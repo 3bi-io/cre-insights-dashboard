@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
   LayoutDashboard, 
   BriefcaseIcon, 
@@ -16,7 +17,7 @@ import {
 
 const Navigation = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navigationItems = [
@@ -36,6 +37,17 @@ const Navigation = () => {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const getRoleBadgeColor = (role: string | null) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800';
+      case 'moderator':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (!user) {
@@ -79,6 +91,11 @@ const Navigation = () => {
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
               <span>Welcome, {user.email}</span>
+              {userRole && (
+                <Badge className={getRoleBadgeColor(userRole)}>
+                  {userRole}
+                </Badge>
+              )}
             </div>
             <Button
               variant="outline"
@@ -125,8 +142,13 @@ const Navigation = () => {
                 );
               })}
               <div className="border-t border-gray-200 pt-2 mt-2">
-                <div className="px-3 py-2 text-sm text-gray-600">
-                  {user.email}
+                <div className="flex items-center justify-between px-3 py-2 text-sm text-gray-600">
+                  <span>{user.email}</span>
+                  {userRole && (
+                    <Badge className={getRoleBadgeColor(userRole)}>
+                      {userRole}
+                    </Badge>
+                  )}
                 </div>
                 <Button
                   variant="outline"
