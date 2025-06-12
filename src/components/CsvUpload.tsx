@@ -1,15 +1,13 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, AlertCircle, CheckCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { parseCsvData, parsePreviewData } from '@/utils/csvParser';
-import { mapCsvToJobListing } from '@/utils/jobMapper';
+import { parsePreviewData } from '@/utils/csvParser';
 import CsvPreview from '@/components/CsvPreview';
+import CsvFileInput from '@/components/csv/CsvFileInput';
+import CsvUploadButton from '@/components/csv/CsvUploadButton';
+import { useCsvUploadProcessor } from '@/components/csv/CsvUploadProcessor';
 
 interface CsvUploadProps {
   onSuccess: () => void;
@@ -19,23 +17,12 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<any[]>([]);
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { processUpload } = useCsvUploadProcessor();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select a CSV file.",
-          variant: "destructive",
-        });
-        return;
-      }
-      setFile(selectedFile);
-      parsePreview(selectedFile);
-    }
+  const handleFileSelect = (selectedFile: File) => {
+    setFile(selectedFile);
+    parsePreview(selectedFile);
   };
 
   const parsePreview = (file: File) => {
@@ -48,78 +35,24 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
     reader.readAsText(file);
   };
 
-  const uploadCsv = async () => {
+  const handleUpload = async () => {
     if (!file || !user) return;
 
     setUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const text = e.target?.result as string;
-        const csvData = parseCsvData(text);
-
-        // Get default platform and category IDs
-        const { data: platforms } = await supabase.from('platforms').select('id').limit(1);
-        const { data: categories } = await supabase.from('job_categories').select('id').limit(1);
-
-        if (!platforms?.length || !categories?.length) {
-          toast({
-            title: "Setup required",
-            description: "Please ensure platforms and job categories exist before uploading.",
-            variant: "destructive",
-          });
-          setUploading(false);
-          return;
-        }
-
-        const jobListings = csvData.map(row => ({
-          ...mapCsvToJobListing(row, user.id),
-          platform_id: platforms[0].id,
-          category_id: categories[0].id,
-        })).filter(job => job.title || job.job_title);
-
-        if (jobListings.length === 0) {
-          toast({
-            title: "No valid data",
-            description: "No valid job listings found in the CSV file. Please ensure job_title column has data.",
-            variant: "destructive",
-          });
-          setUploading(false);
-          return;
-        }
-
-        const { error } = await supabase
-          .from('job_listings')
-          .insert(jobListings);
-
-        if (error) {
-          console.error('Upload error:', error);
-          toast({
-            title: "Upload failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Upload successful",
-            description: `Successfully uploaded ${jobListings.length} job listings.`,
-          });
-          setFile(null);
-          setPreview([]);
-          onSuccess();
-        }
-      };
-      reader.readAsText(file);
-    } catch (error) {
-      console.error('Error processing file:', error);
-      toast({
-        title: "Error",
-        description: "Failed to process the CSV file.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
+    
+    await processUpload({
+      file,
+      userId: user.id,
+      onSuccess: () => {
+        setFile(null);
+        setPreview([]);
+        onSuccess();
+        setUploading(false);
+      },
+      onError: () => {
+        setUploading(false);
+      }
+    });
   };
 
   return (
@@ -131,42 +64,19 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="csv-upload" className="text-sm font-medium">
-            Select CSV File
-          </label>
-          <Input
-            id="csv-upload"
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-          <p className="text-xs text-muted-foreground">
-            Expected columns: client, radius, city, state, salary_min, salary_max, job_id, dest_city, dest_state, job_title, job_description, salary_type, url
-          </p>
-        </div>
+        <CsvFileInput 
+          onFileSelect={handleFileSelect}
+          disabled={uploading}
+        />
 
         <CsvPreview data={preview} />
 
         <div className="flex gap-2">
-          <Button 
-            onClick={uploadCsv} 
+          <CsvUploadButton
+            onUpload={handleUpload}
             disabled={!file || uploading}
-            className="flex-1"
-          >
-            {uploading ? (
-              <>
-                <AlertCircle className="w-4 h-4 mr-2 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Upload CSV
-              </>
-            )}
-          </Button>
+            uploading={uploading}
+          />
         </div>
       </CardContent>
     </Card>
