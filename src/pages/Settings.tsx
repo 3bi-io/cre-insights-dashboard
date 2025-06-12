@@ -51,6 +51,8 @@ const Settings = () => {
   const { data: administrators, isLoading: adminLoading } = useQuery({
     queryKey: ['administrators'],
     queryFn: async (): Promise<AdminUser[]> => {
+      console.log('Fetching administrators...');
+      
       // Get admin roles
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
@@ -62,12 +64,17 @@ const Settings = () => {
         throw rolesError;
       }
 
+      console.log('Admin roles found:', adminRoles);
+
       if (!adminRoles || adminRoles.length === 0) {
+        console.log('No admin roles found');
         return [];
       }
 
-      // Get profiles for admin users
+      // Get profiles for admin users - but don't fail if profiles are missing
       const adminUserIds = adminRoles.map(role => role.user_id);
+      console.log('Looking for profiles for user IDs:', adminUserIds);
+      
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, email, full_name')
@@ -75,20 +82,29 @@ const Settings = () => {
       
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
+        // Don't throw error, continue with what we have
       }
 
-      // Combine admin roles with profile data
-      return adminRoles.map(adminRole => {
+      console.log('Profiles found:', profiles);
+
+      // Combine admin roles with profile data, handling missing profiles gracefully
+      const result = adminRoles.map(adminRole => {
         const profile = profiles?.find(p => p.id === adminRole.user_id);
+        
+        // If this is the current user, we can get their email from the auth session
+        const isCurrentUser = adminRole.user_id === user?.id;
+        
         return {
           id: adminRole.user_id,
-          email: profile?.email || 'No email available',
+          email: profile?.email || (isCurrentUser ? user?.email : null) || `admin-${adminRole.user_id.slice(0, 8)}`,
           full_name: profile?.full_name || null,
           created_at: adminRole.created_at,
           role: adminRole.role
         };
       });
+
+      console.log('Final administrators result:', result);
+      return result;
     },
     enabled: userRole === 'admin', // Only fetch if current user is admin
   });
@@ -516,7 +532,7 @@ const Settings = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h4 className="font-medium text-blue-800 mb-2">Managing Administrators</h4>
                       <p className="text-sm text-blue-600">
-                        Administrator roles are managed through the user_roles table. User information is retrieved from the profiles table which stores accessible user data.
+                        Administrator roles are managed through the user_roles table. User information is retrieved from the profiles table when available.
                       </p>
                     </div>
                   </div>
