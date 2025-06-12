@@ -22,8 +22,7 @@ import {
 
 interface AdminUser {
   id: string;
-  email: string;
-  full_name: string | null;
+  email: string | null;
   created_at: string;
   role: string;
 }
@@ -71,33 +70,14 @@ const Settings = () => {
         return [];
       }
 
-      // Get profiles for admin users - but don't fail if profiles are missing
-      const adminUserIds = adminRoles.map(role => role.user_id);
-      console.log('Looking for profiles for user IDs:', adminUserIds);
-      
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', adminUserIds);
-      
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        // Don't throw error, continue with what we have
-      }
-
-      console.log('Profiles found:', profiles);
-
-      // Combine admin roles with profile data, handling missing profiles gracefully
+      // Since we can't access auth.users directly and profiles table is for clients,
+      // we'll only show the current user's email if they're an admin
       const result = adminRoles.map(adminRole => {
-        const profile = profiles?.find(p => p.id === adminRole.user_id);
-        
-        // If this is the current user, we can get their email from the auth session
         const isCurrentUser = adminRole.user_id === user?.id;
         
         return {
           id: adminRole.user_id,
-          email: profile?.email || (isCurrentUser ? user?.email : null) || `admin-${adminRole.user_id.slice(0, 8)}`,
-          full_name: profile?.full_name || null,
+          email: isCurrentUser ? user?.email || null : null,
           created_at: adminRole.created_at,
           role: adminRole.role
         };
@@ -484,11 +464,10 @@ const Settings = () => {
                                     </div>
                                     <div>
                                       <div className="font-medium text-foreground">
-                                        {admin.id === user?.id ? 'You' : (admin.full_name || admin.email?.split('@')[0] || 'Unknown User')}
+                                        {admin.id === user?.id ? 'You' : `Admin User`}
                                       </div>
-                                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                        <Mail className="w-3 h-3" />
-                                        {admin.email}
+                                      <div className="text-sm text-muted-foreground">
+                                        {admin.email || `ID: ${admin.id.slice(0, 8)}...`}
                                       </div>
                                     </div>
                                   </div>
@@ -532,7 +511,7 @@ const Settings = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h4 className="font-medium text-blue-800 mb-2">Managing Administrators</h4>
                       <p className="text-sm text-blue-600">
-                        Administrator roles are managed through the user_roles table. User information is retrieved from the profiles table when available.
+                        Administrator roles are managed through the user_roles table. Email addresses are only visible for your own account due to security restrictions.
                       </p>
                     </div>
                   </div>
