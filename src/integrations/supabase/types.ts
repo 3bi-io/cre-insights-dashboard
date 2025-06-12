@@ -151,46 +151,85 @@ export type Database = {
         Row: {
           budget: number | null
           category_id: string
+          city: string | null
+          client: string | null
           created_at: string
           description: string | null
+          dest_city: string | null
+          dest_state: string | null
           experience_level: string | null
           id: string
+          job_description: string | null
+          job_id: string | null
+          job_title: string | null
           location: string | null
           platform_id: string
+          radius: number | null
           remote_type: string | null
+          salary_max: number | null
+          salary_min: number | null
+          salary_type: string | null
+          state: string | null
           status: string | null
           title: string
           updated_at: string
+          url: string | null
           user_id: string
         }
         Insert: {
           budget?: number | null
           category_id: string
+          city?: string | null
+          client?: string | null
           created_at?: string
           description?: string | null
+          dest_city?: string | null
+          dest_state?: string | null
           experience_level?: string | null
           id?: string
+          job_description?: string | null
+          job_id?: string | null
+          job_title?: string | null
           location?: string | null
           platform_id: string
+          radius?: number | null
           remote_type?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_type?: string | null
+          state?: string | null
           status?: string | null
           title: string
           updated_at?: string
+          url?: string | null
           user_id: string
         }
         Update: {
           budget?: number | null
           category_id?: string
+          city?: string | null
+          client?: string | null
           created_at?: string
           description?: string | null
+          dest_city?: string | null
+          dest_state?: string | null
           experience_level?: string | null
           id?: string
+          job_description?: string | null
+          job_id?: string | null
+          job_title?: string | null
           location?: string | null
           platform_id?: string
+          radius?: number | null
           remote_type?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_type?: string | null
+          state?: string | null
           status?: string | null
           title?: string
           updated_at?: string
+          url?: string | null
           user_id?: string
         }
         Relationships: [
@@ -233,6 +272,33 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
           updated_at?: string
         }
         Relationships: []

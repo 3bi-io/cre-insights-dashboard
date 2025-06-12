@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +27,7 @@ const Analytics = () => {
   });
 
   const processedData = React.useMemo(() => {
-    if (!analytics) return { spendTrend: [], platformData: [], metrics: {} };
+    if (!analytics) return { spendTrend: [], platformData: [], metrics: { totalSpend: 0, totalApplications: 0, avgCostPerApp: 0, conversionRate: 0 } };
 
     const totalSpend = analytics.spend.reduce((sum, item) => sum + Number(item.amount), 0);
     const totalApplications = analytics.applications.length;
