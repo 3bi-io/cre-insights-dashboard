@@ -21,32 +21,63 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastLogin: string;
+  department: string;
+  created_at: string;
+}
+
 const Accounts = () => {
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['accounts'],
-    queryFn: async () => {
-      // Get user roles data
-      const { data: userRoles, error } = await supabase
-        .from('user_roles')
-        .select('*');
+    queryFn: async (): Promise<UserAccount[]> => {
+      // First get profiles with user roles
+      const { data: profilesWithRoles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          created_at,
+          user_roles!inner (
+            role
+          )
+        `);
       
-      if (error) {
-        console.error('Error fetching user roles:', error);
-        return [];
+      if (profilesError) {
+        console.error('Error fetching profiles with roles:', profilesError);
+        throw profilesError;
       }
 
       // Transform the data to match the expected format
-      return userRoles.map(userRole => ({
-        id: userRole.id,
-        name: `User ${userRole.user_id.slice(0, 8)}`, // Since we don't have access to auth.users
-        email: `user-${userRole.user_id.slice(0, 8)}@crengland.com`,
-        role: userRole.role,
-        status: 'active',
-        lastLogin: new Date().toISOString().split('T')[0],
-        department: userRole.role === 'admin' ? 'HR' : userRole.role === 'moderator' ? 'Recruiting' : 'Operations'
+      return (profilesWithRoles || []).map(profile => ({
+        id: profile.id,
+        name: profile.full_name || profile.email?.split('@')[0] || 'Unknown User',
+        email: profile.email || 'No email',
+        role: profile.user_roles?.role || 'user',
+        status: 'active', // We can assume active since they exist in profiles
+        lastLogin: new Date(profile.created_at).toLocaleDateString(),
+        department: getDepartmentForRole(profile.user_roles?.role || 'user'),
+        created_at: profile.created_at
       }));
     },
   });
+
+  const getDepartmentForRole = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'Administration';
+      case 'moderator':
+        return 'Operations';
+      default:
+        return 'General';
+    }
+  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -154,7 +185,7 @@ const Accounts = () => {
                 <TableHead>Role</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
+                <TableHead>Created</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -166,7 +197,7 @@ const Accounts = () => {
                       <Users className="w-8 h-8 text-muted-foreground" />
                       <p className="text-muted-foreground">No user accounts found</p>
                       <p className="text-sm text-muted-foreground">
-                        User accounts will appear here when authentication is set up
+                        User accounts will appear here when users sign up
                       </p>
                     </div>
                   </TableCell>
