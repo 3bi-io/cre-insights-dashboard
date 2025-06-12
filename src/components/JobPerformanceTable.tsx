@@ -40,7 +40,7 @@ const JobPerformanceTable = () => {
           spend: totalSpend,
           applications: applicationCount,
           costPerApp,
-          status: job.status || 'Active',
+          status: job.status || 'active',
           trend
         };
       });
@@ -49,14 +49,14 @@ const JobPerformanceTable = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Job Performance by Listing</h3>
+          <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
           <Button variant="outline" size="sm" disabled>View All</Button>
         </div>
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-12 bg-gray-100 rounded animate-pulse"></div>
+            <div key={i} className="h-12 bg-muted rounded animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -65,12 +65,12 @@ const JobPerformanceTable = () => {
 
   if (jobData.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Job Performance by Listing</h3>
+          <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
           <Button variant="outline" size="sm">View All</Button>
         </div>
-        <div className="flex items-center justify-center h-32 text-gray-500">
+        <div className="flex items-center justify-center h-32 text-muted-foreground">
           No job performance data available
         </div>
       </div>
@@ -78,43 +78,43 @@ const JobPerformanceTable = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Job Performance by Listing</h3>
+        <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
         <Button variant="outline" size="sm">View All</Button>
       </div>
       
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-medium text-gray-700">Job Title</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-700">Platform</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700">Spend</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700">Applications</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700">Cost/App</th>
-              <th className="text-center py-3 px-4 font-medium text-gray-700">Status</th>
-              <th className="text-center py-3 px-4 font-medium text-gray-700">Trend</th>
-              <th className="text-center py-3 px-4 font-medium text-gray-700">Actions</th>
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Job Title</th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Platform</th>
+              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Spend</th>
+              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Applications</th>
+              <th className="text-right py-3 px-4 font-medium text-muted-foreground">Cost/App</th>
+              <th className="text-center py-3 px-4 font-medium text-muted-foreground">Status</th>
+              <th className="text-center py-3 px-4 font-medium text-muted-foreground">Trend</th>
+              <th className="text-center py-3 px-4 font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody>
             {jobData.map((job) => (
-              <tr key={job.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+              <tr key={job.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                 <td className="py-4 px-4">
-                  <div className="font-medium text-gray-900">{job.title}</div>
+                  <div className="font-medium text-foreground">{job.title}</div>
                 </td>
                 <td className="py-4 px-4">
-                  <span className="text-gray-600">{job.platform}</span>
+                  <span className="text-muted-foreground">{job.platform}</span>
                 </td>
                 <td className="py-4 px-4 text-right">
-                  <span className="font-medium text-gray-900">${job.spend.toLocaleString()}</span>
+                  <span className="font-medium text-foreground">${job.spend.toLocaleString()}</span>
                 </td>
                 <td className="py-4 px-4 text-right">
-                  <span className="font-medium text-gray-900">{job.applications}</span>
+                  <span className="font-medium text-foreground">{job.applications}</span>
                 </td>
                 <td className="py-4 px-4 text-right">
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-foreground">
                     {job.costPerApp > 0 ? `$${job.costPerApp.toFixed(2)}` : '$0.00'}
                   </span>
                 </td>
