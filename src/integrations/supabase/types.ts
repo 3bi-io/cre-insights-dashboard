@@ -9,7 +9,234 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      applications: {
+        Row: {
+          applicant_email: string | null
+          applicant_name: string | null
+          applied_at: string
+          id: string
+          job_listing_id: string
+          source: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_email?: string | null
+          applicant_name?: string | null
+          applied_at?: string
+          id?: string
+          job_listing_id: string
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_email?: string | null
+          applicant_name?: string | null
+          applied_at?: string
+          id?: string
+          job_listing_id?: string
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_allocations: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          month: number
+          monthly_budget: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          month: number
+          monthly_budget: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          month?: number
+          monthly_budget?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_allocations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "job_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_spend: {
+        Row: {
+          amount: number
+          clicks: number | null
+          created_at: string
+          date: string
+          id: string
+          job_listing_id: string
+          views: number | null
+        }
+        Insert: {
+          amount?: number
+          clicks?: number | null
+          created_at?: string
+          date: string
+          id?: string
+          job_listing_id: string
+          views?: number | null
+        }
+        Update: {
+          amount?: number
+          clicks?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          job_listing_id?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_spend_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      job_listings: {
+        Row: {
+          budget: number | null
+          category_id: string
+          created_at: string
+          description: string | null
+          experience_level: string | null
+          id: string
+          location: string | null
+          platform_id: string
+          remote_type: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number | null
+          category_id: string
+          created_at?: string
+          description?: string | null
+          experience_level?: string | null
+          id?: string
+          location?: string | null
+          platform_id: string
+          remote_type?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget?: number | null
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          experience_level?: string | null
+          id?: string
+          location?: string | null
+          platform_id?: string
+          remote_type?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "job_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platforms: {
+        Row: {
+          api_endpoint: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
