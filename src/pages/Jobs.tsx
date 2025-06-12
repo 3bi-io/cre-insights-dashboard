@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,10 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Search, Filter, MoreHorizontal, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CsvUpload from '@/components/CsvUpload';
+import JobEditDialog from '@/components/JobEditDialog';
+import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
 
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedJobForEdit, setSelectedJobForEdit] = useState(null);
+  const [selectedJobForAnalytics, setSelectedJobForAnalytics] = useState(null);
   const { toast } = useToast();
 
   const { data: jobListings, isLoading, refetch } = useQuery({
@@ -54,6 +57,23 @@ const Jobs = () => {
   const handleUploadSuccess = () => {
     setShowUploadDialog(false);
     refetch();
+  };
+
+  const handleEditJob = (job: any) => {
+    setSelectedJobForEdit(job);
+  };
+
+  const handleViewAnalytics = (job: any) => {
+    setSelectedJobForAnalytics(job);
+  };
+
+  const handleEditSuccess = () => {
+    setSelectedJobForEdit(null);
+    refetch();
+    toast({
+      title: "Job updated",
+      description: "Job listing has been updated successfully.",
+    });
   };
 
   if (isLoading) {
@@ -156,9 +176,6 @@ const Jobs = () => {
                   <Badge className={getStatusColor(job.status)}>
                     {job.status}
                   </Badge>
-                  <span className="text-sm text-gray-500">
-                    Budget: ${job.budget?.toLocaleString() || '0'}
-                  </span>
                 </div>
                 
                 {job.location && (
@@ -173,10 +190,20 @@ const Jobs = () => {
                 </div>
                 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleEditJob(job)}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleViewAnalytics(job)}
+                  >
                     View Analytics
                   </Button>
                 </div>
@@ -184,6 +211,25 @@ const Jobs = () => {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Edit Job Dialog */}
+      {selectedJobForEdit && (
+        <JobEditDialog
+          job={selectedJobForEdit}
+          open={!!selectedJobForEdit}
+          onOpenChange={(open) => !open && setSelectedJobForEdit(null)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+
+      {/* Analytics Dialog */}
+      {selectedJobForAnalytics && (
+        <JobAnalyticsDialog
+          job={selectedJobForAnalytics}
+          open={!!selectedJobForAnalytics}
+          onOpenChange={(open) => !open && setSelectedJobForAnalytics(null)}
+        />
       )}
     </div>
   );
