@@ -10,7 +10,7 @@ import {
   Settings, 
   BarChart3,
   LogOut,
-  UserCheck
+  Building
 } from 'lucide-react';
 import {
   Sidebar,
@@ -37,7 +37,7 @@ const AppSidebar = () => {
     { path: '/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/applications', label: 'Applications', icon: Users },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { path: '/accounts', label: 'Accounts', icon: UserCheck },
+    { path: '/clients', label: 'Clients', icon: Building },
     { path: '/settings', label: 'Settings', icon: Settings },
   ];
 

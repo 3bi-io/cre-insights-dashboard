@@ -12,7 +12,8 @@ import {
   BarChart3,
   LogOut,
   Menu,
-  X
+  X,
+  Building
 } from 'lucide-react';
 
 const Navigation = () => {
@@ -25,6 +26,7 @@ const Navigation = () => {
     { path: '/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/applications', label: 'Applications', icon: Users },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/clients', label: 'Clients', icon: Building },
     { path: '/settings', label: 'Settings', icon: Settings },
   ];
 
