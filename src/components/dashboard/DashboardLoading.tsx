@@ -1,13 +1,9 @@
 
 import React from 'react';
-import DashboardMetrics from '@/components/dashboard/DashboardMetrics';
-import DashboardCharts from '@/components/dashboard/DashboardCharts';
-import DashboardOverview from '@/components/dashboard/DashboardOverview';
 
-const Index = () => {
+const DashboardLoading = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Page Header */}
       <div className="bg-card border-b border-border shadow-sm">
         <div className="container mx-auto px-8 py-6 max-w-7xl">
           <div className="space-y-2">
@@ -22,20 +18,20 @@ const Index = () => {
       </div>
       
       <div className="container mx-auto px-8 py-8 max-w-7xl">
-        {/* Key Metrics */}
-        <DashboardMetrics />
-
-        {/* Charts Section */}
-        <DashboardCharts />
-
-        {/* Budget and Performance Section */}
-        <DashboardOverview />
-
-        {/* Footer spacing */}
-        <div className="h-8"></div>
+        <div className="animate-pulse space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded-xl"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            <div className="xl:col-span-3 h-80 bg-muted rounded-xl"></div>
+            <div className="xl:col-span-1 h-80 bg-muted rounded-xl"></div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Index;
+export default DashboardLoading;
