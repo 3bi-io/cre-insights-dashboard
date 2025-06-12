@@ -2,39 +2,77 @@
 import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-
-const budgetData = [
-  {
-    category: 'Driver Recruitment',
-    budget: 25000,
-    spent: 18750,
-    remaining: 6250,
-    status: 'on-track'
-  },
-  {
-    category: 'Logistics Positions',
-    budget: 15000,
-    spent: 14200,
-    remaining: 800,
-    status: 'warning'
-  },
-  {
-    category: 'Management Roles',
-    budget: 10000,
-    spent: 7500,
-    remaining: 2500,
-    status: 'on-track'
-  },
-  {
-    category: 'Technical Positions',
-    budget: 8000,
-    spent: 8100,
-    remaining: -100,
-    status: 'over-budget'
-  }
-];
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const BudgetOverview = () => {
+  const { data: budgetData = [], isLoading } = useQuery({
+    queryKey: ['budget-overview'],
+    queryFn: async () => {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
+
+      // Get budget allocations for current month
+      const { data: budgets } = await supabase
+        .from('budget_allocations')
+        .select(`
+          monthly_budget,
+          job_categories!inner(
+            id,
+            name
+          )
+        `)
+        .eq('year', currentYear)
+        .eq('month', currentMonth);
+
+      if (!budgets) return [];
+
+      // Get actual spend for current month by category
+      const { data: spendData } = await supabase
+        .from('daily_spend')
+        .select(`
+          amount,
+          job_listings!inner(
+            category_id,
+            job_categories!inner(
+              name
+            )
+          )
+        `)
+        .gte('date', `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`);
+
+      // Group spend by category
+      const categorySpend = spendData?.reduce((acc: Record<string, number>, item) => {
+        const categoryId = item.job_listings.category_id;
+        acc[categoryId] = (acc[categoryId] || 0) + Number(item.amount);
+        return acc;
+      }, {}) || {};
+
+      return budgets.map(budget => {
+        const categoryId = budget.job_categories.id;
+        const spent = categorySpend[categoryId] || 0;
+        const budgetAmount = Number(budget.monthly_budget);
+        const remaining = budgetAmount - spent;
+        
+        let status = 'on-track';
+        if (remaining < 0) {
+          status = 'over-budget';
+        } else if (remaining < budgetAmount * 0.1) { // Less than 10% remaining
+          status = 'warning';
+        }
+
+        return {
+          category: budget.job_categories.name,
+          budget: budgetAmount,
+          spent,
+          remaining,
+          status
+        };
+      });
+    },
+  });
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'on-track':
@@ -61,6 +99,30 @@ const BudgetOverview = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Budget Overview</h3>
+        <div className="space-y-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-16 bg-gray-100 rounded animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (budgetData.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Budget Overview</h3>
+        <div className="flex items-center justify-center h-32 text-gray-500">
+          No budget data available for this month
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-6">Budget Overview</h3>
@@ -68,8 +130,6 @@ const BudgetOverview = () => {
       <div className="space-y-6">
         {budgetData.map((item, index) => {
           const percentage = (item.spent / item.budget) * 100;
-          const progressColor = item.status === 'over-budget' ? 'bg-red-500' : 
-                               item.status === 'warning' ? 'bg-yellow-500' : 'bg-green-500';
           
           return (
             <div key={index} className="space-y-3">

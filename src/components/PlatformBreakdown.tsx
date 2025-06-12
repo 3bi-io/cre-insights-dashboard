@@ -1,16 +1,47 @@
 
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-
-const platformData = [
-  { name: 'Indeed', value: 35, spend: 12250, color: '#3b82f6' },
-  { name: 'LinkedIn', value: 25, spend: 8750, color: '#10b981' },
-  { name: 'ZipRecruiter', value: 20, spend: 7000, color: '#f59e0b' },
-  { name: 'Glassdoor', value: 12, spend: 4200, color: '#ef4444' },
-  { name: 'Monster', value: 8, spend: 2800, color: '#8b5cf6' },
-];
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const PlatformBreakdown = () => {
+  const { data: platformData = [], isLoading } = useQuery({
+    queryKey: ['platform-breakdown'],
+    queryFn: async () => {
+      const { data: spendData } = await supabase
+        .from('daily_spend')
+        .select(`
+          amount,
+          job_listings!inner(
+            platform_id,
+            platforms!inner(
+              name
+            )
+          )
+        `);
+
+      if (!spendData) return [];
+
+      // Group spend by platform
+      const platformSpend = spendData.reduce((acc: Record<string, number>, item) => {
+        const platformName = item.job_listings.platforms.name;
+        acc[platformName] = (acc[platformName] || 0) + Number(item.amount);
+        return acc;
+      }, {});
+
+      const totalSpend = Object.values(platformSpend).reduce((sum, amount) => sum + amount, 0);
+      
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+      
+      return Object.entries(platformSpend).map(([name, spend], index) => ({
+        name,
+        value: totalSpend > 0 ? Math.round((spend / totalSpend) * 100) : 0,
+        spend,
+        color: colors[index % colors.length]
+      }));
+    },
+  });
+
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -24,6 +55,26 @@ const PlatformBreakdown = () => {
     }
     return null;
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Platform</h3>
+        <div className="h-64 bg-gray-100 rounded animate-pulse"></div>
+      </div>
+    );
+  }
+
+  if (platformData.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Platform</h3>
+        <div className="h-64 flex items-center justify-center text-gray-500">
+          No platform data available
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">

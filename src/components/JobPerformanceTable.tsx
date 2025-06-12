@@ -3,61 +3,80 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
-
-const jobData = [
-  {
-    id: 1,
-    title: 'CDL Driver - OTR',
-    platform: 'Indeed',
-    spend: 2450,
-    applications: 68,
-    costPerApp: 36.03,
-    status: 'Active',
-    trend: 'up'
-  },
-  {
-    id: 2,
-    title: 'Regional Truck Driver',
-    platform: 'LinkedIn',
-    spend: 1890,
-    applications: 45,
-    costPerApp: 42.00,
-    status: 'Active',
-    trend: 'down'
-  },
-  {
-    id: 3,
-    title: 'Local Delivery Driver',
-    platform: 'ZipRecruiter',
-    spend: 1200,
-    applications: 52,
-    costPerApp: 23.08,
-    status: 'Paused',
-    trend: 'up'
-  },
-  {
-    id: 4,
-    title: 'Owner Operator',
-    platform: 'Glassdoor',
-    spend: 3100,
-    applications: 34,
-    costPerApp: 91.18,
-    status: 'Active',
-    trend: 'down'
-  },
-  {
-    id: 5,
-    title: 'Team Driver',
-    platform: 'Monster',
-    spend: 1650,
-    applications: 41,
-    costPerApp: 40.24,
-    status: 'Active',
-    trend: 'up'
-  }
-];
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const JobPerformanceTable = () => {
+  const { data: jobData = [], isLoading } = useQuery({
+    queryKey: ['job-performance'],
+    queryFn: async () => {
+      // Get job listings with their spend and application data
+      const { data: jobs } = await supabase
+        .from('job_listings')
+        .select(`
+          id,
+          title,
+          status,
+          platforms!inner(name),
+          daily_spend(amount),
+          applications(id)
+        `)
+        .limit(5);
+
+      if (!jobs) return [];
+
+      return jobs.map(job => {
+        const totalSpend = job.daily_spend.reduce((sum, spend) => sum + Number(spend.amount), 0);
+        const applicationCount = job.applications.length;
+        const costPerApp = applicationCount > 0 ? totalSpend / applicationCount : 0;
+        
+        // Simple trend calculation (could be enhanced with time-based data)
+        const trend = Math.random() > 0.5 ? 'up' : 'down'; // Random for now
+
+        return {
+          id: job.id,
+          title: job.title,
+          platform: job.platforms.name,
+          spend: totalSpend,
+          applications: applicationCount,
+          costPerApp,
+          status: job.status || 'Active',
+          trend
+        };
+      });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Job Performance by Listing</h3>
+          <Button variant="outline" size="sm" disabled>View All</Button>
+        </div>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-100 rounded animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (jobData.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Job Performance by Listing</h3>
+          <Button variant="outline" size="sm">View All</Button>
+        </div>
+        <div className="flex items-center justify-center h-32 text-gray-500">
+          No job performance data available
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
@@ -95,10 +114,12 @@ const JobPerformanceTable = () => {
                   <span className="font-medium text-gray-900">{job.applications}</span>
                 </td>
                 <td className="py-4 px-4 text-right">
-                  <span className="font-medium text-gray-900">${job.costPerApp.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">
+                    {job.costPerApp > 0 ? `$${job.costPerApp.toFixed(2)}` : '$0.00'}
+                  </span>
                 </td>
                 <td className="py-4 px-4 text-center">
-                  <Badge variant={job.status === 'Active' ? 'default' : 'secondary'}>
+                  <Badge variant={job.status === 'active' ? 'default' : 'secondary'}>
                     {job.status}
                   </Badge>
                 </td>
