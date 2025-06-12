@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,33 +35,41 @@ const Accounts = () => {
   const { data: accounts, isLoading } = useQuery({
     queryKey: ['accounts'],
     queryFn: async (): Promise<UserAccount[]> => {
-      // First get profiles with user roles
-      const { data: profilesWithRoles, error: profilesError } = await supabase
+      // First get all profiles
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          created_at,
-          user_roles!inner (
-            role
-          )
-        `);
+        .select('id, email, full_name, created_at');
       
       if (profilesError) {
-        console.error('Error fetching profiles with roles:', profilesError);
+        console.error('Error fetching profiles:', profilesError);
         throw profilesError;
       }
 
+      // Then get all user roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+      
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
+
+      // Create a map of user roles for quick lookup
+      const rolesMap = new Map();
+      userRoles?.forEach(userRole => {
+        rolesMap.set(userRole.user_id, userRole.role);
+      });
+
       // Transform the data to match the expected format
-      return (profilesWithRoles || []).map(profile => ({
+      return (profiles || []).map(profile => ({
         id: profile.id,
         name: profile.full_name || profile.email?.split('@')[0] || 'Unknown User',
         email: profile.email || 'No email',
-        role: profile.user_roles?.role || 'user',
+        role: rolesMap.get(profile.id) || 'user',
         status: 'active', // We can assume active since they exist in profiles
         lastLogin: new Date(profile.created_at).toLocaleDateString(),
-        department: getDepartmentForRole(profile.user_roles?.role || 'user'),
+        department: getDepartmentForRole(rolesMap.get(profile.id) || 'user'),
         created_at: profile.created_at
       }));
     },
