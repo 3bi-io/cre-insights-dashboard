@@ -15,24 +15,32 @@ const MetricsCard = ({ title, value, change, changeType, icon: Icon, description
   const changeColor = {
     positive: 'text-green-600',
     negative: 'text-red-600',
-    neutral: 'text-gray-600'
+    neutral: 'text-muted-foreground'
+  }[changeType];
+
+  const changeBgColor = {
+    positive: 'bg-green-50 border-green-200',
+    negative: 'bg-red-50 border-red-200',
+    neutral: 'bg-muted border-border'
   }[changeType];
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between">
+    <div className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-200 hover:border-primary/20">
+      <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <div className="flex items-baseline gap-2 mt-2">
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            <p className={`text-sm font-medium ${changeColor}`}>{change}</p>
+          <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
+          <div className="flex items-baseline gap-3">
+            <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
+            <div className={`px-2 py-1 rounded-md border text-xs font-semibold ${changeBgColor} ${changeColor}`}>
+              {change}
+            </div>
           </div>
           {description && (
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+            <p className="text-sm text-muted-foreground mt-2">{description}</p>
           )}
         </div>
-        <div className="bg-blue-50 p-3 rounded-lg">
-          <Icon className="w-6 h-6 text-blue-600" />
+        <div className="bg-primary/10 p-3 rounded-lg ml-4">
+          <Icon className="w-6 h-6 text-primary" />
         </div>
       </div>
     </div>

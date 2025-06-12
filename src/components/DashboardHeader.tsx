@@ -1,31 +1,44 @@
 
 import React from 'react';
-import { Calendar, Download, Settings, Bell } from 'lucide-react';
+import { Calendar, Download, Settings, Bell, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const DashboardHeader = () => {
   return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">C.R. England - Job Advertising Analytics</h1>
-          <p className="text-gray-600 mt-1">Monitor spend, track performance, and optimize your job advertising campaigns</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Last 30 Days
-          </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm">
-            <Bell className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4" />
-          </Button>
+    <div className="bg-card border-b border-border shadow-sm">
+      <div className="container mx-auto px-8 py-6 max-w-7xl">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              C.R. England - Job Advertising Analytics
+            </h1>
+            <p className="text-muted-foreground text-lg max-w-2xl">
+              Monitor spend, track performance, and optimize your job advertising campaigns across all platforms
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="default" className="flex items-center gap-2 h-10">
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Last 30 Days</span>
+            </Button>
+            <Button variant="outline" size="default" className="flex items-center gap-2 h-10">
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Filter</span>
+            </Button>
+            <Button variant="outline" size="default" className="flex items-center gap-2 h-10">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+            <div className="flex items-center gap-2 ml-2">
+              <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Bell className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
