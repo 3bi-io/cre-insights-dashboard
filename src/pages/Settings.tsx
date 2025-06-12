@@ -1,6 +1,7 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,12 +10,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { User, Bell, Shield, Database, Trash2, Save } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { User, Bell, Shield, Database, Trash2, Save, Users, Mail, MoreVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  created_at: string;
+  role: string;
+}
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
 
   const [notifications, setNotifications] = useState({
@@ -28,6 +45,83 @@ const Settings = () => {
     dataSharing: false,
     analytics: true,
     marketing: false,
+  });
+
+  // Fetch administrators
+  const { data: administrators, isLoading: adminLoading } = useQuery({
+    queryKey: ['administrators'],
+    queryFn: async (): Promise<AdminUser[]> => {
+      // Get all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, created_at');
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Get admin roles
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'admin');
+      
+      if (rolesError) {
+        console.error('Error fetching admin roles:', rolesError);
+        throw rolesError;
+      }
+
+      // Create a set of admin user IDs for quick lookup
+      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
+
+      // Filter profiles to only include admins
+      return (profiles || [])
+        .filter(profile => adminUserIds.has(profile.id))
+        .map(profile => ({
+          id: profile.id,
+          email: profile.email || 'No email',
+          full_name: profile.full_name,
+          created_at: profile.created_at,
+          role: 'admin'
+        }));
+    },
+    enabled: userRole === 'admin', // Only fetch if current user is admin
+  });
+
+  // Mutation to remove admin role
+  const removeAdminMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'admin');
+      
+      if (error) throw error;
+      
+      // Add user role instead
+      const { error: userRoleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'user' });
+      
+      if (userRoleError) throw userRoleError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['administrators'] });
+      toast({
+        title: "Admin removed",
+        description: "User has been removed from administrators.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error removing admin:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove administrator.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleSaveNotifications = async () => {
@@ -52,6 +146,18 @@ const Settings = () => {
     setLoading(false);
   };
 
+  const handleRemoveAdmin = (userId: string) => {
+    if (userId === user?.id) {
+      toast({
+        title: "Cannot remove yourself",
+        description: "You cannot remove your own admin privileges.",
+        variant: "destructive",
+      });
+      return;
+    }
+    removeAdminMutation.mutate(userId);
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
@@ -60,10 +166,11 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
+          {userRole === 'admin' && <TabsTrigger value="administrators">Administrators</TabsTrigger>}
           <TabsTrigger value="danger">Danger Zone</TabsTrigger>
         </TabsList>
 
@@ -293,6 +400,128 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {userRole === 'admin' && (
+          <TabsContent value="administrators" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  App Administrators
+                </CardTitle>
+                <CardDescription>
+                  Manage users with administrator privileges
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {adminLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Current Administrators</p>
+                        <p className="text-sm text-gray-600">
+                          {administrators?.length || 0} administrator{administrators?.length !== 1 ? 's' : ''} found
+                        </p>
+                      </div>
+                      <Badge variant="secondary">
+                        Total: {administrators?.length || 0}
+                      </Badge>
+                    </div>
+
+                    <div className="bg-card rounded-xl border border-border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Added</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {administrators?.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-8">
+                                <div className="flex flex-col items-center gap-2">
+                                  <Users className="w-8 h-8 text-muted-foreground" />
+                                  <p className="text-muted-foreground">No administrators found</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            administrators?.map((admin) => (
+                              <TableRow key={admin.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <div className="bg-primary/10 p-2 rounded-lg">
+                                      <User className="w-4 h-4 text-primary" />
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">
+                                        {admin.full_name || admin.email?.split('@')[0] || 'Unknown User'}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                        <Mail className="w-3 h-3" />
+                                        {admin.email}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                    <Shield className="w-3 h-3 mr-1" />
+                                    {admin.role}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="text-sm text-muted-foreground">
+                                    {new Date(admin.created_at).toLocaleDateString()}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem 
+                                        onClick={() => handleRemoveAdmin(admin.id)}
+                                        className="text-destructive"
+                                        disabled={admin.id === user?.id}
+                                      >
+                                        Remove Admin
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-medium text-blue-800 mb-2">Managing Administrators</h4>
+                      <p className="text-sm text-blue-600">
+                        To add new administrators, you'll need to update user roles directly in the database. 
+                        Administrators have full access to manage the application and other users.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="danger" className="space-y-6">
           <Card className="border-red-200">
