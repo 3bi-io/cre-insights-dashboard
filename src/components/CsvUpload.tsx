@@ -3,10 +3,13 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { parseCsvData, parsePreviewData } from '@/utils/csvParser';
+import { mapCsvToJobListing } from '@/utils/jobMapper';
+import CsvPreview from '@/components/CsvPreview';
 
 interface CsvUploadProps {
   onSuccess: () => void;
@@ -39,60 +42,10 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      const previewData = lines.slice(1, 4).map(line => {
-        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-        const row: any = {};
-        headers.forEach((header, index) => {
-          row[header] = values[index] || '';
-        });
-        return row;
-      });
+      const previewData = parsePreviewData(text);
       setPreview(previewData);
     };
     reader.readAsText(file);
-  };
-
-  const parseCsvData = (text: string) => {
-    const lines = text.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-      const row: any = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index] || '';
-      });
-      return row;
-    });
-  };
-
-  const mapCsvToJobListing = (csvRow: any) => {
-    // Map CSV columns to database columns - using the new fields
-    return {
-      title: csvRow.job_title || '', // Use job_title from CSV as title
-      description: csvRow.job_description || '', // Use job_description from CSV
-      location: csvRow.city && csvRow.state ? `${csvRow.city}, ${csvRow.state}` : (csvRow.city || csvRow.state || ''),
-      budget: csvRow.salary_max ? parseFloat(csvRow.salary_max) : null,
-      experience_level: 'entry', // Default since not provided in CSV
-      status: 'active', // Default status
-      salary_min: csvRow.salary_min ? parseFloat(csvRow.salary_min) : null,
-      salary_max: csvRow.salary_max ? parseFloat(csvRow.salary_max) : null,
-      salary_type: csvRow.salary_type || null,
-      remote_type: null, // Not provided in CSV
-      city: csvRow.city || null,
-      state: csvRow.state || null,
-      client: csvRow.client || null,
-      radius: csvRow.radius ? parseInt(csvRow.radius) : null,
-      job_id: csvRow.job_id || null,
-      dest_city: csvRow.dest_city || null,
-      dest_state: csvRow.dest_state || null,
-      job_title: csvRow.job_title || null,
-      job_description: csvRow.job_description || null,
-      url: csvRow.url || null,
-      user_id: user?.id,
-    };
   };
 
   const uploadCsv = async () => {
@@ -120,10 +73,10 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
         }
 
         const jobListings = csvData.map(row => ({
-          ...mapCsvToJobListing(row),
+          ...mapCsvToJobListing(row, user.id),
           platform_id: platforms[0].id,
           category_id: categories[0].id,
-        })).filter(job => job.title || job.job_title); // Include rows with either title or job_title
+        })).filter(job => job.title || job.job_title);
 
         if (jobListings.length === 0) {
           toast({
@@ -194,34 +147,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
           </p>
         </div>
 
-        {preview.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Preview (first 3 rows)
-            </h4>
-            <div className="max-h-40 overflow-auto border rounded">
-              <table className="w-full text-xs">
-                <thead className="bg-muted">
-                  <tr>
-                    {Object.keys(preview[0]).map(header => (
-                      <th key={header} className="p-2 text-left">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.map((row, index) => (
-                    <tr key={index} className="border-t">
-                      {Object.values(row).map((value: any, i) => (
-                        <td key={i} className="p-2 truncate max-w-32">{value}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        <CsvPreview data={preview} />
 
         <div className="flex gap-2">
           <Button 
