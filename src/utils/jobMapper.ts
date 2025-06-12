@@ -1,26 +1,52 @@
 
 export const mapCsvToJobListing = (csvRow: any, userId: string) => {
-  return {
-    title: csvRow.job_title || '',
-    description: csvRow.job_description || '',
-    location: csvRow.city && csvRow.state ? `${csvRow.city}, ${csvRow.state}` : (csvRow.city || csvRow.state || ''),
-    budget: csvRow.salary_max ? parseFloat(csvRow.salary_max) : null,
+  console.log('Mapping CSV row:', csvRow);
+  
+  // Try multiple possible column names for job title
+  const jobTitle = csvRow.job_title || csvRow['Job Title'] || csvRow.title || csvRow.Title || '';
+  const jobDescription = csvRow.job_description || csvRow['Job Description'] || csvRow.description || csvRow.Description || '';
+  
+  // Handle location fields more flexibly
+  const city = csvRow.city || csvRow.City || csvRow.dest_city || '';
+  const state = csvRow.state || csvRow.State || csvRow.dest_state || '';
+  const location = city && state ? `${city}, ${state}` : (city || state || '');
+  
+  // Handle salary fields more flexibly
+  const salaryMin = parseNumber(csvRow.salary_min || csvRow['Salary Min'] || csvRow.min_salary);
+  const salaryMax = parseNumber(csvRow.salary_max || csvRow['Salary Max'] || csvRow.max_salary);
+  const budget = salaryMax || salaryMin || null;
+  
+  const mapped = {
+    title: jobTitle,
+    description: jobDescription,
+    location: location,
+    budget: budget,
     experience_level: 'entry',
     status: 'active',
-    salary_min: csvRow.salary_min ? parseFloat(csvRow.salary_min) : null,
-    salary_max: csvRow.salary_max ? parseFloat(csvRow.salary_max) : null,
-    salary_type: csvRow.salary_type || null,
+    salary_min: salaryMin,
+    salary_max: salaryMax,
+    salary_type: csvRow.salary_type || csvRow['Salary Type'] || null,
     remote_type: null,
-    city: csvRow.city || null,
-    state: csvRow.state || null,
-    client: csvRow.client || null,
-    radius: csvRow.radius ? parseInt(csvRow.radius) : null,
-    job_id: csvRow.job_id || null,
-    dest_city: csvRow.dest_city || null,
-    dest_state: csvRow.dest_state || null,
-    job_title: csvRow.job_title || null,
-    job_description: csvRow.job_description || null,
-    url: csvRow.url || null,
+    city: city || null,
+    state: state || null,
+    client: csvRow.client || csvRow.Client || null,
+    radius: parseNumber(csvRow.radius || csvRow.Radius),
+    job_id: csvRow.job_id || csvRow['Job ID'] || csvRow.id || null,
+    dest_city: csvRow.dest_city || csvRow['Dest City'] || null,
+    dest_state: csvRow.dest_state || csvRow['Dest State'] || null,
+    job_title: jobTitle,
+    job_description: jobDescription,
+    url: csvRow.url || csvRow.URL || csvRow.link || null,
     user_id: userId,
   };
+  
+  console.log('Mapped job listing:', mapped);
+  return mapped;
 };
+
+// Helper function to parse numbers safely
+function parseNumber(value: any): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = parseFloat(String(value).replace(/[$,]/g, ''));
+  return isNaN(parsed) ? null : parsed;
+}

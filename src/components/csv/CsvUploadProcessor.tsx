@@ -17,10 +17,15 @@ export const useCsvUploadProcessor = () => {
 
   const processUpload = async ({ file, userId, onSuccess, onError }: CsvUploadProcessorProps) => {
     try {
+      console.log('Starting CSV upload process for file:', file.name);
+      
       const reader = new FileReader();
       reader.onload = async (e) => {
         const text = e.target?.result as string;
+        console.log('File read complete, parsing CSV data...');
+        
         const csvData = parseCsvData(text);
+        console.log(`Parsed ${csvData.length} rows from CSV`);
 
         // Get default platform and category IDs
         const { data: platforms } = await supabase.from('platforms').select('id').limit(1);
@@ -41,9 +46,22 @@ export const useCsvUploadProcessor = () => {
           ...mapCsvToJobListing(row, userId),
           platform_id: platforms[0].id,
           category_id: categories[0].id,
-        })).filter(job => job.title || job.job_title);
+        }));
 
-        if (jobListings.length === 0) {
+        console.log(`Mapped ${jobListings.length} job listings`);
+
+        // Filter out jobs that don't have a title (be more lenient)
+        const validJobListings = jobListings.filter(job => {
+          const hasTitle = (job.title && job.title.trim()) || (job.job_title && job.job_title.trim());
+          if (!hasTitle) {
+            console.log('Filtering out job without title:', job);
+          }
+          return hasTitle;
+        });
+
+        console.log(`${validJobListings.length} valid job listings after filtering`);
+
+        if (validJobListings.length === 0) {
           const errorMsg = "No valid job listings found in the CSV file. Please ensure job_title column has data.";
           toast({
             title: "No valid data",
@@ -54,9 +72,11 @@ export const useCsvUploadProcessor = () => {
           return;
         }
 
-        const { error } = await supabase
+        console.log('Inserting job listings into database...');
+        const { error, data } = await supabase
           .from('job_listings')
-          .insert(jobListings);
+          .insert(validJobListings)
+          .select();
 
         if (error) {
           console.error('Upload error:', error);
@@ -67,9 +87,10 @@ export const useCsvUploadProcessor = () => {
           });
           onError(error.message);
         } else {
+          console.log(`Successfully inserted ${data?.length || validJobListings.length} job listings`);
           toast({
             title: "Upload successful",
-            description: `Successfully uploaded ${jobListings.length} job listings.`,
+            description: `Successfully uploaded ${data?.length || validJobListings.length} out of ${csvData.length} job listings.`,
           });
           onSuccess();
         }
