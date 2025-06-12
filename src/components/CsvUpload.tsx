@@ -69,20 +69,28 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
   };
 
   const mapCsvToJobListing = (csvRow: any) => {
-    // Map CSV columns to database columns
+    // Map CSV columns to database columns - using the new fields
     return {
-      title: csvRow.title || csvRow.job_title || '',
-      description: csvRow.description || csvRow.job_description || '',
-      location: csvRow.location || '',
-      budget: csvRow.budget ? parseFloat(csvRow.budget) : null,
-      experience_level: csvRow.experience_level || 'entry',
-      status: csvRow.status || 'active',
+      title: csvRow.job_title || '', // Use job_title from CSV as title
+      description: csvRow.job_description || '', // Use job_description from CSV
+      location: csvRow.city && csvRow.state ? `${csvRow.city}, ${csvRow.state}` : (csvRow.city || csvRow.state || ''),
+      budget: csvRow.salary_max ? parseFloat(csvRow.salary_max) : null,
+      experience_level: 'entry', // Default since not provided in CSV
+      status: 'active', // Default status
       salary_min: csvRow.salary_min ? parseFloat(csvRow.salary_min) : null,
       salary_max: csvRow.salary_max ? parseFloat(csvRow.salary_max) : null,
       salary_type: csvRow.salary_type || null,
-      remote_type: csvRow.remote_type || null,
+      remote_type: null, // Not provided in CSV
       city: csvRow.city || null,
       state: csvRow.state || null,
+      client: csvRow.client || null,
+      radius: csvRow.radius ? parseInt(csvRow.radius) : null,
+      job_id: csvRow.job_id || null,
+      dest_city: csvRow.dest_city || null,
+      dest_state: csvRow.dest_state || null,
+      job_title: csvRow.job_title || null,
+      job_description: csvRow.job_description || null,
+      url: csvRow.url || null,
       user_id: user?.id,
     };
   };
@@ -115,12 +123,12 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
           ...mapCsvToJobListing(row),
           platform_id: platforms[0].id,
           category_id: categories[0].id,
-        })).filter(job => job.title); // Only include rows with titles
+        })).filter(job => job.title || job.job_title); // Include rows with either title or job_title
 
         if (jobListings.length === 0) {
           toast({
             title: "No valid data",
-            description: "No valid job listings found in the CSV file.",
+            description: "No valid job listings found in the CSV file. Please ensure job_title column has data.",
             variant: "destructive",
           });
           setUploading(false);
@@ -182,7 +190,7 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onSuccess }) => {
             disabled={uploading}
           />
           <p className="text-xs text-muted-foreground">
-            Expected columns: title, description, location, budget, experience_level, status
+            Expected columns: client, radius, city, state, salary_min, salary_max, job_id, dest_city, dest_state, job_title, job_description, salary_type, url
           </p>
         </div>
 
