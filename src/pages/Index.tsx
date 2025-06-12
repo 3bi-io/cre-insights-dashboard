@@ -7,54 +7,33 @@ import SpendChart from '@/components/SpendChart';
 import JobPerformanceTable from '@/components/JobPerformanceTable';
 import BudgetOverview from '@/components/BudgetOverview';
 import PlatformBreakdown from '@/components/PlatformBreakdown';
-import { DollarSign, Users, TrendingUp, Target, AlertCircle, CheckCircle } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Target, AlertCircle, CheckCircle, Briefcase } from 'lucide-react';
 
 const Index = () => {
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      const [spendData, applicationsData] = await Promise.all([
+      const [spendData, applicationsData, jobsData] = await Promise.all([
         supabase.from('daily_spend').select('amount'),
-        supabase.from('applications').select('id')
+        supabase.from('applications').select('id'),
+        supabase.from('job_listings').select('id')
       ]);
       
       const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
       const totalApplications = applicationsData.data?.length || 0;
+      const totalJobs = jobsData.data?.length || 0;
       const costPerApplication = totalApplications > 0 ? totalSpend / totalApplications : 0;
       
       return {
         totalSpend,
         totalApplications,
-        costPerApplication,
-        conversionRate: 3.8 // This would need hire data to calculate properly
+        totalJobs,
+        costPerApplication
       };
     },
   });
 
-  const { data: alerts, isLoading: alertsLoading } = useQuery({
-    queryKey: ['dashboard-alerts'],
-    queryFn: async () => {
-      // This would need budget allocation data to calculate properly
-      return [
-        {
-          type: 'warning',
-          title: 'Budget Alert',
-          message: 'Connect budget allocations to track spending against budgets.',
-          current: 0,
-          budget: 0
-        },
-        {
-          type: 'success',
-          title: 'Performance Update',
-          message: 'Set up job categories to track performance metrics.',
-          target: 0,
-          actual: 0
-        }
-      ];
-    },
-  });
-
-  if (metricsLoading || alertsLoading) {
+  if (metricsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="bg-card border-b border-border shadow-sm">
@@ -109,34 +88,34 @@ const Index = () => {
           <MetricsCard
             title="Total Spend (MTD)"
             value={`$${metrics?.totalSpend.toLocaleString() || '0'}`}
-            change="+12.5%"
-            changeType="positive"
+            change="--"
+            changeType="neutral"
             icon={DollarSign}
-            description="vs. last month"
+            description="month to date"
           />
           <MetricsCard
             title="Total Applications"
             value={metrics?.totalApplications.toLocaleString() || '0'}
-            change="+8.3%"
-            changeType="positive"
+            change="--"
+            changeType="neutral"
             icon={Users}
-            description="this month"
+            description="all time"
+          />
+          <MetricsCard
+            title="Total Job Listings"
+            value={metrics?.totalJobs.toLocaleString() || '0'}
+            change="--"
+            changeType="neutral"
+            icon={Briefcase}
+            description="active listings"
           />
           <MetricsCard
             title="Cost per Application"
             value={`$${metrics?.costPerApplication.toFixed(2) || '0.00'}`}
-            change="-5.2%"
-            changeType="positive"
+            change="--"
+            changeType="neutral"
             icon={Target}
-            description="vs. last month"
-          />
-          <MetricsCard
-            title="Conversion Rate"
-            value={`${metrics?.conversionRate || 0}%`}
-            change="+0.4%"
-            changeType="positive"
-            icon={TrendingUp}
-            description="application to hire"
+            description="average cost"
           />
         </div>
 
@@ -158,57 +137,6 @@ const Index = () => {
           <div className="xl:col-span-3">
             <JobPerformanceTable />
           </div>
-        </div>
-
-        {/* Alert Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {alerts?.map((alert, index) => (
-            <div key={index} className={`${
-              alert.type === 'warning' 
-                ? 'bg-yellow-50 border-yellow-200' 
-                : 'bg-green-50 border-green-200'
-            } border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow`}>
-              <div className="flex items-start gap-4">
-                <div className={`${
-                  alert.type === 'warning' 
-                    ? 'bg-yellow-100' 
-                    : 'bg-green-100'
-                } p-2 rounded-lg`}>
-                  {alert.type === 'warning' ? (
-                    <AlertCircle className={`w-6 h-6 ${
-                      alert.type === 'warning' ? 'text-yellow-600' : 'text-green-600'
-                    }`} />
-                  ) : (
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h4 className={`font-semibold text-lg mb-2 ${
-                    alert.type === 'warning' ? 'text-yellow-900' : 'text-green-900'
-                  }`}>
-                    {alert.title}
-                  </h4>
-                  <p className={`leading-relaxed ${
-                    alert.type === 'warning' ? 'text-yellow-800' : 'text-green-800'
-                  }`}>
-                    {alert.message}
-                  </p>
-                  {alert.current > 0 && (
-                    <div className={`mt-4 pt-4 border-t ${
-                      alert.type === 'warning' ? 'border-yellow-200' : 'border-green-200'
-                    }`}>
-                      <div className={`flex justify-between text-sm ${
-                        alert.type === 'warning' ? 'text-yellow-700' : 'text-green-700'
-                      }`}>
-                        <span>Current: ${alert.current?.toLocaleString()}</span>
-                        <span>{alert.type === 'warning' ? 'Budget' : 'Target'}: ${alert.budget || alert.target}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Footer spacing */}
