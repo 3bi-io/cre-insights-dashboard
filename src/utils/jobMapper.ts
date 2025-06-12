@@ -1,3 +1,4 @@
+
 export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   console.log('Mapping CSV row:', csvRow);
   
@@ -15,6 +16,20 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   const salaryMax = parseNumber(csvRow.salary_max || csvRow['Salary Max'] || csvRow.max_salary);
   const budget = salaryMax || salaryMin || null;
   
+  // Handle salary_type with validation
+  const rawSalaryType = csvRow.salary_type || csvRow['Salary Type'] || '';
+  const validSalaryTypes = ['hourly', 'yearly', 'weekly', 'daily', 'contract'];
+  let salaryType = null;
+  
+  if (rawSalaryType) {
+    const normalizedType = rawSalaryType.toLowerCase().trim();
+    if (validSalaryTypes.includes(normalizedType)) {
+      salaryType = normalizedType;
+    } else {
+      console.log(`Invalid salary_type "${rawSalaryType}" found, setting to null`);
+    }
+  }
+  
   const mapped = {
     title: jobTitle,
     description: description,
@@ -24,7 +39,7 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
     status: 'active',
     salary_min: salaryMin,
     salary_max: salaryMax,
-    salary_type: csvRow.salary_type || csvRow['Salary Type'] || null,
+    salary_type: salaryType,
     remote_type: null,
     city: city || null,
     state: state || null,
