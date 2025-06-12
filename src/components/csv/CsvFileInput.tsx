@@ -39,7 +39,7 @@ const CsvFileInput: React.FC<CsvFileInputProps> = ({ onFileSelect, disabled }) =
         disabled={disabled}
       />
       <p className="text-xs text-muted-foreground">
-        Expected columns: client, radius, city, state, salary_min, salary_max, job_id, dest_city, dest_state, job_title, job_description, salary_type, url
+        Expected columns: client, radius, city, state, salary_min, salary_max, job_id, dest_city, dest_state, job_title, salary_type, url
       </p>
     </div>
   );

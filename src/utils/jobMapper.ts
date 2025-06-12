@@ -1,10 +1,9 @@
-
 export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   console.log('Mapping CSV row:', csvRow);
   
   // Try multiple possible column names for job title
   const jobTitle = csvRow.job_title || csvRow['Job Title'] || csvRow.title || csvRow.Title || '';
-  const jobDescription = csvRow.job_description || csvRow['Job Description'] || csvRow.description || csvRow.Description || '';
+  const description = csvRow.description || csvRow.Description || '';
   
   // Handle location fields more flexibly
   const city = csvRow.city || csvRow.City || csvRow.dest_city || '';
@@ -18,7 +17,7 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   
   const mapped = {
     title: jobTitle,
-    description: jobDescription,
+    description: description,
     location: location,
     budget: budget,
     experience_level: 'entry',
@@ -35,7 +34,6 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
     dest_city: csvRow.dest_city || csvRow['Dest City'] || null,
     dest_state: csvRow.dest_state || csvRow['Dest State'] || null,
     job_title: jobTitle,
-    job_description: jobDescription,
     url: csvRow.url || csvRow.URL || csvRow.link || null,
     user_id: userId,
   };
