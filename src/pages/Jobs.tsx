@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, Filter, MoreHorizontal } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Search, Filter, MoreHorizontal, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import CsvUpload from '@/components/CsvUpload';
 
 const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
   const { toast } = useToast();
 
   const { data: jobListings, isLoading, refetch } = useQuery({
@@ -48,6 +50,11 @@ const Jobs = () => {
     }
   };
 
+  const handleUploadSuccess = () => {
+    setShowUploadDialog(false);
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -70,10 +77,26 @@ const Jobs = () => {
           <h1 className="text-3xl font-bold text-gray-900">Job Listings</h1>
           <p className="text-gray-600 mt-1">Manage your job postings across platforms</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          New Job Listing
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Upload Job Listings</DialogTitle>
+              </DialogHeader>
+              <CsvUpload onSuccess={handleUploadSuccess} />
+            </DialogContent>
+          </Dialog>
+          <Button className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            New Job Listing
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -98,9 +121,14 @@ const Jobs = () => {
             <div className="text-gray-500 mb-4">
               <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium mb-2">No job listings found</h3>
-              <p>Get started by creating your first job listing.</p>
+              <p>Get started by creating your first job listing or uploading a CSV file.</p>
             </div>
-            <Button>Create Job Listing</Button>
+            <div className="flex gap-2 justify-center">
+              <Button>Create Job Listing</Button>
+              <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                Upload CSV
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
