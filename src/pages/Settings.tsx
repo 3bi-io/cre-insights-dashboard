@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +24,6 @@ import {
 interface AdminUser {
   id: string;
   email: string;
-  full_name: string | null;
   created_at: string;
   role: string;
 }
@@ -51,20 +51,10 @@ const Settings = () => {
   const { data: administrators, isLoading: adminLoading } = useQuery({
     queryKey: ['administrators'],
     queryFn: async (): Promise<AdminUser[]> => {
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at');
-      
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
-      }
-
-      // Get admin roles
+      // Get admin roles with user information
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role')
+        .select('user_id, role, created_at')
         .eq('role', 'admin');
       
       if (rolesError) {
@@ -72,19 +62,37 @@ const Settings = () => {
         throw rolesError;
       }
 
-      // Create a set of admin user IDs for quick lookup
-      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
+      if (!adminRoles || adminRoles.length === 0) {
+        return [];
+      }
 
-      // Filter profiles to only include admins
-      return (profiles || [])
-        .filter(profile => adminUserIds.has(profile.id))
-        .map(profile => ({
-          id: profile.id,
-          email: profile.email || 'No email',
-          full_name: profile.full_name,
-          created_at: profile.created_at,
+      // For each admin user, we'll need to get their email from the current session
+      // Since we can't directly query auth.users, we'll show the current user if they're admin
+      // and indicate that other admins exist but we can't fetch their details from auth.users
+      const adminUsers: AdminUser[] = [];
+
+      // If current user is admin, show them
+      if (user && adminRoles.some(role => role.user_id === user.id)) {
+        adminUsers.push({
+          id: user.id,
+          email: user.email || 'Unknown email',
+          created_at: adminRoles.find(role => role.user_id === user.id)?.created_at || new Date().toISOString(),
           role: 'admin'
-        }));
+        });
+      }
+
+      // For other admins, we can only show their IDs since we can't access auth.users
+      const otherAdmins = adminRoles.filter(role => role.user_id !== user?.id);
+      otherAdmins.forEach(admin => {
+        adminUsers.push({
+          id: admin.user_id,
+          email: 'Email not accessible', // Can't access auth.users directly
+          created_at: admin.created_at,
+          role: 'admin'
+        });
+      });
+
+      return adminUsers;
     },
     enabled: userRole === 'admin', // Only fetch if current user is admin
   });
@@ -464,7 +472,7 @@ const Settings = () => {
                                     </div>
                                     <div>
                                       <div className="font-medium text-foreground">
-                                        {admin.full_name || admin.email?.split('@')[0] || 'Unknown User'}
+                                        {admin.id === user?.id ? 'You' : `User ${admin.id.slice(0, 8)}...`}
                                       </div>
                                       <div className="text-sm text-muted-foreground flex items-center gap-1">
                                         <Mail className="w-3 h-3" />
@@ -512,8 +520,8 @@ const Settings = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h4 className="font-medium text-blue-800 mb-2">Managing Administrators</h4>
                       <p className="text-sm text-blue-600">
-                        To add new administrators, you'll need to update user roles directly in the database. 
-                        Administrators have full access to manage the application and other users.
+                        Administrator roles are managed through the user_roles table. Due to security restrictions, 
+                        we can only display limited user information for administrators other than yourself.
                       </p>
                     </div>
                   </div>
