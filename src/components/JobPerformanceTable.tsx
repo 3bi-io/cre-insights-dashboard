@@ -36,7 +36,7 @@ const JobPerformanceTable = () => {
         return {
           id: job.id,
           title: job.title,
-          platform: job.platforms.name,
+          platform: job.platforms.name === 'Indeed' ? 'X' : job.platforms.name,
           spend: totalSpend,
           applications: applicationCount,
           costPerApp,
