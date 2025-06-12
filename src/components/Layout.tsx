@@ -1,16 +1,27 @@
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import Navigation from './Navigation';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import AppSidebar from './AppSidebar';
 
 const Layout = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      <main>
-        <Outlet />
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AppSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          {/* Top header with sidebar trigger */}
+          <header className="h-12 flex items-center border-b bg-card px-4">
+            <SidebarTrigger />
+          </header>
+          
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

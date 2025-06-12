@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Jobs from "./pages/Jobs";
 import Applications from "./pages/Applications";
 import Analytics from "./pages/Analytics";
+import Accounts from "./pages/Accounts";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="jobs" element={<Jobs />} />
               <Route path="applications" element={<Applications />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="accounts" element={<Accounts />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
