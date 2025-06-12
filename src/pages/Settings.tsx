@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +23,7 @@ import {
 interface AdminUser {
   id: string;
   email: string;
+  full_name: string | null;
   created_at: string;
   role: string;
 }
@@ -51,7 +51,7 @@ const Settings = () => {
   const { data: administrators, isLoading: adminLoading } = useQuery({
     queryKey: ['administrators'],
     queryFn: async (): Promise<AdminUser[]> => {
-      // Get admin roles with user information
+      // Get admin roles
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role, created_at')
@@ -66,33 +66,29 @@ const Settings = () => {
         return [];
       }
 
-      // For each admin user, we'll need to get their email from the current session
-      // Since we can't directly query auth.users, we'll show the current user if they're admin
-      // and indicate that other admins exist but we can't fetch their details from auth.users
-      const adminUsers: AdminUser[] = [];
-
-      // If current user is admin, show them
-      if (user && adminRoles.some(role => role.user_id === user.id)) {
-        adminUsers.push({
-          id: user.id,
-          email: user.email || 'Unknown email',
-          created_at: adminRoles.find(role => role.user_id === user.id)?.created_at || new Date().toISOString(),
-          role: 'admin'
-        });
+      // Get profiles for admin users
+      const adminUserIds = adminRoles.map(role => role.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', adminUserIds);
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
       }
 
-      // For other admins, we can only show their IDs since we can't access auth.users
-      const otherAdmins = adminRoles.filter(role => role.user_id !== user?.id);
-      otherAdmins.forEach(admin => {
-        adminUsers.push({
-          id: admin.user_id,
-          email: 'Email not accessible', // Can't access auth.users directly
-          created_at: admin.created_at,
-          role: 'admin'
-        });
+      // Combine admin roles with profile data
+      return adminRoles.map(adminRole => {
+        const profile = profiles?.find(p => p.id === adminRole.user_id);
+        return {
+          id: adminRole.user_id,
+          email: profile?.email || 'No email available',
+          full_name: profile?.full_name || null,
+          created_at: adminRole.created_at,
+          role: adminRole.role
+        };
       });
-
-      return adminUsers;
     },
     enabled: userRole === 'admin', // Only fetch if current user is admin
   });
@@ -472,7 +468,7 @@ const Settings = () => {
                                     </div>
                                     <div>
                                       <div className="font-medium text-foreground">
-                                        {admin.id === user?.id ? 'You' : `User ${admin.id.slice(0, 8)}...`}
+                                        {admin.id === user?.id ? 'You' : (admin.full_name || admin.email?.split('@')[0] || 'Unknown User')}
                                       </div>
                                       <div className="text-sm text-muted-foreground flex items-center gap-1">
                                         <Mail className="w-3 h-3" />
@@ -520,8 +516,7 @@ const Settings = () => {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h4 className="font-medium text-blue-800 mb-2">Managing Administrators</h4>
                       <p className="text-sm text-blue-600">
-                        Administrator roles are managed through the user_roles table. Due to security restrictions, 
-                        we can only display limited user information for administrators other than yourself.
+                        Administrator roles are managed through the user_roles table. User information is retrieved from the profiles table which stores accessible user data.
                       </p>
                     </div>
                   </div>
