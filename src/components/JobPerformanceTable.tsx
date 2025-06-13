@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const JobPerformanceTable = () => {
   const { data: jobData = [], isLoading } = useQuery({
@@ -68,7 +69,9 @@ const JobPerformanceTable = () => {
       <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
-          <Button variant="outline" size="sm">View All</Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/dashboard/jobs">View All</Link>
+          </Button>
         </div>
         <div className="flex items-center justify-center h-32 text-muted-foreground">
           No job performance data available
@@ -81,7 +84,9 @@ const JobPerformanceTable = () => {
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
-        <Button variant="outline" size="sm">View All</Button>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/dashboard/jobs">View All</Link>
+        </Button>
       </div>
       
       <div className="overflow-x-auto">
