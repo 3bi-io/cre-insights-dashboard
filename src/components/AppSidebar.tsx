@@ -33,17 +33,17 @@ const AppSidebar = () => {
   const { state } = useSidebar();
 
   const navigationItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/jobs', label: 'Job Listings', icon: BriefcaseIcon },
-    { path: '/applications', label: 'Applications', icon: Users },
-    { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { path: '/clients', label: 'Clients', icon: Building },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
+    { path: '/dashboard/applications', label: 'Applications', icon: Users },
+    { path: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/dashboard/clients', label: 'Clients', icon: Building },
+    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(path);
   };
