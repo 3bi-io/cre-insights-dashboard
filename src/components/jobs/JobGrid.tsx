@@ -22,10 +22,9 @@ const JobGrid: React.FC<JobGridProps> = ({
           <div className="text-gray-500 mb-4">
             <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium mb-2">No job listings found</h3>
-            <p>Get started by creating your first job listing or uploading a CSV file.</p>
+            <p>Get started by uploading a CSV file with your job listings.</p>
           </div>
           <div className="flex gap-2 justify-center">
-            <Button>Create Job Listing</Button>
             <Button variant="outline" onClick={onShowUploadDialog}>
               Upload CSV
             </Button>
