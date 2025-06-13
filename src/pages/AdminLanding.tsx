@@ -7,12 +7,10 @@ import {
   BarChart3, 
   DollarSign, 
   Users, 
-  Target, 
-  TrendingUp, 
+  Target,
   Shield,
   Briefcase,
   Building,
-  Settings,
   ArrowRight,
   CheckCircle
 } from 'lucide-react';
@@ -69,7 +67,6 @@ const AdminLanding = () => {
                 alt="C.R. England" 
                 className="h-8 w-auto"
               />
-              <span className="text-xl font-bold">Analytics Platform</span>
             </div>
             <div className="flex gap-3">
               <Button asChild>
@@ -84,24 +81,35 @@ const AdminLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-20">
-        <div className="container mx-auto px-8 max-w-7xl">
+      <section className="relative py-20 overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+            alt="Professional working on analytics" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-secondary/90"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10 container mx-auto px-8 max-w-7xl">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl font-bold mb-6 text-foreground">
+            <h1 className="text-5xl font-bold mb-6 text-primary-foreground">
               Job Advertising Analytics Platform
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+            <p className="text-xl text-primary-foreground/90 mb-8 leading-relaxed">
               Comprehensive recruitment analytics and spend management for C.R. England. 
               Monitor performance, optimize campaigns, and maximize your recruitment ROI across all platforms.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" asChild>
+              <Button size="lg" variant="secondary" asChild>
                 <Link to="/auth">
                   Get Started
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
                 <a href="#features">Learn More</a>
               </Button>
             </div>
@@ -244,7 +252,6 @@ const AdminLanding = () => {
                 alt="C.R. England" 
                 className="h-8 w-auto"
               />
-              <span className="text-xl font-bold">Analytics Platform</span>
             </div>
             <div className="text-muted-foreground text-center md:text-right">
               <p>&copy; 2024 C.R. England. All rights reserved.</p>
