@@ -63,11 +63,13 @@ const AdminLanding = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-8 py-4 max-w-7xl">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-                <Briefcase className="w-6 h-6" />
-              </div>
-              <span className="text-xl font-bold">C.R. England Analytics</span>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                alt="C.R. England" 
+                className="h-8 w-auto"
+              />
+              <span className="text-xl font-bold">Analytics Platform</span>
             </div>
             <div className="flex gap-3">
               <Button asChild>
@@ -133,7 +135,7 @@ const AdminLanding = () => {
                     <ul className="space-y-2">
                       {feature.benefits.map((benefit, benefitIndex) => (
                         <li key={benefitIndex} className="flex items-center text-sm text-muted-foreground">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                          <CheckCircle className="w-4 h-4 text-primary mr-2 flex-shrink-0" />
                           {benefit}
                         </li>
                       ))}
@@ -166,7 +168,7 @@ const AdminLanding = () => {
                   </div>
                   <DollarSign className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm text-green-600">+12% from last month</p>
+                <p className="text-sm text-primary">+12% from last month</p>
               </div>
 
               <div className="bg-card rounded-lg p-6 border">
@@ -177,7 +179,7 @@ const AdminLanding = () => {
                   </div>
                   <Users className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm text-green-600">+8% from last month</p>
+                <p className="text-sm text-primary">+8% from last month</p>
               </div>
 
               <div className="bg-card rounded-lg p-6 border">
@@ -188,7 +190,7 @@ const AdminLanding = () => {
                   </div>
                   <Briefcase className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm text-blue-600">3 new this week</p>
+                <p className="text-sm text-secondary">3 new this week</p>
               </div>
 
               <div className="bg-card rounded-lg p-6 border">
@@ -199,7 +201,7 @@ const AdminLanding = () => {
                   </div>
                   <Target className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm text-green-600">-5% from last month</p>
+                <p className="text-sm text-primary">-5% from last month</p>
               </div>
             </div>
 
@@ -236,11 +238,13 @@ const AdminLanding = () => {
       <footer className="bg-card border-t py-12">
         <div className="container mx-auto px-8 max-w-7xl">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-                <Briefcase className="w-6 h-6" />
-              </div>
-              <span className="text-xl font-bold">C.R. England Analytics</span>
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <img 
+                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                alt="C.R. England" 
+                className="h-8 w-auto"
+              />
+              <span className="text-xl font-bold">Analytics Platform</span>
             </div>
             <div className="text-muted-foreground text-center md:text-right">
               <p>&copy; 2024 C.R. England. All rights reserved.</p>
