@@ -8,7 +8,6 @@ import {
   BriefcaseIcon, 
   Users, 
   Settings, 
-  BarChart3,
   LogOut,
   Building
 } from 'lucide-react';
@@ -36,7 +35,7 @@ const AppSidebar = () => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
-    { path: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+    
     { path: '/dashboard/clients', label: 'Clients', icon: Building },
     { path: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
@@ -73,7 +72,7 @@ const AppSidebar = () => {
           {state === 'expanded' && (
             <div className="flex flex-col">
               <span className="text-sm font-bold text-foreground">C.R. England</span>
-              <span className="text-xs text-muted-foreground">Analytics</span>
+              <span className="text-xs text-muted-foreground">Dashboard</span>
             </div>
           )}
         </div>
