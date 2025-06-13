@@ -67,16 +67,12 @@ const AppSidebar = () => {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          {state === 'expanded' ? (
+          {state === 'expanded' && (
             <img 
               src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
               alt="C.R. England" 
               className="h-8 w-auto"
             />
-          ) : (
-            <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-              <BriefcaseIcon className="w-5 h-5" />
-            </div>
           )}
         </div>
       </SidebarHeader>
