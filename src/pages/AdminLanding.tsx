@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -16,6 +17,13 @@ import {
 } from 'lucide-react';
 
 const AdminLanding = () => {
+  const { setTheme } = useTheme();
+
+  // Force dark mode for landing page
+  useEffect(() => {
+    setTheme('dark');
+  }, [setTheme]);
+
   const features = [
     {
       icon: DollarSign,
