@@ -69,12 +69,19 @@ const AdminLanding = () => {
               </div>
               <span className="text-xl font-bold">C.R. England Analytics</span>
             </div>
-            <Button asChild>
-              <Link to="/auth">
-                Access Platform
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Link>
-            </Button>
+            <div className="flex gap-3">
+              <Button variant="outline" asChild>
+                <Link to="/dashboard">
+                  Dashboard
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link to="/auth">
+                  Access Platform
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
