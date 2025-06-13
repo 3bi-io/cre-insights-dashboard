@@ -57,13 +57,6 @@ const AdminLanding = () => {
     }
   ];
 
-  const metrics = [
-    { label: "Platforms Supported", value: "10+", icon: Target },
-    { label: "Active Job Listings", value: "500+", icon: Briefcase },
-    { label: "Monthly Applications", value: "2,500+", icon: Users },
-    { label: "Average Cost Savings", value: "25%", icon: TrendingUp }
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -108,24 +101,6 @@ const AdminLanding = () => {
                 <a href="#features">Learn More</a>
               </Button>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Metrics Overview */}
-      <section className="py-16 bg-card">
-        <div className="container mx-auto px-8 max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {metrics.map((metric, index) => {
-              const Icon = metric.icon;
-              return (
-                <div key={index} className="text-center">
-                  <Icon className="w-8 h-8 mx-auto mb-4 text-primary" />
-                  <div className="text-3xl font-bold text-foreground mb-2">{metric.value}</div>
-                  <div className="text-muted-foreground">{metric.label}</div>
-                </div>
-              );
-            })}
           </div>
         </div>
       </section>
