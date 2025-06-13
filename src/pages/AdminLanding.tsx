@@ -70,11 +70,6 @@ const AdminLanding = () => {
               <span className="text-xl font-bold">C.R. England Analytics</span>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" asChild>
-                <Link to="/dashboard">
-                  Dashboard
-                </Link>
-              </Button>
               <Button asChild>
                 <Link to="/auth">
                   Access Platform
