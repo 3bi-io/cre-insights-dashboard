@@ -12,9 +12,16 @@ const Layout = () => {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          {/* Top header with sidebar trigger and theme toggle */}
-          <header className="h-12 flex items-center justify-between border-b bg-card px-4">
-            <SidebarTrigger />
+          {/* Top header with sidebar trigger, logo and theme toggle */}
+          <header className="h-16 flex items-center justify-between border-b bg-card px-4">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <img 
+                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                alt="C.R. England" 
+                className="h-8 w-auto"
+              />
+            </div>
             <ThemeToggle />
           </header>
           
