@@ -96,8 +96,8 @@ const Jobs = () => {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Job Listings</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Job Listings</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your job postings across platforms • {jobListings?.length || 0} total listings
           </p>
         </div>
