@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Filter, MoreHorizontal, Upload } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import CsvUpload from '@/components/CsvUpload';
 import JobEditDialog from '@/components/JobEditDialog';
@@ -18,7 +19,18 @@ const Jobs = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedJobForEdit, setSelectedJobForEdit] = useState(null);
   const [selectedJobForAnalytics, setSelectedJobForAnalytics] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+
+  // Get route filter parameters from URL
+  const routeFilter = {
+    origin_city: searchParams.get('origin_city'),
+    origin_state: searchParams.get('origin_state'),
+    dest_city: searchParams.get('dest_city'),
+    dest_state: searchParams.get('dest_state')
+  };
+
+  const hasRouteFilter = Object.values(routeFilter).some(value => value !== null);
 
   const { data: jobListings, isLoading, refetch } = useQuery({
     queryKey: ['job-listings'],
@@ -37,10 +49,21 @@ const Jobs = () => {
     },
   });
 
-  const filteredJobs = jobListings?.filter(job =>
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.location?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredJobs = jobListings?.filter(job => {
+    // Apply text search filter
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Apply route filter if present
+    const matchesRoute = !hasRouteFilter || (
+      job.city === routeFilter.origin_city &&
+      job.state === routeFilter.origin_state &&
+      job.dest_city === routeFilter.dest_city &&
+      job.dest_state === routeFilter.dest_state
+    );
+    
+    return matchesSearch && matchesRoute;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -53,6 +76,10 @@ const Jobs = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+    };
+
+  const clearRouteFilter = () => {
+    setSearchParams({});
   };
 
   const handleUploadSuccess = () => {
@@ -98,7 +125,10 @@ const Jobs = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Job Listings</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your job postings across platforms • {jobListings?.length || 0} total listings
+            Manage your job postings across platforms • {filteredJobs?.length || 0} of {jobListings?.length || 0} listings
+            {hasRouteFilter && (
+              <span className="text-primary"> (filtered by route)</span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -122,6 +152,31 @@ const Jobs = () => {
           </Button>
         </div>
       </div>
+
+      {/* Route Filter Display */}
+      {hasRouteFilter && (
+        <div className="mb-6">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-foreground mb-1">Filtered by Route</h3>
+                <p className="text-sm text-muted-foreground">
+                  {routeFilter.origin_city}, {routeFilter.origin_state} → {routeFilter.dest_city}, {routeFilter.dest_state}
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearRouteFilter}
+                className="flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Clear Filter
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">

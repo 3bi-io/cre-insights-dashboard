@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Filter, MapPin, ArrowRight } from 'lucide-react';
+import { Search, Filter, MapPin, ArrowRight, Eye } from 'lucide-react';
 
 interface Route {
   origin_city: string;
@@ -16,6 +17,7 @@ interface Route {
 
 const Routes = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
   const { data: routes, isLoading } = useQuery({
     queryKey: ['routes'],
@@ -58,6 +60,16 @@ const Routes = () => {
     route.dest_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     route.dest_state?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewJobs = (route: Route) => {
+    const params = new URLSearchParams({
+      origin_city: route.origin_city,
+      origin_state: route.origin_state,
+      dest_city: route.dest_city,
+      dest_state: route.dest_state
+    });
+    navigate(`/dashboard/jobs?${params.toString()}`);
+  };
 
   if (isLoading) {
     return (
@@ -141,12 +153,21 @@ const Routes = () => {
                 </div>
                 
                 <div className="border-t pt-3">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm mb-3">
                     <span className="text-muted-foreground">Job Listings</span>
                     <span className="font-medium text-foreground">
                       {route.job_count} {route.job_count === 1 ? 'listing' : 'listings'}
                     </span>
                   </div>
+                  
+                  <Button 
+                    className="w-full" 
+                    size="sm"
+                    onClick={() => handleViewJobs(route)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Jobs
+                  </Button>
                 </div>
               </CardContent>
             </Card>
