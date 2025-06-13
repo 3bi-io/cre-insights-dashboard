@@ -6,14 +6,12 @@ import JobCard from './JobCard';
 
 interface JobGridProps {
   jobs: any[] | undefined;
-  onEditJob: (job: any) => void;
   onViewAnalytics: (job: any) => void;
   onShowUploadDialog: () => void;
 }
 
 const JobGrid: React.FC<JobGridProps> = ({ 
   jobs, 
-  onEditJob, 
   onViewAnalytics, 
   onShowUploadDialog 
 }) => {
@@ -43,7 +41,6 @@ const JobGrid: React.FC<JobGridProps> = ({
         <JobCard
           key={job.id}
           job={job}
-          onEditJob={onEditJob}
           onViewAnalytics={onViewAnalytics}
         />
       ))}

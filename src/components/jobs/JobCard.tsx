@@ -6,11 +6,10 @@ import { MoreHorizontal } from 'lucide-react';
 
 interface JobCardProps {
   job: any;
-  onEditJob: (job: any) => void;
   onViewAnalytics: (job: any) => void;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, onEditJob, onViewAnalytics }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -62,17 +61,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, onEditJob, onViewAnalytics }) =>
             variant="outline" 
             size="sm" 
             className="flex-1"
-            onClick={() => onEditJob(job)}
-          >
-            Edit
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
             onClick={() => onViewAnalytics(job)}
           >
-            View Analytics
+            View Details
           </Button>
         </div>
       </CardContent>

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useJobs } from '@/hooks/useJobs';
-import JobEditDialog from '@/components/JobEditDialog';
+
 import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
 import JobsHeader from '@/components/jobs/JobsHeader';
 import JobsSearch from '@/components/jobs/JobsSearch';
@@ -11,7 +11,6 @@ import JobGrid from '@/components/jobs/JobGrid';
 
 const Jobs = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedJobForEdit, setSelectedJobForEdit] = useState(null);
   const [selectedJobForAnalytics, setSelectedJobForAnalytics] = useState(null);
   const { toast } = useToast();
 
@@ -32,21 +31,8 @@ const Jobs = () => {
     refetch();
   };
 
-  const handleEditJob = (job: any) => {
-    setSelectedJobForEdit(job);
-  };
-
   const handleViewAnalytics = (job: any) => {
     setSelectedJobForAnalytics(job);
-  };
-
-  const handleEditSuccess = () => {
-    setSelectedJobForEdit(null);
-    refetch();
-    toast({
-      title: "Job updated",
-      description: "Job listing has been updated successfully.",
-    });
   };
 
   if (isLoading) {
@@ -89,20 +75,9 @@ const Jobs = () => {
 
       <JobGrid
         jobs={filteredJobs}
-        onEditJob={handleEditJob}
         onViewAnalytics={handleViewAnalytics}
         onShowUploadDialog={() => setShowUploadDialog(true)}
       />
-
-      {/* Edit Job Dialog */}
-      {selectedJobForEdit && (
-        <JobEditDialog
-          job={selectedJobForEdit}
-          open={!!selectedJobForEdit}
-          onOpenChange={(open) => !open && setSelectedJobForEdit(null)}
-          onSuccess={handleEditSuccess}
-        />
-      )}
 
       {/* Analytics Dialog */}
       {selectedJobForAnalytics && (
