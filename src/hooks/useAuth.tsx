@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     
     if (!error) {
-      navigate('/');
+      navigate('/dashboard');
     }
     
     return { error };

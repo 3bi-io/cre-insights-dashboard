@@ -19,7 +19,7 @@ const Auth = () => {
 
   React.useEffect(() => {
     if (user) {
-      window.location.href = '/';
+      window.location.href = '/dashboard';
     }
   }, [user]);
 
