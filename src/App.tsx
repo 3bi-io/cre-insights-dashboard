@@ -15,6 +15,7 @@ import Analytics from "./pages/Analytics";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              <Route path="/admin-invite" element={<AdminLanding />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={
                 <ProtectedRoute>
