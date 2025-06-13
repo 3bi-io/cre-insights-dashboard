@@ -85,8 +85,8 @@ const AdminLanding = () => {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
-            alt="Professional working on analytics" 
+            src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+            alt="Professional truck driver and logistics" 
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/80 to-secondary/90"></div>
