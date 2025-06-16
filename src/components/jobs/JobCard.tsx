@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, MapPin } from 'lucide-react';
 
 interface JobCardProps {
   job: any;
@@ -24,21 +25,23 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{job.title}</CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
-              {job.platforms?.name} • {job.job_categories?.name}
-            </p>
+            <CardTitle className="text-lg leading-tight break-words">{job.title}</CardTitle>
+            <div className="text-sm text-gray-600 mt-1 space-y-1">
+              <p className="break-words">
+                {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name} • {job.job_categories?.name}
+              </p>
+            </div>
           </div>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="flex-shrink-0">
             <MoreHorizontal className="w-4 h-4" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between">
           <Badge className={getStatusColor(job.status)}>
             {job.status}
@@ -46,21 +49,21 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
         </div>
         
         {job.location && (
-          <p className="text-sm text-gray-600 flex items-center gap-1">
-            📍 {job.location}
-          </p>
+          <div className="flex items-start gap-2 text-sm text-gray-600">
+            <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <span className="break-words">{job.location}</span>
+          </div>
         )}
         
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-gray-500 mt-auto">
           <span>Created {new Date(job.created_at).toLocaleDateString()}</span>
-          <span className="capitalize">{job.experience_level}</span>
         </div>
         
-        <div className="flex gap-2 pt-2">
+        <div className="pt-2 mt-auto">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1"
+            className="w-full"
             onClick={() => onViewAnalytics(job)}
           >
             View Details

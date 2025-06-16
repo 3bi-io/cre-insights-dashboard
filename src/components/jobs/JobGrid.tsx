@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,14 +19,14 @@ const JobGrid: React.FC<JobGridProps> = ({
   if (!jobs || jobs.length === 0) {
     return (
       <Card>
-        <CardContent className="text-center py-12">
+        <CardContent className="text-center py-12 px-4">
           <div className="text-gray-500 mb-4">
             <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium mb-2">No job listings found</h3>
-            <p>Get started by uploading a CSV file with your job listings.</p>
+            <p className="text-sm sm:text-base">Get started by uploading a CSV file with your job listings.</p>
           </div>
-          <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={onShowUploadDialog}>
+          <div className="flex justify-center">
+            <Button variant="outline" onClick={onShowUploadDialog} className="w-full sm:w-auto">
               Upload CSV
             </Button>
           </div>
@@ -35,7 +36,7 @@ const JobGrid: React.FC<JobGridProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
       {jobs.map((job) => (
         <JobCard
           key={job.id}

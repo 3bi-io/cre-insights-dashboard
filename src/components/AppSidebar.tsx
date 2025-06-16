@@ -27,11 +27,13 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AppSidebar = () => {
   const location = useLocation();
   const { user, userRole, signOut } = useAuth();
   const { state } = useSidebar();
+  const isMobile = useIsMobile();
 
   const navigationItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -65,11 +67,11 @@ const AppSidebar = () => {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className={isMobile ? "w-full" : ""}>
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
           <SidebarTrigger />
-          {state === 'expanded' && (
+          {(state === 'expanded' || isMobile) && (
             <img 
               src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
               alt="C.R. England" 
@@ -89,9 +91,11 @@ const AppSidebar = () => {
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                      <NavLink to={item.path}>
+                      <NavLink to={item.path} className="flex items-center w-full">
                         <Icon className="w-4 h-4" />
-                        <span>{item.label}</span>
+                        <span className={isMobile || state === 'expanded' ? 'block' : 'sr-only'}>
+                          {item.label}
+                        </span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -105,7 +109,7 @@ const AppSidebar = () => {
       <SidebarFooter>
         {user && (
           <div className="p-2 space-y-2">
-            {state === 'expanded' && (
+            {(state === 'expanded' || isMobile) && (
               <div className="px-2 py-2 text-sm">
                 <div className="font-medium text-foreground truncate">{user.email}</div>
                 {userRole && (
@@ -122,7 +126,7 @@ const AppSidebar = () => {
               className="w-full justify-start"
             >
               <LogOut className="w-4 h-4" />
-              {state === 'expanded' && <span className="ml-2">Sign Out</span>}
+              {(state === 'expanded' || isMobile) && <span className="ml-2">Sign Out</span>}
             </Button>
           </div>
         )}

@@ -8,19 +8,19 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Page Header */}
       <div className="bg-card border-b border-border shadow-sm">
-        <div className="container mx-auto px-8 py-6 max-w-7xl">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight break-words">
               C.R. England - Job Advertising Analytics
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl">
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
               Monitor spend, track performance, and optimize your job advertising campaigns across all platforms
             </p>
           </div>
         </div>
       </div>
       
-      <div className="container mx-auto px-8 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-7xl">
         {/* Key Metrics */}
         <DashboardMetrics />
 
