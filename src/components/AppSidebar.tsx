@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut,
   Building,
-  MapPin
+  MapPin,
+  Megaphone
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const AppSidebar = () => {
     { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
+    { path: '/dashboard/platforms', label: 'Platforms', icon: Megaphone },
     { path: '/dashboard/clients', label: 'Clients', icon: Building },
     { path: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];

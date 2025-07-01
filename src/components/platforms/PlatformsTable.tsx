@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MoreHorizontal, Globe, Edit, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Platform {
   id: string;
@@ -20,6 +22,33 @@ interface PlatformsTableProps {
 }
 
 const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh }) => {
+  const { toast } = useToast();
+
+  const handleDeletePlatform = async (platformId: string, platformName: string) => {
+    try {
+      const { error } = await supabase
+        .from('platforms')
+        .delete()
+        .eq('id', platformId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${platformName} platform deleted successfully`,
+      });
+      
+      onRefresh();
+    } catch (error) {
+      console.error('Error deleting platform:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete platform. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!platforms || platforms.length === 0) {
     return (
       <Card>
@@ -97,7 +126,10 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Platform
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem 
+                        className="text-red-600"
+                        onClick={() => handleDeletePlatform(platform.id, platform.name)}
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete Platform
                       </DropdownMenuItem>
