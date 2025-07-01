@@ -201,6 +201,7 @@ export type Database = {
           category_id: string
           city: string | null
           client: string | null
+          client_id: string | null
           created_at: string
           description: string | null
           dest_city: string | null
@@ -229,6 +230,7 @@ export type Database = {
           category_id: string
           city?: string | null
           client?: string | null
+          client_id?: string | null
           created_at?: string
           description?: string | null
           dest_city?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           category_id?: string
           city?: string | null
           client?: string | null
+          client_id?: string | null
           created_at?: string
           description?: string | null
           dest_city?: string | null
@@ -286,6 +289,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "job_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {

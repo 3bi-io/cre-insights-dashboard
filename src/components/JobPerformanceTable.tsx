@@ -19,6 +19,7 @@ const JobPerformanceTable = () => {
           title,
           status,
           platforms!inner(name),
+          clients(name),
           daily_spend(amount),
           applications(id)
         `)
@@ -38,6 +39,7 @@ const JobPerformanceTable = () => {
           id: job.id,
           title: job.title,
           platform: job.platforms.name === 'Indeed' ? 'X' : job.platforms.name,
+          client: job.clients?.name || 'Unknown',
           spend: totalSpend,
           applications: applicationCount,
           costPerApp,
@@ -95,6 +97,7 @@ const JobPerformanceTable = () => {
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-medium text-muted-foreground">Job Title</th>
               <th className="text-left py-3 px-4 font-medium text-muted-foreground">Platform</th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Client</th>
               <th className="text-right py-3 px-4 font-medium text-muted-foreground">Spend</th>
               <th className="text-right py-3 px-4 font-medium text-muted-foreground">Applications</th>
               <th className="text-right py-3 px-4 font-medium text-muted-foreground">Cost/App</th>
@@ -111,6 +114,9 @@ const JobPerformanceTable = () => {
                 </td>
                 <td className="py-4 px-4">
                   <span className="text-muted-foreground">{job.platform}</span>
+                </td>
+                <td className="py-4 px-4">
+                  <span className="font-medium text-primary">{job.client}</span>
                 </td>
                 <td className="py-4 px-4 text-right">
                   <span className="font-medium text-foreground">${job.spend.toLocaleString()}</span>

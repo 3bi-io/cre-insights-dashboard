@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -25,7 +26,8 @@ export const useJobs = () => {
         .select(`
           *,
           platforms:platform_id(name),
-          job_categories:category_id(name)
+          job_categories:category_id(name),
+          clients:client_id(name)
         `)
         .order('created_at', { ascending: false });
       
@@ -37,7 +39,8 @@ export const useJobs = () => {
   const filteredJobs = jobListings?.filter(job => {
     // Apply text search filter
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location?.toLowerCase().includes(searchTerm.toLowerCase());
+      job.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Apply route filter if present
     const matchesRoute = !hasRouteFilter || (

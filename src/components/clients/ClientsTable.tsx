@@ -26,24 +26,6 @@ interface ClientsTableProps {
 }
 
 const ClientsTable = ({ clients }: ClientsTableProps) => {
-  const getClientNameFromLocation = (city: string | null, state: string | null) => {
-    if (!city || !state) return 'Unknown Client';
-    
-    const location = `${city}, ${state}`;
-    const locationClientMap: { [key: string]: string } = {
-      'Joliet, IL': 'Dollar Tree',
-      'Ridgefield, OR': 'Dollar Tree',
-      'Cowpens, SC': 'Dollar Tree',
-      'Warrensburg, MO': 'Dollar Tree',
-      'Memphis, TN': 'Dollar Tree',
-      'Oklahoma City, OK': 'Family Dollar',
-      'St George, UT': 'Family Dollar',
-      'Denver, CO': 'Kroger'
-    };
-    
-    return locationClientMap[location] || 'Unknown Client';
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -78,8 +60,7 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Client</TableHead>
+                <TableHead>Client Name</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Company</TableHead>
@@ -99,11 +80,6 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
                         </span>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium text-primary">
-                      {getClientNameFromLocation(client.city, client.state)}
-                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">

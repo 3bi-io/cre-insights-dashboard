@@ -88,6 +88,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
           <Badge className={getStatusColor(job.status)}>
             {job.status}
           </Badge>
+          {job.clients?.name && (
+            <span className="text-sm font-medium text-primary">
+              {job.clients.name}
+            </span>
+          )}
         </div>
         
         {job.location && (
