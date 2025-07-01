@@ -1,11 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface JobTableProps {
   jobs: any[] | undefined;
@@ -13,11 +13,17 @@ interface JobTableProps {
   onShowUploadDialog: () => void;
 }
 
+type SortField = 'title' | 'job_id' | 'platform' | 'category' | 'location' | 'status' | 'created_at';
+type SortDirection = 'asc' | 'desc';
+
 const JobTable: React.FC<JobTableProps> = ({ 
   jobs, 
   onViewAnalytics, 
   onShowUploadDialog 
 }) => {
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -46,6 +52,64 @@ const JobTable: React.FC<JobTableProps> = ({
     return locationJobIdMap[location] || null;
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? 
+      <ChevronUp className="w-4 h-4 ml-1" /> : 
+      <ChevronDown className="w-4 h-4 ml-1" />;
+  };
+
+  const sortedJobs = jobs ? [...jobs].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortField) {
+      case 'title':
+        aValue = a.title?.toLowerCase() || '';
+        bValue = b.title?.toLowerCase() || '';
+        break;
+      case 'job_id':
+        aValue = a.job_id || getJobIdFromLocation(a.location) || 0;
+        bValue = b.job_id || getJobIdFromLocation(b.location) || 0;
+        break;
+      case 'platform':
+        aValue = a.platforms?.name?.toLowerCase() || '';
+        bValue = b.platforms?.name?.toLowerCase() || '';
+        break;
+      case 'category':
+        aValue = a.job_categories?.name?.toLowerCase() || '';
+        bValue = b.job_categories?.name?.toLowerCase() || '';
+        break;
+      case 'location':
+        aValue = a.location?.toLowerCase() || '';
+        bValue = b.location?.toLowerCase() || '';
+        break;
+      case 'status':
+        aValue = a.status?.toLowerCase() || '';
+        bValue = b.status?.toLowerCase() || '';
+        break;
+      case 'created_at':
+        aValue = new Date(a.created_at);
+        bValue = new Date(b.created_at);
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  }) : [];
+
   if (!jobs || jobs.length === 0) {
     return (
       <Card>
@@ -72,18 +136,81 @@ const JobTable: React.FC<JobTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[200px]">Job Title</TableHead>
-                <TableHead>Job ID</TableHead>
-                <TableHead>Platform</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead className="min-w-[200px]">
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('title')}
+                  >
+                    Job Title
+                    {getSortIcon('title')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('job_id')}
+                  >
+                    Job ID
+                    {getSortIcon('job_id')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('platform')}
+                  >
+                    Platform
+                    {getSortIcon('platform')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('category')}
+                  >
+                    Category
+                    {getSortIcon('category')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('location')}
+                  >
+                    Location
+                    {getSortIcon('location')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('status')}
+                  >
+                    Status
+                    {getSortIcon('status')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    Created
+                    {getSortIcon('created_at')}
+                  </Button>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {jobs.map((job) => {
+              {sortedJobs.map((job) => {
                 const jobId = job.job_id || getJobIdFromLocation(job.location);
                 
                 return (
