@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Filter, Eye, MessageCircle, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook } from 'lucide-react';
+import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,97 +86,113 @@ const Applications = () => {
         </div>
       </div>
 
-      {/* Status Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-        {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
-          <Card key={status}>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">
-                {statusCounts?.[status] || 0}
-              </div>
-              <div className="text-sm text-gray-600 capitalize">{status}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Tabs defaultValue="applications" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="webhook-setup" className="flex items-center gap-2">
+            <Webhook className="w-4 h-4" />
+            Zapier Integration
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search by applicant name, email, or job title..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Filter className="w-4 h-4" />
-          Filters
-        </Button>
-      </div>
+        <TabsContent value="applications" className="space-y-6">
+          {/* Status Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
+              <Card key={status}>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {statusCounts?.[status] || 0}
+                  </div>
+                  <div className="text-sm text-gray-600 capitalize">{status}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {filteredApplications?.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="text-gray-500 mb-4">
-              <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">No applications found</h3>
-              <p>Applications will appear here as candidates apply to your job listings.</p>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search by applicant name, email, or job title..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredApplications?.map((application) => (
-            <Card key={application.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {application.applicant_name || 'Anonymous Applicant'}
-                      </h3>
-                      <Badge className={getStatusColor(application.status)}>
-                        {application.status}
-                      </Badge>
-                    </div>
-                    <p className="text-gray-600 mb-1">
-                      {application.applicant_email}
-                    </p>
-                    <p className="text-sm text-gray-500 mb-2">
-                      Applied for: <span className="font-medium">{application.job_listings?.title}</span>
-                      {application.job_listings?.platforms?.name && (
-                        <span> via {application.job_listings.platforms.name}</span>
-                      )}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        Applied {new Date(application.applied_at).toLocaleDateString()}
-                      </span>
-                      {application.source && (
-                        <span>Source: {application.source}</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <Eye className="w-4 h-4" />
-                      View Details
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4" />
-                      Contact
-                    </Button>
-                  </div>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              Filters
+            </Button>
+          </div>
+
+          {filteredApplications?.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <div className="text-gray-500 mb-4">
+                  <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium mb-2">No applications found</h3>
+                  <p>Applications will appear here as candidates apply to your job listings.</p>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          ) : (
+            <div className="space-y-4">
+              {filteredApplications?.map((application) => (
+                <Card key={application.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-medium text-gray-900">
+                            {application.applicant_name || 'Anonymous Applicant'}
+                          </h3>
+                          <Badge className={getStatusColor(application.status)}>
+                            {application.status}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-600 mb-1">
+                          {application.applicant_email}
+                        </p>
+                        <p className="text-sm text-gray-500 mb-2">
+                          Applied for: <span className="font-medium">{application.job_listings?.title}</span>
+                          {application.job_listings?.platforms?.name && (
+                            <span> via {application.job_listings.platforms.name}</span>
+                          )}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Applied {new Date(application.applied_at).toLocaleDateString()}
+                          </span>
+                          {application.source && (
+                            <span>Source: {application.source}</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex items-center gap-2">
+                          <Eye className="w-4 h-4" />
+                          View Details
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4" />
+                          Contact
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="webhook-setup">
+          <ZapierWebhookSetup />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
