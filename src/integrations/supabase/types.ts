@@ -13,38 +13,38 @@ export type Database = {
         Row: {
           applicant_email: string | null
           applicant_name: string | null
-          applied_at: string
+          applied_at: string | null
           email: string | null
           first_name: string | null
           id: string
           job_listing_id: string
           source: string | null
           status: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           applicant_email?: string | null
           applicant_name?: string | null
-          applied_at?: string
+          applied_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
           job_listing_id: string
           source?: string | null
           status?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           applicant_email?: string | null
           applicant_name?: string | null
-          applied_at?: string
+          applied_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
           job_listing_id?: string
           source?: string | null
           status?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
