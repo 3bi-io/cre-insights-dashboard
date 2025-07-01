@@ -40,14 +40,47 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Parse the request body
-    const body = await req.json();
-    console.log('Received webhook data:', body);
+    // Parse the request body - handle both JSON and form data
+    let body: any = {};
+    const contentType = req.headers.get('content-type') || '';
+    
+    console.log('Content-Type:', contentType);
+
+    if (contentType.includes('application/json')) {
+      body = await req.json();
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await req.text();
+      console.log('Form data received:', formData);
+      
+      // Parse URL-encoded data
+      const params = new URLSearchParams(formData);
+      body = {};
+      for (const [key, value] of params) {
+        body[key] = value;
+      }
+    } else {
+      // Try to parse as text and then as JSON as fallback
+      const text = await req.text();
+      console.log('Raw text received:', text);
+      
+      try {
+        body = JSON.parse(text);
+      } catch {
+        // If it's not JSON, treat it as form data
+        const params = new URLSearchParams(text);
+        body = {};
+        for (const [key, value] of params) {
+          body[key] = value;
+        }
+      }
+    }
+
+    console.log('Parsed webhook data:', body);
 
     // Extract application data from Zapier payload
     const applicationData: ZapierApplicationData = {
-      job_listing_id: body.job_listing_id || body.jobListingId,
-      applicant_name: body.applicant_name || body.applicantName || body.name,
+      job_listing_id: body.job_listing_id || body.jobListingId || body.job_id,
+      applicant_name: body.applicant_name || body.applicantName || body.name || body.full_name,
       applicant_email: body.applicant_email || body.applicantEmail || body.email,
       source: body.source || 'Zapier',
       status: body.status || 'pending'
