@@ -91,7 +91,8 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'Missing required field: job_listing_id',
-          received_data: body
+          received_data: body,
+          help: 'Make sure your Zapier webhook includes a job_listing_id field'
         }),
         { 
           status: 400,
@@ -99,6 +100,14 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+
+    // First, let's check what job listings exist to help with debugging
+    const { data: allJobListings, error: listError } = await supabase
+      .from('job_listings')
+      .select('id, title')
+      .limit(10);
+
+    console.log('Available job listings:', allJobListings);
 
     // Verify the job listing exists
     const { data: jobListing, error: jobError } = await supabase
@@ -112,7 +121,9 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'Job listing not found',
-          job_listing_id: applicationData.job_listing_id
+          job_listing_id: applicationData.job_listing_id,
+          available_listings: allJobListings || [],
+          help: 'Please verify the job_listing_id exists in your database. Check the available listings above.'
         }),
         { 
           status: 404,
