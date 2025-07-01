@@ -8,10 +8,12 @@ import JobsHeader from '@/components/jobs/JobsHeader';
 import JobsSearch from '@/components/jobs/JobsSearch';
 import RouteFilter from '@/components/jobs/RouteFilter';
 import JobGrid from '@/components/jobs/JobGrid';
+import JobTable from '@/components/jobs/JobTable';
 
 const Jobs = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedJobForAnalytics, setSelectedJobForAnalytics] = useState(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const { toast } = useToast();
 
   const {
@@ -63,6 +65,8 @@ const Jobs = () => {
         showUploadDialog={showUploadDialog}
         onShowUploadDialog={setShowUploadDialog}
         onUploadSuccess={handleUploadSuccess}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
       {hasRouteFilter && (
@@ -77,11 +81,19 @@ const Jobs = () => {
         onSearchChange={setSearchTerm}
       />
 
-      <JobGrid
-        jobs={filteredJobs}
-        onViewAnalytics={handleViewAnalytics}
-        onShowUploadDialog={() => setShowUploadDialog(true)}
-      />
+      {viewMode === 'grid' ? (
+        <JobGrid
+          jobs={filteredJobs}
+          onViewAnalytics={handleViewAnalytics}
+          onShowUploadDialog={() => setShowUploadDialog(true)}
+        />
+      ) : (
+        <JobTable
+          jobs={filteredJobs}
+          onViewAnalytics={handleViewAnalytics}
+          onShowUploadDialog={() => setShowUploadDialog(true)}
+        />
+      )}
 
       {/* Analytics Dialog */}
       {selectedJobForAnalytics && (

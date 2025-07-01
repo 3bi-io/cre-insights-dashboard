@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload } from 'lucide-react';
+import { Upload, Grid3X3, Table } from 'lucide-react';
 import CsvUpload from '@/components/CsvUpload';
 
 interface JobsHeaderProps {
@@ -12,6 +12,8 @@ interface JobsHeaderProps {
   showUploadDialog: boolean;
   onShowUploadDialog: (show: boolean) => void;
   onUploadSuccess: () => void;
+  viewMode: 'grid' | 'table';
+  onViewModeChange: (mode: 'grid' | 'table') => void;
 }
 
 const JobsHeader: React.FC<JobsHeaderProps> = ({
@@ -20,7 +22,9 @@ const JobsHeader: React.FC<JobsHeaderProps> = ({
   hasRouteFilter,
   showUploadDialog,
   onShowUploadDialog,
-  onUploadSuccess
+  onUploadSuccess,
+  viewMode,
+  onViewModeChange
 }) => {
   return (
     <div className="flex flex-col gap-4 mb-6 sm:mb-8">
@@ -36,6 +40,26 @@ const JobsHeader: React.FC<JobsHeaderProps> = ({
         </div>
         
         <div className="flex gap-2 w-full sm:w-auto">
+          {/* View Mode Toggle */}
+          <div className="flex rounded-md border border-input bg-background">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onViewModeChange('grid')}
+              className="rounded-r-none border-r"
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => onViewModeChange('table')}
+              className="rounded-l-none"
+            >
+              <Table className="w-4 h-4" />
+            </Button>
+          </div>
+
           <Dialog open={showUploadDialog} onOpenChange={onShowUploadDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2 flex-1 sm:flex-none">
