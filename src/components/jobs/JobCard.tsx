@@ -3,7 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MoreHorizontal, MapPin } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, MapPin, Eye, Edit, Trash2 } from 'lucide-react';
 
 interface JobCardProps {
   job: any;
@@ -24,6 +25,23 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
     }
   };
 
+  const getJobIdFromLocation = (location: string) => {
+    const locationJobIdMap: { [key: string]: number } = {
+      'Joliet, IL': 371,
+      'Ridgefield, OR': 338,
+      'Cowpens, SC': 590,
+      'Warrensburg, MO': 361,
+      'Memphis, TN': 882,
+      'Oklahoma City, OK': 141,
+      'St George, UT': 328,
+      'Denver, CO': 911
+    };
+    
+    return locationJobIdMap[location] || null;
+  };
+
+  const jobId = job.job_id || getJobIdFromLocation(job.location);
+
   return (
     <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
       <CardHeader className="pb-3 flex-shrink-0">
@@ -34,11 +52,35 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
               <p className="break-words">
                 {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name} • {job.job_categories?.name}
               </p>
+              {jobId && (
+                <p className="font-mono text-xs text-muted-foreground">
+                  ID: {jobId}
+                </p>
+              )}
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="flex-shrink-0">
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="flex-shrink-0 h-8 w-8 p-0">
+                <MoreHorizontal className="w-4 h-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onViewAnalytics(job)}>
+                <Eye className="w-4 h-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Job
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-red-600">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Job
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 flex flex-col">
@@ -66,6 +108,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
             className="w-full"
             onClick={() => onViewAnalytics(job)}
           >
+            <Eye className="w-4 h-4 mr-2" />
             View Details
           </Button>
         </div>
