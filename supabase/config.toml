@@ -1,1 +1,5 @@
+
 project_id = "auwhcdpppldjlcaxzsme"
+
+[functions.zapier-webhook]
+verify_jwt = false

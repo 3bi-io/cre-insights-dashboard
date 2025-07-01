@@ -14,6 +14,8 @@ export type Database = {
           applicant_email: string | null
           applicant_name: string | null
           applied_at: string
+          email: string | null
+          first_name: string | null
           id: string
           job_listing_id: string
           source: string | null
@@ -24,6 +26,8 @@ export type Database = {
           applicant_email?: string | null
           applicant_name?: string | null
           applied_at?: string
+          email?: string | null
+          first_name?: string | null
           id?: string
           job_listing_id: string
           source?: string | null
@@ -34,6 +38,8 @@ export type Database = {
           applicant_email?: string | null
           applicant_name?: string | null
           applied_at?: string
+          email?: string | null
+          first_name?: string | null
           id?: string
           job_listing_id?: string
           source?: string | null
