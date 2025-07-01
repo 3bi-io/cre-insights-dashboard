@@ -1,22 +1,9 @@
 
 import React from 'react';
-import { Users, Mail, Phone, Building, MapPin, MoreVertical } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Card, CardContent } from '@/components/ui/card';
+import { MapPin, Mail, Phone, Building } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -39,8 +26,8 @@ interface ClientsTableProps {
 }
 
 const ClientsTable = ({ clients }: ClientsTableProps) => {
-  const getClientFromLocation = (city: string | null, state: string | null) => {
-    if (!city || !state) return null;
+  const getClientNameFromLocation = (city: string | null, state: string | null) => {
+    if (!city || !state) return 'Unknown Client';
     
     const location = `${city}, ${state}`;
     const locationClientMap: { [key: string]: string } = {
@@ -54,140 +41,121 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
       'Denver, CO': 'Kroger'
     };
     
-    return locationClientMap[location] || null;
+    return locationClientMap[location] || 'Unknown Client';
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    return status === 'active' 
-      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-      : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
+
+  if (clients.length === 0) {
+    return (
+      <Card>
+        <CardContent className="text-center py-12">
+          <div className="text-muted-foreground">
+            <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">No clients found</h3>
+            <p className="text-sm">Start by adding your first client.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Client</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Company</TableHead>
-            <TableHead>Client Name</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {clients.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
-                <div className="flex flex-col items-center gap-2">
-                  <Users className="w-8 h-8 text-muted-foreground" />
-                  <p className="text-muted-foreground">No clients found</p>
-                  <p className="text-sm text-muted-foreground">
-                    Add your first client to get started
-                  </p>
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            clients.map((client) => {
-              const clientName = getClientFromLocation(client.city, client.state);
-              
-              return (
-                <TableRow key={client.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 p-2 rounded-lg">
-                        <Users className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">{client.name}</div>
-                        {client.notes && (
-                          <div className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {client.notes}
-                          </div>
-                        )}
-                      </div>
+    <Card>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {clients.map((client) => (
+                <TableRow key={client.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground">{client.name}</span>
+                      {client.notes && (
+                        <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                          {client.notes}
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
+                    <span className="font-medium text-primary">
+                      {getClientNameFromLocation(client.city, client.state)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
                       {client.email && (
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Mail className="w-3 h-3" />
-                          {client.email}
+                          <span className="truncate max-w-[150px]">{client.email}</span>
                         </div>
                       )}
                       {client.phone && (
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Phone className="w-3 h-3" />
-                          {client.phone}
+                          <span>{client.phone}</span>
                         </div>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {client.company ? (
-                      <div className="flex items-center gap-1">
-                        <Building className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-foreground">{client.company}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {clientName ? (
-                      <div className="flex items-center gap-1">
-                        <Building className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-foreground font-medium">{clientName}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {client.city || client.state ? (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-foreground">
+                    {(client.city || client.state) && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="w-3 h-3" />
+                        <span>
                           {[client.city, client.state].filter(Boolean).join(', ')}
                         </span>
                       </div>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
+                    )}
+                    {client.address && (
+                      <div className="text-xs text-muted-foreground mt-1 truncate max-w-[150px]">
+                        {client.address}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadgeColor(client.status)}>
+                    <span className="text-muted-foreground">{client.company || '-'}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(client.status)}>
                       {client.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-background border border-border">
-                        <DropdownMenuItem>Edit Client</DropdownMenuItem>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Add Note</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          Delete Client
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(client.created_at).toLocaleDateString()}
+                    </span>
                   </TableCell>
                 </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </div>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
