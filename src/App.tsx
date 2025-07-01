@@ -12,7 +12,7 @@ import Index from "./pages/Index";
 import Jobs from "./pages/Jobs";
 import Applications from "./pages/Applications";
 import RoutesPage from "./pages/Routes";
-
+import Platforms from "./pages/Platforms";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -41,7 +41,7 @@ const App = () => (
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="applications" element={<Applications />} />
                 <Route path="routes" element={<RoutesPage />} />
-                
+                <Route path="platforms" element={<Platforms />} />
                 <Route path="clients" element={<Clients />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
