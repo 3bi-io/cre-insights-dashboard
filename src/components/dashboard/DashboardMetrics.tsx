@@ -9,34 +9,23 @@ const DashboardMetrics = () => {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      // For demo purposes, we'll query data without RLS restrictions
-      const { data: spendData } = await supabase.rpc('get_total_spend_mtd').catch(() => ({ data: null }));
-      const { data: applicationsData } = await supabase.rpc('get_total_applications').catch(() => ({ data: null }));
-      const { data: jobsData } = await supabase.rpc('get_total_jobs').catch(() => ({ data: null }));
+      const { data } = await supabase.rpc('get_dashboard_metrics');
       
-      // Fallback to direct queries if RPC functions don't exist
-      const [directSpendData, directJobsData] = await Promise.all([
-        supabase
-          .from('daily_spend')
-          .select('amount, job_listing_id'),
-        supabase
-          .from('job_listings')
-          .select(`
-            id,
-            applications(id)
-          `)
-      ]);
-      
-      const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-      const totalJobs = jobsData.data?.length || 0;
-      const totalApplications = jobsData.data?.reduce((sum, job) => sum + job.applications.length, 0) || 0;
-      const costPerApplication = totalApplications > 0 ? totalSpend / totalApplications : 0;
+      if (data && typeof data === 'object' && data !== null) {
+        const metrics = data as any;
+        return {
+          totalSpend: Number(metrics.totalSpend) || 0,
+          totalApplications: Number(metrics.totalApplications) || 0,
+          totalJobs: Number(metrics.totalJobs) || 0,
+          costPerApplication: Number(metrics.costPerApplication) || 0
+        };
+      }
       
       return {
-        totalSpend,
-        totalApplications,
-        totalJobs,
-        costPerApplication
+        totalSpend: 0,
+        totalApplications: 0,
+        totalJobs: 0,
+        costPerApplication: 0
       };
     },
   });
