@@ -9,15 +9,22 @@ const DashboardMetrics = () => {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      const [spendData, applicationsData, jobsData] = await Promise.all([
-        supabase.from('daily_spend').select('amount'),
-        supabase.from('applications').select('id'),
-        supabase.from('job_listings').select('id')
+      const [spendData, jobsData] = await Promise.all([
+        supabase
+          .from('daily_spend')
+          .select('amount, job_listing_id')
+          .gte('date', new Date().toISOString().split('T')[0].slice(0, 7) + '-01'),
+        supabase
+          .from('job_listings')
+          .select(`
+            id,
+            applications(id)
+          `)
       ]);
       
       const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-      const totalApplications = applicationsData.data?.length || 0;
       const totalJobs = jobsData.data?.length || 0;
+      const totalApplications = jobsData.data?.reduce((sum, job) => sum + job.applications.length, 0) || 0;
       const costPerApplication = totalApplications > 0 ? totalSpend / totalApplications : 0;
       
       return {

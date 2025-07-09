@@ -17,9 +17,8 @@ const SpendChart = () => {
         .select(`
           date,
           amount,
-          job_listings!inner(
-            applications(id)
-          )
+          views,
+          clicks
         `)
         .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
         .order('date');
@@ -33,12 +32,13 @@ const SpendChart = () => {
           acc[date] = {
             date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             spend: 0,
-            applications: 0,
-            hires: 0 // We don't have hire data yet, so this will be 0
+            views: 0,
+            clicks: 0
           };
         }
         acc[date].spend += Number(item.amount);
-        acc[date].applications += item.job_listings.applications.length;
+        acc[date].views += Number(item.views || 0);
+        acc[date].clicks += Number(item.clicks || 0);
         return acc;
       }, {});
 
@@ -48,42 +48,42 @@ const SpendChart = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Advertising Spend Trends</h3>
+          <h3 className="text-lg font-semibold text-foreground">Advertising Spend Trends</h3>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-gray-600">Daily Spend</span>
+              <div className="w-3 h-3 rounded-full bg-primary"></div>
+              <span className="text-muted-foreground">Daily Spend</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-gray-600">Applications</span>
+              <span className="text-muted-foreground">Views</span>
             </div>
           </div>
         </div>
-        <div className="h-80 bg-gray-100 rounded animate-pulse"></div>
+        <div className="h-80 bg-muted rounded animate-pulse"></div>
       </div>
     );
   }
 
   if (spendData.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Advertising Spend Trends</h3>
+          <h3 className="text-lg font-semibold text-foreground">Advertising Spend Trends</h3>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-gray-600">Daily Spend</span>
+              <div className="w-3 h-3 rounded-full bg-primary"></div>
+              <span className="text-muted-foreground">Daily Spend</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-gray-600">Applications</span>
+              <span className="text-muted-foreground">Views</span>
             </div>
           </div>
         </div>
-        <div className="h-80 flex items-center justify-center text-gray-500">
+        <div className="h-80 flex items-center justify-center text-muted-foreground">
           No spend data available for the last 30 days
         </div>
       </div>
@@ -91,17 +91,17 @@ const SpendChart = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Advertising Spend Trends</h3>
+        <h3 className="text-lg font-semibold text-foreground">Advertising Spend Trends</h3>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-gray-600">Daily Spend</span>
+            <div className="w-3 h-3 rounded-full bg-primary"></div>
+            <span className="text-muted-foreground">Daily Spend</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-gray-600">Applications</span>
+            <span className="text-muted-foreground">Views</span>
           </div>
         </div>
       </div>
@@ -138,7 +138,7 @@ const SpendChart = () => {
               }}
               formatter={(value: any, name: string) => [
                 name === 'spend' ? `$${value}` : value,
-                name === 'spend' ? 'Daily Spend' : name === 'applications' ? 'Applications' : 'Hires'
+                name === 'spend' ? 'Daily Spend' : name === 'views' ? 'Views' : 'Clicks'
               ]}
             />
             <Area

@@ -46,10 +46,10 @@ const PlatformBreakdown = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-md">
-          <p className="font-medium text-gray-900">{data.name}</p>
-          <p className="text-sm text-gray-600">{data.value}% of total spend</p>
-          <p className="text-sm text-gray-600">${data.spend.toLocaleString()}</p>
+        <div className="bg-card p-3 border border-border rounded-lg shadow-md">
+          <p className="font-medium text-foreground">{data.name}</p>
+          <p className="text-sm text-muted-foreground">{data.value}% of total spend</p>
+          <p className="text-sm text-muted-foreground">${data.spend.toLocaleString()}</p>
         </div>
       );
     }
@@ -58,18 +58,18 @@ const PlatformBreakdown = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Platform</h3>
-        <div className="h-64 bg-gray-100 rounded animate-pulse"></div>
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-6">Spend by Platform</h3>
+        <div className="h-64 bg-muted rounded animate-pulse"></div>
       </div>
     );
   }
 
   if (platformData.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Platform</h3>
-        <div className="h-64 flex items-center justify-center text-gray-500">
+      <div className="bg-card rounded-lg border border-border p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-6">Spend by Platform</h3>
+        <div className="h-64 flex items-center justify-center text-muted-foreground">
           No platform data available
         </div>
       </div>
@@ -77,8 +77,8 @@ const PlatformBreakdown = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Platform</h3>
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h3 className="text-lg font-semibold text-foreground mb-6">Spend by Platform</h3>
       
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
@@ -109,11 +109,11 @@ const PlatformBreakdown = () => {
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: platform.color }}
               ></div>
-              <span className="text-gray-700">{platform.name}</span>
+              <span className="text-foreground">{platform.name}</span>
             </div>
             <div className="text-right">
-              <span className="font-medium text-gray-900">${platform.spend.toLocaleString()}</span>
-              <span className="text-gray-500 ml-2">({platform.value}%)</span>
+              <span className="font-medium text-foreground">${platform.spend.toLocaleString()}</span>
+              <span className="text-muted-foreground ml-2">({platform.value}%)</span>
             </div>
           </div>
         ))}
