@@ -3,3 +3,6 @@ project_id = "auwhcdpppldjlcaxzsme"
 
 [functions.zapier-webhook]
 verify_jwt = false
+
+[functions.job-feed-xml]
+verify_jwt = false
