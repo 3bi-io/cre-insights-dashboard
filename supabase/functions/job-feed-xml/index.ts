@@ -24,7 +24,6 @@ serve(async (req) => {
       .from('job_listings')
       .select(`
         *,
-        platforms:platform_id(name),
         job_categories:category_id(name)
       `)
       .eq('status', 'active')
@@ -62,7 +61,6 @@ function generateJobFeedXML(jobs: any[]): string {
     const title = escapeXml(job.title || job.job_title || '')
     const description = escapeXml(job.description || job.job_description || '')
     const location = escapeXml(job.location || `${job.city || ''}, ${job.state || ''}`.trim().replace(/^,\s*|,\s*$/, '') || '')
-    const platform = escapeXml(job.platforms?.name || '')
     const category = escapeXml(job.job_categories?.name || '')
     const client = escapeXml(job.client || '')
     const salaryMin = job.salary_min ? `<salary_min>${job.salary_min}</salary_min>` : ''
@@ -76,7 +74,6 @@ function generateJobFeedXML(jobs: any[]): string {
       <title>${title}</title>
       <description>${description}</description>
       <location>${location}</location>
-      <platform>${platform}</platform>
       <category>${category}</category>
       <client>${client}</client>
       <status>${job.status}</status>
