@@ -8,13 +8,37 @@ const PlatformBreakdown = () => {
   const { data: platformData = [], isLoading } = useQuery({
     queryKey: ['platform-breakdown'],
     queryFn: async () => {
-      const { data } = await supabase.rpc('get_platform_breakdown_data');
+      const { data: spendData } = await supabase
+        .from('daily_spend')
+        .select(`
+          amount,
+          job_listings!inner(
+            platform_id,
+            platforms!inner(
+              name
+            )
+          )
+        `);
+
+      if (!spendData) return [];
+
+      // Group spend by platform
+      const platformSpend = spendData.reduce((acc: Record<string, number>, item) => {
+        const platformName = item.job_listings.platforms.name;
+        acc[platformName] = (acc[platformName] || 0) + Number(item.amount);
+        return acc;
+      }, {});
+
+      const totalSpend = Object.values(platformSpend).reduce((sum, amount) => sum + amount, 0);
       
-      if (data && Array.isArray(data)) {
-        return data as any[];
-      }
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
       
-      return [];
+      return Object.entries(platformSpend).map(([name, spend], index) => ({
+        name,
+        value: totalSpend > 0 ? Math.round((spend / totalSpend) * 100) : 0,
+        spend,
+        color: colors[index % colors.length]
+      }));
     },
   });
 

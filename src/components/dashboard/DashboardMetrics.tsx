@@ -3,43 +3,43 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import MetricsCard from '@/components/MetricsCard';
-import { DollarSign, Users, TrendingUp, Target, Briefcase, Eye, Activity } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Target, Briefcase } from 'lucide-react';
 
 const DashboardMetrics = () => {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      const { data } = await supabase.rpc('get_dashboard_metrics');
+      const [spendData, jobsData] = await Promise.all([
+        supabase
+          .from('daily_spend')
+          .select('amount, job_listing_id')
+          .gte('date', new Date().toISOString().split('T')[0].slice(0, 7) + '-01'),
+        supabase
+          .from('job_listings')
+          .select(`
+            id,
+            applications(id)
+          `)
+      ]);
       
-      if (data && typeof data === 'object' && data !== null) {
-        const metrics = data as any;
-        return {
-          totalSpend: Number(metrics.totalSpend) || 0,
-          totalApplications: Number(metrics.totalApplications) || 0,
-          totalJobs: Number(metrics.totalJobs) || 0,
-          totalReach: Number(metrics.totalReach) || 0,
-          totalImpressions: Number(metrics.totalImpressions) || 0,
-          costPerApplication: Number(metrics.costPerApplication) || 0,
-          costPerLead: Number(metrics.costPerLead) || 0
-        };
-      }
+      const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+      const totalJobs = jobsData.data?.length || 0;
+      const totalApplications = jobsData.data?.reduce((sum, job) => sum + job.applications.length, 0) || 0;
+      const costPerApplication = totalApplications > 0 ? totalSpend / totalApplications : 0;
       
       return {
-        totalSpend: 0,
-        totalApplications: 0,
-        totalJobs: 0,
-        totalReach: 0,
-        totalImpressions: 0,
-        costPerApplication: 0,
-        costPerLead: 0
+        totalSpend,
+        totalApplications,
+        totalJobs,
+        costPerApplication
       };
     },
   });
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-12">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
+        {[...Array(4)].map((_, i) => (
           <div key={i} className="h-32 bg-muted rounded-xl animate-pulse"></div>
         ))}
       </div>
@@ -47,9 +47,9 @@ const DashboardMetrics = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-12">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
       <MetricsCard
-        title="Total Spend"
+        title="Total Spend (MTD)"
         value={`$${metrics?.totalSpend.toLocaleString() || '0'}`}
         change="--"
         changeType="neutral"
@@ -57,36 +57,28 @@ const DashboardMetrics = () => {
         description="month to date"
       />
       <MetricsCard
-        title="Reach"
-        value={metrics?.totalReach.toLocaleString() || '0'}
-        change="--"
-        changeType="neutral"
-        icon={Eye}
-        description="total reach"
-      />
-      <MetricsCard
-        title="Impressions"
-        value={metrics?.totalImpressions.toLocaleString() || '0'}
-        change="--"
-        changeType="neutral"
-        icon={Activity}
-        description="total impressions"
-      />
-      <MetricsCard
-        title="Applications"
+        title="Total Applications"
         value={metrics?.totalApplications.toLocaleString() || '0'}
         change="--"
         changeType="neutral"
         icon={Users}
-        description="total leads"
+        description="all time"
       />
       <MetricsCard
-        title="Cost per Lead"
-        value={`$${metrics?.costPerLead?.toFixed(2) || '0.00'}`}
+        title="Total Job Listings"
+        value={metrics?.totalJobs.toLocaleString() || '0'}
+        change="--"
+        changeType="neutral"
+        icon={Briefcase}
+        description="active listings"
+      />
+      <MetricsCard
+        title="Cost per Application"
+        value={`$${metrics?.costPerApplication.toFixed(2) || '0.00'}`}
         change="--"
         changeType="neutral"
         icon={Target}
-        description="average cost per lead"
+        description="average cost"
       />
     </div>
   );

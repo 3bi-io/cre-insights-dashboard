@@ -8,13 +8,41 @@ const SpendChart = () => {
   const { data: spendData = [], isLoading } = useQuery({
     queryKey: ['spend-chart'],
     queryFn: async () => {
-      const { data } = await supabase.rpc('get_spend_chart_data');
+      // Get daily spend data for the last 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      if (data && Array.isArray(data)) {
-        return data as any[];
-      }
-      
-      return [];
+      const { data: dailySpend } = await supabase
+        .from('daily_spend')
+        .select(`
+          date,
+          amount,
+          views,
+          clicks
+        `)
+        .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+        .order('date');
+
+      if (!dailySpend) return [];
+
+      // Group by date and calculate totals
+      const groupedData = dailySpend.reduce((acc: Record<string, any>, item) => {
+        const date = item.date;
+        if (!acc[date]) {
+          acc[date] = {
+            date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            spend: 0,
+            views: 0,
+            clicks: 0
+          };
+        }
+        acc[date].spend += Number(item.amount);
+        acc[date].views += Number(item.views || 0);
+        acc[date].clicks += Number(item.clicks || 0);
+        return acc;
+      }, {});
+
+      return Object.values(groupedData).slice(-10); // Last 10 data points
     },
   });
 
