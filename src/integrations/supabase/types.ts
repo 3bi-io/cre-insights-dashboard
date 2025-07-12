@@ -402,6 +402,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_dashboard_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_platform_breakdown_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_spend_chart_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       has_role: {
         Args: {
           _user_id: string
