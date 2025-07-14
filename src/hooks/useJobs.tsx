@@ -21,6 +21,7 @@ export const useJobs = () => {
   const { data: jobListings, isLoading, refetch } = useQuery({
     queryKey: ['job-listings'],
     queryFn: async () => {
+      console.log('Fetching job listings...');
       const { data, error } = await supabase
         .from('job_listings')
         .select(`
@@ -31,16 +32,25 @@ export const useJobs = () => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching job listings:', error);
+        throw error;
+      }
+      
+      console.log('Job listings fetched:', data?.length);
       return data;
     },
   });
 
   const filteredJobs = jobListings?.filter(job => {
     // Apply text search filter
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      job.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.state?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.client?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Apply route filter if present
     const matchesRoute = !hasRouteFilter || (

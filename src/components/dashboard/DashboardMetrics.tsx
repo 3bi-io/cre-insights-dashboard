@@ -6,14 +6,20 @@ import MetricsCard from '@/components/MetricsCard';
 import { DollarSign, Users, TrendingUp, Target, Briefcase } from 'lucide-react';
 
 const DashboardMetrics = () => {
-  const { data: metrics, isLoading } = useQuery({
+  const { data: metrics, isLoading, refetch } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
+      console.log('Fetching dashboard metrics...');
+      
       const [spendData, applicationsData, jobsData] = await Promise.all([
         supabase.from('daily_spend').select('amount'),
         supabase.from('applications').select('id'),
         supabase.from('job_listings').select('id')
       ]);
+      
+      console.log('Spend data:', spendData.data?.length);
+      console.log('Applications data:', applicationsData.data?.length);
+      console.log('Jobs data:', jobsData.data?.length);
       
       const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
       const totalApplications = applicationsData.data?.length || 0;
@@ -27,6 +33,8 @@ const DashboardMetrics = () => {
         costPerApplication
       };
     },
+    // Refresh every 30 seconds to stay in sync
+    refetchInterval: 30000,
   });
 
   if (isLoading) {

@@ -5,10 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 const PlatformBreakdown = () => {
-  const { data: platformData = [], isLoading } = useQuery({
+  const { data: platformData = [], isLoading, refetch } = useQuery({
     queryKey: ['platform-breakdown'],
     queryFn: async () => {
-      const { data: spendData } = await supabase
+      console.log('Fetching platform breakdown data...');
+      
+      const { data: spendData, error } = await supabase
         .from('daily_spend')
         .select(`
           amount,
@@ -19,6 +21,13 @@ const PlatformBreakdown = () => {
             )
           )
         `);
+
+      if (error) {
+        console.error('Error fetching platform breakdown:', error);
+        throw error;
+      }
+
+      console.log('Platform breakdown data fetched:', spendData?.length);
 
       if (!spendData) return [];
 
@@ -40,6 +49,8 @@ const PlatformBreakdown = () => {
         color: colors[index % colors.length]
       }));
     },
+    // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   const CustomTooltip = ({ active, payload }: any) => {

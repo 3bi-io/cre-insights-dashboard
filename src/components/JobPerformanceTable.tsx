@@ -8,22 +8,33 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 
 const JobPerformanceTable = () => {
-  const { data: jobData = [], isLoading } = useQuery({
+  const { data: jobData = [], isLoading, refetch } = useQuery({
     queryKey: ['job-performance'],
     queryFn: async () => {
+      console.log('Fetching job performance data...');
+      
       // Get job listings with their spend and application data
-      const { data: jobs } = await supabase
+      const { data: jobs, error } = await supabase
         .from('job_listings')
         .select(`
           id,
           title,
+          job_title,
           status,
+          client,
           platforms!inner(name),
           clients(name),
           daily_spend(amount),
           applications(id)
         `)
-        .limit(5);
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching job performance:', error);
+        throw error;
+      }
+
+      console.log('Job performance data fetched:', jobs?.length);
 
       if (!jobs) return [];
 
@@ -37,9 +48,9 @@ const JobPerformanceTable = () => {
 
         return {
           id: job.id,
-          title: job.title,
-          platform: job.platforms.name === 'Indeed' ? 'X' : job.platforms.name,
-          client: job.clients?.name || 'Unknown',
+          title: job.title || job.job_title || 'Untitled Job',
+          platform: job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name || 'Unknown',
+          client: job.clients?.name || job.client || 'Unknown',
           spend: totalSpend,
           applications: applicationCount,
           costPerApp,
@@ -48,6 +59,8 @@ const JobPerformanceTable = () => {
         };
       });
     },
+    // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   if (isLoading) {

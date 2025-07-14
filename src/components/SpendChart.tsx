@@ -1,18 +1,20 @@
 
 import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, LineChart } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 const SpendChart = () => {
-  const { data: spendData = [], isLoading } = useQuery({
+  const { data: spendData = [], isLoading, refetch } = useQuery({
     queryKey: ['spend-chart'],
     queryFn: async () => {
+      console.log('Fetching spend chart data...');
+      
       // Get daily spend data for the last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data: dailySpend } = await supabase
+      const { data: dailySpend, error } = await supabase
         .from('daily_spend')
         .select(`
           date,
@@ -23,6 +25,13 @@ const SpendChart = () => {
         `)
         .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
         .order('date');
+
+      if (error) {
+        console.error('Error fetching spend chart data:', error);
+        throw error;
+      }
+
+      console.log('Spend chart data fetched:', dailySpend?.length);
 
       if (!dailySpend) return [];
 
@@ -42,8 +51,10 @@ const SpendChart = () => {
         return acc;
       }, {});
 
-      return Object.values(groupedData).slice(-10); // Last 10 data points
+      return Object.values(groupedData).slice(-14); // Last 14 data points
     },
+    // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   if (isLoading) {

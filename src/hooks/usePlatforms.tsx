@@ -6,14 +6,22 @@ export const usePlatforms = () => {
   const { data: platforms, isLoading, refetch } = useQuery({
     queryKey: ['platforms'],
     queryFn: async () => {
+      console.log('Fetching platforms...');
       const { data, error } = await supabase
         .from('platforms')
         .select('*')
         .order('name', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching platforms:', error);
+        throw error;
+      }
+      
+      console.log('Platforms fetched:', data?.length);
       return data;
     },
+    // Refresh every 30 seconds to stay in sync
+    refetchInterval: 30000,
   });
 
   return {
