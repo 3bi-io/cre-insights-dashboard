@@ -22,6 +22,7 @@ const Jobs = () => {
     jobListings,
     filteredJobs,
     isLoading,
+    error,
     refetch,
     routeFilter,
     hasRouteFilter,
@@ -40,6 +41,27 @@ const Jobs = () => {
   const handleViewAnalytics = (job: any) => {
     setSelectedJobForAnalytics(job);
   };
+
+  // Show error state if there's an error
+  if (error) {
+    console.error('Jobs page error:', error);
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Error Loading Jobs</h1>
+          <p className="text-muted-foreground mb-4">
+            There was an error loading your job listings: {error.message}
+          </p>
+          <button 
+            onClick={() => refetch()} 
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
