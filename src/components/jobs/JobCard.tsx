@@ -43,6 +43,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
   const displayTitle = job.title || job.job_title || 'Untitled Job';
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
+  const displayDescription = job.description || job.job_description;
 
   return (
     <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
@@ -96,6 +97,12 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
             </span>
           )}
         </div>
+
+        {displayDescription && (
+          <div className="text-sm text-gray-600 break-words">
+            <p className="line-clamp-3">{displayDescription}</p>
+          </div>
+        )}
         
         {displayLocation && (
           <div className="flex items-start gap-2 text-sm text-gray-600">

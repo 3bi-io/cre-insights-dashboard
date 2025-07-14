@@ -227,6 +227,7 @@ const JobTable: React.FC<JobTableProps> = ({
               {sortedJobs.map((job) => {
                 const displayTitle = job.title || job.job_title || 'Untitled Job';
                 const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : 'Not specified');
+                const displayDescription = job.description || job.job_description;
                 const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
                 
                 return (
@@ -237,6 +238,11 @@ const JobTable: React.FC<JobTableProps> = ({
                         {(job.clients?.name || job.client) && (
                           <div className="text-sm text-muted-foreground truncate">
                             {job.clients?.name || job.client}
+                          </div>
+                        )}
+                        {displayDescription && (
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2 max-w-[200px]">
+                            {displayDescription}
                           </div>
                         )}
                       </div>
