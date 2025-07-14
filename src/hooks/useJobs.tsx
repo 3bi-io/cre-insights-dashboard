@@ -23,35 +23,25 @@ export const useJobs = () => {
     queryFn: async () => {
       console.log('Fetching job listings...');
       
-      try {
-        const { data, error, count } = await supabase
-          .from('job_listings')
-          .select(`
-            *,
-            platforms:platform_id(name),
-            job_categories:category_id(name),
-            clients:client_id(name)
-          `, { count: 'exact' })
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('Error fetching job listings:', error);
-          throw error;
-        }
-        
-        console.log('Job listings fetched successfully:', {
-          count: data?.length || 0,
-          totalCount: count,
-          firstJob: data?.[0]
-        });
-        
-        return data || [];
-      } catch (err) {
-        console.error('Failed to fetch job listings:', err);
-        throw err;
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select(`
+          *,
+          platforms:platform_id(name),
+          job_categories:category_id(name),
+          clients:client_id(name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching job listings:', error);
+        throw error;
       }
+      
+      console.log('Job listings fetched successfully:', data?.length || 0);
+      return data || [];
     },
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
   });
 
@@ -83,15 +73,6 @@ export const useJobs = () => {
   const clearRouteFilter = () => {
     setSearchParams({});
   };
-
-  // Log for debugging
-  console.log('useJobs state:', {
-    isLoading,
-    error,
-    jobListingsCount: jobListings?.length || 0,
-    filteredJobsCount: filteredJobs?.length || 0,
-    hasRouteFilter
-  });
 
   return {
     searchTerm,

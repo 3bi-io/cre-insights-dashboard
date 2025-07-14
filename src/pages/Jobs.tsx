@@ -1,33 +1,61 @@
 
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useJobs } from '@/hooks/useJobs';
-
-import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
-import JobsHeader from '@/components/jobs/JobsHeader';
-import JobsSearch from '@/components/jobs/JobsSearch';
-import RouteFilter from '@/components/jobs/RouteFilter';
-import JobGrid from '@/components/jobs/JobGrid';
-import JobTable from '@/components/jobs/JobTable';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus } from 'lucide-react';
+import CsvUpload from '@/components/CsvUpload';
 
 const Jobs = () => {
+  const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedJobForAnalytics, setSelectedJobForAnalytics] = useState(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const { toast } = useToast();
 
-  const {
-    searchTerm,
-    setSearchTerm,
-    jobListings,
-    filteredJobs,
-    isLoading,
-    error,
-    refetch,
-    routeFilter,
-    hasRouteFilter,
-    clearRouteFilter
-  } = useJobs();
+  const { data: jobListings, isLoading, error, refetch } = useQuery({
+    queryKey: ['job-listings'],
+    queryFn: async () => {
+      console.log('Fetching job listings...');
+      
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select(`
+          *,
+          platforms:platform_id(name),
+          job_categories:category_id(name),
+          clients:client_id(name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching job listings:', error);
+        throw error;
+      }
+      
+      console.log('Job listings fetched:', data?.length || 0);
+      return data || [];
+    },
+  });
+
+  const filteredJobs = jobListings?.filter(job => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      job.title?.toLowerCase().includes(searchLower) ||
+      job.job_title?.toLowerCase().includes(searchLower) ||
+      job.location?.toLowerCase().includes(searchLower) ||
+      job.city?.toLowerCase().includes(searchLower) ||
+      job.state?.toLowerCase().includes(searchLower) ||
+      job.platforms?.name?.toLowerCase().includes(searchLower) ||
+      job.job_categories?.name?.toLowerCase().includes(searchLower) ||
+      job.clients?.name?.toLowerCase().includes(searchLower)
+    );
+  });
 
   const handleUploadSuccess = () => {
     setShowUploadDialog(false);
@@ -38,26 +66,45 @@ const Jobs = () => {
     });
   };
 
-  const handleViewAnalytics = (job: any) => {
-    setSelectedJobForAnalytics(job);
+  const formatSalary = (min: number | null, max: number | null, type: string | null) => {
+    if (!min && !max) return null;
+    
+    const formatAmount = (amount: number) => {
+      if (type === 'hourly') return `$${amount}/hr`;
+      if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
+      return `$${amount.toLocaleString()}`;
+    };
+
+    if (min && max) {
+      return `${formatAmount(min)} - ${formatAmount(max)}`;
+    }
+    return formatAmount(min || max || 0);
   };
 
-  // Show error state if there's an error
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'paused':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (error) {
-    console.error('Jobs page error:', error);
     return (
-      <div className="p-4 sm:p-6">
+      <div className="p-6">
         <div className="text-center py-12">
           <h1 className="text-2xl font-bold mb-4">Error Loading Jobs</h1>
           <p className="text-muted-foreground mb-4">
             There was an error loading your job listings: {error.message}
           </p>
-          <button 
-            onClick={() => refetch()} 
-            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
-          >
+          <Button onClick={() => refetch()}>
             Try Again
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -65,11 +112,11 @@ const Jobs = () => {
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:p-6">
+      <div className="p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4 min-w-[200px]"></div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {[...Array(8)].map((_, i) => (
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="h-48 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
@@ -79,51 +126,128 @@ const Jobs = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      <JobsHeader
-        filteredJobsCount={filteredJobs?.length || 0}
-        totalJobsCount={jobListings?.length || 0}
-        hasRouteFilter={hasRouteFilter}
-        showUploadDialog={showUploadDialog}
-        onShowUploadDialog={setShowUploadDialog}
-        onUploadSuccess={handleUploadSuccess}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Job Listings</h1>
+          <p className="text-muted-foreground mt-1">
+            {filteredJobs?.length || 0} of {jobListings?.length || 0} listings
+          </p>
+        </div>
+        
+        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Upload CSV
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Upload Job Listings</DialogTitle>
+            </DialogHeader>
+            <CsvUpload onSuccess={handleUploadSuccess} />
+          </DialogContent>
+        </Dialog>
+      </div>
 
-      {hasRouteFilter && (
-        <RouteFilter
-          routeFilter={routeFilter}
-          onClearFilter={clearRouteFilter}
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Input
+          placeholder="Search jobs by title, location, platform..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
         />
-      )}
+      </div>
 
-      <JobsSearch
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
-
-      {viewMode === 'grid' ? (
-        <JobGrid
-          jobs={filteredJobs}
-          onViewAnalytics={handleViewAnalytics}
-          onShowUploadDialog={() => setShowUploadDialog(true)}
-        />
+      {/* Jobs Grid */}
+      {!filteredJobs || filteredJobs.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">No job listings found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchTerm ? 'Try adjusting your search terms.' : 'Get started by uploading a CSV file with your job listings.'}
+            </p>
+            {!searchTerm && (
+              <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                Upload CSV
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       ) : (
-        <JobTable
-          jobs={filteredJobs}
-          onViewAnalytics={handleViewAnalytics}
-          onShowUploadDialog={() => setShowUploadDialog(true)}
-        />
-      )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredJobs.map((job) => {
+            const displayTitle = job.title || job.job_title || 'Untitled Job';
+            const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
+            const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
+            
+            return (
+              <Card key={job.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-lg leading-tight">{displayTitle}</CardTitle>
+                    <Badge className={getStatusColor(job.status || 'active')}>
+                      {job.status || 'active'}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {job.platforms?.name} • {job.job_categories?.name}
+                  </div>
+                  {job.job_id && (
+                    <div className="text-xs text-muted-foreground font-mono">
+                      ID: {job.job_id}
+                    </div>
+                  )}
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  {(job.clients?.name || job.client) && (
+                    <div className="text-sm font-medium text-primary">
+                      {job.clients?.name || job.client}
+                    </div>
+                  )}
+                  
+                  {displayLocation && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="w-4 h-4" />
+                      <span>{displayLocation}</span>
+                    </div>
+                  )}
 
-      {/* Analytics Dialog */}
-      {selectedJobForAnalytics && (
-        <JobAnalyticsDialog
-          job={selectedJobForAnalytics}
-          open={!!selectedJobForAnalytics}
-          onOpenChange={(open) => !open && setSelectedJobForAnalytics(null)}
-        />
+                  {salary && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <DollarSign className="w-4 h-4" />
+                      <span>{salary}</span>
+                    </div>
+                  )}
+
+                  {job.dest_city && job.dest_state && (
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-medium">Destination:</span> {job.dest_city}, {job.dest_state}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(job.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <Button variant="outline" size="sm" className="w-full mt-3">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Details
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
