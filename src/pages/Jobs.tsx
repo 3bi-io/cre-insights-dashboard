@@ -6,12 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw } from 'lucide-react';
+import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import CsvUpload from '@/components/CsvUpload';
+import JobTable from '@/components/jobs/JobTable';
+
+type ViewMode = 'grid' | 'table';
 
 const Jobs = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { toast } = useToast();
   
   const {
@@ -31,6 +35,11 @@ const Jobs = () => {
       title: "Success",
       description: "Jobs uploaded successfully",
     });
+  };
+
+  const handleViewAnalytics = (job: any) => {
+    console.log('View analytics for job:', job);
+    // TODO: Implement analytics view
   };
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
@@ -127,102 +136,139 @@ const Jobs = () => {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          placeholder="Search jobs by title, location, platform..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and View Selector */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search jobs by title, location, platform..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className="flex items-center gap-2"
+          >
+            <Grid3X3 className="w-4 h-4" />
+            Grid
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="flex items-center gap-2"
+          >
+            <Table className="w-4 h-4" />
+            Table
+          </Button>
+        </div>
       </div>
 
-      {/* Jobs Grid */}
-      {!filteredJobs || filteredJobs.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium mb-2">No job listings found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'Try adjusting your search terms.' : 'Get started by uploading a CSV file with your job listings.'}
-            </p>
-            {!searchTerm && (
-              <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
-                Upload CSV
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+      {/* Content based on view mode */}
+      {viewMode === 'table' ? (
+        <JobTable 
+          jobs={filteredJobs}
+          onViewAnalytics={handleViewAnalytics}
+          onShowUploadDialog={() => setShowUploadDialog(true)}
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredJobs.map((job) => {
-            const displayTitle = job.title || job.job_title || 'Untitled Job';
-            const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
-            const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-            
-            return (
-              <Card key={job.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg leading-tight">{displayTitle}</CardTitle>
-                    <Badge className={getStatusColor(job.status || 'active')}>
-                      {job.status || 'active'}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {job.platforms?.name} • {job.job_categories?.name}
-                  </div>
-                  {job.job_id && (
-                    <div className="text-xs text-muted-foreground font-mono">
-                      ID: {job.job_id}
+        /* Jobs Grid */
+        !filteredJobs || filteredJobs.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium mb-2">No job listings found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? 'Try adjusting your search terms.' : 'Get started by uploading a CSV file with your job listings.'}
+              </p>
+              {!searchTerm && (
+                <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
+                  Upload CSV
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredJobs.map((job) => {
+              const displayTitle = job.title || job.job_title || 'Untitled Job';
+              const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
+              const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
+              
+              return (
+                <Card key={job.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-lg leading-tight">{displayTitle}</CardTitle>
+                      <Badge className={getStatusColor(job.status || 'active')}>
+                        {job.status || 'active'}
+                      </Badge>
                     </div>
-                  )}
-                </CardHeader>
-                
-                <CardContent className="space-y-3">
-                  {(job.clients?.name || job.client) && (
-                    <div className="text-sm font-medium text-primary">
-                      {job.clients?.name || job.client}
-                    </div>
-                  )}
-                  
-                  {displayLocation && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      <span>{displayLocation}</span>
-                    </div>
-                  )}
-
-                  {salary && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <DollarSign className="w-4 h-4" />
-                      <span>{salary}</span>
-                    </div>
-                  )}
-
-                  {job.dest_city && job.dest_state && (
                     <div className="text-sm text-muted-foreground">
-                      <span className="font-medium">Destination:</span> {job.dest_city}, {job.dest_state}
+                      {job.platforms?.name} • {job.job_categories?.name}
                     </div>
-                  )}
+                    {job.job_id && (
+                      <div className="text-xs text-muted-foreground font-mono">
+                        ID: {job.job_id}
+                      </div>
+                    )}
+                  </CardHeader>
                   
-                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(job.created_at).toLocaleDateString()}
+                  <CardContent className="space-y-3">
+                    {(job.clients?.name || job.client) && (
+                      <div className="text-sm font-medium text-primary">
+                        {job.clients?.name || job.client}
+                      </div>
+                    )}
+                    
+                    {displayLocation && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        <span>{displayLocation}</span>
+                      </div>
+                    )}
+
+                    {salary && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <DollarSign className="w-4 h-4" />
+                        <span>{salary}</span>
+                      </div>
+                    )}
+
+                    {job.dest_city && job.dest_state && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Destination:</span> {job.dest_city}, {job.dest_state}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {new Date(job.created_at).toLocaleDateString()}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <Button variant="outline" size="sm" className="w-full mt-3">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-3"
+                      onClick={() => handleViewAnalytics(job)}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )
       )}
     </div>
   );
