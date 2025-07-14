@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign } from 'lucide-react';
 
 interface JobTableProps {
   jobs: any[] | undefined;
@@ -13,7 +13,7 @@ interface JobTableProps {
   onShowUploadDialog: () => void;
 }
 
-type SortField = 'title' | 'job_id' | 'platform' | 'category' | 'location' | 'status' | 'created_at';
+type SortField = 'title' | 'job_id' | 'platform' | 'category' | 'location' | 'status' | 'created_at' | 'salary';
 type SortDirection = 'asc' | 'desc';
 
 const JobTable: React.FC<JobTableProps> = ({ 
@@ -37,19 +37,19 @@ const JobTable: React.FC<JobTableProps> = ({
     }
   };
 
-  const getJobIdFromLocation = (location: string) => {
-    const locationJobIdMap: { [key: string]: number } = {
-      'Joliet, IL': 371,
-      'Ridgefield, OR': 338,
-      'Cowpens, SC': 590,
-      'Warrensburg, MO': 361,
-      'Memphis, TN': 882,
-      'Oklahoma City, OK': 141,
-      'St George, UT': 328,
-      'Denver, CO': 911
-    };
+  const formatSalary = (min: number | null, max: number | null, type: string | null) => {
+    if (!min && !max) return 'Not specified';
     
-    return locationJobIdMap[location] || null;
+    const formatAmount = (amount: number) => {
+      if (type === 'hourly') return `$${amount}/hr`;
+      if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
+      return `$${amount.toLocaleString()}`;
+    };
+
+    if (min && max) {
+      return `${formatAmount(min)} - ${formatAmount(max)}`;
+    }
+    return formatAmount(min || max || 0);
   };
 
   const handleSort = (field: SortField) => {
@@ -74,12 +74,12 @@ const JobTable: React.FC<JobTableProps> = ({
 
     switch (sortField) {
       case 'title':
-        aValue = a.title?.toLowerCase() || '';
-        bValue = b.title?.toLowerCase() || '';
+        aValue = (a.title || a.job_title || '').toLowerCase();
+        bValue = (b.title || b.job_title || '').toLowerCase();
         break;
       case 'job_id':
-        aValue = a.job_id || getJobIdFromLocation(a.location) || 0;
-        bValue = b.job_id || getJobIdFromLocation(b.location) || 0;
+        aValue = a.job_id || '';
+        bValue = b.job_id || '';
         break;
       case 'platform':
         aValue = a.platforms?.name?.toLowerCase() || '';
@@ -90,12 +90,16 @@ const JobTable: React.FC<JobTableProps> = ({
         bValue = b.job_categories?.name?.toLowerCase() || '';
         break;
       case 'location':
-        aValue = a.location?.toLowerCase() || '';
-        bValue = b.location?.toLowerCase() || '';
+        aValue = (a.location || (a.city && a.state ? `${a.city}, ${a.state}` : '')).toLowerCase();
+        bValue = (b.location || (b.city && b.state ? `${b.city}, ${b.state}` : '')).toLowerCase();
         break;
       case 'status':
-        aValue = a.status?.toLowerCase() || '';
-        bValue = b.status?.toLowerCase() || '';
+        aValue = (a.status || 'active').toLowerCase();
+        bValue = (b.status || 'active').toLowerCase();
+        break;
+      case 'salary':
+        aValue = a.salary_min || a.salary_max || 0;
+        bValue = b.salary_min || b.salary_max || 0;
         break;
       case 'created_at':
         aValue = new Date(a.created_at);
@@ -190,6 +194,16 @@ const JobTable: React.FC<JobTableProps> = ({
                   <Button 
                     variant="ghost" 
                     className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('salary')}
+                  >
+                    Salary
+                    {getSortIcon('salary')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
                     onClick={() => handleSort('status')}
                   >
                     Status
@@ -211,42 +225,52 @@ const JobTable: React.FC<JobTableProps> = ({
             </TableHeader>
             <TableBody>
               {sortedJobs.map((job) => {
-                const jobId = job.job_id || getJobIdFromLocation(job.location);
+                const displayTitle = job.title || job.job_title || 'Untitled Job';
+                const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : 'Not specified');
+                const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
                 
                 return (
                   <TableRow key={job.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
                       <div className="min-w-0">
-                        <div className="font-medium text-foreground truncate">{job.title}</div>
-                        {job.client && (
-                          <div className="text-sm text-muted-foreground truncate">{job.client}</div>
+                        <div className="font-medium text-foreground truncate">{displayTitle}</div>
+                        {(job.clients?.name || job.client) && (
+                          <div className="text-sm text-muted-foreground truncate">
+                            {job.clients?.name || job.client}
+                          </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <span className="text-muted-foreground font-mono text-sm">
-                        {jobId || 'N/A'}
+                        {job.job_id || 'N/A'}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span className="text-muted-foreground">
-                        {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name}
+                        {job.platforms?.name || 'Unknown'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-muted-foreground">{job.job_categories?.name}</span>
+                      <span className="text-muted-foreground">
+                        {job.job_categories?.name || 'Uncategorized'}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      {job.location && (
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate max-w-[150px]">{job.location}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate max-w-[150px]">{displayLocation}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(job.status)}>
-                        {job.status}
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <DollarSign className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate text-sm">{salary}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(job.status || 'active')}>
+                        {job.status || 'active'}
                       </Badge>
                     </TableCell>
                     <TableCell>

@@ -38,19 +38,24 @@ export const useJobs = () => {
       }
       
       console.log('Job listings fetched:', data?.length);
+      console.log('Sample job data:', data?.[0]);
       return data;
     },
   });
 
   const filteredJobs = jobListings?.filter(job => {
     // Apply text search filter
-    const matchesSearch = job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.state?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.clients?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.client?.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      job.title?.toLowerCase().includes(searchLower) ||
+      job.job_title?.toLowerCase().includes(searchLower) ||
+      job.location?.toLowerCase().includes(searchLower) ||
+      job.city?.toLowerCase().includes(searchLower) ||
+      job.state?.toLowerCase().includes(searchLower) ||
+      job.clients?.name?.toLowerCase().includes(searchLower) ||
+      job.client?.toLowerCase().includes(searchLower) ||
+      job.platforms?.name?.toLowerCase().includes(searchLower) ||
+      job.job_categories?.name?.toLowerCase().includes(searchLower);
     
     // Apply route filter if present
     const matchesRoute = !hasRouteFilter || (

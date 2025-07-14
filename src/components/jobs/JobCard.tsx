@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, MapPin, Eye, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, MapPin, Eye, Edit, Trash2, DollarSign, Clock } from 'lucide-react';
 
 interface JobCardProps {
   job: any;
@@ -25,36 +25,38 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
     }
   };
 
-  const getJobIdFromLocation = (location: string) => {
-    const locationJobIdMap: { [key: string]: number } = {
-      'Joliet, IL': 371,
-      'Ridgefield, OR': 338,
-      'Cowpens, SC': 590,
-      'Warrensburg, MO': 361,
-      'Memphis, TN': 882,
-      'Oklahoma City, OK': 141,
-      'St George, UT': 328,
-      'Denver, CO': 911
-    };
+  const formatSalary = (min: number | null, max: number | null, type: string | null) => {
+    if (!min && !max) return null;
     
-    return locationJobIdMap[location] || null;
+    const formatAmount = (amount: number) => {
+      if (type === 'hourly') return `$${amount}/hr`;
+      if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
+      return `$${amount.toLocaleString()}`;
+    };
+
+    if (min && max) {
+      return `${formatAmount(min)} - ${formatAmount(max)}`;
+    }
+    return formatAmount(min || max || 0);
   };
 
-  const jobId = job.job_id || getJobIdFromLocation(job.location);
+  const displayTitle = job.title || job.job_title || 'Untitled Job';
+  const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
+  const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
 
   return (
     <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
       <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg leading-tight break-words">{job.title}</CardTitle>
+            <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
             <div className="text-sm text-gray-600 mt-1 space-y-1">
               <p className="break-words">
-                {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name} • {job.job_categories?.name}
+                {job.platforms?.name} • {job.job_categories?.name}
               </p>
-              {jobId && (
+              {job.job_id && (
                 <p className="font-mono text-xs text-muted-foreground">
-                  ID: {jobId}
+                  ID: {job.job_id}
                 </p>
               )}
             </div>
@@ -85,25 +87,41 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
       </CardHeader>
       <CardContent className="space-y-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between">
-          <Badge className={getStatusColor(job.status)}>
-            {job.status}
+          <Badge className={getStatusColor(job.status || 'active')}>
+            {job.status || 'active'}
           </Badge>
-          {job.clients?.name && (
+          {(job.clients?.name || job.client) && (
             <span className="text-sm font-medium text-primary">
-              {job.clients.name}
+              {job.clients?.name || job.client}
             </span>
           )}
         </div>
         
-        {job.location && (
+        {displayLocation && (
           <div className="flex items-start gap-2 text-sm text-gray-600">
             <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span className="break-words">{job.location}</span>
+            <span className="break-words">{displayLocation}</span>
+          </div>
+        )}
+
+        {salary && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <DollarSign className="w-4 h-4 flex-shrink-0" />
+            <span>{salary}</span>
+          </div>
+        )}
+
+        {job.dest_city && job.dest_state && (
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">Destination:</span> {job.dest_city}, {job.dest_state}
           </div>
         )}
         
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-gray-500 mt-auto">
-          <span>Created {new Date(job.created_at).toLocaleDateString()}</span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Created {new Date(job.created_at).toLocaleDateString()}
+          </span>
         </div>
         
         <div className="pt-2 mt-auto">
