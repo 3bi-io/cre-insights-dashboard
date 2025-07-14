@@ -23,6 +23,15 @@ export const useJobs = () => {
     queryFn: async () => {
       console.log('Fetching job listings...');
       
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user?.id);
+      
+      if (!user) {
+        console.log('No authenticated user found');
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('job_listings')
         .select(`
@@ -39,6 +48,7 @@ export const useJobs = () => {
       }
       
       console.log('Job listings fetched successfully:', data?.length || 0);
+      console.log('Sample job listing:', data?.[0]);
       return data || [];
     },
     retry: 2,

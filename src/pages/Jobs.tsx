@@ -1,61 +1,28 @@
 
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus } from 'lucide-react';
+import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw } from 'lucide-react';
+import { useJobs } from '@/hooks/useJobs';
 import CsvUpload from '@/components/CsvUpload';
 
 const Jobs = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const { toast } = useToast();
-
-  const { data: jobListings, isLoading, error, refetch } = useQuery({
-    queryKey: ['job-listings'],
-    queryFn: async () => {
-      console.log('Fetching job listings...');
-      
-      const { data, error } = await supabase
-        .from('job_listings')
-        .select(`
-          *,
-          platforms:platform_id(name),
-          job_categories:category_id(name),
-          clients:client_id(name)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching job listings:', error);
-        throw error;
-      }
-      
-      console.log('Job listings fetched:', data?.length || 0);
-      return data || [];
-    },
-  });
-
-  const filteredJobs = jobListings?.filter(job => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      job.title?.toLowerCase().includes(searchLower) ||
-      job.job_title?.toLowerCase().includes(searchLower) ||
-      job.location?.toLowerCase().includes(searchLower) ||
-      job.city?.toLowerCase().includes(searchLower) ||
-      job.state?.toLowerCase().includes(searchLower) ||
-      job.platforms?.name?.toLowerCase().includes(searchLower) ||
-      job.job_categories?.name?.toLowerCase().includes(searchLower) ||
-      job.clients?.name?.toLowerCase().includes(searchLower)
-    );
-  });
+  
+  const {
+    searchTerm,
+    setSearchTerm,
+    jobListings,
+    filteredJobs,
+    isLoading,
+    error,
+    refetch
+  } = useJobs();
 
   const handleUploadSuccess = () => {
     setShowUploadDialog(false);
@@ -95,14 +62,17 @@ const Jobs = () => {
   };
 
   if (error) {
+    console.error('Jobs page error:', error);
     return (
       <div className="p-6">
         <div className="text-center py-12">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
           <h1 className="text-2xl font-bold mb-4">Error Loading Jobs</h1>
           <p className="text-muted-foreground mb-4">
-            There was an error loading your job listings: {error.message}
+            {error instanceof Error ? error.message : 'There was an error loading your job listings'}
           </p>
-          <Button onClick={() => refetch()}>
+          <Button onClick={() => refetch()} className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
             Try Again
           </Button>
         </div>
@@ -134,6 +104,11 @@ const Jobs = () => {
           <p className="text-muted-foreground mt-1">
             {filteredJobs?.length || 0} of {jobListings?.length || 0} listings
           </p>
+          {jobListings?.length === 0 && (
+            <p className="text-sm text-orange-600 mt-1">
+              No job listings found. You may need to upload some jobs or check your authentication.
+            </p>
+          )}
         </div>
         
         <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
