@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table } from 'lucide-react';
+import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table, X } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import CsvUpload from '@/components/CsvUpload';
 import JobTable from '@/components/jobs/JobTable';
@@ -25,7 +25,10 @@ const Jobs = () => {
     filteredJobs,
     isLoading,
     error,
-    refetch
+    refetch,
+    clientFilter,
+    hasClientFilter,
+    clearClientFilter
   } = useJobs();
 
   const handleUploadSuccess = () => {
@@ -112,6 +115,9 @@ const Jobs = () => {
           <h1 className="text-3xl font-bold">Job Listings</h1>
           <p className="text-muted-foreground mt-1">
             {filteredJobs?.length || 0} of {jobListings?.length || 0} listings
+            {hasClientFilter && (
+              <span className="ml-2">for {clientFilter}</span>
+            )}
           </p>
           {jobListings?.length === 0 && (
             <p className="text-sm text-orange-600 mt-1">
@@ -135,6 +141,23 @@ const Jobs = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Client Filter Badge */}
+      {hasClientFilter && (
+        <div className="mb-4">
+          <Badge variant="secondary" className="flex items-center gap-2 w-fit">
+            Filtered by client: {clientFilter}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto p-0 ml-1 hover:bg-destructive hover:text-destructive-foreground"
+              onClick={clearClientFilter}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </Badge>
+        </div>
+      )}
 
       {/* Search and View Selector */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -185,9 +208,9 @@ const Jobs = () => {
               <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium mb-2">No job listings found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? 'Try adjusting your search terms.' : 'Get started by uploading a CSV file with your job listings.'}
+                {searchTerm || hasClientFilter ? 'Try adjusting your search terms or filters.' : 'Get started by uploading a CSV file with your job listings.'}
               </p>
-              {!searchTerm && (
+              {!searchTerm && !hasClientFilter && (
                 <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
                   Upload CSV
                 </Button>

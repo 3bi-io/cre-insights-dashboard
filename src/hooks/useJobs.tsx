@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,18 @@ export const useJobs = () => {
     dest_state: searchParams.get('dest_state')
   };
 
+  // Get client filter from URL
+  const clientFilter = searchParams.get('client');
+
   const hasRouteFilter = Object.values(routeFilter).some(value => value !== null);
+  const hasClientFilter = Boolean(clientFilter);
+
+  // Set search term based on client filter
+  useEffect(() => {
+    if (clientFilter && !searchTerm) {
+      setSearchTerm(clientFilter);
+    }
+  }, [clientFilter, searchTerm]);
 
   const { data: jobListings, isLoading, refetch, error } = useQuery({
     queryKey: ['job-listings'],
@@ -86,6 +97,13 @@ export const useJobs = () => {
     setSearchParams({});
   };
 
+  const clearClientFilter = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('client');
+    setSearchParams(newParams);
+    setSearchTerm('');
+  };
+
   return {
     searchTerm,
     setSearchTerm,
@@ -96,6 +114,9 @@ export const useJobs = () => {
     refetch,
     routeFilter,
     hasRouteFilter,
-    clearRouteFilter
+    clearRouteFilter,
+    clientFilter,
+    hasClientFilter,
+    clearClientFilter
   };
 };

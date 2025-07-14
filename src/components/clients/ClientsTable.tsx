@@ -1,9 +1,11 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Mail, Phone, Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Mail, Phone, Building, Eye } from 'lucide-react';
 
 interface Client {
   id: string;
@@ -25,7 +27,19 @@ interface ClientsTableProps {
   clients: Client[];
 }
 
+interface ConsolidatedClient {
+  name: string;
+  locations: string[];
+  totalLocations: number;
+  status: string;
+  latestDate: string;
+  emails: string[];
+  phones: string[];
+}
+
 const ClientsTable = ({ clients }: ClientsTableProps) => {
+  const navigate = useNavigate();
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -37,6 +51,63 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Consolidate clients by name
+  const consolidatedClients = React.useMemo(() => {
+    const clientMap = new Map<string, ConsolidatedClient>();
+
+    clients.forEach(client => {
+      const key = client.name;
+      
+      if (!clientMap.has(key)) {
+        clientMap.set(key, {
+          name: client.name,
+          locations: [],
+          totalLocations: 0,
+          status: client.status,
+          latestDate: client.created_at,
+          emails: [],
+          phones: []
+        });
+      }
+
+      const consolidated = clientMap.get(key)!;
+      
+      // Add location if not already present
+      if (client.city && client.state) {
+        const location = `${client.city}, ${client.state}`;
+        if (!consolidated.locations.includes(location)) {
+          consolidated.locations.push(location);
+        }
+      }
+      
+      // Add email if not already present
+      if (client.email && !consolidated.emails.includes(client.email)) {
+        consolidated.emails.push(client.email);
+      }
+      
+      // Add phone if not already present
+      if (client.phone && !consolidated.phones.includes(client.phone)) {
+        consolidated.phones.push(client.phone);
+      }
+      
+      // Update latest date
+      if (new Date(client.created_at) > new Date(consolidated.latestDate)) {
+        consolidated.latestDate = client.created_at;
+      }
+      
+      consolidated.totalLocations++;
+    });
+
+    return Array.from(clientMap.values()).sort((a, b) => 
+      new Date(b.latestDate).getTime() - new Date(a.latestDate).getTime()
+    );
+  }, [clients]);
+
+  const handleViewJobs = (clientName: string) => {
+    // Navigate to jobs page with client filter
+    navigate(`/dashboard/jobs?client=${encodeURIComponent(clientName)}`);
   };
 
   if (clients.length === 0) {
@@ -61,59 +132,61 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Client Name</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Company</TableHead>
+                <TableHead>Locations</TableHead>
+                <TableHead>Contact Info</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>Latest Activity</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
-                <TableRow key={client.id} className="hover:bg-muted/50">
+              {consolidatedClients.map((client) => (
+                <TableRow key={client.name} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
                       <span className="font-medium text-foreground">{client.name}</span>
-                      {client.notes && (
-                        <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                          {client.notes}
+                      {client.totalLocations > 1 && (
+                        <span className="text-sm text-muted-foreground">
+                          {client.totalLocations} locations
                         </span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      {client.email && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Mail className="w-3 h-3" />
-                          <span className="truncate max-w-[150px]">{client.email}</span>
+                      {client.locations.slice(0, 3).map((location, index) => (
+                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate max-w-[200px]">{location}</span>
                         </div>
-                      )}
-                      {client.phone && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Phone className="w-3 h-3" />
-                          <span>{client.phone}</span>
-                        </div>
+                      ))}
+                      {client.locations.length > 3 && (
+                        <span className="text-xs text-muted-foreground ml-4">
+                          +{client.locations.length - 3} more
+                        </span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {(client.city || client.state) && (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MapPin className="w-3 h-3" />
-                        <span>
-                          {[client.city, client.state].filter(Boolean).join(', ')}
+                    <div className="flex flex-col gap-1">
+                      {client.emails.slice(0, 2).map((email, index) => (
+                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Mail className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate max-w-[150px]">{email}</span>
+                        </div>
+                      ))}
+                      {client.phones.slice(0, 2).map((phone, index) => (
+                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Phone className="w-3 h-3 flex-shrink-0" />
+                          <span>{phone}</span>
+                        </div>
+                      ))}
+                      {(client.emails.length > 2 || client.phones.length > 2) && (
+                        <span className="text-xs text-muted-foreground">
+                          +{Math.max(0, client.emails.length - 2) + Math.max(0, client.phones.length - 2)} more
                         </span>
-                      </div>
-                    )}
-                    {client.address && (
-                      <div className="text-xs text-muted-foreground mt-1 truncate max-w-[150px]">
-                        {client.address}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-muted-foreground">{client.company || '-'}</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(client.status)}>
@@ -122,8 +195,19 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
-                      {new Date(client.created_at).toLocaleDateString()}
+                      {new Date(client.latestDate).toLocaleDateString()}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewJobs(client.name)}
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Jobs
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
