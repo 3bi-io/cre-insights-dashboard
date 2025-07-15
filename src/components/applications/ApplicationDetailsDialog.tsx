@@ -45,6 +45,10 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
     }
   };
 
+  const getClientName = (app: any) => {
+    return app.job_listings?.clients?.name || app.job_listings?.client || null;
+  };
+
   const customFields = application.custom_fields && typeof application.custom_fields === 'object' 
     ? application.custom_fields as any 
     : {};
@@ -126,17 +130,29 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
               <Briefcase className="w-4 h-4" />
               Job Information
             </h3>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Position</label>
                 <p className="text-sm">
                   {application.job_listings?.title || application.job_listings?.job_title || 'No job title provided'}
                 </p>
               </div>
-              {application.job_listings?.platforms?.name && (
+              {getClientName(application) && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Platform</label>
-                  <p className="text-sm">{application.job_listings.platforms.name}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Client</label>
+                  <p className="text-sm">{getClientName(application)}</p>
+                </div>
+              )}
+              {application.job_id && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">External Job ID</label>
+                  <p className="text-sm font-mono text-xs">{application.job_id}</p>
+                </div>
+              )}
+              {application.job_listing_id && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Internal Job Listing ID</label>
+                  <p className="text-sm font-mono text-xs">{application.job_listing_id}</p>
                 </div>
               )}
               {application.source && (
@@ -193,12 +209,6 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
                   }) : 'Not provided'}
                 </p>
               </div>
-              {application.job_listing_id && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Job Listing ID</label>
-                  <p className="text-sm font-mono text-xs">{application.job_listing_id}</p>
-                </div>
-              )}
             </div>
           </div>
 
