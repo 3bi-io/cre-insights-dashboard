@@ -8,7 +8,8 @@ const corsHeaders = {
 };
 
 interface MagicLinkRequest {
-  email: string;
+  email?: string;
+  bulkSend?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,8 +24,104 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { email }: MagicLinkRequest = await req.json();
-    console.log("Sending magic link to:", email);
+    const { email, bulkSend }: MagicLinkRequest = await req.json();
+    console.log("Magic link request:", { email, bulkSend });
+
+    // Handle bulk send for all users
+    if (bulkSend) {
+      // Get all profiles to send magic links to
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .not("email", "is", null);
+
+      if (profileError) {
+        throw new Error(`Error fetching profiles: ${profileError.message}`);
+      }
+
+      if (!profiles || profiles.length === 0) {
+        throw new Error("No users found to send magic links to");
+      }
+
+      const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+      let sentCount = 0;
+      const errors: string[] = [];
+
+      for (const profile of profiles) {
+        try {
+          // Generate magic link for each user
+          const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: profile.email,
+            options: {
+              redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('auwhcdpppldjlcaxzsme.supabase.co', 'cf22d483-762d-45c7-a42c-85b40ce9290a.lovableproject.com')}/dashboard`
+            }
+          });
+
+          if (authError) {
+            errors.push(`Error generating link for ${profile.email}: ${authError.message}`);
+            continue;
+          }
+
+          // Send email
+          await resend.emails.send({
+            from: "Admin Portal <onboarding@resend.dev>",
+            to: [profile.email],
+            subject: "Magic Link Login Access",
+            html: `
+              <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+                <h1 style="color: #333; text-align: center;">Access Your Account</h1>
+                <p>Hello,</p>
+                <p>You have been granted access to the admin portal. Click the button below to log in:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${authData.properties?.action_link}" 
+                     style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                    Log In to Portal
+                  </a>
+                </div>
+                <p style="color: #666; font-size: 14px;">
+                  This link will expire in 1 hour. If you didn't expect this email, please ignore it.
+                </p>
+                <p style="color: #666; font-size: 14px;">
+                  Or copy and paste this link in your browser:<br>
+                  <a href="${authData.properties?.action_link}">${authData.properties?.action_link}</a>
+                </p>
+              </div>
+            `,
+          });
+
+          sentCount++;
+        } catch (error: any) {
+          errors.push(`Error sending to ${profile.email}: ${error.message}`);
+        }
+      }
+
+      console.log(`Bulk magic links sent: ${sentCount} successful, ${errors.length} errors`);
+      if (errors.length > 0) {
+        console.error("Errors:", errors);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Magic links sent to ${sentCount} users`,
+          sentCount,
+          errors: errors.length > 0 ? errors : undefined
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
+
+    // Handle single email send
+    if (!email) {
+      throw new Error("Email is required for single send");
+    }
 
     // Check if user exists and is an admin
     const { data: userRoles, error: roleError } = await supabase
@@ -62,7 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('auwhcdpppldjlcaxzsme.supabase.co', window.location?.origin || 'localhost:8080')}/dashboard`
+        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('auwhcdpppldjlcaxzsme.supabase.co', 'cf22d483-762d-45c7-a42c-85b40ce9290a.lovableproject.com')}/dashboard`
       }
     });
 

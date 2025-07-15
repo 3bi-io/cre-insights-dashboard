@@ -3,14 +3,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Send } from 'lucide-react';
+import { Mail, Send, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export const AdminMagicLinkSection = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  const isSuperAdmin = user?.email === 'c@3bi.io';
 
   const handleSendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +61,47 @@ export const AdminMagicLinkSection = () => {
     }
   };
 
+  const handleSendBulkMagicLinks = async () => {
+    if (!isSuperAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "Only c@3bi.io can send bulk magic links.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBulkLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-magic-link', {
+        body: { bulkSend: true }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        toast({
+          title: "Bulk Magic Links Sent",
+          description: `Magic links have been sent to ${data.sentCount || 0} users`,
+        });
+      } else {
+        throw new Error(data?.error || 'Failed to send bulk magic links');
+      }
+    } catch (error: any) {
+      console.error('Error sending bulk magic links:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send bulk magic links. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkLoading(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -65,6 +111,7 @@ export const AdminMagicLinkSection = () => {
         </CardTitle>
         <CardDescription>
           Send a magic link to an administrator for secure login access.
+          {isSuperAdmin && " As super admin, you can also send magic links to all users."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,6 +141,25 @@ export const AdminMagicLinkSection = () => {
               </>
             )}
           </Button>
+          
+          {isSuperAdmin && (
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={handleSendBulkMagicLinks}
+              disabled={isBulkLoading}
+              className="w-full"
+            >
+              {isBulkLoading ? (
+                "Sending to all users..."
+              ) : (
+                <>
+                  <Users className="h-4 w-4 mr-2" />
+                  Send Magic Links to All Users
+                </>
+              )}
+            </Button>
+          )}
         </form>
       </CardContent>
     </Card>
