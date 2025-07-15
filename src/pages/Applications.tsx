@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,28 +28,26 @@ const Applications = () => {
     },
   });
 
-  const filteredApplications = applications?.filter(app =>
-    app.applicant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.applicant_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.job_listings?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-blue-100 text-blue-800';
-      case 'reviewed':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'interviewed':
-        return 'bg-purple-100 text-purple-800';
-      case 'hired':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const getApplicantName = (app: any) => {
+    if (app.first_name && app.last_name) {
+      return `${app.first_name} ${app.last_name}`;
+    } else if (app.first_name) {
+      return app.first_name;
+    } else if (app.last_name) {
+      return app.last_name;
     }
+    return 'Anonymous Applicant';
   };
+
+  const filteredApplications = applications?.filter(app => {
+    const applicantName = getApplicantName(app);
+    return (
+      applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.applicant_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.job_listings?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   const statusCounts = applications?.reduce((acc, app) => {
     acc[app.status] = (acc[app.status] || 0) + 1;
@@ -145,14 +142,14 @@ const Applications = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-medium text-gray-900">
-                            {application.applicant_name || 'Anonymous Applicant'}
+                            {getApplicantName(application)}
                           </h3>
                           <Badge className={getStatusColor(application.status)}>
                             {application.status}
                           </Badge>
                         </div>
                         <p className="text-gray-600 mb-1">
-                          {application.applicant_email}
+                          {application.applicant_email || application.email}
                         </p>
                         <p className="text-sm text-gray-500 mb-2">
                           Applied for: <span className="font-medium">{application.job_listings?.title}</span>
@@ -195,6 +192,23 @@ const Applications = () => {
       </Tabs>
     </div>
   );
+
+  function getStatusColor(status: string) {
+    switch (status) {
+      case 'pending':
+        return 'bg-blue-100 text-blue-800';
+      case 'reviewed':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'interviewed':
+        return 'bg-purple-100 text-purple-800';
+      case 'hired':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  }
 };
 
 export default Applications;
