@@ -19,7 +19,7 @@ export type Database = {
           applicant_email: string | null
           applied_at: string | null
           created_at: string | null
-          custom_fields: Json | null
+          custom_fields: string | null
           first_name: string | null
           full_name: string | null
           id: string
@@ -35,7 +35,7 @@ export type Database = {
           applicant_email?: string | null
           applied_at?: string | null
           created_at?: string | null
-          custom_fields?: Json | null
+          custom_fields?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
@@ -51,7 +51,7 @@ export type Database = {
           applicant_email?: string | null
           applied_at?: string | null
           created_at?: string | null
-          custom_fields?: Json | null
+          custom_fields?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string

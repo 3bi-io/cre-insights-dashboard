@@ -264,17 +264,10 @@ const handler = async (req: Request): Promise<Response> => {
         .join(' ');
     }
 
-    // Prepare custom fields to store additional data
-    const customFields: any = {};
-    
-    // If we have a job identifier that's not a valid UUID, store it in custom fields
+    // Store external job ID directly as string if not a valid UUID
+    let customFieldValue = null;
     if (jobIdentifier && !isValidUUID(jobIdentifier)) {
-      customFields.external_job_id = jobIdentifier;
-    }
-    
-    // Store job title if provided
-    if (applicationData.job_title) {
-      customFields.job_title = applicationData.job_title;
+      customFieldValue = jobIdentifier;
     }
 
     // Prepare final application data for insertion
@@ -286,7 +279,7 @@ const handler = async (req: Request): Promise<Response> => {
       phone: applicationData.phone,
       source: applicationData.source,
       status: applicationData.status,
-      custom_fields: Object.keys(customFields).length > 0 ? customFields : {},
+      custom_fields: customFieldValue,
       applied_at: new Date().toISOString()
     };
 
