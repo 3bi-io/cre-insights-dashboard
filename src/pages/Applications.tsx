@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +20,7 @@ const Applications = () => {
         .from('applications')
         .select(`
           *,
-          job_listings:job_listing_id(title, platforms:platform_id(name))
+          job_listings:job_listing_id(title, job_title, platforms:platform_id(name))
         `)
         .order('applied_at', { ascending: false });
       
@@ -29,7 +30,10 @@ const Applications = () => {
   });
 
   const getApplicantName = (app: any) => {
-    if (app.first_name && app.last_name) {
+    // Try full_name first, then construct from first/last name
+    if (app.full_name) {
+      return app.full_name;
+    } else if (app.first_name && app.last_name) {
       return `${app.first_name} ${app.last_name}`;
     } else if (app.first_name) {
       return app.first_name;
@@ -39,13 +43,19 @@ const Applications = () => {
     return 'Anonymous Applicant';
   };
 
+  const getApplicantEmail = (app: any) => {
+    return app.applicant_email || app.email || 'No email provided';
+  };
+
   const filteredApplications = applications?.filter(app => {
     const applicantName = getApplicantName(app);
+    const applicantEmail = getApplicantEmail(app);
+    const jobTitle = app.job_listings?.title || app.job_listings?.job_title || '';
+    
     return (
       applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.applicant_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.job_listings?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+      applicantEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
@@ -59,8 +69,8 @@ const Applications = () => {
       <div className="p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
               <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
@@ -149,10 +159,12 @@ const Applications = () => {
                           </Badge>
                         </div>
                         <p className="text-gray-600 mb-1">
-                          {application.applicant_email || application.email}
+                          {getApplicantEmail(application)}
                         </p>
                         <p className="text-sm text-gray-500 mb-2">
-                          Applied for: <span className="font-medium">{application.job_listings?.title}</span>
+                          Applied for: <span className="font-medium">
+                            {application.job_listings?.title || application.job_listings?.job_title}
+                          </span>
                           {application.job_listings?.platforms?.name && (
                             <span> via {application.job_listings.platforms.name}</span>
                           )}

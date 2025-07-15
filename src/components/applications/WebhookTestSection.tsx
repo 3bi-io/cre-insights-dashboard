@@ -21,24 +21,26 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
     return {
       job_listing_id: jobId,
       job_title: jobTitle,
-      applicant_name: "John Doe",
       first_name: "John",
       last_name: "Doe",
+      full_name: "John Doe",
       applicant_email: "john.doe@example.com",
       email: "john.doe@example.com",
+      phone: "(555) 123-4567",
       source: "LinkedIn",
       status: "pending"
     };
   };
 
   const generateZapierStylePayload = (jobId: string, jobTitle: string) => {
-    // This mimics how Zapier might send data with numbered field names
     return {
       "301909100__job_listing_id": jobId,
       "301909100__job_title": jobTitle,
       "301909100__email": "jane.smith@example.com",
       "301909100__first_name": "Jane",
       "301909100__last_name": "Smith",
+      "301909100__full_name": "Jane Smith",
+      "301909100__phone": "(555) 987-6543",
       "301909100__source": "Zapier Form"
     };
   };
@@ -146,7 +148,10 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No job listings available for testing</p>
+            <div className="text-center py-4">
+              <p className="text-gray-500 mb-2">No job listings available for testing</p>
+              <p className="text-sm text-green-600">✅ Don't worry! The webhook will create job listings automatically if they don't exist.</p>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -159,7 +164,7 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
         <CardContent className="space-y-4">
           <textarea
             className="w-full h-32 p-3 border rounded-lg font-mono text-sm"
-            placeholder="Enter your custom JSON test data here..."
+            placeholder='Enter your custom JSON test data here...'
             value={testData}
             onChange={(e) => setTestData(e.target.value)}
           />
@@ -220,14 +225,15 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
                 <li>• email, applicant_email, email_address</li>
                 <li>• first_name, firstName, fname</li>
                 <li>• last_name, lastName, lname</li>
-                <li>• applicant_name, name, full_name</li>
+                <li>• full_name, applicant_name, name</li>
+                <li>• phone, phone_number</li>
               </ul>
             </div>
           </div>
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>Tip:</strong> The webhook now supports multiple field name variations, 
-              so it should work with most Zapier field mappings automatically.
+              <strong>Enhanced Support:</strong> The new applications table now supports more flexible field mapping 
+              including full_name, phone numbers, and additional URLs for resumes and portfolios.
             </p>
           </div>
         </CardContent>
