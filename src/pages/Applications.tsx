@@ -8,9 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail, Mic } from 'lucide-react';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
-import VoiceAgentTab from '@/components/applications/VoiceAgentTab';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -157,15 +156,11 @@ const Applications = () => {
       </div>
 
       <Tabs defaultValue="applications" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="webhook-setup" className="flex items-center gap-2">
             <Webhook className="w-4 h-4" />
             Zapier Integration
-          </TabsTrigger>
-          <TabsTrigger value="voice-agent" className="flex items-center gap-2">
-            <Mic className="w-4 h-4" />
-            Voice Agent
           </TabsTrigger>
         </TabsList>
 
@@ -312,10 +307,6 @@ const Applications = () => {
 
         <TabsContent value="webhook-setup">
           <ZapierWebhookSetup />
-        </TabsContent>
-
-        <TabsContent value="voice-agent">
-          <VoiceAgentTab />
         </TabsContent>
       </Tabs>
     </div>
