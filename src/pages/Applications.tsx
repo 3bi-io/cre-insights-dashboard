@@ -152,7 +152,7 @@ const Applications = () => {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-medium text-gray-900">
+                          <h3 className="text-lg font-medium text-white">
                             {getApplicantName(application)}
                           </h3>
                           <Badge className={getStatusColor(application.status)}>
