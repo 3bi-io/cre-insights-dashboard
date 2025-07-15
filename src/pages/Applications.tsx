@@ -192,14 +192,16 @@ const Applications = () => {
                             </p>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 mb-2">
-                          Applied for: <span className="font-medium">
-                            {application.job_listings?.title || application.job_listings?.job_title}
-                          </span>
-                          {application.job_listings?.platforms?.name && (
-                            <span> via {application.job_listings.platforms.name}</span>
-                          )}
-                        </p>
+                         <p className="text-sm text-gray-500 mb-2">
+                           Applied for: <span className="font-medium">
+                             {application.job_listings?.title || 
+                              application.job_listings?.job_title || 
+                              (application.job_id ? `Job ID: ${application.job_id}` : 'Unknown Position')}
+                           </span>
+                           {application.job_listings?.platforms?.name && (
+                             <span> via {application.job_listings.platforms.name}</span>
+                           )}
+                         </p>
                         <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
