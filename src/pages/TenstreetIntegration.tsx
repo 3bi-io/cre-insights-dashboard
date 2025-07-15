@@ -23,7 +23,9 @@ const TenstreetIntegration = () => {
     mode: 'PROD',
     source: 'TheDriverBoardLead',
     companyId: '1300',
-    companyName: 'C.R. England'
+    companyName: 'C.R. England',
+    jobId: '',
+    statusTag: 'Status=New Applicant'
   });
 
   // Field Mappings
@@ -270,12 +272,30 @@ const TenstreetIntegration = () => {
                     onChange={(e) => setConfig({...config, companyId: e.target.value})}
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <Label htmlFor="companyName">Company Name</Label>
                   <Input
                     id="companyName"
                     value={config.companyName}
                     onChange={(e) => setConfig({...config, companyName: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="jobId">Job ID (Optional)</Label>
+                  <Input
+                    id="jobId"
+                    value={config.jobId}
+                    onChange={(e) => setConfig({...config, jobId: e.target.value})}
+                    placeholder="1234"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="statusTag">Status Tag</Label>
+                  <Input
+                    id="statusTag"
+                    value={config.statusTag}
+                    onChange={(e) => setConfig({...config, statusTag: e.target.value})}
+                    placeholder="Status=New Applicant"
                   />
                 </div>
               </div>

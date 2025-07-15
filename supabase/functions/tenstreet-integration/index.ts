@@ -189,6 +189,18 @@ function buildTenstreetXML(applicationData: any, mappings: any, config: any): st
         </DisplayField>`)
     .join('')
 
+  // Build optional Job section
+  const jobXML = config.jobId ? `
+    <Job>
+        <JobId>${config.jobId}</JobId>
+    </Job>` : ''
+
+  // Build optional Tags section
+  const tagsXML = config.statusTag ? `
+    <Tags>
+        <Tag>${config.statusTag}</Tag>
+    </Tags>` : ''
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
@@ -200,7 +212,7 @@ function buildTenstreetXML(applicationData: any, mappings: any, config: any): st
     <Mode>${config.mode}</Mode>
     <Source>${config.source}</Source>
     <CompanyId>${config.companyId}</CompanyId>
-    <CompanyName>${config.companyName}</CompanyName>
+    <CompanyName>${config.companyName}</CompanyName>${jobXML}${tagsXML}
 
     <PersonalData>
         <PersonName>
