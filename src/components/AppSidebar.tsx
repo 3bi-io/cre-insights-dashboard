@@ -11,7 +11,8 @@ import {
   LogOut,
   Building,
   MapPin,
-  Megaphone
+  Megaphone,
+  Link
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const AppSidebar = () => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
+    { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
     { path: '/dashboard/platforms', label: 'Platforms', icon: Megaphone },
     { path: '/dashboard/clients', label: 'Clients', icon: Building },

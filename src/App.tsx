@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Jobs from "./pages/Jobs";
 import Applications from "./pages/Applications";
+import TenstreetIntegration from "./pages/TenstreetIntegration";
 import RoutesPage from "./pages/Routes";
 import Platforms from "./pages/Platforms";
 import Clients from "./pages/Clients";
@@ -40,6 +41,7 @@ const App = () => (
                 <Route index element={<Index />} />
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="applications" element={<Applications />} />
+                <Route path="tenstreet" element={<TenstreetIntegration />} />
                 <Route path="routes" element={<RoutesPage />} />
                 <Route path="platforms" element={<Platforms />} />
                 <Route path="clients" element={<Clients />} />
