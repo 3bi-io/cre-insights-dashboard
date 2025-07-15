@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreHorizontal, Globe, Edit, Trash2, Settings } from 'lucide-react';
+import { MoreHorizontal, Globe, Edit, Trash2, Settings, MessageCircle, Activity } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PlatformSetupDialog from './PlatformSetupDialog';
+import XPlatformActions from './XPlatformActions';
 
 interface Platform {
   id: string;
@@ -87,35 +88,54 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
             <tbody>
               {platforms.map((platform) => (
                 <tr key={platform.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      {platform.logo_url ? (
-                        <img 
-                          src={platform.logo_url} 
-                          alt={platform.name}
-                          className="w-8 h-8 rounded-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Globe className="w-4 h-4 text-primary" />
-                        </div>
-                      )}
-                      <span className="font-medium text-foreground">{platform.name}</span>
-                    </div>
-                  </td>
+                   <td className="py-4 px-4">
+                     <div className="flex items-center gap-3">
+                       {platform.logo_url ? (
+                         <img 
+                           src={platform.logo_url} 
+                           alt={platform.name}
+                           className="w-8 h-8 rounded-full object-cover"
+                           onError={(e) => {
+                             (e.target as HTMLImageElement).style.display = 'none';
+                           }}
+                         />
+                       ) : (
+                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                           {platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter') ? (
+                             <MessageCircle className="w-4 h-4 text-blue-500" />
+                           ) : (
+                             <Globe className="w-4 h-4 text-primary" />
+                           )}
+                         </div>
+                       )}
+                       <div className="flex flex-col">
+                         <span className="font-medium text-foreground">{platform.name}</span>
+                         {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && (
+                           <div className="flex items-center gap-1 mt-1">
+                             <Activity className="w-3 h-3 text-blue-500" />
+                             <span className="text-xs text-blue-600 dark:text-blue-400">Enhanced Integration</span>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   </td>
                   <td className="py-4 px-4">
                     <span className="text-muted-foreground font-mono text-sm">
                       {platform.api_endpoint || 'Not configured'}
                     </span>
                   </td>
-                  <td className="py-4 px-4">
-                    <Badge variant={platform.api_endpoint ? 'default' : 'secondary'}>
-                      {platform.api_endpoint ? 'Configured' : 'Setup Required'}
-                    </Badge>
-                  </td>
+                   <td className="py-4 px-4">
+                     <div className="flex flex-col gap-1">
+                       <Badge variant={platform.api_endpoint ? 'default' : 'secondary'}>
+                         {platform.api_endpoint ? 'Configured' : 'Setup Required'}
+                       </Badge>
+                       {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && platform.api_endpoint && (
+                         <Badge variant="outline" className="text-xs">
+                           API Ready
+                         </Badge>
+                       )}
+                     </div>
+                   </td>
                   <td className="py-4 px-4">
                     <span className="text-muted-foreground text-sm">
                       {new Date(platform.created_at).toLocaleDateString()}
@@ -161,6 +181,17 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
         platform={setupPlatform}
         onSuccess={handleSetupSuccess}
       />
+      
+      {platforms && platforms.some(p => 
+        (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint
+      ) && (
+        <XPlatformActions 
+          platform={platforms.find(p => 
+            (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint
+          )!}
+          onRefresh={onRefresh}
+        />
+      )}
     </>
   );
 };

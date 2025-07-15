@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Zap } from 'lucide-react';
 import AddPlatformDialog from './AddPlatformDialog';
 
 interface PlatformsHeaderProps {
@@ -9,23 +10,37 @@ interface PlatformsHeaderProps {
   showAddDialog: boolean;
   onShowAddDialog: (show: boolean) => void;
   onAddSuccess: () => void;
+  platforms?: Array<{ name: string; api_endpoint: string | null; }>;
 }
 
 const PlatformsHeader: React.FC<PlatformsHeaderProps> = ({
   platformsCount,
   showAddDialog,
   onShowAddDialog,
-  onAddSuccess
+  onAddSuccess,
+  platforms = []
 }) => {
+  const xPlatformConfigured = platforms.some(p => 
+    (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint
+  );
   return (
     <div className="flex flex-col gap-4 mb-6 sm:mb-8">
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
-            Advertising Platforms
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
+              Advertising Platforms
+            </h1>
+            {xPlatformConfigured && (
+              <Badge variant="outline" className="hidden sm:flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                X API Active
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Manage your advertising platforms • {platformsCount} platforms
+            {xPlatformConfigured && ' • Enhanced X integration enabled'}
           </p>
         </div>
         

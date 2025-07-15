@@ -42,6 +42,7 @@ const Platforms = () => {
         showAddDialog={showAddDialog}
         onShowAddDialog={setShowAddDialog}
         onAddSuccess={handleAddSuccess}
+        platforms={platforms}
       />
 
       <PlatformsTable
