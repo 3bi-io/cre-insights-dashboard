@@ -227,34 +227,6 @@ const Jobs = () => {
               const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
               const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
               
-              const formatSalary = (min: number | null, max: number | null, type: string | null) => {
-                if (!min && !max) return null;
-                
-                const formatAmount = (amount: number) => {
-                  if (type === 'hourly') return `$${amount}/hr`;
-                  if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
-                  return `$${amount.toLocaleString()}`;
-                };
-
-                if (min && max) {
-                  return `${formatAmount(min)} - ${formatAmount(max)}`;
-                }
-                return formatAmount(min || max || 0);
-              };
-
-              const getStatusColor = (status: string) => {
-                switch (status) {
-                  case 'active':
-                    return 'bg-green-100 text-green-800';
-                  case 'paused':
-                    return 'bg-yellow-100 text-yellow-800';
-                  case 'completed':
-                    return 'bg-gray-100 text-gray-800';
-                  default:
-                    return 'bg-gray-100 text-gray-800';
-                }
-              };
-              
               return (
                 <Card key={job.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">

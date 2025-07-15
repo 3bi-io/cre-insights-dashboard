@@ -208,20 +208,22 @@ export type Database = {
       }
       job_listings: {
         Row: {
+          apply_url: string | null
           budget: number | null
           category_id: string
           city: string | null
           client: string | null
           client_id: string | null
           created_at: string
-          description: string | null
           dest_city: string | null
           dest_state: string | null
           experience_level: string | null
           id: string
           job_description: string | null
           job_id: string | null
+          job_summary: string | null
           job_title: string | null
+          job_type: string | null
           location: string | null
           platform_id: string
           radius: number | null
@@ -237,20 +239,22 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          apply_url?: string | null
           budget?: number | null
           category_id: string
           city?: string | null
           client?: string | null
           client_id?: string | null
           created_at?: string
-          description?: string | null
           dest_city?: string | null
           dest_state?: string | null
           experience_level?: string | null
           id?: string
           job_description?: string | null
           job_id?: string | null
+          job_summary?: string | null
           job_title?: string | null
+          job_type?: string | null
           location?: string | null
           platform_id: string
           radius?: number | null
@@ -266,20 +270,22 @@ export type Database = {
           user_id: string
         }
         Update: {
+          apply_url?: string | null
           budget?: number | null
           category_id?: string
           city?: string | null
           client?: string | null
           client_id?: string | null
           created_at?: string
-          description?: string | null
           dest_city?: string | null
           dest_state?: string | null
           experience_level?: string | null
           id?: string
           job_description?: string | null
           job_id?: string | null
+          job_summary?: string | null
           job_title?: string | null
+          job_type?: string | null
           location?: string | null
           platform_id?: string
           radius?: number | null
