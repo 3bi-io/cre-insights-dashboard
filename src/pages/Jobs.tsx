@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -10,12 +9,15 @@ import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, Refr
 import { useJobs } from '@/hooks/useJobs';
 import CsvUpload from '@/components/CsvUpload';
 import JobTable from '@/components/jobs/JobTable';
+import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
 
 type ViewMode = 'grid' | 'table';
 
 const Jobs = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const { toast } = useToast();
   
   const {
@@ -41,8 +43,9 @@ const Jobs = () => {
   };
 
   const handleViewAnalytics = (job: any) => {
-    console.log('View analytics for job:', job);
-    // TODO: Implement analytics view
+    console.log('Opening analytics for job:', job);
+    setSelectedJob(job);
+    setShowAnalyticsDialog(true);
   };
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
@@ -224,6 +227,34 @@ const Jobs = () => {
               const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
               const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
               
+              const formatSalary = (min: number | null, max: number | null, type: string | null) => {
+                if (!min && !max) return null;
+                
+                const formatAmount = (amount: number) => {
+                  if (type === 'hourly') return `$${amount}/hr`;
+                  if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
+                  return `$${amount.toLocaleString()}`;
+                };
+
+                if (min && max) {
+                  return `${formatAmount(min)} - ${formatAmount(max)}`;
+                }
+                return formatAmount(min || max || 0);
+              };
+
+              const getStatusColor = (status: string) => {
+                switch (status) {
+                  case 'active':
+                    return 'bg-green-100 text-green-800';
+                  case 'paused':
+                    return 'bg-yellow-100 text-yellow-800';
+                  case 'completed':
+                    return 'bg-gray-100 text-gray-800';
+                  default:
+                    return 'bg-gray-100 text-gray-800';
+                }
+              };
+              
               return (
                 <Card key={job.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
@@ -292,6 +323,15 @@ const Jobs = () => {
             })}
           </div>
         )
+      )}
+
+      {/* Analytics Dialog */}
+      {selectedJob && (
+        <JobAnalyticsDialog
+          job={selectedJob}
+          open={showAnalyticsDialog}
+          onOpenChange={setShowAnalyticsDialog}
+        />
       )}
     </div>
   );
