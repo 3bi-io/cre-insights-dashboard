@@ -19,6 +19,16 @@ interface ZapierApplicationData {
   email?: string;
 }
 
+// Helper function to safely extract value from multiple possible field names
+const extractValue = (data: any, fieldNames: string[]): string | undefined => {
+  for (const fieldName of fieldNames) {
+    if (data[fieldName] && typeof data[fieldName] === 'string' && data[fieldName].trim()) {
+      return data[fieldName].trim();
+    }
+  }
+  return undefined;
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log('Zapier webhook received:', req.method);
 
@@ -38,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Initialize Supabase client with service role key since this is a public function
+    // Initialize Supabase client with service role key
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -49,6 +59,7 @@ const handler = async (req: Request): Promise<Response> => {
     const contentType = req.headers.get('content-type') || '';
     
     console.log('Content-Type:', contentType);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
     if (contentType.includes('application/json')) {
       body = await req.json();
@@ -79,35 +90,90 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log('Parsed webhook data:', body);
+    console.log('Parsed webhook data:', JSON.stringify(body, null, 2));
 
-    // Extract application data from Zapier payload with more flexible field mapping
+    // More flexible field extraction with multiple possible field names
     const applicationData: ZapierApplicationData = {
-      job_listing_id: body.job_listing_id || body.jobListingId || body.job_id,
-      job_title: body.job_title || body.jobTitle || body.title,
-      applicant_name: body.applicant_name || body.applicantName || body.name || body.full_name,
-      first_name: body.first_name || body.firstName || body.applicant_first_name,
-      last_name: body.last_name || body.lastName || body.applicant_last_name,
-      applicant_email: body.applicant_email || body.applicantEmail || body.email,
-      email: body.email || body.applicant_email || body.applicantEmail,
-      source: body.source || 'Zapier',
-      status: body.status || 'pending'
+      job_listing_id: extractValue(body, [
+        'job_listing_id', 'jobListingId', 'job_id', 'jobId', 'listing_id'
+      ]),
+      job_title: extractValue(body, [
+        'job_title', 'jobTitle', 'title', 'job_name', 'position', 'role'
+      ]),
+      applicant_name: extractValue(body, [
+        'applicant_name', 'applicantName', 'name', 'full_name', 'fullName', 'candidate_name'
+      ]),
+      first_name: extractValue(body, [
+        'first_name', 'firstName', 'applicant_first_name', 'fname', 'given_name'
+      ]),
+      last_name: extractValue(body, [
+        'last_name', 'lastName', 'applicant_last_name', 'lname', 'family_name', 'surname'
+      ]),
+      applicant_email: extractValue(body, [
+        'applicant_email', 'applicantEmail', 'email', 'email_address', 'emailAddress', 'candidate_email'
+      ]),
+      email: extractValue(body, [
+        'email', 'email_address', 'emailAddress', 'applicant_email', 'applicantEmail', 'candidate_email'
+      ]),
+      source: extractValue(body, [
+        'source', 'platform', 'origin', 'referrer', 'channel'
+      ]) || 'Zapier',
+      status: extractValue(body, [
+        'status', 'application_status', 'state', 'stage'
+      ]) || 'pending'
     };
 
-    console.log('Processed application data:', applicationData);
+    console.log('Processed application data:', JSON.stringify(applicationData, null, 2));
+
+    // Validate that we have essential data
+    if (!applicationData.job_listing_id && !applicationData.job_title) {
+      console.error('Missing required job identification');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required job information',
+          message: 'Either job_listing_id or job_title is required',
+          received_fields: Object.keys(body),
+          help: 'Please provide either a job_listing_id or job_title field in your webhook data'
+        }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+
+    if (!applicationData.applicant_email && !applicationData.email) {
+      console.error('Missing required email');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required email',
+          message: 'Applicant email is required',
+          received_fields: Object.keys(body),
+          help: 'Please provide an email field in your webhook data'
+        }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
 
     let jobListing = null;
 
     // Try to find job listing by ID first, then by title
     if (applicationData.job_listing_id) {
+      console.log('Searching for job by ID:', applicationData.job_listing_id);
       const { data, error } = await supabase
         .from('job_listings')
-        .select('id, title')
+        .select('id, title, job_title')
         .eq('id', applicationData.job_listing_id)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         jobListing = data;
+        console.log('Found job listing by ID:', jobListing);
+      } else if (error) {
+        console.log('Error searching by ID:', error);
       }
     }
 
@@ -117,22 +183,25 @@ const handler = async (req: Request): Promise<Response> => {
       
       const { data, error } = await supabase
         .from('job_listings')
-        .select('id, title')
-        .ilike('title', `%${applicationData.job_title}%`)
+        .select('id, title, job_title')
+        .or(`title.ilike.%${applicationData.job_title}%,job_title.ilike.%${applicationData.job_title}%`)
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         jobListing = data;
         console.log('Found job listing by title:', jobListing);
+      } else if (error) {
+        console.log('Error searching by title:', error);
       }
     }
 
     // If still no job listing found, get available listings for debugging
     if (!jobListing) {
+      console.log('No job listing found, fetching available listings for debug');
       const { data: allJobListings } = await supabase
         .from('job_listings')
-        .select('id, title')
+        .select('id, title, job_title')
         .limit(10);
 
       console.log('Available job listings:', allJobListings);
@@ -140,11 +209,17 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'Job listing not found',
+          message: 'Could not find a matching job listing',
           provided_job_id: applicationData.job_listing_id,
           provided_job_title: applicationData.job_title,
-          available_listings: allJobListings || [],
+          available_listings: allJobListings?.map(job => ({
+            id: job.id,
+            title: job.title || job.job_title,
+            matches_title: job.title || job.job_title
+          })) || [],
           help: 'Please verify the job_listing_id exists or provide a job_title that matches an existing job listing. Check the available listings above.',
-          received_data: body
+          received_data: body,
+          all_received_fields: Object.keys(body)
         }),
         { 
           status: 404,
@@ -153,19 +228,27 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Build applicant name from available fields
+    let applicantName = applicationData.applicant_name;
+    if (!applicantName && (applicationData.first_name || applicationData.last_name)) {
+      applicantName = [applicationData.first_name, applicationData.last_name]
+        .filter(Boolean)
+        .join(' ');
+    }
+
     // Prepare final application data for insertion
     const finalApplicationData = {
       job_listing_id: jobListing.id,
       applicant_email: applicationData.applicant_email || applicationData.email,
-      first_name: applicationData.first_name,
-      last_name: applicationData.last_name || applicationData.applicant_name,
+      first_name: applicationData.first_name || (applicantName ? applicantName.split(' ')[0] : null),
+      last_name: applicationData.last_name || (applicantName && applicantName.includes(' ') ? applicantName.split(' ').slice(1).join(' ') : null),
       email: applicationData.email || applicationData.applicant_email,
       source: applicationData.source,
       status: applicationData.status,
       applied_at: new Date().toISOString()
     };
 
-    console.log('Final application data for insertion:', finalApplicationData);
+    console.log('Final application data for insertion:', JSON.stringify(finalApplicationData, null, 2));
 
     // Insert the application into the database
     const { data: application, error: insertError } = await supabase
@@ -179,7 +262,8 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ 
           error: 'Failed to create application',
-          details: insertError.message,
+          message: insertError.message,
+          details: insertError.details || insertError.hint,
           application_data: finalApplicationData
         }),
         { 
@@ -195,8 +279,17 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true,
         message: 'Application created successfully',
-        application: application,
-        job_listing: jobListing
+        application: {
+          id: application.id,
+          job_listing_id: application.job_listing_id,
+          applicant_email: application.applicant_email || application.email,
+          status: application.status,
+          applied_at: application.applied_at
+        },
+        job_listing: {
+          id: jobListing.id,
+          title: jobListing.title || jobListing.job_title
+        }
       }),
       { 
         status: 201,
@@ -209,7 +302,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message
+        message: error.message,
+        stack: error.stack
       }),
       { 
         status: 500,

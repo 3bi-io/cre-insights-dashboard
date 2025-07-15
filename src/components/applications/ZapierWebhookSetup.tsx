@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Copy, ExternalLink, CheckCircle, AlertCircle, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import WebhookTestSection from './WebhookTestSection';
 
 const ZapierWebhookSetup = () => {
-  const [testData, setTestData] = useState('');
-  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const { toast } = useToast();
 
   const webhookUrl = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/zapier-webhook`;
@@ -47,101 +46,49 @@ const ZapierWebhookSetup = () => {
     }
   };
 
-  const testWebhook = async () => {
-    if (!testData.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter test data first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsTestingWebhook(true);
-    try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: testData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Success!",
-          description: "Webhook test successful - application created",
-        });
-      } else {
-        toast({
-          title: "Webhook Error",
-          description: result.error || "Failed to process webhook",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Network Error",
-        description: "Failed to connect to webhook endpoint",
-        variant: "destructive",
-      });
-    } finally {
-      setIsTestingWebhook(false);
-    }
-  };
-
-  const generateSamplePayload = (jobId: string, jobTitle: string) => {
-    return {
-      job_listing_id: jobId,
-      job_title: jobTitle,
-      applicant_name: "John Doe",
-      first_name: "John",
-      last_name: "Doe",
-      applicant_email: "john.doe@example.com",
-      email: "john.doe@example.com",
-      source: "LinkedIn",
-      status: "pending"
-    };
-  };
-
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ExternalLink className="w-5 h-5" />
-          Zapier Webhook Integration
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <h3 className="text-lg font-medium">Webhook URL</h3>
-          <div className="flex gap-2">
-            <Input 
-              value={webhookUrl}
-              readOnly
-              className="font-mono text-sm"
-            />
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => copyToClipboard(webhookUrl)}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
+    <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Webhook URL */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ExternalLink className="w-5 h-5" />
+            Zapier Webhook Integration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Webhook URL</h3>
+            <div className="flex gap-2">
+              <Input 
+                value={webhookUrl}
+                readOnly
+                className="font-mono text-sm"
+              />
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => copyToClipboard(webhookUrl)}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Use this URL as your webhook endpoint in Zapier
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Use this URL as your webhook endpoint in Zapier
-          </p>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Available Job Listings */}
-        <div className="space-y-3">
-          <h3 className="text-lg font-medium flex items-center gap-2">
+      {/* Available Job Listings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <List className="w-5 h-5" />
             Available Job Listings
-          </h3>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
             {jobListings && jobListings.length > 0 ? (
               <div className="space-y-3">
@@ -156,19 +103,6 @@ const ZapierWebhookSetup = () => {
                           ID: {job.id}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const payload = generateSamplePayload(
-                            job.id, 
-                            job.title || job.job_title || 'Untitled Job'
-                          );
-                          setTestData(JSON.stringify(payload, null, 2));
-                        }}
-                      >
-                        Use This Job
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -177,14 +111,16 @@ const ZapierWebhookSetup = () => {
               <p className="text-gray-500">No job listings found. Create some job listings first.</p>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            Click "Use This Job" to generate test data with the correct job ID
-          </p>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-3">
-          <h3 className="text-lg font-medium">Setup Instructions</h3>
-          <div className="space-y-2">
+      {/* Setup Instructions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Setup Instructions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
             <div className="flex items-start gap-3">
               <Badge variant="outline" className="mt-1">1</Badge>
               <div>
@@ -208,50 +144,78 @@ const ZapierWebhookSetup = () => {
               <div>
                 <p className="font-medium">Configure the Webhook</p>
                 <p className="text-sm text-muted-foreground">
-                  Use the URL above and send data using one of the job IDs from the list above
+                  Use the URL above and map your form fields to the webhook data
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Badge variant="outline" className="mt-1">4</Badge>
+              <div>
+                <p className="font-medium">Test Your Integration</p>
+                <p className="text-sm text-muted-foreground">
+                  Use the testing tools below to verify your webhook works correctly
                 </p>
               </div>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-3">
-          <h3 className="text-lg font-medium">Required Data Format</h3>
-          <div className="space-y-2">
+      {/* Field Requirements */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Requirements</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-medium">Required:</span>
-              <code className="text-sm bg-gray-100 px-2 py-1 rounded">job_listing_id</code>
-              <span className="text-sm text-muted-foreground">(Use an ID from the list above)</span>
+              <span className="text-sm font-medium">Required (at least one):</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="ml-6 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">job_listing_id</code> (exact UUID from job listings above)
+              </p>
+              <p className="text-sm text-muted-foreground">
+                • <strong>OR</strong> <code className="bg-gray-100 px-2 py-1 rounded text-xs">job_title</code> (partial match supported)
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2 mt-4">
+              <AlertCircle className="w-4 h-4 text-red-500" />
+              <span className="text-sm font-medium">Required:</span>
+            </div>
+            <div className="ml-6">
+              <p className="text-sm text-muted-foreground">
+                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">email</code> or <code className="bg-gray-100 px-2 py-1 rounded text-xs">applicant_email</code>
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 mt-4">
               <CheckCircle className="w-4 h-4 text-green-500" />
               <span className="text-sm font-medium">Optional:</span>
-              <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                first_name, last_name, applicant_email, email, source, status
-              </code>
+            </div>
+            <div className="ml-6 text-sm text-muted-foreground">
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">first_name</code>
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">last_name</code>
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">source</code>
+              <code className="bg-gray-100 px-2 py-1 rounded text-xs">status</code>
             </div>
           </div>
-        </div>
+          
+          <div className="mt-6 p-4 bg-green-50 rounded-lg">
+            <h4 className="font-medium text-green-800 mb-2">✅ Improved Flexibility</h4>
+            <p className="text-sm text-green-700">
+              The webhook now supports multiple field name variations (e.g., firstName, first_name, fname) 
+              and provides better error messages to help with debugging Zapier integration issues.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-3">
-          <h3 className="text-lg font-medium">Test Webhook</h3>
-          <textarea
-            className="w-full h-32 p-3 border rounded-lg font-mono text-sm"
-            placeholder="Click 'Use This Job' button above to generate test data, or paste your own JSON data here..."
-            value={testData}
-            onChange={(e) => setTestData(e.target.value)}
-          />
-          <Button 
-            onClick={testWebhook}
-            disabled={isTestingWebhook}
-            className="w-full"
-          >
-            {isTestingWebhook ? 'Testing...' : 'Test Webhook'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Testing Section */}
+      <WebhookTestSection webhookUrl={webhookUrl} jobListings={jobListings || []} />
+    </div>
   );
 };
 
