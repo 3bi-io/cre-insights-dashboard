@@ -76,8 +76,16 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Name</label>
-                <p className="text-sm">{getApplicantName(application)}</p>
+                <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                <p className="text-sm">{application.full_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">First Name</label>
+                <p className="text-sm">{application.first_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Last Name</label>
+                <p className="text-sm">{application.last_name || 'Not provided'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
@@ -103,6 +111,10 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
                   </p>
                 </div>
               )}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Application ID</label>
+                <p className="text-sm font-mono text-xs">{application.id}</p>
+              </div>
             </div>
           </div>
 
@@ -148,27 +160,45 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Applied Date</label>
                 <p className="text-sm">
-                  {new Date(application.applied_at).toLocaleDateString('en-US', {
+                  {application.applied_at ? new Date(application.applied_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
-                  })}
+                  }) : 'Not provided'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Created Date</label>
+                <p className="text-sm">
+                  {application.created_at ? new Date(application.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : 'Not provided'}
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
                 <p className="text-sm">
-                  {new Date(application.updated_at).toLocaleDateString('en-US', {
+                  {application.updated_at ? new Date(application.updated_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
-                  })}
+                  }) : 'Not provided'}
                 </p>
               </div>
+              {application.job_listing_id && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Job Listing ID</label>
+                  <p className="text-sm font-mono text-xs">{application.job_listing_id}</p>
+                </div>
+              )}
             </div>
           </div>
 
