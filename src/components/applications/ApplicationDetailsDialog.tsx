@@ -115,12 +115,104 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
                   </p>
                 </div>
               )}
+              {application.city && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">City</label>
+                  <p className="text-sm">{application.city}</p>
+                </div>
+              )}
+              {application.state && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">State</label>
+                  <p className="text-sm">{application.state}</p>
+                </div>
+              )}
+              {application.zip && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">ZIP Code</label>
+                  <p className="text-sm">{application.zip}</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Application ID</label>
                 <p className="text-sm font-mono text-xs">{application.id}</p>
               </div>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Driver/Experience Information */}
+          {(application.cdl || application.exp || application.months || application.veteran) && (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Driver & Experience Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {application.cdl && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">CDL License</label>
+                      <p className="text-sm">{application.cdl}</p>
+                    </div>
+                  )}
+                  {application.exp && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Experience</label>
+                      <p className="text-sm">{application.exp}</p>
+                    </div>
+                  )}
+                  {application.months && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Months Experience</label>
+                      <p className="text-sm">{application.months}</p>
+                    </div>
+                  )}
+                  {application.veteran && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Veteran Status</label>
+                      <p className="text-sm">{application.veteran}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Compliance & Agreements */}
+          {(application.drug || application.consent || application.privacy || application.age) && (
+            <>
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Compliance & Agreements</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {application.drug && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Drug Screening</label>
+                      <p className="text-sm">{application.drug}</p>
+                    </div>
+                  )}
+                  {application.consent && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Data Consent</label>
+                      <p className="text-sm">{application.consent}</p>
+                    </div>
+                  )}
+                  {application.privacy && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Privacy Agreement</label>
+                      <p className="text-sm">{application.privacy}</p>
+                    </div>
+                  )}
+                  {application.age && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Age Verification</label>
+                      <p className="text-sm">{application.age}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
 
           <Separator />
 
