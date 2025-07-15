@@ -59,7 +59,6 @@ const handler = async (req: Request): Promise<Response> => {
     const contentType = req.headers.get('content-type') || '';
     
     console.log('Content-Type:', contentType);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
     if (contentType.includes('application/json')) {
       body = await req.json();
@@ -133,7 +132,14 @@ const handler = async (req: Request): Promise<Response> => {
           error: 'Missing required job information',
           message: 'Either job_listing_id or job_title is required',
           received_fields: Object.keys(body),
-          help: 'Please provide either a job_listing_id or job_title field in your webhook data'
+          help: 'Please provide either a job_listing_id or job_title field in your webhook data',
+          debug_info: {
+            all_received_data: body,
+            parsed_job_data: {
+              job_listing_id: applicationData.job_listing_id,
+              job_title: applicationData.job_title
+            }
+          }
         }),
         { 
           status: 400,
@@ -177,16 +183,27 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // If no job listing found by ID, try to find by title
+    // If no job listing found by ID, try to find by title with more flexible matching
     if (!jobListing && applicationData.job_title) {
       console.log('Searching for job by title:', applicationData.job_title);
       
-      const { data, error } = await supabase
+      // First try exact match, then partial match
+      let { data, error } = await supabase
         .from('job_listings')
         .select('id, title, job_title')
-        .or(`title.ilike.%${applicationData.job_title}%,job_title.ilike.%${applicationData.job_title}%`)
+        .or(`title.eq.${applicationData.job_title},job_title.eq.${applicationData.job_title}`)
         .limit(1)
         .maybeSingle();
+      
+      if (!data && !error) {
+        // Try case-insensitive partial match
+        ({ data, error } = await supabase
+          .from('job_listings')
+          .select('id, title, job_title')
+          .or(`title.ilike.%${applicationData.job_title}%,job_title.ilike.%${applicationData.job_title}%`)
+          .limit(1)
+          .maybeSingle());
+      }
       
       if (!error && data) {
         jobListing = data;
@@ -196,7 +213,45 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // If still no job listing found, get available listings for debugging
+    // If still no job listing found, create one automatically with the provided job title
+    if (!jobListing && applicationData.job_title) {
+      console.log('No job listing found, creating new one with title:', applicationData.job_title);
+      
+      // Get the first available platform and category for the new job listing
+      const { data: platforms } = await supabase
+        .from('platforms')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+        
+      const { data: categories } = await supabase
+        .from('job_categories')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      if (platforms && categories) {
+        const { data: newJob, error: createError } = await supabase
+          .from('job_listings')
+          .insert([{
+            title: applicationData.job_title,
+            job_title: applicationData.job_title,
+            platform_id: platforms.id,
+            category_id: categories.id,
+            user_id: '00000000-0000-0000-0000-000000000000', // System user for auto-created jobs
+            status: 'active'
+          }])
+          .select('id, title, job_title')
+          .single();
+
+        if (!createError && newJob) {
+          jobListing = newJob;
+          console.log('Created new job listing:', jobListing);
+        }
+      }
+    }
+
+    // If still no job listing, return detailed error
     if (!jobListing) {
       console.log('No job listing found, fetching available listings for debug');
       const { data: allJobListings } = await supabase
@@ -218,8 +273,11 @@ const handler = async (req: Request): Promise<Response> => {
             matches_title: job.title || job.job_title
           })) || [],
           help: 'Please verify the job_listing_id exists or provide a job_title that matches an existing job listing. Check the available listings above.',
-          received_data: body,
-          all_received_fields: Object.keys(body)
+          debug_info: {
+            received_data: body,
+            all_received_fields: Object.keys(body),
+            parsed_application_data: applicationData
+          }
         }),
         { 
           status: 404,

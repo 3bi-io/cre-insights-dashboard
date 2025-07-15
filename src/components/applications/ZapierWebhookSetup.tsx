@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Copy, ExternalLink, CheckCircle, AlertCircle, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import WebhookTestSection from './WebhookTestSection';
+import QuickFixGuide from './QuickFixGuide';
 
 const ZapierWebhookSetup = () => {
   const { toast } = useToast();
@@ -48,6 +49,8 @@ const ZapierWebhookSetup = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6">
+      <QuickFixGuide />
+
       {/* Webhook URL */}
       <Card>
         <CardHeader>
@@ -108,7 +111,10 @@ const ZapierWebhookSetup = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No job listings found. Create some job listings first.</p>
+              <div className="text-center py-4">
+                <p className="text-gray-500 mb-2">No job listings found.</p>
+                <p className="text-sm text-green-600">✅ Don't worry! The webhook will now create job listings automatically if they don't exist.</p>
+              </div>
             )}
           </div>
         </CardContent>
@@ -144,7 +150,7 @@ const ZapierWebhookSetup = () => {
               <div>
                 <p className="font-medium">Configure the Webhook</p>
                 <p className="text-sm text-muted-foreground">
-                  Use the URL above and map your form fields to the webhook data
+                  Use the URL above. Just map <strong>job_title</strong> and <strong>email</strong> - that's all you need!
                 </p>
               </div>
             </div>
@@ -164,50 +170,39 @@ const ZapierWebhookSetup = () => {
       {/* Field Requirements */}
       <Card>
         <CardHeader>
-          <CardTitle>Data Requirements</CardTitle>
+          <CardTitle>Data Requirements (Simplified)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-medium">Required (at least one):</span>
+              <span className="text-sm font-medium">Required Fields:</span>
             </div>
-            <div className="ml-6 space-y-1">
+            <div className="ml-6 space-y-2">
               <p className="text-sm text-muted-foreground">
-                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">job_listing_id</code> (exact UUID from job listings above)
+                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">job_title</code> (any job title - will auto-create if needed)
               </p>
               <p className="text-sm text-muted-foreground">
-                • <strong>OR</strong> <code className="bg-gray-100 px-2 py-1 rounded text-xs">job_title</code> (partial match supported)
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2 mt-4">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-medium">Required:</span>
-            </div>
-            <div className="ml-6">
-              <p className="text-sm text-muted-foreground">
-                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">email</code> or <code className="bg-gray-100 px-2 py-1 rounded text-xs">applicant_email</code>
+                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">email</code> (applicant's email address)
               </p>
             </div>
 
             <div className="flex items-center gap-2 mt-4">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-medium">Optional:</span>
+              <span className="text-sm font-medium">Optional Fields:</span>
             </div>
             <div className="ml-6 text-sm text-muted-foreground">
               <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">first_name</code>
               <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">last_name</code>
               <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">source</code>
-              <code className="bg-gray-100 px-2 py-1 rounded text-xs">status</code>
             </div>
           </div>
           
           <div className="mt-6 p-4 bg-green-50 rounded-lg">
-            <h4 className="font-medium text-green-800 mb-2">✅ Improved Flexibility</h4>
+            <h4 className="font-medium text-green-800 mb-2">✅ Quick Fix Applied!</h4>
             <p className="text-sm text-green-700">
-              The webhook now supports multiple field name variations (e.g., firstName, first_name, fname) 
-              and provides better error messages to help with debugging Zapier integration issues.
+              The webhook now automatically creates job listings if they don't exist, 
+              uses flexible field matching, and provides much better error messages to help debug any issues.
             </p>
           </div>
         </CardContent>
