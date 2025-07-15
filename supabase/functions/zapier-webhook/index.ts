@@ -274,7 +274,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Store job title if provided
     if (applicationData.job_title) {
-      customFields.job_title = applicationData.job_title;
+      customFields.cre_id = applicationData.job_title;
     }
 
     // Prepare final application data for insertion
