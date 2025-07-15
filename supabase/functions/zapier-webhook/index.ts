@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface ZapierApplicationData {
   job_listing_id?: string;
+  job_id?: string;
   job_title?: string;
   applicant_name?: string;
   applicant_email?: string;
@@ -91,10 +92,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Parsed webhook data:', JSON.stringify(body, null, 2));
 
-    // More flexible field extraction with multiple possible field names
+    // More flexible field extraction with multiple possible field names - INCLUDING job_id
     const applicationData: ZapierApplicationData = {
       job_listing_id: extractValue(body, [
         'job_listing_id', 'jobListingId', 'job_id', 'jobId', 'listing_id'
+      ]),
+      job_id: extractValue(body, [
+        'job_id', 'jobId', 'job_listing_id', 'jobListingId', 'listing_id'
       ]),
       job_title: extractValue(body, [
         'job_title', 'jobTitle', 'title', 'job_name', 'position', 'role'
@@ -124,19 +128,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Processed application data:', JSON.stringify(applicationData, null, 2));
 
+    // Use job_id as job_listing_id if job_listing_id is not provided
+    const jobIdentifier = applicationData.job_listing_id || applicationData.job_id;
+
     // Validate that we have essential data
-    if (!applicationData.job_listing_id && !applicationData.job_title) {
+    if (!jobIdentifier && !applicationData.job_title) {
       console.error('Missing required job identification');
       return new Response(
         JSON.stringify({ 
           error: 'Missing required job information',
-          message: 'Either job_listing_id or job_title is required',
+          message: 'Either job_listing_id, job_id, or job_title is required',
           received_fields: Object.keys(body),
-          help: 'Please provide either a job_listing_id or job_title field in your webhook data',
+          help: 'Please provide either a job_listing_id, job_id, or job_title field in your webhook data',
           debug_info: {
             all_received_data: body,
             parsed_job_data: {
               job_listing_id: applicationData.job_listing_id,
+              job_id: applicationData.job_id,
               job_title: applicationData.job_title
             }
           }
@@ -166,13 +174,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     let jobListing = null;
 
-    // Try to find job listing by ID first, then by title
-    if (applicationData.job_listing_id) {
-      console.log('Searching for job by ID:', applicationData.job_listing_id);
+    // Try to find job listing by ID first (checking both job_listing_id and job_id), then by title
+    if (jobIdentifier) {
+      console.log('Searching for job by ID:', jobIdentifier);
       const { data, error } = await supabase
         .from('job_listings')
         .select('id, title, job_title')
-        .eq('id', applicationData.job_listing_id)
+        .eq('id', jobIdentifier)
         .maybeSingle();
       
       if (!error && data) {
@@ -265,14 +273,14 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           error: 'Job listing not found',
           message: 'Could not find a matching job listing',
-          provided_job_id: applicationData.job_listing_id,
+          provided_job_id: jobIdentifier,
           provided_job_title: applicationData.job_title,
           available_listings: allJobListings?.map(job => ({
             id: job.id,
             title: job.title || job.job_title,
             matches_title: job.title || job.job_title
           })) || [],
-          help: 'Please verify the job_listing_id exists or provide a job_title that matches an existing job listing. Check the available listings above.',
+          help: 'Please verify the job_listing_id/job_id exists or provide a job_title that matches an existing job listing. Check the available listings above.',
           debug_info: {
             received_data: body,
             all_received_fields: Object.keys(body),
