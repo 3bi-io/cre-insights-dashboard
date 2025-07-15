@@ -44,6 +44,17 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
     enabled: open,
   });
 
+  const getApplicantName = (app: any) => {
+    if (app.first_name && app.last_name) {
+      return `${app.first_name} ${app.last_name}`;
+    } else if (app.first_name) {
+      return app.first_name;
+    } else if (app.last_name) {
+      return app.last_name;
+    }
+    return 'Anonymous Applicant';
+  };
+
   const totalSpend = spendData?.reduce((sum, day) => sum + Number(day.amount), 0) || 0;
   const totalViews = spendData?.reduce((sum, day) => sum + Number(day.views), 0) || 0;
   const totalClicks = spendData?.reduce((sum, day) => sum + Number(day.clicks), 0) || 0;
@@ -186,9 +197,9 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
                   {applicationsData.slice(0, 5).map((application) => (
                     <div key={application.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
                       <div>
-                        <span className="font-medium">{application.applicant_name || 'Anonymous'}</span>
-                        {application.applicant_email && (
-                          <span className="text-sm text-gray-600 ml-2">({application.applicant_email})</span>
+                        <span className="font-medium">{getApplicantName(application)}</span>
+                        {(application.applicant_email || application.email) && (
+                          <span className="text-sm text-gray-600 ml-2">({application.applicant_email || application.email})</span>
                         )}
                       </div>
                       <div className="text-sm text-gray-600">
