@@ -8,7 +8,7 @@ import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const VoiceAgentTab = () => {
-  const [agentId, setAgentId] = useState('');
+  const [agentId, setAgentId] = useState('agent_01jwedntnjf7tt0qma00a2276r');
   const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
 
