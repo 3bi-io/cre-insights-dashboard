@@ -49,11 +49,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Initialize Supabase client with service role key
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Set a timeout for the entire operation
+    const timeoutPromise = new Promise<Response>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 25000); // 25 second timeout
+    });
+
+    const processWebhook = async (): Promise<Response> => {
+      // Initialize Supabase client with service role key
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
 
     // Parse the request body - handle both JSON and form data
     let body: any = {};
@@ -362,9 +368,29 @@ const handler = async (req: Request): Promise<Response> => {
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       }
     );
+    };
+
+    // Race between the actual processing and timeout
+    return await Promise.race([processWebhook(), timeoutPromise]);
 
   } catch (error) {
     console.error('Webhook error:', error);
+    
+    // Handle timeout errors specifically
+    if (error.message === 'Request timeout') {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Request timeout',
+          message: 'The webhook processing took too long to complete. Please try again.',
+          timeout: '25 seconds'
+        }),
+        { 
+          status: 504,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
