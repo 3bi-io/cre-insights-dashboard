@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, Eye, MessageCircle, Calendar, Webhook } from 'lucide-react';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 
 const Applications = () => {
@@ -158,9 +158,17 @@ const Applications = () => {
                             {application.status}
                           </Badge>
                         </div>
-                        <p className="text-gray-600 mb-1">
-                          {getApplicantEmail(application)}
-                        </p>
+                        <div className="space-y-1 mb-2">
+                          <p className="text-gray-600 flex items-center gap-2">
+                            <span>{getApplicantEmail(application)}</span>
+                          </p>
+                          {application.phone && (
+                            <p className="text-gray-600 flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              {application.phone}
+                            </p>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500 mb-2">
                           Applied for: <span className="font-medium">
                             {application.job_listings?.title || application.job_listings?.job_title}
@@ -169,13 +177,35 @@ const Applications = () => {
                             <span> via {application.job_listings.platforms.name}</span>
                           )}
                         </p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             Applied {new Date(application.applied_at).toLocaleDateString()}
                           </span>
                           {application.source && (
                             <span>Source: {application.source}</span>
+                          )}
+                        </div>
+                        
+                        {/* Additional fields */}
+                        <div className="flex gap-2 flex-wrap">
+                          {application.resume_url && (
+                            <Button variant="outline" size="sm" className="flex items-center gap-1">
+                              <ExternalLink className="w-3 h-3" />
+                              Resume
+                            </Button>
+                          )}
+                          {application.linkedin_url && (
+                            <Button variant="outline" size="sm" className="flex items-center gap-1">
+                              <ExternalLink className="w-3 h-3" />
+                              LinkedIn
+                            </Button>
+                          )}
+                          {application.portfolio_url && (
+                            <Button variant="outline" size="sm" className="flex items-center gap-1">
+                              <ExternalLink className="w-3 h-3" />
+                              Portfolio
+                            </Button>
                           )}
                         </div>
                       </div>

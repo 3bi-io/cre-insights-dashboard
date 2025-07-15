@@ -28,7 +28,10 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
       email: "john.doe@example.com",
       phone: "(555) 123-4567",
       source: "LinkedIn",
-      status: "pending"
+      status: "pending",
+      cover_letter: "I am very interested in this position...",
+      resume_url: "https://example.com/resume.pdf",
+      linkedin_url: "https://www.linkedin.com/in/johndoe"
     };
   };
 
@@ -41,7 +44,9 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
       "301909100__last_name": "Smith",
       "301909100__full_name": "Jane Smith",
       "301909100__phone": "(555) 987-6543",
-      "301909100__source": "Zapier Form"
+      "301909100__source": "Zapier Form",
+      "301909100__cover_letter": "Looking forward to hearing from you...",
+      "301909100__linkedin_url": "https://www.linkedin.com/in/janesmith"
     };
   };
 
@@ -133,7 +138,7 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
                       onClick={() => testWebhook(generateSamplePayload(job.id, job.title || job.job_title))}
                       disabled={isTestingWebhook}
                     >
-                      Test Normal
+                      Test Enhanced
                     </Button>
                     <Button
                       variant="outline"
@@ -207,33 +212,33 @@ const WebhookTestSection = ({ webhookUrl, jobListings }: WebhookTestSectionProps
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="w-5 h-5 text-blue-500" />
-            Supported Field Names
+            Enhanced Field Support
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4 text-sm">
             <div>
-              <h4 className="font-medium mb-2">Job Identification:</h4>
+              <h4 className="font-medium mb-2">Required Fields:</h4>
               <ul className="space-y-1 text-gray-600">
-                <li>• job_listing_id, jobListingId, job_id</li>
-                <li>• job_title, jobTitle, title, position</li>
+                <li>• job_listing_id or job_title</li>
+                <li>• email or applicant_email</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Applicant Info:</h4>
+              <h4 className="font-medium mb-2">Optional Enhanced Fields:</h4>
               <ul className="space-y-1 text-gray-600">
-                <li>• email, applicant_email, email_address</li>
-                <li>• first_name, firstName, fname</li>
-                <li>• last_name, lastName, lname</li>
-                <li>• full_name, applicant_name, name</li>
-                <li>• phone, phone_number</li>
+                <li>• first_name, last_name, full_name</li>
+                <li>• phone, cover_letter</li>
+                <li>• resume_url, linkedin_url, portfolio_url</li>
+                <li>• source, status, notes</li>
               </ul>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Enhanced Support:</strong> The new applications table now supports more flexible field mapping 
-              including full_name, phone numbers, and additional URLs for resumes and portfolios.
+          <div className="mt-4 p-3 bg-green-50 rounded-lg">
+            <p className="text-sm text-green-800">
+              <strong>Enhanced Support:</strong> The rebuilt applications table now supports comprehensive 
+              applicant data including contact information, documents, and additional metadata through 
+              flexible field mapping and custom fields storage.
             </p>
           </div>
         </CardContent>
