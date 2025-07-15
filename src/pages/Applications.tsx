@@ -1,18 +1,22 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: applications, isLoading } = useQuery({
     queryKey: ['applications'],
@@ -51,6 +55,36 @@ const Applications = () => {
       return data;
     },
   });
+
+  // Status update mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ applicationId, newStatus }: { applicationId: string; newStatus: string }) => {
+      const { error } = await supabase
+        .from('applications')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', applicationId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({
+        title: "Status Updated",
+        description: "Application status has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update application status. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStatusChange = (applicationId: string, newStatus: string) => {
+    updateStatusMutation.mutate({ applicationId, newStatus });
+  };
 
   const getApplicantName = (app: any) => {
     // Try full_name first, then construct from first/last name
@@ -182,9 +216,22 @@ const Applications = () => {
                           <h3 className="text-lg font-medium text-white">
                             {getApplicantName(application)}
                           </h3>
-                          <Badge className={getStatusColor(application.status)}>
-                            {application.status}
-                          </Badge>
+                          <Select
+                            value={application.status}
+                            onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
+                            disabled={updateStatusMutation.isPending}
+                          >
+                            <SelectTrigger className={`w-32 h-7 text-xs font-medium ${getStatusColor(application.status)}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="reviewed">Reviewed</SelectItem>
+                              <SelectItem value="interviewed">Interviewed</SelectItem>
+                              <SelectItem value="hired">Hired</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-1 mb-2">
                           <p className="text-gray-600 flex items-center gap-2">
