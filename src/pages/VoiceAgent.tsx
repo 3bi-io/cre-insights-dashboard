@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const VoiceAgent = () => {
   const [agentId, setAgentId] = useState('agent_01jwedntnjf7tt0qma00a2276r');
   const [isConnected, setIsConnected] = useState(false);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   const conversation = useConversation({
@@ -53,20 +55,32 @@ const VoiceAgent = () => {
     }
 
     try {
-      // Request microphone access
+      // Request microphone access first
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Start conversation with agent
-      const conversationId = await conversation.startSession({
-        agentId: agentId.trim(),
+      // Get signed URL from our edge function
+      const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
+        body: { agentId: agentId.trim() }
       });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to get signed URL');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get signed URL');
+      }
+
+      // Store the signed URL and start conversation
+      setSignedUrl(data.signedUrl);
+      const conversationId = await conversation.startSession(data.signedUrl);
       
       console.log('Conversation started with ID:', conversationId);
     } catch (error) {
       console.error('Failed to start conversation:', error);
       toast({
         title: "Connection Failed",
-        description: "Failed to connect to voice agent. Please check your Agent ID and try again.",
+        description: error.message || "Failed to connect to voice agent. Please check your Agent ID and try again.",
         variant: "destructive",
       });
     }
