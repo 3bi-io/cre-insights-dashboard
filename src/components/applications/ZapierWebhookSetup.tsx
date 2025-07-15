@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Copy, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { Copy, ExternalLink, CheckCircle, AlertCircle, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ZapierWebhookSetup = () => {
@@ -14,12 +16,27 @@ const ZapierWebhookSetup = () => {
 
   const webhookUrl = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/zapier-webhook`;
 
+  // Fetch available job listings to help with setup
+  const { data: jobListings } = useQuery({
+    queryKey: ['job-listings-for-webhook'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select('id, title, job_title')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       toast({
         title: "Copied!",
-        description: "Webhook URL copied to clipboard",
+        description: "Text copied to clipboard",
       });
     } catch (err) {
       toast({
@@ -75,12 +92,18 @@ const ZapierWebhookSetup = () => {
     }
   };
 
-  const samplePayload = {
-    job_listing_id: "your-job-listing-id",
-    applicant_name: "John Doe",
-    applicant_email: "john.doe@example.com",
-    source: "LinkedIn",
-    status: "pending"
+  const generateSamplePayload = (jobId: string, jobTitle: string) => {
+    return {
+      job_listing_id: jobId,
+      job_title: jobTitle,
+      applicant_name: "John Doe",
+      first_name: "John",
+      last_name: "Doe",
+      applicant_email: "john.doe@example.com",
+      email: "john.doe@example.com",
+      source: "LinkedIn",
+      status: "pending"
+    };
   };
 
   return (
@@ -113,6 +136,52 @@ const ZapierWebhookSetup = () => {
           </p>
         </div>
 
+        {/* Available Job Listings */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-medium flex items-center gap-2">
+            <List className="w-5 h-5" />
+            Available Job Listings
+          </h3>
+          <div className="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
+            {jobListings && jobListings.length > 0 ? (
+              <div className="space-y-3">
+                {jobListings.map((job) => (
+                  <div key={job.id} className="bg-white p-3 rounded border">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">
+                          {job.title || job.job_title || 'Untitled Job'}
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          ID: {job.id}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const payload = generateSamplePayload(
+                            job.id, 
+                            job.title || job.job_title || 'Untitled Job'
+                          );
+                          setTestData(JSON.stringify(payload, null, 2));
+                        }}
+                      >
+                        Use This Job
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No job listings found. Create some job listings first.</p>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Click "Use This Job" to generate test data with the correct job ID
+          </p>
+        </div>
+
         <div className="space-y-3">
           <h3 className="text-lg font-medium">Setup Instructions</h3>
           <div className="space-y-2">
@@ -139,7 +208,7 @@ const ZapierWebhookSetup = () => {
               <div>
                 <p className="font-medium">Configure the Webhook</p>
                 <p className="text-sm text-muted-foreground">
-                  Use the URL above and send data in the format shown below
+                  Use the URL above and send data using one of the job IDs from the list above
                 </p>
               </div>
             </div>
@@ -148,22 +217,18 @@ const ZapierWebhookSetup = () => {
 
         <div className="space-y-3">
           <h3 className="text-lg font-medium">Required Data Format</h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <pre className="text-sm overflow-x-auto">
-              {JSON.stringify(samplePayload, null, 2)}
-            </pre>
-          </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-500" />
               <span className="text-sm font-medium">Required:</span>
               <code className="text-sm bg-gray-100 px-2 py-1 rounded">job_listing_id</code>
+              <span className="text-sm text-muted-foreground">(Use an ID from the list above)</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" />
               <span className="text-sm font-medium">Optional:</span>
               <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                applicant_name, applicant_email, source, status
+                first_name, last_name, applicant_email, email, source, status
               </code>
             </div>
           </div>
@@ -173,7 +238,7 @@ const ZapierWebhookSetup = () => {
           <h3 className="text-lg font-medium">Test Webhook</h3>
           <textarea
             className="w-full h-32 p-3 border rounded-lg font-mono text-sm"
-            placeholder="Paste your test JSON data here..."
+            placeholder="Click 'Use This Job' button above to generate test data, or paste your own JSON data here..."
             value={testData}
             onChange={(e) => setTestData(e.target.value)}
           />
