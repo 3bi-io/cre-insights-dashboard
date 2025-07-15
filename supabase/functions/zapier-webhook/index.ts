@@ -22,6 +22,14 @@ interface ZapierApplicationData {
   state?: string;
   city?: string;
   zip?: string;
+  privacy?: string;
+  age?: string;
+  veteran?: string;
+  months?: string;
+  consent?: string;
+  drug?: string;
+  exp?: string;
+  cdl?: string;
 }
 
 // Helper function to safely extract value from multiple possible field names
@@ -145,6 +153,30 @@ const handler = async (req: Request): Promise<Response> => {
       ]),
       zip: extractValue(body, [
         'zip', 'zip_code', 'postal_code', 'applicant_zip'
+      ]),
+      privacy: extractValue(body, [
+        'privacy', 'privacy_consent', 'privacy_agreement'
+      ]),
+      age: extractValue(body, [
+        'age', 'applicant_age', 'birth_year'
+      ]),
+      veteran: extractValue(body, [
+        'veteran', 'veteran_status', 'military_veteran'
+      ]),
+      months: extractValue(body, [
+        'months', 'experience_months', 'months_experience'
+      ]),
+      consent: extractValue(body, [
+        'consent', 'data_consent', 'consent_agreement'
+      ]),
+      drug: extractValue(body, [
+        'drug', 'drug_test', 'drug_screening'
+      ]),
+      exp: extractValue(body, [
+        'exp', 'experience', 'work_experience'
+      ]),
+      cdl: extractValue(body, [
+        'cdl', 'cdl_license', 'commercial_license'
       ])
     };
 
@@ -294,6 +326,14 @@ const handler = async (req: Request): Promise<Response> => {
       state: applicationData.state,
       city: applicationData.city,
       zip: applicationData.zip,
+      privacy: applicationData.privacy,
+      age: applicationData.age,
+      veteran: applicationData.veteran,
+      months: applicationData.months,
+      consent: applicationData.consent,
+      drug: applicationData.drug,
+      exp: applicationData.exp,
+      cdl: applicationData.cdl,
       job_id: customFieldValue,
       applied_at: new Date().toISOString()
     };
