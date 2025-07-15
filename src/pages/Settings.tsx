@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
+import { AdminMagicLinkSection } from '@/components/settings/AdminMagicLinkSection';
 
 interface AdminUser {
   id: string;
@@ -409,6 +410,8 @@ const Settings = () => {
 
         {userRole === 'admin' && (
           <TabsContent value="administrators" className="space-y-6">
+            <AdminMagicLinkSection />
+            
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
