@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Bell, Shield, Database, Trash2, Save, Users, Mail, MoreVertical } from 'lucide-react';
+import { User, Bell, Shield, Database, Trash2, Save, Users, Mail, MoreVertical, Plug } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import IntegrationsTab from '@/components/settings/IntegrationsTab';
 
 interface AdminUser {
   id: string;
@@ -166,8 +167,9 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           {userRole === 'admin' && <TabsTrigger value="administrators">Administrators</TabsTrigger>}
@@ -228,6 +230,10 @@ const Settings = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6">
+          <IntegrationsTab />
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
