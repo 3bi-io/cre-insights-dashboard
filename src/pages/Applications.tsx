@@ -21,7 +21,7 @@ const Applications = () => {
         .from('applications')
         .select(`
           *,
-          job_listings:job_listing_id(title, job_title, platforms:platform_id(name))
+          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name))
         `)
         .order('applied_at', { ascending: false });
       
@@ -34,7 +34,7 @@ const Applications = () => {
             if (app.job_id && !app.job_listing_id) {
               const { data: jobListing } = await supabase
                 .from('job_listings')
-                .select('title, job_title, platforms:platform_id(name)')
+                .select('title, job_title, client, client_id, clients:client_id(name)')
                 .eq('job_id', app.job_id)
                 .single();
               
@@ -68,6 +68,11 @@ const Applications = () => {
 
   const getApplicantEmail = (app: any) => {
     return app.applicant_email || app.email || 'No email provided';
+  };
+
+  const getClientName = (app: any) => {
+    // Try to get client name from the relationship first, then fallback to client field
+    return app.job_listings?.clients?.name || app.job_listings?.client || null;
   };
 
   const filteredApplications = applications?.filter(app => {
@@ -198,6 +203,9 @@ const Applications = () => {
                               application.job_listings?.job_title || 
                               (application.job_id ? `Job ID: ${application.job_id}` : 'Unknown Position')}
                            </span>
+                           {getClientName(application) && (
+                             <span className="ml-2 text-blue-600">• {getClientName(application)}</span>
+                           )}
                          </p>
                         <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
                           <span className="flex items-center gap-1">
