@@ -18,6 +18,7 @@ interface ZapierApplicationData {
   first_name?: string;
   last_name?: string;
   email?: string;
+  phone?: string;
 }
 
 // Helper function to safely extract value from multiple possible field names
@@ -124,6 +125,9 @@ const handler = async (req: Request): Promise<Response> => {
       email: extractValue(body, [
         'email', 'email_address', 'emailAddress', 'applicant_email', 'applicantEmail', 'candidate_email'
       ]),
+      phone: extractValue(body, [
+        'phone', 'phone_number', 'phoneNumber', 'applicant_phone', 'contact_number', 'mobile', 'tel'
+      ]),
       source: extractValue(body, [
         'source', 'platform', 'origin', 'referrer', 'channel'
       ]) || 'Zapier',
@@ -136,6 +140,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Use job_id as job_listing_id if job_listing_id is not provided
     const jobIdentifier = applicationData.job_listing_id || applicationData.job_id;
+
+    // Helper function to check if a string is a valid UUID
+    const isValidUUID = (str: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(str);
+    };
 
     // Job identification is now optional - applications can be created without matching job listings
 
@@ -157,9 +167,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     let jobListing = null;
 
-    // Try to find job listing by ID first (checking both job_listing_id and job_id), then by title
-    if (jobIdentifier) {
-      console.log('Searching for job by ID:', jobIdentifier);
+    // Try to find job listing by ID only if it's a valid UUID
+    if (jobIdentifier && isValidUUID(jobIdentifier)) {
+      console.log('Searching for job by UUID:', jobIdentifier);
       const { data, error } = await supabase
         .from('job_listings')
         .select('id, title, job_title')
@@ -172,6 +182,8 @@ const handler = async (req: Request): Promise<Response> => {
       } else if (error) {
         console.log('Error searching by ID:', error);
       }
+    } else if (jobIdentifier) {
+      console.log('Invalid UUID format for job identifier:', jobIdentifier, '- skipping UUID search');
     }
 
     // If no job listing found by ID, try to find by title with more flexible matching
@@ -258,6 +270,7 @@ const handler = async (req: Request): Promise<Response> => {
       applicant_email: applicationData.applicant_email || applicationData.email,
       first_name: applicationData.first_name || (applicantName ? applicantName.split(' ')[0] : null),
       last_name: applicationData.last_name || (applicantName && applicantName.includes(' ') ? applicantName.split(' ').slice(1).join(' ') : null),
+      phone: applicationData.phone,
       source: applicationData.source,
       status: applicationData.status,
       applied_at: new Date().toISOString()
