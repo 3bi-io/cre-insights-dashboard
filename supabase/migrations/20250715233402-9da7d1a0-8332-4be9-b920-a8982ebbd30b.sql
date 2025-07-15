@@ -1,0 +1,2 @@
+-- Create a simple edge function to help with ElevenLabs integration if needed
+-- This is just a placeholder for future ElevenLabs server-side functionality
