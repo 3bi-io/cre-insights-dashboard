@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
+import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -214,16 +215,13 @@ const Applications = () => {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <Eye className="w-4 h-4" />
-                          View Details
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <MessageCircle className="w-4 h-4" />
-                          Contact
-                        </Button>
-                      </div>
+                       <div className="flex gap-2">
+                         <ApplicationDetailsDialog application={application} />
+                         <Button variant="outline" size="sm" className="flex items-center gap-2">
+                           <MessageCircle className="w-4 h-4" />
+                           Contact
+                         </Button>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
