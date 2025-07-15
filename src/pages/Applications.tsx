@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit } from 'lucide-react';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -276,9 +276,25 @@ const Applications = () => {
                       
                        <div className="flex gap-2">
                          <ApplicationDetailsDialog application={application} />
-                         <Button variant="outline" size="sm" className="flex items-center gap-2">
-                           <MessageCircle className="w-4 h-4" />
-                           Contact
+                         {application.phone && (
+                           <Button 
+                             variant="outline" 
+                             size="sm" 
+                             className="flex items-center gap-2"
+                             onClick={() => window.open(`tel:${application.phone}`)}
+                           >
+                             <Phone className="w-4 h-4" />
+                             Call
+                           </Button>
+                         )}
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           className="flex items-center gap-2"
+                           onClick={() => window.open(`mailto:${getApplicantEmail(application)}`)}
+                         >
+                           <Mail className="w-4 h-4" />
+                           Email
                          </Button>
                        </div>
                     </div>
