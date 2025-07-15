@@ -26,10 +26,6 @@ const ClientsHeader = ({ clientsCount }: ClientsHeaderProps) => {
               <Filter className="w-4 h-4" />
               <span className="hidden sm:inline">Filter</span>
             </Button>
-            <Button className="flex items-center gap-2 h-10">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Client</span>
-            </Button>
           </div>
         </div>
       </div>
