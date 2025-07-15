@@ -109,7 +109,7 @@ const Applications = () => {
             {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
               <Card key={status}>
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                  <div className="text-2xl font-bold text-white mb-1">
                     {statusCounts?.[status] || 0}
                   </div>
                   <div className="text-sm text-gray-600 capitalize">{status}</div>
