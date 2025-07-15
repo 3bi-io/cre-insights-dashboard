@@ -9,7 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Settings, MapPin, User, FileText, Plus, X, TestTube } from 'lucide-react';
+import { Save, Settings, MapPin, User, FileText, Plus, X, TestTube, Users, UserCheck, CreditCard, Phone } from 'lucide-react';
+import { AVAILABLE_FIELD_TYPES } from '@/types/tenstreet';
 
 const TenstreetIntegration = () => {
   const { toast } = useToast();
@@ -17,61 +18,83 @@ const TenstreetIntegration = () => {
   
   // Tenstreet Configuration
   const [config, setConfig] = useState({
-    clientId: '303',
-    password: 'lS%!r3pjy@0SzMs!8Ln',
+    clientId: '535',
+    password: 'if43DIY4oLOync2tm5f8',
     service: 'subject_upload',
-    mode: 'PROD',
-    source: 'TheDriverBoardLead',
-    companyId: '1300',
-    companyName: 'C.R. England',
+    mode: 'DEV',
+    source: 'TenstreetDevTestLead',
+    companyId: '15',
+    companyName: 'Tenstreet Test',
+    driverId: '',
     jobId: '',
-    statusTag: 'Status=New Applicant'
+    statusTag: 'Status=New Applicant',
+    appReferrer: '3BI'
   });
 
-  // Field Mappings
+  // Enhanced Personal Data Field Mappings
   const [personalDataMappings, setPersonalDataMappings] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    municipality: '',
-    region: '',
-    postalCode: ''
+    // PersonName fields
+    prefix: '',
+    givenName: 'first_name',
+    middleName: '',
+    familyName: 'last_name',
+    affix: '',
+    
+    // PostalAddress fields
+    countryCode: '',
+    municipality: 'city',
+    region: 'state',
+    postalCode: 'zip_code',
+    address1: '',
+    address2: '',
+    
+    // GovernmentID fields
+    governmentId: '',
+    governmentIdCountryCode: '',
+    governmentIdIssuingAuthority: '',
+    governmentIdDocumentType: '',
+    
+    // Contact and personal data
+    dateOfBirth: '',
+    internetEmailAddress: 'email',
+    primaryPhone: 'phone',
+    secondaryPhone: '',
+    preferredMethod: ''
   });
 
   const [customQuestions, setCustomQuestions] = useState([
     {
-      id: 'Class_A_CDL',
+      questionId: 'Class_A_CDL',
       question: 'Do you have a Class A CDL?',
       mapping: ''
     },
     {
-      id: 'Veteran_Status',
+      questionId: 'Veteran_Status',
       question: 'Are you a veteran?',
       mapping: ''
     },
     {
-      id: 'Class_A_CDL_experience',
+      questionId: 'Class_A_CDL_experience',
       question: 'How many months of Class A CDL experience do you have?',
       mapping: ''
     },
     {
-      id: 'agree_privacy_policy',
+      questionId: 'agree_privacy_policy',
       question: 'I agree to C.R. England\'s Privacy Policy.',
       mapping: ''
     },
     {
-      id: 'consentToSMS',
+      questionId: 'consentToSMS',
       question: 'Do you consent to (SMS) messages from or on behalf of C.R. England?',
       mapping: ''
     },
     {
-      id: 'over_21',
+      questionId: 'over_21',
       question: 'Are you 21 or older?',
       mapping: ''
     },
     {
-      id: 'can_pass_drug',
+      questionId: 'can_pass_drug',
       question: 'Can you pass a DOT drug test?',
       mapping: ''
     }
@@ -79,31 +102,14 @@ const TenstreetIntegration = () => {
 
   const [displayFields, setDisplayFields] = useState([
     {
-      prompt: 'Experience (months):',
+      displayPrompt: 'Experience (months):',
       mapping: ''
     },
     {
-      prompt: 'Job Code:(months):',
+      displayPrompt: 'Job Code:',
       mapping: ''
     }
   ]);
-
-  // Sample field options (these would come from your form/application data)
-  const availableFields = [
-    'first_name',
-    'last_name', 
-    'email',
-    'phone',
-    'state',
-    'zip_code',
-    'city',
-    'do_you_have_a_class_a_cdl?',
-    'are_you_a_veteran?',
-    'how_many_months_of_class_a_driving_experience_do_you_have?',
-    'are_you_21_or_older?',
-    'are_you_able_to_pass_a_dot_drug_test?',
-    'i_agree_to_privacy_policy'
-  ];
 
   const handleSaveConfig = () => {
     setIsLoading(true);
@@ -157,7 +163,7 @@ const TenstreetIntegration = () => {
     setCustomQuestions([
       ...customQuestions,
       {
-        id: `custom_${Date.now()}`,
+        questionId: `custom_${Date.now()}`,
         question: '',
         mapping: ''
       }
@@ -172,7 +178,7 @@ const TenstreetIntegration = () => {
     setDisplayFields([
       ...displayFields,
       {
-        prompt: '',
+        displayPrompt: '',
         mapping: ''
       }
     ]);
@@ -182,12 +188,27 @@ const TenstreetIntegration = () => {
     setDisplayFields(displayFields.filter((_, i) => i !== index));
   };
 
+  // Helper function to render field mapping select
+  const renderFieldSelect = (value: string, onChange: (value: string) => void, placeholder = "Select field") => (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="">-- None --</SelectItem>
+        {AVAILABLE_FIELD_TYPES.map(field => (
+          <SelectItem key={field} value={field}>{field}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Tenstreet Integration</h1>
-          <p className="text-muted-foreground mt-1">Configure field mapping for Tenstreet driver applications</p>
+          <p className="text-muted-foreground mt-1">Configure comprehensive field mapping for Tenstreet driver applications</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={handleTestConnection} variant="outline" disabled={isLoading}>
@@ -202,10 +223,12 @@ const TenstreetIntegration = () => {
       </div>
 
       <Tabs defaultValue="configuration" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="personal-data">Personal Data</TabsTrigger>
-          <TabsTrigger value="custom-questions">Custom Questions</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="configuration">API Config</TabsTrigger>
+          <TabsTrigger value="personal-name">Name</TabsTrigger>
+          <TabsTrigger value="address-contact">Address & Contact</TabsTrigger>
+          <TabsTrigger value="identification">Identification</TabsTrigger>
+          <TabsTrigger value="custom-questions">Questions</TabsTrigger>
           <TabsTrigger value="display-fields">Display Fields</TabsTrigger>
         </TabsList>
 
@@ -252,7 +275,8 @@ const TenstreetIntegration = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PROD">Production</SelectItem>
-                      <SelectItem value="TEST">Test/Development</SelectItem>
+                      <SelectItem value="DEV">Development</SelectItem>
+                      <SelectItem value="TEST">Test</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -281,6 +305,15 @@ const TenstreetIntegration = () => {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="driverId">Driver ID (Optional)</Label>
+                  <Input
+                    id="driverId"
+                    value={config.driverId}
+                    onChange={(e) => setConfig({...config, driverId: e.target.value})}
+                    placeholder="Leave empty to auto-generate"
+                  />
+                </div>
+                <div>
                   <Label htmlFor="jobId">Job ID (Optional)</Label>
                   <Input
                     id="jobId"
@@ -289,7 +322,7 @@ const TenstreetIntegration = () => {
                     placeholder="1234"
                   />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <Label htmlFor="statusTag">Status Tag</Label>
                   <Input
                     id="statusTag"
@@ -298,132 +331,238 @@ const TenstreetIntegration = () => {
                     placeholder="Status=New Applicant"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="appReferrer">App Referrer</Label>
+                  <Input
+                    id="appReferrer"
+                    value={config.appReferrer}
+                    onChange={(e) => setConfig({...config, appReferrer: e.target.value})}
+                    placeholder="3BI"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="personal-data" className="space-y-6">
+        <TabsContent value="personal-name" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
-                Personal Data Field Mapping
+                PersonName Field Mapping
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label>First Name</Label>
-                  <Select 
-                    value={personalDataMappings.firstName} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, firstName: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Prefix (Mr., Mrs., Dr., etc.)</Label>
+                  {renderFieldSelect(
+                    personalDataMappings.prefix,
+                    (value) => setPersonalDataMappings({...personalDataMappings, prefix: value})
+                  )}
                 </div>
                 <div>
-                  <Label>Last Name</Label>
-                  <Select 
-                    value={personalDataMappings.lastName} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, lastName: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Given Name (First Name) *</Label>
+                  {renderFieldSelect(
+                    personalDataMappings.givenName,
+                    (value) => setPersonalDataMappings({...personalDataMappings, givenName: value})
+                  )}
                 </div>
                 <div>
-                  <Label>Email</Label>
-                  <Select 
-                    value={personalDataMappings.email} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, email: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Middle Name</Label>
+                  {renderFieldSelect(
+                    personalDataMappings.middleName,
+                    (value) => setPersonalDataMappings({...personalDataMappings, middleName: value})
+                  )}
                 </div>
                 <div>
-                  <Label>Phone</Label>
-                  <Select 
-                    value={personalDataMappings.phone} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, phone: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Family Name (Last Name) *</Label>
+                  {renderFieldSelect(
+                    personalDataMappings.familyName,
+                    (value) => setPersonalDataMappings({...personalDataMappings, familyName: value})
+                  )}
                 </div>
                 <div>
-                  <Label>City/Municipality</Label>
-                  <Select 
-                    value={personalDataMappings.municipality} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, municipality: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Affix (Jr., Sr., III, etc.)</Label>
+                  {renderFieldSelect(
+                    personalDataMappings.affix,
+                    (value) => setPersonalDataMappings({...personalDataMappings, affix: value})
+                  )}
                 </div>
-                <div>
-                  <Label>State/Region</Label>
-                  <Select 
-                    value={personalDataMappings.region} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, region: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="address-contact" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Address & Contact Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-4">Postal Address</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Country Code</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.countryCode,
+                      (value) => setPersonalDataMappings({...personalDataMappings, countryCode: value}),
+                      "Default: US"
+                    )}
+                  </div>
+                  <div>
+                    <Label>Municipality (City) *</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.municipality,
+                      (value) => setPersonalDataMappings({...personalDataMappings, municipality: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Region (State) *</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.region,
+                      (value) => setPersonalDataMappings({...personalDataMappings, region: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Postal Code (ZIP) *</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.postalCode,
+                      (value) => setPersonalDataMappings({...personalDataMappings, postalCode: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Address Line 1</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.address1,
+                      (value) => setPersonalDataMappings({...personalDataMappings, address1: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Address Line 2</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.address2,
+                      (value) => setPersonalDataMappings({...personalDataMappings, address2: value})
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <Label>Postal Code</Label>
-                  <Select 
-                    value={personalDataMappings.postalCode} 
-                    onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, postalCode: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFields.map(field => (
-                        <SelectItem key={field} value={field}>{field}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                  <Phone className="w-5 h-5" />
+                  Contact Data
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Email Address *</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.internetEmailAddress,
+                      (value) => setPersonalDataMappings({...personalDataMappings, internetEmailAddress: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Primary Phone</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.primaryPhone,
+                      (value) => setPersonalDataMappings({...personalDataMappings, primaryPhone: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Secondary Phone</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.secondaryPhone,
+                      (value) => setPersonalDataMappings({...personalDataMappings, secondaryPhone: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Preferred Contact Method</Label>
+                    <Select 
+                      value={personalDataMappings.preferredMethod} 
+                      onValueChange={(value) => setPersonalDataMappings({...personalDataMappings, preferredMethod: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Default: PrimaryPhone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">-- Auto Select --</SelectItem>
+                        <SelectItem value="PrimaryPhone">Primary Phone</SelectItem>
+                        <SelectItem value="SecondaryPhone">Secondary Phone</SelectItem>
+                        <SelectItem value="Email">Email</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="identification" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Identification & Personal Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-4">Government ID (Optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Government ID (SSN)</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.governmentId,
+                      (value) => setPersonalDataMappings({...personalDataMappings, governmentId: value})
+                    )}
+                  </div>
+                  <div>
+                    <Label>Country Code</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.governmentIdCountryCode,
+                      (value) => setPersonalDataMappings({...personalDataMappings, governmentIdCountryCode: value}),
+                      "Default: US"
+                    )}
+                  </div>
+                  <div>
+                    <Label>Issuing Authority</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.governmentIdIssuingAuthority,
+                      (value) => setPersonalDataMappings({...personalDataMappings, governmentIdIssuingAuthority: value}),
+                      "Default: SSA"
+                    )}
+                  </div>
+                  <div>
+                    <Label>Document Type</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.governmentIdDocumentType,
+                      (value) => setPersonalDataMappings({...personalDataMappings, governmentIdDocumentType: value}),
+                      "Default: SSN"
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-lg font-medium mb-4">Personal Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Date of Birth</Label>
+                    {renderFieldSelect(
+                      personalDataMappings.dateOfBirth,
+                      (value) => setPersonalDataMappings({...personalDataMappings, dateOfBirth: value})
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -449,10 +588,10 @@ const TenstreetIntegration = () => {
                     <div className="space-y-2">
                       <Label>Question ID</Label>
                       <Input
-                        value={question.id}
+                        value={question.questionId}
                         onChange={(e) => {
                           const updated = [...customQuestions];
-                          updated[index].id = e.target.value;
+                          updated[index].questionId = e.target.value;
                           setCustomQuestions(updated);
                         }}
                         placeholder="Question ID"
@@ -476,29 +615,21 @@ const TenstreetIntegration = () => {
                   <div className="flex-1">
                     <div className="space-y-2">
                       <Label>Field Mapping</Label>
-                      <Select 
-                        value={question.mapping} 
-                        onValueChange={(value) => {
+                      {renderFieldSelect(
+                        question.mapping,
+                        (value) => {
                           const updated = [...customQuestions];
                           updated[index].mapping = value;
                           setCustomQuestions(updated);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select field" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableFields.map(field => (
-                            <SelectItem key={field} value={field}>{field}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        }
+                      )}
                     </div>
                   </div>
-                  <Button
-                    onClick={() => removeCustomQuestion(index)}
-                    variant="destructive"
+                  <Button 
+                    onClick={() => removeCustomQuestion(index)} 
+                    variant="outline" 
                     size="sm"
+                    className="text-red-600 hover:text-red-700"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -512,7 +643,7 @@ const TenstreetIntegration = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
+                <Users className="w-5 h-5" />
                 Display Fields Mapping
                 <Button onClick={addDisplayField} size="sm" variant="outline" className="ml-auto">
                   <Plus className="w-4 h-4 mr-2" />
@@ -524,41 +655,37 @@ const TenstreetIntegration = () => {
               {displayFields.map((field, index) => (
                 <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
                   <div className="flex-1">
-                    <Label>Display Prompt</Label>
-                    <Input
-                      value={field.prompt}
-                      onChange={(e) => {
-                        const updated = [...displayFields];
-                        updated[index].prompt = e.target.value;
-                        setDisplayFields(updated);
-                      }}
-                      placeholder="Display prompt"
-                    />
+                    <div className="space-y-2">
+                      <Label>Display Prompt</Label>
+                      <Input
+                        value={field.displayPrompt}
+                        onChange={(e) => {
+                          const updated = [...displayFields];
+                          updated[index].displayPrompt = e.target.value;
+                          setDisplayFields(updated);
+                        }}
+                        placeholder="Display prompt"
+                      />
+                    </div>
                   </div>
                   <div className="flex-1">
-                    <Label>Field Mapping</Label>
-                    <Select 
-                      value={field.mapping} 
-                      onValueChange={(value) => {
-                        const updated = [...displayFields];
-                        updated[index].mapping = value;
-                        setDisplayFields(updated);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select field" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableFields.map(field => (
-                          <SelectItem key={field} value={field}>{field}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label>Field Mapping</Label>
+                      {renderFieldSelect(
+                        field.mapping,
+                        (value) => {
+                          const updated = [...displayFields];
+                          updated[index].mapping = value;
+                          setDisplayFields(updated);
+                        }
+                      )}
+                    </div>
                   </div>
-                  <Button
-                    onClick={() => removeDisplayField(index)}
-                    variant="destructive"
+                  <Button 
+                    onClick={() => removeDisplayField(index)} 
+                    variant="outline" 
                     size="sm"
+                    className="text-red-600 hover:text-red-700"
                   >
                     <X className="w-4 h-4" />
                   </Button>

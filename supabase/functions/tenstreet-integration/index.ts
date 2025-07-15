@@ -24,6 +24,8 @@ Deno.serve(async (req) => {
         return await handleSendApplication(data)
       case 'test_connection':
         return await handleTestConnection(data)
+      case 'sync_applicant':
+        return await handleSyncApplicant(data)
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
@@ -100,28 +102,8 @@ async function handleTestConnection(data: any) {
   try {
     const { config } = data
 
-    // Build a minimal test XML
-    const testXML = `<?xml version="1.0" encoding="UTF-8"?>
-<TenstreetData>
-    <Authentication>
-        <ClientId>${config.clientId}</ClientId>
-        <Password>${config.password}</Password>
-        <Service>${config.service}</Service>
-    </Authentication>
-    <Mode>${config.mode}</Mode>
-    <Source>${config.source}</Source>
-    <CompanyId>${config.companyId}</CompanyId>
-    <CompanyName>${config.companyName}</CompanyName>
-    <PersonalData>
-        <PersonName>
-            <GivenName>Test</GivenName>
-            <FamilyName>Connection</FamilyName>
-        </PersonName>
-        <ContactData>
-            <InternetEmailAddress>test@example.com</InternetEmailAddress>
-        </ContactData>
-    </PersonalData>
-</TenstreetData>`
+    // Build enhanced test XML with all supported fields
+    const testXML = buildTestXML(config)
 
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
       method: 'POST',
@@ -159,35 +141,226 @@ async function handleTestConnection(data: any) {
   }
 }
 
-function buildTenstreetXML(applicationData: any, mappings: any, config: any): string {
-  const { personalDataMappings, customQuestions, displayFields } = mappings
+async function handleSyncApplicant(data: any) {
+  try {
+    const { phone } = data
 
-  // Helper function to get field value from application data
-  const getFieldValue = (fieldName: string) => {
-    if (!fieldName) return ''
-    return applicationData[fieldName] || ''
+    // Mock sync functionality - in real implementation, this would query Tenstreet API
+    // For now, return mock data
+    const mockData = {
+      found: true,
+      applicantData: {
+        driverId: '123456789',
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john.doe@example.com',
+        phone: phone,
+        cdlClass: 'A',
+        experienceMonths: '24',
+        veteranStatus: 'No'
+      }
+    }
+
+    return new Response(
+      JSON.stringify(mockData),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  } catch (error) {
+    console.error('Error syncing applicant:', error)
+    return new Response(
+      JSON.stringify({ 
+        found: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
   }
+}
+
+// Helper function to safely get field value from application data
+function getFieldValue(applicationData: any, fieldName: string): string {
+  if (!fieldName || !applicationData) return ''
+  
+  // Handle nested field access
+  if (fieldName.includes('.')) {
+    const parts = fieldName.split('.')
+    let value = applicationData
+    for (const part of parts) {
+      value = value?.[part]
+      if (value === undefined || value === null) return ''
+    }
+    return String(value)
+  }
+  
+  const value = applicationData[fieldName]
+  if (value === undefined || value === null) return ''
+  return String(value)
+}
+
+// Helper function to format phone number
+function formatPhoneNumber(phone: string): string {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+  }
+  return phone
+}
+
+// Helper function to format date
+function formatDate(dateValue: string): string {
+  if (!dateValue) return ''
+  try {
+    const date = new Date(dateValue)
+    if (isNaN(date.getTime())) return dateValue
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${month}/${day}/${year}`
+  } catch (error) {
+    return dateValue
+  }
+}
+
+// Helper function to format SSN
+function formatSSN(ssn: string): string {
+  if (!ssn) return ''
+  const digits = ssn.replace(/\D/g, '')
+  if (digits.length === 9) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`
+  }
+  return ssn
+}
+
+// Build comprehensive test XML
+function buildTestXML(config: any): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<TenstreetData>
+    <Authentication>
+        <ClientId>${config.clientId}</ClientId>
+        <Password>${config.password}</Password>
+        <Service>${config.service || 'subject_upload'}</Service>
+    </Authentication>
+    <Mode>${config.mode || 'PROD'}</Mode>
+    <Source>${config.source}</Source>
+    <CompanyId>${config.companyId}</CompanyId>
+    <CompanyName>${config.companyName}</CompanyName>
+    <DriverId>TEST123456</DriverId>
+    <PersonalData>
+        <PersonName>
+            <Prefix>Mr.</Prefix>
+            <GivenName>Test</GivenName>
+            <MiddleName>Q</MiddleName>
+            <FamilyName>Connection</FamilyName>
+            <Affix>Jr.</Affix>
+        </PersonName>
+        <PostalAddress>
+            <CountryCode>US</CountryCode>
+            <Municipality>Test City</Municipality>
+            <Region>TX</Region>
+            <PostalCode>12345</PostalCode>
+            <Address1>123 Test Street</Address1>
+            <Address2>Apt 456</Address2>
+        </PostalAddress>
+        <GovernmentID countryCode="US" issuingAuthority="SSA" documentType="SSN">
+            123-45-6789
+        </GovernmentID>
+        <DateOfBirth>01/01/1990</DateOfBirth>
+        <ContactData PreferredMethod="PrimaryPhone">
+            <InternetEmailAddress>test@example.com</InternetEmailAddress>
+            <PrimaryPhone>555-123-4567</PrimaryPhone>
+            <SecondaryPhone>555-987-6543</SecondaryPhone>
+        </ContactData>
+    </PersonalData>
+</TenstreetData>`
+}
+
+// Build comprehensive Tenstreet XML with all supported fields
+function buildTenstreetXML(applicationData: any, mappings: any, config: any): string {
+  const { personalData, customQuestions, displayFields } = mappings
+
+  // Build PersonName section
+  const personNameXML = `
+        <PersonName>
+            <Prefix>${getFieldValue(applicationData, personalData?.prefix || '')}</Prefix>
+            <GivenName>${getFieldValue(applicationData, personalData?.givenName || personalData?.firstName || '')}</GivenName>
+            <MiddleName>${getFieldValue(applicationData, personalData?.middleName || '')}</MiddleName>
+            <FamilyName>${getFieldValue(applicationData, personalData?.familyName || personalData?.lastName || '')}</FamilyName>
+            <Affix>${getFieldValue(applicationData, personalData?.affix || '')}</Affix>
+        </PersonName>`
+
+  // Build PostalAddress section
+  const postalAddressXML = `
+        <PostalAddress>
+            <CountryCode>${getFieldValue(applicationData, personalData?.countryCode || '') || 'US'}</CountryCode>
+            <Municipality>${getFieldValue(applicationData, personalData?.municipality || personalData?.city || '')}</Municipality>
+            <Region>${getFieldValue(applicationData, personalData?.region || personalData?.state || '')}</Region>
+            <PostalCode>${getFieldValue(applicationData, personalData?.postalCode || personalData?.zipCode || '')}</PostalCode>
+            <Address1>${getFieldValue(applicationData, personalData?.address1 || personalData?.address || '')}</Address1>
+            <Address2>${getFieldValue(applicationData, personalData?.address2 || '')}</Address2>
+        </PostalAddress>`
+
+  // Build GovernmentID section (optional)
+  const governmentIdValue = getFieldValue(applicationData, personalData?.governmentId || personalData?.ssn || '')
+  const governmentIdXML = governmentIdValue ? `
+        <GovernmentID countryCode="${getFieldValue(applicationData, personalData?.governmentIdCountryCode || '') || 'US'}" 
+                      issuingAuthority="${getFieldValue(applicationData, personalData?.governmentIdIssuingAuthority || '') || 'SSA'}" 
+                      documentType="${getFieldValue(applicationData, personalData?.governmentIdDocumentType || '') || 'SSN'}">
+            ${formatSSN(governmentIdValue)}
+        </GovernmentID>` : ''
+
+  // Build DateOfBirth section (optional)
+  const dateOfBirth = formatDate(getFieldValue(applicationData, personalData?.dateOfBirth || ''))
+  const dateOfBirthXML = dateOfBirth ? `
+        <DateOfBirth>${dateOfBirth}</DateOfBirth>` : ''
+
+  // Build ContactData section
+  const primaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.primaryPhone || personalData?.phone || ''))
+  const secondaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.secondaryPhone || ''))
+  const preferredMethod = getFieldValue(applicationData, personalData?.preferredMethod || '') || 'PrimaryPhone'
+  
+  const contactDataXML = `
+        <ContactData PreferredMethod="${preferredMethod}">
+            <InternetEmailAddress>${getFieldValue(applicationData, personalData?.internetEmailAddress || personalData?.email || '')}</InternetEmailAddress>
+            ${primaryPhone ? `<PrimaryPhone>${primaryPhone}</PrimaryPhone>` : ''}
+            ${secondaryPhone ? `<SecondaryPhone>${secondaryPhone}</SecondaryPhone>` : ''}
+        </ContactData>`
 
   // Build custom questions XML
-  const customQuestionsXML = customQuestions
-    .filter((q: any) => q.mapping && q.id)
-    .map((q: any) => `
+  const customQuestionsXML = customQuestions && Array.isArray(customQuestions)
+    ? customQuestions
+        .filter((q: any) => q.mapping && q.questionId && getFieldValue(applicationData, q.mapping))
+        .map((q: any) => `
             <CustomQuestion>
-                <QuestionId>${q.id}</QuestionId>
-                <Question>${q.question}</Question>
-                <Answer>${getFieldValue(q.mapping)}</Answer>
+                <QuestionId>${q.questionId}</QuestionId>
+                <Question>${q.question || ''}</Question>
+                <Answer>${getFieldValue(applicationData, q.mapping)}</Answer>
             </CustomQuestion>`)
-    .join('')
+        .join('')
+    : ''
 
   // Build display fields XML
-  const displayFieldsXML = displayFields
-    .filter((f: any) => f.mapping && f.prompt)
-    .map((f: any) => `
+  const displayFieldsXML = displayFields && Array.isArray(displayFields)
+    ? displayFields
+        .filter((f: any) => f.mapping && f.displayPrompt && getFieldValue(applicationData, f.mapping))
+        .map((f: any) => `
         <DisplayField>
-            <DisplayPrompt>${f.prompt}</DisplayPrompt>
-            <DisplayValue>${getFieldValue(f.mapping)}</DisplayValue>
+            <DisplayPrompt>${f.displayPrompt}</DisplayPrompt>
+            <DisplayValue>${getFieldValue(applicationData, f.mapping)}</DisplayValue>
         </DisplayField>`)
-    .join('')
+        .join('')
+    : ''
+
+  // Build optional DriverId section
+  const driverId = config.driverId || getFieldValue(applicationData, 'driver_id') || getFieldValue(applicationData, 'id')
+  const driverIdXML = driverId ? `
+    <DriverId>${driverId}</DriverId>` : ''
 
   // Build optional Job section
   const jobXML = config.jobId ? `
@@ -206,39 +379,18 @@ function buildTenstreetXML(applicationData: any, mappings: any, config: any): st
     <Authentication>
         <ClientId>${config.clientId}</ClientId>
         <Password>${config.password}</Password>
-        <Service>${config.service}</Service>
+        <Service>${config.service || 'subject_upload'}</Service>
     </Authentication>
-
-    <Mode>${config.mode}</Mode>
+    <Mode>${config.mode || 'PROD'}</Mode>
     <Source>${config.source}</Source>
     <CompanyId>${config.companyId}</CompanyId>
-    <CompanyName>${config.companyName}</CompanyName>${jobXML}${tagsXML}
-
-    <PersonalData>
-        <PersonName>
-            <GivenName>${getFieldValue(personalDataMappings.firstName)}</GivenName>
-            <FamilyName>${getFieldValue(personalDataMappings.lastName)}</FamilyName>
-        </PersonName>
-
-        <PostalAddress>
-            <CountryCode>US</CountryCode>
-            <Municipality>${getFieldValue(personalDataMappings.municipality)}</Municipality>
-            <Region>${getFieldValue(personalDataMappings.region)}</Region>
-            <PostalCode>${getFieldValue(personalDataMappings.postalCode)}</PostalCode>
-        </PostalAddress>
-
-        <ContactData>
-            <InternetEmailAddress>${getFieldValue(personalDataMappings.email)}</InternetEmailAddress>
-            <PrimaryPhone>${getFieldValue(personalDataMappings.phone)}</PrimaryPhone>
-        </ContactData>
+    <CompanyName>${config.companyName}</CompanyName>${driverIdXML}${jobXML}${tagsXML}
+    <PersonalData>${personNameXML}${postalAddressXML}${governmentIdXML}${dateOfBirthXML}${contactDataXML}
     </PersonalData>
-
     <ApplicationData>
-        <AppReferrer>3BI</AppReferrer>
-
+        <AppReferrer>${config.appReferrer || '3BI'}</AppReferrer>
         <CustomQuestions>${customQuestionsXML}
         </CustomQuestions>
-        
         <DisplayFields>${displayFieldsXML}
         </DisplayFields>
     </ApplicationData>
