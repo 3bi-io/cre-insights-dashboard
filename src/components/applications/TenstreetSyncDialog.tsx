@@ -63,12 +63,14 @@ const TenstreetSyncDialog: React.FC<TenstreetSyncDialogProps> = ({ application }
       if (data.success && data.applicantData) {
         toast({
           title: "Sync Successful",
-          description: "Found existing Tenstreet applicant data.",
+          description: data.isMockData ? 
+            "Found mock applicant data (test mode)" : 
+            "Found existing Tenstreet applicant data.",
         });
       } else {
         toast({
           title: "No Match Found",
-          description: "No existing applicant found in Tenstreet for this phone number.",
+          description: data.message || "No existing applicant found in Tenstreet for this phone number.",
         });
       }
     },
@@ -183,17 +185,22 @@ const TenstreetSyncDialog: React.FC<TenstreetSyncDialogProps> = ({ application }
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      {syncData.success && syncData.applicantData ? (
-                        <>
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                          Existing Applicant Found
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-5 h-5 text-amber-600" />
-                          No Matching Applicant
-                        </>
-                      )}
+                       {syncData.success && syncData.applicantData ? (
+                         <>
+                           <CheckCircle className="w-5 h-5 text-green-600" />
+                           Existing Applicant Found
+                           {syncData.isMockData && (
+                             <Badge variant="outline" className="ml-2 text-xs">
+                               Test Mode
+                             </Badge>
+                           )}
+                         </>
+                       ) : (
+                         <>
+                           <AlertCircle className="w-5 h-5 text-amber-600" />
+                           No Matching Applicant
+                         </>
+                       )}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
