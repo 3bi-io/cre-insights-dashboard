@@ -23,7 +23,7 @@ export type Database = {
           first_name: string | null
           full_name: string | null
           id: string
-          job_listing_id: string
+          job_listing_id: string | null
           last_name: string | null
           notes: string | null
           phone: string | null
@@ -39,7 +39,7 @@ export type Database = {
           first_name?: string | null
           full_name?: string | null
           id?: string
-          job_listing_id: string
+          job_listing_id?: string | null
           last_name?: string | null
           notes?: string | null
           phone?: string | null
@@ -55,7 +55,7 @@ export type Database = {
           first_name?: string | null
           full_name?: string | null
           id?: string
-          job_listing_id?: string
+          job_listing_id?: string | null
           last_name?: string | null
           notes?: string | null
           phone?: string | null

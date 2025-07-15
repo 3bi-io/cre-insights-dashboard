@@ -187,25 +187,29 @@ const Applications = () => {
                           )}
                         </div>
                         
-                        {/* Additional fields */}
+                        {/* Additional fields from custom_fields if available */}
                         <div className="flex gap-2 flex-wrap">
-                          {application.resume_url && (
-                            <Button variant="outline" size="sm" className="flex items-center gap-1">
-                              <ExternalLink className="w-3 h-3" />
-                              Resume
-                            </Button>
-                          )}
-                          {application.linkedin_url && (
-                            <Button variant="outline" size="sm" className="flex items-center gap-1">
-                              <ExternalLink className="w-3 h-3" />
-                              LinkedIn
-                            </Button>
-                          )}
-                          {application.portfolio_url && (
-                            <Button variant="outline" size="sm" className="flex items-center gap-1">
-                              <ExternalLink className="w-3 h-3" />
-                              Portfolio
-                            </Button>
+                          {application.custom_fields && typeof application.custom_fields === 'object' && (
+                            <>
+                              {(application.custom_fields as any)?.resume_url && (
+                                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                  <ExternalLink className="w-3 h-3" />
+                                  Resume
+                                </Button>
+                              )}
+                              {(application.custom_fields as any)?.linkedin_url && (
+                                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                  <ExternalLink className="w-3 h-3" />
+                                  LinkedIn
+                                </Button>
+                              )}
+                              {(application.custom_fields as any)?.portfolio_url && (
+                                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                  <ExternalLink className="w-3 h-3" />
+                                  Portfolio
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>

@@ -198,8 +198,8 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
                     <div key={application.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
                       <div>
                         <span className="font-medium">{getApplicantName(application)}</span>
-                        {(application.applicant_email || application.email) && (
-                          <span className="text-sm text-gray-600 ml-2">({application.applicant_email || application.email})</span>
+                        {application.applicant_email && (
+                          <span className="text-sm text-gray-600 ml-2">({application.applicant_email})</span>
                         )}
                       </div>
                       <div className="text-sm text-gray-600">
