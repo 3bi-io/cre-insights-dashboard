@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -58,35 +59,30 @@ serve(async (req) => {
 
 function generateJobFeedXML(jobs: any[]): string {
   const xmlJobs = jobs.map(job => {
+    const id = escapeXml(job.id || '')
     const title = escapeXml(job.title || job.job_title || '')
-    const description = escapeXml(job.description || job.job_description || '')
+    const jobSummary = escapeXml(job.job_summary || job.job_description || '')
     const location = escapeXml(job.location || `${job.city || ''}, ${job.state || ''}`.trim().replace(/^,\s*|,\s*$/, '') || '')
     const category = escapeXml(job.job_categories?.name || '')
-    const client = escapeXml(job.client || '')
-    const salaryMin = job.salary_min ? `<salary_min>${job.salary_min}</salary_min>` : ''
-    const salaryMax = job.salary_max ? `<salary_max>${job.salary_max}</salary_max>` : ''
-    const salaryType = job.salary_type ? `<salary_type>${escapeXml(job.salary_type)}</salary_type>` : ''
-    const url = job.url ? `<url>${escapeXml(job.url)}</url>` : ''
-    const jobId = job.job_id ? `<job_id>${escapeXml(job.job_id)}</job_id>` : ''
+    const salaryMin = job.salary_min || ''
+    const salaryMax = job.salary_max || ''
+    const salaryType = escapeXml(job.salary_type || '')
+    const url = escapeXml(job.url || '')
+    const jobType = escapeXml(job.job_type || '')
+    const applyUrl = escapeXml(job.apply_url || '')
 
     return `    <job>
-      <id>${job.id}</id>
+      <id>${id}</id>
       <title>${title}</title>
-      <description>${description}</description>
+      <job_summary>${jobSummary}</job_summary>
       <location>${location}</location>
       <category>${category}</category>
-      <client>${client}</client>
-      <status>${job.status}</status>
-      <experience_level>${job.experience_level || ''}</experience_level>
-      <remote_type>${job.remote_type || ''}</remote_type>
-      ${salaryMin}
-      ${salaryMax}
-      ${salaryType}
-      <budget>${job.budget || 0}</budget>
-      ${jobId}
-      ${url}
-      <created_at>${job.created_at}</created_at>
-      <updated_at>${job.updated_at}</updated_at>
+      <salary_min>${salaryMin}</salary_min>
+      <salary_max>${salaryMax}</salary_max>
+      <salary_type>${salaryType}</salary_type>
+      <url>${url}</url>
+      <job_type>${jobType}</job_type>
+      <apply_url>${applyUrl}</apply_url>
     </job>`
   }).join('\n')
 
