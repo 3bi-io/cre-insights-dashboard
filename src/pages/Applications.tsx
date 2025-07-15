@@ -26,6 +26,28 @@ const Applications = () => {
         .order('applied_at', { ascending: false });
       
       if (error) throw error;
+      
+      // For applications with job_id but no job_listing_id, try to find matching job listing
+      if (data) {
+        const enhancedData = await Promise.all(
+          data.map(async (app) => {
+            if (app.job_id && !app.job_listing_id) {
+              const { data: jobListing } = await supabase
+                .from('job_listings')
+                .select('title, job_title, platforms:platform_id(name)')
+                .eq('job_id', app.job_id)
+                .single();
+              
+              if (jobListing) {
+                return { ...app, job_listings: jobListing };
+              }
+            }
+            return app;
+          })
+        );
+        return enhancedData;
+      }
+      
       return data;
     },
   });
