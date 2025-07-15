@@ -279,7 +279,7 @@ const handler = async (req: Request): Promise<Response> => {
       phone: applicationData.phone,
       source: applicationData.source,
       status: applicationData.status,
-      custom_fields: customFieldValue,
+      job_id: customFieldValue,
       applied_at: new Date().toISOString()
     };
 

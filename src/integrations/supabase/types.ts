@@ -19,10 +19,10 @@ export type Database = {
           applicant_email: string | null
           applied_at: string | null
           created_at: string | null
-          custom_fields: string | null
           first_name: string | null
           full_name: string | null
           id: string
+          job_id: string | null
           job_listing_id: string | null
           last_name: string | null
           notes: string | null
@@ -35,10 +35,10 @@ export type Database = {
           applicant_email?: string | null
           applied_at?: string | null
           created_at?: string | null
-          custom_fields?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
+          job_id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
           notes?: string | null
@@ -51,10 +51,10 @@ export type Database = {
           applicant_email?: string | null
           applied_at?: string | null
           created_at?: string | null
-          custom_fields?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
+          job_id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
           notes?: string | null
