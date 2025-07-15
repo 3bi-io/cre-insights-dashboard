@@ -137,30 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Use job_id as job_listing_id if job_listing_id is not provided
     const jobIdentifier = applicationData.job_listing_id || applicationData.job_id;
 
-    // Validate that we have essential data
-    if (!jobIdentifier && !applicationData.job_title) {
-      console.error('Missing required job identification');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing required job information',
-          message: 'Either job_listing_id, job_id, or job_title is required',
-          received_fields: Object.keys(body),
-          help: 'Please provide either a job_listing_id, job_id, or job_title field in your webhook data',
-          debug_info: {
-            all_received_data: body,
-            parsed_job_data: {
-              job_listing_id: applicationData.job_listing_id,
-              job_id: applicationData.job_id,
-              job_title: applicationData.job_title
-            }
-          }
-        }),
-        { 
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
+    // Job identification is now optional - applications can be created without matching job listings
 
     if (!applicationData.applicant_email && !applicationData.email) {
       console.error('Missing required email');
@@ -227,7 +204,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // If still no job listing found, create one automatically with the provided job title
+    // If still no job listing found and job title provided, create one automatically 
     if (!jobListing && applicationData.job_title) {
       console.log('No job listing found, creating new one with title:', applicationData.job_title);
       
@@ -265,40 +242,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // If still no job listing, return detailed error
-    if (!jobListing) {
-      console.log('No job listing found, fetching available listings for debug');
-      const { data: allJobListings } = await supabase
-        .from('job_listings')
-        .select('id, title, job_title')
-        .limit(10);
-
-      console.log('Available job listings:', allJobListings);
-
-      return new Response(
-        JSON.stringify({ 
-          error: 'Job listing not found',
-          message: 'Could not find a matching job listing',
-          provided_job_id: jobIdentifier,
-          provided_job_title: applicationData.job_title,
-          available_listings: allJobListings?.map(job => ({
-            id: job.id,
-            title: job.title || job.job_title,
-            matches_title: job.title || job.job_title
-          })) || [],
-          help: 'Please verify the job_listing_id/job_id exists or provide a job_title that matches an existing job listing. Check the available listings above.',
-          debug_info: {
-            received_data: body,
-            all_received_fields: Object.keys(body),
-            parsed_application_data: applicationData
-          }
-        }),
-        { 
-          status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
-    }
+    // Applications can now be created without a job listing
 
     // Build applicant name from available fields
     let applicantName = applicationData.applicant_name;
@@ -310,11 +254,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Prepare final application data for insertion
     const finalApplicationData = {
-      job_listing_id: jobListing.id,
+      ...(jobListing && { job_listing_id: jobListing.id }),
       applicant_email: applicationData.applicant_email || applicationData.email,
       first_name: applicationData.first_name || (applicantName ? applicantName.split(' ')[0] : null),
       last_name: applicationData.last_name || (applicantName && applicantName.includes(' ') ? applicantName.split(' ').slice(1).join(' ') : null),
-      email: applicationData.email || applicationData.applicant_email,
       source: applicationData.source,
       status: applicationData.status,
       applied_at: new Date().toISOString()
@@ -358,10 +301,12 @@ const handler = async (req: Request): Promise<Response> => {
           status: application.status,
           applied_at: application.applied_at
         },
-        job_listing: {
-          id: jobListing.id,
-          title: jobListing.title || jobListing.job_title
-        }
+        ...(jobListing && {
+          job_listing: {
+            id: jobListing.id,
+            title: jobListing.title || jobListing.job_title
+          }
+        })
       }),
       { 
         status: 201,

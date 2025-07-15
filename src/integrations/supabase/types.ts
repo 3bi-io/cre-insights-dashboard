@@ -18,20 +18,15 @@ export type Database = {
         Row: {
           applicant_email: string | null
           applied_at: string | null
-          cover_letter: string | null
           created_at: string | null
           custom_fields: Json | null
-          email: string | null
           first_name: string | null
           full_name: string | null
           id: string
           job_listing_id: string
           last_name: string | null
-          linkedin_url: string | null
           notes: string | null
           phone: string | null
-          portfolio_url: string | null
-          resume_url: string | null
           source: string | null
           status: string | null
           updated_at: string | null
@@ -39,20 +34,15 @@ export type Database = {
         Insert: {
           applicant_email?: string | null
           applied_at?: string | null
-          cover_letter?: string | null
           created_at?: string | null
           custom_fields?: Json | null
-          email?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
           job_listing_id: string
           last_name?: string | null
-          linkedin_url?: string | null
           notes?: string | null
           phone?: string | null
-          portfolio_url?: string | null
-          resume_url?: string | null
           source?: string | null
           status?: string | null
           updated_at?: string | null
@@ -60,20 +50,15 @@ export type Database = {
         Update: {
           applicant_email?: string | null
           applied_at?: string | null
-          cover_letter?: string | null
           created_at?: string | null
           custom_fields?: Json | null
-          email?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
           job_listing_id?: string
           last_name?: string | null
-          linkedin_url?: string | null
           notes?: string | null
           phone?: string | null
-          portfolio_url?: string | null
-          resume_url?: string | null
           source?: string | null
           status?: string | null
           updated_at?: string | null
