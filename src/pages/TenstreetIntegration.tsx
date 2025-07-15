@@ -250,8 +250,7 @@ const TenstreetIntegration = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="PROD">Production</SelectItem>
-                      <SelectItem value="TEST">Test</SelectItem>
-                      <SelectItem value="DEV">Development</SelectItem>
+                      <SelectItem value="TEST">Test/Development</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
