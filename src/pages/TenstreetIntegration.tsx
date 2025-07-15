@@ -251,6 +251,7 @@ const TenstreetIntegration = () => {
                     <SelectContent>
                       <SelectItem value="PROD">Production</SelectItem>
                       <SelectItem value="TEST">Test</SelectItem>
+                      <SelectItem value="DEV">Development</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
