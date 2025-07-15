@@ -19,6 +19,9 @@ interface ZapierApplicationData {
   last_name?: string;
   email?: string;
   phone?: string;
+  state?: string;
+  city?: string;
+  zip?: string;
 }
 
 // Helper function to safely extract value from multiple possible field names
@@ -132,8 +135,17 @@ const handler = async (req: Request): Promise<Response> => {
         'source', 'platform', 'origin', 'referrer', 'channel'
       ]) || 'Zapier',
       status: extractValue(body, [
-        'status', 'application_status', 'state', 'stage'
-      ]) || 'pending'
+        'status', 'application_status', 'stage'
+      ]) || 'pending',
+      state: extractValue(body, [
+        'state', 'applicant_state', 'location_state'
+      ]),
+      city: extractValue(body, [
+        'city', 'applicant_city', 'location_city'
+      ]),
+      zip: extractValue(body, [
+        'zip', 'zip_code', 'postal_code', 'applicant_zip'
+      ])
     };
 
     console.log('Processed application data:', JSON.stringify(applicationData, null, 2));
@@ -278,7 +290,10 @@ const handler = async (req: Request): Promise<Response> => {
       last_name: applicationData.last_name || (applicantName && applicantName.includes(' ') ? applicantName.split(' ').slice(1).join(' ') : null),
       phone: applicationData.phone,
       source: applicationData.source,
-      status: applicationData.status,
+      status: applicationData.status || 'pending',
+      state: applicationData.state,
+      city: applicationData.city,
+      zip: applicationData.zip,
       job_id: customFieldValue,
       applied_at: new Date().toISOString()
     };

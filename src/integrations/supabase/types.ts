@@ -16,52 +16,85 @@ export type Database = {
     Tables: {
       applications: {
         Row: {
+          age: string | null
           applicant_email: string | null
           applied_at: string | null
+          cdl: string | null
+          city: string | null
+          consent: string | null
           created_at: string | null
+          drug: string | null
+          exp: string | null
           first_name: string | null
           full_name: string | null
           id: string
           job_id: string | null
           job_listing_id: string | null
           last_name: string | null
+          months: string | null
           notes: string | null
           phone: string | null
+          privacy: string | null
           source: string | null
+          state: string | null
           status: string | null
           updated_at: string | null
+          veteran: string | null
+          zip: string | null
         }
         Insert: {
+          age?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          cdl?: string | null
+          city?: string | null
+          consent?: string | null
           created_at?: string | null
+          drug?: string | null
+          exp?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
           job_id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
+          months?: string | null
           notes?: string | null
           phone?: string | null
+          privacy?: string | null
           source?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
+          veteran?: string | null
+          zip?: string | null
         }
         Update: {
+          age?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          cdl?: string | null
+          city?: string | null
+          consent?: string | null
           created_at?: string | null
+          drug?: string | null
+          exp?: string | null
           first_name?: string | null
           full_name?: string | null
           id?: string
           job_id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
+          months?: string | null
           notes?: string | null
           phone?: string | null
+          privacy?: string | null
           source?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
+          veteran?: string | null
+          zip?: string | null
         }
         Relationships: [
           {
