@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
+import TenstreetSyncDialog from '@/components/applications/TenstreetSyncDialog';
 import { useToast } from '@/hooks/use-toast';
 
 const Applications = () => {
@@ -274,13 +275,14 @@ const Applications = () => {
                          </div>
                       </div>
                       
-                       <div className="flex gap-2">
-                         <ApplicationDetailsDialog application={application} />
-                         <Button variant="outline" size="sm" className="flex items-center gap-2">
-                           <MessageCircle className="w-4 h-4" />
-                           Contact
-                         </Button>
-                       </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <ApplicationDetailsDialog application={application} />
+                          <TenstreetSyncDialog application={application} />
+                          <Button variant="outline" size="sm" className="flex items-center gap-2">
+                            <MessageCircle className="w-4 h-4" />
+                            Contact
+                          </Button>
+                        </div>
                     </div>
                   </CardContent>
                 </Card>

@@ -24,6 +24,8 @@ Deno.serve(async (req) => {
         return await handleSendApplication(data)
       case 'test_connection':
         return await handleTestConnection(data)
+      case 'sync_applicant':
+        return await handleSyncApplicant(data)
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
@@ -156,6 +158,117 @@ async function handleTestConnection(data: any) {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )
+  }
+}
+
+async function handleSyncApplicant(data: any) {
+  try {
+    const { phone, config } = data
+
+    if (!phone) {
+      throw new Error('Phone number is required for sync')
+    }
+
+    // Build XML query to search for applicant by phone
+    const searchXML = `<?xml version="1.0" encoding="UTF-8"?>
+<TenstreetData>
+    <Authentication>
+        <ClientId>${config.clientId}</ClientId>
+        <Password>${config.password}</Password>
+        <Service>applicant_search</Service>
+    </Authentication>
+    <Mode>${config.mode}</Mode>
+    <Source>${config.source}</Source>
+    <CompanyId>${config.companyId}</CompanyId>
+    <CompanyName>${config.companyName}</CompanyName>
+    <SearchCriteria>
+        <PrimaryPhone>${phone}</PrimaryPhone>
+    </SearchCriteria>
+</TenstreetData>`
+
+    console.log('Searching Tenstreet for phone:', phone)
+
+    const response = await fetch('https://dashboard.tenstreet.com/search/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/xml',
+      },
+      body: searchXML
+    })
+
+    const responseText = await response.text()
+    console.log('Tenstreet search response:', responseText)
+
+    if (!response.ok) {
+      throw new Error(`Tenstreet search error: ${response.status} - ${responseText}`)
+    }
+
+    // Parse the XML response to extract applicant data
+    const applicantData = parseApplicantData(responseText)
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        applicantData,
+        message: applicantData ? 'Applicant data found and synced' : 'No existing applicant found',
+        rawResponse: responseText 
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  } catch (error) {
+    console.error('Error syncing applicant:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
+}
+
+function parseApplicantData(xmlResponse: string) {
+  try {
+    // Basic XML parsing - in a real implementation, you'd use a proper XML parser
+    // This is a simplified version for demonstration
+    
+    // Check if applicant was found
+    if (xmlResponse.includes('<Status>NotFound</Status>') || !xmlResponse.includes('<Applicant>')) {
+      return null
+    }
+
+    // Extract basic information using regex (simplified approach)
+    const extractValue = (tag: string) => {
+      const regex = new RegExp(`<${tag}>(.*?)</${tag}>`, 'i')
+      const match = xmlResponse.match(regex)
+      return match ? match[1] : ''
+    }
+
+    return {
+      driverId: extractValue('DriverId'),
+      firstName: extractValue('GivenName'),
+      lastName: extractValue('FamilyName'),
+      email: extractValue('InternetEmailAddress'),
+      phone: extractValue('PrimaryPhone'),
+      address: {
+        municipality: extractValue('Municipality'),
+        region: extractValue('Region'),
+        postalCode: extractValue('PostalCode')
+      },
+      status: extractValue('ApplicantStatus'),
+      experience: extractValue('ExperienceMonths'),
+      cdlClass: extractValue('CDLClass'),
+      lastUpdated: extractValue('LastModified')
+    }
+  } catch (error) {
+    console.error('Error parsing applicant data:', error)
+    return null
   }
 }
 
