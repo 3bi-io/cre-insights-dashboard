@@ -295,6 +295,22 @@ const Applications = () => {
                                </Badge>
                              );
                            })()}
+                           <Select
+                             value={application.status}
+                             onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
+                             disabled={updateStatusMutation.isPending}
+                           >
+                             <SelectTrigger className={`w-32 h-7 text-xs font-medium ${getStatusColor(application.status)}`}>
+                               <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="pending">Pending</SelectItem>
+                               <SelectItem value="reviewed">Reviewed</SelectItem>
+                               <SelectItem value="interviewed">Interviewed</SelectItem>
+                               <SelectItem value="hired">Hired</SelectItem>
+                               <SelectItem value="rejected">Rejected</SelectItem>
+                             </SelectContent>
+                           </Select>
                          </div>
                         <div className="space-y-1 mb-2">
                           <p className="text-gray-600 flex items-center gap-2">
@@ -337,45 +353,29 @@ const Applications = () => {
                          </div>
                       </div>
                       
-                        <div className="flex gap-2 items-center">
-                          <Select
-                            value={application.status}
-                            onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <SelectTrigger className={`w-32 h-8 text-xs font-medium ${getStatusColor(application.status)}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="reviewed">Reviewed</SelectItem>
-                              <SelectItem value="interviewed">Interviewed</SelectItem>
-                              <SelectItem value="hired">Hired</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <ApplicationDetailsDialog application={application} />
-                          {application.phone && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex items-center gap-2"
-                              onClick={() => window.open(`tel:${application.phone}`)}
-                            >
-                              <Phone className="w-4 h-4" />
-                              Call
-                            </Button>
-                          )}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex items-center gap-2"
-                            onClick={() => window.open(`mailto:${getApplicantEmail(application)}`)}
-                          >
-                            <Mail className="w-4 h-4" />
-                            Email
-                          </Button>
-                        </div>
+                       <div className="flex gap-2">
+                         <ApplicationDetailsDialog application={application} />
+                         {application.phone && (
+                           <Button 
+                             variant="outline" 
+                             size="sm" 
+                             className="flex items-center gap-2"
+                             onClick={() => window.open(`tel:${application.phone}`)}
+                           >
+                             <Phone className="w-4 h-4" />
+                             Call
+                           </Button>
+                         )}
+                         <Button 
+                           variant="outline" 
+                           size="sm" 
+                           className="flex items-center gap-2"
+                           onClick={() => window.open(`mailto:${getApplicantEmail(application)}`)}
+                         >
+                           <Mail className="w-4 h-4" />
+                           Email
+                         </Button>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
