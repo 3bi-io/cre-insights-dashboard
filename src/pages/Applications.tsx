@@ -109,6 +109,46 @@ const Applications = () => {
     return app.job_listings?.clients?.name || app.job_listings?.client || null;
   };
 
+  const getApplicantCategory = (app: any) => {
+    const hasCdl = app.cdl?.toLowerCase() === 'yes';
+    const hasAge = app.age?.toLowerCase() === 'yes';
+    const expValue = app.exp?.toLowerCase() || '';
+    
+    // Determine if experience is more than 3 months
+    const hasMoreThan3MonthsExp = 
+      expValue.includes('more than 3') || 
+      expValue.includes('>3') || 
+      expValue.includes('over 3') ||
+      expValue.includes('4') || expValue.includes('5') || expValue.includes('6') ||
+      expValue.includes('year') || expValue.includes('experienced');
+    
+    const hasLessThan3MonthsExp = 
+      expValue.includes('less than 3') || 
+      expValue.includes('<3') || 
+      expValue.includes('under 3') ||
+      expValue.includes('1') || expValue.includes('2') || 
+      expValue.includes('beginner') || expValue.includes('new');
+
+    // Apply the rules:
+    // "D" = cdl(Yes), age(Yes), exp(More than 3 months)
+    if (hasCdl && hasAge && hasMoreThan3MonthsExp) {
+      return { code: 'D', label: 'Experienced Driver', color: 'bg-green-100 text-green-800' };
+    }
+    
+    // "SC" = cdl(Yes), age(Yes), exp(Less than 3 months)
+    if (hasCdl && hasAge && hasLessThan3MonthsExp) {
+      return { code: 'SC', label: 'New CDL Holder', color: 'bg-blue-100 text-blue-800' };
+    }
+    
+    // "SR" = cdl(No), age(Yes), exp(Less than 3 months)
+    if (!hasCdl && hasAge && hasLessThan3MonthsExp) {
+      return { code: 'SR', label: 'Student Ready', color: 'bg-yellow-100 text-yellow-800' };
+    }
+
+    // Default for applicants that don't match any category
+    return { code: 'N/A', label: 'Uncategorized', color: 'bg-gray-100 text-gray-800' };
+  };
+
   const filteredApplications = applications?.filter(app => {
     const applicantName = getApplicantName(app);
     const applicantEmail = getApplicantEmail(app);
@@ -123,6 +163,12 @@ const Applications = () => {
 
   const statusCounts = applications?.reduce((acc, app) => {
     acc[app.status] = (acc[app.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const categoryCounts = applications?.reduce((acc, app) => {
+    const category = getApplicantCategory(app);
+    acc[category.code] = (acc[category.code] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -179,6 +225,31 @@ const Applications = () => {
             ))}
           </div>
 
+          {/* Applicant Categories Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { code: 'D', label: 'Experienced Driver', color: 'bg-green-100 text-green-800', desc: 'CDL + Age + 3+ months exp' },
+              { code: 'SC', label: 'New CDL Holder', color: 'bg-blue-100 text-blue-800', desc: 'CDL + Age + <3 months exp' },
+              { code: 'SR', label: 'Student Ready', color: 'bg-yellow-100 text-yellow-800', desc: 'No CDL + Age + <3 months exp' },
+              { code: 'N/A', label: 'Uncategorized', color: 'bg-gray-100 text-gray-800', desc: 'Other combinations' }
+            ].map((category) => (
+              <Card key={category.code}>
+                <CardContent className="p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Badge className={`text-lg font-bold px-3 py-1 ${category.color}`}>
+                      {category.code}
+                    </Badge>
+                  </div>
+                  <div className="text-2xl font-bold text-white mb-1">
+                    {categoryCounts?.[category.code] || 0}
+                  </div>
+                  <div className="text-sm font-medium text-gray-300 mb-1">{category.label}</div>
+                  <div className="text-xs text-gray-500">{category.desc}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -212,27 +283,35 @@ const Applications = () => {
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-medium text-white">
-                            {getApplicantName(application)}
-                          </h3>
-                          <Select
-                            value={application.status}
-                            onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            <SelectTrigger className={`w-32 h-7 text-xs font-medium ${getStatusColor(application.status)}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="reviewed">Reviewed</SelectItem>
-                              <SelectItem value="interviewed">Interviewed</SelectItem>
-                              <SelectItem value="hired">Hired</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                         <div className="flex items-center gap-3 mb-2">
+                           <h3 className="text-lg font-medium text-white">
+                             {getApplicantName(application)}
+                           </h3>
+                           {(() => {
+                             const category = getApplicantCategory(application);
+                             return (
+                               <Badge className={`text-xs font-bold px-2 py-1 ${category.color}`}>
+                                 {category.code}
+                               </Badge>
+                             );
+                           })()}
+                           <Select
+                             value={application.status}
+                             onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
+                             disabled={updateStatusMutation.isPending}
+                           >
+                             <SelectTrigger className={`w-32 h-7 text-xs font-medium ${getStatusColor(application.status)}`}>
+                               <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="pending">Pending</SelectItem>
+                               <SelectItem value="reviewed">Reviewed</SelectItem>
+                               <SelectItem value="interviewed">Interviewed</SelectItem>
+                               <SelectItem value="hired">Hired</SelectItem>
+                               <SelectItem value="rejected">Rejected</SelectItem>
+                             </SelectContent>
+                           </Select>
+                         </div>
                         <div className="space-y-1 mb-2">
                           <p className="text-gray-600 flex items-center gap-2">
                             <span>{getApplicantEmail(application)}</span>
