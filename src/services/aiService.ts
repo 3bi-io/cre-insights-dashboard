@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { cacheService } from './cacheService';
 
 export type AIProvider = 'openai' | 'anthropic' | 'basic';
 export type DataSensitivity = 'public' | 'internal' | 'sensitive' | 'restricted';
@@ -37,23 +38,51 @@ class AIService {
   async processRequest(request: AIRequest): Promise<AIResponse> {
     const startTime = Date.now();
 
+    // Check cache first
+    const cacheKey = cacheService.getCacheKey(request.data, 'auto', request.parameters);
+    const cachedResult = await cacheService.get(cacheKey);
+    
+    if (cachedResult) {
+      return {
+        ...cachedResult,
+        processingTime: Date.now() - startTime,
+        fallbackUsed: false
+      };
+    }
+
     // Check if AI processing is required and allowed
     if (!this.shouldUseAI(request)) {
-      return this.processWithRules(request, startTime);
+      const result = this.processWithRules(request, startTime);
+      // Cache rule-based results for shorter time
+      await cacheService.set(request.data, result, 'basic', request.parameters, 1, 'rule-based');
+      return result;
     }
 
     // Try providers in order until one succeeds
     for (let i = 0; i < this.preferredProviders.length; i++) {
       const provider = this.preferredProviders[i];
       
-try {
+      try {
         const result = await this.tryProvider(provider, request);
-        return {
+        const response = {
           ...result,
           provider,
           fallbackUsed: i > 0,
           processingTime: Date.now() - startTime
         } as AIResponse;
+
+        // Cache successful AI results
+        await cacheService.set(
+          request.data, 
+          response, 
+          provider, 
+          request.parameters, 
+          24, 
+          'ai', 
+          response.confidence
+        );
+
+        return response;
       } catch (error) {
         console.warn(`Provider ${provider} failed:`, error);
         
@@ -68,7 +97,9 @@ try {
     }
 
     // Fallback to rule-based processing if all AI providers fail
-    return this.processWithRules(request, startTime, true);
+    const fallbackResult = this.processWithRules(request, startTime, true);
+    await cacheService.set(request.data, fallbackResult, 'basic', request.parameters, 1, 'rule-based');
+    return fallbackResult;
   }
 
   private shouldUseAI(request: AIRequest): boolean {

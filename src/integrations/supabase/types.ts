@@ -14,6 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_analysis_cache: {
+        Row: {
+          analysis_result: Json
+          cache_key: string
+          confidence_score: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          processing_type: string
+          provider: string
+        }
+        Insert: {
+          analysis_result: Json
+          cache_key: string
+          confidence_score?: number | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          processing_type: string
+          provider: string
+        }
+        Update: {
+          analysis_result?: Json
+          cache_key?: string
+          confidence_score?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          processing_type?: string
+          provider?: string
+        }
+        Relationships: []
+      }
+      ai_metrics: {
+        Row: {
+          ai_value: number | null
+          created_at: string
+          date: string
+          id: string
+          improvement_percentage: number | null
+          metric_type: string
+          traditional_value: number | null
+          user_id: string
+        }
+        Insert: {
+          ai_value?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          improvement_percentage?: number | null
+          metric_type: string
+          traditional_value?: number | null
+          user_id: string
+        }
+        Update: {
+          ai_value?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          improvement_percentage?: number | null
+          metric_type?: string
+          traditional_value?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_settings: {
+        Row: {
+          ai_processing_enabled: boolean | null
+          audit_enabled: boolean | null
+          bias_reduction_level: number | null
+          created_at: string
+          data_retention_days: number | null
+          data_sharing_level: string | null
+          experience_sensitivity: number | null
+          explainability_level: string | null
+          id: string
+          industry_focus: string | null
+          sensitive_data_processing: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_processing_enabled?: boolean | null
+          audit_enabled?: boolean | null
+          bias_reduction_level?: number | null
+          created_at?: string
+          data_retention_days?: number | null
+          data_sharing_level?: string | null
+          experience_sensitivity?: number | null
+          explainability_level?: string | null
+          id?: string
+          industry_focus?: string | null
+          sensitive_data_processing?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_processing_enabled?: boolean | null
+          audit_enabled?: boolean | null
+          bias_reduction_level?: number | null
+          created_at?: string
+          data_retention_days?: number | null
+          data_sharing_level?: string | null
+          experience_sensitivity?: number | null
+          explainability_level?: string | null
+          id?: string
+          industry_focus?: string | null
+          sensitive_data_processing?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           age: string | null
@@ -511,6 +625,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]

@@ -22,6 +22,7 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
+import PrivacyControls from "./pages/PrivacyControls";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="applications" element={<Applications />} />
                 <Route path="ai-analytics" element={<AIAnalytics />} />
                 <Route path="ai-impact" element={<AIImpactDashboard />} />
+                <Route path="privacy-controls" element={<PrivacyControls />} />
                 <Route path="voice-agent" element={<VoiceAgent />} />
                 <Route path="tenstreet" element={<TenstreetIntegration />} />
                 <Route path="routes" element={<RoutesPage />} />

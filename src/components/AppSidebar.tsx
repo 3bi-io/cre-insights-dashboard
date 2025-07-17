@@ -15,7 +15,8 @@ import {
   Link,
   Mic,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 import {
   Sidebar,
@@ -51,6 +52,7 @@ const AppSidebar = () => {
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
     { path: '/dashboard/platforms', label: 'Platforms', icon: Megaphone },
     { path: '/dashboard/clients', label: 'Clients', icon: Building },
+    { path: '/dashboard/privacy-controls', label: 'Privacy Controls', icon: Shield },
     { path: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
 
