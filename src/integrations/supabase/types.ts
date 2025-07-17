@@ -581,6 +581,144 @@ export type Database = {
           },
         ]
       }
+      meta_ad_accounts: {
+        Row: {
+          account_id: string
+          account_name: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          timezone_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          account_name?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          timezone_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          account_name?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          timezone_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meta_campaigns: {
+        Row: {
+          account_id: string
+          campaign_id: string
+          campaign_name: string | null
+          created_at: string
+          created_time: string | null
+          id: string
+          objective: string | null
+          status: string | null
+          updated_at: string
+          updated_time: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          campaign_id: string
+          campaign_name?: string | null
+          created_at?: string
+          created_time?: string | null
+          id?: string
+          objective?: string | null
+          status?: string | null
+          updated_at?: string
+          updated_time?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          campaign_id?: string
+          campaign_name?: string | null
+          created_at?: string
+          created_time?: string | null
+          id?: string
+          objective?: string | null
+          status?: string | null
+          updated_at?: string
+          updated_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meta_daily_spend: {
+        Row: {
+          account_id: string
+          ad_id: string | null
+          adset_id: string | null
+          campaign_id: string | null
+          clicks: number | null
+          cpc: number | null
+          cpm: number | null
+          created_at: string
+          ctr: number | null
+          date_start: string
+          date_stop: string
+          frequency: number | null
+          id: string
+          impressions: number | null
+          reach: number | null
+          spend: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          ad_id?: string | null
+          adset_id?: string | null
+          campaign_id?: string | null
+          clicks?: number | null
+          cpc?: number | null
+          cpm?: number | null
+          created_at?: string
+          ctr?: number | null
+          date_start: string
+          date_stop: string
+          frequency?: number | null
+          id?: string
+          impressions?: number | null
+          reach?: number | null
+          spend?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          ad_id?: string | null
+          adset_id?: string | null
+          campaign_id?: string | null
+          clicks?: number | null
+          cpc?: number | null
+          cpm?: number | null
+          created_at?: string
+          ctr?: number | null
+          date_start?: string
+          date_stop?: string
+          frequency?: number | null
+          id?: string
+          impressions?: number | null
+          reach?: number | null
+          spend?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platforms: {
         Row: {
           api_endpoint: string | null
