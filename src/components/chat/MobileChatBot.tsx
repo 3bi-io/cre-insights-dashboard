@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Minimize2, Maximize2, Pin, PinOff, Move, Send } from 'lucide-react';
+import { MessageSquare, X, Minimize2, Maximize2, Pin, PinOff, Move, Send, History, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,15 @@ interface Position {
   y: number;
 }
 
+interface ChatSession {
+  id: string;
+  title: string;
+  page?: string;
+  context?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface ChatBotProps {
   page?: string;
   context?: any;
@@ -37,6 +46,9 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [showSessionHistory, setShowSessionHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -140,20 +152,195 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
   };
 
   useEffect(() => {
+    // Load user's chat sessions when component mounts and user is authenticated
+    const fetchSessions = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('chat_sessions')
+            .select('*')
+            .order('updated_at', { ascending: false });
+          
+          if (error) throw error;
+          if (data) setSessions(data);
+        }
+      } catch (error) {
+        console.error('Error fetching chat sessions:', error);
+      }
+    };
+
+    fetchSessions();
+  }, []);
+
+  // Create a new chat session or update existing one with messages
+  const saveSession = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to save chat sessions.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (messages.length <= 1) {
+        // Don't save sessions with only the welcome message
+        return;
+      }
+
+      // Generate a title based on first user message
+      const userMessages = messages.filter(msg => msg.sender === 'user');
+      const sessionTitle = userMessages.length > 0 
+        ? userMessages[0].text.slice(0, 40) + (userMessages[0].text.length > 40 ? '...' : '')
+        : 'New Chat';
+
+      let sessionId = currentSessionId;
+      
+      // Create a new session if we don't have one
+      if (!sessionId) {
+        const { data, error } = await supabase
+          .from('chat_sessions')
+          .insert([{
+            user_id: user.id,
+            title: sessionTitle,
+            page,
+            context: context ? JSON.stringify(context) : null
+          }])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        if (data) {
+          sessionId = data.id;
+          setCurrentSessionId(sessionId);
+          setSessions(prev => [data, ...prev]);
+        }
+      } else {
+        // Update existing session
+        const { error } = await supabase
+          .from('chat_sessions')
+          .update({ 
+            title: sessionTitle,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', sessionId);
+        
+        if (error) throw error;
+      }
+
+      // Save messages to the database
+      if (sessionId) {
+        // Get only new messages that need to be saved
+        const messagesToSave = messages.filter(msg => !msg.id.includes('db_'));
+        
+        if (messagesToSave.length > 0) {
+          const { error } = await supabase
+            .from('chat_messages')
+            .insert(
+              messagesToSave.map(msg => ({
+                session_id: sessionId,
+                message: msg.text,
+                sender: msg.sender,
+                is_analytics: !!msg.isAnalytics,
+                timestamp: msg.timestamp.toISOString()
+              }))
+            );
+          
+          if (error) throw error;
+          
+          // Update message IDs to indicate they're saved in DB
+          setMessages(prev => 
+            prev.map(msg => 
+              messagesToSave.includes(msg) 
+                ? { ...msg, id: `db_${msg.id}` } 
+                : msg
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error saving chat session:', error);
+      toast({
+        title: "Save Error",
+        description: "Could not save your chat session.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load an existing chat session
+  const loadSession = async (sessionId: string) => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('timestamp', { ascending: true });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const loadedMessages = data.map(msg => ({
+          id: `db_${msg.id}`,
+          text: msg.message,
+          sender: msg.sender as 'user' | 'bot',
+          timestamp: new Date(msg.timestamp),
+          isAnalytics: msg.is_analytics
+        }));
+        
+        setMessages(loadedMessages);
+        setCurrentSessionId(sessionId);
+        setShowSessionHistory(false);
+      }
+    } catch (error) {
+      console.error('Error loading chat session:', error);
+      toast({
+        title: "Load Error",
+        description: "Could not load the chat session.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Start a new chat session
+  const startNewSession = () => {
+    setCurrentSessionId(null);
+    setMessages([{
+      id: '1',
+      text: getWelcomeMessage(page),
+      sender: 'bot',
+      timestamp: new Date()
+    }]);
+    setShowSessionHistory(false);
+  };
+
+  // Save chat session after messages update
+  useEffect(() => {
+    if (isOpen && messages.length > 1 && !isLoading) {
+      const saveTimer = setTimeout(() => {
+        saveSession();
+      }, 2000); // Save after 2 seconds of inactivity
+      
+      return () => clearTimeout(saveTimer);
+    }
+  }, [messages, isLoading]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const welcomeMessage = getWelcomeMessage(page);
-      setMessages([{
-        id: '1',
-        text: welcomeMessage,
-        sender: 'bot',
-        timestamp: new Date()
-      }]);
+      startNewSession();
     }
-  }, [isOpen, page]);
+  }, [isOpen]);
 
   const getWelcomeMessage = (currentPage: string): string => {
     const pageMessages: Record<string, string> = {
@@ -412,78 +599,141 @@ Your role:
 
       {!isMinimized && (
         <>
-          {/* Messages */}
-          <ScrollArea className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]'}`}>
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+          {showSessionHistory ? (
+            // Session History UI
+            <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]'}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-medium">Chat History</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={startNewSession}
+                  className="gap-1"
                 >
-                  <div
-                    className={`max-w-[85%] rounded-lg p-3 ${
-                      message.sender === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <div className={`${isMobile ? 'text-sm' : 'text-sm'} whitespace-pre-wrap`}>
-                      {message.text}
-                    </div>
-                    {message.isAnalytics && (
-                      <Badge variant="outline" className="mt-2 text-xs">
-                        📊 Analytics
-                      </Badge>
-                    )}
-                    <div className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </div>
+                  <Plus className="w-4 h-4" />
+                  <span>New Chat</span>
+                </Button>
+              </div>
+              
+              <ScrollArea className="h-[calc(100%-48px)]">
+                {sessions.length === 0 ? (
+                  <div className="text-center p-4 text-muted-foreground">
+                    No chat history yet. Start a conversation!
                   </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sessions.map(session => (
+                      <Card
+                        key={session.id}
+                        className="p-3 hover:bg-accent cursor-pointer transition-colors"
+                        onClick={() => loadSession(session.id)}
+                      >
+                        <div className="font-medium truncate">{session.title}</div>
+                        <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                          <span>{new Date(session.updated_at).toLocaleDateString()}</span>
+                          {session.page && <Badge variant="outline" className="text-xs">{session.page}</Badge>}
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
+                )}
+              </ScrollArea>
             </div>
-          </ScrollArea>
+          ) : (
+            // Messages UI
+            <ScrollArea className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]'}`}>
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-lg p-3 ${
+                        message.sender === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <div className={`${isMobile ? 'text-sm' : 'text-sm'} whitespace-pre-wrap`}>
+                        {message.text}
+                      </div>
+                      {message.isAnalytics && (
+                        <Badge variant="outline" className="mt-2 text-xs">
+                          📊 Analytics
+                        </Badge>
+                      )}
+                      <div className="text-xs opacity-70 mt-1">
+                        {message.timestamp.toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          )}
 
           {/* Input */}
           <div className="p-4 border-t bg-background">
-            <div className="flex gap-2 items-end">
-              <Textarea
-                ref={textareaRef}
-                value={currentMessage}
-                onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask about your data..."
-                className={`min-h-[44px] max-h-[120px] resize-none ${isMobile ? 'text-base' : 'text-sm'}`}
-                disabled={isLoading}
-                style={{ fontSize: isMobile ? '16px' : '14px' }} // Prevents zoom on iOS
-              />
-              <Button 
-                onClick={sendMessage} 
-                disabled={isLoading || !currentMessage.trim()}
-                size="sm"
-                className="h-[44px] px-3"
+            {showSessionHistory ? (
+              <Button
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowSessionHistory(false)}
               >
-                <Send className="w-4 h-4" />
+                Back to Current Chat
               </Button>
-            </div>
-            <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-2`}>
-              Try: "Analyze performance" or "Show application trends"
-            </div>
+            ) : (
+              <>
+                <div className="flex gap-2 items-end">
+                  <Textarea
+                    ref={textareaRef}
+                    value={currentMessage}
+                    onChange={(e) => setCurrentMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask about your data..."
+                    className={`min-h-[44px] max-h-[120px] resize-none ${isMobile ? 'text-base' : 'text-sm'}`}
+                    disabled={isLoading}
+                    style={{ fontSize: isMobile ? '16px' : '14px' }} // Prevents zoom on iOS
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm" 
+                    onClick={() => setShowSessionHistory(true)}
+                    className="h-[44px] px-3"
+                    title="Chat history"
+                  >
+                    <History className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    onClick={sendMessage} 
+                    disabled={isLoading || !currentMessage.trim()}
+                    size="sm"
+                    className="h-[44px] px-3"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-2`}>
+                  Try: "Analyze performance" or "Show application trends"
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
