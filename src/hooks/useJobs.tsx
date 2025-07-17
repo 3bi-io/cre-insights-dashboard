@@ -73,7 +73,7 @@ export const useJobs = () => {
       job.title?.toLowerCase().includes(searchLower) ||
       job.job_title?.toLowerCase().includes(searchLower) ||
       job.job_summary?.toLowerCase().includes(searchLower) ||
-      job.job_description?.toLowerCase().includes(searchLower) ||
+      
       job.location?.toLowerCase().includes(searchLower) ||
       job.city?.toLowerCase().includes(searchLower) ||
       job.state?.toLowerCase().includes(searchLower) ||

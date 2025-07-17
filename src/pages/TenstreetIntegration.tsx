@@ -195,7 +195,7 @@ const TenstreetIntegration = () => {
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="">-- None --</SelectItem>
+        <SelectItem value="none">-- None --</SelectItem>
         {AVAILABLE_FIELD_TYPES.map(field => (
           <SelectItem key={field} value={field}>{field}</SelectItem>
         ))}
@@ -492,7 +492,7 @@ const TenstreetIntegration = () => {
                         <SelectValue placeholder="Default: PrimaryPhone" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">-- Auto Select --</SelectItem>
+                        <SelectItem value="auto">-- Auto Select --</SelectItem>
                         <SelectItem value="PrimaryPhone">Primary Phone</SelectItem>
                         <SelectItem value="SecondaryPhone">Secondary Phone</SelectItem>
                         <SelectItem value="Email">Email</SelectItem>
