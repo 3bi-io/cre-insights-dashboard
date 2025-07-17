@@ -28,11 +28,11 @@ const LayoutContent = () => {
       <AppSidebar />
       
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header for mobile devices */}
-        {isMobile ? (
+        {/* Always show mobile header on mobile, desktop header on desktop */}
+        <div className="md:hidden">
           <MobileHeader />
-        ) : (
-          /* Desktop header with conditional logo and theme toggle */
+        </div>
+        <div className="hidden md:block">
           <header className="h-16 flex items-center justify-between border-b bg-card px-4 shrink-0">
             <div className="flex items-center gap-4">
               {(state === 'collapsed') && (
@@ -45,7 +45,7 @@ const LayoutContent = () => {
             </div>
             <ThemeToggle />
           </header>
-        )}
+        </div>
         
         <main className="flex-1 overflow-auto">
           <Outlet />
