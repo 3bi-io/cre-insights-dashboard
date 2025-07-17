@@ -1,14 +1,26 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
 import ThemeToggle from './ThemeToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ChatBot from '@/components/chat/ChatBot';
 
 const LayoutContent = () => {
   const { state } = useSidebar();
   const isMobile = useIsMobile();
+  const location = useLocation();
+  
+  // Extract page name from current route
+  const getCurrentPage = () => {
+    const path = location.pathname;
+    if (path === '/dashboard') return 'dashboard';
+    if (path.includes('/dashboard/')) {
+      return path.split('/dashboard/')[1];
+    }
+    return 'dashboard';
+  };
   
   return (
     <div className="min-h-screen flex w-full">
@@ -32,6 +44,9 @@ const LayoutContent = () => {
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
+        
+        {/* Global ChatBot */}
+        <ChatBot page={getCurrentPage()} />
       </div>
     </div>
   );

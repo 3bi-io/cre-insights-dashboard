@@ -9,3 +9,9 @@ verify_jwt = false
 
 [functions.ai-analytics]
 verify_jwt = true
+
+[functions.chatbot-analytics]
+verify_jwt = true
+
+[functions.openai-chat]
+verify_jwt = true
