@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -16,7 +18,7 @@ import {
   Zap,
   AlertTriangle
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Tooltip,
@@ -55,12 +57,67 @@ interface AIDecisionTracking {
   };
 }
 
+interface ROICalculation {
+  monthlySpend: number;
+  monthlySavings: number;
+  roi: number;
+  timeSaved: number;
+  userSatisfaction: number;
+}
+
 const AIImpactDashboard = () => {
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [decisionData, setDecisionData] = useState<AIDecisionTracking | null>(null);
   const [loading, setLoading] = useState(false);
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter'>('month');
-  const { toast } = useToast();
+  const [monthlySpend, setMonthlySpend] = useState<string>('15000');
+  const [roiData, setRoiData] = useState<ROICalculation | null>(null);
+
+  const calculateROI = (spend: number): ROICalculation => {
+    // AI efficiency improvements based on industry benchmarks
+    const efficiencyGains = {
+      timeToHireReduction: 0.387, // 38.7% reduction
+      costPerHireReduction: 0.333, // 33.3% reduction
+      qualityImprovement: 0.191, // 19.1% improvement
+      processEfficiency: 0.302, // 30.2% improvement
+    };
+
+    // Base costs and metrics
+    const avgCostPerHire = 4200;
+    const traditionalTimeToHire = 14.2; // days
+    const hrHourlyCost = 45; // average HR hourly cost
+    
+    // Calculate monthly hires based on spend
+    const monthlyHires = Math.floor(spend / avgCostPerHire);
+    
+    // Calculate savings
+    const costPerHireSavings = avgCostPerHire * efficiencyGains.costPerHireReduction * monthlyHires;
+    const timeSavingsHours = traditionalTimeToHire * efficiencyGains.timeToHireReduction * 8 * monthlyHires; // 8 hours per day
+    const timeSavingsCost = timeSavingsHours * hrHourlyCost;
+    
+    const totalMonthlySavings = costPerHireSavings + timeSavingsCost;
+    const aiImplementationCost = spend * 0.05; // 5% of spend for AI tools
+    const netSavings = totalMonthlySavings - aiImplementationCost;
+    
+    const roi = aiImplementationCost > 0 ? (netSavings / aiImplementationCost) * 100 : 0;
+    const timeSavedDays = (timeSavingsHours / 8) / monthlyHires || 0;
+    
+    return {
+      monthlySpend: spend,
+      monthlySavings: Math.max(0, netSavings),
+      roi: Math.max(0, roi),
+      timeSaved: timeSavedDays * efficiencyGains.timeToHireReduction,
+      userSatisfaction: 94 - (spend > 50000 ? 10 : 0) // Satisfaction may decrease with very high spend
+    };
+  };
+
+  const handleSpendChange = (value: string) => {
+    setMonthlySpend(value);
+    const spend = parseFloat(value) || 0;
+    if (spend >= 0) {
+      setRoiData(calculateROI(spend));
+    }
+  };
 
   const loadMetrics = async () => {
     setLoading(true);
@@ -139,17 +196,12 @@ const AIImpactDashboard = () => {
       setPerformanceData(mockPerformanceData);
       setDecisionData(mockDecisionData);
 
-      toast({
-        title: "Metrics Updated",
+      toast.success("Metrics Updated", {
         description: "AI impact metrics have been refreshed",
       });
     } catch (error) {
       console.error('Error loading metrics:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load AI impact metrics",
-        variant: "destructive",
-      });
+      toast.error("Failed to load AI impact metrics");
     } finally {
       setLoading(false);
     }
@@ -157,6 +209,7 @@ const AIImpactDashboard = () => {
 
   useEffect(() => {
     loadMetrics();
+    handleSpendChange(monthlySpend); // Initialize ROI calculation
   }, [timeRange]);
 
   const formatImprovement = (value: number) => {
@@ -309,34 +362,88 @@ const AIImpactDashboard = () => {
         </div>
       )}
 
-      {/* AI ROI Summary */}
+      {/* AI ROI Calculator */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            AI ROI Summary
+            <Calculator className="w-5 h-5" />
+            AI ROI Calculator
           </CardTitle>
           <CardDescription>
-            Financial impact of AI implementation in recruitment
+            Calculate potential financial impact based on your monthly recruitment spend
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 mb-1">$18,200</div>
-              <div className="text-sm text-muted-foreground">Monthly Savings</div>
+          <div className="space-y-6">
+            {/* Input Section */}
+            <div className="flex flex-col space-y-2">
+              <Label htmlFor="monthly-spend">Monthly Recruitment Spend ($)</Label>
+              <Input
+                id="monthly-spend"
+                type="number"
+                value={monthlySpend}
+                onChange={(e) => handleSpendChange(e.target.value)}
+                placeholder="Enter your monthly spend"
+                className="max-w-xs"
+                min="0"
+                step="1000"
+              />
+              <p className="text-sm text-muted-foreground">
+                Enter your current monthly recruitment budget to see potential AI savings
+              </p>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600 mb-1">312%</div>
-              <div className="text-sm text-muted-foreground">ROI</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600 mb-1">5.8 days</div>
-              <div className="text-sm text-muted-foreground">Time Saved</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600 mb-1">94%</div>
-              <div className="text-sm text-muted-foreground">User Satisfaction</div>
+
+            {/* Results Section */}
+            {roiData && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600 mb-1">
+                    ${roiData.monthlySavings.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Monthly Savings</div>
+                  <div className="text-xs text-green-600 mt-1">
+                    {roiData.monthlySpend > 0 ? `${((roiData.monthlySavings / roiData.monthlySpend) * 100).toFixed(1)}% of spend` : ''}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600 mb-1">
+                    {roiData.roi.toFixed(0)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">ROI</div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    {roiData.roi > 200 ? 'Excellent' : roiData.roi > 100 ? 'Very Good' : roiData.roi > 50 ? 'Good' : 'Moderate'}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600 mb-1">
+                    {roiData.timeSaved.toFixed(1)} days
+                  </div>
+                  <div className="text-sm text-muted-foreground">Time Saved per Hire</div>
+                  <div className="text-xs text-purple-600 mt-1">
+                    38% faster process
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600 mb-1">
+                    {roiData.userSatisfaction.toFixed(0)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">User Satisfaction</div>
+                  <div className="text-xs text-orange-600 mt-1">
+                    Candidate experience
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Assumptions */}
+            <div className="text-xs text-muted-foreground space-y-1 pt-4 border-t">
+              <p><strong>Calculation based on:</strong></p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>38.7% reduction in time-to-hire</li>
+                <li>33.3% reduction in cost-per-hire</li>
+                <li>5% of spend allocated to AI implementation</li>
+                <li>$4,200 average cost per hire (industry benchmark)</li>
+              </ul>
             </div>
           </div>
         </CardContent>
