@@ -78,14 +78,27 @@ const VoiceAgent = () => {
 
       // Store the signed URL and start conversation
       setSignedUrl(data.signedUrl);
+      
+      console.log('Starting conversation with signed URL:', data.signedUrl);
       const conversationId = await conversation.startSession(data.signedUrl);
       
       console.log('Conversation started with ID:', conversationId);
     } catch (error) {
       console.error('Failed to start conversation:', error);
+      
+      // More specific error messaging
+      let errorMessage = "Failed to connect to voice agent.";
+      if (error.message?.includes('Agent ID')) {
+        errorMessage = "Invalid Agent ID. Please check your ElevenLabs Agent ID.";
+      } else if (error.message?.includes('API key')) {
+        errorMessage = "ElevenLabs API key not configured properly.";
+      } else if (error.message?.includes('signed_url')) {
+        errorMessage = "Failed to get authorization from ElevenLabs. Please check your Agent ID.";
+      }
+      
       toast({
         title: "Connection Failed",
-        description: error.message || "Failed to connect to voice agent. Please check your Agent ID and try again.",
+        description: `${errorMessage} Error: ${error.message}`,
         variant: "destructive",
       });
     }
