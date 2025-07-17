@@ -5,7 +5,7 @@ import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
 import ThemeToggle from './ThemeToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ChatBot from '@/components/chat/ChatBot';
+import ChatBot from '@/components/chat/MobileChatBot';
 
 const LayoutContent = () => {
   const { state } = useSidebar();

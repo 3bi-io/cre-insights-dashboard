@@ -78,12 +78,22 @@ const AppSidebar = () => {
     <Sidebar collapsible="icon" className={isMobile ? "w-full" : ""}>
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
-          <SidebarTrigger />
+          <SidebarTrigger className="lg:hidden" />
           {(state === 'expanded' || isMobile) && (
+            <div className="flex items-center gap-2">
+              <img 
+                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                alt="C.R. England" 
+                className="h-8 w-auto"
+              />
+              <span className="font-semibold text-lg">CRE Insights</span>
+            </div>
+          )}
+          {state === 'collapsed' && !isMobile && (
             <img 
               src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
               alt="C.R. England" 
-              className="h-8 w-auto"
+              className="h-8 w-8 object-contain mx-auto"
             />
           )}
         </div>
