@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, MapPin, Users, BarChart3, Brain, SquareCode, Settings2 } from 'lucide-react';
+import { Loader2, TrendingUp, MapPin, Users, BarChart3, Brain, SquareCode, Settings2, ShieldAlert, Cloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -14,6 +14,13 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
+import { aiService, AIRequest, AIResponse, AIParameters } from '@/services/aiService';
 
 interface AnalyticsData {
   locationConversion: Array<{ location: string; conversionRate: number; totalApplications: number }>;
