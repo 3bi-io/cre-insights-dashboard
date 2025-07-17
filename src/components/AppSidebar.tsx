@@ -13,7 +13,8 @@ import {
   MapPin,
   Megaphone,
   Link,
-  Mic
+  Mic,
+  BarChart3
 } from 'lucide-react';
 import {
   Sidebar,
@@ -42,6 +43,7 @@ const AppSidebar = () => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
+    { path: '/dashboard/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
     { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
     { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
