@@ -49,9 +49,42 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
     ? (isMinimized ? '64px' : 'calc(100vh - 32px)') 
     : (isMinimized ? '64px' : '600px');
 
-  // Touch-friendly drag handlers
+  // Mouse handlers for desktop
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isPinned) return;
+    
+    const rect = chatRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setIsDragging(true);
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || !isPinned) return;
+    
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+    
+    const maxX = window.innerWidth - (isMobile ? window.innerWidth - 32 : 384);
+    const maxY = window.innerHeight - (isMinimized ? 64 : (isMobile ? window.innerHeight - 32 : 600));
+    
+    setPosition({
+      x: Math.max(16, Math.min(newX, maxX)),
+      y: Math.max(16, Math.min(newY, maxY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Touch handlers for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isPinned || isMobile) return;
+    if (!isPinned) return;
     
     const touch = e.touches[0];
     const rect = chatRef.current?.getBoundingClientRect();
@@ -87,10 +120,15 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
 
   useEffect(() => {
     if (isDragging) {
+      // Add both mouse and touch event listeners
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
       document.addEventListener('touchend', handleTouchEnd);
       
       return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
         document.removeEventListener('touchmove', handleTouchMove);
         document.removeEventListener('touchend', handleTouchEnd);
       };
@@ -320,6 +358,7 @@ Your role:
         className={`flex items-center justify-between p-4 border-b bg-primary text-primary-foreground ${
           isPinned && !isMobile ? 'cursor-move' : ''
         }`}
+        onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
         <div className="flex items-center gap-2 min-w-0">
