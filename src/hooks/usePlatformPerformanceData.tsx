@@ -12,24 +12,47 @@ export const usePlatformPerformanceData = () => {
           job_listings(
             id,
             daily_spend(amount),
-            applications(id)
+            applications(id, source)
           )
         `);
 
       if (error) throw error;
 
-      return platformData
-        .map((platform: any) => {
-          const applications = platform.job_listings.reduce((acc: number, job: any) => 
-            acc + job.applications.length, 0);
-          const spend = platform.job_listings.reduce((acc: number, job: any) => 
-            acc + job.daily_spend.reduce((sum: number, spend: any) => sum + Number(spend.amount), 0), 0);
-          const cpa = applications > 0 ? spend / applications : 0;
+      // Group data by platform, consolidating Meta sources
+      const consolidatedData = platformData.reduce((acc: any, platform: any) => {
+        let platformName = platform.name;
+        
+        // Check if any applications are from fb/ig sources
+        const hasMetaSources = platform.job_listings.some((job: any) =>
+          job.applications.some((app: any) => app.source === 'fb' || app.source === 'ig')
+        );
+        
+        if (platformName === 'Facebook' || platformName === 'Instagram' || hasMetaSources) {
+          platformName = 'Meta';
+        }
 
+        if (!acc[platformName]) {
+          acc[platformName] = { applications: 0, spend: 0 };
+        }
+
+        const applications = platform.job_listings.reduce((appAcc: number, job: any) => 
+          appAcc + job.applications.length, 0);
+        const spend = platform.job_listings.reduce((spendAcc: number, job: any) => 
+          spendAcc + job.daily_spend.reduce((sum: number, spend: any) => sum + Number(spend.amount), 0), 0);
+
+        acc[platformName].applications += applications;
+        acc[platformName].spend += spend;
+
+        return acc;
+      }, {});
+
+      return Object.entries(consolidatedData)
+        .map(([platform, data]: [string, any]) => {
+          const cpa = data.applications > 0 ? data.spend / data.applications : 0;
           return {
-            platform: platform.name,
-            applications,
-            spend: Number(spend.toFixed(2)),
+            platform,
+            applications: data.applications,
+            spend: Number(data.spend.toFixed(2)),
             cpa: Number(cpa.toFixed(2))
           };
         })

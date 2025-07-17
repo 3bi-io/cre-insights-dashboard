@@ -7,12 +7,14 @@ import { useSpendTrendData } from '@/hooks/useSpendTrendData';
 import { usePlatformDistributionData } from '@/hooks/usePlatformDistributionData';
 import { usePlatformPerformanceData } from '@/hooks/usePlatformPerformanceData';
 import { useMonthlyBudgetData } from '@/hooks/useMonthlyBudgetData';
+import { useJobVolumeData } from '@/hooks/useJobVolumeData';
 
 const DashboardCharts = () => {
   const { data: spendTrendData = [], isLoading: spendLoading, error: spendError } = useSpendTrendData();
   const { data: platformDistributionData = [], isLoading: distributionLoading, error: distributionError } = usePlatformDistributionData();
   const { data: platformPerformanceData = [], isLoading: performanceLoading, error: performanceError } = usePlatformPerformanceData();
   const { data: monthlyBudgetData = [], isLoading: budgetLoading, error: budgetError } = useMonthlyBudgetData();
+  const { data: jobVolumeData = [], isLoading: jobVolumeLoading, error: jobVolumeError } = useJobVolumeData();
 
   return (
     <div className="space-y-6">
@@ -32,19 +34,34 @@ const DashboardCharts = () => {
           error={spendError}
         />
 
+        {/* Job Volume Bar Chart */}
+        <BarChart
+          data={jobVolumeData}
+          title="Job Volume by Day"
+          xKey="date"
+          bars={[
+            { key: 'active', fill: '#10b981', name: 'Active Jobs' },
+            { key: 'inactive', fill: '#f59e0b', name: 'Inactive Jobs' }
+          ]}
+          height={350}
+          stacked={true}
+          isLoading={jobVolumeLoading}
+          error={jobVolumeError}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Platform Distribution Pie Chart */}
         <PieChart
           data={platformDistributionData}
-          title="Applications by Platform"
+          title="Applications by Platform (Meta Consolidated)"
           height={350}
           innerRadius={60}
           outerRadius={120}
           isLoading={distributionLoading}
           error={distributionError}
         />
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Platform Performance Bar Chart */}
         <BarChart
           data={platformPerformanceData}
@@ -58,7 +75,9 @@ const DashboardCharts = () => {
           isLoading={performanceLoading}
           error={performanceError}
         />
+      </div>
 
+      <div className="grid grid-cols-1 gap-6">
         {/* Monthly Budget Area Chart */}
         <AreaChart
           data={monthlyBudgetData}

@@ -11,6 +11,7 @@ export const usePlatformDistributionData = () => {
         .from('applications')
         .select(`
           id,
+          source,
           job_listings!inner(
             platform_id,
             platforms!inner(name)
@@ -19,9 +20,15 @@ export const usePlatformDistributionData = () => {
 
       if (error) throw error;
 
-      // Count applications by platform
+      // Count applications by platform, consolidating Meta sources
       const platformCounts = data.reduce((acc: any, curr: any) => {
-        const platformName = curr.job_listings.platforms.name;
+        let platformName = curr.job_listings.platforms.name;
+        
+        // Consolidate Facebook and Instagram under Meta
+        if (curr.source === 'fb' || curr.source === 'ig' || platformName === 'Facebook' || platformName === 'Instagram') {
+          platformName = 'Meta';
+        }
+        
         acc[platformName] = (acc[platformName] || 0) + 1;
         return acc;
       }, {});
