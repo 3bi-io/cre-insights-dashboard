@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PlatformSetupDialog from './PlatformSetupDialog';
 import XPlatformActions from './XPlatformActions';
+import MetaPlatformActions from './MetaPlatformActions';
 
 interface Platform {
   id: string;
@@ -101,21 +102,31 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
                          />
                        ) : (
                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                           {platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter') ? (
-                             <MessageCircle className="w-4 h-4 text-blue-500" />
-                           ) : (
-                             <Globe className="w-4 h-4 text-primary" />
-                           )}
+                        {platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter') ? (
+                              <MessageCircle className="w-4 h-4 text-blue-500" />
+                            ) : platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook') ? (
+                              <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                                <span className="text-white font-bold text-xs">M</span>
+                              </div>
+                            ) : (
+                              <Globe className="w-4 h-4 text-primary" />
+                            )}
                          </div>
                        )}
                        <div className="flex flex-col">
                          <span className="font-medium text-foreground">{platform.name}</span>
-                         {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && (
-                           <div className="flex items-center gap-1 mt-1">
-                             <Activity className="w-3 h-3 text-blue-500" />
-                             <span className="text-xs text-blue-600 dark:text-blue-400">Enhanced Integration</span>
-                           </div>
-                         )}
+                          {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Activity className="w-3 h-3 text-blue-500" />
+                              <span className="text-xs text-blue-600 dark:text-blue-400">Enhanced Integration</span>
+                            </div>
+                          )}
+                          {(platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook')) && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <Activity className="w-3 h-3 text-blue-500" />
+                              <span className="text-xs text-blue-600 dark:text-blue-400">Meta Business API</span>
+                            </div>
+                          )}
                        </div>
                      </div>
                    </td>
@@ -129,11 +140,16 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
                        <Badge variant={platform.api_endpoint ? 'default' : 'secondary'}>
                          {platform.api_endpoint ? 'Configured' : 'Setup Required'}
                        </Badge>
-                       {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && platform.api_endpoint && (
-                         <Badge variant="outline" className="text-xs">
-                           API Ready
-                         </Badge>
-                       )}
+                        {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && platform.api_endpoint && (
+                          <Badge variant="outline" className="text-xs">
+                            API Ready
+                          </Badge>
+                        )}
+                        {(platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook')) && (
+                          <Badge variant="outline" className="text-xs">
+                            Meta Ready
+                          </Badge>
+                        )}
                      </div>
                    </td>
                   <td className="py-4 px-4">
@@ -188,6 +204,17 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
         <XPlatformActions 
           platform={platforms.find(p => 
             (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint
+          )!}
+          onRefresh={onRefresh}
+        />
+      )}
+      
+      {platforms && platforms.some(p => 
+        p.name.toLowerCase().includes('meta') || p.name.toLowerCase().includes('facebook')
+      ) && (
+        <MetaPlatformActions 
+          platform={platforms.find(p => 
+            p.name.toLowerCase().includes('meta') || p.name.toLowerCase().includes('facebook')
           )!}
           onRefresh={onRefresh}
         />

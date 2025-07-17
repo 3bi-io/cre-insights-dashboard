@@ -27,7 +27,7 @@ export const usePlatformPerformanceData = () => {
           job.applications.some((app: any) => app.source === 'fb' || app.source === 'ig')
         );
         
-        if (platformName === 'Facebook' || platformName === 'Instagram' || hasMetaSources) {
+        if (platformName === 'Facebook' || platformName === 'Instagram' || platformName === 'Meta' || hasMetaSources) {
           platformName = 'Meta';
         }
 

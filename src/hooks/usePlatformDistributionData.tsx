@@ -25,7 +25,7 @@ export const usePlatformDistributionData = () => {
         let platformName = curr.job_listings.platforms.name;
         
         // Consolidate Facebook and Instagram under Meta
-        if (curr.source === 'fb' || curr.source === 'ig' || platformName === 'Facebook' || platformName === 'Instagram') {
+        if (curr.source === 'fb' || curr.source === 'ig' || platformName === 'Facebook' || platformName === 'Instagram' || platformName === 'Meta') {
           platformName = 'Meta';
         }
         
