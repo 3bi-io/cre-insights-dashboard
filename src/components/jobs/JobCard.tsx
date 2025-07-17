@@ -53,7 +53,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics }) => {
             <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
             <div className="text-sm text-gray-600 mt-1 space-y-1">
               <p className="break-words">
-                {job.platforms?.name} • {job.job_categories?.name}
+                {job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No platforms'} • {job.job_categories?.name}
               </p>
               {job.job_id && (
                 <p className="font-mono text-xs text-muted-foreground">

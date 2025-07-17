@@ -82,8 +82,8 @@ const JobTable: React.FC<JobTableProps> = ({
         bValue = b.job_id || '';
         break;
       case 'platform':
-        aValue = a.platforms?.name?.toLowerCase() || '';
-        bValue = b.platforms?.name?.toLowerCase() || '';
+        aValue = a.job_platform_associations?.[0]?.platforms?.name?.toLowerCase() || '';
+        bValue = b.job_platform_associations?.[0]?.platforms?.name?.toLowerCase() || '';
         break;
       case 'category':
         aValue = a.job_categories?.name?.toLowerCase() || '';
@@ -253,9 +253,13 @@ const JobTable: React.FC<JobTableProps> = ({
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-muted-foreground">
-                        {job.platforms?.name || 'Unknown'}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {job.job_platform_associations?.map((assoc, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {assoc.platforms?.name || 'Unknown'}
+                          </Badge>
+                        )) || <span className="text-muted-foreground">No platforms</span>}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <span className="text-muted-foreground">

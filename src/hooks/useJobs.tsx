@@ -47,7 +47,12 @@ export const useJobs = () => {
         .from('job_listings')
         .select(`
           *,
-          platforms:platform_id(name),
+          job_platform_associations(
+            platforms(
+              id,
+              name
+            )
+          ),
           job_categories:category_id(name),
           clients:client_id(name)
         `)
@@ -79,7 +84,9 @@ export const useJobs = () => {
       job.state?.toLowerCase().includes(searchLower) ||
       job.clients?.name?.toLowerCase().includes(searchLower) ||
       job.client?.toLowerCase().includes(searchLower) ||
-      job.platforms?.name?.toLowerCase().includes(searchLower) ||
+      job.job_platform_associations?.some(assoc => 
+        assoc.platforms?.name?.toLowerCase().includes(searchLower)
+      ) ||
       job.job_categories?.name?.toLowerCase().includes(searchLower);
     
     // Apply route filter if present

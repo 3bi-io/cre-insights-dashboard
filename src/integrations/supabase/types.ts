@@ -581,6 +581,42 @@ export type Database = {
           },
         ]
       }
+      job_platform_associations: {
+        Row: {
+          created_at: string
+          id: string
+          job_listing_id: string
+          platform_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_listing_id: string
+          platform_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_listing_id?: string
+          platform_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_platform_associations_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_platform_associations_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_ad_accounts: {
         Row: {
           account_id: string

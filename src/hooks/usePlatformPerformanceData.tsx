@@ -9,10 +9,12 @@ export const usePlatformPerformanceData = () => {
         .from('platforms')
         .select(`
           name,
-          job_listings(
-            id,
-            daily_spend(amount),
-            applications(id, source)
+          job_platform_associations(
+            job_listings(
+              id,
+              daily_spend(amount),
+              applications(id, source)
+            )
           )
         `);
 
@@ -22,9 +24,9 @@ export const usePlatformPerformanceData = () => {
       const consolidatedData = platformData.reduce((acc: any, platform: any) => {
         let platformName = platform.name;
         
-        // Check if any applications are from fb/ig sources
-        const hasMetaSources = platform.job_listings.some((job: any) =>
-          job.applications.some((app: any) => app.source === 'fb' || app.source === 'ig')
+        // Check if any applications are from fb/ig sources through job platform associations
+        const hasMetaSources = platform.job_platform_associations.some((assoc: any) =>
+          assoc.job_listings.applications.some((app: any) => app.source === 'fb' || app.source === 'ig')
         );
         
         if (platformName === 'Facebook' || platformName === 'Instagram' || platformName === 'Meta' || hasMetaSources) {
@@ -35,10 +37,10 @@ export const usePlatformPerformanceData = () => {
           acc[platformName] = { applications: 0, spend: 0 };
         }
 
-        const applications = platform.job_listings.reduce((appAcc: number, job: any) => 
-          appAcc + job.applications.length, 0);
-        const spend = platform.job_listings.reduce((spendAcc: number, job: any) => 
-          spendAcc + job.daily_spend.reduce((sum: number, spend: any) => sum + Number(spend.amount), 0), 0);
+        const applications = platform.job_platform_associations.reduce((appAcc: number, assoc: any) => 
+          appAcc + assoc.job_listings.applications.length, 0);
+        const spend = platform.job_platform_associations.reduce((spendAcc: number, assoc: any) => 
+          spendAcc + assoc.job_listings.daily_spend.reduce((sum: number, spend: any) => sum + Number(spend.amount), 0), 0);
 
         acc[platformName].applications += applications;
         acc[platformName].spend += spend;

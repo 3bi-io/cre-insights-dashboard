@@ -237,7 +237,7 @@ const Jobs = () => {
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {job.platforms?.name} • {job.job_categories?.name}
+                      {job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No platforms'} • {job.job_categories?.name}
                     </div>
                     {job.job_id && (
                       <div className="text-xs text-muted-foreground font-mono">

@@ -13,8 +13,9 @@ export const usePlatformDistributionData = () => {
           id,
           source,
           job_listings!inner(
-            platform_id,
-            platforms!inner(name)
+            job_platform_associations!inner(
+              platforms!inner(name)
+            )
           )
         `);
 
@@ -22,14 +23,17 @@ export const usePlatformDistributionData = () => {
 
       // Count applications by platform, consolidating Meta sources
       const platformCounts = data.reduce((acc: any, curr: any) => {
-        let platformName = curr.job_listings.platforms.name;
-        
-        // Consolidate Facebook and Instagram under Meta
-        if (curr.source === 'fb' || curr.source === 'ig' || platformName === 'Facebook' || platformName === 'Instagram' || platformName === 'Meta') {
-          platformName = 'Meta';
-        }
-        
-        acc[platformName] = (acc[platformName] || 0) + 1;
+        // Handle multiple platforms per job
+        curr.job_listings.job_platform_associations.forEach((assoc: any) => {
+          let platformName = assoc.platforms.name;
+          
+          // Consolidate Facebook and Instagram under Meta
+          if (curr.source === 'fb' || curr.source === 'ig' || platformName === 'Facebook' || platformName === 'Instagram' || platformName === 'Meta') {
+            platformName = 'Meta';
+          }
+          
+          acc[platformName] = (acc[platformName] || 0) + 1;
+        });
         return acc;
       }, {});
 
