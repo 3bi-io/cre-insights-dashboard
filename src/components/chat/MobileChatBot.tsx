@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Minimize2, Maximize2, Pin, PinOff, Move, Send, History, Plus } from 'lucide-react';
+import { MessageSquare, X, Minimize2, Maximize2, Pin, PinOff, Move, Send, History, Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -49,6 +50,8 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessionHistory, setShowSessionHistory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<'openai' | 'anthropic'>('openai');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -437,13 +440,24 @@ Your role:
           }
         });
       } else {
-        response = await supabase.functions.invoke('openai-chat', {
-          body: { 
-            message: currentMessage,
-            systemPrompt,
-            includeAnalytics: false
-          }
-        });
+        // Use selected AI model for general queries
+        if (selectedModel === 'anthropic') {
+          response = await supabase.functions.invoke('anthropic-chat', {
+            body: { 
+              message: currentMessage,
+              systemPrompt,
+              model: 'claude-3-5-sonnet-20241022'
+            }
+          });
+        } else {
+          response = await supabase.functions.invoke('openai-chat', {
+            body: { 
+              message: currentMessage,
+              systemPrompt,
+              includeAnalytics: false
+            }
+          });
+        }
       }
 
       if (response.error) {
@@ -563,6 +577,18 @@ Your role:
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowSettings(!showSettings);
+              setShowSessionHistory(false);
+            }}
+            className="text-primary-foreground hover:bg-primary-foreground/20"
+            title="Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
           {!isMobile && (
             <Button
               variant="ghost"
@@ -599,7 +625,58 @@ Your role:
 
       {!isMinimized && (
         <>
-          {showSessionHistory ? (
+          {showSettings ? (
+            // Settings UI
+            <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]'}`}>
+              <div className="space-y-4">
+                <h3 className="font-medium">AI Model Settings</h3>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">AI Provider</label>
+                  <Select value={selectedModel} onValueChange={(value: 'openai' | 'anthropic') => setSelectedModel(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select AI model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">
+                        <div className="flex items-center gap-2">
+                          <span>🤖</span>
+                          <div>
+                            <div>OpenAI GPT-4</div>
+                            <div className="text-xs text-muted-foreground">Fast & reliable</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="anthropic">
+                        <div className="flex items-center gap-2">
+                          <span>🧠</span>
+                          <div>
+                            <div>Anthropic Claude</div>
+                            <div className="text-xs text-muted-foreground">Advanced reasoning</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    {selectedModel === 'openai' 
+                      ? 'OpenAI GPT-4 provides fast, accurate responses with broad knowledge.'
+                      : 'Anthropic Claude excels at reasoning, analysis, and detailed explanations.'
+                    }
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <div className="text-sm font-medium mb-2">Current Selection</div>
+                  <Badge variant="outline" className="gap-1">
+                    {selectedModel === 'openai' ? '🤖' : '🧠'}
+                    {selectedModel === 'openai' ? 'OpenAI GPT-4' : 'Anthropic Claude'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ) : showSessionHistory ? (
             // Session History UI
             <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]'}`}>
               <div className="flex justify-between items-center mb-4">
@@ -690,7 +767,15 @@ Your role:
 
           {/* Input */}
           <div className="p-4 border-t bg-background">
-            {showSessionHistory ? (
+            {showSettings ? (
+              <Button
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowSettings(false)}
+              >
+                Back to Current Chat
+              </Button>
+            ) : showSessionHistory ? (
               <Button
                 variant="outline" 
                 className="w-full"
@@ -706,20 +791,37 @@ Your role:
                     value={currentMessage}
                     onChange={(e) => setCurrentMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    placeholder="Ask about your data..."
+                    placeholder={`Ask ${selectedModel === 'openai' ? 'GPT-4' : 'Claude'} about your data...`}
                     className={`min-h-[44px] max-h-[120px] resize-none ${isMobile ? 'text-base' : 'text-sm'}`}
                     disabled={isLoading}
                     style={{ fontSize: isMobile ? '16px' : '14px' }} // Prevents zoom on iOS
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm" 
-                    onClick={() => setShowSessionHistory(true)}
-                    className="h-[44px] px-3"
-                    title="Chat history"
-                  >
-                    <History className="w-4 h-4" />
-                  </Button>
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm" 
+                      onClick={() => {
+                        setShowSessionHistory(false);
+                        setShowSettings(true);
+                      }}
+                      className="h-[21px] px-2"
+                      title="AI settings"
+                    >
+                      <Settings className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm" 
+                      onClick={() => {
+                        setShowSettings(false);
+                        setShowSessionHistory(true);
+                      }}
+                      className="h-[21px] px-2"
+                      title="Chat history"
+                    >
+                      <History className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <Button 
                     onClick={sendMessage} 
                     disabled={isLoading || !currentMessage.trim()}
@@ -729,8 +831,11 @@ Your role:
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-2`}>
-                  Try: "Analyze performance" or "Show application trends"
+                <div className={`${isMobile ? 'text-xs' : 'text-xs'} text-muted-foreground mt-2 flex justify-between items-center`}>
+                  <span>Try: "Analyze performance" or "Show application trends"</span>
+                  <Badge variant="outline" className="text-xs">
+                    {selectedModel === 'openai' ? '🤖 GPT-4' : '🧠 Claude'}
+                  </Badge>
                 </div>
               </>
             )}
