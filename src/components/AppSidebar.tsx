@@ -79,45 +79,105 @@ const AppSidebar = () => {
   };
 
   return (
-    <Sidebar collapsible="icon" className={isMobile ? "w-full" : ""}>
-      <SidebarHeader>
-        <div className="flex items-center justify-between px-2 py-2">
-          <SidebarTrigger className="lg:hidden" />
-          {(state === 'expanded' || isMobile) && (
-            <div className="flex items-center gap-2">
-              <img 
-                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
-                alt="C.R. England" 
-                className="h-8 w-auto"
-              />
-              <span className="font-semibold text-lg">CRE Insights</span>
-            </div>
-          )}
-          {state === 'collapsed' && !isMobile && (
+    <Sidebar 
+      collapsible={isMobile ? "none" : "icon"} 
+      className={`
+        ${isMobile ? "fixed inset-y-0 left-0 z-50 w-72 border-r bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/95" : ""}
+        transition-all duration-300 ease-in-out
+      `}
+      variant={isMobile ? "floating" : "sidebar"}
+    >
+      {/* Mobile overlay */}
+      {isMobile && state === 'expanded' && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => {
+            // Close sidebar on overlay click
+            const trigger = document.querySelector('[data-sidebar="trigger"]') as HTMLElement;
+            trigger?.click();
+          }}
+        />
+      )}
+
+      <SidebarHeader className="border-b px-4 py-4">
+        {(state === 'expanded' || isMobile) && (
+          <div className="flex items-center gap-3">
             <img 
               src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
               alt="C.R. England" 
-              className="h-8 w-8 object-contain mx-auto"
+              className="h-8 w-auto"
             />
-          )}
-        </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-lg leading-none">CRE Insights</span>
+              <span className="text-xs text-muted-foreground leading-none mt-0.5">Dashboard</span>
+            </div>
+          </div>
+        )}
+        {state === 'collapsed' && !isMobile && (
+          <div className="flex justify-center">
+            <img 
+              src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+              alt="C.R. England" 
+              className="h-8 w-8 object-contain"
+            />
+          </div>
+        )}
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
+                const active = isActive(item.path);
                 return (
                   <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                      <NavLink to={item.path} className="flex items-center w-full">
-                        <Icon className="w-4 h-4" />
-                        <span className={isMobile || state === 'expanded' ? 'block' : 'sr-only'}>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={active}
+                      className={`
+                        relative group transition-all duration-200 
+                        ${active 
+                          ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                        }
+                        ${isMobile ? 'h-12 px-3' : 'h-10 px-3'}
+                      `}
+                    >
+                      <NavLink 
+                        to={item.path} 
+                        className="flex items-center w-full gap-3"
+                        onClick={() => {
+                          // Auto-close mobile menu after navigation
+                          if (isMobile) {
+                            setTimeout(() => {
+                              const trigger = document.querySelector('[data-sidebar="trigger"]') as HTMLElement;
+                              if (state === 'expanded') {
+                                trigger?.click();
+                              }
+                            }, 150);
+                          }
+                        }}
+                      >
+                        <Icon className={`
+                          ${isMobile ? 'w-5 h-5' : 'w-4 h-4'} 
+                          ${active ? 'text-primary-foreground' : ''}
+                          transition-transform group-hover:scale-110
+                        `} />
+                        <span className={`
+                          ${isMobile || state === 'expanded' ? 'block' : 'sr-only'}
+                          ${isMobile ? 'text-base' : 'text-sm'}
+                          font-medium
+                        `}>
                           {item.label}
                         </span>
+                        {active && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-foreground rounded-r-full" />
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -128,27 +188,48 @@ const AppSidebar = () => {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        {user && (
-          <div className="p-2 space-y-2">
-            {(state === 'expanded' || isMobile) && (
-              <div className="px-2 py-2 text-sm">
-                <div className="font-medium text-foreground truncate">{user.email}</div>
-                {userRole && (
-                  <Badge className={`${getRoleBadgeColor(userRole)} text-xs mt-1`}>
-                    {userRole}
-                  </Badge>
-                )}
+      <SidebarFooter className="border-t px-4 py-4">
+        {user && (state === 'expanded' || isMobile) && (
+          <div className="space-y-3">
+            <div className="px-2 py-2 rounded-lg bg-accent/50 border">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                  {user.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-foreground truncate">
+                    {user.email}
+                  </div>
+                  {userRole && (
+                    <Badge className={`${getRoleBadgeColor(userRole)} text-xs`}>
+                      {userRole}
+                    </Badge>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
             <Button
               variant="outline"
+              size={isMobile ? "default" : "sm"}
+              onClick={handleSignOut}
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LogOut className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+              <span>Sign Out</span>
+            </Button>
+          </div>
+        )}
+        
+        {/* Collapsed state user indicator */}
+        {user && state === 'collapsed' && !isMobile && (
+          <div className="flex justify-center">
+            <Button
+              variant="ghost"
               size="sm"
               onClick={handleSignOut}
-              className="w-full justify-start"
+              className="w-10 h-10 p-0 rounded-full"
             >
               <LogOut className="w-4 h-4" />
-              {(state === 'expanded' || isMobile) && <span className="ml-2">Sign Out</span>}
             </Button>
           </div>
         )}
