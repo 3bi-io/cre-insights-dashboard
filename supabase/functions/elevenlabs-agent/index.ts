@@ -14,11 +14,15 @@ serve(async (req) => {
   try {
     const { agentId } = await req.json();
     
+    console.log('Received request for agent:', agentId);
+    
     if (!agentId) {
       throw new Error('Agent ID is required');
     }
 
     const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
+    
+    console.log('API key available:', !!elevenLabsApiKey);
     
     if (!elevenLabsApiKey) {
       throw new Error('ElevenLabs API key not configured');

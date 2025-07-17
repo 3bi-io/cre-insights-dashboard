@@ -59,16 +59,21 @@ const VoiceAgent = () => {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
       // Get signed URL from our edge function
+      console.log('Requesting signed URL for agent:', agentId.trim());
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
         body: { agentId: agentId.trim() }
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
+        console.error('Supabase function error:', error);
         throw new Error(error.message || 'Failed to get signed URL');
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to get signed URL');
+      if (!data || !data.success) {
+        console.error('Edge function returned error:', data);
+        throw new Error(data?.error || 'Failed to get signed URL');
       }
 
       // Store the signed URL and start conversation
