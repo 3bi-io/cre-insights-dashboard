@@ -23,6 +23,7 @@ serve(async (req) => {
     const sourceStats = new Map()
     const veteranStats = { yes: 0, no: 0, unknown: 0 }
     const cdlStats = { yes: 0, no: 0, unknown: 0 }
+    const categoryStats = { D: 0, SR: 0, SC: 0, 'N/A': 0 }
 
     applications.forEach(app => {
       // Location analysis
@@ -46,6 +47,21 @@ serve(async (req) => {
       if (app.cdl === 'Yes') cdlStats.yes++
       else if (app.cdl === 'No') cdlStats.no++
       else cdlStats.unknown++
+
+      // Category analysis (D, SR, SC, N/A)
+      // D = Driver (CDL holders with experience)
+      // SR = Senior (experienced, 48+ months)
+      // SC = Semi-experienced (some experience, less than 48 months)
+      // N/A = No experience or missing data
+      if (app.cdl === 'Yes' && app.months === '48+') {
+        categoryStats.D++
+      } else if (app.months === '48+' && app.exp === 'More than 3 months experience') {
+        categoryStats.SR++
+      } else if (app.exp === 'More than 3 months experience' || (app.months && app.months !== '48+' && app.months !== '1')) {
+        categoryStats.SC++
+      } else {
+        categoryStats['N/A']++
+      }
     })
 
     // Convert to arrays and sort
@@ -65,11 +81,19 @@ serve(async (req) => {
         count
       }))
 
+    const categoryBreakdown = Object.entries(categoryStats)
+      .map(([category, count]) => ({
+        category,
+        percentage: (count / applications.length) * 100,
+        count
+      }))
+
     const insights = [
       `Total of ${applications.length} applications received`,
       `Top location: ${locationConversion[0]?.location || 'Various'} with ${locationConversion[0]?.totalApplications || 0} applications`,
       `${veteranStats.yes} veterans among applicants (${((veteranStats.yes / applications.length) * 100).toFixed(1)}%)`,
       `${cdlStats.yes} applicants have CDL (${((cdlStats.yes / applications.length) * 100).toFixed(1)}%)`,
+      `Category breakdown: D=${categoryStats.D}, SR=${categoryStats.SR}, SC=${categoryStats.SC}, N/A=${categoryStats['N/A']}`,
       `Primary sources: ${Array.from(sourceStats.keys()).join(', ')}`
     ]
 
@@ -77,13 +101,15 @@ serve(async (req) => {
       'All applications are currently pending - review and update statuses to track conversion rates',
       'Focus recruitment efforts on high-performing locations like ' + (locationConversion[0]?.location || 'current top markets'),
       'Leverage Facebook and Instagram channels as they appear to be primary sources',
-      'Consider prioritizing applicants with CDL experience for relevant positions',
+      `Prioritize D category applicants (${categoryStats.D}) - CDL holders with 48+ months experience`,
+      `Develop SR category applicants (${categoryStats.SR}) - experienced candidates for senior roles`,
       'Implement application status tracking to better measure conversion rates'
     ]
 
     const result = {
       locationConversion,
       statusBreakdown,
+      categoryBreakdown,
       insights,
       recommendations
     }

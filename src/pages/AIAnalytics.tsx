@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AnalyticsData {
   locationConversion: Array<{ location: string; conversionRate: number; totalApplications: number }>;
   statusBreakdown: Array<{ status: string; percentage: number; count: number }>;
+  categoryBreakdown: Array<{ category: string; percentage: number; count: number }>;
   insights: string[];
   recommendations: string[];
 }
@@ -79,7 +80,7 @@ const AIAnalytics = () => {
           </div>
         </div>
       ) : analyticsData ? (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Location Conversion Rates */}
           <Card>
             <CardHeader>
@@ -144,8 +145,46 @@ const AIAnalytics = () => {
             </CardContent>
           </Card>
 
+          {/* Category Breakdown (D, SR, SC, N/A) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Category Distribution
+              </CardTitle>
+              <CardDescription>
+                D, SR, SC, N/A category breakdown
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {analyticsData.categoryBreakdown.map((category, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{category.category}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {category.count} applications
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-primary">
+                        {category.percentage.toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-xs text-muted-foreground">
+                <p><strong>D:</strong> CDL holders with 48+ months experience</p>
+                <p><strong>SR:</strong> Senior experienced (48+ months)</p>
+                <p><strong>SC:</strong> Semi-experienced candidates</p>
+                <p><strong>N/A:</strong> No experience or missing data</p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* AI Insights */}
-          <Card className="md:col-span-2">
+          <Card className="md:col-span-2 lg:col-span-3">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
