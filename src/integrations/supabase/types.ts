@@ -635,6 +635,44 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_magic_links: {
+        Row: {
+          application_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone_number: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone_number: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone_number?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_magic_links_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -662,6 +700,10 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_sms_links: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
