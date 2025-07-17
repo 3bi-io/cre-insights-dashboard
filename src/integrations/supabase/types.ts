@@ -484,7 +484,6 @@ export type Database = {
           job_title: string | null
           job_type: string | null
           location: string | null
-          platform_id: string
           radius: number | null
           remote_type: string | null
           salary_max: number | null
@@ -514,7 +513,6 @@ export type Database = {
           job_title?: string | null
           job_type?: string | null
           location?: string | null
-          platform_id: string
           radius?: number | null
           remote_type?: string | null
           salary_max?: number | null
@@ -544,7 +542,6 @@ export type Database = {
           job_title?: string | null
           job_type?: string | null
           location?: string | null
-          platform_id?: string
           radius?: number | null
           remote_type?: string | null
           salary_max?: number | null
@@ -570,13 +567,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_listings_platform_id_fkey"
-            columns: ["platform_id"]
-            isOneToOne: false
-            referencedRelation: "platforms"
             referencedColumns: ["id"]
           },
         ]
