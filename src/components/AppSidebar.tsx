@@ -14,7 +14,8 @@ import {
   Megaphone,
   Link,
   Mic,
-  BarChart3
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const AppSidebar = () => {
     { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
     { path: '/dashboard/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
+    { path: '/dashboard/ai-impact', label: 'AI Impact Dashboard', icon: TrendingUp },
     { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
     { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },

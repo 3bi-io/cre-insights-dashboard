@@ -12,6 +12,7 @@ import Index from "./pages/Index";
 import Jobs from "./pages/Jobs";
 import Applications from "./pages/Applications";
 import AIAnalytics from "./pages/AIAnalytics";
+import AIImpactDashboard from "./pages/AIImpactDashboard";
 import VoiceAgent from "./pages/VoiceAgent";
 import TenstreetIntegration from "./pages/TenstreetIntegration";
 import RoutesPage from "./pages/Routes";
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="applications" element={<Applications />} />
                 <Route path="ai-analytics" element={<AIAnalytics />} />
+                <Route path="ai-impact" element={<AIImpactDashboard />} />
                 <Route path="voice-agent" element={<VoiceAgent />} />
                 <Route path="tenstreet" element={<TenstreetIntegration />} />
                 <Route path="routes" element={<RoutesPage />} />
