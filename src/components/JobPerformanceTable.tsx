@@ -22,7 +22,9 @@ const JobPerformanceTable = () => {
           job_title,
           status,
           client,
-          platforms!inner(name),
+          job_platform_associations!inner(
+            platforms!inner(name)
+          ),
           clients(name),
           daily_spend(amount),
           applications(id)
@@ -49,7 +51,7 @@ const JobPerformanceTable = () => {
         return {
           id: job.id,
           title: job.title || job.job_title || 'Untitled Job',
-          platform: job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name || 'Unknown',
+          platform: job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'Unknown',
           client: job.clients?.name || job.client || 'Unknown',
           spend: totalSpend,
           applications: applicationCount,

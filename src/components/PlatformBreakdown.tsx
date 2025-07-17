@@ -15,9 +15,8 @@ const PlatformBreakdown = () => {
         .select(`
           amount,
           job_listings!inner(
-            platform_id,
-            platforms!inner(
-              name
+            job_platform_associations!inner(
+              platforms!inner(name)
             )
           )
         `);
@@ -33,8 +32,10 @@ const PlatformBreakdown = () => {
 
       // Group spend by platform
       const platformSpend = spendData.reduce((acc: Record<string, number>, item) => {
-        const platformName = item.job_listings.platforms.name;
-        acc[platformName] = (acc[platformName] || 0) + Number(item.amount);
+        item.job_listings.job_platform_associations.forEach((assoc: any) => {
+          const platformName = assoc.platforms.name;
+          acc[platformName] = (acc[platformName] || 0) + Number(item.amount);
+        });
         return acc;
       }, {});
 

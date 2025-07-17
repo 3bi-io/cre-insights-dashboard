@@ -47,8 +47,8 @@ export const useJobs = () => {
         .from('job_listings')
         .select(`
           *,
-          job_platform_associations(
-            platforms(
+          job_platform_associations!inner(
+            platforms!inner(
               id,
               name
             )
