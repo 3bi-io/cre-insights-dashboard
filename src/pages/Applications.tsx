@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -153,12 +154,17 @@ const Applications = () => {
     const applicantName = getApplicantName(app);
     const applicantEmail = getApplicantEmail(app);
     const jobTitle = app.job_listings?.title || app.job_listings?.job_title || '';
+    const category = getApplicantCategory(app);
     
-    return (
+    const matchesSearch = (
       applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       applicantEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
       jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    
+    const matchesCategory = categoryFilter === 'all' || category.code === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
   });
 
   const statusCounts = applications?.reduce((acc, app) => {
@@ -260,10 +266,18 @@ const Applications = () => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Filters
-            </Button>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="D">D - Experienced Driver</SelectItem>
+                <SelectItem value="SC">SC - New CDL Holder</SelectItem>
+                <SelectItem value="SR">SR - Student Ready</SelectItem>
+                <SelectItem value="N/A">N/A - Uncategorized</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {filteredApplications?.length === 0 ? (
