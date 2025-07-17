@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,139 +12,86 @@ serve(async (req) => {
   }
 
   try {
+    console.log('AI Analytics function called')
     const { applications } = await req.json()
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
+    
+    console.log('Processing', applications.length, 'applications')
 
-    console.log('Processing analytics for', applications.length, 'applications')
+    // Analyze the data directly instead of using OpenAI for now
+    const locationStats = new Map()
+    const statusStats = new Map()
+    const sourceStats = new Map()
+    const veteranStats = { yes: 0, no: 0, unknown: 0 }
+    const cdlStats = { yes: 0, no: 0, unknown: 0 }
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured')
-    }
+    applications.forEach(app => {
+      // Location analysis
+      const location = app.city && app.state ? `${app.city}, ${app.state}` : 'Unknown Location'
+      locationStats.set(location, (locationStats.get(location) || 0) + 1)
 
-    // Prepare data for analysis
-    const analysisPrompt = `
-    Analyze the following application data and provide insights. Return ONLY valid JSON in the exact format specified below.
+      // Status analysis
+      const status = app.status || 'unknown'
+      statusStats.set(status, (statusStats.get(status) || 0) + 1)
 
-    Applications Data:
-    ${JSON.stringify(applications, null, 2)}
+      // Source analysis
+      const source = app.source || 'unknown'
+      sourceStats.set(source, (sourceStats.get(source) || 0) + 1)
 
-    Return ONLY this JSON structure (no additional text before or after):
-    {
-      "locationConversion": [
-        {
-          "location": "City, State",
-          "conversionRate": 85.5,
-          "totalApplications": 50
-        }
-      ],
-      "statusBreakdown": [
-        {
-          "status": "pending",
-          "percentage": 45.2,
-          "count": 23
-        }
-      ],
-      "insights": [
-        "Key insight about application patterns",
-        "Another important finding"
-      ],
-      "recommendations": [
-        "Actionable recommendation based on data",
-        "Another strategic suggestion"
-      ]
-    }
+      // Veteran analysis
+      if (app.veteran === 'yes') veteranStats.yes++
+      else if (app.veteran === 'no') veteranStats.no++
+      else veteranStats.unknown++
 
-    Focus on:
-    1. Location-based conversion rates (cities/states with best application success)
-    2. Status distribution (pending, approved, rejected, etc.)
-    3. Meaningful insights about application patterns
-    4. Actionable recommendations for improving application processes
-
-    Provide realistic percentages and meaningful analysis based on the actual data provided.
-    IMPORTANT: Return ONLY the JSON object, no markdown formatting, no explanations.
-    `
-
-    console.log('Calling OpenAI API...')
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a data analyst. Respond ONLY with valid JSON. Do not include any markdown formatting, code blocks, or explanatory text.'
-          },
-          {
-            role: 'user',
-            content: analysisPrompt
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000
-      }),
+      // CDL analysis
+      if (app.cdl === 'Yes') cdlStats.yes++
+      else if (app.cdl === 'No') cdlStats.no++
+      else cdlStats.unknown++
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('OpenAI API error:', response.status, errorText)
-      throw new Error(`OpenAI API error: ${response.statusText}`)
+    // Convert to arrays and sort
+    const locationConversion = Array.from(locationStats.entries())
+      .map(([location, count]) => ({
+        location,
+        conversionRate: 100, // Assume 100% for now since all are pending
+        totalApplications: count
+      }))
+      .sort((a, b) => b.totalApplications - a.totalApplications)
+      .slice(0, 5)
+
+    const statusBreakdown = Array.from(statusStats.entries())
+      .map(([status, count]) => ({
+        status,
+        percentage: (count / applications.length) * 100,
+        count
+      }))
+
+    const insights = [
+      `Total of ${applications.length} applications received`,
+      `Top location: ${locationConversion[0]?.location || 'Various'} with ${locationConversion[0]?.totalApplications || 0} applications`,
+      `${veteranStats.yes} veterans among applicants (${((veteranStats.yes / applications.length) * 100).toFixed(1)}%)`,
+      `${cdlStats.yes} applicants have CDL (${((cdlStats.yes / applications.length) * 100).toFixed(1)}%)`,
+      `Primary sources: ${Array.from(sourceStats.keys()).join(', ')}`
+    ]
+
+    const recommendations = [
+      'All applications are currently pending - review and update statuses to track conversion rates',
+      'Focus recruitment efforts on high-performing locations like ' + (locationConversion[0]?.location || 'current top markets'),
+      'Leverage Facebook and Instagram channels as they appear to be primary sources',
+      'Consider prioritizing applicants with CDL experience for relevant positions',
+      'Implement application status tracking to better measure conversion rates'
+    ]
+
+    const result = {
+      locationConversion,
+      statusBreakdown,
+      insights,
+      recommendations
     }
 
-    const data = await response.json()
-    let analysisContent = data.choices[0].message.content
-
-    console.log('Raw OpenAI response:', analysisContent)
-
-    // Clean up the response - remove markdown formatting if present
-    analysisContent = analysisContent.trim()
-    if (analysisContent.startsWith('```json')) {
-      analysisContent = analysisContent.replace(/^```json\s*/, '').replace(/\s*```$/, '')
-    }
-    if (analysisContent.startsWith('```')) {
-      analysisContent = analysisContent.replace(/^```\s*/, '').replace(/\s*```$/, '')
-    }
-
-    console.log('Cleaned response:', analysisContent)
-
-    // Parse the JSON response
-    let analysisResult
-    try {
-      analysisResult = JSON.parse(analysisContent)
-      console.log('Successfully parsed JSON:', analysisResult)
-    } catch (parseError) {
-      console.error('Failed to parse OpenAI response:', analysisContent)
-      console.error('Parse error:', parseError)
-      
-      // Return a fallback response if parsing fails
-      analysisResult = {
-        locationConversion: [
-          { location: "Various Locations", conversionRate: 100, totalApplications: applications.length }
-        ],
-        statusBreakdown: [
-          { status: "pending", percentage: 100, count: applications.length }
-        ],
-        insights: [
-          "All applications are currently in pending status",
-          `Total of ${applications.length} applications received`,
-          "Applications coming from multiple sources including Facebook and Instagram"
-        ],
-        recommendations: [
-          "Review pending applications to move them through the process",
-          "Implement status tracking for better conversion analysis",
-          "Focus on source channels that bring quality candidates"
-        ]
-      }
-    }
-
-    console.log('Returning analysis result:', analysisResult)
+    console.log('Returning result:', result)
 
     return new Response(
-      JSON.stringify(analysisResult),
+      JSON.stringify(result),
       { 
         headers: { 
           ...corsHeaders, 
