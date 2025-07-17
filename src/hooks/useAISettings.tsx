@@ -26,6 +26,9 @@ export const useAISettings = () => {
     if (!user) return;
 
     try {
+      setLoading(true);
+      
+      // First try to get existing settings
       const { data, error } = await supabase
         .from('ai_settings')
         .select('*')
@@ -37,7 +40,7 @@ export const useAISettings = () => {
       if (data) {
         setSettings(data);
       } else {
-        // Create default settings
+        // Create default settings if none exist
         const defaultSettings: Omit<AISettings, 'id'> = {
           user_id: user.id,
           experience_sensitivity: 0.5,
@@ -57,8 +60,23 @@ export const useAISettings = () => {
           .select()
           .single();
 
-        if (createError) throw createError;
-        setSettings(newSettings);
+        if (createError) {
+          // If unique constraint violation, try to fetch existing settings again
+          if (createError.code === '23505') {
+            const { data: existingData, error: fetchError } = await supabase
+              .from('ai_settings')
+              .select('*')
+              .eq('user_id', user.id)
+              .single();
+            
+            if (fetchError) throw fetchError;
+            setSettings(existingData);
+          } else {
+            throw createError;
+          }
+        } else {
+          setSettings(newSettings);
+        }
       }
     } catch (error) {
       console.error('Error loading AI settings:', error);
