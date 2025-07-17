@@ -142,17 +142,28 @@ const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
     return contexts[currentPage] || 'The user is viewing general system information.';
   };
 
-  const detectQueryType = (message: string): 'analytics' | 'general' => {
+  const detectQueryType = (message: string): 'analytics' | 'analysis' | 'general' => {
     const analyticsKeywords = [
-      'how many', 'total', 'count', 'analytics', 'data', 'metrics', 'performance',
-      'applications', 'jobs', 'spending', 'budget', 'clients', 'platforms',
-      'breakdown', 'distribution', 'trends', 'compare', 'analysis', 'show me',
-      'what are', 'list', 'average', 'cost', 'roi', 'conversion'
+      'how many', 'total', 'count', 'show me', 'list', 'breakdown', 'distribution'
     ];
     
-    return analyticsKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword)
-    ) ? 'analytics' : 'general';
+    const analysisKeywords = [
+      'analyze', 'analysis', 'insights', 'trends', 'patterns', 'compare', 'comparison',
+      'performance', 'optimize', 'optimization', 'recommend', 'prediction', 'forecast',
+      'why', 'what should', 'improve', 'strategy', 'roi', 'efficiency', 'best', 'worst'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    
+    if (analysisKeywords.some(keyword => lowerMessage.includes(keyword))) {
+      return 'analysis';
+    }
+    
+    if (analyticsKeywords.some(keyword => lowerMessage.includes(keyword))) {
+      return 'analytics';
+    }
+    
+    return 'general';
   };
 
   const sendMessage = async () => {
@@ -192,7 +203,32 @@ When analyzing data:
 
       let response;
       
-      if (queryType === 'analytics') {
+      if (queryType === 'analysis') {
+        // Use advanced data analysis for complex analytical queries
+        response = await supabase.functions.invoke('data-analysis', {
+          body: { 
+            query: currentMessage,
+            analysisType: 'insights',
+            timeframe: 'last30days',
+            includeRecommendations: true,
+            dataPoints: [page]
+          }
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.data.analysis || 'I couldn\'t complete the advanced analysis. Please try again.',
+          sender: 'bot',
+          timestamp: new Date(),
+          isAnalytics: true
+        };
+
+        setMessages(prev => [...prev, botMessage]);
+      } else if (queryType === 'analytics') {
         // Use analytics-specific function for data queries
         response = await supabase.functions.invoke('chatbot-analytics', {
           body: { 
@@ -416,7 +452,7 @@ When analyzing data:
               </Button>
             </div>
             <div className="text-xs text-muted-foreground mt-2">
-              Try: "How many applications this week?" or "Compare platform performance"
+              Try: "Analyze my platform performance" or "What trends do you see in applications?"
             </div>
           </div>
         </>
