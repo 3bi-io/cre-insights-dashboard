@@ -18,13 +18,13 @@ const TenstreetIntegration = () => {
   
   // Tenstreet Configuration
   const [config, setConfig] = useState({
-    clientId: '535',
-    password: 'if43DIY4oLOync2tm5f8',
+    clientId: '303',
+    password: 'lS%!r3pjy@0SzMs!8Ln',
     service: 'subject_upload',
-    mode: 'DEV',
-    source: 'TenstreetDevTestLead',
-    companyId: '15',
-    companyName: 'Tenstreet Test',
+    mode: 'PROD',
+    source: 'TheDriverBoardLead',
+    companyId: '1300',
+    companyName: 'C.R. England',
     driverId: '',
     jobId: '',
     statusTag: 'Status=New Applicant',
