@@ -14,7 +14,7 @@ const DashboardMetrics = () => {
       const [spendData, applicationsData, jobsData] = await Promise.all([
         supabase.from('daily_spend').select('amount'),
         supabase.from('applications').select('id'),
-        supabase.from('job_listings').select('id')
+        supabase.from('job_listings').select('id').eq('status', 'active')
       ]);
       
       console.log('Spend data:', spendData.data?.length);
