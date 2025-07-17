@@ -91,8 +91,10 @@ const VoiceAgent = () => {
       
       console.log('Starting conversation with signed URL:', data.signedUrl);
       
-      // Use the startSession method properly
-      const conversationId = await conversation.startSession(data.signedUrl);
+      // Use the startSession method with just the signedUrl parameter
+      const conversationId = await conversation.startSession({
+        signedUrl: data.signedUrl
+      });
       
       console.log('Conversation started with ID:', conversationId);
     } catch (error) {
