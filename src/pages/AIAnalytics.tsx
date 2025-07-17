@@ -80,111 +80,122 @@ const AIAnalytics = () => {
           </div>
         </div>
       ) : analyticsData ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Location Conversion Rates */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Best Conversion Locations
-              </CardTitle>
-              <CardDescription>
-                Locations with highest application conversion rates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {analyticsData.locationConversion.map((location, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{location.location}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {location.totalApplications} applications
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        {location.conversionRate.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Status Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Application Status Breakdown
-              </CardTitle>
-              <CardDescription>
-                Distribution of application statuses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {analyticsData.statusBreakdown.map((status, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="font-medium capitalize">{status.status}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {status.count} applications
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        {status.percentage.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Category Breakdown (D, SR, SC, N/A) */}
+        <>
+          {/* Category Breakdown (D, SR, SC, N/A) - Full Width */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
-                Category Distribution
+                Category Distribution (D, SR, SC, N/A)
               </CardTitle>
               <CardDescription>
-                D, SR, SC, N/A category breakdown
+                Application breakdown by experience and qualification categories
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {analyticsData.categoryBreakdown.map((category, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{category.category}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {category.count} applications
-                      </p>
+                  <div key={index} className="text-center p-4 bg-muted/50 rounded-lg">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {category.count}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">
-                        {category.percentage.toFixed(1)}%
-                      </p>
+                    <div className="text-lg font-semibold mb-1">
+                      {category.category}
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      {category.percentage.toFixed(1)}%
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 text-xs text-muted-foreground">
-                <p><strong>D:</strong> CDL holders with 48+ months experience</p>
-                <p><strong>SR:</strong> Senior experienced (48+ months)</p>
-                <p><strong>SC:</strong> Semi-experienced candidates</p>
-                <p><strong>N/A:</strong> No experience or missing data</p>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                <div className="text-center">
+                  <p><strong>D (Driver):</strong></p>
+                  <p>CDL holders with 48+ months experience</p>
+                </div>
+                <div className="text-center">
+                  <p><strong>SR (Senior):</strong></p>
+                  <p>Senior experienced (48+ months)</p>
+                </div>
+                <div className="text-center">
+                  <p><strong>SC (Semi-experienced):</strong></p>
+                  <p>Some experience, less than 48 months</p>
+                </div>
+                <div className="text-center">
+                  <p><strong>N/A:</strong></p>
+                  <p>No experience or missing data</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* AI Insights */}
-          <Card className="md:col-span-2 lg:col-span-3">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Location Conversion Rates */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Best Conversion Locations
+                </CardTitle>
+                <CardDescription>
+                  Locations with highest application conversion rates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsData.locationConversion.map((location, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{location.location}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {location.totalApplications} applications
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">
+                          {location.conversionRate.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Application Status Breakdown
+                </CardTitle>
+                <CardDescription>
+                  Distribution of application statuses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsData.statusBreakdown.map((status, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium capitalize">{status.status}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {status.count} applications
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">
+                          {status.percentage.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Insights */}
+            <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
@@ -221,8 +232,9 @@ const AIAnalytics = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        </>
       ) : (
         <Card>
           <CardContent className="flex items-center justify-center h-64">
