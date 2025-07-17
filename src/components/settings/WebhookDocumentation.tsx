@@ -14,7 +14,8 @@ import {
   Settings,
   Send,
   Database,
-  Shield
+  Shield,
+  Download
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,6 +38,98 @@ const WebhookDocumentation = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const downloadPDF = () => {
+    // Create comprehensive PDF content
+    const pdfContent = `
+WEBHOOK CONFIGURATION GUIDE
+==========================
+
+This guide explains how to configure webhooks to automatically send applicant data to your application management system.
+
+WEBHOOK ENDPOINT
+================
+URL: ${webhookUrl}
+Method: POST
+Content-Type: application/json
+
+SETUP INSTRUCTIONS
+==================
+
+Step 1: Create Webhook Integration
+• Log into your webhook provider (Zapier, Make.com, etc.)
+• Create a new "Zap" or automation workflow
+• Set your trigger (form submission, email, database update, etc.)
+
+Step 2: Configure Webhook Action
+• Add "Webhooks" or "HTTP Request" action
+• Set method to POST
+• Use the webhook URL provided above
+• Set Content-Type header to application/json
+
+Step 3: Map Data Fields
+Map your source data to the required fields in the webhook payload.
+
+DATA FIELD REQUIREMENTS
+========================
+
+Required Fields:
+• job_title: The position the applicant is applying for
+• email: Valid email address of the applicant
+
+Optional Fields:
+• first_name, last_name, phone, city, state, zip
+• age, veteran, cdl, exp, drug, consent, source
+
+Field Value Guidelines:
+• Boolean fields (age, veteran, cdl, drug, consent): "yes" or "no"
+• Experience (exp): "Less than 3 months", "More than 3 months", etc.
+• Source: Any descriptive text (e.g., "Company Website", "Indeed", "Zapier")
+
+SAMPLE JSON PAYLOAD
+===================
+${samplePayload}
+
+TESTING YOUR WEBHOOK
+====================
+Use this cURL command to test your webhook:
+
+${curlExample}
+
+SECURITY CONSIDERATIONS
+=======================
+• This webhook endpoint is publicly accessible
+• Only send non-sensitive applicant data
+• Consider implementing authentication if handling sensitive information
+• Monitor webhook usage and implement rate limiting if needed
+• Regularly review webhook logs for unusual activity
+
+TESTING TIPS
+============
+• Use the Applications page to verify test data appears correctly
+• Check the webhook logs in your provider's dashboard
+• Test with both minimal (job_title + email) and complete payloads
+• Verify applicant categorization (D, SC, SR, N/A) works as expected
+
+For more information, visit your dashboard at /dashboard/applications
+    `.trim();
+
+    // Create and download the PDF as a text file (for simplicity)
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'webhook-configuration-guide.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download Started",
+      description: "Webhook configuration guide is being downloaded",
+    });
   };
 
   const samplePayload = `{
@@ -66,10 +159,20 @@ const WebhookDocumentation = () => {
       {/* Introduction */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Webhook Configuration Guide
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Webhook Configuration Guide
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              onClick={downloadPDF}
+              className="flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Download PDF Guide
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground mb-4">
