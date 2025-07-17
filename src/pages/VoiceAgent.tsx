@@ -56,7 +56,9 @@ const VoiceAgent = () => {
 
     try {
       // Request microphone access first
+      console.log('Requesting microphone access...');
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone access granted');
       
       // Get signed URL from our edge function
       console.log('Requesting signed URL for agent:', agentId.trim());
@@ -68,18 +70,28 @@ const VoiceAgent = () => {
 
       if (error) {
         console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to get signed URL');
+        throw new Error(error.message || `Supabase function error: ${JSON.stringify(error)}`);
       }
 
-      if (!data || !data.success) {
+      if (!data) {
+        throw new Error('No response data from edge function');
+      }
+
+      if (!data.success) {
         console.error('Edge function returned error:', data);
-        throw new Error(data?.error || 'Failed to get signed URL');
+        throw new Error(data.error || `Edge function failed: ${JSON.stringify(data)}`);
+      }
+
+      if (!data.signedUrl) {
+        throw new Error('No signed URL received from edge function');
       }
 
       // Store the signed URL and start conversation
       setSignedUrl(data.signedUrl);
       
       console.log('Starting conversation with signed URL:', data.signedUrl);
+      
+      // Use the startSession method properly
       const conversationId = await conversation.startSession(data.signedUrl);
       
       console.log('Conversation started with ID:', conversationId);
@@ -88,17 +100,21 @@ const VoiceAgent = () => {
       
       // More specific error messaging
       let errorMessage = "Failed to connect to voice agent.";
-      if (error.message?.includes('Agent ID')) {
+      const errorString = error?.message || error?.toString() || 'Unknown error';
+      
+      if (errorString.includes('Agent ID')) {
         errorMessage = "Invalid Agent ID. Please check your ElevenLabs Agent ID.";
-      } else if (error.message?.includes('API key')) {
+      } else if (errorString.includes('API key')) {
         errorMessage = "ElevenLabs API key not configured properly.";
-      } else if (error.message?.includes('signed_url')) {
+      } else if (errorString.includes('signed_url') || errorString.includes('signedUrl')) {
         errorMessage = "Failed to get authorization from ElevenLabs. Please check your Agent ID.";
+      } else if (errorString.includes('getUserMedia')) {
+        errorMessage = "Microphone access is required. Please allow microphone permissions.";
       }
       
       toast({
         title: "Connection Failed",
-        description: `${errorMessage} Error: ${error.message}`,
+        description: `${errorMessage} Error: ${errorString}`,
         variant: "destructive",
       });
     }
