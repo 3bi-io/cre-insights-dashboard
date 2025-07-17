@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
+import WebhookDocumentation from '@/components/settings/WebhookDocumentation';
 import { AdminMagicLinkSection } from '@/components/settings/AdminMagicLinkSection';
 
 interface AdminUser {
@@ -168,9 +169,10 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           {userRole === 'admin' && <TabsTrigger value="administrators">Administrators</TabsTrigger>}
@@ -235,6 +237,10 @@ const Settings = () => {
 
         <TabsContent value="integrations" className="space-y-6">
           <IntegrationsTab />
+        </TabsContent>
+
+        <TabsContent value="webhooks" className="space-y-6">
+          <WebhookDocumentation />
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
