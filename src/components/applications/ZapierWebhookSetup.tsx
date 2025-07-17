@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,45 +9,44 @@ import { Copy, ExternalLink, CheckCircle, AlertCircle, List } from 'lucide-react
 import { useToast } from '@/hooks/use-toast';
 import WebhookTestSection from './WebhookTestSection';
 import QuickFixGuide from './QuickFixGuide';
-
 const ZapierWebhookSetup = () => {
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const webhookUrl = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/zapier-webhook`;
 
   // Fetch available job listings to help with setup
-  const { data: jobListings } = useQuery({
+  const {
+    data: jobListings
+  } = useQuery({
     queryKey: ['job-listings-for-webhook'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('job_listings')
-        .select('id, title, job_title')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
+      const {
+        data,
+        error
+      } = await supabase.from('job_listings').select('id, title, job_title').order('created_at', {
+        ascending: false
+      }).limit(10);
       if (error) throw error;
       return data;
-    },
+    }
   });
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       toast({
         title: "Copied!",
-        description: "Text copied to clipboard",
+        description: "Text copied to clipboard"
       });
     } catch (err) {
       toast({
         title: "Error",
         description: "Failed to copy to clipboard",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
-  return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+  return <div className="w-full max-w-6xl mx-auto space-y-6">
       <QuickFixGuide />
 
       {/* Webhook URL */}
@@ -63,16 +61,8 @@ const ZapierWebhookSetup = () => {
           <div className="space-y-3">
             <h3 className="text-lg font-medium">Webhook URL</h3>
             <div className="flex gap-2">
-              <Input 
-                value={webhookUrl}
-                readOnly
-                className="font-mono text-sm"
-              />
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => copyToClipboard(webhookUrl)}
-              >
+              <Input value={webhookUrl} readOnly className="font-mono text-sm" />
+              <Button variant="outline" size="sm" onClick={() => copyToClipboard(webhookUrl)}>
                 <Copy className="w-4 h-4" />
               </Button>
             </div>
@@ -93,10 +83,8 @@ const ZapierWebhookSetup = () => {
         </CardHeader>
         <CardContent>
           <div className="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
-            {jobListings && jobListings.length > 0 ? (
-              <div className="space-y-3">
-                {jobListings.map((job) => (
-                  <div key={job.id} className="bg-white p-3 rounded border">
+            {jobListings && jobListings.length > 0 ? <div className="space-y-3">
+                {jobListings.map(job => <div key={job.id} className="bg-white p-3 rounded border">
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm">
@@ -107,15 +95,11 @@ const ZapierWebhookSetup = () => {
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4">
+                  </div>)}
+              </div> : <div className="text-center py-4">
                 <p className="text-gray-500 mb-2">No job listings found.</p>
                 <p className="text-sm text-green-600">✅ Don't worry! The webhook will now create job listings automatically if they don't exist.</p>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
@@ -168,50 +152,10 @@ const ZapierWebhookSetup = () => {
       </Card>
 
       {/* Field Requirements */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Requirements (Simplified)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm font-medium">Required Fields:</span>
-            </div>
-            <div className="ml-6 space-y-2">
-              <p className="text-sm text-muted-foreground">
-                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">job_title</code> (any job title - will auto-create if needed)
-              </p>
-              <p className="text-sm text-muted-foreground">
-                • <code className="bg-gray-100 px-2 py-1 rounded text-xs">email</code> (applicant's email address)
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 mt-4">
-              <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-medium">Optional Fields:</span>
-            </div>
-            <div className="ml-6 text-sm text-muted-foreground">
-              <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">first_name</code>
-              <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">last_name</code>
-              <code className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">source</code>
-            </div>
-          </div>
-          
-          <div className="mt-6 p-4 bg-green-50 rounded-lg">
-            <h4 className="font-medium text-green-800 mb-2">✅ Quick Fix Applied!</h4>
-            <p className="text-sm text-green-700">
-              The webhook now automatically creates job listings if they don't exist, 
-              uses flexible field matching, and provides much better error messages to help debug any issues.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      
 
       {/* Testing Section */}
       <WebhookTestSection webhookUrl={webhookUrl} jobListings={jobListings || []} />
-    </div>
-  );
+    </div>;
 };
-
 export default ZapierWebhookSetup;
