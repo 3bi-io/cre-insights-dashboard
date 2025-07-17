@@ -18,6 +18,7 @@ import {
   Download
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
 
 const WebhookDocumentation = () => {
   const { toast } = useToast();
@@ -41,94 +42,97 @@ const WebhookDocumentation = () => {
   };
 
   const downloadPDF = () => {
-    // Create comprehensive PDF content
-    const pdfContent = `
-WEBHOOK CONFIGURATION GUIDE
-==========================
-
-This guide explains how to configure webhooks to automatically send applicant data to your application management system.
-
-WEBHOOK ENDPOINT
-================
-URL: ${webhookUrl}
-Method: POST
-Content-Type: application/json
-
-SETUP INSTRUCTIONS
-==================
-
-Step 1: Create Webhook Integration
-• Log into your webhook provider (Zapier, Make.com, etc.)
-• Create a new "Zap" or automation workflow
-• Set your trigger (form submission, email, database update, etc.)
-
-Step 2: Configure Webhook Action
-• Add "Webhooks" or "HTTP Request" action
-• Set method to POST
-• Use the webhook URL provided above
-• Set Content-Type header to application/json
-
-Step 3: Map Data Fields
-Map your source data to the required fields in the webhook payload.
-
-DATA FIELD REQUIREMENTS
-========================
-
-Required Fields:
-• job_title: The position the applicant is applying for
-• email: Valid email address of the applicant
-
-Optional Fields:
-• first_name, last_name, phone, city, state, zip
-• age, veteran, cdl, exp, drug, consent, source
-
-Field Value Guidelines:
-• Boolean fields (age, veteran, cdl, drug, consent): "yes" or "no"
-• Experience (exp): "Less than 3 months", "More than 3 months", etc.
-• Source: Any descriptive text (e.g., "Company Website", "Indeed", "Zapier")
-
-SAMPLE JSON PAYLOAD
-===================
-${samplePayload}
-
-TESTING YOUR WEBHOOK
-====================
-Use this cURL command to test your webhook:
-
-${curlExample}
-
-SECURITY CONSIDERATIONS
-=======================
-• This webhook endpoint is publicly accessible
-• Only send non-sensitive applicant data
-• Consider implementing authentication if handling sensitive information
-• Monitor webhook usage and implement rate limiting if needed
-• Regularly review webhook logs for unusual activity
-
-TESTING TIPS
-============
-• Use the Applications page to verify test data appears correctly
-• Check the webhook logs in your provider's dashboard
-• Test with both minimal (job_title + email) and complete payloads
-• Verify applicant categorization (D, SC, SR, N/A) works as expected
-
-For more information, visit your dashboard at /dashboard/applications
-    `.trim();
-
-    // Create and download the PDF as a text file (for simplicity)
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'webhook-configuration-guide.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
+    const doc = new jsPDF();
+    
+    // Set font and add content
+    doc.setFontSize(18);
+    doc.text('WEBHOOK CONFIGURATION GUIDE', 20, 20);
+    
+    doc.setFontSize(12);
+    let yPos = 40;
+    
+    // Introduction
+    doc.text('This guide explains how to configure webhooks to automatically', 20, yPos);
+    doc.text('send applicant data to your application management system.', 20, yPos + 10);
+    yPos += 30;
+    
+    // Webhook Endpoint
+    doc.setFontSize(14);
+    doc.text('WEBHOOK ENDPOINT', 20, yPos);
+    doc.setFontSize(12);
+    yPos += 15;
+    doc.text(`URL: ${webhookUrl}`, 20, yPos);
+    doc.text('Method: POST', 20, yPos + 10);
+    doc.text('Content-Type: application/json', 20, yPos + 20);
+    yPos += 40;
+    
+    // Setup Instructions
+    doc.setFontSize(14);
+    doc.text('SETUP INSTRUCTIONS', 20, yPos);
+    doc.setFontSize(12);
+    yPos += 15;
+    
+    doc.text('Step 1: Create Webhook Integration', 20, yPos);
+    doc.text('• Log into your webhook provider (Zapier, Make.com, etc.)', 25, yPos + 10);
+    doc.text('• Create a new "Zap" or automation workflow', 25, yPos + 20);
+    doc.text('• Set your trigger (form submission, email, etc.)', 25, yPos + 30);
+    yPos += 50;
+    
+    doc.text('Step 2: Configure Webhook Action', 20, yPos);
+    doc.text('• Add "Webhooks" or "HTTP Request" action', 25, yPos + 10);
+    doc.text('• Set method to POST', 25, yPos + 20);
+    doc.text('• Use the webhook URL provided above', 25, yPos + 30);
+    doc.text('• Set Content-Type header to application/json', 25, yPos + 40);
+    yPos += 60;
+    
+    doc.text('Step 3: Map Data Fields', 20, yPos);
+    doc.text('Map your source data to the required fields in the payload.', 25, yPos + 10);
+    yPos += 30;
+    
+    // Add new page for remaining content
+    doc.addPage();
+    yPos = 20;
+    
+    // Data Field Requirements
+    doc.setFontSize(14);
+    doc.text('DATA FIELD REQUIREMENTS', 20, yPos);
+    doc.setFontSize(12);
+    yPos += 15;
+    
+    doc.text('Required Fields:', 20, yPos);
+    doc.text('• job_title: The position applying for', 25, yPos + 10);
+    doc.text('• email: Valid email address', 25, yPos + 20);
+    yPos += 40;
+    
+    doc.text('Optional Fields:', 20, yPos);
+    doc.text('• first_name, last_name, phone, city, state, zip', 25, yPos + 10);
+    doc.text('• age, veteran, cdl, exp, drug, consent, source', 25, yPos + 20);
+    yPos += 40;
+    
+    doc.text('Field Value Guidelines:', 20, yPos);
+    doc.text('• Boolean fields: "yes" or "no"', 25, yPos + 10);
+    doc.text('• Experience: "Less than 3 months", etc.', 25, yPos + 20);
+    doc.text('• Source: Any descriptive text', 25, yPos + 30);
+    yPos += 50;
+    
+    // Sample JSON (simplified)
+    doc.setFontSize(14);
+    doc.text('SAMPLE JSON PAYLOAD', 20, yPos);
+    doc.setFontSize(10);
+    yPos += 15;
+    doc.text('{', 20, yPos);
+    doc.text('  "job_title": "CDL Driver",', 20, yPos + 8);
+    doc.text('  "email": "john@example.com",', 20, yPos + 16);
+    doc.text('  "first_name": "John",', 20, yPos + 24);
+    doc.text('  "phone": "555-1234"', 20, yPos + 32);
+    doc.text('}', 20, yPos + 40);
+    
+    // Save the PDF
+    doc.save('webhook-configuration-guide.pdf');
+    
     toast({
-      title: "Download Started",
-      description: "Webhook configuration guide is being downloaded",
+      title: "PDF Downloaded",
+      description: "Webhook configuration guide downloaded successfully",
     });
   };
 
