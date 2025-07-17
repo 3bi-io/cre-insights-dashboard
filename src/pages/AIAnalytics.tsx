@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, MapPin, Users, BarChart3 } from 'lucide-react';
+import { Loader2, TrendingUp, MapPin, Users, BarChart3, Brain, SquareCode, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  Select, 
+  SelectContent, 
+  SelectGroup,
+  SelectItem, 
+  SelectLabel,
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface AnalyticsData {
   locationConversion: Array<{ location: string; conversionRate: number; totalApplications: number }>;
@@ -11,11 +21,13 @@ interface AnalyticsData {
   categoryBreakdown: Array<{ category: string; percentage: number; count: number }>;
   insights: string[];
   recommendations: string[];
+  provider?: string;
 }
 
 const AIAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic'>('basic');
   const { toast } = useToast();
 
   const generateAnalytics = async () => {
@@ -28,10 +40,14 @@ const AIAnalytics = () => {
 
       if (error) throw error;
 
-      // Call edge function to analyze with OpenAI
+      // Call enhanced edge function with selected AI provider
       const { data: analysisResult, error: analysisError } = await supabase.functions
-        .invoke('ai-analytics', {
-          body: { applications }
+        .invoke('ai-analytics-enhanced', {
+          body: { 
+            applications,
+            aiProvider,
+            extraContext: `Analytics for ${applications.length} applications using ${aiProvider} analysis`
+          }
         });
 
       if (analysisError) throw analysisError;
@@ -39,7 +55,7 @@ const AIAnalytics = () => {
       setAnalyticsData(analysisResult);
       toast({
         title: "Analytics Generated",
-        description: "AI analysis completed successfully",
+        description: `AI analysis completed using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`,
       });
     } catch (error) {
       console.error('Error generating analytics:', error);
@@ -52,6 +68,13 @@ const AIAnalytics = () => {
       setLoading(false);
     }
   };
+
+  // Re-generate analytics when provider changes
+  useEffect(() => {
+    if (analyticsData && aiProvider !== analyticsData.provider) {
+      generateAnalytics();
+    }
+  }, [aiProvider]);
 
   useEffect(() => {
     generateAnalytics();
@@ -66,11 +89,99 @@ const AIAnalytics = () => {
             AI-powered insights and recommendations for your applications
           </p>
         </div>
-        <Button onClick={generateAnalytics} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <BarChart3 className="w-4 h-4 mr-2" />}
-          Refresh Analytics
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button onClick={generateAnalytics} disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <BarChart3 className="w-4 h-4 mr-2" />}
+            Refresh Analytics
+          </Button>
+        </div>
       </div>
+
+      {/* AI Provider Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings2 className="w-5 h-5" />
+            AI Analysis Settings
+          </CardTitle>
+          <CardDescription>
+            Choose your preferred AI provider for enhanced insights and recommendations
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">AI Provider</label>
+              <Select 
+                value={aiProvider} 
+                onValueChange={(value: 'basic' | 'openai' | 'anthropic') => setAiProvider(value)}
+                disabled={loading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select AI provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Analysis Options</SelectLabel>
+                    <SelectItem value="basic">
+                      <div className="flex items-center gap-2">
+                        <SquareCode className="w-4 h-4" />
+                        <div>
+                          <div>Basic Analytics</div>
+                          <div className="text-xs text-muted-foreground">Rule-based analysis only</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="openai">
+                      <div className="flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        <div>
+                          <div>OpenAI GPT-4</div>
+                          <div className="text-xs text-muted-foreground">Advanced AI insights & recommendations</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="anthropic">
+                      <div className="flex items-center gap-2">
+                        <Brain className="w-4 h-4" />
+                        <div>
+                          <div>Anthropic Claude</div>
+                          <div className="text-xs text-muted-foreground">Deep reasoning & strategic analysis</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                {aiProvider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic</>}
+                {aiProvider === 'openai' && <><Brain className="w-3 h-3" /> OpenAI</>}
+                {aiProvider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
+              </Badge>
+              {analyticsData?.provider && analyticsData.provider !== aiProvider && (
+                <Badge variant="secondary" className="text-xs">
+                  Update Required
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <div className="mt-4 text-sm text-muted-foreground">
+            {aiProvider === 'basic' && 
+              "Basic analytics use rule-based analysis to categorize and summarize your application data."
+            }
+            {aiProvider === 'openai' && 
+              "OpenAI GPT-4 provides advanced pattern recognition and strategic insights for your recruitment data."
+            }
+            {aiProvider === 'anthropic' && 
+              "Anthropic Claude excels at deep reasoning and provides detailed strategic recommendations."
+            }
+          </div>
+        </CardContent>
+      </Card>
 
       {loading && !analyticsData ? (
         <div className="flex items-center justify-center h-64">
@@ -200,6 +311,13 @@ const AIAnalytics = () => {
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 AI Insights
+                {analyticsData.provider && (
+                  <Badge variant="outline" className="ml-2 gap-1 text-xs">
+                    {analyticsData.provider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic Analysis</>}
+                    {analyticsData.provider === 'openai' && <><Brain className="w-3 h-3" /> GPT-4</>}
+                    {analyticsData.provider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 Key insights discovered from your application data

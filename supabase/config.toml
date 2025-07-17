@@ -10,14 +10,17 @@ verify_jwt = false
 [functions.ai-analytics]
 verify_jwt = true
 
+[functions.ai-analytics-enhanced]
+verify_jwt = true
+
 [functions.chatbot-analytics]
 verify_jwt = true
 
 [functions.openai-chat]
 verify_jwt = true
 
-[functions.data-analysis]
+[functions.anthropic-chat]
 verify_jwt = true
 
-[functions.anthropic-chat]
+[functions.data-analysis]
 verify_jwt = true
