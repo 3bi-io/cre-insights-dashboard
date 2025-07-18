@@ -47,10 +47,14 @@ const Campaigns = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showJobsDialog, setShowJobsDialog] = useState(false);
-  const [campaignForm, setCampaignForm] = useState({
+  const [campaignForm, setCampaignForm] = useState<{
+    name: string;
+    description: string;
+    status: 'active' | 'paused' | 'completed';
+  }>({
     name: '',
     description: '',
-    status: 'active' as const
+    status: 'active'
   });
   const { toast } = useToast();
 
