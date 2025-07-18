@@ -289,16 +289,17 @@ const Applications = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
+      <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-col sm:flex-row'} justify-between items-start sm:items-center gap-4 mb-8`}>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Applications</h1>
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-foreground`}>Applications</h1>
           <p className="text-muted-foreground mt-1">Track and manage job applications</p>
         </div>
         <Button
           onClick={downloadApplicationsPDF}
-          className="flex items-center gap-2"
+          className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
           variant="outline"
+          size={isMobile ? 'lg' : 'default'}
         >
           <Download className="w-4 h-4" />
           Download PDF
@@ -354,18 +355,18 @@ const Applications = () => {
             ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className={`flex ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'} gap-4 mb-6`}>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Search by applicant name, email, or job title..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className={`pl-10 ${isMobile ? 'h-12 text-base' : ''}`}
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className={`${isMobile ? 'w-full h-12 text-base' : 'w-48'}`}>
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -393,37 +394,39 @@ const Applications = () => {
               {filteredApplications?.map((application) => (
                 <Card key={application.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                         <div className="flex items-center gap-3 mb-2">
-                           <h3 className="text-lg font-medium text-white">
-                             {getApplicantName(application)}
-                           </h3>
-                           {(() => {
-                             const category = getApplicantCategory(application);
-                             return (
-                               <Badge className={`text-xs font-bold px-2 py-1 ${category.color}`}>
-                                 {category.code}
-                               </Badge>
-                             );
-                           })()}
-                           <Select
-                             value={application.status}
-                             onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
-                             disabled={updateStatusMutation.isPending}
-                           >
-                             <SelectTrigger className={`w-32 h-7 text-xs font-medium ${getStatusColor(application.status)}`}>
-                               <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent>
-                               <SelectItem value="pending">Pending</SelectItem>
-                               <SelectItem value="reviewed">Reviewed</SelectItem>
-                               <SelectItem value="interviewed">Interviewed</SelectItem>
-                               <SelectItem value="hired">Hired</SelectItem>
-                               <SelectItem value="rejected">Rejected</SelectItem>
-                             </SelectContent>
-                           </Select>
-                         </div>
+                     <div className={`flex ${isMobile ? 'flex-col' : 'flex-col md:flex-row md:items-center'} justify-between gap-4`}>
+                       <div className="flex-1 min-w-0">
+                          <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center gap-3'} mb-2`}>
+                            <div className="flex items-center gap-2">
+                              <h3 className={`${isMobile ? 'text-lg' : 'text-lg'} font-medium text-white`}>
+                                {getApplicantName(application)}
+                              </h3>
+                              {(() => {
+                                const category = getApplicantCategory(application);
+                                return (
+                                  <Badge className={`text-xs font-bold px-2 py-1 ${category.color}`}>
+                                    {category.code}
+                                  </Badge>
+                                );
+                              })()}
+                            </div>
+                            <Select
+                              value={application.status}
+                              onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              <SelectTrigger className={`${isMobile ? 'w-full h-10' : 'w-32 h-7'} text-xs font-medium ${getStatusColor(application.status)}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="reviewed">Reviewed</SelectItem>
+                                <SelectItem value="interviewed">Interviewed</SelectItem>
+                                <SelectItem value="hired">Hired</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         <div className="space-y-1 mb-2">
                           <p className="text-gray-600 flex items-center gap-2">
                             <span>{getApplicantEmail(application)}</span>
@@ -465,29 +468,75 @@ const Applications = () => {
                          </div>
                       </div>
                       
-                        <div className="flex gap-2">
-                          <ApplicationDetailsDialog application={application} />
-                          <TenstreetUpdateDialog application={application} />
-                          {application.phone && (
+                        {isMobile ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-10 w-10 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => {
+                                const dialog = document.querySelector(`[data-application-details="${application.id}"]`) as HTMLElement;
+                                dialog?.click();
+                              }}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                const dialog = document.querySelector(`[data-tenstreet-update="${application.id}"]`) as HTMLElement;
+                                dialog?.click();
+                              }}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Tenstreet Update
+                              </DropdownMenuItem>
+                              {application.phone && (
+                                <DropdownMenuItem onClick={() => window.open(`tel:${application.phone}`)}>
+                                  <Phone className="w-4 h-4 mr-2" />
+                                  Call
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={() => window.open(`mailto:${getApplicantEmail(application)}`)}>
+                                <Mail className="w-4 h-4 mr-2" />
+                                Email
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <div className="flex gap-2">
+                            <ApplicationDetailsDialog application={application} />
+                            <TenstreetUpdateDialog application={application} />
+                            {application.phone && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex items-center gap-2"
+                                onClick={() => window.open(`tel:${application.phone}`)}
+                              >
+                                <Phone className="w-4 h-4" />
+                                Call
+                              </Button>
+                            )}
                             <Button 
                               variant="outline" 
                               size="sm" 
                               className="flex items-center gap-2"
-                              onClick={() => window.open(`tel:${application.phone}`)}
+                              onClick={() => window.open(`mailto:${getApplicantEmail(application)}`)}
                             >
-                              <Phone className="w-4 h-4" />
-                              Call
+                              <Mail className="w-4 h-4" />
+                              Email
                             </Button>
-                          )}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="flex items-center gap-2"
-                            onClick={() => window.open(`mailto:${getApplicantEmail(application)}`)}
-                          >
-                            <Mail className="w-4 h-4" />
-                            Email
-                          </Button>
+                          </div>
+                        )}
+                        
+                        {/* Hidden dialog triggers for mobile dropdown */}
+                        <div className="hidden">
+                          <div data-application-details={application.id}>
+                            <ApplicationDetailsDialog application={application} />
+                          </div>
+                          <div data-tenstreet-update={application.id}>
+                            <TenstreetUpdateDialog application={application} />
+                          </div>
                         </div>
                     </div>
                   </CardContent>
