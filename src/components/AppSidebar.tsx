@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,9 +15,9 @@ import {
   Link,
   Mic,
   BarChart3,
-  TrendingUp,
+  Target,
   Shield,
-  Target
+  ChevronRight
 } from 'lucide-react';
 import {
   Sidebar,
@@ -29,11 +30,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const AppSidebar = () => {
   const location = useLocation();
@@ -47,13 +52,16 @@ const AppSidebar = () => {
     { path: '/dashboard/campaigns', label: 'Campaigns', icon: Target },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
     { path: '/dashboard/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
-    { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
     { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
     { path: '/dashboard/platforms', label: 'Platforms', icon: Megaphone },
     { path: '/dashboard/clients', label: 'Clients', icon: Building },
     { path: '/dashboard/privacy-controls', label: 'Privacy Controls', icon: Shield },
-    { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+  ];
+
+  const settingsItems = [
+    { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
+    { path: '/dashboard/settings', label: 'General Settings', icon: Settings },
   ];
 
   const isActive = (path: string) => {
@@ -61,6 +69,10 @@ const AppSidebar = () => {
       return location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(path);
+  };
+
+  const isSettingsActive = () => {
+    return settingsItems.some(item => isActive(item.path));
   };
 
   const getRoleBadgeColor = (role: string | null) => {
@@ -123,7 +135,6 @@ const AppSidebar = () => {
                           to={item.path} 
                           className="flex items-center w-full gap-3"
                           onClick={() => {
-                            // Auto-close mobile menu after navigation
                             if (isMobile) {
                               setTimeout(() => setOpenMobile(false), 150);
                             }
@@ -145,6 +156,73 @@ const AppSidebar = () => {
                     </SidebarMenuItem>
                   );
                 })}
+
+                {/* Settings with submenu */}
+                <SidebarMenuItem>
+                  <Collapsible defaultOpen={isSettingsActive()}>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton 
+                        className={`
+                          relative group transition-all duration-200 
+                          ${isSettingsActive() 
+                            ? 'bg-primary text-primary-foreground shadow-sm font-medium' 
+                            : 'hover:bg-accent hover:text-accent-foreground'
+                          }
+                          h-10 px-3
+                        `}
+                      >
+                        <div className="flex items-center w-full gap-3">
+                          <Settings className={`
+                            w-4 h-4
+                            ${isSettingsActive() ? 'text-primary-foreground' : ''}
+                            transition-transform group-hover:scale-110
+                          `} />
+                          <span className="text-sm font-medium">
+                            Settings
+                          </span>
+                          <ChevronRight className={`
+                            w-4 h-4 ml-auto transition-transform duration-200
+                            ${isSettingsActive() ? 'rotate-90' : ''}
+                          `} />
+                        </div>
+                        {isSettingsActive() && (
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-foreground rounded-r-full" />
+                        )}
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {settingsItems.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActive(item.path);
+                          return (
+                            <SidebarMenuSubItem key={item.path}>
+                              <SidebarMenuSubButton 
+                                asChild
+                                isActive={active}
+                              >
+                                <NavLink 
+                                  to={item.path}
+                                  className="flex items-center w-full gap-3"
+                                  onClick={() => {
+                                    if (isMobile) {
+                                      setTimeout(() => setOpenMobile(false), 150);
+                                    }
+                                  }}
+                                >
+                                  <Icon className="w-4 h-4" />
+                                  <span className="text-sm">
+                                    {item.label}
+                                  </span>
+                                </NavLink>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
