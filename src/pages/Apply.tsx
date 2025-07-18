@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -248,18 +249,17 @@ const Apply = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="experience">Driving Experience</Label>
+                    <Label htmlFor="experience">How many months of CDL-A driving experience do you have?</Label>
                     <Select value={formData.experience} onValueChange={(value) => handleInputChange('experience', value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select experience level..." />
+                        <SelectValue placeholder="Select months of experience..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="less than 3 months">Less than 3 months</SelectItem>
-                        <SelectItem value="3-6 months">3-6 months</SelectItem>
-                        <SelectItem value="6-12 months">6-12 months</SelectItem>
-                        <SelectItem value="1-2 years">1-2 years</SelectItem>
-                        <SelectItem value="2-5 years">2-5 years</SelectItem>
-                        <SelectItem value="5+ years">5+ years</SelectItem>
+                        {Array.from({ length: 48 }, (_, i) => i + 1).map((month) => (
+                          <SelectItem key={month} value={month.toString()}>
+                            {month} {month === 1 ? 'month' : 'months'}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
