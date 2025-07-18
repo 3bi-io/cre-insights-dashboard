@@ -55,12 +55,12 @@ const AppSidebar = () => {
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
     { path: '/dashboard/platforms', label: 'Platforms', icon: Megaphone },
     { path: '/dashboard/clients', label: 'Clients', icon: Building },
-    { path: '/dashboard/privacy-controls', label: 'Privacy Controls', icon: Shield },
   ];
 
   const settingsItems = [
     { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
+    { path: '/dashboard/privacy-controls', label: 'Privacy Controls', icon: Shield },
     { path: '/dashboard/settings', label: 'General Settings', icon: Settings },
   ];
 
