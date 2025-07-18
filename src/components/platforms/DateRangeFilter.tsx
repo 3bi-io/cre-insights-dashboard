@@ -12,7 +12,7 @@ const dateRangeOptions = [
   { value: 'last_7d', label: 'Last 7 days' },
   { value: 'last_14d', label: 'Last 14 days' },
   { value: 'last_30d', label: 'Last 30 days' },
-  { value: 'last_60d', label: 'Last 60 days' },
+  { value: 'last_60d', label: 'Last 60 days (90d data)' }, // Note: Uses 90d Meta preset
   { value: 'last_90d', label: 'Last 90 days' },
   { value: 'this_month', label: 'This month' },
   { value: 'last_month', label: 'Last month' },

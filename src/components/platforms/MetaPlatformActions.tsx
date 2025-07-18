@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +20,28 @@ interface MetaPlatformActionsProps {
 }
 
 const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+
+// Map our frontend date ranges to Meta API valid date_preset values
+const getMetaDatePreset = (dateRange: string): string => {
+  switch (dateRange) {
+    case 'last_7d':
+      return 'last_7d';
+    case 'last_14d':
+      return 'last_14d';
+    case 'last_30d':
+      return 'last_30d';
+    case 'last_60d':
+      return 'last_90d'; // Meta doesn't have 60d, use 90d instead
+    case 'last_90d':
+      return 'last_90d';
+    case 'this_month':
+      return 'this_month';
+    case 'last_month':
+      return 'last_month';
+    default:
+      return 'last_30d';
+  }
+};
 
 const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onRefresh }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -116,12 +137,15 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     try {
       console.log(`Attempting ${action} with accountId: ${accountId || CR_ENGLAND_ACCOUNT_ID}`);
       
+      // Use the mapped Meta API date preset
+      const metaDatePreset = getMetaDatePreset(dateRange);
+      
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: { 
           action, 
           accountId: accountId || CR_ENGLAND_ACCOUNT_ID,
           campaignId,
-          datePreset: dateRange
+          datePreset: metaDatePreset
         }
       });
 
