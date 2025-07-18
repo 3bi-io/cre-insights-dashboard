@@ -18,26 +18,47 @@ const DashboardMetrics = () => {
         supabase.from('meta_daily_spend').select('spend, impressions, clicks, reach')
       ]);
       
-      console.log('Spend data:', spendData.data?.length);
-      console.log('Applications data:', applicationsData.data?.length);
-      console.log('Jobs data:', jobsData.data?.length);
-      console.log('Meta spend data:', metaSpendData.data?.length);
+      console.log('Spend data:', spendData.data?.length, 'records');
+      console.log('Applications data:', applicationsData.data?.length, 'records');
+      console.log('Jobs data:', jobsData.data?.length, 'records');
+      console.log('Meta spend data:', metaSpendData.data?.length, 'records');
       
-      const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-      const metaTotalSpend = metaSpendData.data?.reduce((sum, item) => sum + Number(item.spend || 0), 0) || 0;
+      // Calculate traditional spend
+      const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount || 0), 0) || 0;
+      console.log('Traditional spend total:', totalSpend);
+      
+      // Calculate Meta spend with better error handling
+      const metaTotalSpend = metaSpendData.data?.reduce((sum, item) => {
+        const spendValue = Number(item.spend || 0);
+        console.log('Meta spend item:', item.spend, 'parsed as:', spendValue);
+        return sum + spendValue;
+      }, 0) || 0;
+      console.log('Meta spend total:', metaTotalSpend);
+      
       const combinedSpend = totalSpend + metaTotalSpend;
+      console.log('Combined spend total:', combinedSpend);
       
       const totalApplications = applicationsData.data?.length || 0;
       const totalJobs = jobsData.data?.length || 0;
       const metaDataPoints = metaSpendData.data?.length || 0;
       const costPerApplication = totalApplications > 0 ? combinedSpend / totalApplications : 0;
       
+      // Calculate additional Meta metrics
+      const totalImpressions = metaSpendData.data?.reduce((sum, item) => sum + Number(item.impressions || 0), 0) || 0;
+      const totalClicks = metaSpendData.data?.reduce((sum, item) => sum + Number(item.clicks || 0), 0) || 0;
+      const totalReach = metaSpendData.data?.reduce((sum, item) => sum + Number(item.reach || 0), 0) || 0;
+      
       return {
         totalSpend: combinedSpend,
+        traditionalSpend: totalSpend,
+        metaSpend: metaTotalSpend,
         totalApplications,
         totalJobs,
         costPerApplication,
-        metaDataPoints
+        metaDataPoints,
+        totalImpressions,
+        totalClicks,
+        totalReach
       };
     },
     // Refresh every 30 seconds to stay in sync
@@ -58,8 +79,8 @@ const DashboardMetrics = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8 mb-12">
       <MetricsCard
         title="Total Spend (MTD)"
-        value={`$${metrics?.totalSpend.toLocaleString() || '0'}`}
-        change="--"
+        value={`$${(metrics?.totalSpend || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+        change={metrics?.metaSpend > 0 ? `Meta: $${metrics.metaSpend.toFixed(2)}` : "--"}
         changeType="neutral"
         icon={DollarSign}
         description="month to date"
@@ -82,19 +103,19 @@ const DashboardMetrics = () => {
       />
       <MetricsCard
         title="Cost per Application"
-        value={`$${metrics?.costPerApplication.toFixed(2) || '0.00'}`}
+        value={`$${(metrics?.costPerApplication || 0).toFixed(2)}`}
         change="--"
         changeType="neutral"
         icon={Target}
         description="average cost"
       />
       <MetricsCard
-        title="Data Points"
+        title="Meta Insights"
         value={metrics?.metaDataPoints.toLocaleString() || '0'}
-        change="--"
+        change={metrics?.totalImpressions > 0 ? `${(metrics.totalImpressions / 1000).toFixed(1)}k views` : "--"}
         changeType="neutral"
         icon={TrendingUp}
-        description="Meta insights"
+        description="data points"
       />
     </div>
   );
