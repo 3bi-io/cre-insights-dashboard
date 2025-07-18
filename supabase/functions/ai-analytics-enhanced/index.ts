@@ -49,36 +49,31 @@ serve(async (req) => {
       else if (app.cdl === 'No') cdlStats.no++
       else cdlStats.unknown++
 
-      // Category analysis (D, SR, SC, N/A) based on experience rules
+      // Category analysis (D, SC, SR, N/A) based on applications page rules
       const hasCDL = app.cdl === 'Yes' || app.cdl === 'yes'
+      const hasAge = app.age && parseInt(app.age) >= 21 // Age requirement
       const experienceMonths = app.months || app.exp || ''
       
-      // Parse experience to determine if 48+ months (4 years)
-      const has48MonthsExp = experienceMonths.includes('48+') || 
-                            experienceMonths.includes('4+ years') ||
-                            experienceMonths.includes('More than 4 years') ||
-                            experienceMonths.includes('5+ years') ||
-                            (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) >= 48)
+      // Parse experience to determine if 3+ months
+      const has3MonthsExp = experienceMonths.includes('3+') || 
+                           experienceMonths.includes('6+') ||
+                           experienceMonths.includes('12+') ||
+                           experienceMonths.includes('24+') ||
+                           experienceMonths.includes('36+') ||
+                           experienceMonths.includes('48+') ||
+                           experienceMonths.includes('More than 3 months') ||
+                           experienceMonths.includes('year') ||
+                           (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) >= 3)
       
-      // Check for some experience but less than 48 months
-      const hasSomeExp = experienceMonths.includes('3+') ||
-                        experienceMonths.includes('6+') ||
-                        experienceMonths.includes('12+') ||
-                        experienceMonths.includes('24+') ||
-                        experienceMonths.includes('36+') ||
-                        experienceMonths.toLowerCase().includes('months') ||
-                        experienceMonths.toLowerCase().includes('year') ||
-                        (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) > 0 && parseInt(experienceMonths.match(/\d+/)[0]) < 48)
-      
-      // Apply categorization rules
-      if (hasCDL && has48MonthsExp) {
-        categoryStats.D++ // Driver: CDL holders with 48+ months experience
-      } else if (!hasCDL && has48MonthsExp) {
-        categoryStats.SR++ // Senior: Senior experienced (48+ months) without CDL
-      } else if (hasSomeExp && !has48MonthsExp) {
-        categoryStats.SC++ // Semi-experienced: Some experience, less than 48 months
+      // Apply categorization rules from applications page
+      if (hasCDL && hasAge && has3MonthsExp) {
+        categoryStats.D++ // D = Experienced Driver (CDL + Age + 3+ months exp)
+      } else if (hasCDL && hasAge && !has3MonthsExp) {
+        categoryStats.SC++ // SC = New CDL Holder (CDL + Age + <3 months exp)
+      } else if (!hasCDL && hasAge && !has3MonthsExp) {
+        categoryStats.SR++ // SR = Student Ready (No CDL + Age + <3 months exp)
       } else {
-        categoryStats['N/A']++ // N/A: No experience or missing data
+        categoryStats['N/A']++ // N/A = Uncategorized (Other combinations)
       }
     })
 
@@ -120,8 +115,9 @@ serve(async (req) => {
       'All applications are currently pending - review and update statuses to track conversion rates',
       'Focus recruitment efforts on high-performing locations like ' + (locationConversion[0]?.location || 'current top markets'),
       'Leverage Facebook and Instagram channels as they appear to be primary sources',
-      `Prioritize D category applicants (${categoryStats.D}) - CDL holders with 48+ months experience`,
-      `Develop SR category applicants (${categoryStats.SR}) - experienced candidates for senior roles`,
+      `Prioritize D category applicants (${categoryStats.D}) - Experienced Drivers with CDL and 3+ months experience`,
+      `Develop SC category applicants (${categoryStats.SC}) - New CDL Holders ready for training`,
+      `Focus on SR category applicants (${categoryStats.SR}) - Student Ready candidates for CDL programs`,
       'Implement application status tracking to better measure conversion rates'
     ]
 
