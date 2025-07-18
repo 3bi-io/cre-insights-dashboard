@@ -8,11 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail, Download } from 'lucide-react';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail, Download, Upload } from 'lucide-react';
 import jsPDF from 'jspdf';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import TenstreetUpdateDialog from '@/components/applications/TenstreetUpdateDialog';
+import ApplicationsImporter from '@/components/ApplicationsImporter';
 import { useToast } from '@/hooks/use-toast';
 
 const Applications = () => {
@@ -303,8 +304,12 @@ const Applications = () => {
       </div>
 
       <Tabs defaultValue="applications" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            Import Data
+          </TabsTrigger>
           <TabsTrigger value="webhook-setup" className="flex items-center gap-2">
             <Webhook className="w-4 h-4" />
             Zapier Integration
@@ -492,6 +497,10 @@ const Applications = () => {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="import">
+          <ApplicationsImporter />
         </TabsContent>
 
         <TabsContent value="webhook-setup">
