@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +15,8 @@ import {
   Mic,
   BarChart3,
   TrendingUp,
-  Shield
+  Shield,
+  Target
 } from 'lucide-react';
 import {
   Sidebar,
@@ -44,6 +44,7 @@ const AppSidebar = () => {
   const navigationItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
+    { path: '/dashboard/campaigns', label: 'Campaigns', icon: Target },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
     { path: '/dashboard/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
     { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
@@ -93,7 +94,6 @@ const AppSidebar = () => {
         </div>
       </SidebarHeader>
 
-      
       <SidebarContent className="flex-1 overflow-y-auto">
         <div className="px-2 py-4">
           <SidebarGroup>

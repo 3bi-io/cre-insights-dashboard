@@ -10,6 +10,7 @@ import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Jobs from "./pages/Jobs";
+import Campaigns from "./pages/Campaigns";
 import Applications from "./pages/Applications";
 import AIAnalytics from "./pages/AIAnalytics";
 import AIImpactDashboard from "./pages/AIImpactDashboard";
@@ -48,6 +49,7 @@ const App = () => (
               }>
                 <Route index element={<Index />} />
                 <Route path="jobs" element={<Jobs />} />
+                <Route path="campaigns" element={<Campaigns />} />
                 <Route path="applications" element={<Applications />} />
                 <Route path="ai-analytics" element={<AIAnalytics />} />
                 <Route path="ai-impact" element={<AIImpactDashboard />} />
