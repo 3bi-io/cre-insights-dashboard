@@ -171,7 +171,7 @@ const DetailedApply = () => {
         exp: data.experience,
         accident_history: data.accidentHistory || null,
         violation_history: data.violationHistory || null,
-        employment_history: data.employmentHistory ? JSON.parse(data.employmentHistory) : null,
+        employment_history: data.employmentHistory ? data.employmentHistory : null,
         education_level: data.educationLevel || null,
         
         // Military
@@ -804,16 +804,16 @@ const DetailedApply = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="employmentHistory">Previous Employment (JSON format)</Label>
+                <Label htmlFor="employmentHistory">Previous Employment</Label>
                 <Textarea
                   id="employmentHistory"
                   value={formData.employmentHistory}
                   onChange={(e) => handleInputChange('employmentHistory', e.target.value)}
-                  placeholder='{"jobs":[{"company":"Example Corp","position":"Driver","start_date":"2020-01","end_date":"2023-01","reason_for_leaving":"Career advancement"}]}'
+                  placeholder="Please describe your previous employment history, including company names, positions held, dates of employment, and reasons for leaving."
                   rows={4}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Enter employment history in JSON format, or leave blank
+                  Describe your work history in detail
                 </p>
               </div>
 
