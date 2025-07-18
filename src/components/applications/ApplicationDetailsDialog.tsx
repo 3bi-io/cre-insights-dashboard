@@ -8,9 +8,11 @@ import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase } from 'lucid
 interface ApplicationDetailsDialogProps {
   application: any;
   trigger?: React.ReactNode;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDialogProps) => {
+const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
   const getApplicantName = (app: any) => {
     if (app.full_name) {
       return app.full_name;
@@ -54,15 +56,20 @@ const ApplicationDetailsDialog = ({ application, trigger }: ApplicationDetailsDi
     : {};
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {trigger || (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      {trigger && (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      )}
+      {!trigger && isOpen === undefined && (
+        <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
             View Details
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
