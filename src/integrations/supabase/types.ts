@@ -149,6 +149,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           privacy: string | null
+          recruiter_id: string | null
           source: string | null
           state: string | null
           status: string | null
@@ -176,6 +177,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           privacy?: string | null
+          recruiter_id?: string | null
           source?: string | null
           state?: string | null
           status?: string | null
@@ -203,6 +205,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           privacy?: string | null
+          recruiter_id?: string | null
           source?: string | null
           state?: string | null
           status?: string | null
@@ -216,6 +219,13 @@ export type Database = {
             columns: ["job_listing_id"]
             isOneToOne: false
             referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "recruiters"
             referencedColumns: ["id"]
           },
         ]
@@ -796,6 +806,42 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      recruiters: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
