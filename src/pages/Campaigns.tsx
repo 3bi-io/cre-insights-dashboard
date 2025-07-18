@@ -64,6 +64,15 @@ const Campaigns = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user;
+    }
+  });
+
   // Fetch campaigns with statistics
   const { data: campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns } = useQuery({
     queryKey: ['campaigns'],
@@ -164,9 +173,14 @@ const Campaigns = () => {
   // Create campaign mutation
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: typeof campaignForm) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('campaigns')
-        .insert([campaignData])
+        .insert([{
+          ...campaignData,
+          user_id: user.id
+        }])
         .select()
         .single();
       
