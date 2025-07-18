@@ -20,6 +20,7 @@ import Platforms from "./pages/Platforms";
 import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import Apply from "./pages/Apply";
 import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
@@ -36,6 +37,7 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/" element={<AdminLanding />} />
+              <Route path="/apply" element={<Apply />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>

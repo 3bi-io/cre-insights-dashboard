@@ -110,15 +110,18 @@ const AdminLanding = () => {
               Comprehensive recruitment analytics and spend management for C.R. England. 
               Monitor performance, optimize campaigns, and maximize your recruitment ROI across all platforms.
             </p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild>
                 <Link to="/auth">
                   Get Started
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
-                <a href="#features">Learn More</a>
+              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+                <Link to="/apply">
+                  Apply for Jobs
+                  <Users className="w-5 h-5 ml-2" />
+                </Link>
               </Button>
             </div>
           </div>
