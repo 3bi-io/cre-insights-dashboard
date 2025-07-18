@@ -4,13 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, AlertCircle, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Loader2, Download, BarChart3, Target, Calendar, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import MetaStats from './MetaStats';
-import MetaPerformanceSummary from './MetaPerformanceSummary';
-import MetaSyncActions from './MetaSyncActions';
 
 interface MetaPlatformActionsProps {
   platform: {
@@ -26,7 +23,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const [currentAction, setCurrentAction] = useState<string>('');
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState<string>('');
-  const [insightBreakdown, setInsightBreakdown] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch Meta accounts with better error handling
@@ -82,7 +78,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     setCurrentAction(action);
     setSyncProgress(0);
     setSyncStatus(`Starting ${action}...`);
-    setInsightBreakdown(null);
 
     try {
       console.log(`Attempting ${action} with accountId: ${accountId}`);
@@ -104,11 +99,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       setSyncProgress(100);
       setSyncStatus('Sync completed successfully');
 
-      // Show insight breakdown if available
-      if (data.insights && action === 'sync_insights') {
-        setInsightBreakdown(data.insights);
-      }
-
       toast({
         title: "Success",
         description: data.message || `${action} completed successfully`,
@@ -116,10 +106,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
       // Refresh appropriate data based on action
       if (action === 'sync_accounts') {
-        // Add a small delay to ensure cleanup is complete
-        setTimeout(() => {
-          refetchAccounts();
-        }, 1000);
+        refetchAccounts();
       } else if (action === 'sync_campaigns') {
         refetchCampaigns();
       } else if (action === 'sync_insights') {
@@ -141,75 +128,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       setTimeout(() => {
         setSyncProgress(0);
         setSyncStatus('');
-        setInsightBreakdown(null);
-      }, 5000);
-    }
-  };
-
-  const handleSyncAllInsights = async () => {
-    if (!metaAccounts?.length) return;
-    
-    setIsLoading(true);
-    setCurrentAction('sync_insights');
-    setSyncStatus('Syncing insights for all accounts...');
-    
-    const total = metaAccounts.length;
-    let completed = 0;
-    let errors = 0;
-    let totalInsights = { account: 0, campaign: 0, adset: 0, ad: 0, total: 0 };
-
-    try {
-      for (const account of metaAccounts) {
-        try {
-          setSyncStatus(`Syncing insights for ${account.account_name}...`);
-          
-          const { data, error } = await supabase.functions.invoke('meta-integration', {
-            body: { 
-              action: 'sync_insights', 
-              accountId: account.account_id,
-              datePreset: 'last_30d'
-            }
-          });
-
-          if (error) throw error;
-          
-          if (data.insights) {
-            totalInsights.account += data.insights.account || 0;
-            totalInsights.campaign += data.insights.campaign || 0;
-            totalInsights.adset += data.insights.adset || 0;
-            totalInsights.ad += data.insights.ad || 0;
-            totalInsights.total += data.insights.total || 0;
-          }
-          
-          completed++;
-        } catch (error) {
-          console.error(`Failed to sync insights for account ${account.account_id}:`, error);
-          errors++;
-        }
-        setSyncProgress(((completed + errors) / total) * 100);
-      }
-      
-      setInsightBreakdown(totalInsights);
-      
-      if (errors === 0) {
-        toast({
-          title: "Success",
-          description: `Synced insights for all ${total} accounts with ${totalInsights.total} total records`,
-        });
-      } else {
-        toast({
-          title: "Partial Success",
-          description: `Synced ${completed} accounts successfully, ${errors} failed. Total records: ${totalInsights.total}`,
-          variant: "destructive",
-        });
-      }
-      
-      refetchSpend();
-    } catch (error) {
-      console.error('Error syncing all insights:', error);
-    } finally {
-      setIsLoading(false);
-      setCurrentAction('');
+      }, 3000);
     }
   };
 
@@ -257,6 +176,50 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     }
   };
 
+  const handleSyncAllInsights = async () => {
+    if (!metaAccounts?.length) return;
+    
+    setIsLoading(true);
+    setCurrentAction('sync_insights');
+    setSyncStatus('Syncing insights for all accounts...');
+    
+    const total = metaAccounts.length;
+    let completed = 0;
+    let errors = 0;
+
+    try {
+      for (const account of metaAccounts) {
+        try {
+          setSyncStatus(`Syncing insights for ${account.account_name}...`);
+          await handleMetaAction('sync_insights', account.account_id);
+          completed++;
+        } catch (error) {
+          console.error(`Failed to sync insights for account ${account.account_id}:`, error);
+          errors++;
+        }
+        setSyncProgress(((completed + errors) / total) * 100);
+      }
+      
+      if (errors === 0) {
+        toast({
+          title: "Success",
+          description: `Synced insights for all ${total} accounts`,
+        });
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `Synced ${completed} accounts successfully, ${errors} failed`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing all insights:', error);
+    } finally {
+      setIsLoading(false);
+      setCurrentAction('');
+    }
+  };
+
   const totalMetaSpend = metaSpend?.reduce((sum, record) => sum + (record.spend || 0), 0) || 0;
   const totalImpressions = metaSpend?.reduce((sum, record) => sum + (record.impressions || 0), 0) || 0;
   const totalClicks = metaSpend?.reduce((sum, record) => sum + (record.clicks || 0), 0) || 0;
@@ -271,7 +234,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           <div>
             <CardTitle className="text-lg">Meta Business Platform</CardTitle>
             <CardDescription>
-              Sync ad accounts, campaigns, and performance data from Meta (account, campaign, adset & ad levels)
+              Sync ad accounts, campaigns, and performance data from Meta
             </CardDescription>
           </div>
         </div>
@@ -294,39 +257,114 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
               {syncProgress > 0 && syncProgress < 100 && (
                 <Progress value={syncProgress} className="w-full" />
               )}
-              {insightBreakdown && (
-                <div className="mt-2 p-2 bg-muted/30 rounded-lg">
-                  <div className="text-sm font-medium mb-1">Insights Breakdown:</div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>Account: {insightBreakdown.account}</div>
-                    <div>Campaign: {insightBreakdown.campaign}</div>
-                    <div>Adset: {insightBreakdown.adset}</div>
-                    <div>Ad: {insightBreakdown.ad}</div>
-                  </div>
-                  <div className="text-xs font-medium mt-1 pt-1 border-t">
-                    Total: {insightBreakdown.total} records
-                  </div>
-                </div>
-              )}
             </AlertDescription>
           </Alert>
         )}
 
-        <MetaStats
-          accountsCount={metaAccounts?.length || 0}
-          campaignsCount={metaCampaigns?.length || 0}
-          totalSpend={totalMetaSpend}
-          dataPointsCount={metaSpend?.length || 0}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <Target className="w-6 h-6 mx-auto mb-2 text-blue-500" />
+            <div className="text-sm font-medium">Ad Accounts</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {metaAccounts?.length || 0}
+            </div>
+          </div>
+          
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-500" />
+            <div className="text-sm font-medium">Campaigns</div>
+            <div className="text-2xl font-bold text-green-600">
+              {metaCampaigns?.length || 0}
+            </div>
+          </div>
+          
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-500" />
+            <div className="text-sm font-medium">30d Spend</div>
+            <div className="text-2xl font-bold text-purple-600">
+              ${totalMetaSpend.toFixed(2)}
+            </div>
+          </div>
 
-        <MetaSyncActions
-          isLoading={isLoading}
-          currentAction={currentAction}
-          metaAccountsCount={metaAccounts?.length || 0}
-          onSyncAccounts={() => handleMetaAction('sync_accounts')}
-          onSyncAllCampaigns={handleSyncAllCampaigns}
-          onSyncAllInsights={handleSyncAllInsights}
-        />
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <RefreshCw className="w-6 h-6 mx-auto mb-2 text-orange-500" />
+            <div className="text-sm font-medium">Last Sync</div>
+            <div className="text-sm font-medium text-orange-600">
+              {metaAccounts?.length ? 'Active' : 'Never'}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Sync Ad Accounts</p>
+              <p className="text-sm text-muted-foreground">
+                Import your Meta ad accounts and basic information
+              </p>
+            </div>
+            <Button 
+              onClick={() => handleMetaAction('sync_accounts')}
+              disabled={isLoading}
+              size="sm"
+            >
+              {isLoading && currentAction === 'sync_accounts' ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Sync Accounts
+            </Button>
+          </div>
+
+          {metaAccounts && metaAccounts.length > 0 && (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Sync All Campaigns</p>
+                  <p className="text-sm text-muted-foreground">
+                    Import campaigns from all your ad accounts ({metaAccounts.length} accounts)
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleSyncAllCampaigns}
+                  disabled={isLoading}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isLoading && currentAction === 'sync_campaigns' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                  )}
+                  Sync All Campaigns
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Sync All Performance Data</p>
+                  <p className="text-sm text-muted-foreground">
+                    Import spend, impressions, clicks and other metrics for all accounts
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleSyncAllInsights}
+                  disabled={isLoading}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isLoading && currentAction === 'sync_insights' ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Calendar className="w-4 h-4 mr-2" />
+                  )}
+                  Sync All Insights
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
 
         {metaAccounts && metaAccounts.length > 0 && (
           <div className="pt-4 border-t">
@@ -359,7 +397,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       disabled={isLoading}
                       title="Sync insights for this account"
                     >
-                      <Loader2 className="w-3 h-3" />
+                      <Calendar className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
@@ -369,10 +407,25 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         )}
 
         {totalImpressions > 0 && (
-          <MetaPerformanceSummary
-            totalImpressions={totalImpressions}
-            totalClicks={totalClicks}
-          />
+          <div className="pt-4 border-t">
+            <p className="text-sm font-medium mb-2">30-Day Performance Summary:</p>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-lg font-bold">{totalImpressions.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Impressions</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold">{totalClicks.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Clicks</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold">
+                  {totalClicks > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00'}%
+                </p>
+                <p className="text-xs text-muted-foreground">CTR</p>
+              </div>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

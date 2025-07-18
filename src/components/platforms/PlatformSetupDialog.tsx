@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import PlatformSetupConfig from './PlatformSetupConfig';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface PlatformSetupDialogProps {
   open: boolean;
@@ -104,14 +105,39 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <PlatformSetupConfig
-            platformName={platform.name}
-            apiEndpoint={apiEndpoint}
-            enableTracking={enableTracking}
-            onApiEndpointChange={setApiEndpoint}
-            onTrackingChange={setEnableTracking}
-            onUseDefault={handleUseDefault}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="api-endpoint">API Endpoint</Label>
+            <div className="flex gap-2">
+              <Input
+                id="api-endpoint"
+                value={apiEndpoint}
+                onChange={(e) => setApiEndpoint(e.target.value)}
+                placeholder="https://api.platform.com/v1"
+                type="url"
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleUseDefault}
+                className="whitespace-nowrap"
+              >
+                Use Default
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Configure the API endpoint for {platform.name} integration
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="enable-tracking"
+              checked={enableTracking}
+              onCheckedChange={setEnableTracking}
+            />
+            <Label htmlFor="enable-tracking">Enable campaign tracking</Label>
+          </div>
 
           {isMetaPlatform && (
             <Card>
