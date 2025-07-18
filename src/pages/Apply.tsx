@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Truck, User, MapPin, FileText } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 
 const Apply = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-  const jobId = searchParams.get('job');
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -24,226 +18,173 @@ const Apply = () => {
     phone: '',
     city: '',
     state: '',
-    zipCode: '',
+    zip: '',
+    age: '',
     cdl: '',
     experience: '',
-    drugConsent: false,
-    dataConsent: false,
-    ageVerification: false,
+    drug: '',
+    veteran: '',
+    employmentHistory: '',
+    consent: '',
+    privacy: '',
   });
+
+  const navigate = useNavigate();
 
   const submitApplication = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const applicationData = {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        full_name: `${data.firstName} ${data.lastName}`,
-        applicant_email: data.email,
-        phone: data.phone,
-        city: data.city,
-        state: data.state,
-        zip: data.zipCode,
-        cdl: data.cdl,
-        exp: data.experience,
-        drug: data.drugConsent ? 'yes' : 'no',
-        consent: data.dataConsent ? 'yes' : 'no',
-        age: data.ageVerification ? 'yes' : 'no',
-        job_id: jobId,
-        status: 'pending',
-        applied_at: new Date().toISOString(),
-        source: 'Direct Application',
-      };
+      const response = await fetch('/functions/v1/submit-application', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      const { error } = await supabase
-        .from('applications')
-        .insert([applicationData]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit application');
+      }
 
-      if (error) throw error;
+      return response.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Application Submitted!",
-        description: "Thank you for your application. We'll be in touch soon.",
-      });
-      navigate('/');
+      toast.success('Application submitted successfully!');
+      navigate('/thank-you');
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to submit application. Please try again.",
-        variant: "destructive",
-      });
-      console.error('Application submission error:', error);
+      toast.error(error.message || 'Failed to submit application');
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.drugConsent || !formData.dataConsent || !formData.ageVerification) {
-      toast({
-        title: "Consent Required",
-        description: "Please agree to all consent requirements.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     submitApplication.mutate(formData);
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Truck className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Quick Apply</h1>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Driver Application</h1>
+            <p className="text-muted-foreground">Fill out the form below to apply for driving positions</p>
           </div>
-          <p className="text-muted-foreground mb-4">
-            Join our team! Fill out this quick form to get started.
-          </p>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/apply/detailed">
-              Need a more detailed application? Click here
-            </Link>
-          </Button>
-        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Application Form
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Personal Information */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <User className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Personal Information</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      placeholder="Your first name"
-                      required
-                    />
+          <Card>
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Personal Information Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Personal Information</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="state">State</Label>
+                      <Input
+                        id="state"
+                        value={formData.state}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="zip">ZIP Code</Label>
+                      <Input
+                        id="zip"
+                        value={formData.zip}
+                        onChange={(e) => handleInputChange('zip', e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      placeholder="Your last name"
-                      required
-                    />
+                    <Label htmlFor="age">Age</Label>
+                    <Select value={formData.age} onValueChange={(value) => handleInputChange('age', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your age..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 50 }, (_, i) => 21 + i).map(age => (
+                          <SelectItem key={age} value={age.toString()}>{age}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* CDL Information Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">CDL Information</h2>
+                  
                   <div>
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      placeholder="your.email@example.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="(555) 123-4567"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Location</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      placeholder="Your city"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      placeholder="State"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="zipCode">ZIP Code</Label>
-                    <Input
-                      id="zipCode"
-                      value={formData.zipCode}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                      placeholder="12345"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Experience & Qualifications */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Truck className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Experience & Qualifications</h3>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="cdl">Do you have a CDL?</Label>
+                    <Label htmlFor="cdl">Do you have a CDL-A license?</Label>
                     <Select value={formData.cdl} onValueChange={(value) => handleInputChange('cdl', value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
+                        <SelectValue placeholder="Select CDL status..." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="yes">Yes</SelectItem>
                         <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="permit">Permit only</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -254,77 +195,104 @@ const Apply = () => {
                         <SelectValue placeholder="Select months of experience..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 48 }, (_, i) => i + 1).map((month) => (
-                          <SelectItem key={month} value={month.toString()}>
-                            {month} {month === 1 ? 'month' : 'months'}
-                          </SelectItem>
+                        {Array.from({ length: 48 }, (_, i) => i + 1).map(month => (
+                          <SelectItem key={month} value={month.toString()}>{month}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-              </div>
 
-              {/* Consent & Agreements */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Required Agreements</h3>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="drugConsent"
-                      checked={formData.drugConsent}
-                      onCheckedChange={(checked) => handleInputChange('drugConsent', checked as boolean)}
-                    />
-                    <Label htmlFor="drugConsent" className="text-sm">
-                      I consent to drug screening as required by company policy *
-                    </Label>
-                  </div>
+                {/* Background Information Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Background Information</h2>
                   
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="dataConsent"
-                      checked={formData.dataConsent}
-                      onCheckedChange={(checked) => handleInputChange('dataConsent', checked as boolean)}
-                    />
-                    <Label htmlFor="dataConsent" className="text-sm">
-                      I consent to the collection and processing of my personal data for employment purposes *
-                    </Label>
+                  <div>
+                    <Label htmlFor="drug">Can you pass a drug test?</Label>
+                    <Select value={formData.drug} onValueChange={(value) => handleInputChange('drug', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="ageVerification"
-                      checked={formData.ageVerification}
-                      onCheckedChange={(checked) => handleInputChange('ageVerification', checked as boolean)}
-                    />
-                    <Label htmlFor="ageVerification" className="text-sm">
-                      I certify that I am at least 21 years of age *
-                    </Label>
+
+                  <div>
+                    <Label htmlFor="veteran">Are you a veteran?</Label>
+                    <Select value={formData.veteran} onValueChange={(value) => handleInputChange('veteran', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex gap-4 pt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/')}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitApplication.isPending}
-                  className="flex-1"
-                >
-                  {submitApplication.isPending ? 'Submitting...' : 'Submit Application'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                {/* Employment History Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Employment History</h2>
+                  
+                  <div>
+                    <Label htmlFor="employmentHistory">Previous Employment</Label>
+                    <Textarea
+                      id="employmentHistory"
+                      value={formData.employmentHistory}
+                      onChange={(e) => handleInputChange('employmentHistory', e.target.value)}
+                      placeholder="Please describe your previous employment history..."
+                      className="min-h-[120px]"
+                    />
+                  </div>
+                </div>
+
+                {/* Consent Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Consent</h2>
+                  
+                  <div>
+                    <Label htmlFor="consent">Do you consent to be contacted by recruiters?</Label>
+                    <Select value={formData.consent} onValueChange={(value) => handleInputChange('consent', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="privacy">Do you agree to our privacy policy?</Label>
+                    <Select value={formData.privacy} onValueChange={(value) => handleInputChange('privacy', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-6">
+                  <Link to="/" className="text-primary hover:underline">
+                    ← Back to Home
+                  </Link>
+                  <Button type="submit" disabled={submitApplication.isPending}>
+                    {submitApplication.isPending ? 'Submitting...' : 'Submit Application'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
