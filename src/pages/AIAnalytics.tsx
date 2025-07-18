@@ -256,34 +256,7 @@ const AIAnalytics = () => {
             </Card>
 
             {/* Status Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Application Status Breakdown
-                </CardTitle>
-                <CardDescription>
-                  Distribution of application statuses
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analyticsData.statusBreakdown.map((status, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="font-medium capitalize">{status.status}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {status.count} applications
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">
-                          {status.percentage.toFixed(1)}%
-                        </p>
-                      </div>
-                    </div>)}
-                </div>
-              </CardContent>
-            </Card>
+            
 
             {/* AI Insights */}
             <Card className="md:col-span-2">
