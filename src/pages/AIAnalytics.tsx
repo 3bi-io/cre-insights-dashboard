@@ -4,64 +4,62 @@ import { Button } from '@/components/ui/button';
 import { Loader2, TrendingUp, MapPin, Users, BarChart3, Brain, SquareCode, Settings2, ShieldAlert, Cloud } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Select, 
-  SelectContent, 
-  SelectGroup,
-  SelectItem, 
-  SelectLabel,
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { aiService, AIRequest, AIResponse, AIParameters } from '@/services/aiService';
-
 interface AnalyticsData {
-  locationConversion: Array<{ location: string; conversionRate: number; totalApplications: number }>;
-  statusBreakdown: Array<{ status: string; percentage: number; count: number }>;
-  categoryBreakdown: Array<{ category: string; percentage: number; count: number }>;
+  locationConversion: Array<{
+    location: string;
+    conversionRate: number;
+    totalApplications: number;
+  }>;
+  statusBreakdown: Array<{
+    status: string;
+    percentage: number;
+    count: number;
+  }>;
+  categoryBreakdown: Array<{
+    category: string;
+    percentage: number;
+    count: number;
+  }>;
   insights: string[];
   recommendations: string[];
   totalApplications?: number;
   provider?: string;
 }
-
 const AIAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic'>('basic');
   const [totalApplications, setTotalApplications] = useState<number>(0);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const generateAnalytics = async () => {
     setLoading(true);
     try {
       // Fetch applications data
-      const { data: applications, error } = await supabase
-        .from('applications')
-        .select('*');
-
+      const {
+        data: applications,
+        error
+      } = await supabase.from('applications').select('*');
       if (error) throw error;
-
       console.log(`Fetched ${applications?.length || 0} applications for analysis`);
       setTotalApplications(applications?.length || 0);
 
       // Call enhanced edge function with selected AI provider
-      const { data: analysisResult, error: analysisError } = await supabase.functions
-        .invoke('ai-analytics-enhanced', {
-          body: { 
-            applications,
-            aiProvider,
-            extraContext: `Analytics for ${applications.length} applications using ${aiProvider} analysis`
-          }
-        });
-
+      const {
+        data: analysisResult,
+        error: analysisError
+      } = await supabase.functions.invoke('ai-analytics-enhanced', {
+        body: {
+          applications,
+          aiProvider,
+          extraContext: `Analytics for ${applications.length} applications using ${aiProvider} analysis`
+        }
+      });
       if (analysisError) throw analysisError;
 
       // Add total applications count to the result
@@ -69,18 +67,17 @@ const AIAnalytics = () => {
         ...analysisResult,
         totalApplications: applications?.length || 0
       };
-
       setAnalyticsData(enrichedResult);
       toast({
         title: "Analytics Generated",
-        description: `AI analysis completed for ${applications?.length || 0} applications using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`,
+        description: `AI analysis completed for ${applications?.length || 0} applications using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`
       });
     } catch (error) {
       console.error('Error generating analytics:', error);
       toast({
         title: "Error",
         description: "Failed to generate analytics",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
@@ -93,24 +90,19 @@ const AIAnalytics = () => {
       generateAnalytics();
     }
   }, [aiProvider]);
-
   useEffect(() => {
     generateAnalytics();
   }, []);
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
+  return <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">AI Analytics</h1>
           <p className="text-muted-foreground">
             AI-powered insights and recommendations for your applications
           </p>
-          {(analyticsData?.totalApplications || totalApplications > 0) && (
-            <p className="text-sm text-primary font-medium mt-1">
+          {(analyticsData?.totalApplications || totalApplications > 0) && <p className="text-sm text-primary font-medium mt-1">
               Analyzing {analyticsData?.totalApplications || totalApplications} total applications
-            </p>
-          )}
+            </p>}
         </div>
         <div className="flex items-center gap-4">
           <Button onClick={generateAnalytics} disabled={loading}>
@@ -135,11 +127,7 @@ const AIAnalytics = () => {
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <label className="text-sm font-medium mb-2 block">AI Provider</label>
-              <Select 
-                value={aiProvider} 
-                onValueChange={(value: 'basic' | 'openai' | 'anthropic') => setAiProvider(value)}
-                disabled={loading}
-              >
+              <Select value={aiProvider} onValueChange={(value: 'basic' | 'openai' | 'anthropic') => setAiProvider(value)} disabled={loading}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select AI provider" />
                 </SelectTrigger>
@@ -184,37 +172,26 @@ const AIAnalytics = () => {
                 {aiProvider === 'openai' && <><Brain className="w-3 h-3" /> OpenAI</>}
                 {aiProvider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
               </Badge>
-              {analyticsData?.provider && analyticsData.provider !== aiProvider && (
-                <Badge variant="secondary" className="text-xs">
+              {analyticsData?.provider && analyticsData.provider !== aiProvider && <Badge variant="secondary" className="text-xs">
                   Update Required
-                </Badge>
-              )}
+                </Badge>}
             </div>
           </div>
           
           <div className="mt-4 text-sm text-muted-foreground">
-            {aiProvider === 'basic' && 
-              "Basic analytics use rule-based analysis to categorize and summarize your application data."
-            }
-            {aiProvider === 'openai' && 
-              "OpenAI GPT-4 provides advanced pattern recognition and strategic insights for your recruitment data."
-            }
-            {aiProvider === 'anthropic' && 
-              "Anthropic Claude excels at deep reasoning and provides detailed strategic recommendations."
-            }
+            {aiProvider === 'basic' && "Basic analytics use rule-based analysis to categorize and summarize your application data."}
+            {aiProvider === 'openai' && "OpenAI GPT-4 provides advanced pattern recognition and strategic insights for your recruitment data."}
+            {aiProvider === 'anthropic' && "Anthropic Claude excels at deep reasoning and provides detailed strategic recommendations."}
           </div>
         </CardContent>
       </Card>
 
-      {loading && !analyticsData ? (
-        <div className="flex items-center justify-center h-64">
+      {loading && !analyticsData ? <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground">Analyzing applications with AI...</p>
           </div>
-        </div>
-      ) : analyticsData ? (
-        <>
+        </div> : analyticsData ? <>
           {/* Application Summary Card */}
           <Card>
             <CardHeader>
@@ -245,52 +222,7 @@ const AIAnalytics = () => {
           </Card>
 
           {/* Category Breakdown (D, SR, SC, N/A) - Full Width */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Category Distribution (D, SR, SC, N/A)
-              </CardTitle>
-              <CardDescription>
-                Application breakdown by experience and qualification categories
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {analyticsData.categoryBreakdown.map((category, index) => (
-                  <div key={index} className="text-center p-4 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold text-primary mb-1">
-                      {category.count}
-                    </div>
-                    <div className="text-lg font-semibold mb-1">
-                      {category.category}
-                    </div>
-                    <div className="text-sm text-muted-foreground mb-2">
-                      {category.percentage.toFixed(1)}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                <div className="text-center">
-                  <p><strong>D (Experienced Driver):</strong></p>
-                  <p>CDL + Age + 3+ months experience</p>
-                </div>
-                <div className="text-center">
-                  <p><strong>SR (Student Ready):</strong></p>
-                  <p>No CDL + Age + &lt;3 months experience</p>
-                </div>
-                <div className="text-center">
-                  <p><strong>SC (New CDL Holder):</strong></p>
-                  <p>CDL + Age + &lt;3 months experience</p>
-                </div>
-                <div className="text-center">
-                  <p><strong>N/A (Uncategorized):</strong></p>
-                  <p>Other combinations</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
 
           <div className="grid gap-6 md:grid-cols-2">
             {/* Location Conversion Rates */}
@@ -306,8 +238,7 @@ const AIAnalytics = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {analyticsData.locationConversion.map((location, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  {analyticsData.locationConversion.map((location, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
                         <p className="font-medium">{location.location}</p>
                         <p className="text-sm text-muted-foreground">
@@ -319,8 +250,7 @@ const AIAnalytics = () => {
                           {location.conversionRate.toFixed(1)}%
                         </p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -338,8 +268,7 @@ const AIAnalytics = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {analyticsData.statusBreakdown.map((status, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  {analyticsData.statusBreakdown.map((status, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                       <div>
                         <p className="font-medium capitalize">{status.status}</p>
                         <p className="text-sm text-muted-foreground">
@@ -351,8 +280,7 @@ const AIAnalytics = () => {
                           {status.percentage.toFixed(1)}%
                         </p>
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -363,13 +291,11 @@ const AIAnalytics = () => {
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
                 AI Insights
-                {analyticsData.provider && (
-                  <Badge variant="outline" className="ml-2 gap-1 text-xs">
+                {analyticsData.provider && <Badge variant="outline" className="ml-2 gap-1 text-xs">
                     {analyticsData.provider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic Analysis</>}
                     {analyticsData.provider === 'openai' && <><Brain className="w-3 h-3" /> GPT-4</>}
                     {analyticsData.provider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
-                  </Badge>
-                )}
+                  </Badge>}
               </CardTitle>
               <CardDescription>
                 Key insights discovered from your application data
@@ -380,33 +306,27 @@ const AIAnalytics = () => {
                 <div>
                   <h4 className="font-medium mb-2">Key Insights:</h4>
                   <ul className="space-y-2">
-                    {analyticsData.insights.map((insight, index) => (
-                      <li key={index} className="flex items-start gap-2">
+                    {analyticsData.insights.map((insight, index) => <li key={index} className="flex items-start gap-2">
                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                         <p className="text-sm">{insight}</p>
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
                 </div>
                 
                 <div>
                   <h4 className="font-medium mb-2">Recommendations:</h4>
                   <ul className="space-y-2">
-                    {analyticsData.recommendations.map((recommendation, index) => (
-                      <li key={index} className="flex items-start gap-2">
+                    {analyticsData.recommendations.map((recommendation, index) => <li key={index} className="flex items-start gap-2">
                         <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0" />
                         <p className="text-sm">{recommendation}</p>
-                      </li>
-                    ))}
+                      </li>)}
                   </ul>
                 </div>
               </div>
             </CardContent>
             </Card>
           </div>
-        </>
-      ) : (
-        <Card>
+        </> : <Card>
           <CardContent className="flex items-center justify-center h-64">
             <div className="text-center">
               <BarChart3 className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -416,10 +336,7 @@ const AIAnalytics = () => {
               </Button>
             </div>
           </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+        </Card>}
+    </div>;
 };
-
 export default AIAnalytics;
