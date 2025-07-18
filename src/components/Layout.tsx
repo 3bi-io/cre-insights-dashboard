@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { SidebarProvider, useSidebar } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
 import ThemeToggle from './ThemeToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,6 +35,7 @@ const LayoutContent = () => {
         <div className="hidden md:block">
           <header className="h-16 flex items-center justify-between border-b bg-card px-4 shrink-0">
             <div className="flex items-center gap-4">
+              <SidebarTrigger />
               {(state === 'collapsed') && (
                 <img 
                   src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
