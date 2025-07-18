@@ -9,6 +9,7 @@ import { Loader2, Download, BarChart3, Target, Calendar, AlertCircle, CheckCircl
 import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import DateRangeFilter from './DateRangeFilter';
 
 interface MetaPlatformActionsProps {
   platform: {
@@ -26,6 +27,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const [currentAction, setCurrentAction] = useState<string>('');
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState<string>('');
+  const [dateRange, setDateRange] = useState('last_30d');
   const { toast } = useToast();
 
   // Fetch Meta accounts - filter for CR England only
@@ -61,16 +63,42 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     enabled: !!metaAccounts?.length,
   });
 
-  // Fetch Meta spend data - filter for CR England account only
+  // Fetch Meta spend data - filter for CR England account only with date range
   const { data: metaSpend, refetch: refetchSpend } = useQuery({
-    queryKey: ['meta-spend'],
+    queryKey: ['meta-spend', dateRange],
     queryFn: async () => {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      let startDate: string;
+      const today = new Date();
+      
+      switch (dateRange) {
+        case 'last_7d':
+          startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last_14d':
+          startDate = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last_60d':
+          startDate = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last_90d':
+          startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'this_month':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+          break;
+        case 'last_month':
+          const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          startDate = lastMonth.toISOString().split('T')[0];
+          break;
+        default: // last_30d
+          startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      }
+
       const { data, error } = await supabase
         .from('meta_daily_spend')
         .select('*')
         .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
-        .gte('date_start', thirtyDaysAgo)
+        .gte('date_start', startDate)
         .order('date_start', { ascending: false });
       
       if (error) throw error;
@@ -93,7 +121,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           action, 
           accountId: accountId || CR_ENGLAND_ACCOUNT_ID,
           campaignId,
-          datePreset: 'last_30d'
+          datePreset: dateRange
         }
       });
 
@@ -145,16 +173,19 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   return (
     <Card className="mt-6">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">M</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">M</span>
+            </div>
+            <div>
+              <CardTitle className="text-lg">Meta Business Platform - CR England</CardTitle>
+              <CardDescription>
+                Sync ad accounts, campaigns, and performance data for CR England account only
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg">Meta Business Platform - CR England</CardTitle>
-            <CardDescription>
-              Sync ad accounts, campaigns, and performance data for CR England account only
-            </CardDescription>
-          </div>
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -198,7 +229,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-500" />
-            <div className="text-sm font-medium">30d Spend</div>
+            <div className="text-sm font-medium">Selected Period Spend</div>
             <div className="text-2xl font-bold text-purple-600">
               ${totalMetaSpend.toFixed(2)}
             </div>
@@ -326,7 +357,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
         {totalImpressions > 0 && (
           <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-2">CR England 30-Day Performance Summary:</p>
+            <p className="text-sm font-medium mb-2">CR England Performance Summary ({dateRange.replace('_', ' ')}):</p>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-lg font-bold">{totalImpressions.toLocaleString()}</p>
