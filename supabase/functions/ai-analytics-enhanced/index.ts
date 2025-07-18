@@ -49,16 +49,25 @@ serve(async (req) => {
       else if (app.cdl === 'No') cdlStats.no++
       else cdlStats.unknown++
 
-      // Category analysis (D, SR, SC, N/A) - use actual category field
-      const category = app.category || 'N/A'
-      if (category === 'D') {
-        categoryStats.D++
-      } else if (category === 'SR') {
-        categoryStats.SR++
-      } else if (category === 'SC') {
-        categoryStats.SC++
+      // Category analysis (D, SC, SR, N/A) based on CDL + Age + Experience
+      const hasCDL = app.cdl === 'Yes' || app.cdl === 'yes'
+      const hasAge = app.age && parseInt(app.age) >= 21 // Assuming 21+ is required age
+      const experienceMonths = app.months || app.exp || ''
+      
+      // Parse experience to determine if 3+ months
+      const hasThreeMonthsExp = experienceMonths.includes('48+') || 
+                               experienceMonths.includes('3+') ||
+                               experienceMonths.includes('More than 3 months') ||
+                               (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) >= 3)
+      
+      if (hasCDL && hasAge && hasThreeMonthsExp) {
+        categoryStats.D++ // Experienced Driver
+      } else if (hasCDL && hasAge && !hasThreeMonthsExp) {
+        categoryStats.SC++ // New CDL Holder
+      } else if (!hasCDL && hasAge && !hasThreeMonthsExp) {
+        categoryStats.SR++ // Student Ready
       } else {
-        categoryStats['N/A']++
+        categoryStats['N/A']++ // Uncategorized
       }
     })
 
