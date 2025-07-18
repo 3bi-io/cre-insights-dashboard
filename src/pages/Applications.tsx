@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail } from 'lucide-react';
+import { Search, Filter, Eye, MessageCircle, Calendar, Webhook, Phone, ExternalLink, Edit, Mail, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import TenstreetUpdateDialog from '@/components/applications/TenstreetUpdateDialog';
@@ -86,6 +87,91 @@ const Applications = () => {
 
   const handleStatusChange = (applicationId: string, newStatus: string) => {
     updateStatusMutation.mutate({ applicationId, newStatus });
+  };
+
+  const downloadApplicationsPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let yPosition = 20;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Applications Report', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 20;
+
+    // Date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 20;
+
+    // Summary
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 20, yPosition);
+    yPosition += 10;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Applications: ${applications?.length || 0}`, 20, yPosition);
+    yPosition += 6;
+
+    if (statusCounts) {
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        doc.text(`${status.charAt(0).toUpperCase() + status.slice(1)}: ${count}`, 20, yPosition);
+        yPosition += 6;
+      });
+    }
+
+    yPosition += 10;
+
+    // Applications List
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Applications', 20, yPosition);
+    yPosition += 10;
+
+    filteredApplications?.forEach((app, index) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      const applicantName = getApplicantName(app);
+      const email = getApplicantEmail(app);
+      const jobTitle = app.job_listings?.title || app.job_listings?.job_title || 'Unknown Position';
+      const category = getApplicantCategory(app);
+      const clientName = getClientName(app);
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${index + 1}. ${applicantName}`, 20, yPosition);
+      yPosition += 6;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Email: ${email}`, 25, yPosition);
+      yPosition += 5;
+      doc.text(`Position: ${jobTitle}`, 25, yPosition);
+      yPosition += 5;
+      if (clientName) {
+        doc.text(`Client: ${clientName}`, 25, yPosition);
+        yPosition += 5;
+      }
+      doc.text(`Category: ${category.code} - ${category.label}`, 25, yPosition);
+      yPosition += 5;
+      doc.text(`Status: ${app.status}`, 25, yPosition);
+      yPosition += 5;
+      if (app.phone) {
+        doc.text(`Phone: ${app.phone}`, 25, yPosition);
+        yPosition += 5;
+      }
+      doc.text(`Applied: ${new Date(app.applied_at).toLocaleDateString()}`, 25, yPosition);
+      yPosition += 10;
+    });
+
+    doc.save('applications-report.pdf');
   };
 
   const getApplicantName = (app: any) => {
@@ -206,6 +292,14 @@ const Applications = () => {
           <h1 className="text-3xl font-bold text-foreground">Applications</h1>
           <p className="text-muted-foreground mt-1">Track and manage job applications</p>
         </div>
+        <Button
+          onClick={downloadApplicationsPDF}
+          className="flex items-center gap-2"
+          variant="outline"
+        >
+          <Download className="w-4 h-4" />
+          Download PDF
+        </Button>
       </div>
 
       <Tabs defaultValue="applications" className="w-full">
