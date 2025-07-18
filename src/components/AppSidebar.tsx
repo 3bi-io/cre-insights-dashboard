@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,8 +42,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 const AppSidebar = () => {
   const location = useLocation();
-  const { user, userRole, signOut } = useAuth();
-  const { state, setOpenMobile } = useSidebar();
+  const { setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
 
   const navigationItems = [
@@ -72,21 +72,6 @@ const AppSidebar = () => {
 
   const isSettingsActive = () => {
     return settingsItems.some(item => isActive(item.path));
-  };
-
-  const getRoleBadgeColor = (role: string | null) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-100 text-red-800';
-      case 'moderator':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
   };
 
   return (
@@ -226,36 +211,7 @@ const AppSidebar = () => {
       </SidebarContent>
 
       <SidebarFooter className="border-t px-4 py-4 shrink-0">
-        {user && (
-          <div className="space-y-3">
-            <div className="px-2 py-2 rounded-lg bg-accent/50 border">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                  {user.email?.[0]?.toUpperCase() || 'U'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-foreground truncate">
-                    {user.email}
-                  </div>
-                  {userRole && (
-                    <Badge className={`${getRoleBadgeColor(userRole)} text-xs`}>
-                      {userRole}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
-            </Button>
-          </div>
-        )}
+        {/* Footer is now empty - user status moved to header */}
       </SidebarFooter>
     </Sidebar>
   );
