@@ -427,6 +427,7 @@ export type Database = {
       }
       budget_allocations: {
         Row: {
+          campaign_id: string | null
           category_id: string
           created_at: string
           id: string
@@ -436,6 +437,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          campaign_id?: string | null
           category_id: string
           created_at?: string
           id?: string
@@ -445,6 +447,7 @@ export type Database = {
           year: number
         }
         Update: {
+          campaign_id?: string | null
           category_id?: string
           created_at?: string
           id?: string
@@ -455,6 +458,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "budget_allocations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "budget_allocations_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
@@ -462,6 +472,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      campaign_job_assignments: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          job_listing_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          job_listing_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          job_listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_job_assignments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_job_assignments_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       chat_messages: {
         Row: {

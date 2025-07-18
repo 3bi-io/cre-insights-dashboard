@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, MapPin, Users, Eye, Edit, Trash2, Target } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Target } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -20,9 +20,7 @@ interface Campaign {
   description?: string;
   status: 'active' | 'paused' | 'completed';
   created_at: string;
-  job_count: number;
-  total_budget: number;
-  total_spend: number;
+  user_id: string;
 }
 
 interface JobListing {
@@ -42,11 +40,18 @@ interface JobListing {
   }>;
 }
 
+interface CampaignWithStats extends Campaign {
+  job_count: number;
+  total_budget: number;
+  total_spend: number;
+}
+
 const Campaigns = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showJobsDialog, setShowJobsDialog] = useState(false);
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([]);
   const [campaignForm, setCampaignForm] = useState<{
     name: string;
     description: string;
@@ -57,34 +62,65 @@ const Campaigns = () => {
     status: 'active'
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Fetch campaigns (mock data for now)
+  // Fetch campaigns with statistics
   const { data: campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns } = useQuery({
     queryKey: ['campaigns'],
     queryFn: async () => {
-      // Mock data - in real implementation, this would fetch from campaigns table
-      return [
-        {
-          id: '1',
-          name: 'Denver Metro Drivers',
-          description: 'CDL-A drivers for Denver metropolitan area',
-          status: 'active' as const,
-          created_at: '2025-01-15T10:00:00Z',
-          job_count: 12,
-          total_budget: 5000,
-          total_spend: 3200
-        },
-        {
-          id: '2',
-          name: 'Texas Regional Campaign',
-          description: 'Regional drivers across Texas markets',
-          status: 'active' as const,
-          created_at: '2025-01-10T09:00:00Z',
-          job_count: 8,
-          total_budget: 8000,
-          total_spend: 4500
-        }
-      ] as Campaign[];
+      const { data: campaignsData, error: campaignsError } = await supabase
+        .from('campaigns')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (campaignsError) throw campaignsError;
+
+      // Get campaign statistics
+      const campaignsWithStats = await Promise.all(
+        campaignsData.map(async (campaign) => {
+          // Get job count for this campaign
+          const { count: jobCount } = await supabase
+            .from('campaign_job_assignments')
+            .select('*', { count: 'exact', head: true })
+            .eq('campaign_id', campaign.id);
+
+          // Get jobs assigned to this campaign
+          const { data: assignedJobs } = await supabase
+            .from('campaign_job_assignments')
+            .select(`
+              job_listing_id,
+              job_listings!inner(budget)
+            `)
+            .eq('campaign_id', campaign.id);
+
+          // Calculate total budget
+          const totalBudget = assignedJobs?.reduce((sum, assignment) => {
+            return sum + (assignment.job_listings?.budget || 0);
+          }, 0) || 0;
+
+          // Get total spend for jobs in this campaign
+          const jobIds = assignedJobs?.map(j => j.job_listing_id) || [];
+          let totalSpend = 0;
+          
+          if (jobIds.length > 0) {
+            const { data: spendData } = await supabase
+              .from('daily_spend')
+              .select('amount')
+              .in('job_listing_id', jobIds);
+            
+            totalSpend = spendData?.reduce((sum, spend) => sum + (spend.amount || 0), 0) || 0;
+          }
+
+          return {
+            ...campaign,
+            job_count: jobCount || 0,
+            total_budget: totalBudget,
+            total_spend: totalSpend
+          };
+        })
+      );
+
+      return campaignsWithStats as CampaignWithStats[];
     }
   });
 
@@ -108,24 +144,133 @@ const Campaigns = () => {
     }
   });
 
-  const handleCreateCampaign = async () => {
-    try {
-      // Mock implementation - in real app, this would save to campaigns table
+  // Get jobs already assigned to the selected campaign
+  const { data: assignedJobIds } = useQuery({
+    queryKey: ['campaign-job-assignments', selectedCampaign?.id],
+    queryFn: async () => {
+      if (!selectedCampaign?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('campaign_job_assignments')
+        .select('job_listing_id')
+        .eq('campaign_id', selectedCampaign.id);
+      
+      if (error) throw error;
+      return data.map(assignment => assignment.job_listing_id);
+    },
+    enabled: !!selectedCampaign?.id
+  });
+
+  // Create campaign mutation
+  const createCampaignMutation = useMutation({
+    mutationFn: async (campaignData: typeof campaignForm) => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .insert([campaignData])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
       toast({
         title: "Success",
         description: "Campaign created successfully",
       });
       setShowCreateDialog(false);
       setCampaignForm({ name: '', description: '', status: 'active' });
-      refetchCampaigns();
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    },
+    onError: (error) => {
+      console.error('Campaign creation error:', error);
       toast({
         title: "Error",
         description: "Failed to create campaign",
         variant: "destructive",
       });
     }
+  });
+
+  // Update campaign job assignments mutation
+  const updateJobAssignmentsMutation = useMutation({
+    mutationFn: async ({ campaignId, jobIds }: { campaignId: string; jobIds: string[] }) => {
+      // First, remove existing assignments
+      await supabase
+        .from('campaign_job_assignments')
+        .delete()
+        .eq('campaign_id', campaignId);
+
+      // Then add new assignments
+      if (jobIds.length > 0) {
+        const assignments = jobIds.map(jobId => ({
+          campaign_id: campaignId,
+          job_listing_id: jobId
+        }));
+
+        const { error } = await supabase
+          .from('campaign_job_assignments')
+          .insert(assignments);
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Campaign jobs updated successfully",
+      });
+      setShowJobsDialog(false);
+      setSelectedJobIds([]);
+      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-job-assignments'] });
+    },
+    onError: (error) => {
+      console.error('Job assignment error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update campaign jobs",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateCampaign = async () => {
+    if (!campaignForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Campaign name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    createCampaignMutation.mutate(campaignForm);
   };
+
+  const handleUpdateJobAssignments = () => {
+    if (!selectedCampaign) return;
+    
+    updateJobAssignmentsMutation.mutate({
+      campaignId: selectedCampaign.id,
+      jobIds: selectedJobIds
+    });
+  };
+
+  const handleJobSelection = (jobId: string, checked: boolean) => {
+    setSelectedJobIds(prev => 
+      checked 
+        ? [...prev, jobId]
+        : prev.filter(id => id !== jobId)
+    );
+  };
+
+  // Initialize selected jobs when dialog opens
+  React.useEffect(() => {
+    if (showJobsDialog && assignedJobIds) {
+      setSelectedJobIds(assignedJobIds);
+    }
+  }, [showJobsDialog, assignedJobIds]);
 
   const filteredCampaigns = campaigns?.filter(campaign =>
     campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -221,8 +366,12 @@ const Campaigns = () => {
                 </Select>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleCreateCampaign} className="flex-1">
-                  Create Campaign
+                <Button 
+                  onClick={handleCreateCampaign} 
+                  className="flex-1"
+                  disabled={createCampaignMutation.isPending}
+                >
+                  {createCampaignMutation.isPending ? 'Creating...' : 'Create Campaign'}
                 </Button>
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                   Cancel
@@ -313,7 +462,7 @@ const Campaigns = () => {
                     }}
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    View Jobs
+                    Manage Jobs
                   </Button>
                   <Button variant="ghost" size="sm">
                     <Edit className="w-4 h-4" />
@@ -328,24 +477,28 @@ const Campaigns = () => {
         </div>
       )}
 
-      {/* View Jobs Dialog */}
+      {/* Manage Jobs Dialog */}
       <Dialog open={showJobsDialog} onOpenChange={setShowJobsDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Jobs in "{selectedCampaign?.name}" Campaign
+              Manage Jobs in "{selectedCampaign?.name}" Campaign
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Manage which jobs are included in this campaign. You can group jobs by location, platform, job ID, or other criteria.
+              Select which jobs should be included in this campaign. You can group jobs by location, platform, job ID, or other criteria.
             </p>
             
             {/* Job Selection List */}
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {jobListings?.slice(0, 10).map((job) => (
+              {jobListings?.map((job) => (
                 <div key={job.id} className="flex items-center space-x-3 p-3 border rounded-lg">
-                  <Checkbox id={`job-${job.id}`} />
+                  <Checkbox 
+                    id={`job-${job.id}`}
+                    checked={selectedJobIds.includes(job.id)}
+                    onCheckedChange={(checked) => handleJobSelection(job.id, checked as boolean)}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">
                       {job.title || job.job_title || 'Untitled Job'}
@@ -364,8 +517,12 @@ const Campaigns = () => {
             </div>
             
             <div className="flex gap-2 pt-4">
-              <Button className="flex-1">
-                Update Campaign
+              <Button 
+                className="flex-1"
+                onClick={handleUpdateJobAssignments}
+                disabled={updateJobAssignmentsMutation.isPending}
+              >
+                {updateJobAssignmentsMutation.isPending ? 'Updating...' : 'Update Campaign'}
               </Button>
               <Button variant="outline" onClick={() => setShowJobsDialog(false)}>
                 Cancel
