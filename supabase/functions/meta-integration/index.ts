@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -121,11 +122,14 @@ async function syncAdAccounts(userId: string, accessToken: string, supabase: any
   // Sync accounts to database
   const syncResults = [];
   for (const account of accounts) {
+    // Extract the actual account ID (remove 'act_' prefix if present)
+    const cleanAccountId = account.id.replace(/^act_/, '');
+    
     const { data, error } = await supabase
       .from('meta_ad_accounts')
       .upsert({
         user_id: userId,
-        account_id: account.id,
+        account_id: cleanAccountId,
         account_name: account.name,
         currency: account.currency,
         timezone_name: account.timezone_name,
@@ -135,9 +139,9 @@ async function syncAdAccounts(userId: string, accessToken: string, supabase: any
       });
 
     if (error) {
-      console.error(`Error syncing account ${account.id}:`, error);
+      console.error(`Error syncing account ${cleanAccountId}:`, error);
     } else {
-      syncResults.push({ account_id: account.id, status: 'synced' });
+      syncResults.push({ account_id: cleanAccountId, status: 'synced' });
     }
   }
 
@@ -154,8 +158,13 @@ async function syncAdAccounts(userId: string, accessToken: string, supabase: any
 async function syncCampaigns(userId: string, accountId: string, accessToken: string, supabase: any) {
   console.log(`Syncing campaigns for account: ${accountId}`);
   
+  // Ensure the account ID is properly formatted for Meta API (with act_ prefix)
+  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  // But store the clean version in database
+  const cleanAccountId = accountId.replace(/^act_/, '');
+  
   const response = await fetch(
-    `https://graph.facebook.com/v18.0/act_${accountId}/campaigns?fields=id,name,objective,status,created_time,updated_time&access_token=${accessToken}`
+    `https://graph.facebook.com/v18.0/${formattedAccountId}/campaigns?fields=id,name,objective,status,created_time,updated_time&access_token=${accessToken}`
   );
   
   if (!response.ok) {
@@ -172,7 +181,7 @@ async function syncCampaigns(userId: string, accountId: string, accessToken: str
       .from('meta_campaigns')
       .upsert({
         user_id: userId,
-        account_id: accountId,
+        account_id: cleanAccountId,
         campaign_id: campaign.id,
         campaign_name: campaign.name,
         objective: campaign.objective,
@@ -204,11 +213,15 @@ async function syncCampaigns(userId: string, accountId: string, accessToken: str
 async function syncInsights(userId: string, accountId: string, campaignId: string | undefined, datePreset: string, accessToken: string, supabase: any) {
   console.log(`Syncing insights for account: ${accountId}, campaign: ${campaignId || 'all'}`);
   
+  // Ensure proper formatting
+  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const cleanAccountId = accountId.replace(/^act_/, '');
+  
   const fields = 'date_start,date_stop,spend,impressions,clicks,ctr,cpm,cpc,reach,frequency';
   const level = campaignId ? 'campaign' : 'account';
   const endpoint = campaignId 
     ? `https://graph.facebook.com/v18.0/${campaignId}/insights`
-    : `https://graph.facebook.com/v18.0/act_${accountId}/insights`;
+    : `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`;
   
   const response = await fetch(
     `${endpoint}?fields=${fields}&level=${level}&date_preset=${datePreset}&access_token=${accessToken}`
@@ -228,7 +241,7 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
       .from('meta_daily_spend')
       .upsert({
         user_id: userId,
-        account_id: accountId,
+        account_id: cleanAccountId,
         campaign_id: campaignId || null,
         date_start: insight.date_start,
         date_stop: insight.date_stop,

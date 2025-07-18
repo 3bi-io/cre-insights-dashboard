@@ -81,6 +81,8 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     setSyncStatus(`Starting ${action}...`);
 
     try {
+      console.log(`Attempting ${action} with accountId: ${accountId}`);
+      
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: { 
           action, 
@@ -90,7 +92,10 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error(`Supabase function error:`, error);
+        throw error;
+      }
 
       setSyncProgress(100);
       setSyncStatus('Sync completed successfully');
@@ -110,12 +115,12 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       }
       
       onRefresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error with ${action}:`, error);
       setSyncStatus(`Error: ${error.message || 'Unknown error occurred'}`);
       toast({
         title: "Error",
-        description: `Failed to ${action}. ${error.message || 'Please try again.'}`,
+        description: `Failed to ${action}. ${error.message || 'Please check the logs and try again.'}`,
         variant: "destructive",
       });
     } finally {
@@ -137,21 +142,38 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     
     const total = metaAccounts.length;
     let completed = 0;
+    let errors = 0;
 
     try {
       for (const account of metaAccounts) {
-        setSyncStatus(`Syncing campaigns for ${account.account_name}...`);
-        await handleMetaAction('sync_campaigns', account.account_id);
-        completed++;
-        setSyncProgress((completed / total) * 100);
+        try {
+          setSyncStatus(`Syncing campaigns for ${account.account_name}...`);
+          await handleMetaAction('sync_campaigns', account.account_id);
+          completed++;
+        } catch (error) {
+          console.error(`Failed to sync campaigns for account ${account.account_id}:`, error);
+          errors++;
+        }
+        setSyncProgress(((completed + errors) / total) * 100);
       }
       
-      toast({
-        title: "Success",
-        description: `Synced campaigns for all ${total} accounts`,
-      });
+      if (errors === 0) {
+        toast({
+          title: "Success",
+          description: `Synced campaigns for all ${total} accounts`,
+        });
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `Synced ${completed} accounts successfully, ${errors} failed`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error syncing all campaigns:', error);
+    } finally {
+      setIsLoading(false);
+      setCurrentAction('');
     }
   };
 
@@ -164,21 +186,38 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     
     const total = metaAccounts.length;
     let completed = 0;
+    let errors = 0;
 
     try {
       for (const account of metaAccounts) {
-        setSyncStatus(`Syncing insights for ${account.account_name}...`);
-        await handleMetaAction('sync_insights', account.account_id);
-        completed++;
-        setSyncProgress((completed / total) * 100);
+        try {
+          setSyncStatus(`Syncing insights for ${account.account_name}...`);
+          await handleMetaAction('sync_insights', account.account_id);
+          completed++;
+        } catch (error) {
+          console.error(`Failed to sync insights for account ${account.account_id}:`, error);
+          errors++;
+        }
+        setSyncProgress(((completed + errors) / total) * 100);
       }
       
-      toast({
-        title: "Success",
-        description: `Synced insights for all ${total} accounts`,
-      });
+      if (errors === 0) {
+        toast({
+          title: "Success",
+          description: `Synced insights for all ${total} accounts`,
+        });
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `Synced ${completed} accounts successfully, ${errors} failed`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error syncing all insights:', error);
+    } finally {
+      setIsLoading(false);
+      setCurrentAction('');
     }
   };
 
@@ -339,7 +378,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       {account.account_name}
                     </Badge>
                     <p className="text-xs text-muted-foreground">
-                      {account.currency} • {account.timezone_name}
+                      ID: {account.account_id} • {account.currency} • {account.timezone_name}
                     </p>
                   </div>
                   <div className="flex gap-1">
@@ -348,6 +387,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       variant="ghost"
                       onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
                       disabled={isLoading}
+                      title="Sync campaigns for this account"
                     >
                       <BarChart3 className="w-3 h-3" />
                     </Button>
@@ -356,6 +396,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       variant="ghost"
                       onClick={() => handleMetaAction('sync_insights', account.account_id)}
                       disabled={isLoading}
+                      title="Sync insights for this account"
                     >
                       <Calendar className="w-3 h-3" />
                     </Button>
