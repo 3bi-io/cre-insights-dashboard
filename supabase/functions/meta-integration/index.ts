@@ -43,7 +43,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, accountId, campaignId, datePreset = 'last_30_days' } = await req.json();
+    const { action, accountId, campaignId, datePreset = 'last_30d' } = await req.json();
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
