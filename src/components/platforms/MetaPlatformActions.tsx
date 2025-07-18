@@ -116,7 +116,10 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
       // Refresh appropriate data based on action
       if (action === 'sync_accounts') {
-        refetchAccounts();
+        // Add a small delay to ensure cleanup is complete
+        setTimeout(() => {
+          refetchAccounts();
+        }, 1000);
       } else if (action === 'sync_campaigns') {
         refetchCampaigns();
       } else if (action === 'sync_insights') {

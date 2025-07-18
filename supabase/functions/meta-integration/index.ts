@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
@@ -140,7 +139,42 @@ async function syncAdAccounts(userId: string, accessToken: string, supabase: any
   const { data: accounts }: { data: MetaAdAccount[] } = await response.json();
   console.log(`Found ${accounts.length} Meta ad accounts`);
 
-  // Sync accounts to database
+  // First, clean up any existing duplicates for this user
+  console.log('Cleaning up existing duplicate accounts...');
+  
+  // Get all existing accounts for this user
+  const { data: existingAccounts } = await supabase
+    .from('meta_ad_accounts')
+    .select('id, account_id')
+    .eq('user_id', userId);
+
+  if (existingAccounts && existingAccounts.length > 0) {
+    // Group by account_id to find duplicates
+    const accountGroups = existingAccounts.reduce((groups: any, account: any) => {
+      const key = account.account_id;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(account);
+      return groups;
+    }, {});
+
+    // Delete duplicates, keeping only the first entry for each account_id
+    for (const [accountId, duplicates] of Object.entries(accountGroups)) {
+      if ((duplicates as any[]).length > 1) {
+        const toDelete = (duplicates as any[]).slice(1); // Keep first, delete rest
+        for (const duplicate of toDelete) {
+          await supabase
+            .from('meta_ad_accounts')
+            .delete()
+            .eq('id', duplicate.id);
+        }
+        console.log(`Removed ${toDelete.length} duplicate(s) for account ${accountId}`);
+      }
+    }
+  }
+
+  // Sync accounts to database with proper conflict resolution
   const syncResults = [];
   for (const account of accounts) {
     // Extract the actual account ID (remove 'act_' prefix if present)
@@ -156,7 +190,8 @@ async function syncAdAccounts(userId: string, accessToken: string, supabase: any
         timezone_name: account.timezone_name,
         updated_at: new Date().toISOString(),
       }, {
-        onConflict: 'user_id,account_id'
+        onConflict: 'user_id,account_id',
+        ignoreDuplicates: false
       });
 
     if (error) {
