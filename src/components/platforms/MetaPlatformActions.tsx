@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,14 +26,13 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const [syncStatus, setSyncStatus] = useState<string>('');
   const { toast } = useToast();
 
-  // Fetch Meta accounts with filter for account ID 1845
+  // Fetch Meta accounts with better error handling
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
     queryKey: ['meta-accounts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
-        .eq('account_id', '1845')
         .order('account_name');
       
       if (error) throw error;
@@ -42,14 +42,13 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     retryDelay: 1000,
   });
 
-  // Fetch Meta campaigns for the filtered account
+  // Fetch Meta campaigns
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
     queryKey: ['meta-campaigns'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
-        .eq('account_id', '1845')
         .order('campaign_name');
       
       if (error) throw error;
@@ -58,7 +57,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     enabled: !!metaAccounts?.length,
   });
 
-  // Fetch Meta spend data for the filtered account
+  // Fetch Meta spend data with date range
   const { data: metaSpend, refetch: refetchSpend } = useQuery({
     queryKey: ['meta-spend'],
     queryFn: async () => {
@@ -66,7 +65,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       const { data, error } = await supabase
         .from('meta_daily_spend')
         .select('*')
-        .eq('account_id', '1845')
         .gte('date_start', thirtyDaysAgo)
         .order('date_start', { ascending: false });
       
@@ -86,7 +84,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: { 
           action, 
-          accountId: accountId || '1845', // Default to 1845 if not specified
+          accountId, 
           campaignId,
           datePreset: 'last_30_days'
         }
@@ -135,17 +133,25 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     
     setIsLoading(true);
     setCurrentAction('sync_campaigns');
-    setSyncStatus('Syncing campaigns for account 1845...');
+    setSyncStatus('Syncing campaigns for all accounts...');
     
+    const total = metaAccounts.length;
+    let completed = 0;
+
     try {
-      await handleMetaAction('sync_campaigns', '1845');
+      for (const account of metaAccounts) {
+        setSyncStatus(`Syncing campaigns for ${account.account_name}...`);
+        await handleMetaAction('sync_campaigns', account.account_id);
+        completed++;
+        setSyncProgress((completed / total) * 100);
+      }
       
       toast({
         title: "Success",
-        description: `Synced campaigns for account 1845`,
+        description: `Synced campaigns for all ${total} accounts`,
       });
     } catch (error) {
-      console.error('Error syncing campaigns:', error);
+      console.error('Error syncing all campaigns:', error);
     }
   };
 
@@ -154,17 +160,25 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     
     setIsLoading(true);
     setCurrentAction('sync_insights');
-    setSyncStatus('Syncing insights for account 1845...');
+    setSyncStatus('Syncing insights for all accounts...');
     
+    const total = metaAccounts.length;
+    let completed = 0;
+
     try {
-      await handleMetaAction('sync_insights', '1845');
+      for (const account of metaAccounts) {
+        setSyncStatus(`Syncing insights for ${account.account_name}...`);
+        await handleMetaAction('sync_insights', account.account_id);
+        completed++;
+        setSyncProgress((completed / total) * 100);
+      }
       
       toast({
         title: "Success",
-        description: `Synced insights for account 1845`,
+        description: `Synced insights for all ${total} accounts`,
       });
     } catch (error) {
-      console.error('Error syncing insights:', error);
+      console.error('Error syncing all insights:', error);
     }
   };
 
@@ -180,9 +194,9 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
             <span className="text-white font-bold text-sm">M</span>
           </div>
           <div>
-            <CardTitle className="text-lg">Meta Business Platform (Account 1845)</CardTitle>
+            <CardTitle className="text-lg">Meta Business Platform</CardTitle>
             <CardDescription>
-              Sync ad account 1845, campaigns, and performance data from Meta
+              Sync ad accounts, campaigns, and performance data from Meta
             </CardDescription>
           </div>
         </div>
@@ -192,7 +206,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Failed to load Meta account 1845. Please check your API configuration and try again.
+              Failed to load Meta accounts. Please check your API configuration and try again.
             </AlertDescription>
           </Alert>
         )}
@@ -212,7 +226,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <Target className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-            <div className="text-sm font-medium">Ad Account</div>
+            <div className="text-sm font-medium">Ad Accounts</div>
             <div className="text-2xl font-bold text-blue-600">
               {metaAccounts?.length || 0}
             </div>
@@ -246,13 +260,13 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Sync Ad Account 1845</p>
+              <p className="font-medium">Sync Ad Accounts</p>
               <p className="text-sm text-muted-foreground">
-                Import ad account 1845 and basic information
+                Import your Meta ad accounts and basic information
               </p>
             </div>
             <Button 
-              onClick={() => handleMetaAction('sync_accounts', '1845')}
+              onClick={() => handleMetaAction('sync_accounts')}
               disabled={isLoading}
               size="sm"
             >
@@ -261,7 +275,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
               ) : (
                 <Download className="w-4 h-4 mr-2" />
               )}
-              Sync Account
+              Sync Accounts
             </Button>
           </div>
 
@@ -269,9 +283,9 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
             <>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Sync Campaigns for Account 1845</p>
+                  <p className="font-medium">Sync All Campaigns</p>
                   <p className="text-sm text-muted-foreground">
-                    Import campaigns from ad account 1845
+                    Import campaigns from all your ad accounts ({metaAccounts.length} accounts)
                   </p>
                 </div>
                 <Button 
@@ -285,15 +299,15 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                   ) : (
                     <BarChart3 className="w-4 h-4 mr-2" />
                   )}
-                  Sync Campaigns
+                  Sync All Campaigns
                 </Button>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Sync Performance Data for Account 1845</p>
+                  <p className="font-medium">Sync All Performance Data</p>
                   <p className="text-sm text-muted-foreground">
-                    Import spend, impressions, clicks and other metrics for account 1845
+                    Import spend, impressions, clicks and other metrics for all accounts
                   </p>
                 </div>
                 <Button 
@@ -307,7 +321,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                   ) : (
                     <Calendar className="w-4 h-4 mr-2" />
                   )}
-                  Sync Insights
+                  Sync All Insights
                 </Button>
               </div>
             </>
@@ -316,13 +330,13 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
         {metaAccounts && metaAccounts.length > 0 && (
           <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-3">Connected Ad Account:</p>
-            <div className="grid grid-cols-1 gap-2">
+            <p className="text-sm font-medium mb-3">Connected Ad Accounts:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {metaAccounts.map((account) => (
                 <div key={account.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg">
                   <div>
                     <Badge variant="outline" className="mb-1">
-                      {account.account_name || `Account ${account.account_id}`}
+                      {account.account_name}
                     </Badge>
                     <p className="text-xs text-muted-foreground">
                       {account.currency} • {account.timezone_name}
@@ -354,7 +368,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
         {totalImpressions > 0 && (
           <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-2">30-Day Performance Summary (Account 1845):</p>
+            <p className="text-sm font-medium mb-2">30-Day Performance Summary:</p>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <p className="text-lg font-bold">{totalImpressions.toLocaleString()}</p>
