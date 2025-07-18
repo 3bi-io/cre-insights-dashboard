@@ -52,7 +52,6 @@ const AppSidebar = () => {
     { path: '/dashboard/campaigns', label: 'Campaigns', icon: Target },
     { path: '/dashboard/applications', label: 'Applications', icon: Users },
     { path: '/dashboard/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
-    { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/routes', label: 'Routes', icon: MapPin },
     { path: '/dashboard/platforms', label: 'Platforms', icon: Megaphone },
     { path: '/dashboard/clients', label: 'Clients', icon: Building },
@@ -60,6 +59,7 @@ const AppSidebar = () => {
   ];
 
   const settingsItems = [
+    { path: '/dashboard/tenstreet', label: 'Tenstreet Integration', icon: Link },
     { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Mic },
     { path: '/dashboard/settings', label: 'General Settings', icon: Settings },
   ];
