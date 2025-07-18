@@ -1,10 +1,30 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
+const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
 
 export const usePlatformPerformanceData = () => {
   return useQuery({
     queryKey: ['platform-performance-data'],
     queryFn: async () => {
+      // Get Meta data for CR England account specifically
+      const { data: metaData, error: metaError } = await supabase
+        .from('meta_daily_spend')
+        .select('spend, impressions, clicks')
+        .eq('account_id', CR_ENGLAND_ACCOUNT_ID);
+
+      if (metaError) throw metaError;
+
+      // Get applications from Meta sources (fb, ig, meta)
+      const { data: applicationsData, error: appsError } = await supabase
+        .from('applications')
+        .select('id, source')
+        .or('source.eq.fb,source.eq.ig,source.eq.meta');
+
+      if (appsError) throw appsError;
+
+      // Get other platform data (non-Meta)
       const { data: platformData, error } = await supabase
         .from('platforms')
         .select(`
@@ -16,50 +36,50 @@ export const usePlatformPerformanceData = () => {
               applications(id, source)
             )
           )
-        `);
+        `)
+        .not('name', 'ilike', '%meta%')
+        .not('name', 'ilike', '%facebook%')
+        .not('name', 'ilike', '%instagram%');
 
       if (error) throw error;
 
-      // Group data by platform, consolidating Meta sources
-      const consolidatedData = platformData.reduce((acc: any, platform: any) => {
-        let platformName = platform.name;
-        
-        // Check if any applications are from fb/ig sources through job platform associations
-        const hasMetaSources = platform.job_platform_associations.some((assoc: any) =>
-          assoc.job_listings.applications.some((app: any) => app.source === 'fb' || app.source === 'ig')
-        );
-        
-        if (platformName === 'Facebook' || platformName === 'Instagram' || platformName === 'Meta' || hasMetaSources) {
-          platformName = 'Meta';
-        }
+      // Calculate Meta (CR England) performance
+      const metaSpend = metaData?.reduce((sum, record) => sum + (record.spend || 0), 0) || 0;
+      const metaApplications = applicationsData?.length || 0;
+      const metaCpa = metaApplications > 0 ? metaSpend / metaApplications : 0;
 
-        if (!acc[platformName]) {
-          acc[platformName] = { applications: 0, spend: 0 };
-        }
-
+      // Process other platforms
+      const otherPlatforms = platformData.reduce((acc: any, platform: any) => {
         const applications = platform.job_platform_associations.reduce((appAcc: number, assoc: any) => 
           appAcc + assoc.job_listings.applications.length, 0);
         const spend = platform.job_platform_associations.reduce((spendAcc: number, assoc: any) => 
           spendAcc + assoc.job_listings.daily_spend.reduce((sum: number, spend: any) => sum + Number(spend.amount), 0), 0);
 
-        acc[platformName].applications += applications;
-        acc[platformName].spend += spend;
-
-        return acc;
-      }, {});
-
-      return Object.entries(consolidatedData)
-        .map(([platform, data]: [string, any]) => {
-          const cpa = data.applications > 0 ? data.spend / data.applications : 0;
-          return {
-            platform,
-            applications: data.applications,
-            spend: Number(data.spend.toFixed(2)),
+        if (applications > 0 || spend > 0) {
+          const cpa = applications > 0 ? spend / applications : 0;
+          acc.push({
+            platform: platform.name,
+            applications,
+            spend: Number(spend.toFixed(2)),
             cpa: Number(cpa.toFixed(2))
-          };
-        })
-        .filter((platform: any) => platform.applications > 0 || platform.spend > 0) // Filter out empty platforms
-        .sort((a: any, b: any) => b.applications - a.applications); // Sort by applications descending
+          });
+        }
+        return acc;
+      }, []);
+
+      // Combine Meta and other platforms
+      const allPlatforms = [
+        {
+          platform: 'Meta (CR England)',
+          applications: metaApplications,
+          spend: Number(metaSpend.toFixed(2)),
+          cpa: Number(metaCpa.toFixed(2))
+        },
+        ...otherPlatforms
+      ].filter((platform: any) => platform.applications > 0 || platform.spend > 0)
+       .sort((a: any, b: any) => b.applications - a.applications);
+
+      return allPlatforms;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

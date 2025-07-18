@@ -5,32 +5,39 @@ import { supabase } from '@/integrations/supabase/client';
 import MetricsCard from '@/components/MetricsCard';
 import { DollarSign, Users, TrendingUp, Target, Briefcase } from 'lucide-react';
 
+const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+
 const DashboardMetrics = () => {
   const { data: metrics, isLoading, refetch } = useQuery({
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
-      console.log('Fetching dashboard metrics...');
+      console.log('Fetching dashboard metrics for CR England...');
       
-      const [spendData, applicationsData, jobsData] = await Promise.all([
-        supabase.from('daily_spend').select('amount'),
-        supabase.from('applications').select('id'),
+      const [metaSpendData, applicationsData, jobsData] = await Promise.all([
+        supabase
+          .from('meta_daily_spend')
+          .select('spend, impressions, clicks, reach')
+          .eq('account_id', CR_ENGLAND_ACCOUNT_ID),
+        supabase.from('applications').select('id, source').or('source.eq.fb,source.eq.ig,source.eq.meta'),
         supabase.from('job_listings').select('id').eq('status', 'active')
       ]);
       
-      console.log('Spend data:', spendData.data?.length);
+      console.log('Meta spend data:', metaSpendData.data?.length);
       console.log('Applications data:', applicationsData.data?.length);
       console.log('Jobs data:', jobsData.data?.length);
       
-      const totalSpend = spendData.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
-      const totalApplications = applicationsData.data?.length || 0;
+      const totalSpend = metaSpendData.data?.reduce((sum, item) => sum + Number(item.spend), 0) || 0;
+      const totalLeads = applicationsData.data?.length || 0;
       const totalJobs = jobsData.data?.length || 0;
-      const costPerApplication = totalApplications > 0 ? totalSpend / totalApplications : 0;
+      const totalReach = metaSpendData.data?.reduce((sum, item) => sum + Number(item.reach || 0), 0) || 0;
+      const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
       
       return {
         totalSpend,
-        totalApplications,
+        totalLeads,
         totalJobs,
-        costPerApplication
+        totalReach,
+        costPerLead
       };
     },
     // Refresh every 30 seconds to stay in sync
@@ -39,8 +46,8 @@ const DashboardMetrics = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8 mb-12">
+        {[...Array(5)].map((_, i) => (
           <div key={i} className="h-32 bg-muted rounded-xl animate-pulse"></div>
         ))}
       </div>
@@ -48,25 +55,25 @@ const DashboardMetrics = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-12">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8 mb-12">
       <MetricsCard
-        title="Total Spend (MTD)"
+        title="Meta Lead Spend (MTD)"
         value={`$${metrics?.totalSpend.toLocaleString() || '0'}`}
         change="--"
         changeType="neutral"
         icon={DollarSign}
-        description="month to date"
+        description="CR England only"
       />
       <MetricsCard
-        title="Total Applications"
-        value={metrics?.totalApplications.toLocaleString() || '0'}
+        title="Total Leads Generated"
+        value={metrics?.totalLeads.toLocaleString() || '0'}
         change="--"
         changeType="neutral"
         icon={Users}
-        description="all time"
+        description="Facebook/Meta leads"
       />
       <MetricsCard
-        title="Total Job Listings"
+        title="Active Job Listings"
         value={metrics?.totalJobs.toLocaleString() || '0'}
         change="--"
         changeType="neutral"
@@ -74,12 +81,20 @@ const DashboardMetrics = () => {
         description="active listings"
       />
       <MetricsCard
-        title="Cost per Application"
-        value={`$${metrics?.costPerApplication.toFixed(2) || '0.00'}`}
+        title="Cost per Lead"
+        value={`$${metrics?.costPerLead.toFixed(2) || '0.00'}`}
         change="--"
         changeType="neutral"
         icon={Target}
-        description="average cost"
+        description="CR England CPA"
+      />
+      <MetricsCard
+        title="Campaign Reach"
+        value={metrics?.totalReach.toLocaleString() || '0'}
+        change="--"
+        changeType="neutral"
+        icon={TrendingUp}
+        description="total impressions"
       />
     </div>
   );
