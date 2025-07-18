@@ -300,7 +300,7 @@ const Apply = () => {
                       onCheckedChange={(checked) => handleInputChange('ageVerification', checked as boolean)}
                     />
                     <Label htmlFor="ageVerification" className="text-sm">
-                      I certify that I am at least 18 years of age *
+                      I certify that I am at least 21 years of age *
                     </Label>
                   </div>
                 </div>
