@@ -273,20 +273,20 @@ const AIAnalytics = () => {
               </div>
               <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                 <div className="text-center">
-                  <p><strong>D (Driver):</strong></p>
-                  <p>CDL holders with 48+ months experience</p>
+                  <p><strong>D (Experienced Driver):</strong></p>
+                  <p>CDL + Age + 3+ months experience</p>
                 </div>
                 <div className="text-center">
-                  <p><strong>SR (Senior):</strong></p>
-                  <p>Senior experienced (48+ months)</p>
+                  <p><strong>SR (Student Ready):</strong></p>
+                  <p>No CDL + Age + &lt;3 months experience</p>
                 </div>
                 <div className="text-center">
-                  <p><strong>SC (Semi-experienced):</strong></p>
-                  <p>Some experience, less than 48 months</p>
+                  <p><strong>SC (New CDL Holder):</strong></p>
+                  <p>CDL + Age + &lt;3 months experience</p>
                 </div>
                 <div className="text-center">
-                  <p><strong>N/A:</strong></p>
-                  <p>No experience or missing data</p>
+                  <p><strong>N/A (Uncategorized):</strong></p>
+                  <p>Other combinations</p>
                 </div>
               </div>
             </CardContent>
