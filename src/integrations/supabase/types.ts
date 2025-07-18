@@ -845,6 +845,48 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_conversations: {
+        Row: {
+          application_id: string
+          created_at: string
+          id: string
+          phone_number: string
+          recruiter_id: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          id?: string
+          phone_number: string
+          recruiter_id: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          id?: string
+          phone_number?: string
+          recruiter_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_conversations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "recruiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_magic_links: {
         Row: {
           application_id: string | null
@@ -879,6 +921,47 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          message: string
+          sender_type: string
+          status: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          message: string
+          sender_type: string
+          status?: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message?: string
+          sender_type?: string
+          status?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "sms_conversations"
             referencedColumns: ["id"]
           },
         ]

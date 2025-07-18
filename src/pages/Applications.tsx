@@ -14,12 +14,15 @@ import jsPDF from 'jspdf';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import TenstreetUpdateDialog from '@/components/applications/TenstreetUpdateDialog';
+import SmsConversationDialog from '@/components/applications/SmsConversationDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
@@ -32,7 +35,8 @@ const Applications = () => {
         .from('applications')
         .select(`
           *,
-          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name))
+          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name)),
+          recruiters:recruiter_id(id, first_name, last_name, email)
         `)
         .order('applied_at', { ascending: false });
       
@@ -72,6 +76,74 @@ const Applications = () => {
       return enhancedData;
     },
   });
+
+  // Get recruiters for assignment dropdown
+  const { data: recruiters } = useQuery({
+    queryKey: ['recruiters'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recruiters')
+        .select('*')
+        .eq('status', 'active')
+        .order('first_name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Get current recruiter for current user
+  const { data: currentRecruiter } = useQuery({
+    queryKey: ['current-recruiter'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data, error } = await supabase
+        .from('recruiters')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+  });
+
+  // Recruiter assignment mutation
+  const assignRecruiterMutation = useMutation({
+    mutationFn: async ({ applicationId, recruiterId }: { applicationId: string; recruiterId: string | null }) => {
+      const { error } = await supabase
+        .from('applications')
+        .update({ recruiter_id: recruiterId, updated_at: new Date().toISOString() })
+        .eq('id', applicationId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast({
+        title: "Recruiter Assigned",
+        description: "Recruiter has been assigned successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to assign recruiter. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRecruiterAssignment = (applicationId: string, recruiterId: string | null) => {
+    assignRecruiterMutation.mutate({ applicationId, recruiterId });
+  };
+
+  const handleSmsOpen = (application: any) => {
+    setSelectedApplication(application);
+    setSmsDialogOpen(true);
+  };
 
   // Status update mutation
   const updateStatusMutation = useMutation({
@@ -421,22 +493,43 @@ const Applications = () => {
                                 );
                               })()}
                             </div>
-                            <Select
-                              value={application.status}
-                              onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
-                              disabled={updateStatusMutation.isPending}
-                            >
-                              <SelectTrigger className={`${isMobile ? 'w-full h-10' : 'w-32 h-7'} text-xs font-medium ${getStatusColor(application.status)}`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="reviewed">Reviewed</SelectItem>
-                                <SelectItem value="interviewed">Interviewed</SelectItem>
-                                <SelectItem value="hired">Hired</SelectItem>
-                                <SelectItem value="rejected">Rejected</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex gap-2">
+                              <Select
+                                value={application.status}
+                                onValueChange={(newStatus) => handleStatusChange(application.id, newStatus)}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                <SelectTrigger className={`${isMobile ? 'w-full h-10' : 'w-32 h-7'} text-xs font-medium ${getStatusColor(application.status)}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="reviewed">Reviewed</SelectItem>
+                                  <SelectItem value="interviewed">Interviewed</SelectItem>
+                                  <SelectItem value="hired">Hired</SelectItem>
+                                  <SelectItem value="rejected">Rejected</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              
+                              {/* Recruiter Assignment Dropdown */}
+                              <Select
+                                value={application.recruiter_id || 'unassigned'}
+                                onValueChange={(value) => handleRecruiterAssignment(application.id, value === 'unassigned' ? null : value)}
+                                disabled={assignRecruiterMutation.isPending}
+                              >
+                                <SelectTrigger className={`${isMobile ? 'w-full h-10' : 'w-40 h-7'} text-xs`}>
+                                  <SelectValue placeholder="Assign Recruiter" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-background">
+                                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                                  {recruiters?.map((recruiter) => (
+                                    <SelectItem key={recruiter.id} value={recruiter.id}>
+                                      {recruiter.first_name} {recruiter.last_name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         <div className="space-y-1 mb-2">
                           <p className="text-gray-600 flex items-center gap-2">
@@ -502,6 +595,12 @@ const Applications = () => {
                                 Tenstreet Update
                               </DropdownMenuItem>
                               {application.phone && (
+                                <DropdownMenuItem onClick={() => handleSmsOpen(application)}>
+                                  <MessageCircle className="w-4 h-4 mr-2" />
+                                  SMS Chat
+                                </DropdownMenuItem>
+                              )}
+                              {application.phone && (
                                 <DropdownMenuItem onClick={() => window.open(`tel:${application.phone}`)}>
                                   <Phone className="w-4 h-4 mr-2" />
                                   Call
@@ -514,9 +613,20 @@ const Applications = () => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         ) : (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <ApplicationDetailsDialog application={application} />
                             <TenstreetUpdateDialog application={application} />
+                            {application.phone && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex items-center gap-2"
+                                onClick={() => handleSmsOpen(application)}
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                SMS
+                              </Button>
+                            )}
                             {application.phone && (
                               <Button 
                                 variant="outline" 
@@ -561,6 +671,14 @@ const Applications = () => {
           <ZapierWebhookSetup />
         </TabsContent>
       </Tabs>
+
+      {/* SMS Conversation Dialog */}
+      <SmsConversationDialog
+        open={smsDialogOpen}
+        onOpenChange={setSmsDialogOpen}
+        application={selectedApplication}
+        currentRecruiterId={currentRecruiter?.id}
+      />
     </div>
   );
 
