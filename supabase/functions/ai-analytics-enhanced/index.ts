@@ -49,25 +49,36 @@ serve(async (req) => {
       else if (app.cdl === 'No') cdlStats.no++
       else cdlStats.unknown++
 
-      // Category analysis (D, SC, SR, N/A) based on CDL + Age + Experience
+      // Category analysis (D, SR, SC, N/A) based on experience rules
       const hasCDL = app.cdl === 'Yes' || app.cdl === 'yes'
-      const hasAge = app.age && parseInt(app.age) >= 21 // Assuming 21+ is required age
       const experienceMonths = app.months || app.exp || ''
       
-      // Parse experience to determine if 3+ months
-      const hasThreeMonthsExp = experienceMonths.includes('48+') || 
-                               experienceMonths.includes('3+') ||
-                               experienceMonths.includes('More than 3 months') ||
-                               (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) >= 3)
+      // Parse experience to determine if 48+ months (4 years)
+      const has48MonthsExp = experienceMonths.includes('48+') || 
+                            experienceMonths.includes('4+ years') ||
+                            experienceMonths.includes('More than 4 years') ||
+                            experienceMonths.includes('5+ years') ||
+                            (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) >= 48)
       
-      if (hasCDL && hasAge && hasThreeMonthsExp) {
-        categoryStats.D++ // Experienced Driver
-      } else if (hasCDL && hasAge && !hasThreeMonthsExp) {
-        categoryStats.SC++ // New CDL Holder
-      } else if (!hasCDL && hasAge && !hasThreeMonthsExp) {
-        categoryStats.SR++ // Student Ready
+      // Check for some experience but less than 48 months
+      const hasSomeExp = experienceMonths.includes('3+') ||
+                        experienceMonths.includes('6+') ||
+                        experienceMonths.includes('12+') ||
+                        experienceMonths.includes('24+') ||
+                        experienceMonths.includes('36+') ||
+                        experienceMonths.toLowerCase().includes('months') ||
+                        experienceMonths.toLowerCase().includes('year') ||
+                        (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) > 0 && parseInt(experienceMonths.match(/\d+/)[0]) < 48)
+      
+      // Apply categorization rules
+      if (hasCDL && has48MonthsExp) {
+        categoryStats.D++ // Driver: CDL holders with 48+ months experience
+      } else if (!hasCDL && has48MonthsExp) {
+        categoryStats.SR++ // Senior: Senior experienced (48+ months) without CDL
+      } else if (hasSomeExp && !has48MonthsExp) {
+        categoryStats.SC++ // Semi-experienced: Some experience, less than 48 months
       } else {
-        categoryStats['N/A']++ // Uncategorized
+        categoryStats['N/A']++ // N/A: No experience or missing data
       }
     })
 
