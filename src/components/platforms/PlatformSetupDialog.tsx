@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface PlatformSetupDialogProps {
   open: boolean;
@@ -27,6 +29,9 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
 }) => {
   const [apiEndpoint, setApiEndpoint] = useState(platform?.api_endpoint || '');
   const [enableTracking, setEnableTracking] = useState(true);
+  const [metaAppId, setMetaAppId] = useState('');
+  const [metaAppSecret, setMetaAppSecret] = useState('');
+  const [metaAccessToken, setMetaAccessToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -88,16 +93,18 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
     }
   };
 
+  const isMetaPlatform = platform?.name.toLowerCase().includes('meta') || platform?.name.toLowerCase().includes('facebook');
+
   if (!platform) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md mx-4">
+      <DialogContent className="max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Setup {platform.name} Platform</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="api-endpoint">API Endpoint</Label>
             <div className="flex gap-2">
@@ -131,6 +138,70 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
             />
             <Label htmlFor="enable-tracking">Enable campaign tracking</Label>
           </div>
+
+          {isMetaPlatform && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Meta Business API Configuration</CardTitle>
+                <CardDescription>
+                  Configure your Meta Business API credentials for advanced integration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Meta API Setup Requirements</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Meta Developer Account with Business API access</li>
+                    <li>• App configured with Marketing API permissions</li>
+                    <li>• Valid access token with ads_read permissions</li>
+                    <li>• Ad account access and proper role assignments</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="meta-app-id">Meta App ID</Label>
+                  <Input
+                    id="meta-app-id"
+                    value={metaAppId}
+                    onChange={(e) => setMetaAppId(e.target.value)}
+                    placeholder="Your Meta App ID"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="meta-app-secret">Meta App Secret</Label>
+                  <Input
+                    id="meta-app-secret"
+                    type="password"
+                    value={metaAppSecret}
+                    onChange={(e) => setMetaAppSecret(e.target.value)}
+                    placeholder="Your Meta App Secret"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="meta-access-token">Meta Access Token</Label>
+                  <Textarea
+                    id="meta-access-token"
+                    value={metaAccessToken}
+                    onChange={(e) => setMetaAccessToken(e.target.value)}
+                    placeholder="Your Meta Access Token"
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This should be a long-lived access token with ads_read permissions
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-700">
+                    <strong>Security Note:</strong> API credentials are stored securely and encrypted. 
+                    Never share your access tokens or app secrets with unauthorized parties.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {platform.name.toLowerCase() === 'x' && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
