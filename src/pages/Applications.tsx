@@ -27,7 +27,8 @@ const Applications = () => {
   const { data: applications, isLoading } = useQuery({
     queryKey: ['applications'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, get all applications with their direct job_listing relationships
+      const { data: appsWithListings, error } = await supabase
         .from('applications')
         .select(`
           *,
@@ -37,28 +38,38 @@ const Applications = () => {
       
       if (error) throw error;
       
-      // For applications with job_id but no job_listing_id, try to find matching job listing
-      if (data) {
-        const enhancedData = await Promise.all(
-          data.map(async (app) => {
-            if (app.job_id && !app.job_listing_id) {
-              const { data: jobListing } = await supabase
-                .from('job_listings')
-                .select('title, job_title, client, client_id, clients:client_id(name)')
-                .eq('job_id', app.job_id)
-                .single();
-              
-              if (jobListing) {
-                return { ...app, job_listings: jobListing };
-              }
+      // Get unique job_ids that don't have job_listing_id matches
+      const missingJobIds = appsWithListings
+        ?.filter(app => app.job_id && !app.job_listing_id)
+        .map(app => app.job_id)
+        .filter((value, index, self) => self.indexOf(value) === index) || [];
+      
+      // Batch fetch job listings for missing job_ids
+      let jobListingsMap = new Map();
+      if (missingJobIds.length > 0) {
+        const { data: jobListings } = await supabase
+          .from('job_listings')
+          .select('job_id, title, job_title, client, client_id, clients:client_id(name)')
+          .in('job_id', missingJobIds);
+        
+        if (jobListings) {
+          jobListings.forEach(job => {
+            if (job.job_id) {
+              jobListingsMap.set(job.job_id, job);
             }
-            return app;
-          })
-        );
-        return enhancedData;
+          });
+        }
       }
       
-      return data;
+      // Enhance applications with job listing data
+      const enhancedData = appsWithListings?.map(app => {
+        if (app.job_id && !app.job_listing_id && jobListingsMap.has(app.job_id)) {
+          return { ...app, job_listings: jobListingsMap.get(app.job_id) };
+        }
+        return app;
+      });
+      
+      return enhancedData;
     },
   });
 
