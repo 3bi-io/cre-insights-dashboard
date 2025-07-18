@@ -28,6 +28,7 @@ interface AnalyticsData {
   categoryBreakdown: Array<{ category: string; percentage: number; count: number }>;
   insights: string[];
   recommendations: string[];
+  totalApplications?: number;
   provider?: string;
 }
 
@@ -35,6 +36,7 @@ const AIAnalytics = () => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic'>('basic');
+  const [totalApplications, setTotalApplications] = useState<number>(0);
   const { toast } = useToast();
 
   const generateAnalytics = async () => {
@@ -46,6 +48,9 @@ const AIAnalytics = () => {
         .select('*');
 
       if (error) throw error;
+
+      console.log(`Fetched ${applications?.length || 0} applications for analysis`);
+      setTotalApplications(applications?.length || 0);
 
       // Call enhanced edge function with selected AI provider
       const { data: analysisResult, error: analysisError } = await supabase.functions
@@ -59,10 +64,16 @@ const AIAnalytics = () => {
 
       if (analysisError) throw analysisError;
 
-      setAnalyticsData(analysisResult);
+      // Add total applications count to the result
+      const enrichedResult = {
+        ...analysisResult,
+        totalApplications: applications?.length || 0
+      };
+
+      setAnalyticsData(enrichedResult);
       toast({
         title: "Analytics Generated",
-        description: `AI analysis completed using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`,
+        description: `AI analysis completed for ${applications?.length || 0} applications using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`,
       });
     } catch (error) {
       console.error('Error generating analytics:', error);
@@ -95,6 +106,11 @@ const AIAnalytics = () => {
           <p className="text-muted-foreground">
             AI-powered insights and recommendations for your applications
           </p>
+          {(analyticsData?.totalApplications || totalApplications > 0) && (
+            <p className="text-sm text-primary font-medium mt-1">
+              Analyzing {analyticsData?.totalApplications || totalApplications} total applications
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <Button onClick={generateAnalytics} disabled={loading}>
@@ -199,6 +215,35 @@ const AIAnalytics = () => {
         </div>
       ) : analyticsData ? (
         <>
+          {/* Application Summary Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Application Summary
+              </CardTitle>
+              <CardDescription>
+                Total applications processed in this analysis
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Applications Analyzed</p>
+                  <p className="text-3xl font-bold text-primary">{analyticsData.totalApplications || totalApplications}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">AI Provider</p>
+                  <Badge variant="outline" className="gap-1">
+                    {analyticsData.provider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic</>}
+                    {analyticsData.provider === 'openai' && <><Brain className="w-3 h-3" /> OpenAI</>}
+                    {analyticsData.provider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Category Breakdown (D, SR, SC, N/A) - Full Width */}
           <Card>
             <CardHeader>
