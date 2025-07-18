@@ -226,10 +226,64 @@ const AIAnalytics = () => {
 
           <div className="grid gap-6 md:grid-cols-2">
             {/* Location Conversion Rates */}
-            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Best Conversion Locations
+                </CardTitle>
+                <CardDescription>
+                  Locations with highest application conversion rates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsData.locationConversion.map((location, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{location.location}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {location.totalApplications} applications
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">
+                          {location.conversionRate.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>)}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Status Breakdown */}
-            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Application Status Breakdown
+                </CardTitle>
+                <CardDescription>
+                  Distribution of application statuses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analyticsData.statusBreakdown.map((status, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium capitalize">{status.status}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {status.count} applications
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">
+                          {status.percentage.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>)}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* AI Insights */}
             <Card className="md:col-span-2">
