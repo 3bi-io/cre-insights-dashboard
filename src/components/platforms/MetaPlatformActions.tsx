@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Download, BarChart3, Target, Calendar, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Loader2, Download, BarChart3, Target, Calendar, AlertCircle, CheckCircle2, RefreshCw, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +23,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const [currentAction, setCurrentAction] = useState<string>('');
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState<string>('');
+  const [insightBreakdown, setInsightBreakdown] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch Meta accounts with better error handling
@@ -78,6 +79,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     setCurrentAction(action);
     setSyncProgress(0);
     setSyncStatus(`Starting ${action}...`);
+    setInsightBreakdown(null);
 
     try {
       console.log(`Attempting ${action} with accountId: ${accountId}`);
@@ -98,6 +100,11 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
       setSyncProgress(100);
       setSyncStatus('Sync completed successfully');
+
+      // Show insight breakdown if available
+      if (data.insights && action === 'sync_insights') {
+        setInsightBreakdown(data.insights);
+      }
 
       toast({
         title: "Success",
@@ -128,7 +135,75 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       setTimeout(() => {
         setSyncProgress(0);
         setSyncStatus('');
-      }, 3000);
+        setInsightBreakdown(null);
+      }, 5000);
+    }
+  };
+
+  const handleSyncAllInsights = async () => {
+    if (!metaAccounts?.length) return;
+    
+    setIsLoading(true);
+    setCurrentAction('sync_insights');
+    setSyncStatus('Syncing insights for all accounts...');
+    
+    const total = metaAccounts.length;
+    let completed = 0;
+    let errors = 0;
+    let totalInsights = { account: 0, campaign: 0, adset: 0, ad: 0, total: 0 };
+
+    try {
+      for (const account of metaAccounts) {
+        try {
+          setSyncStatus(`Syncing insights for ${account.account_name}...`);
+          
+          const { data, error } = await supabase.functions.invoke('meta-integration', {
+            body: { 
+              action: 'sync_insights', 
+              accountId: account.account_id,
+              datePreset: 'last_30d'
+            }
+          });
+
+          if (error) throw error;
+          
+          if (data.insights) {
+            totalInsights.account += data.insights.account || 0;
+            totalInsights.campaign += data.insights.campaign || 0;
+            totalInsights.adset += data.insights.adset || 0;
+            totalInsights.ad += data.insights.ad || 0;
+            totalInsights.total += data.insights.total || 0;
+          }
+          
+          completed++;
+        } catch (error) {
+          console.error(`Failed to sync insights for account ${account.account_id}:`, error);
+          errors++;
+        }
+        setSyncProgress(((completed + errors) / total) * 100);
+      }
+      
+      setInsightBreakdown(totalInsights);
+      
+      if (errors === 0) {
+        toast({
+          title: "Success",
+          description: `Synced insights for all ${total} accounts with ${totalInsights.total} total records`,
+        });
+      } else {
+        toast({
+          title: "Partial Success",
+          description: `Synced ${completed} accounts successfully, ${errors} failed. Total records: ${totalInsights.total}`,
+          variant: "destructive",
+        });
+      }
+      
+      refetchSpend();
+    } catch (error) {
+      console.error('Error syncing all insights:', error);
+    } finally {
+      setIsLoading(false);
+      setCurrentAction('');
     }
   };
 
@@ -176,50 +251,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     }
   };
 
-  const handleSyncAllInsights = async () => {
-    if (!metaAccounts?.length) return;
-    
-    setIsLoading(true);
-    setCurrentAction('sync_insights');
-    setSyncStatus('Syncing insights for all accounts...');
-    
-    const total = metaAccounts.length;
-    let completed = 0;
-    let errors = 0;
-
-    try {
-      for (const account of metaAccounts) {
-        try {
-          setSyncStatus(`Syncing insights for ${account.account_name}...`);
-          await handleMetaAction('sync_insights', account.account_id);
-          completed++;
-        } catch (error) {
-          console.error(`Failed to sync insights for account ${account.account_id}:`, error);
-          errors++;
-        }
-        setSyncProgress(((completed + errors) / total) * 100);
-      }
-      
-      if (errors === 0) {
-        toast({
-          title: "Success",
-          description: `Synced insights for all ${total} accounts`,
-        });
-      } else {
-        toast({
-          title: "Partial Success",
-          description: `Synced ${completed} accounts successfully, ${errors} failed`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error syncing all insights:', error);
-    } finally {
-      setIsLoading(false);
-      setCurrentAction('');
-    }
-  };
-
   const totalMetaSpend = metaSpend?.reduce((sum, record) => sum + (record.spend || 0), 0) || 0;
   const totalImpressions = metaSpend?.reduce((sum, record) => sum + (record.impressions || 0), 0) || 0;
   const totalClicks = metaSpend?.reduce((sum, record) => sum + (record.clicks || 0), 0) || 0;
@@ -234,7 +265,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           <div>
             <CardTitle className="text-lg">Meta Business Platform</CardTitle>
             <CardDescription>
-              Sync ad accounts, campaigns, and performance data from Meta
+              Sync ad accounts, campaigns, and performance data from Meta (account, campaign, adset & ad levels)
             </CardDescription>
           </div>
         </div>
@@ -256,6 +287,20 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
               <div>{syncStatus}</div>
               {syncProgress > 0 && syncProgress < 100 && (
                 <Progress value={syncProgress} className="w-full" />
+              )}
+              {insightBreakdown && (
+                <div className="mt-2 p-2 bg-muted/30 rounded-lg">
+                  <div className="text-sm font-medium mb-1">Insights Breakdown:</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>Account: {insightBreakdown.account}</div>
+                    <div>Campaign: {insightBreakdown.campaign}</div>
+                    <div>Adset: {insightBreakdown.adset}</div>
+                    <div>Ad: {insightBreakdown.ad}</div>
+                  </div>
+                  <div className="text-xs font-medium mt-1 pt-1 border-t">
+                    Total: {insightBreakdown.total} records
+                  </div>
+                </div>
               )}
             </AlertDescription>
           </Alert>
@@ -287,10 +332,10 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           </div>
 
           <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <RefreshCw className="w-6 h-6 mx-auto mb-2 text-orange-500" />
-            <div className="text-sm font-medium">Last Sync</div>
-            <div className="text-sm font-medium text-orange-600">
-              {metaAccounts?.length ? 'Active' : 'Never'}
+            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-orange-500" />
+            <div className="text-sm font-medium">Data Points</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {metaSpend?.length || 0}
             </div>
           </div>
         </div>
@@ -345,7 +390,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                 <div>
                   <p className="font-medium">Sync All Performance Data</p>
                   <p className="text-sm text-muted-foreground">
-                    Import spend, impressions, clicks and other metrics for all accounts
+                    Import spend, impressions, clicks and metrics for account, campaign, adset & ad levels
                   </p>
                 </div>
                 <Button 
@@ -357,7 +402,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                   {isLoading && currentAction === 'sync_insights' ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <Calendar className="w-4 h-4 mr-2" />
+                    <TrendingUp className="w-4 h-4 mr-2" />
                   )}
                   Sync All Insights
                 </Button>
@@ -397,7 +442,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       disabled={isLoading}
                       title="Sync insights for this account"
                     >
-                      <Calendar className="w-3 h-3" />
+                      <TrendingUp className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>

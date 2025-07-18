@@ -23,6 +23,24 @@ interface MetaCampaign {
   updated_time: string;
 }
 
+interface MetaAdSet {
+  id: string;
+  name: string;
+  campaign_id: string;
+  status: string;
+  created_time: string;
+  updated_time: string;
+}
+
+interface MetaAd {
+  id: string;
+  name: string;
+  adset_id: string;
+  status: string;
+  created_time: string;
+  updated_time: string;
+}
+
 interface MetaInsight {
   date_start: string;
   date_stop: string;
@@ -34,6 +52,9 @@ interface MetaInsight {
   cpc: string;
   reach: string;
   frequency: string;
+  campaign_id?: string;
+  adset_id?: string;
+  ad_id?: string;
 }
 
 serve(async (req) => {
@@ -218,59 +239,193 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
   const cleanAccountId = accountId.replace(/^act_/, '');
   
   const fields = 'date_start,date_stop,spend,impressions,clicks,ctr,cpm,cpc,reach,frequency';
-  const level = campaignId ? 'campaign' : 'account';
-  const endpoint = campaignId 
-    ? `https://graph.facebook.com/v18.0/${campaignId}/insights`
-    : `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`;
-  
+  let allInsights: MetaInsight[] = [];
+  let totalSynced = 0;
+
+  try {
+    // 1. Sync account-level insights
+    console.log('Syncing account-level insights...');
+    const accountInsights = await fetchInsights(
+      `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`,
+      fields,
+      'account',
+      datePreset,
+      accessToken
+    );
+    
+    for (const insight of accountInsights) {
+      const { error } = await supabase
+        .from('meta_daily_spend')
+        .upsert({
+          user_id: userId,
+          account_id: cleanAccountId,
+          campaign_id: null,
+          adset_id: null,
+          ad_id: null,
+          date_start: insight.date_start,
+          date_stop: insight.date_stop,
+          spend: parseFloat(insight.spend) || 0,
+          impressions: parseInt(insight.impressions) || 0,
+          clicks: parseInt(insight.clicks) || 0,
+          ctr: parseFloat(insight.ctr) || 0,
+          cpm: parseFloat(insight.cpm) || 0,
+          cpc: parseFloat(insight.cpc) || 0,
+          reach: parseInt(insight.reach) || 0,
+          frequency: parseFloat(insight.frequency) || 0,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,account_id,campaign_id,date_start'
+        });
+
+      if (!error) totalSynced++;
+    }
+
+    // 2. Sync campaign-level insights
+    console.log('Syncing campaign-level insights...');
+    const campaignInsights = await fetchInsights(
+      `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`,
+      fields,
+      'campaign',
+      datePreset,
+      accessToken
+    );
+    
+    for (const insight of campaignInsights) {
+      const { error } = await supabase
+        .from('meta_daily_spend')
+        .upsert({
+          user_id: userId,
+          account_id: cleanAccountId,
+          campaign_id: insight.campaign_id || null,
+          adset_id: null,
+          ad_id: null,
+          date_start: insight.date_start,
+          date_stop: insight.date_stop,
+          spend: parseFloat(insight.spend) || 0,
+          impressions: parseInt(insight.impressions) || 0,
+          clicks: parseInt(insight.clicks) || 0,
+          ctr: parseFloat(insight.ctr) || 0,
+          cpm: parseFloat(insight.cpm) || 0,
+          cpc: parseFloat(insight.cpc) || 0,
+          reach: parseInt(insight.reach) || 0,
+          frequency: parseFloat(insight.frequency) || 0,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,account_id,campaign_id,date_start'
+        });
+
+      if (!error) totalSynced++;
+    }
+
+    // 3. Sync adset-level insights
+    console.log('Syncing adset-level insights...');
+    const adsetInsights = await fetchInsights(
+      `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`,
+      fields,
+      'adset',
+      datePreset,
+      accessToken
+    );
+    
+    for (const insight of adsetInsights) {
+      const { error } = await supabase
+        .from('meta_daily_spend')
+        .upsert({
+          user_id: userId,
+          account_id: cleanAccountId,
+          campaign_id: insight.campaign_id || null,
+          adset_id: insight.adset_id || null,
+          ad_id: null,
+          date_start: insight.date_start,
+          date_stop: insight.date_stop,
+          spend: parseFloat(insight.spend) || 0,
+          impressions: parseInt(insight.impressions) || 0,
+          clicks: parseInt(insight.clicks) || 0,
+          ctr: parseFloat(insight.ctr) || 0,
+          cpm: parseFloat(insight.cpm) || 0,
+          cpc: parseFloat(insight.cpc) || 0,
+          reach: parseInt(insight.reach) || 0,
+          frequency: parseFloat(insight.frequency) || 0,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,account_id,campaign_id,date_start'
+        });
+
+      if (!error) totalSynced++;
+    }
+
+    // 4. Sync ad-level insights
+    console.log('Syncing ad-level insights...');
+    const adInsights = await fetchInsights(
+      `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`,
+      fields,
+      'ad',
+      datePreset,
+      accessToken
+    );
+    
+    for (const insight of adInsights) {
+      const { error } = await supabase
+        .from('meta_daily_spend')
+        .upsert({
+          user_id: userId,
+          account_id: cleanAccountId,
+          campaign_id: insight.campaign_id || null,
+          adset_id: insight.adset_id || null,
+          ad_id: insight.ad_id || null,
+          date_start: insight.date_start,
+          date_stop: insight.date_stop,
+          spend: parseFloat(insight.spend) || 0,
+          impressions: parseInt(insight.impressions) || 0,
+          clicks: parseInt(insight.clicks) || 0,
+          ctr: parseFloat(insight.ctr) || 0,
+          cpm: parseFloat(insight.cpm) || 0,
+          cpc: parseFloat(insight.cpc) || 0,
+          reach: parseInt(insight.reach) || 0,
+          frequency: parseFloat(insight.frequency) || 0,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,account_id,campaign_id,date_start'
+        });
+
+      if (!error) totalSynced++;
+    }
+
+    console.log(`Synced ${totalSynced} total insight records across all levels`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: `Synced ${totalSynced} insight records across account, campaign, adset, and ad levels`,
+        insights: { 
+          account: accountInsights.length,
+          campaign: campaignInsights.length,
+          adset: adsetInsights.length,
+          ad: adInsights.length,
+          total: totalSynced
+        }
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error syncing insights:', error);
+    throw error;
+  }
+}
+
+async function fetchInsights(endpoint: string, fields: string, level: string, datePreset: string, accessToken: string): Promise<MetaInsight[]> {
   const response = await fetch(
     `${endpoint}?fields=${fields}&level=${level}&date_preset=${datePreset}&access_token=${accessToken}`
   );
   
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
+    throw new Error(`Meta API error for ${level} level: ${errorData.error?.message || 'Unknown error'}`);
   }
   
-  const { data: insights }: { data: MetaInsight[] } = await response.json();
-  console.log(`Found ${insights.length} insight records`);
-
-  const syncResults = [];
-  for (const insight of insights) {
-    const { error } = await supabase
-      .from('meta_daily_spend')
-      .upsert({
-        user_id: userId,
-        account_id: cleanAccountId,
-        campaign_id: campaignId || null,
-        date_start: insight.date_start,
-        date_stop: insight.date_stop,
-        spend: parseFloat(insight.spend) || 0,
-        impressions: parseInt(insight.impressions) || 0,
-        clicks: parseInt(insight.clicks) || 0,
-        ctr: parseFloat(insight.ctr) || 0,
-        cpm: parseFloat(insight.cpm) || 0,
-        cpc: parseFloat(insight.cpc) || 0,
-        reach: parseInt(insight.reach) || 0,
-        frequency: parseFloat(insight.frequency) || 0,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,account_id,campaign_id,date_start'
-      });
-
-    if (error) {
-      console.error(`Error syncing insight for ${insight.date_start}:`, error);
-    } else {
-      syncResults.push({ date: insight.date_start, status: 'synced' });
-    }
-  }
-
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: `Synced ${syncResults.length} insight records`,
-      insights: syncResults 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  const { data }: { data: MetaInsight[] } = await response.json();
+  console.log(`Found ${data.length} ${level}-level insight records`);
+  
+  return data;
 }
