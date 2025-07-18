@@ -49,12 +49,13 @@ serve(async (req) => {
       else if (app.cdl === 'No') cdlStats.no++
       else cdlStats.unknown++
 
-      // Category analysis (D, SR, SC, N/A)
-      if (app.cdl === 'Yes' && app.months === '48+') {
+      // Category analysis (D, SR, SC, N/A) - use actual category field
+      const category = app.category || 'N/A'
+      if (category === 'D') {
         categoryStats.D++
-      } else if (app.months === '48+' && app.exp === 'More than 3 months experience') {
+      } else if (category === 'SR') {
         categoryStats.SR++
-      } else if (app.exp === 'More than 3 months experience' || (app.months && app.months !== '48+' && app.months !== '1')) {
+      } else if (category === 'SC') {
         categoryStats.SC++
       } else {
         categoryStats['N/A']++
@@ -146,7 +147,7 @@ Format your response as a JSON object with two arrays:
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'gpt-4-turbo',
+            model: 'gpt-4o-mini',
             messages: [
               { role: 'system', content: 'You are a recruiting analytics expert specializing in the trucking and logistics industry.' },
               { role: 'user', content: prompt }
