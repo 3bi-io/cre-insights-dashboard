@@ -130,87 +130,246 @@ export type Database = {
       }
       applications: {
         Row: {
+          accident_history: string | null
+          address_1: string | null
+          address_2: string | null
           age: string | null
+          agree_privacy_policy: string | null
           applicant_email: string | null
           applied_at: string | null
+          background_check_consent: string | null
+          can_pass_drug_test: string | null
+          can_pass_physical: string | null
+          can_work_nights: string | null
+          can_work_weekends: string | null
           cdl: string | null
+          cdl_class: string | null
+          cdl_endorsements: string[] | null
+          cdl_expiration_date: string | null
+          cdl_state: string | null
           city: string | null
           consent: string | null
+          consent_to_email: string | null
+          consent_to_sms: string | null
+          convicted_felony: string | null
+          country: string | null
           created_at: string | null
+          custom_questions: Json | null
+          date_of_birth: string | null
+          display_fields: Json | null
+          dot_physical_date: string | null
+          driver_id: string | null
+          driving_experience_years: number | null
           drug: string | null
+          education_level: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          employment_history: Json | null
           exp: string | null
+          felony_details: string | null
           first_name: string | null
           full_name: string | null
+          government_id: string | null
+          government_id_type: string | null
+          hazmat_endorsement: string | null
+          how_did_you_hear: string | null
           id: string
           job_id: string | null
           job_listing_id: string | null
           last_name: string | null
+          medical_card_expiration: string | null
+          middle_name: string | null
+          military_branch: string | null
+          military_end_date: string | null
+          military_service: string | null
+          military_start_date: string | null
           months: string | null
           notes: string | null
+          over_21: string | null
+          passport_card: string | null
           phone: string | null
+          preferred_contact_method: string | null
+          preferred_start_date: string | null
+          prefix: string | null
           privacy: string | null
           recruiter_id: string | null
+          referral_source: string | null
+          salary_expectations: string | null
+          secondary_phone: string | null
           source: string | null
+          ssn: string | null
           state: string | null
           status: string | null
+          suffix: string | null
+          twic_card: string | null
           updated_at: string | null
           veteran: string | null
+          violation_history: string | null
+          willing_to_relocate: string | null
+          work_authorization: string | null
           zip: string | null
         }
         Insert: {
+          accident_history?: string | null
+          address_1?: string | null
+          address_2?: string | null
           age?: string | null
+          agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          background_check_consent?: string | null
+          can_pass_drug_test?: string | null
+          can_pass_physical?: string | null
+          can_work_nights?: string | null
+          can_work_weekends?: string | null
           cdl?: string | null
+          cdl_class?: string | null
+          cdl_endorsements?: string[] | null
+          cdl_expiration_date?: string | null
+          cdl_state?: string | null
           city?: string | null
           consent?: string | null
+          consent_to_email?: string | null
+          consent_to_sms?: string | null
+          convicted_felony?: string | null
+          country?: string | null
           created_at?: string | null
+          custom_questions?: Json | null
+          date_of_birth?: string | null
+          display_fields?: Json | null
+          dot_physical_date?: string | null
+          driver_id?: string | null
+          driving_experience_years?: number | null
           drug?: string | null
+          education_level?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employment_history?: Json | null
           exp?: string | null
+          felony_details?: string | null
           first_name?: string | null
           full_name?: string | null
+          government_id?: string | null
+          government_id_type?: string | null
+          hazmat_endorsement?: string | null
+          how_did_you_hear?: string | null
           id?: string
           job_id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
+          medical_card_expiration?: string | null
+          middle_name?: string | null
+          military_branch?: string | null
+          military_end_date?: string | null
+          military_service?: string | null
+          military_start_date?: string | null
           months?: string | null
           notes?: string | null
+          over_21?: string | null
+          passport_card?: string | null
           phone?: string | null
+          preferred_contact_method?: string | null
+          preferred_start_date?: string | null
+          prefix?: string | null
           privacy?: string | null
           recruiter_id?: string | null
+          referral_source?: string | null
+          salary_expectations?: string | null
+          secondary_phone?: string | null
           source?: string | null
+          ssn?: string | null
           state?: string | null
           status?: string | null
+          suffix?: string | null
+          twic_card?: string | null
           updated_at?: string | null
           veteran?: string | null
+          violation_history?: string | null
+          willing_to_relocate?: string | null
+          work_authorization?: string | null
           zip?: string | null
         }
         Update: {
+          accident_history?: string | null
+          address_1?: string | null
+          address_2?: string | null
           age?: string | null
+          agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          background_check_consent?: string | null
+          can_pass_drug_test?: string | null
+          can_pass_physical?: string | null
+          can_work_nights?: string | null
+          can_work_weekends?: string | null
           cdl?: string | null
+          cdl_class?: string | null
+          cdl_endorsements?: string[] | null
+          cdl_expiration_date?: string | null
+          cdl_state?: string | null
           city?: string | null
           consent?: string | null
+          consent_to_email?: string | null
+          consent_to_sms?: string | null
+          convicted_felony?: string | null
+          country?: string | null
           created_at?: string | null
+          custom_questions?: Json | null
+          date_of_birth?: string | null
+          display_fields?: Json | null
+          dot_physical_date?: string | null
+          driver_id?: string | null
+          driving_experience_years?: number | null
           drug?: string | null
+          education_level?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employment_history?: Json | null
           exp?: string | null
+          felony_details?: string | null
           first_name?: string | null
           full_name?: string | null
+          government_id?: string | null
+          government_id_type?: string | null
+          hazmat_endorsement?: string | null
+          how_did_you_hear?: string | null
           id?: string
           job_id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
+          medical_card_expiration?: string | null
+          middle_name?: string | null
+          military_branch?: string | null
+          military_end_date?: string | null
+          military_service?: string | null
+          military_start_date?: string | null
           months?: string | null
           notes?: string | null
+          over_21?: string | null
+          passport_card?: string | null
           phone?: string | null
+          preferred_contact_method?: string | null
+          preferred_start_date?: string | null
+          prefix?: string | null
           privacy?: string | null
           recruiter_id?: string | null
+          referral_source?: string | null
+          salary_expectations?: string | null
+          secondary_phone?: string | null
           source?: string | null
+          ssn?: string | null
           state?: string | null
           status?: string | null
+          suffix?: string | null
+          twic_card?: string | null
           updated_at?: string | null
           veteran?: string | null
+          violation_history?: string | null
+          willing_to_relocate?: string | null
+          work_authorization?: string | null
           zip?: string | null
         }
         Relationships: [

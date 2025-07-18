@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -114,9 +114,14 @@ const Apply = () => {
             <Truck className="w-8 h-8 text-primary" />
             <h1 className="text-3xl font-bold text-foreground">Quick Apply</h1>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-4">
             Join our team! Fill out this quick form to get started.
           </p>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/apply/detailed">
+              Need a more detailed application? Click here
+            </Link>
+          </Button>
         </div>
 
         <Card>

@@ -21,6 +21,7 @@ import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import Apply from "./pages/Apply";
+import DetailedApply from "./pages/DetailedApply";
 import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
@@ -38,6 +39,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<AdminLanding />} />
               <Route path="/apply" element={<Apply />} />
+              <Route path="/apply/detailed" element={<DetailedApply />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
