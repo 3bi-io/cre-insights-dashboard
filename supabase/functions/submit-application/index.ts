@@ -31,6 +31,18 @@ Deno.serve(async (req) => {
     const formData = await req.json();
     console.log('Received form data:', formData);
 
+    // Determine experience level based on months
+    const getExperienceLevel = (months: string) => {
+      if (!months) return '';
+      
+      const monthsNum = parseInt(months);
+      if (monthsNum < 3) {
+        return 'Less than 3 months experience';
+      } else {
+        return 'More than 3 months experience';
+      }
+    };
+
     // Map form data to applications table schema
     const applicationData = {
       first_name: formData.firstName,
@@ -42,7 +54,7 @@ Deno.serve(async (req) => {
       zip: formData.zip,
       age: formData.over21,
       cdl: formData.cdl,
-      exp: formData.experience,
+      exp: getExperienceLevel(formData.experience),
       drug: formData.drug,
       veteran: formData.veteran,
       employment_history: formData.employmentHistory,
