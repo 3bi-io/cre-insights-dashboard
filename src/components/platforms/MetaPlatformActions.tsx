@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import DateRangeFilter from './DateRangeFilter';
+import MetaSpendMetrics from './MetaSpendMetrics';
 
 interface MetaPlatformActionsProps {
   platform: {
@@ -51,7 +52,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const [dateRange, setDateRange] = useState('last_30d');
   const { toast } = useToast();
 
-  // Fetch Meta accounts - filter for CR England only
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
     queryKey: ['meta-accounts'],
     queryFn: async () => {
@@ -68,7 +68,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     retryDelay: 1000,
   });
 
-  // Fetch Meta campaigns - filter for CR England account only
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
     queryKey: ['meta-campaigns'],
     queryFn: async () => {
@@ -84,7 +83,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     enabled: !!metaAccounts?.length,
   });
 
-  // Fetch Meta spend data - filter for CR England account only with date range
   const { data: metaSpend, refetch: refetchSpend } = useQuery({
     queryKey: ['meta-spend', dateRange],
     queryFn: async () => {
@@ -111,7 +109,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
           startDate = lastMonth.toISOString().split('T')[0];
           break;
-        default: // last_30d
+        default:
           startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
 
@@ -137,7 +135,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     try {
       console.log(`Attempting ${action} with accountId: ${accountId || CR_ENGLAND_ACCOUNT_ID}`);
       
-      // Use the mapped Meta API date preset
       const metaDatePreset = getMetaDatePreset(dateRange);
       
       const { data, error } = await supabase.functions.invoke('meta-integration', {
@@ -162,7 +159,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         description: data.message || `${action} completed successfully`,
       });
 
-      // Refresh appropriate data based on action
       if (action === 'sync_accounts') {
         refetchAccounts();
       } else if (action === 'sync_campaigns') {
@@ -195,213 +191,218 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const totalClicks = metaSpend?.reduce((sum, record) => sum + (record.clicks || 0), 0) || 0;
 
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
-            </div>
-            <div>
-              <CardTitle className="text-lg">Meta Business Platform - CR England</CardTitle>
-              <CardDescription>
-                Sync ad accounts, campaigns, and performance data for CR England account only
-              </CardDescription>
-            </div>
-          </div>
-          <DateRangeFilter value={dateRange} onChange={setDateRange} />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {accountsError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load CR England Meta account. Please check your API configuration and try again.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {syncStatus && (
-          <Alert>
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertDescription className="space-y-2">
-              <div>{syncStatus}</div>
-              {syncProgress > 0 && syncProgress < 100 && (
-                <Progress value={syncProgress} className="w-full" />
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <Target className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-            <div className="text-sm font-medium">CR England Account</div>
-            <div className="text-2xl font-bold text-blue-600">
-              {metaAccounts?.length || 0}
-            </div>
-          </div>
-          
-          <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-500" />
-            <div className="text-sm font-medium">Campaigns</div>
-            <div className="text-2xl font-bold text-green-600">
-              {metaCampaigns?.length || 0}
-            </div>
-          </div>
-          
-          <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-500" />
-            <div className="text-sm font-medium">Selected Period Spend</div>
-            <div className="text-2xl font-bold text-purple-600">
-              ${totalMetaSpend.toFixed(2)}
-            </div>
-          </div>
-
-          <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <RefreshCw className="w-6 h-6 mx-auto mb-2 text-orange-500" />
-            <div className="text-sm font-medium">Last Sync</div>
-            <div className="text-sm font-medium text-orange-600">
-              {metaAccounts?.length ? 'Active' : 'Never'}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Sync CR England Account</p>
-              <p className="text-sm text-muted-foreground">
-                Import CR England Meta ad account and basic information
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">M</span>
+              </div>
+              <div>
+                <CardTitle className="text-lg">Meta Business Platform - CR England</CardTitle>
+                <CardDescription>
+                  Sync ad accounts, campaigns, and performance data for CR England account only
+                </CardDescription>
+              </div>
             </div>
-            <Button 
-              onClick={() => handleMetaAction('sync_accounts', CR_ENGLAND_ACCOUNT_ID)}
-              disabled={isLoading}
-              size="sm"
-            >
-              {isLoading && currentAction === 'sync_accounts' ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
-              Sync Account
-            </Button>
+            <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {accountsError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Failed to load CR England Meta account. Please check your API configuration and try again.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {syncStatus && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription className="space-y-2">
+                <div>{syncStatus}</div>
+                {syncProgress > 0 && syncProgress < 100 && (
+                  <Progress value={syncProgress} className="w-full" />
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <Target className="w-6 h-6 mx-auto mb-2 text-blue-500" />
+              <div className="text-sm font-medium">CR England Account</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {metaAccounts?.length || 0}
+              </div>
+            </div>
+            
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-500" />
+              <div className="text-sm font-medium">Campaigns</div>
+              <div className="text-2xl font-bold text-green-600">
+                {metaCampaigns?.length || 0}
+              </div>
+            </div>
+            
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-500" />
+              <div className="text-sm font-medium">Selected Period Spend</div>
+              <div className="text-2xl font-bold text-purple-600">
+                ${totalMetaSpend.toFixed(2)}
+              </div>
+            </div>
+
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <RefreshCw className="w-6 h-6 mx-auto mb-2 text-orange-500" />
+              <div className="text-sm font-medium">Last Sync</div>
+              <div className="text-sm font-medium text-orange-600">
+                {metaAccounts?.length ? 'Active' : 'Never'}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Sync CR England Account</p>
+                <p className="text-sm text-muted-foreground">
+                  Import CR England Meta ad account and basic information
+                </p>
+              </div>
+              <Button 
+                onClick={() => handleMetaAction('sync_accounts', CR_ENGLAND_ACCOUNT_ID)}
+                disabled={isLoading}
+                size="sm"
+              >
+                {isLoading && currentAction === 'sync_accounts' ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Sync Account
+              </Button>
+            </div>
+
+            {metaAccounts && metaAccounts.length > 0 && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Sync CR England Campaigns</p>
+                    <p className="text-sm text-muted-foreground">
+                      Import campaigns from CR England ad account
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => handleMetaAction('sync_campaigns', CR_ENGLAND_ACCOUNT_ID)}
+                    disabled={isLoading}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {isLoading && currentAction === 'sync_campaigns' ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                    )}
+                    Sync Campaigns
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Sync CR England Performance Data</p>
+                    <p className="text-sm text-muted-foreground">
+                      Import spend, impressions, clicks and other metrics for CR England
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => handleMetaAction('sync_insights', CR_ENGLAND_ACCOUNT_ID)}
+                    disabled={isLoading}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {isLoading && currentAction === 'sync_insights' ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Calendar className="w-4 h-4 mr-2" />
+                    )}
+                    Sync Insights
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           {metaAccounts && metaAccounts.length > 0 && (
-            <>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Sync CR England Campaigns</p>
-                  <p className="text-sm text-muted-foreground">
-                    Import campaigns from CR England ad account
-                  </p>
-                </div>
-                <Button 
-                  onClick={() => handleMetaAction('sync_campaigns', CR_ENGLAND_ACCOUNT_ID)}
-                  disabled={isLoading}
-                  size="sm"
-                  variant="outline"
-                >
-                  {isLoading && currentAction === 'sync_campaigns' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                  )}
-                  Sync Campaigns
-                </Button>
+            <div className="pt-4 border-t">
+              <p className="text-sm font-medium mb-3">CR England Ad Account:</p>
+              <div className="grid grid-cols-1 gap-2">
+                {metaAccounts.map((account) => (
+                  <div key={account.id} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div>
+                      <Badge variant="default" className="mb-1 bg-blue-600">
+                        {account.account_name}
+                      </Badge>
+                      <p className="text-sm text-muted-foreground">
+                        ID: {account.account_id} • {account.currency} • {account.timezone_name}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
+                        disabled={isLoading}
+                        title="Sync campaigns for CR England"
+                      >
+                        <BarChart3 className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleMetaAction('sync_insights', account.account_id)}
+                        disabled={isLoading}
+                        title="Sync insights for CR England"
+                      >
+                        <Calendar className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Sync CR England Performance Data</p>
-                  <p className="text-sm text-muted-foreground">
-                    Import spend, impressions, clicks and other metrics for CR England
-                  </p>
-                </div>
-                <Button 
-                  onClick={() => handleMetaAction('sync_insights', CR_ENGLAND_ACCOUNT_ID)}
-                  disabled={isLoading}
-                  size="sm"
-                  variant="outline"
-                >
-                  {isLoading && currentAction === 'sync_insights' ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Calendar className="w-4 h-4 mr-2" />
-                  )}
-                  Sync Insights
-                </Button>
-              </div>
-            </>
+            </div>
           )}
-        </div>
 
-        {metaAccounts && metaAccounts.length > 0 && (
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-3">CR England Ad Account:</p>
-            <div className="grid grid-cols-1 gap-2">
-              {metaAccounts.map((account) => (
-                <div key={account.id} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div>
-                    <Badge variant="default" className="mb-1 bg-blue-600">
-                      {account.account_name}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground">
-                      ID: {account.account_id} • {account.currency} • {account.timezone_name}
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
-                      disabled={isLoading}
-                      title="Sync campaigns for CR England"
-                    >
-                      <BarChart3 className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleMetaAction('sync_insights', account.account_id)}
-                      disabled={isLoading}
-                      title="Sync insights for CR England"
-                    >
-                      <Calendar className="w-3 h-3" />
-                    </Button>
-                  </div>
+          {totalImpressions > 0 && (
+            <div className="pt-4 border-t">
+              <p className="text-sm font-medium mb-2">CR England Performance Summary ({dateRange.replace('_', ' ')}):</p>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-lg font-bold">{totalImpressions.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Impressions</p>
                 </div>
-              ))}
+                <div>
+                  <p className="text-lg font-bold">{totalClicks.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Clicks</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">
+                    {totalClicks > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00'}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">CTR</p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </CardContent>
+      </Card>
 
-        {totalImpressions > 0 && (
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-2">CR England Performance Summary ({dateRange.replace('_', ' ')}):</p>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-lg font-bold">{totalImpressions.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Impressions</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold">{totalClicks.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Clicks</p>
-              </div>
-              <div>
-                <p className="text-lg font-bold">
-                  {totalClicks > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00'}%
-                </p>
-                <p className="text-xs text-muted-foreground">CTR</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* AI-Powered Meta Spend Metrics */}
+      <MetaSpendMetrics dateRange={dateRange} />
+    </div>
   );
 };
 
