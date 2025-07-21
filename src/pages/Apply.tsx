@@ -33,7 +33,7 @@ const Apply = () => {
 
   const submitApplication = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await fetch('/functions/v1/submit-application', {
+      const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ const Apply = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit application');
+        throw new Error(errorData.error || 'Failed to submit application');
       }
 
       return response.json();
