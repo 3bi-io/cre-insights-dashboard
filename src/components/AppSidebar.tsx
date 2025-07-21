@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, LogOut, Building, MapPin, Megaphone, Link, Mic, BarChart3, Target, Shield, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, LogOut, Building, MapPin, Megaphone, Link, Mic, Target, Shield, ChevronRight } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,10 +44,6 @@ const AppSidebar = () => {
     icon: Building
   }];
   const settingsItems = [{
-    path: '/dashboard/ai-analytics',
-    label: 'AI Analytics',
-    icon: BarChart3
-  }, {
     path: '/dashboard/tenstreet',
     label: 'Tenstreet Integration',
     icon: Link
