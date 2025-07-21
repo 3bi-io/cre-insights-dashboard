@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +14,7 @@ import { useApplications } from '@/hooks/useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +23,7 @@ const Applications = () => {
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   const {
     applications,
@@ -42,7 +45,19 @@ const Applications = () => {
   };
 
   const downloadApplicationsPDF = () => {
-    generateApplicationsPDF(filteredApplications || []);
+    try {
+      generateApplicationsPDF(filteredApplications || []);
+      toast({
+        title: "PDF Downloaded",
+        description: "Applications report has been downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF report",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter);
@@ -83,7 +98,7 @@ const Applications = () => {
           size={isMobile ? 'lg' : 'default'}
         >
           <Download className="w-4 h-4" />
-          Download PDF
+          Export PDF
         </Button>
       </div>
 

@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Calendar, Download, Settings, Bell, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useApplications } from '@/hooks/useApplications';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
+import { generateDashboardPDF } from '@/utils/dashboardPdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 
 const DashboardHeader = () => {
@@ -12,10 +12,10 @@ const DashboardHeader = () => {
 
   const handleExportPDF = () => {
     try {
-      generateApplicationsPDF(applications);
+      generateDashboardPDF();
       toast({
         title: "PDF Downloaded",
-        description: "Applications report has been downloaded successfully",
+        description: "Dashboard report has been downloaded successfully",
       });
     } catch (error) {
       toast({
@@ -52,7 +52,7 @@ const DashboardHeader = () => {
               onClick={handleExportPDF}
             >
               <Download className="w-4 h-4" />
-              <span>Export</span>
+              <span>Export PDF</span>
             </Button>
             <div className="flex items-center gap-2 ml-2">
               <Button variant="ghost" size="icon" className="h-10 w-10">

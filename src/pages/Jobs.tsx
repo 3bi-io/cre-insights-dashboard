@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table, X } from 'lucide-react';
+import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table, X, Download } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import CsvUpload from '@/components/CsvUpload';
 import JobTable from '@/components/jobs/JobTable';
 import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
+import { generateJobsPDF } from '@/utils/jobsPdfGenerator';
 
 type ViewMode = 'grid' | 'table';
 
@@ -46,6 +47,22 @@ const Jobs = () => {
     console.log('Opening analytics for job:', job);
     setSelectedJob(job);
     setShowAnalyticsDialog(true);
+  };
+
+  const handleExportPDF = () => {
+    try {
+      generateJobsPDF(filteredJobs || []);
+      toast({
+        title: "PDF Downloaded",
+        description: "Job listings report has been downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF report",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
@@ -129,20 +146,31 @@ const Jobs = () => {
           )}
         </div>
         
-        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Upload CSV
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Upload Job Listings</DialogTitle>
-            </DialogHeader>
-            <CsvUpload onSuccess={handleUploadSuccess} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleExportPDF}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
+          </Button>
+          
+          <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Upload Job Listings</DialogTitle>
+              </DialogHeader>
+              <CsvUpload onSuccess={handleUploadSuccess} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Client Filter Badge */}
