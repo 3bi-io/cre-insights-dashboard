@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Download, BarChart3, Target, Calendar, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Loader2, Download, BarChart3, Target, AlertCircle, CheckCircle2, RefreshCw, Users, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -176,6 +176,12 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         await refetchAccounts();
       } else if (action === 'sync_campaigns') {
         await refetchCampaigns();
+      } else if (action === 'sync_adsets') {
+        // Refresh campaigns as ad sets are related to campaigns
+        await refetchCampaigns();
+      } else if (action === 'sync_ads') {
+        // Refresh campaigns as ads are related to campaigns
+        await refetchCampaigns();
       } else if (action === 'sync_insights') {
         await refetchSpend();
       }
@@ -264,7 +270,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
             </div>
             
             <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <Calendar className="w-6 h-6 mx-auto mb-2 text-purple-500" />
+              <Target className="w-6 h-6 mx-auto mb-2 text-purple-500" />
               <div className="text-sm font-medium">Selected Period Spend</div>
               <div className="text-2xl font-bold text-purple-600">
                 ${totalMetaSpend.toFixed(2)}
@@ -328,23 +334,45 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Sync CR England Performance Data</p>
+                    <p className="font-medium">Sync CR England Ad Sets</p>
                     <p className="text-sm text-muted-foreground">
-                      Import spend, impressions, clicks and other metrics for CR England ({dateRange.replace('_', ' ')})
+                      Import ad sets with metrics from CR England account
                     </p>
                   </div>
                   <Button 
-                    onClick={() => handleMetaAction('sync_insights', CR_ENGLAND_ACCOUNT_ID)}
+                    onClick={() => handleMetaAction('sync_adsets', CR_ENGLAND_ACCOUNT_ID)}
                     disabled={isLoading}
                     size="sm"
                     variant="outline"
                   >
-                    {isLoading && currentAction === 'sync_insights' ? (
+                    {isLoading && currentAction === 'sync_adsets' ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     ) : (
-                      <Calendar className="w-4 h-4 mr-2" />
+                      <Users className="w-4 h-4 mr-2" />
                     )}
-                    Sync Insights
+                    Sync Ad Sets
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Sync CR England Ads</p>
+                    <p className="text-sm text-muted-foreground">
+                      Import individual ads from CR England account
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => handleMetaAction('sync_ads', CR_ENGLAND_ACCOUNT_ID)}
+                    disabled={isLoading}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {isLoading && currentAction === 'sync_ads' ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Zap className="w-4 h-4 mr-2" />
+                    )}
+                    Sync Ads
                   </Button>
                 </div>
               </>
@@ -378,11 +406,20 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleMetaAction('sync_insights', account.account_id)}
+                        onClick={() => handleMetaAction('sync_adsets', account.account_id)}
                         disabled={isLoading}
-                        title="Sync insights for CR England"
+                        title="Sync ad sets for CR England"
                       >
-                        <Calendar className="w-3 h-3" />
+                        <Users className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleMetaAction('sync_ads', account.account_id)}
+                        disabled={isLoading}
+                        title="Sync ads for CR England"
+                      >
+                        <Zap className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
