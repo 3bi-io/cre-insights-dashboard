@@ -130,6 +130,21 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     enabled: !!metaAccounts?.length,
   });
 
+  const { data: metaAdSets } = useQuery({
+    queryKey: ['meta-ad-sets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('meta_ad_sets')
+        .select('*')
+        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!metaAccounts?.length,
+  });
+
   const handleMetaAction = async (action: string, accountId?: string, campaignId?: string) => {
     setIsLoading(true);
     setCurrentAction(action);
@@ -270,10 +285,10 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
             </div>
             
             <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <Target className="w-6 h-6 mx-auto mb-2 text-purple-500" />
-              <div className="text-sm font-medium">Selected Period Spend</div>
+              <Users className="w-6 h-6 mx-auto mb-2 text-purple-500" />
+              <div className="text-sm font-medium">Adsets</div>
               <div className="text-2xl font-bold text-purple-600">
-                ${totalMetaSpend.toFixed(2)}
+                {metaAdSets?.length || 0}
               </div>
             </div>
 
