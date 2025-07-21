@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
       employment_history: formData.employmentHistory,
       consent: formData.consent,
       privacy: formData.privacy,
+      months: formData.experience,
       source: 'Direct Application',
       status: 'pending',
       applied_at: new Date().toISOString(),
