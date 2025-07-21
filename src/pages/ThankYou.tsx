@@ -48,11 +48,15 @@ const ThankYou = () => {
                       Back to Home
                     </Button>
                   </Link>
-                  <Link to="/apply">
+                  <a 
+                    href="https://intelliapp.driverapponline.com/c/crengland?r=ƷBI" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
                     <Button>
-                      Submit Another Application
+                      TAP HERE TO CONTINUE
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </CardContent>
