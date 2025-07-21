@@ -7,9 +7,9 @@ interface MetaSpendMetrics {
   totalSpend: number;
   totalImpressions: number;
   totalClicks: number;
-  ctr: number;
-  cpm: number;
-  cpc: number;
+  totalLeads: number;
+  costPerLead: number;
+  conversionRate: number;
   insights: string;
   recommendations: string[];
 }
@@ -63,20 +63,33 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
 
       console.log('Meta spend data fetched:', spendData?.length || 0, 'records');
 
+      // Get lead generation applications data (from Meta sources)
+      const { data: applicationsData } = await supabase
+        .from('applications')
+        .select('id, source, applied_at')
+        .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram')
+        .gte('applied_at', startDate);
+
+      const totalLeads = applicationsData?.length || 0;
+      console.log('Total leads from Meta campaigns:', totalLeads);
+
       if (!spendData || spendData.length === 0) {
         console.log('No Meta spend data found for the selected period');
         setMetrics({
           totalSpend: 0,
           totalImpressions: 0,
           totalClicks: 0,
-          ctr: 0,
-          cpm: 0,
-          cpc: 0,
-          insights: 'No Meta spend data available for the selected period. Please sync your Meta data first.',
+          totalLeads,
+          costPerLead: 0,
+          conversionRate: 0,
+          insights: totalLeads > 0 
+            ? `Generated ${totalLeads} leads during this period, but no spend data available. Please sync your Meta data to see cost metrics.`
+            : 'No Meta spend data or leads found for the selected period. Please sync your Meta data first.',
           recommendations: [
             'Sync Meta data from the platforms page',
             'Check your Meta API connection',
-            'Verify your account ID is correct'
+            'Verify lead generation campaign objectives',
+            'Review campaign targeting for driver demographics'
           ]
         });
         return;
@@ -98,63 +111,52 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
         return sum + clicks;
       }, 0);
 
-      const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-      const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
-      const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+      const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
+      const conversionRate = totalClicks > 0 ? (totalLeads / totalClicks) * 100 : 0;
 
-      console.log('Calculated metrics:', {
+      console.log('Calculated lead generation metrics:', {
         totalSpend,
         totalImpressions,
         totalClicks,
-        ctr,
-        cpm,
-        cpc
+        totalLeads,
+        costPerLead,
+        conversionRate
       });
 
-      // Get applications data for context
-      const { data: applicationsData } = await supabase
-        .from('applications')
-        .select('id, source, applied_at')
-        .or('source.eq.fb,source.eq.ig,source.eq.meta')
-        .gte('applied_at', startDate);
-
-      const totalApplications = applicationsData?.length || 0;
-
-      // Use OpenAI to analyze the data
+      // Use OpenAI to analyze the lead generation data
       const analysisPrompt = `
-        Analyze the following Meta advertising performance data for CR England:
+        Analyze the following Meta lead generation performance data for CR England driver recruitment:
         
         Period: ${dateRange.replace('_', ' ')}
         Total Spend: $${totalSpend.toFixed(2)}
         Total Impressions: ${totalImpressions.toLocaleString()}
         Total Clicks: ${totalClicks.toLocaleString()}
-        CTR: ${ctr.toFixed(2)}%
-        CPM: $${cpm.toFixed(2)}
-        CPC: $${cpc.toFixed(2)}
-        Applications: ${totalApplications}
-        Cost per Application: $${totalApplications > 0 ? (totalSpend / totalApplications).toFixed(2) : 'N/A'}
+        Total Leads: ${totalLeads}
+        Cost per Lead: $${costPerLead.toFixed(2)}
+        Conversion Rate: ${conversionRate.toFixed(2)}%
         
         Daily breakdown:
         ${spendData.slice(0, 7).map(d => `${d.date_start}: $${Number(d.spend).toFixed(2)} spent, ${Number(d.impressions).toLocaleString()} impressions, ${Number(d.clicks).toLocaleString()} clicks`).join('\n')}
         
         Please provide:
-        1. A brief performance analysis (2-3 sentences)
-        2. 3-5 specific actionable recommendations for improvement
+        1. A brief lead generation performance analysis (2-3 sentences)
+        2. 3-5 specific actionable recommendations for improving lead generation campaigns
         
-        Focus on trucking/transportation industry context and driver recruitment.
+        Focus on trucking/transportation industry context and driver recruitment lead generation strategies.
       `;
 
       const aiResponse = await invoke({
         message: analysisPrompt,
         model: 'gpt-4.1-2025-04-14',
-        systemPrompt: 'You are an expert in digital marketing analytics for the trucking and transportation industry, specializing in driver recruitment campaigns.'
+        systemPrompt: 'You are an expert in digital marketing analytics for the trucking and transportation industry, specializing in lead generation campaigns for driver recruitment.'
       });
 
-      let insights = 'Performance analysis completed.';
+      let insights = 'Lead generation performance analysis completed.';
       let recommendations = [
-        'Continue monitoring performance metrics',
-        'Consider A/B testing different ad creatives',
-        'Optimize targeting for driver demographics'
+        'Optimize ad creatives for driver demographics',
+        'Test different lead generation objectives',
+        'Improve landing page conversion rates',
+        'Target drivers with specific CDL requirements'
       ];
 
       if (aiResponse) {
@@ -173,16 +175,16 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
         totalSpend,
         totalImpressions,
         totalClicks,
-        ctr,
-        cpm,
-        cpc,
+        totalLeads,
+        costPerLead,
+        conversionRate,
         insights,
         recommendations
       });
 
     } catch (err) {
-      console.error('Error analyzing Meta spend metrics:', err);
-      setError(err instanceof Error ? err.message : 'Failed to analyze Meta spend data');
+      console.error('Error analyzing Meta lead generation metrics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to analyze Meta lead generation data');
     } finally {
       setIsLoading(false);
     }

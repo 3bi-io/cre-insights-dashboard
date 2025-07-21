@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, TrendingDown, DollarSign, Eye, MousePointer, Target, AlertCircle, Lightbulb, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, Target, AlertCircle, Lightbulb, RefreshCw } from 'lucide-react';
 import { useMetaSpendAnalytics } from '@/hooks/useMetaSpendAnalytics';
 import { Button } from '@/components/ui/button';
 
@@ -21,7 +21,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Meta Spend Analytics
+            Meta Lead Generation Analytics
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -35,7 +35,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         </CardContent>
       </Card>
     );
-  }
+  };
 
   if (error) {
     return (
@@ -43,7 +43,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Meta Spend Analytics
+            Meta Lead Generation Analytics
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -89,10 +89,10 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Meta Spend Analytics
+              Meta Lead Generation Analytics
             </CardTitle>
             <CardDescription>
-              AI-powered insights for CR England Meta campaigns ({dateRange.replace('_', ' ')})
+              AI-powered insights for CR England lead generation campaigns ({dateRange.replace('_', ' ')})
             </CardDescription>
           </div>
           <Button 
@@ -107,54 +107,57 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {/* Lead Generation Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-6 bg-green-50 dark:bg-green-950/20 rounded-lg">
+            <Users className="w-8 h-8 mx-auto mb-3 text-green-600" />
+            <div className="text-3xl font-bold text-green-600">
+              {formatNumber(metrics.totalLeads)}
+            </div>
+            <div className="text-sm text-muted-foreground mt-1">Total Leads</div>
+          </div>
+
           <div className="text-center p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
             <DollarSign className="w-8 h-8 mx-auto mb-3 text-blue-600" />
             <div className="text-3xl font-bold text-blue-600">
+              {formatCurrency(metrics.costPerLead)}
+            </div>
+            <div className="text-sm text-muted-foreground mt-1">Cost per Lead</div>
+          </div>
+
+          <div className="text-center p-6 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+            <Target className="w-8 h-8 mx-auto mb-3 text-purple-600" />
+            <div className="text-3xl font-bold text-purple-600">
               {formatCurrency(metrics.totalSpend)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">Total Spend</div>
           </div>
+        </div>
 
-          <div className="text-center p-6 bg-green-50 dark:bg-green-950/20 rounded-lg">
-            <Eye className="w-8 h-8 mx-auto mb-3 text-green-600" />
-            <div className="text-3xl font-bold text-green-600">
+        {/* Supporting Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+            <div className="text-2xl font-bold text-orange-600">
               {formatNumber(metrics.totalImpressions)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">Impressions</div>
           </div>
 
-          <div className="text-center p-6 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-            <MousePointer className="w-8 h-8 mx-auto mb-3 text-purple-600" />
-            <div className="text-3xl font-bold text-purple-600">
+          <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
+            <TrendingDown className="w-6 h-6 mx-auto mb-2 text-red-600" />
+            <div className="text-2xl font-bold text-red-600">
               {formatNumber(metrics.totalClicks)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">Clicks</div>
           </div>
 
-          <div className="text-center p-6 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-            <TrendingUp className="w-8 h-8 mx-auto mb-3 text-orange-600" />
-            <div className="text-3xl font-bold text-orange-600">
-              {formatPercentage(metrics.ctr)}
+          <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+            <Target className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
+            <div className="text-2xl font-bold text-yellow-600">
+              {formatPercentage(metrics.conversionRate)}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">CTR</div>
-          </div>
-
-          <div className="text-center p-6 bg-red-50 dark:bg-red-950/20 rounded-lg">
-            <DollarSign className="w-8 h-8 mx-auto mb-3 text-red-600" />
-            <div className="text-3xl font-bold text-red-600">
-              {formatCurrency(metrics.cpm)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">CPM</div>
-          </div>
-
-          <div className="text-center p-6 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
-            <MousePointer className="w-8 h-8 mx-auto mb-3 text-yellow-600" />
-            <div className="text-3xl font-bold text-yellow-600">
-              {formatCurrency(metrics.cpc)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">CPC</div>
+            <div className="text-sm text-muted-foreground mt-1">Conversion Rate</div>
           </div>
         </div>
 
@@ -162,7 +165,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-3">
             <Lightbulb className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100">AI Performance Insights</h3>
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100">AI Lead Generation Insights</h3>
           </div>
           <p className="text-sm text-gray-700 dark:text-gray-300">
             {metrics.insights}
@@ -173,7 +176,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         <div>
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Optimization Recommendations
+            Lead Generation Optimization Recommendations
           </h3>
           <div className="space-y-2">
             {metrics.recommendations.map((recommendation, index) => (
