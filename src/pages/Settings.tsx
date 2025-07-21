@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Bell, Shield, Database, Trash2, Save, Users, Mail, MoreVertical, Plug } from 'lucide-react';
+import { User, Bell, Shield, Database, Trash2, Save, Users, Mail, MoreVertical, Plug, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ import {
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
 import WebhookDocumentation from '@/components/settings/WebhookDocumentation';
 import { AdminMagicLinkSection } from '@/components/settings/AdminMagicLinkSection';
+import { generateChangelogPDF } from '@/utils/changelogPdfGenerator';
 
 interface AdminUser {
   id: string;
@@ -127,6 +128,23 @@ const Settings = () => {
     },
   });
 
+  const handleDownloadChangelog = () => {
+    try {
+      generateChangelogPDF();
+      toast({
+        title: "Changelog Downloaded",
+        description: "The changelog PDF has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Error generating changelog PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate changelog PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSaveNotifications = async () => {
     setLoading(true);
     // Simulate API call
@@ -231,6 +249,34 @@ const Settings = () => {
                 <Save className="w-4 h-4" />
                 Save Changes
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                System Information
+              </CardTitle>
+              <CardDescription>
+                Download system documentation and changelog
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">PDF Export Feature Changelog</p>
+                    <p className="text-sm text-muted-foreground">
+                      Download the complete changelog for the PDF export functionality
+                    </p>
+                  </div>
+                  <Button onClick={handleDownloadChangelog} variant="outline" className="flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Download Changelog
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
