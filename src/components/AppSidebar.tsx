@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -12,6 +13,12 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
 } from '@/components/ui/sidebar';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -105,6 +112,14 @@ const AppSidebar = () => {
     return user.email.charAt(0).toUpperCase();
   };
 
+  const regularGroups = navigationItems.filter(group => 
+    group.group === "Analytics" || group.group === "Recruitment"
+  );
+  
+  const accordionGroups = navigationItems.filter(group => 
+    group.group === "Management" || group.group === "Settings"
+  );
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b">
@@ -119,7 +134,8 @@ const AppSidebar = () => {
       </SidebarHeader>
       
       <SidebarContent>
-        {navigationItems.map((group) => (
+        {/* Regular groups */}
+        {regularGroups.map((group) => (
           <SidebarGroup key={group.group}>
             <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -141,6 +157,36 @@ const AppSidebar = () => {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {/* Accordion groups */}
+        <div className="px-2">
+          <Accordion type="multiple" defaultValue={["Management", "Settings"]}>
+            {accordionGroups.map((group) => (
+              <AccordionItem key={group.group} value={group.group}>
+                <AccordionTrigger className="text-xs font-medium text-sidebar-foreground/70 hover:no-underline py-2">
+                  {group.group}
+                </AccordionTrigger>
+                <AccordionContent className="pb-1">
+                  <SidebarMenu>
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <SidebarMenuItem key={item.path}>
+                          <SidebarMenuButton asChild isActive={isActive(item.path)}>
+                            <Link to={item.path} className="flex items-center gap-3">
+                              <Icon className="w-4 h-4" />
+                              <span>{item.label}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
       </SidebarContent>
       
       <SidebarFooter className="border-t">
