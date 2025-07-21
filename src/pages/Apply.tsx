@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 
 const Apply = () => {
   const [formData, setFormData] = useState({
@@ -25,7 +24,6 @@ const Apply = () => {
     experience: '',
     drug: '',
     veteran: '',
-    employmentHistory: '',
     consent: '',
     privacy: '',
   });
@@ -263,22 +261,6 @@ const Apply = () => {
                         <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                </div>
-
-                {/* Employment History Section */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Employment History</h2>
-                  
-                  <div>
-                    <Label htmlFor="employmentHistory">Previous Employment</Label>
-                    <Textarea
-                      id="employmentHistory"
-                      value={formData.employmentHistory}
-                      onChange={(e) => handleInputChange('employmentHistory', e.target.value)}
-                      placeholder="Please describe your previous employment history..."
-                      className="min-h-[120px]"
-                    />
                   </div>
                 </div>
 
