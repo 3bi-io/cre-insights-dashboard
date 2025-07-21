@@ -62,6 +62,26 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
     return null;
   }
 
+  const formatNumber = (value: number) => {
+    if (value === 0) return '0';
+    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+    if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
+    return value.toLocaleString();
+  };
+
+  const formatCurrency = (value: number) => {
+    if (value === 0) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    if (value === 0) return '0.00%';
+    return value.toFixed(2) + '%';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -89,52 +109,52 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
       <CardContent className="space-y-6">
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-            <DollarSign className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-            <div className="text-2xl font-bold text-blue-600">
-              ${metrics.totalSpend.toFixed(2)}
+          <div className="text-center p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+            <DollarSign className="w-8 h-8 mx-auto mb-3 text-blue-600" />
+            <div className="text-3xl font-bold text-blue-600">
+              {formatCurrency(metrics.totalSpend)}
             </div>
-            <div className="text-sm text-muted-foreground">Total Spend</div>
+            <div className="text-sm text-muted-foreground mt-1">Total Spend</div>
           </div>
 
-          <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-            <Eye className="w-6 h-6 mx-auto mb-2 text-green-600" />
-            <div className="text-2xl font-bold text-green-600">
-              {metrics.totalImpressions.toLocaleString()}
+          <div className="text-center p-6 bg-green-50 dark:bg-green-950/20 rounded-lg">
+            <Eye className="w-8 h-8 mx-auto mb-3 text-green-600" />
+            <div className="text-3xl font-bold text-green-600">
+              {formatNumber(metrics.totalImpressions)}
             </div>
-            <div className="text-sm text-muted-foreground">Impressions</div>
+            <div className="text-sm text-muted-foreground mt-1">Impressions</div>
           </div>
 
-          <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-            <MousePointer className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <div className="text-2xl font-bold text-purple-600">
-              {metrics.totalClicks.toLocaleString()}
+          <div className="text-center p-6 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+            <MousePointer className="w-8 h-8 mx-auto mb-3 text-purple-600" />
+            <div className="text-3xl font-bold text-purple-600">
+              {formatNumber(metrics.totalClicks)}
             </div>
-            <div className="text-sm text-muted-foreground">Clicks</div>
+            <div className="text-sm text-muted-foreground mt-1">Clicks</div>
           </div>
 
-          <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-orange-600" />
-            <div className="text-2xl font-bold text-orange-600">
-              {metrics.ctr.toFixed(2)}%
+          <div className="text-center p-6 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+            <TrendingUp className="w-8 h-8 mx-auto mb-3 text-orange-600" />
+            <div className="text-3xl font-bold text-orange-600">
+              {formatPercentage(metrics.ctr)}
             </div>
-            <div className="text-sm text-muted-foreground">CTR</div>
+            <div className="text-sm text-muted-foreground mt-1">CTR</div>
           </div>
 
-          <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
-            <DollarSign className="w-6 h-6 mx-auto mb-2 text-red-600" />
-            <div className="text-2xl font-bold text-red-600">
-              ${metrics.cpm.toFixed(2)}
+          <div className="text-center p-6 bg-red-50 dark:bg-red-950/20 rounded-lg">
+            <DollarSign className="w-8 h-8 mx-auto mb-3 text-red-600" />
+            <div className="text-3xl font-bold text-red-600">
+              {formatCurrency(metrics.cpm)}
             </div>
-            <div className="text-sm text-muted-foreground">CPM</div>
+            <div className="text-sm text-muted-foreground mt-1">CPM</div>
           </div>
 
-          <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
-            <MousePointer className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
-            <div className="text-2xl font-bold text-yellow-600">
-              ${metrics.cpc.toFixed(2)}
+          <div className="text-center p-6 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+            <MousePointer className="w-8 h-8 mx-auto mb-3 text-yellow-600" />
+            <div className="text-3xl font-bold text-yellow-600">
+              {formatCurrency(metrics.cpc)}
             </div>
-            <div className="text-sm text-muted-foreground">CPC</div>
+            <div className="text-sm text-muted-foreground mt-1">CPC</div>
           </div>
         </div>
 
