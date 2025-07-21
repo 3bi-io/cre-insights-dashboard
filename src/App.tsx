@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +25,7 @@ import DetailedApply from "./pages/DetailedApply";
 import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
+import ThankYou from "./pages/ThankYou";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +41,7 @@ const App = () => (
               <Route path="/" element={<AdminLanding />} />
               <Route path="/apply" element={<Apply />} />
               <Route path="/apply/detailed" element={<DetailedApply />} />
+              <Route path="/thank-you" element={<ThankYou />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={
                 <ProtectedRoute>
