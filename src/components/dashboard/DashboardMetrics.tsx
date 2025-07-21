@@ -49,7 +49,10 @@ const DashboardMetrics = () => {
           .select('spend, impressions, clicks, reach')
           .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
           .gte('date_start', startDate),
-        supabase.from('applications').select('id, source').or('source.eq.fb,source.eq.ig,source.eq.meta'),
+        supabase.from('applications')
+          .select('id, source, applied_at')
+          .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram')
+          .gte('applied_at', startDate),
         supabase.from('job_listings').select('id').eq('status', 'active')
       ]);
       
