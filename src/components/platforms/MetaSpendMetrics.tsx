@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,18 +7,23 @@ import { TrendingUp, TrendingDown, DollarSign, Users, Target, AlertCircle, Light
 import { useMetaSpendAnalytics } from '@/hooks/useMetaSpendAnalytics';
 import { useCostPerLead } from '@/hooks/useCostPerLead';
 import { Button } from '@/components/ui/button';
-
 interface MetaSpendMetricsProps {
   dateRange: string;
 }
-
-const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
-  const { metrics, isLoading, error, refetch } = useMetaSpendAnalytics(dateRange);
-  const { data: costData } = useCostPerLead(dateRange);
-
+const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({
+  dateRange
+}) => {
+  const {
+    metrics,
+    isLoading,
+    error,
+    refetch
+  } = useMetaSpendAnalytics(dateRange);
+  const {
+    data: costData
+  } = useCostPerLead(dateRange);
   if (isLoading) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
@@ -28,20 +32,16 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-20" />
-            ))}
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-20" />)}
           </div>
           <Skeleton className="h-20" />
           <Skeleton className="h-32" />
         </CardContent>
-      </Card>
-    );
-  };
-
+      </Card>;
+  }
+  ;
   if (error) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="w-5 h-5" />
@@ -56,21 +56,17 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
             </AlertDescription>
           </Alert>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   if (!metrics) {
     return null;
   }
-
   const formatNumber = (value: number) => {
     if (value === 0) return '0';
     if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
     if (value >= 1000) return (value / 1000).toFixed(1) + 'K';
     return value.toLocaleString();
   };
-
   const formatCurrency = (value: number) => {
     if (value === 0) return '$0.00';
     return new Intl.NumberFormat('en-US', {
@@ -78,122 +74,10 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
       currency: 'USD'
     }).format(value);
   };
-
   const formatPercentage = (value: number) => {
     if (value === 0) return '0.00%';
     return value.toFixed(2) + '%';
   };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5" />
-              Meta Lead Generation Analytics
-            </CardTitle>
-            <CardDescription>
-              AI-powered insights for CR England lead generation campaigns ({dateRange.replace('_', ' ')})
-            </CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={refetch}
-            disabled={isLoading}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Lead Generation Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-6 bg-green-50 dark:bg-green-950/20 rounded-lg">
-            <Users className="w-8 h-8 mx-auto mb-3 text-green-600" />
-            <div className="text-3xl font-bold text-green-600">
-              {formatNumber(costData?.metaLeads || 0)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Total Leads</div>
-          </div>
-
-          <div className="text-center p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-            <DollarSign className="w-8 h-8 mx-auto mb-3 text-blue-600" />
-            <div className="text-3xl font-bold text-blue-600">
-              {formatCurrency(costData?.metaCostPerLead || 0)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Cost per Lead</div>
-          </div>
-
-          <div className="text-center p-6 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-            <Target className="w-8 h-8 mx-auto mb-3 text-purple-600" />
-            <div className="text-3xl font-bold text-purple-600">
-              {formatCurrency(costData?.metaSpend || 0)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Total Spend</div>
-          </div>
-        </div>
-
-        {/* Supporting Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-orange-600" />
-            <div className="text-2xl font-bold text-orange-600">
-              {formatNumber(metrics.totalImpressions)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Impressions</div>
-          </div>
-
-          <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
-            <TrendingDown className="w-6 h-6 mx-auto mb-2 text-red-600" />
-            <div className="text-2xl font-bold text-red-600">
-              {formatNumber(metrics.totalClicks)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Clicks</div>
-          </div>
-
-          <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
-            <Target className="w-6 h-6 mx-auto mb-2 text-yellow-600" />
-            <div className="text-2xl font-bold text-yellow-600">
-              {formatPercentage(metrics.conversionRate)}
-            </div>
-            <div className="text-sm text-muted-foreground mt-1">Conversion Rate</div>
-          </div>
-        </div>
-
-        {/* AI Insights */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 p-4 rounded-lg">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100">AI Lead Generation Insights</h3>
-          </div>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            {metrics.insights}
-          </p>
-        </div>
-
-        {/* Recommendations */}
-        <div>
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Lead Generation Optimization Recommendations
-          </h3>
-          <div className="space-y-2">
-            {metrics.recommendations.map((recommendation, index) => (
-              <div key={index} className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
-                <Badge variant="outline" className="text-xs">
-                  {index + 1}
-                </Badge>
-                <span className="text-sm flex-1">{recommendation}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return;
 };
-
 export default MetaSpendMetrics;
