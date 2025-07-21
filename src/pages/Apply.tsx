@@ -269,7 +269,7 @@ const Apply = () => {
                   <h2 className="text-xl font-semibold text-foreground border-b pb-2">Consent</h2>
                   
                   <div>
-                    <Label htmlFor="consent">Do you consent to be contacted by recruiters?</Label>
+                    <Label htmlFor="consent">Do you agree to receive SMS messages from C.R. England?</Label>
                     <Select value={formData.consent} onValueChange={(value) => handleInputChange('consent', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select..." />
