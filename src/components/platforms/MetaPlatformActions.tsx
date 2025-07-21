@@ -145,6 +145,21 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     enabled: !!metaAccounts?.length,
   });
 
+  const { data: metaAds } = useQuery({
+    queryKey: ['meta-ads'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('meta_ads')
+        .select('*')
+        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!metaAccounts?.length,
+  });
+
   const handleMetaAction = async (action: string, accountId?: string, campaignId?: string) => {
     setIsLoading(true);
     setCurrentAction(action);
@@ -293,10 +308,10 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
             </div>
 
             <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <RefreshCw className="w-6 h-6 mx-auto mb-2 text-orange-500" />
-              <div className="text-sm font-medium">Last Sync</div>
-              <div className="text-sm font-medium text-orange-600">
-                {metaAccounts?.length ? 'Active' : 'Never'}
+              <Zap className="w-6 h-6 mx-auto mb-2 text-orange-500" />
+              <div className="text-sm font-medium">Ads</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {metaAds?.length || 0}
               </div>
             </div>
           </div>
