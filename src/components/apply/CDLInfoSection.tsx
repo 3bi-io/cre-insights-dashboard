@@ -27,7 +27,6 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange }: CDLInfoSe
           <SelectContent>
             <SelectItem value="Yes">Yes</SelectItem>
             <SelectItem value="No">No</SelectItem>
-            <SelectItem value="Permit only">Permit only</SelectItem>
           </SelectContent>
         </Select>
       </div>
