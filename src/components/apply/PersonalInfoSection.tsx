@@ -20,35 +20,39 @@ interface PersonalInfoSectionProps {
 
 export const PersonalInfoSection = React.memo(({ formData, onInputChange }: PersonalInfoSectionProps) => {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-foreground border-b pb-2">Personal Information</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-semibold text-foreground border-b pb-2">
+        Personal Information
+      </h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="firstName">First Name</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
           <Input
             id="firstName"
             value={formData.firstName}
             onChange={(e) => onInputChange('firstName', e.target.value)}
             required
             placeholder="Enter your first name"
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
-        <div>
-          <Label htmlFor="lastName">Last Name</Label>
+        <div className="space-y-2">
+          <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
           <Input
             id="lastName"
             value={formData.lastName}
             onChange={(e) => onInputChange('lastName', e.target.value)}
             required
             placeholder="Enter your last name"
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="email">Email</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
           <Input
             id="email"
             type="email"
@@ -56,10 +60,11 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('email', e.target.value)}
             required
             placeholder="Enter your email"
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
-        <div>
-          <Label htmlFor="phone">Phone Number</Label>
+        <div className="space-y-2">
+          <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
           <Input
             id="phone"
             type="tel"
@@ -67,47 +72,51 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('phone', e.target.value)}
             placeholder="(555) 123-4567"
             required
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="city">City</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="city" className="text-sm font-medium">City</Label>
           <Input
             id="city"
             value={formData.city}
             onChange={(e) => onInputChange('city', e.target.value)}
             required
             placeholder="Enter your city"
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
-        <div>
-          <Label htmlFor="state">State</Label>
+        <div className="space-y-2">
+          <Label htmlFor="state" className="text-sm font-medium">State</Label>
           <Input
             id="state"
             value={formData.state}
             onChange={(e) => onInputChange('state', e.target.value)}
             required
             placeholder="Enter your state"
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
-        <div>
-          <Label htmlFor="zip">ZIP Code</Label>
+        <div className="space-y-2">
+          <Label htmlFor="zip" className="text-sm font-medium">ZIP Code</Label>
           <Input
             id="zip"
             value={formData.zip}
             onChange={(e) => onInputChange('zip', e.target.value)}
             required
             placeholder="Enter your ZIP code"
+            className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="over21">Are you over 21?</Label>
+      <div className="space-y-2">
+        <Label htmlFor="over21" className="text-sm font-medium">Are you over 21?</Label>
         <Select value={formData.over21} onValueChange={(value) => onInputChange('over21', value)}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select your age status..." />
           </SelectTrigger>
           <SelectContent>

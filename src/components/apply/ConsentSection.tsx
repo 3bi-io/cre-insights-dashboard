@@ -13,13 +13,17 @@ interface ConsentSectionProps {
 
 export const ConsentSection = React.memo(({ formData, onInputChange }: ConsentSectionProps) => {
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-foreground border-b pb-2">Consent</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-semibold text-foreground border-b pb-2">
+        Consent
+      </h2>
       
-      <div>
-        <Label htmlFor="consent">Do you agree to receive SMS messages from C.R. England?</Label>
+      <div className="space-y-2">
+        <Label htmlFor="consent" className="text-sm font-medium">
+          Do you agree to receive SMS messages from C.R. England?
+        </Label>
         <Select value={formData.consent} onValueChange={(value) => onInputChange('consent', value)}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
@@ -29,10 +33,12 @@ export const ConsentSection = React.memo(({ formData, onInputChange }: ConsentSe
         </Select>
       </div>
 
-      <div>
-        <Label htmlFor="privacy">Do you agree to our privacy policy?</Label>
+      <div className="space-y-2">
+        <Label htmlFor="privacy" className="text-sm font-medium">
+          Do you agree to our privacy policy?
+        </Label>
         <Select value={formData.privacy} onValueChange={(value) => onInputChange('privacy', value)}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
