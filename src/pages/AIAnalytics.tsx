@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import AIProviderSettings from '@/components/analytics/AIProviderSettings';
 import AnalyticsSummary from '@/components/analytics/AnalyticsSummary';
-import CategoryTiles from '@/components/analytics/CategoryTiles';
 import LocationStatusBreakdown from '@/components/analytics/LocationStatusBreakdown';
 import AnalyticsInsights from '@/components/analytics/AnalyticsInsights';
 
@@ -143,9 +142,6 @@ const AIAnalytics = () => {
             totalApplications={analyticsData.totalApplications || totalApplications}
             provider={analyticsData.provider}
           />
-
-          {/* Category Breakdown Tiles */}
-          <CategoryTiles categoryBreakdown={analyticsData.categoryBreakdown} />
 
           {/* Location and Status Breakdown */}
           <LocationStatusBreakdown 
