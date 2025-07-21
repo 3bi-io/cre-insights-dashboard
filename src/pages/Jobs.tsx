@@ -16,7 +16,7 @@ type ViewMode = 'grid' | 'table';
 
 const Jobs = () => {
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const { toast } = useToast();
