@@ -1,14 +1,18 @@
+
 import React from 'react';
-import { Calendar, Download, Settings, Bell, Filter } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useApplications } from '@/hooks/useApplications';
-import { generateApplicationsPDF } from '@/utils/pdfGenerator';
-import { generateDashboardPDF } from '@/utils/dashboardPdfGenerator';
 import { useToast } from '@/hooks/use-toast';
+import { generateDashboardPDF } from '@/utils/dashboardPdfGenerator';
+import DateRangePicker from './DateRangePicker';
+import FilterDialog from './FilterDialog';
+import NotificationsPanel from './NotificationsPanel';
+import SettingsPanel from './SettingsPanel';
+import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 
 const DashboardHeader = () => {
-  const { applications = [] } = useApplications();
   const { toast } = useToast();
+  const { dateRange, setDateRange, filters, setFilters } = useDashboardFilters();
 
   const handleExportPDF = () => {
     try {
@@ -26,6 +30,14 @@ const DashboardHeader = () => {
     }
   };
 
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
+    toast({
+      title: "Filters Applied",
+      description: "Dashboard data has been filtered",
+    });
+  };
+
   return (
     <div className="bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl">
@@ -37,14 +49,13 @@ const DashboardHeader = () => {
           </div>
           
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="outline" size="default" className="flex items-center gap-2 h-10">
-              <Calendar className="w-4 h-4" />
-              <span>Last 30 Days</span>
-            </Button>
-            <Button variant="outline" size="default" className="flex items-center gap-2 h-10">
-              <Filter className="w-4 h-4" />
-              <span>Filter</span>
-            </Button>
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+            />
+            
+            <FilterDialog onFiltersChange={handleFiltersChange} />
+            
             <Button 
               variant="outline" 
               size="default" 
@@ -54,14 +65,17 @@ const DashboardHeader = () => {
               <Download className="w-4 h-4" />
               <span>Export PDF</span>
             </Button>
+            
             <div className="flex items-center gap-2 ml-2">
-              <Button variant="ghost" size="icon" className="h-10 w-10">
-                <Bell className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-10 w-10">
-                <Settings className="w-4 h-4" />
-              </Button>
+              <NotificationsPanel />
+              <SettingsPanel />
             </div>
+          </div>
+
+          {/* Mobile version with simplified layout */}
+          <div className="flex lg:hidden items-center gap-2">
+            <NotificationsPanel />
+            <SettingsPanel />
           </div>
         </div>
       </div>
