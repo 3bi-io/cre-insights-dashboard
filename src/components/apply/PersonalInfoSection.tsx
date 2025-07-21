@@ -31,6 +31,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             value={formData.firstName}
             onChange={(e) => onInputChange('firstName', e.target.value)}
             required
+            placeholder="Enter your first name"
           />
         </div>
         <div>
@@ -40,6 +41,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             value={formData.lastName}
             onChange={(e) => onInputChange('lastName', e.target.value)}
             required
+            placeholder="Enter your last name"
           />
         </div>
       </div>
@@ -53,6 +55,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             value={formData.email}
             onChange={(e) => onInputChange('email', e.target.value)}
             required
+            placeholder="Enter your email"
           />
         </div>
         <div>
@@ -76,6 +79,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             value={formData.city}
             onChange={(e) => onInputChange('city', e.target.value)}
             required
+            placeholder="Enter your city"
           />
         </div>
         <div>
@@ -85,6 +89,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             value={formData.state}
             onChange={(e) => onInputChange('state', e.target.value)}
             required
+            placeholder="Enter your state"
           />
         </div>
         <div>
@@ -94,6 +99,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             value={formData.zip}
             onChange={(e) => onInputChange('zip', e.target.value)}
             required
+            placeholder="Enter your ZIP code"
           />
         </div>
       </div>
@@ -102,7 +108,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
         <Label htmlFor="over21">Are you over 21?</Label>
         <Select value={formData.over21} onValueChange={(value) => onInputChange('over21', value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select..." />
+            <SelectValue placeholder="Select your age status..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="Yes">Yes</SelectItem>
