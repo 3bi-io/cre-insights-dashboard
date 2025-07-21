@@ -16,7 +16,11 @@ serve(async (req) => {
   try {
     console.log('Meta Spend Analytics function called');
     
-    const authHeader = req.headers.get('Authorization')!;
+    // Get auth header safely
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header provided');
+    }
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -24,10 +28,13 @@ serve(async (req) => {
     );
 
     // Get current user
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Unauthorized: ' + (userError?.message || 'No user found'));
+    }
 
-    const { analysisType = 'overview', dateRange = 'last_30d' } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { analysisType = 'overview', dateRange = 'last_30d' } = body;
 
     // Fetch meta ad sets data
     const { data: adSets, error: adSetsError } = await supabaseClient
