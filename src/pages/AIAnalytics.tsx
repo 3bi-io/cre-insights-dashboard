@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, MapPin, Users, BarChart3, Brain, SquareCode, Settings2, ShieldAlert, Cloud } from 'lucide-react';
+import { Loader2, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { aiService, AIRequest, AIResponse, AIParameters } from '@/services/aiService';
+import AIProviderSettings from '@/components/analytics/AIProviderSettings';
+import AnalyticsSummary from '@/components/analytics/AnalyticsSummary';
+import CategoryTiles from '@/components/analytics/CategoryTiles';
+import LocationStatusBreakdown from '@/components/analytics/LocationStatusBreakdown';
+import AnalyticsInsights from '@/components/analytics/AnalyticsInsights';
 
 interface AnalyticsData {
   locationConversion: Array<{
@@ -94,32 +95,6 @@ const AIAnalytics = () => {
     generateAnalytics();
   }, []);
 
-  const getCategoryDetails = (category: string) => {
-    const details = {
-      'D': { 
-        label: 'Experienced Driver', 
-        color: 'bg-green-100 text-green-800 border-green-200', 
-        description: 'CDL + Age + 3+ months exp' 
-      },
-      'SC': { 
-        label: 'New CDL Holder', 
-        color: 'bg-blue-100 text-blue-800 border-blue-200', 
-        description: 'CDL + Age + <3 months exp' 
-      },
-      'SR': { 
-        label: 'Student Ready', 
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200', 
-        description: 'No CDL + Age + <3 months exp' 
-      },
-      'N/A': { 
-        label: 'Uncategorized', 
-        color: 'bg-gray-100 text-gray-800 border-gray-200', 
-        description: 'Other combinations' 
-      }
-    };
-    return details[category as keyof typeof details] || details['N/A'];
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -147,80 +122,12 @@ const AIAnalytics = () => {
       </div>
 
       {/* AI Provider Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings2 className="w-5 h-5" />
-            AI Analysis Settings
-          </CardTitle>
-          <CardDescription>
-            Choose your preferred AI provider for enhanced insights and recommendations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">AI Provider</label>
-              <Select value={aiProvider} onValueChange={(value: 'basic' | 'openai' | 'anthropic') => setAiProvider(value)} disabled={loading}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select AI provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Analysis Options</SelectLabel>
-                    <SelectItem value="basic">
-                      <div className="flex items-center gap-2">
-                        <SquareCode className="w-4 h-4" />
-                        <div>
-                          <div>Basic Analytics</div>
-                          <div className="text-xs text-muted-foreground">Rule-based analysis only</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="openai">
-                      <div className="flex items-center gap-2">
-                        <Brain className="w-4 h-4" />
-                        <div>
-                          <div>OpenAI GPT-4</div>
-                          <div className="text-xs text-muted-foreground">Advanced AI insights & recommendations</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="anthropic">
-                      <div className="flex items-center gap-2">
-                        <Brain className="w-4 h-4" />
-                        <div>
-                          <div>Anthropic Claude</div>
-                          <div className="text-xs text-muted-foreground">Deep reasoning & strategic analysis</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                {aiProvider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic</>}
-                {aiProvider === 'openai' && <><Brain className="w-3 h-3" /> OpenAI</>}
-                {aiProvider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
-              </Badge>
-              {analyticsData?.provider && analyticsData.provider !== aiProvider && (
-                <Badge variant="secondary" className="text-xs">
-                  Update Required
-                </Badge>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-4 text-sm text-muted-foreground">
-            {aiProvider === 'basic' && "Basic analytics use rule-based analysis to categorize and summarize your application data."}
-            {aiProvider === 'openai' && "OpenAI GPT-4 provides advanced pattern recognition and strategic insights for your recruitment data."}
-            {aiProvider === 'anthropic' && "Anthropic Claude excels at deep reasoning and provides detailed strategic recommendations."}
-          </div>
-        </CardContent>
-      </Card>
+      <AIProviderSettings 
+        aiProvider={aiProvider}
+        setAiProvider={setAiProvider}
+        loading={loading}
+        analyticsProvider={analyticsData?.provider}
+      />
 
       {loading && !analyticsData ? (
         <div className="flex items-center justify-center h-64">
@@ -232,173 +139,26 @@ const AIAnalytics = () => {
       ) : analyticsData ? (
         <>
           {/* Application Summary Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Application Summary
-              </CardTitle>
-              <CardDescription>
-                Total applications processed in this analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Applications Analyzed</p>
-                  <p className="text-3xl font-bold text-primary">{analyticsData.totalApplications || totalApplications}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">AI Provider</p>
-                  <Badge variant="outline" className="gap-1">
-                    {analyticsData.provider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic</>}
-                    {analyticsData.provider === 'openai' && <><Brain className="w-3 h-3" /> OpenAI</>}
-                    {analyticsData.provider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsSummary 
+            totalApplications={analyticsData.totalApplications || totalApplications}
+            provider={analyticsData.provider}
+          />
 
           {/* Category Breakdown Tiles */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Applicant Categories
-              </CardTitle>
-              <CardDescription>
-                Distribution of applicants by experience and qualification level
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {analyticsData.categoryBreakdown.map((category) => {
-                  const details = getCategoryDetails(category.category);
-                  return (
-                    <div key={category.category} className="text-center">
-                      <div className={`p-4 rounded-lg border-2 ${details.color} mb-2`}>
-                        <div className="text-2xl font-bold mb-1">{category.count}</div>
-                        <Badge variant="outline" className="text-xs font-medium">
-                          {category.category}
-                        </Badge>
-                      </div>
-                      <div className="text-sm font-medium text-foreground mb-1">{details.label}</div>
-                      <div className="text-xs text-muted-foreground">{details.description}</div>
-                      <div className="text-xs text-primary font-medium mt-1">
-                        {category.percentage.toFixed(1)}%
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <CategoryTiles categoryBreakdown={analyticsData.categoryBreakdown} />
 
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Location Conversion Rates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Top Locations
-                </CardTitle>
-                <CardDescription>
-                  Applications by geographic location
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analyticsData.locationConversion.map((location, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{location.location}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Applications</p>
-                        <p className="font-bold">{location.totalApplications}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Location and Status Breakdown */}
+          <LocationStatusBreakdown 
+            locationConversion={analyticsData.locationConversion}
+            statusBreakdown={analyticsData.statusBreakdown}
+          />
 
-            {/* Status Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Application Status
-                </CardTitle>
-                <CardDescription>
-                  Current status distribution of applications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analyticsData.statusBreakdown.map((status, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="font-medium capitalize">{status.status}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">{status.percentage.toFixed(1)}%</p>
-                        <p className="font-bold">{status.count}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* AI Insights */}
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  AI Insights
-                  {analyticsData.provider && (
-                    <Badge variant="outline" className="ml-2 gap-1 text-xs">
-                      {analyticsData.provider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic Analysis</>}
-                      {analyticsData.provider === 'openai' && <><Brain className="w-3 h-3" /> GPT-4</>}
-                      {analyticsData.provider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Key insights discovered from your application data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Key Insights:</h4>
-                    <ul className="space-y-2">
-                      {analyticsData.insights.map((insight, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                          <p className="text-sm">{insight}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium mb-2">Recommendations:</h4>
-                    <ul className="space-y-2">
-                      {analyticsData.recommendations.map((recommendation, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0" />
-                          <p className="text-sm">{recommendation}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* AI Insights */}
+          <AnalyticsInsights 
+            insights={analyticsData.insights}
+            recommendations={analyticsData.recommendations}
+            provider={analyticsData.provider}
+          />
         </>
       ) : (
         <Card>
