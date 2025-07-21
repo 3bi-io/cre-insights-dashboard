@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -26,6 +27,41 @@ serve(async (req) => {
     const cdlStats = { yes: 0, no: 0, unknown: 0 }
     const categoryStats = { D: 0, SR: 0, SC: 0, 'N/A': 0 }
 
+    // Helper function to get applicant category - matching applicationHelpers.ts logic
+    const getApplicantCategory = (app) => {
+      const hasCdl = app.cdl?.toLowerCase() === 'yes';
+      const hasAge = app.age?.toLowerCase() === 'yes';
+      const expValue = app.exp?.toLowerCase() || '';
+      
+      const hasMoreThan3MonthsExp = 
+        expValue.includes('more than 3') || 
+        expValue.includes('>3') || 
+        expValue.includes('over 3') ||
+        expValue.includes('4') || expValue.includes('5') || expValue.includes('6') ||
+        expValue.includes('year') || expValue.includes('experienced');
+      
+      const hasLessThan3MonthsExp = 
+        expValue.includes('less than 3') || 
+        expValue.includes('<3') || 
+        expValue.includes('under 3') ||
+        expValue.includes('1') || expValue.includes('2') || 
+        expValue.includes('beginner') || expValue.includes('new');
+
+      if (hasCdl && hasAge && hasMoreThan3MonthsExp) {
+        return 'D'; // Experienced Driver
+      }
+      
+      if (hasCdl && hasAge && hasLessThan3MonthsExp) {
+        return 'SC'; // New CDL Holder
+      }
+      
+      if (!hasCdl && hasAge && hasLessThan3MonthsExp) {
+        return 'SR'; // Student Ready
+      }
+
+      return 'N/A'; // Uncategorized
+    };
+
     applications.forEach(app => {
       // Location analysis
       const location = app.city && app.state ? `${app.city}, ${app.state}` : 'Unknown Location'
@@ -49,32 +85,9 @@ serve(async (req) => {
       else if (app.cdl === 'No') cdlStats.no++
       else cdlStats.unknown++
 
-      // Category analysis (D, SC, SR, N/A) based on applications page rules
-      const hasCDL = app.cdl === 'Yes' || app.cdl === 'yes'
-      const hasAge = app.age && parseInt(app.age) >= 21 // Age requirement
-      const experienceMonths = app.months || app.exp || ''
-      
-      // Parse experience to determine if 3+ months
-      const has3MonthsExp = experienceMonths.includes('3+') || 
-                           experienceMonths.includes('6+') ||
-                           experienceMonths.includes('12+') ||
-                           experienceMonths.includes('24+') ||
-                           experienceMonths.includes('36+') ||
-                           experienceMonths.includes('48+') ||
-                           experienceMonths.includes('More than 3 months') ||
-                           experienceMonths.includes('year') ||
-                           (experienceMonths.match(/\d+/) && parseInt(experienceMonths.match(/\d+/)[0]) >= 3)
-      
-      // Apply categorization rules from applications page
-      if (hasCDL && hasAge && has3MonthsExp) {
-        categoryStats.D++ // D = Experienced Driver (CDL + Age + 3+ months exp)
-      } else if (hasCDL && hasAge && !has3MonthsExp) {
-        categoryStats.SC++ // SC = New CDL Holder (CDL + Age + <3 months exp)
-      } else if (!hasCDL && hasAge && !has3MonthsExp) {
-        categoryStats.SR++ // SR = Student Ready (No CDL + Age + <3 months exp)
-      } else {
-        categoryStats['N/A']++ // N/A = Uncategorized (Other combinations)
-      }
+      // Category analysis using the corrected logic
+      const category = getApplicantCategory(app);
+      categoryStats[category]++;
     })
 
     // Convert to arrays and sort
