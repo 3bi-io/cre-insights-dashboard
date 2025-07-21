@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       city: formData.city,
       state: formData.state,
       zip: formData.zip,
-      age: formData.age,
+      age: formData.over21,
       cdl: formData.cdl,
       exp: formData.experience,
       drug: formData.drug,
