@@ -1,177 +1,190 @@
 
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+} from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, LogOut, Building, MapPin, Megaphone, Link, Mic, Target, Shield, ChevronRight } from 'lucide-react';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { LogOut } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  LayoutDashboard, 
+  BriefcaseIcon, 
+  Users, 
+  Settings, 
+  BarChart3,
+  Building,
+  MessageSquare,
+  Phone,
+  Route,
+  Share2,
+  Shield,
+  FileImage
+} from 'lucide-react';
+
 const AppSidebar = () => {
   const location = useLocation();
-  const {
-    setOpenMobile
-  } = useSidebar();
-  const isMobile = useIsMobile();
-  const navigationItems = [{
-    path: '/dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard
-  }, {
-    path: '/dashboard/jobs',
-    label: 'Job Listings',
-    icon: BriefcaseIcon
-  }, {
-    path: '/dashboard/campaigns',
-    label: 'Campaigns',
-    icon: Target
-  }, {
-    path: '/dashboard/applications',
-    label: 'Applications',
-    icon: Users
-  }, {
-    path: '/dashboard/routes',
-    label: 'Routes',
-    icon: MapPin
-  }, {
-    path: '/dashboard/platforms',
-    label: 'Platforms',
-    icon: Megaphone
-  }, {
-    path: '/dashboard/clients',
-    label: 'Clients',
-    icon: Building
-  }];
-  const settingsItems = [{
-    path: '/dashboard/tenstreet',
-    label: 'Tenstreet Integration',
-    icon: Link
-  }, {
-    path: '/dashboard/voice-agent',
-    label: 'Voice Agent',
-    icon: Mic
-  }, {
-    path: '/dashboard/privacy-controls',
-    label: 'Privacy Controls',
-    icon: Shield
-  }, {
-    path: '/dashboard/settings',
-    label: 'General Settings',
-    icon: Settings
-  }];
+  const { user, userRole, signOut } = useAuth();
+
+  const navigationItems = [
+    { 
+      group: "Analytics", 
+      items: [
+        { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/dashboard/ai-impact', label: 'AI Impact', icon: BarChart3 },
+      ]
+    },
+    { 
+      group: "Recruitment", 
+      items: [
+        { path: '/dashboard/jobs', label: 'Job Listings', icon: BriefcaseIcon },
+        { path: '/dashboard/applications', label: 'Applications', icon: Users },
+        { path: '/dashboard/campaigns', label: 'Campaigns', icon: MessageSquare },
+        { path: '/dashboard/voice-agent', label: 'Voice Agent', icon: Phone },
+      ]
+    },
+    { 
+      group: "Management", 
+      items: [
+        { path: '/dashboard/routes', label: 'Routes', icon: Route },
+        { path: '/dashboard/platforms', label: 'Platforms', icon: Share2 },
+        { path: '/dashboard/clients', label: 'Clients', icon: Building },
+        { path: '/dashboard/tenstreet', label: 'Tenstreet', icon: Share2 },
+        { path: '/dashboard/media', label: 'Media', icon: FileImage },
+      ]
+    },
+    { 
+      group: "Settings", 
+      items: [
+        { path: '/dashboard/privacy-controls', label: 'Privacy Controls', icon: Shield },
+        { path: '/dashboard/settings', label: 'Settings', icon: Settings },
+      ]
+    },
+  ];
+
   const isActive = (path: string) => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard';
     }
-    return location.pathname.startsWith(path);
+    return location.pathname === path;
   };
-  const isSettingsActive = () => {
-    return settingsItems.some(item => isActive(item.path));
+
+  const handleSignOut = async () => {
+    await signOut();
   };
-  return <Sidebar collapsible="offcanvas" className="border-r">
-      <SidebarHeader className="border-b px-4 py-4 shrink-0">
-        <div className="flex items-center justify-between">
-          <img src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" alt="C.R. England" className="h-8 w-auto" />
-          
+
+  const getRoleBadgeColor = (role: string | null) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'moderator':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user?.email) return 'U';
+    return user.email.charAt(0).toUpperCase();
+  };
+
+  return (
+    <Sidebar>
+      <SidebarHeader className="border-b">
+        <div className="flex items-center gap-2 px-4 py-3">
+          <img 
+            src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+            alt="C.R. England" 
+            className="h-8 w-auto"
+          />
+          <span className="font-semibold text-lg">Analytics</span>
         </div>
       </SidebarHeader>
-
-      <SidebarContent className="flex-1 overflow-y-auto">
-        <div className="px-2 py-4">
-          <SidebarGroup>
-            <SidebarGroupLabel className="px-2 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Navigation
-            </SidebarGroupLabel>
+      
+      <SidebarContent>
+        {navigationItems.map((group) => (
+          <SidebarGroup key={group.group}>
+            <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="space-y-1">
-                {navigationItems.map(item => {
-                const Icon = item.icon;
-                const active = isActive(item.path);
-                return <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton asChild isActive={active} className={`
-                          relative group transition-all duration-200 
-                          ${active ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-accent hover:text-accent-foreground'}
-                          h-10 px-3
-                        `}>
-                        <NavLink to={item.path} className="flex items-center w-full gap-3" onClick={() => {
-                      if (isMobile) {
-                        setTimeout(() => setOpenMobile(false), 150);
-                      }
-                    }}>
-                          <Icon className={`
-                            w-4 h-4
-                            ${active ? 'text-primary-foreground' : ''}
-                            transition-transform group-hover:scale-110
-                          `} />
-                          <span className="text-sm font-medium">
-                            {item.label}
-                          </span>
-                          {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-foreground rounded-r-full" />}
-                        </NavLink>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton asChild isActive={isActive(item.path)}>
+                        <Link to={item.path} className="flex items-center gap-3">
+                          <Icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </Link>
                       </SidebarMenuButton>
-                    </SidebarMenuItem>;
-              })}
-
-                {/* Settings with submenu */}
-                <SidebarMenuItem>
-                  <Collapsible defaultOpen={isSettingsActive()}>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton className={`
-                          relative group transition-all duration-200 
-                          ${isSettingsActive() ? 'bg-primary text-primary-foreground shadow-sm font-medium' : 'hover:bg-accent hover:text-accent-foreground'}
-                          h-10 px-3
-                        `}>
-                        <div className="flex items-center w-full gap-3">
-                          <Settings className={`
-                            w-4 h-4
-                            ${isSettingsActive() ? 'text-primary-foreground' : ''}
-                            transition-transform group-hover:scale-110
-                          `} />
-                          <span className="text-sm font-medium">
-                            Settings
-                          </span>
-                          <ChevronRight className={`
-                            w-4 h-4 ml-auto transition-transform duration-200
-                            ${isSettingsActive() ? 'rotate-90' : ''}
-                          `} />
-                        </div>
-                        {isSettingsActive() && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-foreground rounded-r-full" />}
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {settingsItems.map(item => {
-                        const Icon = item.icon;
-                        const active = isActive(item.path);
-                        return <SidebarMenuSubItem key={item.path}>
-                              <SidebarMenuSubButton asChild isActive={active}>
-                                <NavLink to={item.path} className="flex items-center w-full gap-3" onClick={() => {
-                              if (isMobile) {
-                                setTimeout(() => setOpenMobile(false), 150);
-                              }
-                            }}>
-                                  <Icon className="w-4 h-4" />
-                                  <span className="text-sm">
-                                    {item.label}
-                                  </span>
-                                </NavLink>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>;
-                      })}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </SidebarMenuItem>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        </div>
+        ))}
       </SidebarContent>
-
-      <SidebarFooter className="border-t px-4 py-4 shrink-0">
-        {/* Footer is now empty - user status moved to header */}
+      
+      <SidebarFooter className="border-t">
+        {user && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className="h-12 hover:bg-accent">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary text-primary-foreground font-medium text-sm">
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col items-start text-left">
+                      <span className="text-sm font-medium truncate max-w-32">
+                        {user.email}
+                      </span>
+                      {userRole && (
+                        <Badge className={`${getRoleBadgeColor(userRole)} text-xs`}>
+                          {userRole}
+                        </Badge>
+                      )}
+                    </div>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" className="w-56">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarFooter>
-    </Sidebar>;
+    </Sidebar>
+  );
 };
+
 export default AppSidebar;

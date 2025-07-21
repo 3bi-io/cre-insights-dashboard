@@ -26,6 +26,7 @@ import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
 import ThankYou from "./pages/ThankYou";
+import Media from "./pages/Media";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => (
                 <Route path="platforms" element={<Platforms />} />
                 <Route path="clients" element={<Clients />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="media" element={<Media />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
