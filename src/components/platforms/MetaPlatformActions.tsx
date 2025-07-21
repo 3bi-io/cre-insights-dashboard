@@ -453,7 +453,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       </Card>
 
       {/* AI-Powered Meta Spend Metrics */}
-      <MetaSpendMetrics dateRange={dateRange} />
+      <MetaSpendMetrics />
     </div>
   );
 };
