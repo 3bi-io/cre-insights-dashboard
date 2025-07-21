@@ -29,8 +29,8 @@ interface MetaAnalyticsData {
     totalImpressions: number;
     totalClicks: number;
     totalReach: number;
-    totalLeads: number;
-    costPerLead: number;
+    totalResults: number;
+    costPerResult: number;
     avgCTR: number;
     avgCPM: number;
     avgCPC: number;
@@ -219,9 +219,9 @@ const MetaSpendAnalytics = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Results (Leads)</p>
+                    <p className="text-sm text-muted-foreground">Results</p>
                     <p className="text-2xl font-bold text-primary">
-                      {analyticsData.summary.totalLeads}
+                      {analyticsData.summary.totalResults}
                     </p>
                   </div>
                   <Users className="w-8 h-8 text-green-500" />
@@ -235,10 +235,10 @@ const MetaSpendAnalytics = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Cost per Result</p>
                     <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(analyticsData.summary.costPerLead)}
+                      {formatCurrency(analyticsData.summary.costPerResult)}
                     </p>
-                    <Badge variant={analyticsData.summary.costPerLead < 50 ? "default" : "secondary"} className="text-xs mt-1">
-                      {analyticsData.summary.costPerLead < 50 ? "Excellent" : "High"}
+                    <Badge variant={analyticsData.summary.costPerResult < 50 ? "default" : "secondary"} className="text-xs mt-1">
+                      {analyticsData.summary.costPerResult < 50 ? "Excellent" : "High"}
                     </Badge>
                   </div>
                   <Target className="w-8 h-8 text-purple-500" />
