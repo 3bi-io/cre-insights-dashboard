@@ -23,6 +23,35 @@ interface MetaCampaign {
   updated_time: string;
 }
 
+interface MetaAdSet {
+  id: string;
+  name: string;
+  status: string;
+  targeting?: any;
+  bid_amount?: string;
+  daily_budget?: string;
+  lifetime_budget?: string;
+  start_time?: string;
+  end_time?: string;
+  created_time: string;
+  updated_time: string;
+  campaign_id: string;
+}
+
+interface MetaAd {
+  id: string;
+  name: string;
+  status: string;
+  creative?: {
+    id: string;
+  };
+  preview_shareable_link?: string;
+  created_time: string;
+  updated_time: string;
+  adset_id: string;
+  campaign_id: string;
+}
+
 interface MetaInsight {
   date_start: string;
   date_stop: string;
@@ -83,6 +112,18 @@ serve(async (req) => {
           throw new Error('Account ID is required for syncing campaigns');
         }
         return await syncCampaigns(user.id, accountId, metaAccessToken, supabase);
+      
+      case 'sync_adsets':
+        if (!accountId) {
+          throw new Error('Account ID is required for syncing ad sets');
+        }
+        return await syncAdSets(user.id, accountId, campaignId, metaAccessToken, supabase);
+      
+      case 'sync_ads':
+        if (!accountId) {
+          throw new Error('Account ID is required for syncing ads');
+        }
+        return await syncAds(user.id, accountId, campaignId, metaAccessToken, supabase);
       
       case 'sync_insights':
         if (!accountId) {
@@ -288,6 +329,133 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
       success: true, 
       message: `Synced ${syncResults.length} insight records`,
       insights: syncResults 
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function syncAdSets(userId: string, accountId: string, campaignId: string | undefined, accessToken: string, supabase: any) {
+  console.log(`Syncing ad sets for account: ${accountId}, campaign: ${campaignId || 'all'}`);
+  
+  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const cleanAccountId = accountId.replace(/^act_/, '');
+  
+  let endpoint: string;
+  if (campaignId) {
+    endpoint = `https://graph.facebook.com/v18.0/${campaignId}/adsets`;
+  } else {
+    endpoint = `https://graph.facebook.com/v18.0/${formattedAccountId}/adsets`;
+  }
+  
+  const fields = 'id,name,status,targeting,bid_amount,daily_budget,lifetime_budget,start_time,end_time,created_time,updated_time,campaign_id';
+  const response = await fetch(`${endpoint}?fields=${fields}&access_token=${accessToken}`);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
+  }
+  
+  const { data: adsets }: { data: MetaAdSet[] } = await response.json();
+  console.log(`Found ${adsets.length} ad sets`);
+
+  const syncResults = [];
+  for (const adset of adsets) {
+    const { error } = await supabase
+      .from('meta_ad_sets')
+      .upsert({
+        user_id: userId,
+        account_id: cleanAccountId,
+        campaign_id: adset.campaign_id,
+        adset_id: adset.id,
+        adset_name: adset.name,
+        status: adset.status,
+        targeting: JSON.stringify(adset.targeting),
+        bid_amount: adset.bid_amount ? parseFloat(adset.bid_amount) : null,
+        daily_budget: adset.daily_budget ? parseFloat(adset.daily_budget) : null,
+        lifetime_budget: adset.lifetime_budget ? parseFloat(adset.lifetime_budget) : null,
+        start_time: adset.start_time,
+        end_time: adset.end_time,
+        created_time: adset.created_time,
+        updated_time: adset.updated_time,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,adset_id'
+      });
+
+    if (error) {
+      console.error(`Error syncing ad set ${adset.id}:`, error);
+    } else {
+      syncResults.push({ adset_id: adset.id, status: 'synced' });
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: `Synced ${syncResults.length} ad sets`,
+      adsets: syncResults 
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function syncAds(userId: string, accountId: string, campaignId: string | undefined, accessToken: string, supabase: any) {
+  console.log(`Syncing ads for account: ${accountId}, campaign: ${campaignId || 'all'}`);
+  
+  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const cleanAccountId = accountId.replace(/^act_/, '');
+  
+  let endpoint: string;
+  if (campaignId) {
+    endpoint = `https://graph.facebook.com/v18.0/${campaignId}/ads`;
+  } else {
+    endpoint = `https://graph.facebook.com/v18.0/${formattedAccountId}/ads`;
+  }
+  
+  const fields = 'id,name,status,creative{id},preview_shareable_link,created_time,updated_time,adset_id,campaign_id';
+  const response = await fetch(`${endpoint}?fields=${fields}&access_token=${accessToken}`);
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
+  }
+  
+  const { data: ads }: { data: MetaAd[] } = await response.json();
+  console.log(`Found ${ads.length} ads`);
+
+  const syncResults = [];
+  for (const ad of ads) {
+    const { error } = await supabase
+      .from('meta_ads')
+      .upsert({
+        user_id: userId,
+        account_id: cleanAccountId,
+        campaign_id: ad.campaign_id,
+        adset_id: ad.adset_id,
+        ad_id: ad.id,
+        ad_name: ad.name,
+        status: ad.status,
+        creative_id: ad.creative?.id || null,
+        preview_url: ad.preview_shareable_link || null,
+        created_time: ad.created_time,
+        updated_time: ad.updated_time,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,ad_id'
+      });
+
+    if (error) {
+      console.error(`Error syncing ad ${ad.id}:`, error);
+    } else {
+      syncResults.push({ ad_id: ad.id, status: 'synced' });
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: `Synced ${syncResults.length} ads`,
+      ads: syncResults 
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );

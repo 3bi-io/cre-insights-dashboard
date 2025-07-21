@@ -885,6 +885,117 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_ad_sets: {
+        Row: {
+          account_id: string
+          adset_id: string
+          adset_name: string | null
+          bid_amount: number | null
+          campaign_id: string
+          created_at: string
+          created_time: string | null
+          daily_budget: number | null
+          end_time: string | null
+          id: string
+          lifetime_budget: number | null
+          start_time: string | null
+          status: string | null
+          targeting: string | null
+          updated_at: string
+          updated_time: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          adset_id: string
+          adset_name?: string | null
+          bid_amount?: number | null
+          campaign_id: string
+          created_at?: string
+          created_time?: string | null
+          daily_budget?: number | null
+          end_time?: string | null
+          id?: string
+          lifetime_budget?: number | null
+          start_time?: string | null
+          status?: string | null
+          targeting?: string | null
+          updated_at?: string
+          updated_time?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          adset_id?: string
+          adset_name?: string | null
+          bid_amount?: number | null
+          campaign_id?: string
+          created_at?: string
+          created_time?: string | null
+          daily_budget?: number | null
+          end_time?: string | null
+          id?: string
+          lifetime_budget?: number | null
+          start_time?: string | null
+          status?: string | null
+          targeting?: string | null
+          updated_at?: string
+          updated_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meta_ads: {
+        Row: {
+          account_id: string
+          ad_id: string
+          ad_name: string | null
+          adset_id: string
+          campaign_id: string
+          created_at: string
+          created_time: string | null
+          creative_id: string | null
+          id: string
+          preview_url: string | null
+          status: string | null
+          updated_at: string
+          updated_time: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          ad_id: string
+          ad_name?: string | null
+          adset_id: string
+          campaign_id: string
+          created_at?: string
+          created_time?: string | null
+          creative_id?: string | null
+          id?: string
+          preview_url?: string | null
+          status?: string | null
+          updated_at?: string
+          updated_time?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          ad_id?: string
+          ad_name?: string | null
+          adset_id?: string
+          campaign_id?: string
+          created_at?: string
+          created_time?: string | null
+          creative_id?: string | null
+          id?: string
+          preview_url?: string | null
+          status?: string | null
+          updated_at?: string
+          updated_time?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       meta_campaigns: {
         Row: {
           account_id: string
