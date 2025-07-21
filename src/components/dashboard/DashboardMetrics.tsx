@@ -5,11 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import MetricsCard from '@/components/MetricsCard';
 import DateRangeFilter from '@/components/platforms/DateRangeFilter';
 import { DollarSign, Users, TrendingUp, Target, Briefcase } from 'lucide-react';
+import { useCostPerLead } from '@/hooks/useCostPerLead';
 
 const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
 
 const DashboardMetrics = () => {
   const [dateRange, setDateRange] = useState('last_30d');
+  const { data: costData } = useCostPerLead(dateRange);
 
   const { data: metrics, isLoading, refetch } = useQuery({
     queryKey: ['dashboard-metrics', dateRange],
@@ -64,14 +66,12 @@ const DashboardMetrics = () => {
       const totalLeads = applicationsData.data?.length || 0;
       const totalJobs = jobsData.data?.length || 0;
       const totalReach = metaSpendData.data?.reduce((sum, item) => sum + Number(item.reach || 0), 0) || 0;
-      const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
       
       return {
         totalSpend,
         totalLeads,
         totalJobs,
-        totalReach,
-        costPerLead
+        totalReach
       };
     },
     // Refresh every 30 seconds to stay in sync
@@ -102,7 +102,7 @@ const DashboardMetrics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8">
         <MetricsCard
           title={`Meta Lead Spend (${dateRange.replace('_', ' ')})`}
-          value={`$${metrics?.totalSpend.toLocaleString() || '0'}`}
+          value={`$${costData?.metaSpend.toLocaleString() || '0'}`}
           change="--"
           changeType="neutral"
           icon={DollarSign}
@@ -110,7 +110,7 @@ const DashboardMetrics = () => {
         />
         <MetricsCard
           title="Total Leads Generated"
-          value={metrics?.totalLeads.toLocaleString() || '0'}
+          value={costData?.metaLeads.toLocaleString() || '0'}
           change="--"
           changeType="neutral"
           icon={Users}
@@ -126,7 +126,7 @@ const DashboardMetrics = () => {
         />
         <MetricsCard
           title="Cost per Lead"
-          value={`$${metrics?.costPerLead.toFixed(2) || '0.00'}`}
+          value={`$${costData?.metaCostPerLead.toFixed(2) || '0.00'}`}
           change="--"
           changeType="neutral"
           icon={Target}

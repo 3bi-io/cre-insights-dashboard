@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, AlertCircle, Lightbulb, RefreshCw } from 'lucide-react';
 import { useMetaSpendAnalytics } from '@/hooks/useMetaSpendAnalytics';
+import { useCostPerLead } from '@/hooks/useCostPerLead';
 import { Button } from '@/components/ui/button';
 
 interface MetaSpendMetricsProps {
@@ -14,6 +15,7 @@ interface MetaSpendMetricsProps {
 
 const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
   const { metrics, isLoading, error, refetch } = useMetaSpendAnalytics(dateRange);
+  const { data: costData } = useCostPerLead(dateRange);
 
   if (isLoading) {
     return (
@@ -112,7 +114,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
           <div className="text-center p-6 bg-green-50 dark:bg-green-950/20 rounded-lg">
             <Users className="w-8 h-8 mx-auto mb-3 text-green-600" />
             <div className="text-3xl font-bold text-green-600">
-              {formatNumber(metrics.totalLeads)}
+              {formatNumber(costData?.metaLeads || 0)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">Total Leads</div>
           </div>
@@ -120,7 +122,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
           <div className="text-center p-6 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
             <DollarSign className="w-8 h-8 mx-auto mb-3 text-blue-600" />
             <div className="text-3xl font-bold text-blue-600">
-              {formatCurrency(metrics.costPerLead)}
+              {formatCurrency(costData?.metaCostPerLead || 0)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">Cost per Lead</div>
           </div>
@@ -128,7 +130,7 @@ const MetaSpendMetrics: React.FC<MetaSpendMetricsProps> = ({ dateRange }) => {
           <div className="text-center p-6 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
             <Target className="w-8 h-8 mx-auto mb-3 text-purple-600" />
             <div className="text-3xl font-bold text-purple-600">
-              {formatCurrency(metrics.totalSpend)}
+              {formatCurrency(costData?.metaSpend || 0)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">Total Spend</div>
           </div>
