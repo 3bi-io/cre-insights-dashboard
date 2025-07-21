@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -30,8 +29,7 @@ import {
   LayoutDashboard, 
   BriefcaseIcon, 
   Users, 
-  Settings, 
-  BarChart3,
+  Settings,
   Building,
   MessageSquare,
   Phone,
@@ -50,7 +48,6 @@ const AppSidebar = () => {
       group: "Analytics", 
       items: [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { path: '/dashboard/ai-impact', label: 'AI Impact', icon: BarChart3 },
       ]
     },
     { 
