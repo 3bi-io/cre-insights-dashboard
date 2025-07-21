@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -160,7 +159,7 @@ const AppSidebar = () => {
 
         {/* Accordion groups */}
         <div className="px-2">
-          <Accordion type="multiple" defaultValue={["Management", "Settings"]}>
+          <Accordion type="multiple" defaultValue={[]}>
             {accordionGroups.map((group) => (
               <AccordionItem key={group.group} value={group.group}>
                 <AccordionTrigger className="text-xs font-medium text-sidebar-foreground/70 hover:no-underline py-2">
