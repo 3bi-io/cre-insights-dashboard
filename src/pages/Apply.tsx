@@ -1,100 +1,33 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import React, { Suspense } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useApplicationForm } from '@/hooks/useApplicationForm';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+// Lazy load form sections for better performance
+const PersonalInfoSection = React.lazy(() => import('@/components/apply/PersonalInfoSection').then(module => ({ default: module.PersonalInfoSection })));
+const CDLInfoSection = React.lazy(() => import('@/components/apply/CDLInfoSection').then(module => ({ default: module.CDLInfoSection })));
+const BackgroundInfoSection = React.lazy(() => import('@/components/apply/BackgroundInfoSection').then(module => ({ default: module.BackgroundInfoSection })));
+const ConsentSection = React.lazy(() => import('@/components/apply/ConsentSection').then(module => ({ default: module.ConsentSection })));
+
+// Loading skeleton component
+const SectionSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="h-6 bg-muted rounded w-1/3"></div>
+    <div className="space-y-2">
+      <div className="h-4 bg-muted rounded w-1/4"></div>
+      <div className="h-10 bg-muted rounded"></div>
+    </div>
+    <div className="space-y-2">
+      <div className="h-4 bg-muted rounded w-1/4"></div>
+      <div className="h-10 bg-muted rounded"></div>
+    </div>
+  </div>
+);
 
 const Apply = () => {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    city: '',
-    state: '',
-    zip: '',
-    over21: '',
-    cdl: '',
-    experience: '',
-    drug: '',
-    veteran: '',
-    consent: '',
-    privacy: '',
-  });
-
-  const navigate = useNavigate();
-
-  const formatPhoneNumber = (phone: string) => {
-    // Remove all non-digit characters
-    const digits = phone.replace(/\D/g, '');
-    
-    // Add +1 prefix if US number and format as +1XXXXXXXXXX
-    if (digits.length === 10) {
-      return `+1${digits}`;
-    } else if (digits.length === 11 && digits.startsWith('1')) {
-      return `+${digits}`;
-    }
-    return `+1${digits}`;
-  };
-
-  const getExperienceValue = (months: string) => {
-    if (!months) return '';
-    
-    const monthsNum = parseInt(months);
-    if (monthsNum < 3) {
-      return 'Less than 3 months';
-    } else {
-      return 'More than 3 months';
-    }
-  };
-
-  const submitApplication = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      const formattedData = {
-        ...data,
-        phone: formatPhoneNumber(data.phone),
-        months: data.experience, // Map experience to months field
-        exp: getExperienceValue(data.experience), // Set exp based on months
-      };
-
-      const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formattedData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit application');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast.success('Application submitted successfully!');
-      navigate('/thank-you');
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to submit application');
-    },
-  });
-
-  const handleInputChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    submitApplication.mutate(formData);
-  };
+  const { formData, handleInputChange, handleSubmit, isSubmitting } = useApplicationForm();
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,199 +41,40 @@ const Apply = () => {
           <Card>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information Section */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Personal Information</h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange('firstName', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange('lastName', e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
+                <Suspense fallback={<SectionSkeleton />}>
+                  <PersonalInfoSection 
+                    formData={formData} 
+                    onInputChange={handleInputChange} 
+                  />
+                </Suspense>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        placeholder="(555) 123-4567"
-                        required
-                      />
-                    </div>
-                  </div>
+                <Suspense fallback={<SectionSkeleton />}>
+                  <CDLInfoSection 
+                    formData={formData} 
+                    onInputChange={handleInputChange} 
+                  />
+                </Suspense>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        value={formData.city}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        value={formData.state}
-                        onChange={(e) => handleInputChange('state', e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="zip">ZIP Code</Label>
-                      <Input
-                        id="zip"
-                        value={formData.zip}
-                        onChange={(e) => handleInputChange('zip', e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
+                <Suspense fallback={<SectionSkeleton />}>
+                  <BackgroundInfoSection 
+                    formData={formData} 
+                    onInputChange={handleInputChange} 
+                  />
+                </Suspense>
 
-                  <div>
-                    <Label htmlFor="over21">Are you over 21?</Label>
-                    <Select value={formData.over21} onValueChange={(value) => handleInputChange('over21', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* CDL Information Section */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">CDL Information</h2>
-                  
-                  <div>
-                    <Label htmlFor="cdl">Do you have a CDL-A license?</Label>
-                    <Select value={formData.cdl} onValueChange={(value) => handleInputChange('cdl', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select CDL status..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                        <SelectItem value="Permit only">Permit only</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="experience">Months of CDL-A driving experience?</Label>
-                    <Select value={formData.experience} onValueChange={(value) => handleInputChange('experience', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select months of experience..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 48 }, (_, i) => i + 1).map(month => (
-                          <SelectItem key={month} value={month.toString()}>{month}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Background Information Section */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Background Information</h2>
-                  
-                  <div>
-                    <Label htmlFor="drug">Can you pass a drug test?</Label>
-                    <Select value={formData.drug} onValueChange={(value) => handleInputChange('drug', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="veteran">Are you a veteran?</Label>
-                    <Select value={formData.veteran} onValueChange={(value) => handleInputChange('veteran', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Consent Section */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground border-b pb-2">Consent</h2>
-                  
-                  <div>
-                    <Label htmlFor="consent">Do you agree to receive SMS messages from C.R. England?</Label>
-                    <Select value={formData.consent} onValueChange={(value) => handleInputChange('consent', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="privacy">Do you agree to our privacy policy?</Label>
-                    <Select value={formData.privacy} onValueChange={(value) => handleInputChange('privacy', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Yes">Yes</SelectItem>
-                        <SelectItem value="No">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                <Suspense fallback={<SectionSkeleton />}>
+                  <ConsentSection 
+                    formData={formData} 
+                    onInputChange={handleInputChange} 
+                  />
+                </Suspense>
 
                 <div className="flex items-center justify-between pt-6">
                   <Link to="/" className="text-primary hover:underline">
                     ← Back to Home
                   </Link>
-                  <Button type="submit" disabled={submitApplication.isPending}>
-                    {submitApplication.isPending ? 'Submitting...' : 'Submit Application'}
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
                   </Button>
                 </div>
               </form>
