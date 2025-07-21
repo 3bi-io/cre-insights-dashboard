@@ -32,16 +32,6 @@ const ThankYou = () => {
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h3 className="font-semibold text-foreground mb-2">What happens next?</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1 text-left">
-                    <li>• Application review (1-2 business days)</li>
-                    <li>• Phone screening with our team</li>
-                    <li>• Background and reference checks</li>
-                    <li>• Final interview and job offer</li>
-                  </ul>
-                </div>
-
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link to="/">
                     <Button variant="outline">
