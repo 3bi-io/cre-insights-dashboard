@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -19,7 +20,7 @@ const Apply = () => {
     city: '',
     state: '',
     zip: '',
-    age: '',
+    over21: '',
     cdl: '',
     experience: '',
     drug: '',
@@ -31,14 +32,45 @@ const Apply = () => {
 
   const navigate = useNavigate();
 
+  const formatPhoneNumber = (phone: string) => {
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    
+    // Add +1 prefix if US number and format as +1XXXXXXXXXX
+    if (digits.length === 10) {
+      return `+1${digits}`;
+    } else if (digits.length === 11 && digits.startsWith('1')) {
+      return `+${digits}`;
+    }
+    return `+1${digits}`;
+  };
+
+  const getExperienceValue = (months: string) => {
+    if (!months) return '';
+    
+    const monthsNum = parseInt(months);
+    if (monthsNum < 3) {
+      return 'Less than 3 months';
+    } else {
+      return 'More than 3 months';
+    }
+  };
+
   const submitApplication = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const formattedData = {
+        ...data,
+        phone: formatPhoneNumber(data.phone),
+        months: data.experience, // Map experience to months field
+        exp: getExperienceValue(data.experience), // Set exp based on months
+      };
+
       const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formattedData),
       });
 
       if (!response.ok) {
@@ -121,6 +153,7 @@ const Apply = () => {
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
+                        placeholder="(555) 123-4567"
                         required
                       />
                     </div>
@@ -157,15 +190,14 @@ const Apply = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="age">Age</Label>
-                    <Select value={formData.age} onValueChange={(value) => handleInputChange('age', value)}>
+                    <Label htmlFor="over21">Are you over 21?</Label>
+                    <Select value={formData.over21} onValueChange={(value) => handleInputChange('over21', value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select your age..." />
+                        <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: 50 }, (_, i) => 21 + i).map(age => (
-                          <SelectItem key={age} value={age.toString()}>{age}</SelectItem>
-                        ))}
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -182,9 +214,9 @@ const Apply = () => {
                         <SelectValue placeholder="Select CDL status..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
-                        <SelectItem value="permit">Permit only</SelectItem>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                        <SelectItem value="Permit only">Permit only</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -214,8 +246,8 @@ const Apply = () => {
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -227,8 +259,8 @@ const Apply = () => {
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -261,8 +293,8 @@ const Apply = () => {
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -274,8 +306,8 @@ const Apply = () => {
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="yes">Yes</SelectItem>
-                        <SelectItem value="no">No</SelectItem>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
