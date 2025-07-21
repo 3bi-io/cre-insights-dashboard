@@ -7,7 +7,7 @@ import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
 
 const DashboardHeader = () => {
-  const { data: applications = [] } = useApplications();
+  const { applications = [] } = useApplications();
   const { toast } = useToast();
 
   const handleExportPDF = () => {
