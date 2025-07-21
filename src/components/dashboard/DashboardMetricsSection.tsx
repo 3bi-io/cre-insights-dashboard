@@ -1,6 +1,8 @@
 import React from 'react';
 import DashboardMetrics from './DashboardMetrics';
+
 const DashboardMetricsSection = () => {
-  return;
+  return <DashboardMetrics />;
 };
+
 export default DashboardMetricsSection;
