@@ -61,13 +61,24 @@ serve(async (req) => {
 
     if (adsError) throw adsError;
 
-    console.log(`Analyzing ${adSets.length} ad sets, ${campaigns.length} campaigns, ${ads.length} ads`);
+    // Fetch applications that came from Meta campaigns (Facebook/Instagram sources)
+    const { data: metaApplications, error: applicationsError } = await supabaseClient
+      .from('applications')
+      .select('*')
+      .or('source.ilike.%facebook%,source.ilike.%instagram%,source.ilike.%meta%')
+      .eq('status', 'pending'); // You can adjust this filter as needed
+
+    if (applicationsError) throw applicationsError;
+
+    console.log(`Analyzing ${adSets.length} ad sets, ${campaigns.length} campaigns, ${ads.length} ads, ${metaApplications.length} Meta leads`);
 
     // Calculate aggregate metrics
     const totalSpend = adSets.reduce((sum, adSet) => sum + (parseFloat(adSet.spend) || 0), 0);
     const totalImpressions = adSets.reduce((sum, adSet) => sum + (adSet.impressions || 0), 0);
     const totalClicks = adSets.reduce((sum, adSet) => sum + (adSet.clicks || 0), 0);
     const totalReach = adSets.reduce((sum, adSet) => sum + (adSet.reach || 0), 0);
+    const totalLeads = metaApplications.length;
+    const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
     const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const avgCPM = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
@@ -123,6 +134,8 @@ serve(async (req) => {
         totalImpressions: totalImpressions,
         totalClicks: totalClicks,
         totalReach: totalReach,
+        totalLeads: totalLeads,
+        costPerLead: costPerLead,
         avgCTR: avgCTR,
         avgCPM: avgCPM,
         avgCPC: avgCPC,
@@ -171,6 +184,9 @@ Context:
 - CTR above 1.5% is considered good for this industry
 - CPM under $15 is competitive
 - CPC under $2 is optimal for job application conversions
+- Cost per lead under $50 is excellent for recruitment
+- Total leads generated: ${totalLeads}
+- Cost per lead: $${costPerLead.toFixed(2)}
 
 Focus on:
 - Spend efficiency and budget allocation
