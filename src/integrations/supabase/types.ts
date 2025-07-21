@@ -892,12 +892,20 @@ export type Database = {
           adset_name: string | null
           bid_amount: number | null
           campaign_id: string
+          clicks: number | null
+          cpc: number | null
+          cpm: number | null
           created_at: string
           created_time: string | null
+          ctr: number | null
           daily_budget: number | null
           end_time: string | null
+          frequency: number | null
           id: string
+          impressions: number | null
           lifetime_budget: number | null
+          reach: number | null
+          spend: number | null
           start_time: string | null
           status: string | null
           targeting: string | null
@@ -911,12 +919,20 @@ export type Database = {
           adset_name?: string | null
           bid_amount?: number | null
           campaign_id: string
+          clicks?: number | null
+          cpc?: number | null
+          cpm?: number | null
           created_at?: string
           created_time?: string | null
+          ctr?: number | null
           daily_budget?: number | null
           end_time?: string | null
+          frequency?: number | null
           id?: string
+          impressions?: number | null
           lifetime_budget?: number | null
+          reach?: number | null
+          spend?: number | null
           start_time?: string | null
           status?: string | null
           targeting?: string | null
@@ -930,12 +946,20 @@ export type Database = {
           adset_name?: string | null
           bid_amount?: number | null
           campaign_id?: string
+          clicks?: number | null
+          cpc?: number | null
+          cpm?: number | null
           created_at?: string
           created_time?: string | null
+          ctr?: number | null
           daily_budget?: number | null
           end_time?: string | null
+          frequency?: number | null
           id?: string
+          impressions?: number | null
           lifetime_budget?: number | null
+          reach?: number | null
+          spend?: number | null
           start_time?: string | null
           status?: string | null
           targeting?: string | null

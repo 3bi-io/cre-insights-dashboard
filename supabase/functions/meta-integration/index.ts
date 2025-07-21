@@ -335,7 +335,7 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
 }
 
 async function syncAdSets(userId: string, accountId: string, campaignId: string | undefined, accessToken: string, supabase: any) {
-  console.log(`Syncing ad sets for account: ${accountId}, campaign: ${campaignId || 'all'}`);
+  console.log(`Syncing ad sets with metrics for account: ${accountId}, campaign: ${campaignId || 'all'}`);
   
   const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
   const cleanAccountId = accountId.replace(/^act_/, '');
@@ -360,39 +360,88 @@ async function syncAdSets(userId: string, accountId: string, campaignId: string 
 
   const syncResults = [];
   for (const adset of adsets) {
-    const { error } = await supabase
-      .from('meta_ad_sets')
-      .upsert({
-        user_id: userId,
-        account_id: cleanAccountId,
-        campaign_id: adset.campaign_id,
-        adset_id: adset.id,
-        adset_name: adset.name,
-        status: adset.status,
-        targeting: JSON.stringify(adset.targeting),
-        bid_amount: adset.bid_amount ? parseFloat(adset.bid_amount) : null,
-        daily_budget: adset.daily_budget ? parseFloat(adset.daily_budget) : null,
-        lifetime_budget: adset.lifetime_budget ? parseFloat(adset.lifetime_budget) : null,
-        start_time: adset.start_time,
-        end_time: adset.end_time,
-        created_time: adset.created_time,
-        updated_time: adset.updated_time,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,adset_id'
-      });
+    // Get insights for this ad set
+    try {
+      const insightsResponse = await fetch(
+        `https://graph.facebook.com/v18.0/${adset.id}/insights?fields=spend,impressions,clicks,ctr,cpm,cpc,reach,frequency&date_preset=last_30d&access_token=${accessToken}`
+      );
+      
+      let insights = {};
+      if (insightsResponse.ok) {
+        const insightsData = await insightsResponse.json();
+        insights = insightsData.data?.[0] || {};
+      }
 
-    if (error) {
-      console.error(`Error syncing ad set ${adset.id}:`, error);
-    } else {
-      syncResults.push({ adset_id: adset.id, status: 'synced' });
+      const { error } = await supabase
+        .from('meta_ad_sets')
+        .upsert({
+          user_id: userId,
+          account_id: cleanAccountId,
+          campaign_id: adset.campaign_id,
+          adset_id: adset.id,
+          adset_name: adset.name,
+          status: adset.status,
+          targeting: JSON.stringify(adset.targeting),
+          bid_amount: adset.bid_amount ? parseFloat(adset.bid_amount) : null,
+          daily_budget: adset.daily_budget ? parseFloat(adset.daily_budget) : null,
+          lifetime_budget: adset.lifetime_budget ? parseFloat(adset.lifetime_budget) : null,
+          start_time: adset.start_time,
+          end_time: adset.end_time,
+          created_time: adset.created_time,
+          updated_time: adset.updated_time,
+          spend: insights.spend ? parseFloat(insights.spend) : 0,
+          impressions: insights.impressions ? parseInt(insights.impressions) : 0,
+          clicks: insights.clicks ? parseInt(insights.clicks) : 0,
+          ctr: insights.ctr ? parseFloat(insights.ctr) : 0,
+          cpm: insights.cpm ? parseFloat(insights.cpm) : 0,
+          cpc: insights.cpc ? parseFloat(insights.cpc) : 0,
+          reach: insights.reach ? parseInt(insights.reach) : 0,
+          frequency: insights.frequency ? parseFloat(insights.frequency) : 0,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,account_id,adset_id'
+        });
+
+      if (error) {
+        console.error(`Error syncing ad set ${adset.id}:`, error);
+      } else {
+        syncResults.push({ adset_id: adset.id, status: 'synced' });
+      }
+    } catch (insightError) {
+      console.error(`Error fetching insights for ad set ${adset.id}:`, insightError);
+      // Still sync the ad set without metrics
+      const { error } = await supabase
+        .from('meta_ad_sets')
+        .upsert({
+          user_id: userId,
+          account_id: cleanAccountId,
+          campaign_id: adset.campaign_id,
+          adset_id: adset.id,
+          adset_name: adset.name,
+          status: adset.status,
+          targeting: JSON.stringify(adset.targeting),
+          bid_amount: adset.bid_amount ? parseFloat(adset.bid_amount) : null,
+          daily_budget: adset.daily_budget ? parseFloat(adset.daily_budget) : null,
+          lifetime_budget: adset.lifetime_budget ? parseFloat(adset.lifetime_budget) : null,
+          start_time: adset.start_time,
+          end_time: adset.end_time,
+          created_time: adset.created_time,
+          updated_time: adset.updated_time,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,account_id,adset_id'
+        });
+
+      if (!error) {
+        syncResults.push({ adset_id: adset.id, status: 'synced_without_metrics' });
+      }
     }
   }
 
   return new Response(
     JSON.stringify({ 
       success: true, 
-      message: `Synced ${syncResults.length} ad sets`,
+      message: `Synced ${syncResults.length} ad sets with metrics`,
       adsets: syncResults 
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
