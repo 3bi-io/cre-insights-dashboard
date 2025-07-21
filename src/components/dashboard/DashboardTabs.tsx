@@ -14,7 +14,7 @@ interface DashboardTabsProps {
 const DashboardTabs: React.FC<DashboardTabsProps> = ({ activeTab, onTabChange }) => {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 max-w-lg">
+      <TabsList className="grid w-full grid-cols-3 max-w-md">
         <TabsTrigger value="dashboard" className="flex items-center gap-2">
           <LayoutGrid className="w-4 h-4" />
           Dashboard
