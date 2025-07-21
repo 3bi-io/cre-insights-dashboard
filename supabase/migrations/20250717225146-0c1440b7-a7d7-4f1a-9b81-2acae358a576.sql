@@ -1,3 +1,4 @@
+
 -- Create table for Meta ad accounts
 CREATE TABLE public.meta_ad_accounts (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -46,7 +47,8 @@ CREATE TABLE public.meta_daily_spend (
   reach INTEGER DEFAULT 0,
   frequency DECIMAL(5,2) DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  UNIQUE(user_id, account_id, date_start, COALESCE(campaign_id, ''), COALESCE(adset_id, ''), COALESCE(ad_id, ''))
 );
 
 -- Enable RLS on all Meta tables

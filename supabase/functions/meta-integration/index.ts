@@ -34,6 +34,9 @@ interface MetaInsight {
   cpc: string;
   reach: string;
   frequency: string;
+  campaign_id?: string;
+  adset_id?: string;
+  ad_id?: string;
 }
 
 serve(async (req) => {
@@ -211,17 +214,25 @@ async function syncCampaigns(userId: string, accountId: string, accessToken: str
 }
 
 async function syncInsights(userId: string, accountId: string, campaignId: string | undefined, datePreset: string, accessToken: string, supabase: any) {
-  console.log(`Syncing insights for account: ${accountId}, campaign: ${campaignId || 'all'}`);
+  console.log(`Syncing insights for account: ${accountId}, campaign: ${campaignId || 'all'}, date preset: ${datePreset}`);
   
   // Ensure proper formatting
   const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
   const cleanAccountId = accountId.replace(/^act_/, '');
   
-  const fields = 'date_start,date_stop,spend,impressions,clicks,ctr,cpm,cpc,reach,frequency';
-  const level = campaignId ? 'campaign' : 'account';
-  const endpoint = campaignId 
-    ? `https://graph.facebook.com/v18.0/${campaignId}/insights`
-    : `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`;
+  const fields = 'date_start,date_stop,spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,campaign_id,adset_id,ad_id';
+  let endpoint: string;
+  let level: string;
+  
+  if (campaignId) {
+    // Campaign-level insights
+    endpoint = `https://graph.facebook.com/v18.0/${campaignId}/insights`;
+    level = 'campaign';
+  } else {
+    // Account-level insights with campaign breakdown
+    endpoint = `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`;
+    level = 'campaign';
+  }
   
   const response = await fetch(
     `${endpoint}?fields=${fields}&level=${level}&date_preset=${datePreset}&access_token=${accessToken}`
@@ -237,12 +248,17 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
 
   const syncResults = [];
   for (const insight of insights) {
+    // Create a unique identifier for this record to handle conflicts
+    const recordId = `${cleanAccountId}_${insight.campaign_id || 'account'}_${insight.adset_id || 'none'}_${insight.ad_id || 'none'}_${insight.date_start}`;
+    
     const { error } = await supabase
       .from('meta_daily_spend')
       .upsert({
         user_id: userId,
         account_id: cleanAccountId,
-        campaign_id: campaignId || null,
+        campaign_id: insight.campaign_id || campaignId || null,
+        adset_id: insight.adset_id || null,
+        ad_id: insight.ad_id || null,
         date_start: insight.date_start,
         date_stop: insight.date_stop,
         spend: parseFloat(insight.spend) || 0,
@@ -255,11 +271,13 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
         frequency: parseFloat(insight.frequency) || 0,
         updated_at: new Date().toISOString(),
       }, {
-        onConflict: 'user_id,account_id,campaign_id,date_start'
+        onConflict: 'user_id,account_id,date_start,campaign_id,adset_id,ad_id',
+        ignoreDuplicates: false
       });
 
     if (error) {
       console.error(`Error syncing insight for ${insight.date_start}:`, error);
+      // Continue with other records even if one fails
     } else {
       syncResults.push({ date: insight.date_start, status: 'synced' });
     }

@@ -55,6 +55,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
     queryKey: ['meta-accounts'],
     queryFn: async () => {
+      console.log('Fetching Meta accounts...');
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
@@ -62,6 +63,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         .order('account_name');
       
       if (error) throw error;
+      console.log('Meta accounts fetched:', data?.length);
       return data;
     },
     retry: 2,
@@ -71,6 +73,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
     queryKey: ['meta-campaigns'],
     queryFn: async () => {
+      console.log('Fetching Meta campaigns...');
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
@@ -78,6 +81,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         .order('campaign_name');
       
       if (error) throw error;
+      console.log('Meta campaigns fetched:', data?.length);
       return data;
     },
     enabled: !!metaAccounts?.length,
@@ -129,13 +133,15 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const handleMetaAction = async (action: string, accountId?: string, campaignId?: string) => {
     setIsLoading(true);
     setCurrentAction(action);
-    setSyncProgress(0);
+    setSyncProgress(10);
     setSyncStatus(`Starting ${action}...`);
 
     try {
       console.log(`Attempting ${action} with accountId: ${accountId || CR_ENGLAND_ACCOUNT_ID}`);
       
       const metaDatePreset = getMetaDatePreset(dateRange);
+      setSyncProgress(30);
+      setSyncStatus(`Connecting to Meta API...`);
       
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: { 
@@ -151,6 +157,12 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         throw error;
       }
 
+      setSyncProgress(80);
+      setSyncStatus('Processing data...');
+      
+      // Add a small delay to show progress
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setSyncProgress(100);
       setSyncStatus('Sync completed successfully');
 
@@ -159,21 +171,24 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         description: data.message || `${action} completed successfully`,
       });
 
+      // Refresh the appropriate data
       if (action === 'sync_accounts') {
-        refetchAccounts();
+        await refetchAccounts();
       } else if (action === 'sync_campaigns') {
-        refetchCampaigns();
+        await refetchCampaigns();
       } else if (action === 'sync_insights') {
-        refetchSpend();
+        await refetchSpend();
       }
       
       onRefresh();
     } catch (error: any) {
       console.error(`Error with ${action}:`, error);
       setSyncStatus(`Error: ${error.message || 'Unknown error occurred'}`);
+      setSyncProgress(0);
+      
       toast({
         title: "Error",
-        description: `Failed to ${action}. ${error.message || 'Please check the logs and try again.'}`,
+        description: `Failed to ${action}. ${error.message || 'Please check your Meta API configuration and try again.'}`,
         variant: "destructive",
       });
     } finally {
@@ -315,7 +330,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                   <div>
                     <p className="font-medium">Sync CR England Performance Data</p>
                     <p className="text-sm text-muted-foreground">
-                      Import spend, impressions, clicks and other metrics for CR England
+                      Import spend, impressions, clicks and other metrics for CR England ({dateRange.replace('_', ' ')})
                     </p>
                   </div>
                   <Button 
