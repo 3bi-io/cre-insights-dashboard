@@ -6,6 +6,7 @@ import { Download, Webhook } from 'lucide-react';
 import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import TenstreetUpdateDialog from '@/components/applications/TenstreetUpdateDialog';
+import TenstreetUpdateModal from '@/components/applications/TenstreetUpdateModal';
 import SmsConversationDialog from '@/components/applications/SmsConversationDialog';
 import ApplicationsOverview from '@/components/applications/ApplicationsOverview';
 import ApplicationsSearch from '@/components/applications/ApplicationsSearch';
@@ -22,6 +23,7 @@ const Applications = () => {
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [tenstreetModalOpen, setTenstreetModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
@@ -42,6 +44,11 @@ const Applications = () => {
   const handleDetailsView = (application: any) => {
     setSelectedApplication(application);
     setDetailsDialogOpen(true);
+  };
+
+  const handleTenstreetUpdate = (application: any) => {
+    setSelectedApplication(application);
+    setTenstreetModalOpen(true);
   };
 
   const downloadApplicationsPDF = () => {
@@ -135,6 +142,7 @@ const Applications = () => {
                 onRecruiterAssignment={(id, recruiterId) => assignRecruiter({ applicationId: id, recruiterId })}
                 onSmsOpen={handleSmsOpen}
                 onDetailsView={handleDetailsView}
+                onTenstreetUpdate={handleTenstreetUpdate}
               />
             ))}
 
@@ -170,6 +178,18 @@ const Applications = () => {
         application={selectedApplication}
         currentRecruiterId={currentRecruiter?.id}
       />
+
+      {/* Tenstreet Update Modal */}
+      {selectedApplication && (
+        <TenstreetUpdateModal
+          isOpen={tenstreetModalOpen}
+          onClose={() => {
+            setTenstreetModalOpen(false);
+            setSelectedApplication(null);
+          }}
+          application={selectedApplication}
+        />
+      )}
     </div>
   );
 };

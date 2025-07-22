@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical } from 'lucide-react';
+import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload } from 'lucide-react';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -14,6 +14,7 @@ interface ApplicationCardProps {
   onRecruiterAssignment: (applicationId: string, recruiterId: string | null) => void;
   onSmsOpen: (application: any) => void;
   onDetailsView: (application: any) => void;
+  onTenstreetUpdate: (application: any) => void;
 }
 
 const ApplicationCard = ({
@@ -23,6 +24,7 @@ const ApplicationCard = ({
   onRecruiterAssignment,
   onSmsOpen,
   onDetailsView,
+  onTenstreetUpdate,
 }: ApplicationCardProps) => {
   const isMobile = useIsMobile();
   const applicantName = getApplicantName(application);
@@ -133,6 +135,14 @@ const ApplicationCard = ({
                       <MessageCircle className="w-4 h-4" />
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onTenstreetUpdate(application)}
+                    title="Post to Tenstreet"
+                  >
+                    <Upload className="w-4 h-4" />
+                  </Button>
                 </>
               ) : (
                 <DropdownMenu>
@@ -152,6 +162,10 @@ const ApplicationCard = ({
                         SMS
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => onTenstreetUpdate(application)}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Post to Tenstreet
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
