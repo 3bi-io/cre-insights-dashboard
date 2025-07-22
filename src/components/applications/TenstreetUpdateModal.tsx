@@ -49,10 +49,35 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Application successfully posted to Tenstreet",
-      });
+      // Update the applications table with the new data
+      const updatedData = {
+        first_name: firstName,
+        last_name: lastName,
+        applicant_email: email,
+        phone: phone,
+        date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : application?.date_of_birth,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error: updateError } = await supabase
+        .from('applications')
+        .update(updatedData)
+        .eq('id', application.id);
+
+      if (updateError) {
+        console.error('Error updating application:', updateError);
+        toast({
+          title: "Warning",
+          description: "Posted to Tenstreet but failed to update local application data",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Application successfully posted to Tenstreet and updated locally",
+        });
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error posting to Tenstreet:', error);
