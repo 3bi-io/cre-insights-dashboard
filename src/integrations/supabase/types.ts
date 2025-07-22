@@ -905,6 +905,7 @@ export type Database = {
           impressions: number | null
           lifetime_budget: number | null
           reach: number | null
+          results: string | null
           spend: number | null
           start_time: string | null
           status: string | null
@@ -932,6 +933,7 @@ export type Database = {
           impressions?: number | null
           lifetime_budget?: number | null
           reach?: number | null
+          results?: string | null
           spend?: number | null
           start_time?: string | null
           status?: string | null
@@ -959,6 +961,7 @@ export type Database = {
           impressions?: number | null
           lifetime_budget?: number | null
           reach?: number | null
+          results?: string | null
           spend?: number | null
           start_time?: string | null
           status?: string | null
@@ -1335,6 +1338,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tenstreet_field_mappings: {
+        Row: {
+          created_at: string
+          field_mappings: Json
+          id: string
+          is_default: boolean
+          mapping_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_mappings?: Json
+          id?: string
+          is_default?: boolean
+          mapping_name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          field_mappings?: Json
+          id?: string
+          is_default?: boolean
+          mapping_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
