@@ -7,29 +7,31 @@ import { useSpendTrendData } from '@/hooks/useSpendTrendData';
 import { usePlatformPerformanceData } from '@/hooks/usePlatformPerformanceData';
 import { useMonthlyBudgetData } from '@/hooks/useMonthlyBudgetData';
 import { useJobVolumeData } from '@/hooks/useJobVolumeData';
+import { useMetaAnalyticsData } from '@/hooks/useMetaAnalyticsData';
 
 const DashboardCharts = () => {
   const { data: spendTrendData = [], isLoading: spendLoading, error: spendError } = useSpendTrendData();
   const { data: platformPerformanceData = [], isLoading: performanceLoading, error: performanceError } = usePlatformPerformanceData();
   const { data: monthlyBudgetData = [], isLoading: budgetLoading, error: budgetError } = useMonthlyBudgetData();
   const { data: jobVolumeData = [], isLoading: jobVolumeLoading, error: jobVolumeError } = useJobVolumeData();
+  const { data: metaAnalytics, isLoading: metaLoading, error: metaError } = useMetaAnalyticsData();
 
   return (
     <div className="space-y-6">
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Spend Trend Line Chart */}
+        {/* Meta AI-Powered Spend Trend Line Chart */}
         <LineChart
-          data={spendTrendData}
-          title="Daily Spend & Applications Trend"
+          data={metaAnalytics?.dailyTrendData || spendTrendData}
+          title="Meta AI-Enhanced Daily Spend & Applications"
           xKey="date"
           lines={[
-            { key: 'spend', stroke: '#3b82f6', name: 'Daily Spend ($)' },
-            { key: 'applications', stroke: '#10b981', name: 'Applications' }
+            { key: 'spend', stroke: 'hsl(var(--primary))', name: 'Daily Spend ($)' },
+            { key: 'applications', stroke: 'hsl(var(--green))', name: 'Applications' }
           ]}
           height={350}
-          isLoading={spendLoading}
-          error={spendError}
+          isLoading={metaLoading || spendLoading}
+          error={metaError || spendError}
         />
 
         {/* Job Volume Bar Chart */}
@@ -49,18 +51,18 @@ const DashboardCharts = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* Platform Performance Bar Chart */}
+        {/* AI-Enhanced Platform Performance Bar Chart */}
         <BarChart
-          data={platformPerformanceData}
-          title="Platform Performance Comparison"
+          data={metaAnalytics?.platformPerformanceData || platformPerformanceData}
+          title="AI-Enhanced Platform Performance"
           xKey="platform"
           bars={[
-            { key: 'applications', fill: '#3b82f6', name: 'Applications' },
-            { key: 'cpa', fill: '#ef4444', name: 'Cost Per Application ($)' }
+            { key: 'applications', fill: 'hsl(var(--primary))', name: 'Applications' },
+            { key: 'cpa', fill: 'hsl(var(--destructive))', name: 'Cost Per Application ($)' }
           ]}
           height={350}
-          isLoading={performanceLoading}
-          error={performanceError}
+          isLoading={metaLoading || performanceLoading}
+          error={metaError || performanceError}
         />
       </div>
 
