@@ -33,14 +33,17 @@ interface MetaAnalyticsData {
   recommendations: string[];
 }
 
+const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+
 export const useMetaAnalyticsData = () => {
   return useQuery({
-    queryKey: ['meta-analytics-data'],
+    queryKey: ['meta-analytics-data', CR_ENGLAND_ACCOUNT_ID],
     queryFn: async () => {
       const { data: result, error } = await supabase.functions.invoke('meta-spend-analytics', {
         body: {
           analysisType: 'overview',
-          dateRange: 'last_30d'
+          dateRange: 'last_30d',
+          accountId: CR_ENGLAND_ACCOUNT_ID
         }
       });
 

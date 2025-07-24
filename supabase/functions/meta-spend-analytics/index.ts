@@ -34,30 +34,47 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { analysisType = 'overview', dateRange = 'last_30d' } = body;
+    const { analysisType = 'overview', dateRange = 'last_30d', accountId } = body;
 
     // Fetch meta ad sets data
-    const { data: adSets, error: adSetsError } = await supabaseClient
+    let adSetsQuery = supabaseClient
       .from('meta_ad_sets')
       .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .eq('user_id', user.id);
+    
+    if (accountId) {
+      adSetsQuery = adSetsQuery.eq('account_id', accountId);
+    }
+    
+    const { data: adSets, error: adSetsError } = await adSetsQuery.order('created_at', { ascending: false });
 
     if (adSetsError) throw adSetsError;
 
     // Fetch meta campaigns data for context
-    const { data: campaigns, error: campaignsError } = await supabaseClient
+    let campaignsQuery = supabaseClient
       .from('meta_campaigns')
       .select('*')
       .eq('user_id', user.id);
+    
+    if (accountId) {
+      campaignsQuery = campaignsQuery.eq('account_id', accountId);
+    }
+    
+    const { data: campaigns, error: campaignsError } = await campaignsQuery;
 
     if (campaignsError) throw campaignsError;
 
     // Fetch meta ads data for context
-    const { data: ads, error: adsError } = await supabaseClient
+    let adsQuery = supabaseClient
       .from('meta_ads')
       .select('*')
       .eq('user_id', user.id);
+    
+    if (accountId) {
+      adsQuery = adsQuery.eq('account_id', accountId);
+    }
+    
+    const { data: ads, error: adsError } = await adsQuery;
 
     if (adsError) throw adsError;
 
