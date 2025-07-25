@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { Download } from 'lucide-react';
+import { Download, ExternalLink, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { generateDashboardPDF } from '@/utils/dashboardPdfGenerator';
 import DateRangePicker from './DateRangePicker';
@@ -38,6 +39,15 @@ const DashboardHeader = () => {
     });
   };
 
+  const handleOpenIndeedFeed = () => {
+    const feedUrl = 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/indeed-xml-feed';
+    window.open(feedUrl, '_blank');
+    toast({
+      title: "Indeed XML Feed",
+      description: "Feed opened in new tab",
+    });
+  };
+
   return (
     <div className="bg-card border-b border-border shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl">
@@ -65,6 +75,20 @@ const DashboardHeader = () => {
               <Download className="w-4 h-4" />
               <span>Export PDF</span>
             </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="default" className="h-10">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleOpenIndeedFeed}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Indeed XML Feed
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             <div className="flex items-center gap-2 ml-2">
               <NotificationsPanel />
