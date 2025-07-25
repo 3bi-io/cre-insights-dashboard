@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import PlatformSetupDialog from './PlatformSetupDialog';
 import XPlatformActions from './XPlatformActions';
 import MetaPlatformActions from './MetaPlatformActions';
+import IndeedPlatformActions from './IndeedPlatformActions';
 
 interface Platform {
   id: string;
@@ -109,6 +110,10 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                             <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
                               <span className="text-white font-bold text-xs">M</span>
                             </div>
+                          ) : platform.name.toLowerCase().includes('indeed') ? (
+                            <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
+                              <span className="text-white font-bold text-xs">I</span>
+                            </div>
                           ) : (
                             <Globe className="w-4 h-4 text-primary" />
                           )}
@@ -128,6 +133,12 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                             <span className="text-xs text-blue-600 dark:text-blue-400">Meta Business API</span>
                           </div>
                         )}
+                        {platform.name.toLowerCase().includes('indeed') && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Activity className="w-3 h-3 text-blue-600" />
+                            <span className="text-xs text-blue-600 dark:text-blue-400">Indeed Reporting API</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -141,6 +152,11 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                       {(platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook')) && (
                         <Badge variant="outline" className="text-xs">
                           Meta Ready
+                        </Badge>
+                      )}
+                      {platform.name.toLowerCase().includes('indeed') && (
+                        <Badge variant="outline" className="text-xs">
+                          Indeed Ready
                         </Badge>
                       )}
                     </div>
@@ -203,6 +219,10 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
           platform={platforms.find(p => p.name.toLowerCase().includes('meta') || p.name.toLowerCase().includes('facebook'))!} 
           onRefresh={onRefresh} 
         />
+      )}
+      
+      {platforms && platforms.some(p => p.name.toLowerCase().includes('indeed')) && (
+        <IndeedPlatformActions />
       )}
     </>
   );
