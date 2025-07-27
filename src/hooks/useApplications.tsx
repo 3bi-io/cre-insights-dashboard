@@ -1,10 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOutboundWebhook } from '@/hooks/useOutboundWebhook';
 
-export const useApplications = () => {
+export const useApplications = (webhookConfig?: { url: string; enabled: boolean }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { triggerWebhook } = useOutboundWebhook({
+    webhookUrl: webhookConfig?.url,
+    enabled: webhookConfig?.enabled
+  });
 
   const { data: applications, isLoading } = useQuery({
     queryKey: ['applications'],
@@ -91,6 +96,9 @@ export const useApplications = () => {
         .eq('id', applicationId);
       
       if (error) throw error;
+      
+      // Trigger outbound webhook for application update
+      await triggerWebhook(applicationId, 'updated');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
@@ -116,6 +124,9 @@ export const useApplications = () => {
         .eq('id', applicationId);
       
       if (error) throw error;
+      
+      // Trigger outbound webhook for application update
+      await triggerWebhook(applicationId, 'updated');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });

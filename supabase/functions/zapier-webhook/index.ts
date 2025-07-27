@@ -365,6 +365,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Application created successfully:', application);
 
+    // TODO: Trigger outbound webhook here if configured
+    // This would require storing webhook configuration in the database
+    // For now, applications created via the incoming webhook won't trigger outbound webhooks
+    // The outbound webhook system is designed for applications created/updated through the UI
+
     return new Response(
       JSON.stringify({ 
         success: true,

@@ -115,22 +115,39 @@ const IntegrationsTab = () => {
 
     setIsLoading(true);
     try {
+      // Get a sample application to send in the test
+      const { data: applications } = await supabase
+        .from('applications')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+
+      const testPayload = applications || {
+        test: true,
+        timestamp: new Date().toISOString(),
+        source: "Settings Integration Test",
+        // Sample application structure
+        id: "sample-id",
+        first_name: "John",
+        last_name: "Doe",
+        applicant_email: "john.doe@example.com",
+        phone: "+1234567890",
+        status: "pending",
+        applied_at: new Date().toISOString()
+      };
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         mode: "no-cors",
-        body: JSON.stringify({
-          test: true,
-          timestamp: new Date().toISOString(),
-          source: "Settings Integration Test",
-        }),
+        body: JSON.stringify(testPayload),
       });
 
       toast({
         title: "Test Webhook Sent",
-        description: "Check your Zapier history to verify the webhook was received",
+        description: "Check your Zapier history to verify the webhook was received with application data",
       });
     } catch (error) {
       console.error('Webhook test failed:', error);
@@ -249,7 +266,7 @@ const IntegrationsTab = () => {
             <div>
               <Label htmlFor="webhook-url">Zapier Webhook URL</Label>
               <p className="text-sm text-muted-foreground mb-2">
-                Enter your Zapier webhook URL to receive notifications
+                Enter your Zapier webhook URL to receive complete application data when applications are created or updated
               </p>
               <Input
                 id="webhook-url"
@@ -287,12 +304,13 @@ const IntegrationsTab = () => {
             <div className="flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="text-sm">
-                <p className="font-medium text-blue-800 dark:text-blue-200">How to set up Zapier</p>
+                <p className="font-medium text-blue-800 dark:text-blue-200">How to set up Zapier for application data</p>
                 <ol className="text-blue-700 dark:text-blue-300 mt-1 ml-4 list-decimal space-y-1">
                   <li>Create a new Zap in Zapier</li>
                   <li>Choose "Webhooks by Zapier" as the trigger</li>
                   <li>Select "Catch Hook" as the trigger event</li>
                   <li>Copy the webhook URL and paste it above</li>
+                  <li>Your webhook will receive complete application data including all fields from the applications table</li>
                 </ol>
                 <Button variant="outline" size="sm" className="mt-2" asChild>
                   <a href="https://zapier.com" target="_blank" rel="noopener noreferrer">
