@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatforms } from '@/hooks/usePlatforms';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const IntegrationsTab = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,29 @@ const IntegrationsTab = () => {
   const [zapierEnabled, setZapierEnabled] = useState(false);
   const { toast } = useToast();
   const { platforms, refetch } = usePlatforms();
+  const queryClient = useQueryClient();
+
+  // Fetch existing webhook configuration
+  const { data: webhookConfig } = useQuery({
+    queryKey: ['webhook-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('webhook_configurations')
+        .select('*')
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+  });
+
+  // Set webhook URL from config when loaded
+  React.useEffect(() => {
+    if (webhookConfig?.webhook_url) {
+      setWebhookUrl(webhookConfig.webhook_url);
+      setZapierEnabled(webhookConfig.enabled);
+    }
+  }, [webhookConfig]);
 
   const xPlatform = platforms?.find(p => 
     p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')
@@ -85,14 +109,40 @@ const IntegrationsTab = () => {
   const handleSaveZapier = async () => {
     setIsLoading(true);
     try {
-      // Simulate saving webhook configuration
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (webhookConfig?.id) {
+        // Update existing config
+        const { error } = await supabase
+          .from('webhook_configurations')
+          .update({ 
+            webhook_url: webhookUrl, 
+            enabled: zapierEnabled,
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', webhookConfig.id);
+        if (error) throw error;
+      } else {
+        // Create new config
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+        
+        const { error } = await supabase
+          .from('webhook_configurations')
+          .insert({ 
+            webhook_url: webhookUrl,
+            enabled: zapierEnabled,
+            user_id: user.id
+          });
+        if (error) throw error;
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['webhook-config'] });
       
       toast({
         title: "Zapier Configuration Saved",
-        description: "Your webhook URL has been saved successfully",
+        description: "Your webhook URL has been saved and will automatically receive new application data",
       });
     } catch (error) {
+      console.error('Save error:', error);
       toast({
         title: "Save Failed",
         description: "Unable to save Zapier configuration",
@@ -266,7 +316,7 @@ const IntegrationsTab = () => {
             <div>
               <Label htmlFor="webhook-url">Zapier Webhook URL</Label>
               <p className="text-sm text-muted-foreground mb-2">
-                Enter your Zapier webhook URL to receive complete application data when applications are created or updated
+                Enter your Zapier webhook URL to automatically receive complete application data when new applications are submitted
               </p>
               <Input
                 id="webhook-url"
