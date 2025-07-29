@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MoreHorizontal, Globe, Edit, Trash2, Settings, MessageCircle, Activity } from 'lucide-react';
+import { MoreHorizontal, Globe, Edit, Trash2, Settings, MessageCircle, Activity, ExternalLink } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -178,6 +178,12 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                         <DropdownMenuItem onClick={() => setSetupPlatform(platform)}>
                           <Settings className="w-4 h-4 mr-2" />
                           Setup Platform
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => window.open(`https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/job-feed-xml?platform=${encodeURIComponent(platform.name.toLowerCase())}`, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          XML Feed URL
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Edit className="w-4 h-4 mr-2" />
