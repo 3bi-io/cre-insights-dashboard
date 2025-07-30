@@ -22,13 +22,16 @@ const JobPerformanceTable = () => {
           job_title,
           status,
           client,
-          job_platform_associations!inner(
-            platforms!inner(name)
+          created_at,
+          job_platform_associations(
+            platforms(name)
           ),
           clients(name),
-          daily_spend(amount),
-          applications(id)
+          daily_spend(amount, date),
+          applications(id, created_at)
         `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) {
@@ -41,18 +44,31 @@ const JobPerformanceTable = () => {
       if (!jobs) return [];
 
       return jobs.map(job => {
-        const totalSpend = job.daily_spend.reduce((sum, spend) => sum + Number(spend.amount), 0);
-        const applicationCount = job.applications.length;
+        const totalSpend = job.daily_spend?.reduce((sum, spend) => sum + Number(spend.amount || 0), 0) || 0;
+        const applicationCount = job.applications?.length || 0;
         const costPerApp = applicationCount > 0 ? totalSpend / applicationCount : 0;
         
-        // Simple trend calculation (could be enhanced with time-based data)
-        const trend = Math.random() > 0.5 ? 'up' : 'down'; // Random for now
+        // Calculate trend based on recent applications (last 7 days vs previous 7 days)
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        
+        const recentApps = job.applications?.filter(app => 
+          new Date(app.created_at) >= sevenDaysAgo
+        ).length || 0;
+        
+        const previousApps = job.applications?.filter(app => {
+          const appDate = new Date(app.created_at);
+          return appDate >= fourteenDaysAgo && appDate < sevenDaysAgo;
+        }).length || 0;
+        
+        const trend = recentApps >= previousApps ? 'up' : 'down';
 
         return {
           id: job.id,
           title: job.title || job.job_title || 'Untitled Job',
-          platform: job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'Unknown',
-          client: job.clients?.name || job.client || 'Unknown',
+          platform: job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No Platform',
+          client: job.clients?.name || job.client || 'No Client',
           spend: totalSpend,
           applications: applicationCount,
           costPerApp,
