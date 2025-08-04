@@ -149,7 +149,7 @@ const VoiceAgent = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Phone className="w-5 h-5" />
-              ElevenLabs Voice Agent
+              AI Voice Agent
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
