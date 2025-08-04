@@ -77,7 +77,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChange }) =>
   };
 
   const formatDateRange = () => {
-    if (!value.from || !value.to) return 'Select date range';
+    if (!value.from || !value.to) return 'Date Range';
     
     if (presetValue !== 'custom') {
       const preset = presets.find(p => p.value === presetValue);
