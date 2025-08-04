@@ -98,7 +98,7 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                     <div className="flex items-center gap-3">
                       {platform.logo_url ? (
                         <img 
-                          src="/lovable-uploads/00cf88bc-aaab-4e8e-8908-3bfd7c363516.png" 
+                          src={platform.logo_url} 
                           alt={platform.name} 
                           className="w-8 h-8 rounded-full object-cover"
                           onError={(e) => {
