@@ -367,7 +367,7 @@ const MetaSpendAnalytics = () => {
                 <div className="space-y-3">
                   {analyticsData.insights.map((insight, index) => (
                     <div key={index} className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                       <p className="text-sm">{insight}</p>
                     </div>
                   ))}
@@ -386,7 +386,7 @@ const MetaSpendAnalytics = () => {
                 <div className="space-y-3">
                   {analyticsData.recommendations.map((recommendation, index) => (
                     <div key={index} className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                      <div className="w-2 h-2 bg-secondary-foreground rounded-full mt-2 flex-shrink-0" />
                       <p className="text-sm">{recommendation}</p>
                     </div>
                   ))}

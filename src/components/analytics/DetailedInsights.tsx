@@ -260,13 +260,13 @@ const DetailedInsights: React.FC<DetailedInsightsProps> = ({
           <div className="space-y-6">
             <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" />
+                <CheckCircle className="w-4 h-4 text-primary" />
                 Key Insights
               </h4>
               <div className="space-y-3">
                 {insights.map((insight, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                  <div key={index} className="flex items-start gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                     <p className="text-sm">{insight}</p>
                   </div>
                 ))}
@@ -275,13 +275,13 @@ const DetailedInsights: React.FC<DetailedInsightsProps> = ({
             
             <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Target className="w-4 h-4 text-orange-600" />
+                <Target className="w-4 h-4 text-accent-foreground" />
                 Actionable Recommendations
               </h4>
               <div className="space-y-3">
                 {recommendations.map((recommendation, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg">
-                    <div className="w-2 h-2 bg-orange-600 rounded-full mt-2 flex-shrink-0" />
+                  <div key={index} className="flex items-start gap-3 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                    <div className="w-2 h-2 bg-accent-foreground rounded-full mt-2 flex-shrink-0" />
                     <p className="text-sm">{recommendation}</p>
                   </div>
                 ))}
