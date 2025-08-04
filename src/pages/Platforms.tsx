@@ -5,6 +5,9 @@ import { usePlatforms } from '@/hooks/usePlatforms';
 import PlatformsHeader from '@/components/platforms/PlatformsHeader';
 import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
+import GoogleJobsSetup from '@/components/platforms/GoogleJobsSetup';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Globe, FileText, Settings } from 'lucide-react';
 
 const Platforms = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -45,10 +48,40 @@ const Platforms = () => {
         platforms={platforms}
       />
 
-      <PlatformsTable
-        platforms={platforms}
-        onRefresh={refetch}
-      />
+      <Tabs defaultValue="platforms" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="platforms" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            Platforms
+          </TabsTrigger>
+          <TabsTrigger value="google-jobs" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Google Jobs
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="platforms" className="space-y-6 mt-6">
+          <PlatformsTable
+            platforms={platforms}
+            onRefresh={refetch}
+          />
+        </TabsContent>
+
+        <TabsContent value="google-jobs" className="space-y-6 mt-6">
+          <GoogleJobsSetup />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6 mt-6">
+          <div className="text-center py-12">
+            <Settings className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Platform settings coming soon</p>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {showAddDialog && (
         <AddPlatformDialog
