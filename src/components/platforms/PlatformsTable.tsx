@@ -11,6 +11,7 @@ import PlatformSetupDialog from './PlatformSetupDialog';
 import XPlatformActions from './XPlatformActions';
 import MetaPlatformActions from './MetaPlatformActions';
 import IndeedPlatformActions from './IndeedPlatformActions';
+import ZipRecruiterPlatformActions from './ZipRecruiterPlatformActions';
 
 interface Platform {
   id: string;
@@ -118,6 +119,12 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                               alt="Indeed" 
                               className="w-4 h-4"
                             />
+                          ) : platform.name.toLowerCase().includes('ziprecruiter') || platform.name.toLowerCase().includes('zip recruiter') ? (
+                            <img 
+                              src="/lovable-uploads/7d10dee2-7442-4d14-8a26-bb7f417bd5e8.png" 
+                              alt="ZipRecruiter" 
+                              className="w-4 h-4"
+                            />
                           ) : (
                             <Globe className="w-4 h-4 text-primary" />
                           )}
@@ -161,6 +168,11 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                       {platform.name.toLowerCase().includes('indeed') && (
                         <Badge variant="outline" className="text-xs">
                           Indeed Ready
+                        </Badge>
+                      )}
+                      {(platform.name.toLowerCase().includes('ziprecruiter') || platform.name.toLowerCase().includes('zip recruiter')) && (
+                        <Badge variant="outline" className="text-xs">
+                          ZipRecruiter Ready
                         </Badge>
                       )}
                     </div>
@@ -233,6 +245,10 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
       
       {platforms && platforms.some(p => p.name.toLowerCase().includes('indeed')) && (
         <IndeedPlatformActions />
+      )}
+      
+      {platforms && platforms.some(p => p.name.toLowerCase().includes('ziprecruiter') || p.name.toLowerCase().includes('zip recruiter')) && (
+        <ZipRecruiterPlatformActions />
       )}
     </>
   );
