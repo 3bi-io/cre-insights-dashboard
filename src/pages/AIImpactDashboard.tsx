@@ -221,11 +221,6 @@ const AIImpactDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <select value={timeRange} onChange={e => setTimeRange(e.target.value as any)} className="border rounded px-3 py-2 bg-zinc-800">
-            <option value="week">Last Week</option>
-            <option value="month">Last Month</option>
-            <option value="quarter">Last Quarter</option>
-          </select>
           <Button onClick={loadMetrics} disabled={loading}>
             {loading ? <Clock className="w-4 h-4 animate-spin mr-2" /> : <BarChart3 className="w-4 h-4 mr-2" />}
             Refresh Metrics
