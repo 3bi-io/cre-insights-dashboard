@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, ExternalLink } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import googleJobsLogo from '@/assets/google-jobs-logo.png';
+import indeedLogo from '@/assets/indeed-logo.png';
 
 interface Platform {
   id: string;
@@ -22,14 +24,14 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
   const availablePlatforms = [
     {
       name: 'Google Jobs',
-      logo: '/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png',
+      logo: googleJobsLogo,
       status: 'XML Feed Ready',
       description: 'Google Jobs XML Feed Integration',
       created: '7/29/2025'
     },
     {
       name: 'Indeed',
-      logo: '/lovable-uploads/12d16c27-6e74-452f-ad08-258d0924af84.png',
+      logo: indeedLogo,
       status: 'Indeed Ready',
       description: 'Indeed Reporting API',
       created: '6/12/2025'
