@@ -84,7 +84,11 @@ const DashboardHeader = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleOpenIndeedFeed}>
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <img 
+                    src="/lovable-uploads/00cf88bc-aaab-4e8e-8908-3bfd7c363516.png" 
+                    alt="Indeed" 
+                    className="w-4 h-4 mr-2"
+                  />
                   Indeed XML Feed
                 </DropdownMenuItem>
               </DropdownMenuContent>

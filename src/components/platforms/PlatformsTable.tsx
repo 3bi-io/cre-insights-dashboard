@@ -111,9 +111,11 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                               <span className="text-white font-bold text-xs">M</span>
                             </div>
                           ) : platform.name.toLowerCase().includes('indeed') ? (
-                            <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
-                              <span className="text-white font-bold text-xs">I</span>
-                            </div>
+                            <img 
+                              src="/lovable-uploads/00cf88bc-aaab-4e8e-8908-3bfd7c363516.png" 
+                              alt="Indeed" 
+                              className="w-4 h-4"
+                            />
                           ) : (
                             <Globe className="w-4 h-4 text-primary" />
                           )}

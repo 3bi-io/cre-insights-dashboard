@@ -53,7 +53,11 @@ const IndeedPlatformActions = () => {
   return <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
+          <img 
+            src="/lovable-uploads/00cf88bc-aaab-4e8e-8908-3bfd7c363516.png" 
+            alt="Indeed" 
+            className="w-6 h-6"
+          />
           Indeed Analytics
         </CardTitle>
         <CardDescription>
