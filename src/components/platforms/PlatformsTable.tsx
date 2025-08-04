@@ -13,6 +13,7 @@ import MetaPlatformActions from './MetaPlatformActions';
 import IndeedPlatformActions from './IndeedPlatformActions';
 import ZipRecruiterPlatformActions from './ZipRecruiterPlatformActions';
 import GoogleJobsPlatformActions from './GoogleJobsPlatformActions';
+import TalrooPlatformActions from './TalrooPlatformActions';
 
 interface Platform {
   id: string;
@@ -134,6 +135,12 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                             <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 via-red-500 via-yellow-500 to-green-500 flex items-center justify-center">
                               <span className="text-white font-bold text-xs">G</span>
                             </div>
+                          ) : platform.name.toLowerCase().includes('talroo') ? (
+                            <img 
+                              src="/lovable-uploads/2ba5a3f3-dba1-46c4-8caf-fe192c25c828.png" 
+                              alt="Talroo" 
+                              className="w-4 h-4"
+                            />
                           ) : (
                             <Globe className="w-4 h-4 text-primary" />
                           )}
@@ -187,6 +194,11 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                       {platform.name.toLowerCase().includes('google') && platform.name.toLowerCase().includes('jobs') && (
                         <Badge variant="outline" className="text-xs">
                           XML Feed Ready
+                        </Badge>
+                      )}
+                      {platform.name.toLowerCase().includes('talroo') && (
+                        <Badge variant="outline" className="text-xs">
+                          Talroo Ready
                         </Badge>
                       )}
                     </div>
@@ -267,6 +279,10 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
 
       {platforms && platforms.some(p => p.name.toLowerCase().includes('google') && p.name.toLowerCase().includes('jobs')) && (
         <GoogleJobsPlatformActions />
+      )}
+
+      {platforms && platforms.some(p => p.name.toLowerCase().includes('talroo')) && (
+        <TalrooPlatformActions />
       )}
     </>
   );

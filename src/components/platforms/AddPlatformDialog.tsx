@@ -85,7 +85,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
               id="platform-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Meta, X, Google Ads"
+              placeholder="e.g., Meta, X, Google Ads, Talroo"
               required
             />
           </div>
