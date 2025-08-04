@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle, TrendingUp, BarChart3, Zap, AlertCircle } from 'lucide-react';
+import { MessageCircle, TrendingUp, BarChart3, Zap, AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Platform {
@@ -92,10 +93,100 @@ const XPlatformActions: React.FC<XPlatformActionsProps> = ({ platform, onRefresh
           X Platform Actions
         </CardTitle>
         <CardDescription>
-          Manage your X (Twitter) advertising campaigns and analytics
+          Connect and manage your X (Twitter) advertising platform integration for job promotion and recruitment marketing
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
+        {/* Status Overview */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+            <div className="text-sm font-medium">Campaigns</div>
+            <div className="text-2xl font-bold text-blue-600">0</div>
+          </div>
+          
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-600" />
+            <div className="text-sm font-medium">Impressions</div>
+            <div className="text-2xl font-bold text-green-600">0</div>
+          </div>
+          
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <Zap className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+            <div className="text-sm font-medium">Engagements</div>
+            <div className="text-2xl font-bold text-purple-600">0</div>
+          </div>
+
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <AlertCircle className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+            <div className="text-sm font-medium">Status</div>
+            <div className="text-xs text-orange-600">Not Connected</div>
+          </div>
+        </div>
+
+        {/* Enhanced Integration Alert */}
+        <Alert>
+          <img 
+            src="/lovable-uploads/4eb0ffa4-7d5c-437d-bf75-d16a985e6189.png" 
+            alt="X" 
+            className="w-4 h-4"
+          />
+          <AlertDescription>
+            <strong>Enhanced Integration Available:</strong> X platform integration includes job promotion, 
+            candidate engagement tracking, and recruitment marketing analytics. Connect your X Ads account to get started.
+          </AlertDescription>
+        </Alert>
+
+        {/* Connection Actions */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <p className="font-medium">Test X API Connection</p>
+              <p className="text-sm text-muted-foreground">
+                Verify your X API credentials and connection status
+              </p>
+            </div>
+            <Button 
+              onClick={handleTestConnection}
+              disabled={isLoading}
+              variant="outline"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Test Connection'}
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div>
+              <p className="font-medium">Fetch X Metrics</p>
+              <p className="text-sm text-muted-foreground">
+                Retrieve campaign performance and engagement metrics
+              </p>
+            </div>
+            <Button 
+              onClick={handleGetMetrics}
+              disabled={isLoading}
+              variant="outline"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Get Metrics'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Setup Instructions */}
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">X Integration Setup:</p>
+              <div className="text-sm space-y-1">
+                <p>1. Create an X Developer account and app</p>
+                <p>2. Generate API keys and access tokens</p>
+                <p>3. Configure authentication in platform settings</p>
+                <p>4. Enable recruitment marketing campaigns</p>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
