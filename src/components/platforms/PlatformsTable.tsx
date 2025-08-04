@@ -121,7 +121,7 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                             />
                           ) : platform.name.toLowerCase().includes('indeed') ? (
                             <img 
-                              src="/lovable-uploads/00cf88bc-aaab-4e8e-8908-3bfd7c363516.png" 
+                              src="/lovable-uploads/12d16c27-6e74-452f-ad08-258d0924af84.png" 
                               alt="Indeed" 
                               className="w-4 h-4"
                             />
