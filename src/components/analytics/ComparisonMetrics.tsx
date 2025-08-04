@@ -158,25 +158,25 @@ const ComparisonMetrics: React.FC<ComparisonMetricsProps> = ({ analyticsData }) 
             <div className="space-y-4">
               <h4 className="font-medium text-sm">Application Volume Trends</h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="text-sm font-medium">Current Month</span>
+                <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <span className="text-sm font-medium text-foreground">Current Month</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-green-700">{currentData.totalApplications}</span>
-                    <p className="text-xs text-green-600">+{calculateChange(currentData.totalApplications, historicalData.lastMonth.totalApplications).percentage.toFixed(1)}%</p>
+                    <span className="text-lg font-bold text-primary">{currentData.totalApplications}</span>
+                    <p className="text-xs text-primary/80">+{calculateChange(currentData.totalApplications, historicalData.lastMonth.totalApplications).percentage.toFixed(1)}%</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm font-medium">Last Month</span>
+                <div className="flex items-center justify-between p-3 bg-secondary/10 border border-secondary/20 rounded-lg">
+                  <span className="text-sm font-medium text-foreground">Last Month</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-blue-700">{historicalData.lastMonth.totalApplications}</span>
-                    <p className="text-xs text-blue-600">Baseline</p>
+                    <span className="text-lg font-bold text-secondary-foreground">{historicalData.lastMonth.totalApplications}</span>
+                    <p className="text-xs text-muted-foreground">Baseline</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium">Last Quarter</span>
+                <div className="flex items-center justify-between p-3 bg-muted/50 border border-muted/80 rounded-lg">
+                  <span className="text-sm font-medium text-foreground">Last Quarter</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-gray-700">{historicalData.lastQuarter.totalApplications}</span>
-                    <p className="text-xs text-gray-600">3 months ago</p>
+                    <span className="text-lg font-bold text-muted-foreground">{historicalData.lastQuarter.totalApplications}</span>
+                    <p className="text-xs text-muted-foreground/80">3 months ago</p>
                   </div>
                 </div>
               </div>
