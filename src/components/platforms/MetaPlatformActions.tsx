@@ -247,9 +247,11 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">M</span>
-              </div>
+              <img 
+                src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" 
+                alt="Meta" 
+                className="w-8 h-8"
+              />
               <div>
                 <CardTitle className="text-lg">Meta Business Platform - CR England</CardTitle>
                 <CardDescription>
