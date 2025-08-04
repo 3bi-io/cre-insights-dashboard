@@ -96,15 +96,15 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChange }) =>
           <ChevronDown className="w-4 h-4 ml-auto" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
-        <div className="p-4 border-b">
+      <PopoverContent className="w-80 p-0 bg-popover border border-border shadow-md" align="start">
+        <div className="p-4 border-b border-border bg-popover">
           <Select value={presetValue} onValueChange={handlePresetChange}>
-            <SelectTrigger>
+            <SelectTrigger className="bg-background border-border">
               <SelectValue placeholder="Select date range" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-popover border-border">
               {presets.map((preset) => (
-                <SelectItem key={preset.value} value={preset.value}>
+                <SelectItem key={preset.value} value={preset.value} className="hover:bg-accent hover:text-accent-foreground">
                   {preset.label}
                 </SelectItem>
               ))}
