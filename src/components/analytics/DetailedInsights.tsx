@@ -150,29 +150,29 @@ const DetailedInsights: React.FC<DetailedInsightsProps> = ({
                   'D': { 
                     label: 'Experienced Drivers', 
                     icon: CheckCircle,
-                    color: 'text-green-600',
-                    bgColor: 'bg-green-50',
+                    color: 'text-primary',
+                    bgColor: 'bg-primary/10 border border-primary/20',
                     insight: 'High conversion potential, immediate hire candidates'
                   },
                   'SC': { 
                     label: 'New CDL Holders', 
                     icon: Clock,
-                    color: 'text-blue-600',
-                    bgColor: 'bg-blue-50',
+                    color: 'text-secondary-foreground',
+                    bgColor: 'bg-secondary/10 border border-secondary/20',
                     insight: 'Good potential with minimal training required'
                   },
                   'SR': { 
                     label: 'Student Ready', 
                     icon: TrendingUp,
-                    color: 'text-yellow-600',
-                    bgColor: 'bg-yellow-50',
+                    color: 'text-accent-foreground',
+                    bgColor: 'bg-accent/10 border border-accent/20',
                     insight: 'Long-term investment, requires CDL training'
                   },
                   'N/A': { 
                     label: 'Uncategorized', 
                     icon: AlertTriangle,
-                    color: 'text-gray-600',
-                    bgColor: 'bg-gray-50',
+                    color: 'text-muted-foreground',
+                    bgColor: 'bg-muted/50 border border-muted',
                     insight: 'Requires manual review and assessment'
                   }
                 };
@@ -220,7 +220,7 @@ const DetailedInsights: React.FC<DetailedInsightsProps> = ({
                 const percentage = totalApplications > 0 ? (location.totalApplications / totalApplications) * 100 : 0;
                 
                 return (
-                  <div key={index} className={`p-3 rounded-lg ${isTopPerformer ? 'bg-green-50' : 'bg-gray-50'}`}>
+                  <div key={index} className={`p-3 rounded-lg ${isTopPerformer ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50 border border-muted'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium">{location.location}</span>
                       <div className="flex items-center gap-2">
