@@ -5,28 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  DollarSign, 
-  Users, 
-  Target, 
-  Brain,
-  Calculator,
-  Zap,
-  AlertTriangle
-} from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Clock, DollarSign, Users, Target, Brain, Calculator, Zap, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface MetricComparison {
   metric: string;
   traditional: number;
@@ -35,7 +17,6 @@ interface MetricComparison {
   unit: string;
   description: string;
 }
-
 interface PerformanceData {
   timeToHire: MetricComparison;
   qualityScore: MetricComparison;
@@ -44,7 +25,6 @@ interface PerformanceData {
   biasReduction: MetricComparison;
   processEfficiency: MetricComparison;
 }
-
 interface AIDecisionTracking {
   totalDecisions: number;
   aiAssisted: number;
@@ -56,7 +36,6 @@ interface AIDecisionTracking {
     hybrid: number;
   };
 }
-
 interface ROICalculation {
   monthlySpend: number;
   monthlySavings: number;
@@ -64,7 +43,6 @@ interface ROICalculation {
   timeSaved: number;
   userSatisfaction: number;
 }
-
 const AIImpactDashboard = () => {
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [decisionData, setDecisionData] = useState<AIDecisionTracking | null>(null);
@@ -72,14 +50,16 @@ const AIImpactDashboard = () => {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter'>('month');
   const [monthlySpend, setMonthlySpend] = useState<string>('15000');
   const [roiData, setRoiData] = useState<ROICalculation | null>(null);
-
   const calculateROI = (spend: number): ROICalculation => {
     // AI efficiency improvements based on industry benchmarks and research
     const efficiencyGains = {
-      timeToHireReduction: 0.387, // 38.7% reduction based on industry studies
-      costPerHireReduction: 0.333, // 33.3% reduction in total hiring costs
-      qualityImprovement: 0.191, // 19.1% improvement in candidate quality
-      processEfficiency: 0.302, // 30.2% improvement in process efficiency
+      timeToHireReduction: 0.387,
+      // 38.7% reduction based on industry studies
+      costPerHireReduction: 0.333,
+      // 33.3% reduction in total hiring costs
+      qualityImprovement: 0.191,
+      // 19.1% improvement in candidate quality
+      processEfficiency: 0.302 // 30.2% improvement in process efficiency
     };
 
     // Updated industry benchmarks (2024)
@@ -87,36 +67,35 @@ const AIImpactDashboard = () => {
     const traditionalTimeToHire = 14.2; // days - industry average
     const hrHourlyCost = 52; // updated average HR professional hourly cost
     const recruitmentHoursPerHire = 23; // hours spent per successful hire
-    
+
     // Calculate monthly hires based on spend (more accurate calculation)
     const monthlyHires = spend > 0 ? Math.max(1, Math.floor(spend / avgCostPerHire)) : 0;
-    
+
     // Calculate direct cost savings per hire
     const costPerHireSavings = avgCostPerHire * efficiencyGains.costPerHireReduction * monthlyHires;
-    
+
     // Calculate time savings in monetary terms
     const timeSavedPerHire = recruitmentHoursPerHire * efficiencyGains.timeToHireReduction;
     const totalTimeSavings = timeSavedPerHire * monthlyHires;
     const timeSavingsCost = totalTimeSavings * hrHourlyCost;
-    
+
     // Total monthly savings before AI costs
     const totalMonthlySavings = costPerHireSavings + timeSavingsCost;
-    
+
     // AI implementation cost (typically 3-8% of recruitment budget)
     const aiImplementationCost = spend * 0.06; // 6% of spend for AI tools and training
     const netSavings = Math.max(0, totalMonthlySavings - aiImplementationCost);
-    
+
     // Calculate ROI
-    const roi = aiImplementationCost > 0 ? (netSavings / aiImplementationCost) * 100 : 0;
-    
+    const roi = aiImplementationCost > 0 ? netSavings / aiImplementationCost * 100 : 0;
+
     // Calculate time saved per hire in days (not double-applying the reduction)
     const timeSavedDays = monthlyHires > 0 ? traditionalTimeToHire * efficiencyGains.timeToHireReduction : 0;
-    
+
     // User satisfaction based on process efficiency and candidate experience improvements
     const baseSatisfaction = 87; // baseline candidate satisfaction
     const satisfactionImprovement = efficiencyGains.qualityImprovement * 30; // quality improvement impact
     const userSatisfaction = Math.min(98, baseSatisfaction + satisfactionImprovement);
-    
     return {
       monthlySpend: spend,
       monthlySavings: netSavings,
@@ -125,7 +104,6 @@ const AIImpactDashboard = () => {
       userSatisfaction: userSatisfaction
     };
   };
-
   const handleSpendChange = (value: string) => {
     setMonthlySpend(value);
     const spend = parseFloat(value) || 0;
@@ -133,15 +111,14 @@ const AIImpactDashboard = () => {
       setRoiData(calculateROI(spend));
     }
   };
-
   const loadMetrics = async () => {
     setLoading(true);
     try {
       // Fetch applications and their decision data
-      const { data: applications, error } = await supabase
-        .from('applications')
-        .select('*');
-
+      const {
+        data: applications,
+        error
+      } = await supabase.from('applications').select('*');
       if (error) throw error;
 
       // Simulate AI impact metrics (in real implementation, this would come from tracked data)
@@ -195,7 +172,6 @@ const AIImpactDashboard = () => {
           description: 'Automation and streamlining of recruitment processes'
         }
       };
-
       const mockDecisionData: AIDecisionTracking = {
         totalDecisions: applications?.length || 0,
         aiAssisted: Math.floor((applications?.length || 0) * 0.6),
@@ -207,12 +183,10 @@ const AIImpactDashboard = () => {
           hybrid: 91.5
         }
       };
-
       setPerformanceData(mockPerformanceData);
       setDecisionData(mockDecisionData);
-
       toast.success("Metrics Updated", {
-        description: "AI impact metrics have been refreshed",
+        description: "AI impact metrics have been refreshed"
       });
     } catch (error) {
       console.error('Error loading metrics:', error);
@@ -221,30 +195,24 @@ const AIImpactDashboard = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     loadMetrics();
     handleSpendChange(monthlySpend); // Initialize ROI calculation
   }, [timeRange]);
-
   const formatImprovement = (value: number) => {
     const prefix = value > 0 ? '+' : '';
     return `${prefix}${value.toFixed(1)}%`;
   };
-
   const getImprovementColor = (value: number) => {
     if (value > 20) return 'text-green-600';
     if (value > 0) return 'text-green-500';
     if (value > -10) return 'text-yellow-500';
     return 'text-red-500';
   };
-
   const getImprovementIcon = (value: number) => {
     return value > 0 ? TrendingUp : TrendingDown;
   };
-
-  return (
-    <div className="container mx-auto p-6 space-y-6">
+  return <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">AI Impact Dashboard</h1>
@@ -253,11 +221,7 @@ const AIImpactDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <select 
-            value={timeRange} 
-            onChange={(e) => setTimeRange(e.target.value as any)}
-            className="border rounded px-3 py-2"
-          >
+          <select value={timeRange} onChange={e => setTimeRange(e.target.value as any)} className="border rounded px-3 py-2 bg-zinc-800">
             <option value="week">Last Week</option>
             <option value="month">Last Month</option>
             <option value="quarter">Last Quarter</option>
@@ -270,8 +234,7 @@ const AIImpactDashboard = () => {
       </div>
 
       {/* Decision Distribution */}
-      {decisionData && (
-        <Card>
+      {decisionData && <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
@@ -315,17 +278,13 @@ const AIImpactDashboard = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Performance Metrics Comparison */}
-      {performanceData && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {performanceData && <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Object.entries(performanceData).map(([key, metric]) => {
-            const ImprovementIcon = getImprovementIcon(metric.improvement);
-            
-            return (
-              <Card key={key}>
+        const ImprovementIcon = getImprovementIcon(metric.improvement);
+        return <Card key={key}>
                 <CardHeader>
                   <CardTitle className="text-lg">
                     <TooltipProvider>
@@ -365,17 +324,12 @@ const AIImpactDashboard = () => {
                       </div>
                     </div>
                     
-                    <Progress 
-                      value={Math.abs(metric.improvement)} 
-                      className="h-2"
-                    />
+                    <Progress value={Math.abs(metric.improvement)} className="h-2" />
                   </div>
                 </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+              </Card>;
+      })}
+        </div>}
 
       {/* AI ROI Calculator */}
       <Card>
@@ -393,31 +347,21 @@ const AIImpactDashboard = () => {
             {/* Input Section */}
             <div className="flex flex-col space-y-2">
               <Label htmlFor="monthly-spend">Monthly Recruitment Spend ($)</Label>
-              <Input
-                id="monthly-spend"
-                type="number"
-                value={monthlySpend}
-                onChange={(e) => handleSpendChange(e.target.value)}
-                placeholder="Enter your monthly spend"
-                className="max-w-xs"
-                min="0"
-                step="1000"
-              />
+              <Input id="monthly-spend" type="number" value={monthlySpend} onChange={e => handleSpendChange(e.target.value)} placeholder="Enter your monthly spend" className="max-w-xs" min="0" step="1000" />
               <p className="text-sm text-muted-foreground">
                 Enter your current monthly recruitment budget to see potential AI savings
               </p>
             </div>
 
             {/* Results Section */}
-            {roiData && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t">
+            {roiData && <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4 border-t">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600 mb-1">
                     ${roiData.monthlySavings.toLocaleString()}
                   </div>
                   <div className="text-sm text-muted-foreground">Monthly Savings</div>
                   <div className="text-xs text-green-600 mt-1">
-                    {roiData.monthlySpend > 0 ? `${((roiData.monthlySavings / roiData.monthlySpend) * 100).toFixed(1)}% of spend` : ''}
+                    {roiData.monthlySpend > 0 ? `${(roiData.monthlySavings / roiData.monthlySpend * 100).toFixed(1)}% of spend` : ''}
                   </div>
                 </div>
                 <div className="text-center">
@@ -447,8 +391,7 @@ const AIImpactDashboard = () => {
                     Candidate experience
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Assumptions */}
             <div className="text-xs text-muted-foreground space-y-1 pt-4 border-t">
@@ -465,8 +408,6 @@ const AIImpactDashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default AIImpactDashboard;
