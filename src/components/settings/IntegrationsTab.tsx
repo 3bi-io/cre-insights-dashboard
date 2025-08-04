@@ -217,7 +217,11 @@ const IntegrationsTab = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-blue-500" />
+            <img 
+              src="/lovable-uploads/4eb0ffa4-7d5c-437d-bf75-d16a985e6189.png" 
+              alt="X" 
+              className="w-5 h-5"
+            />
             X (Twitter) Platform
           </CardTitle>
           <CardDescription>

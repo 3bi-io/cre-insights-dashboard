@@ -106,7 +106,11 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                           {platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter') ? (
-                            <MessageCircle className="w-4 h-4 text-blue-500" />
+                            <img 
+                              src="/lovable-uploads/4eb0ffa4-7d5c-437d-bf75-d16a985e6189.png" 
+                              alt="X" 
+                              className="w-4 h-4"
+                            />
                           ) : platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook') ? (
                             <img 
                               src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" 
