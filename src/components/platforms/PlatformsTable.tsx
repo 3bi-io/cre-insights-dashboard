@@ -1,19 +1,8 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { MoreHorizontal, Globe, Edit, Trash2, Settings, MessageCircle, Activity, ExternalLink } from 'lucide-react';
+import { MoreHorizontal, ExternalLink } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import PlatformSetupDialog from './PlatformSetupDialog';
-import XPlatformActions from './XPlatformActions';
-import MetaPlatformActions from './MetaPlatformActions';
-import IndeedPlatformActions from './IndeedPlatformActions';
-import ZipRecruiterPlatformActions from './ZipRecruiterPlatformActions';
-import GoogleJobsPlatformActions from './GoogleJobsPlatformActions';
-import TalrooPlatformActions from './TalrooPlatformActions';
 
 interface Platform {
   id: string;
@@ -28,263 +17,117 @@ interface PlatformsTableProps {
   onRefresh: () => void;
 }
 
-const PlatformsTable: React.FC<PlatformsTableProps> = ({
-  platforms,
-  onRefresh
-}) => {
-  const [setupPlatform, setSetupPlatform] = useState<Platform | null>(null);
-  const { toast } = useToast();
-
-  const handleDeletePlatform = async (platformId: string, platformName: string) => {
-    try {
-      const { error } = await supabase
-        .from('platforms')
-        .delete()
-        .eq('id', platformId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `${platformName} platform deleted successfully`
-      });
-      onRefresh();
-    } catch (error) {
-      console.error('Error deleting platform:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete platform. Please try again.",
-        variant: "destructive"
-      });
+const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh }) => {
+  // Define available platforms with their details
+  const availablePlatforms = [
+    {
+      name: 'Google Jobs',
+      logo: '/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png',
+      status: 'XML Feed Ready',
+      description: 'Google Jobs XML Feed Integration',
+      created: '7/29/2025'
+    },
+    {
+      name: 'Indeed',
+      logo: '/lovable-uploads/12d16c27-6e74-452f-ad08-258d0924af84.png',
+      status: 'Indeed Ready',
+      description: 'Indeed Reporting API',
+      created: '6/12/2025'
+    },
+    {
+      name: 'Meta',
+      logo: '/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png',
+      status: 'Meta Ready',
+      description: 'Meta Business API',
+      created: '7/1/2025'
+    },
+    {
+      name: 'X',
+      logo: '/lovable-uploads/4eb0ffa4-7d5c-437d-bf75-d16a985e6189.png',
+      status: 'Enhanced Integration',
+      description: 'Enhanced Integration',
+      created: '7/1/2025'
+    },
+    {
+      name: 'ZipRecruiter',
+      logo: '/lovable-uploads/7d10dee2-7442-4d14-8a26-bb7f417bd5e8.png',
+      status: 'ZipRecruiter Ready',
+      description: 'ZipRecruiter API Integration',
+      created: '6/12/2025'
+    },
+    {
+      name: 'Talroo',
+      logo: '/lovable-uploads/2ba5a3f3-dba1-46c4-8caf-fe192c25c828.png',
+      status: 'Talroo Ready',
+      description: 'Talroo Platform Integration',
+      created: '6/15/2025'
     }
-  };
-
-  const handleSetupSuccess = () => {
-    setSetupPlatform(null);
-    onRefresh();
-  };
-
-  if (!platforms || platforms.length === 0) {
-    return (
-      <Card>
-        <CardContent className="text-center py-12 px-4">
-          <div className="text-gray-500 mb-4">
-            <Globe className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium mb-2">No platforms found</h3>
-            <p className="text-sm sm:text-base">Get started by adding your first advertising platform.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  ];
 
   return (
-    <>
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Platform</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Created</th>
-                <th className="text-center py-3 px-4 font-medium text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {platforms.map(platform => (
-                <tr key={platform.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      {platform.logo_url ? (
-                        <img 
-                          src={platform.logo_url} 
-                          alt={platform.name} 
-                          className="w-8 h-8 rounded-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          {platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter') ? (
-                            <img 
-                              src="/lovable-uploads/4eb0ffa4-7d5c-437d-bf75-d16a985e6189.png" 
-                              alt="X" 
-                              className="w-4 h-4"
-                            />
-                          ) : platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook') ? (
-                            <img 
-                              src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" 
-                              alt="Meta" 
-                              className="w-4 h-4"
-                            />
-                          ) : platform.name.toLowerCase().includes('indeed') ? (
-                            <img 
-                              src="/lovable-uploads/12d16c27-6e74-452f-ad08-258d0924af84.png" 
-                              alt="Indeed" 
-                              className="w-4 h-4"
-                            />
-                          ) : platform.name.toLowerCase().includes('ziprecruiter') || platform.name.toLowerCase().includes('zip recruiter') ? (
-                            <img 
-                              src="/lovable-uploads/7d10dee2-7442-4d14-8a26-bb7f417bd5e8.png" 
-                              alt="ZipRecruiter" 
-                              className="w-4 h-4"
-                            />
-                          ) : platform.name.toLowerCase().includes('google') && platform.name.toLowerCase().includes('jobs') ? (
-                            <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 via-red-500 via-yellow-500 to-green-500 flex items-center justify-center">
-                              <span className="text-white font-bold text-xs">G</span>
-                            </div>
-                          ) : platform.name.toLowerCase().includes('talroo') ? (
-                            <img 
-                              src="/lovable-uploads/2ba5a3f3-dba1-46c4-8caf-fe192c25c828.png" 
-                              alt="Talroo" 
-                              className="w-4 h-4"
-                            />
-                          ) : (
-                            <Globe className="w-4 h-4 text-primary" />
-                          )}
-                        </div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{platform.name}</span>
-                        {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Activity className="w-3 h-3 text-blue-500" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400">Enhanced Integration</span>
-                          </div>
-                        )}
-                        {(platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook')) && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Activity className="w-3 h-3 text-blue-500" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400">Meta Business API</span>
-                          </div>
-                        )}
-                        {platform.name.toLowerCase().includes('indeed') && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Activity className="w-3 h-3 text-blue-600" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400">Indeed Reporting API</span>
-                          </div>
-                        )}
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border bg-muted/50">
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Platform</th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Created</th>
+              <th className="text-center py-3 px-4 font-medium text-muted-foreground">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {availablePlatforms.map((platform, index) => (
+              <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
+                <td className="py-4 px-4">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={platform.logo} 
+                      alt={platform.name} 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground">{platform.name}</span>
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-xs text-blue-600 dark:text-blue-400">{platform.description}</span>
                       </div>
                     </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex flex-col gap-1">
-                      {(platform.name.toLowerCase().includes('x') || platform.name.toLowerCase().includes('twitter')) && platform.api_endpoint && (
-                        <Badge variant="outline" className="text-xs">
-                          API Ready
-                        </Badge>
-                      )}
-                      {(platform.name.toLowerCase().includes('meta') || platform.name.toLowerCase().includes('facebook')) && (
-                        <Badge variant="outline" className="text-xs">
-                          Meta Ready
-                        </Badge>
-                      )}
-                      {platform.name.toLowerCase().includes('indeed') && (
-                        <Badge variant="outline" className="text-xs">
-                          Indeed Ready
-                        </Badge>
-                      )}
-                      {(platform.name.toLowerCase().includes('ziprecruiter') || platform.name.toLowerCase().includes('zip recruiter')) && (
-                        <Badge variant="outline" className="text-xs">
-                          ZipRecruiter Ready
-                        </Badge>
-                      )}
-                      {platform.name.toLowerCase().includes('google') && platform.name.toLowerCase().includes('jobs') && (
-                        <Badge variant="outline" className="text-xs">
-                          XML Feed Ready
-                        </Badge>
-                      )}
-                      {platform.name.toLowerCase().includes('talroo') && (
-                        <Badge variant="outline" className="text-xs">
-                          Talroo Ready
-                        </Badge>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-muted-foreground text-sm">
-                      {new Date(platform.created_at).toLocaleDateString()}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="w-4 h-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setSetupPlatform(platform)}>
-                          <Settings className="w-4 h-4 mr-2" />
-                          Setup Platform
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => window.open(`https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/job-feed-xml?platform=${encodeURIComponent(platform.name.toLowerCase())}`, '_blank')}
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          XML Feed URL
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Platform
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-red-600" 
-                          onClick={() => handleDeletePlatform(platform.id, platform.name)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete Platform
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </td>
+                <td className="py-4 px-4">
+                  <Badge variant="outline" className="text-xs">
+                    {platform.status}
+                  </Badge>
+                </td>
+                <td className="py-4 px-4">
+                  <span className="text-muted-foreground text-sm">
+                    {platform.created}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="w-4 h-4" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => window.open(`https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/job-feed-xml?platform=${encodeURIComponent(platform.name.toLowerCase())}`, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        XML Feed URL
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      <PlatformSetupDialog 
-        open={!!setupPlatform} 
-        onOpenChange={(open) => !open && setSetupPlatform(null)} 
-        platform={setupPlatform} 
-        onSuccess={handleSetupSuccess} 
-      />
-      
-      {platforms && platforms.some(p => (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint) && (
-        <XPlatformActions 
-          platform={platforms.find(p => (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint)!} 
-          onRefresh={onRefresh} 
-        />
-      )}
-      
-      {platforms && platforms.some(p => p.name.toLowerCase().includes('meta') || p.name.toLowerCase().includes('facebook')) && (
-        <MetaPlatformActions 
-          platform={platforms.find(p => p.name.toLowerCase().includes('meta') || p.name.toLowerCase().includes('facebook'))!} 
-          onRefresh={onRefresh} 
-        />
-      )}
-      
-      {platforms && platforms.some(p => p.name.toLowerCase().includes('indeed')) && (
-        <IndeedPlatformActions />
-      )}
-      
-      {platforms && platforms.some(p => p.name.toLowerCase().includes('ziprecruiter') || p.name.toLowerCase().includes('zip recruiter')) && (
-        <ZipRecruiterPlatformActions />
-      )}
-
-      {platforms && platforms.some(p => p.name.toLowerCase().includes('google') && p.name.toLowerCase().includes('jobs')) && (
-        <GoogleJobsPlatformActions />
-      )}
-
-      {platforms && platforms.some(p => p.name.toLowerCase().includes('talroo')) && (
-        <TalrooPlatformActions />
-      )}
-    </>
+    </div>
   );
 };
 
