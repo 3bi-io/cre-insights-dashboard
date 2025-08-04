@@ -39,7 +39,7 @@ const PlatformsHeader: React.FC<PlatformsHeaderProps> = ({
             )}
           </div>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage your advertising platforms • {platformsCount} platforms
+            Manage your advertising platforms • 6
             {xPlatformConfigured && ' • Enhanced X integration enabled'}
           </p>
         </div>
