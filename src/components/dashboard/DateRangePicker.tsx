@@ -92,7 +92,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChange }) =>
       <PopoverTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2 h-10 min-w-[180px] justify-start">
           <Calendar className="w-4 h-4" />
-          <span className={(!value.from || !value.to) ? 'text-foreground' : ''}>{formatDateRange()}</span>
+          <span className="text-foreground">{formatDateRange()}</span>
           <ChevronDown className="w-4 h-4 ml-auto" />
         </Button>
       </PopoverTrigger>
