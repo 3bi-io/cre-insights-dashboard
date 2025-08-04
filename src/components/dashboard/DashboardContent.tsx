@@ -20,7 +20,9 @@ import {
   Eye,
   MousePointer,
   Users,
-  Sparkles
+  Sparkles,
+  Bot,
+  MapPin
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +30,8 @@ import AIProviderSettings from '@/components/analytics/AIProviderSettings';
 import AnalyticsSummary from '@/components/analytics/AnalyticsSummary';
 import LocationStatusBreakdown from '@/components/analytics/LocationStatusBreakdown';
 import AnalyticsInsights from '@/components/analytics/AnalyticsInsights';
+import DetailedInsights from '@/components/analytics/DetailedInsights';
+import ComparisonMetrics from '@/components/analytics/ComparisonMetrics';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface AnalyticsData {
@@ -302,18 +306,48 @@ const DashboardContent = () => {
                     provider={analyticsData.provider}
                   />
 
-                  {/* Location and Status Breakdown */}
-                  <LocationStatusBreakdown 
-                    locationConversion={analyticsData.locationConversion}
-                    statusBreakdown={analyticsData.statusBreakdown}
-                  />
+                  {/* Enhanced Analytics Tabs */}
+                  <Tabs defaultValue="overview" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="overview" className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        Overview
+                      </TabsTrigger>
+                      <TabsTrigger value="insights" className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Detailed Insights
+                      </TabsTrigger>
+                      <TabsTrigger value="trends" className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Trends & Comparisons
+                      </TabsTrigger>
+                    </TabsList>
 
-                  {/* AI Insights */}
-                  <AnalyticsInsights 
-                    insights={analyticsData.insights}
-                    recommendations={analyticsData.recommendations}
-                    provider={analyticsData.provider}
-                  />
+                    <TabsContent value="overview" className="space-y-6 mt-6">
+                      <LocationStatusBreakdown 
+                        locationConversion={analyticsData.locationConversion}
+                        statusBreakdown={analyticsData.statusBreakdown}
+                      />
+
+                      <AnalyticsInsights 
+                        insights={analyticsData.insights}
+                        recommendations={analyticsData.recommendations}
+                        provider={analyticsData.provider}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="insights" className="space-y-6 mt-6">
+                      <DetailedInsights
+                        insights={analyticsData.insights || []}
+                        recommendations={analyticsData.recommendations || []}
+                        analyticsData={analyticsData}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="trends" className="space-y-6 mt-6">
+                      <ComparisonMetrics analyticsData={analyticsData} />
+                    </TabsContent>
+                  </Tabs>
                 </>
               ) : (
                 <Card>
