@@ -241,8 +241,14 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       'Region': 'state',
       'state': 'state',
       
+      // Job Information
+      'JobTitle': 'job_title',
+      'Position': 'job_title',
+      'job_title': 'job_title',
+      'jobTitle': 'job_title',
+      
       // Boolean fields - map to Yes/No strings
-      'over_21': 'age',
+      'age': 'age',
       'Class_A_CDL': 'cdl',
       'cdl': 'cdl',
       'can_pass_drug': 'drug',
@@ -282,6 +288,27 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
         
         extractedData[appField] = value;
         console.log(`Mapped ${elevenLabsField} -> ${appField}:`, value);
+      }
+    }
+    
+    // Look up job listing if we have a job title
+    let jobListing = null;
+    if (extractedData.job_title) {
+      console.log('Looking up job listing for title:', extractedData.job_title);
+      const { data: jobData, error: jobError } = await supabase
+        .from('job_listings')
+        .select('id, job_id, title, job_title, client, client_id')
+        .or(`title.ilike.%${extractedData.job_title}%,job_title.ilike.%${extractedData.job_title}%`)
+        .limit(1)
+        .single();
+      
+      if (!jobError && jobData) {
+        jobListing = jobData;
+        extractedData.job_listing_id = jobData.id;
+        extractedData.job_id = jobData.job_id;
+        console.log('Found matching job listing:', jobData);
+      } else {
+        console.log('No matching job listing found for:', extractedData.job_title);
       }
     }
     
