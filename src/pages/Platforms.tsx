@@ -6,6 +6,7 @@ import PlatformsHeader from '@/components/platforms/PlatformsHeader';
 import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
 import GoogleJobsSetup from '@/components/platforms/GoogleJobsSetup';
+import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, FileText, Settings } from 'lucide-react';
 
@@ -49,10 +50,14 @@ const Platforms = () => {
       />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Platforms
+          </TabsTrigger>
+          <TabsTrigger value="meta" className="flex items-center gap-2">
+            <img src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" alt="Meta" className="w-4 h-4" />
+            Meta API
           </TabsTrigger>
           <TabsTrigger value="google-jobs" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
@@ -69,6 +74,15 @@ const Platforms = () => {
             platforms={platforms}
             onRefresh={refetch}
           />
+        </TabsContent>
+
+        <TabsContent value="meta" className="space-y-6 mt-6">
+          {platforms?.find(p => p.name.toLowerCase().includes('meta')) && (
+            <MetaPlatformActions 
+              platform={platforms.find(p => p.name.toLowerCase().includes('meta'))!}
+              onRefresh={refetch}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="google-jobs" className="space-y-6 mt-6">
