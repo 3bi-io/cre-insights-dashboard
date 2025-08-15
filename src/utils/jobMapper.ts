@@ -32,7 +32,7 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   
   const mapped = {
     title: jobTitle,
-    description: description,
+    job_summary: description,
     location: location,
     budget: budget,
     experience_level: 'entry',
