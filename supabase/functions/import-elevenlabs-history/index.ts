@@ -322,59 +322,101 @@ async function extractApplicationData(conversationDetail: any, conversation: any
     
     // Also try to parse any transcript if structured data is not available
     const hasStructured = ['applicant_email','first_name','last_name','phone','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_title'].some((f) => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');
+    
+    // Track if phone was sourced from transcript only (used to prevent bad inserts)
+    let phoneFromTranscript = false;
+    
     if (!hasStructured) {
-      console.log('No structured data found or values are empty, trying transcript parsing...');
+      console.log('No structured data found or values are empty, trying transcript parsing (user messages only)...');
       
-      let transcript = '';
-      if (conversationDetail.transcript && typeof conversationDetail.transcript === 'string') {
-        transcript = conversationDetail.transcript;
-      } else if (conversationDetail.transcript && Array.isArray(conversationDetail.transcript)) {
-        transcript = (conversationDetail.transcript as any[])
-          .map((msg: any) => {
-            if (typeof msg === 'string') return msg;
-            if (msg.message) return msg.message;
-            if (msg.text) return msg.text;
-            if (msg.content) return msg.content;
-            return '';
-          })
-          .filter(Boolean)
-          .join(' ');
-      } else if (conversationDetail.messages && Array.isArray(conversationDetail.messages)) {
-        transcript = conversationDetail.messages
-          .map((msg: any) => {
-            if (typeof msg === 'string') return msg;
-            if (msg.text) return msg.text;
-            if (msg.content) return msg.content;
-            if (msg.message) return msg.message;
-            return '';
-          })
-          .filter(Boolean)
-          .join(' ');
+      // Helper to normalize a phone string to just digits for comparison
+      const toDigits = (val: string) => (val || '').replace(/\D/g, '');
+      const isTollFree = (digits: string) => /^(800|888|877|866|855|844|833|822)\d{7}$/.test(digits);
+      
+      // Known numbers from call metadata to ignore
+      const agentNumber = toDigits(conversationDetail?.metadata?.phone_call?.agent_number || '');
+      const externalNumber = toDigits(conversationDetail?.metadata?.phone_call?.external_number || '');
+      
+      // Build transcript using ONLY user messages when available
+      let userTranscript = '';
+      const collectFromArray = (arr: any[]) => arr
+        .map((msg: any) => {
+          if (typeof msg === 'string') return '';
+          if (msg?.role === 'user') {
+            return msg.message || msg.text || msg.content || '';
+          }
+          return '';
+        })
+        .filter(Boolean)
+        .join(' ');
+      
+      if (Array.isArray(conversationDetail.transcript)) {
+        userTranscript = collectFromArray(conversationDetail.transcript);
+      } else if (Array.isArray(conversationDetail.messages)) {
+        userTranscript = collectFromArray(conversationDetail.messages);
       }
       
-      if (transcript) {
-        console.log('Parsing transcript:', transcript.substring(0, 200) + '...');
+      // If we couldn't isolate user-only transcript, fall back to string transcript (last resort)
+      if (!userTranscript && typeof conversationDetail.transcript === 'string') {
+        userTranscript = conversationDetail.transcript;
+      }
+      
+      if (userTranscript) {
+        console.log('Parsing user transcript:', userTranscript.substring(0, 200) + '...');
         
-        // Fallback regex patterns for transcript parsing
+        // Fallback regex patterns for transcript parsing (user-only)
         const patterns = {
-          applicant_email: /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
-          phone: /(\d{3}[-\s]?\d{3}[-\s]?\d{4})/i,
-          zip: /(\d{5}(?:-\d{4})?)/i,
-        };
+          applicant_email: /([a-zA-Z0-9._%+-]+\s*(?:@|\s+at\s+)\s*[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+          phone: /(\+?1?[\s.-]?)?(\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/,
+          zip: /(\b\d{5}(?:-\d{4})?\b)/,
+        } as const;
         
-        for (const [field, pattern] of Object.entries(patterns)) {
-          const match = transcript.match(pattern);
-          if (match && match[1] && !extractedData[field]) {
-            extractedData[field] = match[1].trim();
-            console.log(`Extracted from transcript ${field}:`, match[1]);
+        // Email
+        const emailMatch = userTranscript.match(patterns.applicant_email);
+        if (emailMatch && !extractedData.applicant_email) {
+          const rawEmail = emailMatch[1].replace(/\s+/g, ' ').trim();
+          const normalizedEmail = rawEmail.replace(/\s+at\s+/gi, '@');
+          extractedData.applicant_email = normalizedEmail;
+          console.log('Extracted from transcript applicant_email:', normalizedEmail);
+        }
+        
+        // Phone
+        const phoneMatch = userTranscript.match(patterns.phone);
+        if (phoneMatch && !extractedData.phone) {
+          const raw = phoneMatch[0];
+          const digits = toDigits(raw);
+          // Ignore if matches known agent/external numbers or toll-free
+          if (digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))) {
+            const tenDigits = digits.length === 11 ? digits.slice(1) : digits;
+            if (tenDigits !== agentNumber.slice(-10) && tenDigits !== externalNumber.slice(-10) && !isTollFree(tenDigits)) {
+              // Format as 303-210-6789 for consistency
+              const formatted = `${tenDigits.slice(0,3)}-${tenDigits.slice(3,6)}-${tenDigits.slice(6)}`;
+              extractedData.phone = formatted;
+              phoneFromTranscript = true;
+              console.log('Extracted from transcript phone:', formatted);
+            }
           }
+        }
+        
+        // ZIP
+        const zipMatch = userTranscript.match(patterns.zip);
+        if (zipMatch && !extractedData.zip) {
+          extractedData.zip = zipMatch[1].trim();
+          console.log('Extracted from transcript zip:', extractedData.zip);
         }
       }
     }
 
     // Check if we have meaningful data
     const meaningfulFields = ['first_name','last_name','applicant_email','phone','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_id','job_listing_id','client'];
-    const hasData = meaningfulFields.some((f) => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');
+    let hasData = meaningfulFields.some((f) => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');
+    
+    // If the ONLY field we captured is a phone from transcript, treat as not meaningful to avoid bad inserts
+    const nonPhoneFieldsPresent = meaningfulFields.filter(f => f !== 'phone').some(f => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');
+    if (hasData && !nonPhoneFieldsPresent && phoneFromTranscript) {
+      console.log('Only transcript-derived phone found; skipping as not meaningful.');
+      hasData = false;
+    }
     
     if (hasData) {
       console.log('Successfully extracted application data:', extractedData);
