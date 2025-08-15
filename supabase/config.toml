@@ -1,4 +1,3 @@
-
 project_id = "auwhcdpppldjlcaxzsme"
 
 [functions.zapier-webhook]
@@ -33,3 +32,6 @@ verify_jwt = false
 
 [functions.meta-spend-analytics]
 verify_jwt = true
+
+[functions.import-elevenlabs-history]
+verify_jwt = false

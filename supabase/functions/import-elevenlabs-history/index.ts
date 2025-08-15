@@ -77,7 +77,7 @@ serve(async (req) => {
         const conversationDetail = await detailResponse.json();
         
         // Extract application data from conversation transcript
-        const applicationData = extractApplicationData(conversationDetail, conversation);
+        const applicationData = await extractApplicationData(conversationDetail, conversation, supabase);
         
         if (applicationData) {
           applications.push(applicationData);
@@ -144,7 +144,7 @@ serve(async (req) => {
   }
 });
 
-function extractApplicationData(conversationDetail: any, conversation: any) {
+async function extractApplicationData(conversationDetail: any, conversation: any, supabase: any) {
   try {
     console.log('Processing conversation:', conversation.conversation_id);
     console.log('Conversation detail structure:', JSON.stringify(conversationDetail, null, 2));
