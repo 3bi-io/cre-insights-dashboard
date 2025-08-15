@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useConversation } from '@11labs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Mic, MicOff, Phone, PhoneOff, Loader2 } from 'lucide-react';
+import { Mic, Phone, PhoneOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -38,16 +38,25 @@ const VoiceJobApplication: React.FC<VoiceJobApplicationProps> = ({ job, isOpen, 
   const [agentId] = useState('agent_01jwedntnjf7tt0qma00a2276r'); // ElevenLabs agent ID
   const { toast } = useToast();
 
+  const introMessage = useMemo(() => {
+    const jobTitle = job.title || job.job_title || 'Position';
+    const companyName = job.clients?.name || job.client || 'Company';
+    const location = job.location || `${job.city || ''}${job.city && job.state ? ', ' : ''}${job.state || ''}` || 'Location not specified';
+    const description = job.job_summary || 'No description provided';
+    return `The candidate clicked Apply Now for ${jobTitle} at ${companyName} (${location}). Use this context and the description to personalize your questions. Description: ${description}`;
+  }, [job]);
+
   const conversation = useConversation({
+    overrides: {
+      agent: {
+        firstMessage: introMessage,
+        language: 'en'
+      }
+    },
     onConnect: () => {
       console.log('Connected to voice agent');
       setIsConnecting(false);
       setHasStarted(true);
-      
-      // Send job information to the agent after connection
-      setTimeout(() => {
-        sendJobDetailsToAgent();
-      }, 1000);
     },
     onDisconnect: () => {
       console.log('Disconnected from voice agent');
@@ -95,23 +104,17 @@ const VoiceJobApplication: React.FC<VoiceJobApplicationProps> = ({ job, isOpen, 
       if (error) throw error;
 
       if (data.signedUrl) {
-        // Use the correct ElevenLabs API parameters
+        try {
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (err) {
+          console.warn('Microphone permission error:', err);
+        }
+
         const conversationId = await conversation.startSession({ 
-          agentId: agentId
-        });
+          url: data.signedUrl
+        } as any);
         
         console.log('Conversation started with ID:', conversationId);
-        
-        // Set up initial context with job details
-        const jobContext = {
-          jobTitle: job.title || job.job_title,
-          companyName: job.clients?.name || job.client,
-          location: job.location || `${job.city || ''}${job.city && job.state ? ', ' : ''}${job.state || ''}`,
-          description: job.job_summary,
-          jobId: job.id
-        };
-        
-        console.log('Job context set:', jobContext);
       }
     } catch (error) {
       console.error('Error starting conversation:', error);
