@@ -118,9 +118,9 @@ const AdminLanding = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
-                <Link to="/apply">
-                  Apply for Jobs
-                  <Users className="w-5 h-5 ml-2" />
+                <Link to="/jobs">
+                  Browse Jobs
+                  <Briefcase className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
             </div>

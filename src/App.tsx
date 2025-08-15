@@ -27,6 +27,7 @@ import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
 import ThankYou from "./pages/ThankYou";
 import Media from "./pages/Media";
+import PublicJobs from "./pages/PublicJobs";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
           <AuthProvider>
             <Routes>
               <Route path="/" element={<AdminLanding />} />
+              <Route path="/jobs" element={<PublicJobs />} />
               <Route path="/apply" element={<Apply />} />
               <Route path="/apply/detailed" element={<DetailedApply />} />
               <Route path="/thank-you" element={<ThankYou />} />
