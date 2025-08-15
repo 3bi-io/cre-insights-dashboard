@@ -250,18 +250,17 @@ const PublicJobs = () => {
            )}
          </div>
 
-         {/* Voice Application Dialog */}
-         {selectedJob && (
-           <VoiceJobApplication
-             job={selectedJob}
-             isOpen={isVoiceDialogOpen}
-             onClose={() => {
-               setIsVoiceDialogOpen(false);
-               setSelectedJob(null);
-             }}
-           />
-         )}
-        </div>
+        {/* Voice Application Dialog */}
+        {selectedJob && (
+          <VoiceJobApplication
+            job={selectedJob}
+            isOpen={isVoiceDialogOpen}
+            onClose={() => {
+              setIsVoiceDialogOpen(false);
+              setSelectedJob(null);
+            }}
+          />
+        )}
       </div>
     </PublicLayout>
   );
