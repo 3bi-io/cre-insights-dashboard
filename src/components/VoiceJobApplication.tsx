@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useConversation } from '@11labs/react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +34,9 @@ interface VoiceJobApplicationProps {
 const VoiceJobApplication: React.FC<VoiceJobApplicationProps> = ({ job, isOpen, onClose }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
-  const [agentId] = useState('agent_01jwedntnjf7tt0qma00a2276r'); // ElevenLabs agent ID
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [agentId] = useState('agent_01jwedntnjf7tt0qma00a2276r');
+  const wsRef = useRef<WebSocket | null>(null);
   const { toast } = useToast();
 
   const introMessage = useMemo(() => {
@@ -46,95 +47,92 @@ const VoiceJobApplication: React.FC<VoiceJobApplicationProps> = ({ job, isOpen, 
     return `The candidate clicked Apply Now for ${jobTitle} at ${companyName} (${location}). Use this context and the description to personalize your questions. Description: ${description}`;
   }, [job]);
 
-  const conversation = useConversation({
-    overrides: {
-      agent: {
-        firstMessage: introMessage,
-        language: 'en'
-      }
-    },
-    onConnect: () => {
-      console.log('Connected to voice agent');
-      setIsConnecting(false);
-      setHasStarted(true);
-    },
-    onDisconnect: () => {
-      console.log('Disconnected from voice agent');
-      setHasStarted(false);
-      setIsConnecting(false);
-    },
-    onError: (error) => {
-      console.error('Voice agent error:', error);
-      setIsConnecting(false);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to voice agent. Please try again.",
-        variant: "destructive",
-      });
-    },
-    onMessage: (message) => {
-      console.log('Agent message:', message);
-    }
-  });
-
-  const sendJobDetailsToAgent = () => {
-    const jobTitle = job.title || job.job_title || 'Position';
-    const companyName = job.clients?.name || job.client || 'Company';
-    const location = job.location || `${job.city || ''}${job.city && job.state ? ', ' : ''}${job.state || ''}` || 'Location not specified';
-    const description = job.job_summary || 'No description provided';
-    
-    const jobInfo = `I'm interested in applying for the ${jobTitle} position at ${companyName} located in ${location}. Here's the job description: ${description}`;
-    
-    // Send job information as a message to the agent
-    console.log('Sending job info to agent:', jobInfo);
-    
-    // This would typically be sent through the conversation interface
-    // The agent should be configured to handle this initial context
-  };
-
   const startConversation = async () => {
     setIsConnecting(true);
     
     try {
-      // Get signed URL for the voice agent
-      const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: { agentId }
-      });
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Connect to our edge function that proxies to ElevenLabs
+      const wsUrl = `wss://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/elevenlabs-agent`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-      if (error) throw error;
-
-      if (data.signedUrl) {
-        try {
-          await navigator.mediaDevices.getUserMedia({ audio: true });
-        } catch (err) {
-          console.warn('Microphone permission error:', err);
-        }
-
-        const conversationId = await conversation.startSession({ 
-          url: data.signedUrl
-        } as any);
+      ws.onopen = () => {
+        console.log('Connected to voice agent');
+        setIsConnecting(false);
+        setHasStarted(true);
         
-        console.log('Conversation started with ID:', conversationId);
-      }
+        // Send initial job context
+        ws.send(JSON.stringify({
+          type: 'job_context',
+          data: {
+            jobTitle: job.title || job.job_title,
+            companyName: job.clients?.name || job.client,
+            location: job.location || `${job.city || ''}${job.city && job.state ? ', ' : ''}${job.state || ''}`,
+            description: job.job_summary,
+            message: introMessage
+          }
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received from agent:', data);
+        
+        if (data.type === 'speaking_start') {
+          setIsSpeaking(true);
+        } else if (data.type === 'speaking_end') {
+          setIsSpeaking(false);
+        }
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket closed:', event);
+        setHasStarted(false);
+        setIsConnecting(false);
+        setIsSpeaking(false);
+        
+        if (event.code !== 1000) {
+          toast({
+            title: "Connection Error",
+            description: event.reason || "Connection to voice agent was lost.",
+            variant: "destructive",
+          });
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setIsConnecting(false);
+        toast({
+          title: "Connection Error",
+          description: "Failed to connect to voice agent. Please try again.",
+          variant: "destructive",
+        });
+      };
+
     } catch (error) {
       console.error('Error starting conversation:', error);
       setIsConnecting(false);
       toast({
         title: "Error",
-        description: "Failed to start voice conversation. Please try again.",
+        description: "Failed to access microphone or start voice conversation.",
         variant: "destructive",
       });
     }
   };
 
-  const endConversation = async () => {
-    try {
-      await conversation.endSession();
-      onClose();
-    } catch (error) {
-      console.error('Error ending conversation:', error);
-      onClose();
+  const endConversation = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
     }
+    setHasStarted(false);
+    setIsConnecting(false);
+    setIsSpeaking(false);
+    onClose();
   };
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
@@ -252,9 +250,9 @@ const VoiceJobApplication: React.FC<VoiceJobApplicationProps> = ({ job, isOpen, 
               </div>
             )}
 
-            {conversation.status === 'connected' && hasStarted && (
+            {hasStarted && (
               <div className="flex flex-col items-center gap-4">
-                {conversation.isSpeaking && (
+                {isSpeaking && (
                   <div className="flex items-center gap-2 text-blue-600">
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                     <span className="text-sm">Agent is speaking...</span>
