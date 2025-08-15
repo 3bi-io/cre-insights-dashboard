@@ -170,12 +170,15 @@ const VoiceJobApplication: React.FC<VoiceJobApplicationProps> = ({ job, isOpen, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl" aria-describedby="voice-application-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Phone className="w-5 h-5" />
             Voice Application - {job.title || job.job_title}
           </DialogTitle>
+          <div id="voice-application-description" className="sr-only">
+            Voice-powered job application interface for {job.title || job.job_title}. This dialog allows you to apply for the position using voice conversation with an AI recruiter.
+          </div>
         </DialogHeader>
         
         <div className="space-y-6">
