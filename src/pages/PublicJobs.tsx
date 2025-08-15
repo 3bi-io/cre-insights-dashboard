@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, DollarSign, Briefcase, Search, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import VoiceJobApplication from '@/components/VoiceJobApplication';
+import PublicLayout from '@/components/PublicLayout';
 
 const PublicJobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,22 +95,30 @@ const PublicJobs = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <PublicLayout>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Loading jobs...</div>
         </div>
-      </div>
+      </PublicLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">Find Your Next Career Opportunity</h1>
-            <p className="text-xl opacity-90">Discover amazing job opportunities and join our team</p>
+    <PublicLayout>
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">Find Your Next Career Opportunity</h1>
+            <p className="text-xl opacity-90 mb-8">Discover amazing job opportunities and join our team of transportation professionals</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" variant="secondary">
+                Browse All Jobs
+              </Button>
+              <Button size="lg" variant="outline" className="text-primary-foreground border-primary-foreground hover:bg-primary-foreground hover:text-primary">
+                Learn About Benefits
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -252,8 +261,9 @@ const PublicJobs = () => {
              }}
            />
          )}
-       </div>
-     </div>
+        </div>
+      </div>
+    </PublicLayout>
   );
 };
 
