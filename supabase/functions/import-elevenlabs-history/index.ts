@@ -146,10 +146,47 @@ serve(async (req) => {
 
 function extractApplicationData(conversationDetail: any, conversation: any) {
   try {
-    // Extract data from conversation transcript
-    const transcript = conversationDetail.transcript || '';
-    const messages = conversationDetail.messages || [];
+    console.log('Processing conversation:', conversation.conversation_id);
+    console.log('Conversation detail structure:', JSON.stringify(conversationDetail, null, 2));
     
+    // Extract transcript from messages or direct transcript field
+    let transcript = '';
+    
+    // Try different ways to get transcript content
+    if (conversationDetail.transcript && typeof conversationDetail.transcript === 'string') {
+      transcript = conversationDetail.transcript;
+    } else if (conversationDetail.messages && Array.isArray(conversationDetail.messages)) {
+      // Extract text from messages array
+      transcript = conversationDetail.messages
+        .map((msg: any) => {
+          if (typeof msg === 'string') return msg;
+          if (msg.text) return msg.text;
+          if (msg.content) return msg.content;
+          if (msg.message) return msg.message;
+          return '';
+        })
+        .filter(Boolean)
+        .join(' ');
+    } else if (conversationDetail.turns && Array.isArray(conversationDetail.turns)) {
+      // Extract from turns if that's the structure
+      transcript = conversationDetail.turns
+        .map((turn: any) => {
+          if (typeof turn === 'string') return turn;
+          if (turn.text) return turn.text;
+          if (turn.content) return turn.content;
+          return '';
+        })
+        .filter(Boolean)
+        .join(' ');
+    }
+    
+    console.log('Extracted transcript:', transcript);
+    
+    if (!transcript || typeof transcript !== 'string') {
+      console.log('No valid transcript found for conversation:', conversation.conversation_id);
+      return null;
+    }
+
     // Look for structured data in conversation
     const extractedData: any = {
       source: 'ElevenLabs Voice Agent (Historic)',
@@ -159,21 +196,21 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       updated_at: new Date().toISOString(),
     };
 
-    // Parse transcript for application data using patterns
+    // More flexible patterns for extracting data
     const dataPatterns = {
-      first_name: /(?:first name|given name)[\s:]*([a-zA-Z]+)/i,
-      last_name: /(?:last name|family name|surname)[\s:]*([a-zA-Z]+)/i,
-      applicant_email: /(?:email|e-mail)[\s:]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
-      phone: /(?:phone|telephone)[\s:]*([+]?[\d\s\-\(\)\.]{10,})/i,
-      city: /(?:city|municipality)[\s:]*([a-zA-Z\s]+)/i,
-      state: /(?:state|region)[\s:]*([a-zA-Z\s]{2,})/i,
-      zip: /(?:zip|postal code)[\s:]*(\d{5}(?:-\d{4})?)/i,
-      over_21: /(?:over 21|21 or older)[\s:]*([yn]es?|no)/i,
-      cdl: /(?:cdl|class a)[\s:]*([yn]es?|no)/i,
-      drug: /(?:drug test|pass.*drug)[\s:]*([yn]es?|no)/i,
-      veteran: /(?:veteran)[\s:]*([yn]es?|no)/i,
-      consent: /(?:consent.*sms|sms.*consent)[\s:]*([yn]es?|no)/i,
-      privacy: /(?:privacy policy|agree.*privacy)[\s:]*([yn]es?|no)/i,
+      first_name: /(?:first name|given name|my name is|i'm|i am)\s*:?\s*([a-zA-Z]{2,})/i,
+      last_name: /(?:last name|family name|surname)\s*:?\s*([a-zA-Z]{2,})/i,
+      applicant_email: /(?:email|e-mail|email address)\s*:?\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+      phone: /(?:phone|telephone|phone number|cell)\s*:?\s*([+]?[\d\s\-\(\)\.]{10,})/i,
+      city: /(?:city|live in|from)\s*:?\s*([a-zA-Z\s]{2,})/i,
+      state: /(?:state|region)\s*:?\s*([a-zA-Z\s]{2,})/i,
+      zip: /(?:zip|postal code|zip code)\s*:?\s*(\d{5}(?:-\d{4})?)/i,
+      over_21: /(?:over 21|21 or older|are you 21)\s*:?\s*(yes|no|y|n)/i,
+      cdl: /(?:cdl|class a|commercial license)\s*:?\s*(yes|no|y|n)/i,
+      drug: /(?:drug test|pass.*drug|clean drug)\s*:?\s*(yes|no|y|n)/i,
+      veteran: /(?:veteran|military)\s*:?\s*(yes|no|y|n)/i,
+      consent: /(?:consent.*sms|sms.*consent|text messages)\s*:?\s*(yes|no|y|n)/i,
+      privacy: /(?:privacy policy|agree.*privacy)\s*:?\s*(yes|no|y|n)/i,
     };
 
     // Extract data using patterns
@@ -188,6 +225,7 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
         }
         
         extractedData[field] = value;
+        console.log(`Extracted ${field}:`, value);
       }
     }
 
@@ -195,8 +233,10 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
     const hasData = extractedData.first_name || extractedData.last_name || extractedData.applicant_email || extractedData.phone;
     
     if (hasData) {
-      console.log('Extracted application data:', extractedData);
+      console.log('Successfully extracted application data:', extractedData);
       return extractedData;
+    } else {
+      console.log('No meaningful application data found in transcript');
     }
 
     return null;
