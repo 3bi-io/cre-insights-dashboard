@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -13,6 +15,44 @@ interface ApplicationDetailsDialogProps {
 }
 
 const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
+  // Get job title from voice agent data to look up job_id
+  const getJobTitleFromVoiceAgent = (app: any) => {
+    // Check various places the voice agent might store the job title
+    return app.job_title || 
+           app.position || 
+           app.title ||
+           app.display_fields?.job_title ||
+           app.display_fields?.position ||
+           app.custom_fields?.job_title ||
+           app.custom_fields?.position ||
+           null;
+  };
+
+  const voiceAgentJobTitle = getJobTitleFromVoiceAgent(application);
+
+  // Query to find job_id from job_listings table based on job title
+  const { data: matchedJobListing } = useQuery({
+    queryKey: ['job-listing-by-title', voiceAgentJobTitle],
+    queryFn: async () => {
+      if (!voiceAgentJobTitle) return null;
+      
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select('job_id, title, job_title')
+        .or(`title.ilike.%${voiceAgentJobTitle}%,job_title.ilike.%${voiceAgentJobTitle}%`)
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching job listing:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!voiceAgentJobTitle
+  });
+
   const getApplicantName = (app: any) => {
     if (app.full_name) {
       return app.full_name;
@@ -246,7 +286,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Position</label>
                 <p className="text-sm">
-                  {application.job_listings?.title || application.job_listings?.job_title || 'No job title provided'}
+                  {voiceAgentJobTitle || application.job_listings?.title || application.job_listings?.job_title || 'No job title provided'}
                 </p>
               </div>
               {getClientName(application) && (
@@ -255,10 +295,10 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                   <p className="text-sm">{getClientName(application)}</p>
                 </div>
               )}
-              {application.job_id && (
+              {(application.job_id || matchedJobListing?.job_id) && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">External Job ID</label>
-                  <p className="text-sm font-mono text-xs">{application.job_id}</p>
+                  <p className="text-sm font-mono text-xs">{application.job_id || matchedJobListing?.job_id}</p>
                 </div>
               )}
               {application.job_listing_id && (
