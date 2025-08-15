@@ -149,45 +149,51 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
     console.log('Processing conversation:', conversation.conversation_id);
     console.log('Conversation detail structure:', JSON.stringify(conversationDetail, null, 2));
     
-    // Extract transcript from messages or direct transcript field
-    let transcript = '';
+    // Look for structured data in different possible locations
+    let structuredData: any = {};
     
-    // Try different ways to get transcript content
-    if (conversationDetail.transcript && typeof conversationDetail.transcript === 'string') {
-      transcript = conversationDetail.transcript;
-    } else if (conversationDetail.messages && Array.isArray(conversationDetail.messages)) {
-      // Extract text from messages array
-      transcript = conversationDetail.messages
-        .map((msg: any) => {
-          if (typeof msg === 'string') return msg;
-          if (msg.text) return msg.text;
-          if (msg.content) return msg.content;
-          if (msg.message) return msg.message;
-          return '';
-        })
-        .filter(Boolean)
-        .join(' ');
-    } else if (conversationDetail.turns && Array.isArray(conversationDetail.turns)) {
-      // Extract from turns if that's the structure
-      transcript = conversationDetail.turns
-        .map((turn: any) => {
-          if (typeof turn === 'string') return turn;
-          if (turn.text) return turn.text;
-          if (turn.content) return turn.content;
-          return '';
-        })
-        .filter(Boolean)
-        .join(' ');
+    // Check if there's structured form data or agent responses
+    if (conversationDetail.agent_responses) {
+      console.log('Found agent_responses:', conversationDetail.agent_responses);
+      structuredData = conversationDetail.agent_responses;
     }
     
-    console.log('Extracted transcript:', transcript);
-    
-    if (!transcript || typeof transcript !== 'string') {
-      console.log('No valid transcript found for conversation:', conversation.conversation_id);
-      return null;
+    if (conversationDetail.user_data) {
+      console.log('Found user_data:', conversationDetail.user_data);
+      structuredData = { ...structuredData, ...conversationDetail.user_data };
     }
-
-    // Look for structured data in conversation
+    
+    if (conversationDetail.collected_data) {
+      console.log('Found collected_data:', conversationDetail.collected_data);
+      structuredData = { ...structuredData, ...conversationDetail.collected_data };
+    }
+    
+    if (conversationDetail.form_data) {
+      console.log('Found form_data:', conversationDetail.form_data);
+      structuredData = { ...structuredData, ...conversationDetail.form_data };
+    }
+    
+    // Check for data in the conversation summary or results
+    if (conversationDetail.summary && conversationDetail.summary.extracted_data) {
+      console.log('Found summary extracted_data:', conversationDetail.summary.extracted_data);
+      structuredData = { ...structuredData, ...conversationDetail.summary.extracted_data };
+    }
+    
+    // Check for data in analysis results
+    if (conversationDetail.analysis) {
+      console.log('Found analysis:', conversationDetail.analysis);
+      structuredData = { ...structuredData, ...conversationDetail.analysis };
+    }
+    
+    // Also check the conversation itself for any stored data
+    if (conversation.metadata) {
+      console.log('Found conversation metadata:', conversation.metadata);
+      structuredData = { ...structuredData, ...conversation.metadata };
+    }
+    
+    console.log('Combined structured data:', structuredData);
+    
+    // Initialize application data with defaults
     const extractedData: any = {
       source: 'ElevenLabs Voice Agent (Historic)',
       status: 'pending',
@@ -196,62 +202,132 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       updated_at: new Date().toISOString(),
     };
 
-    // More flexible patterns for extracting data from ElevenLabs conversations
-    const dataPatterns = {
-      // Email patterns
-      applicant_email: /(?:InternetEmailAddress|email|e-mail|email address)\s*[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+    // Direct field mappings from ElevenLabs structured data
+    const fieldMappings = {
+      // Email
+      'InternetEmailAddress': 'applicant_email',
+      'email': 'applicant_email',
+      'emailAddress': 'applicant_email',
       
-      // Name patterns
-      first_name: /(?:GivenName|first name|given name|my name is|i'm|i am)\s*[:\s]*([a-zA-Z]{2,})/i,
-      last_name: /(?:FamilyName|last name|family name|surname)\s*[:\s]*([a-zA-Z]{2,})/i,
+      // Names
+      'GivenName': 'first_name',
+      'firstName': 'first_name',
+      'first_name': 'first_name',
+      'FamilyName': 'last_name',
+      'lastName': 'last_name',
+      'last_name': 'last_name',
       
-      // Phone patterns
-      phone: /(?:PrimaryPhone|phone|telephone|phone number|cell)\s*[:\s]*([+]?[\d\s\-\(\)\.]{10,})/i,
+      // Phone
+      'PrimaryPhone': 'phone',
+      'phoneNumber': 'phone',
+      'phone': 'phone',
       
-      // Location patterns
-      zip: /(?:PostalCode|zip|postal code|zip code)\s*[:\s]*(\d{5}(?:-\d{4})?)/i,
-      city: /(?:Municipality|city|live in|from)\s*[:\s]*([a-zA-Z\s]{2,})/i,
-      state: /(?:Region|state|region)\s*[:\s]*([a-zA-Z\s]{2,})/i,
+      // Address
+      'PostalCode': 'zip',
+      'zipCode': 'zip',
+      'zip': 'zip',
+      'Municipality': 'city',
+      'city': 'city',
+      'Region': 'state',
+      'state': 'state',
       
-      // Yes/No questions
-      over_21: /(?:over_21|over 21|21 or older|are you 21)\s*[:\s]*(yes|no|y|n)/i,
-      cdl: /(?:Class_A_CDL|cdl|class a|commercial license)\s*[:\s]*(yes|no|y|n)/i,
-      drug: /(?:can_pass_drug|drug test|pass.*drug|clean drug)\s*[:\s]*(yes|no|y|n)/i,
-      veteran: /(?:Veteran_Status|veteran|military)\s*[:\s]*(yes|no|y|n)/i,
-      consent: /(?:consentToSMS|consent.*sms|sms.*consent|text messages)\s*[:\s]*(yes|no|y|n)/i,
-      privacy: /(?:agree_privacy_policy|privacy policy|agree.*privacy)\s*[:\s]*(yes|no|y|n)/i,
+      // Boolean fields - map to Yes/No strings
+      'over_21': 'over_21',
+      'Class_A_CDL': 'cdl',
+      'cdl': 'cdl',
+      'can_pass_drug': 'drug',
+      'drugTest': 'drug',
+      'Veteran_Status': 'veteran',
+      'veteran': 'veteran',
+      'consentToSMS': 'consent',
+      'smsConsent': 'consent',
+      'agree_privacy_policy': 'privacy',
+      'privacyPolicy': 'privacy',
       
       // Experience
-      exp: /(?:Class_A_CDL_experience|experience|months|years)\s*[:\s]*(\d+)/i,
+      'Class_A_CDL_experience': 'exp',
+      'experience': 'exp',
+      'months': 'months',
+      'years': 'exp',
     };
 
-    // Extract data using patterns
-    for (const [field, pattern] of Object.entries(dataPatterns)) {
-      const match = transcript.match(pattern);
-      if (match && match[1]) {
-        let value = match[1].trim();
+    // Map structured data to application fields
+    for (const [elevenLabsField, appField] of Object.entries(fieldMappings)) {
+      if (structuredData[elevenLabsField] !== undefined && structuredData[elevenLabsField] !== null) {
+        let value = structuredData[elevenLabsField];
         
-        // Normalize yes/no responses
-        if (['over_21', 'cdl', 'drug', 'veteran', 'consent', 'privacy'].includes(field)) {
-          value = value.toLowerCase().startsWith('y') ? 'Yes' : 'No';
+        // Convert boolean values to Yes/No strings for certain fields
+        if (['over_21', 'cdl', 'drug', 'veteran', 'consent', 'privacy'].includes(appField)) {
+          if (typeof value === 'boolean') {
+            value = value ? 'Yes' : 'No';
+          } else if (typeof value === 'string') {
+            const lowerValue = value.toLowerCase();
+            if (lowerValue === 'true' || lowerValue === 'yes' || lowerValue === 'y') {
+              value = 'Yes';
+            } else if (lowerValue === 'false' || lowerValue === 'no' || lowerValue === 'n') {
+              value = 'No';
+            }
+          }
         }
         
-        extractedData[field] = value;
-        console.log(`Extracted ${field}:`, value);
+        extractedData[appField] = value;
+        console.log(`Mapped ${elevenLabsField} -> ${appField}:`, value);
+      }
+    }
+    
+    // Also try to parse any transcript if structured data is not available
+    if (Object.keys(structuredData).length === 0) {
+      console.log('No structured data found, trying transcript parsing...');
+      
+      let transcript = '';
+      if (conversationDetail.transcript && typeof conversationDetail.transcript === 'string') {
+        transcript = conversationDetail.transcript;
+      } else if (conversationDetail.messages && Array.isArray(conversationDetail.messages)) {
+        transcript = conversationDetail.messages
+          .map((msg: any) => {
+            if (typeof msg === 'string') return msg;
+            if (msg.text) return msg.text;
+            if (msg.content) return msg.content;
+            if (msg.message) return msg.message;
+            return '';
+          })
+          .filter(Boolean)
+          .join(' ');
+      }
+      
+      if (transcript) {
+        console.log('Parsing transcript:', transcript.substring(0, 200) + '...');
+        
+        // Fallback regex patterns for transcript parsing
+        const patterns = {
+          applicant_email: /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+          phone: /(\d{3}[-\s]?\d{3}[-\s]?\d{4})/i,
+          zip: /(\d{5}(?:-\d{4})?)/i,
+        };
+        
+        for (const [field, pattern] of Object.entries(patterns)) {
+          const match = transcript.match(pattern);
+          if (match && match[1] && !extractedData[field]) {
+            extractedData[field] = match[1].trim();
+            console.log(`Extracted from transcript ${field}:`, match[1]);
+          }
+        }
       }
     }
 
-    // Only return if we have some meaningful data
-    const hasData = extractedData.first_name || extractedData.last_name || extractedData.applicant_email || extractedData.phone;
+    // Check if we have meaningful data
+    const hasData = extractedData.first_name || extractedData.last_name || 
+                   extractedData.applicant_email || extractedData.phone ||
+                   Object.keys(structuredData).length > 0;
     
     if (hasData) {
       console.log('Successfully extracted application data:', extractedData);
       return extractedData;
     } else {
-      console.log('No meaningful application data found in transcript');
+      console.log('No meaningful application data found');
+      return null;
     }
 
-    return null;
   } catch (error) {
     console.error('Error extracting application data:', error);
     return null;
