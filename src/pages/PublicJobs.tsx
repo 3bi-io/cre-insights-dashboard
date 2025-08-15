@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, DollarSign, Briefcase, Search, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import VoiceJobApplication from '@/components/VoiceJobApplication';
 
 const PublicJobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [isVoiceDialogOpen, setIsVoiceDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   // Fetch active job listings
@@ -84,8 +87,9 @@ const PublicJobs = () => {
     return 'Salary not specified';
   };
 
-  const handleApply = (jobId: string) => {
-    navigate(`/apply?job_id=${jobId}`);
+  const handleApply = (job: any) => {
+    setSelectedJob(job);
+    setIsVoiceDialogOpen(true);
   };
 
   if (isLoading) {
@@ -194,50 +198,62 @@ const PublicJobs = () => {
                         {job.job_categories?.name && (
                           <Badge variant="secondary">{job.job_categories.name}</Badge>
                         )}
-                        {job.job_type && (
-                          <Badge variant="outline">{job.job_type}</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {job.job_summary && (
-                        <p className="text-muted-foreground line-clamp-3">
-                          {job.job_summary}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4" />
-                          {formatSalary(job.salary_min, job.salary_max, job.salary_type)}
-                        </span>
-                        {job.experience_level && (
-                          <span>Experience: {job.experience_level}</span>
-                        )}
-                        {job.remote_type && (
-                          <Badge variant="outline">{job.remote_type}</Badge>
-                        )}
-                      </div>
-                      
-                      <div className="flex justify-between items-center pt-4">
-                        <span className="text-sm text-muted-foreground">
-                          Posted {new Date(job.created_at).toLocaleDateString()}
-                        </span>
-                        <Button onClick={() => handleApply(job.id)}>
-                          Apply Now
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                         {job.job_type && (
+                           <Badge variant="outline">{job.job_type}</Badge>
+                         )}
+                       </div>
+                     </div>
+                   </CardHeader>
+                   <CardContent>
+                     <div className="space-y-4">
+                       {job.job_summary && (
+                         <p className="text-muted-foreground line-clamp-3">
+                           {job.job_summary}
+                         </p>
+                       )}
+                       
+                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                         <span className="flex items-center gap-1">
+                           <DollarSign className="h-4 w-4" />
+                           {formatSalary(job.salary_min, job.salary_max, job.salary_type)}
+                         </span>
+                         {job.experience_level && (
+                           <span>Experience: {job.experience_level}</span>
+                         )}
+                         {job.remote_type && (
+                           <Badge variant="outline">{job.remote_type}</Badge>
+                         )}
+                       </div>
+                       
+                       <div className="flex justify-between items-center pt-4">
+                         <span className="text-sm text-muted-foreground">
+                           Posted {new Date(job.created_at).toLocaleDateString()}
+                         </span>
+                         <Button onClick={() => handleApply(job)}>
+                           Apply Now
+                         </Button>
+                       </div>
+                     </div>
+                   </CardContent>
+                 </Card>
+               ))}
+             </div>
+           )}
+         </div>
+
+         {/* Voice Application Dialog */}
+         {selectedJob && (
+           <VoiceJobApplication
+             job={selectedJob}
+             isOpen={isVoiceDialogOpen}
+             onClose={() => {
+               setIsVoiceDialogOpen(false);
+               setSelectedJob(null);
+             }}
+           />
+         )}
+       </div>
+     </div>
   );
 };
 
