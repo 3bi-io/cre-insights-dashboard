@@ -51,29 +51,6 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
     return app.job_listings?.clients?.name || app.job_listings?.client || null;
   };
 
-  const getJobTitle = (app: any) => {
-    // Prefer fields provided directly by agents/importers
-    const direct = app.job_title || app.position || app.title;
-    if (direct) return direct;
-
-    // From display_fields (array of { displayPrompt, displayValue })
-    if (Array.isArray(app.display_fields)) {
-      const match = app.display_fields.find((f: any) =>
-        typeof f?.displayPrompt === 'string' && /job\s*title|position/i.test(f.displayPrompt)
-      );
-      if (match?.displayValue) return match.displayValue;
-    }
-
-    // From custom_fields object if present
-    if (app.custom_fields && typeof app.custom_fields === 'object') {
-      const c = app.custom_fields;
-      return c.job_title || c.position || c.title || null;
-    }
-
-    // Fallback to linked job listing
-    return app.job_listings?.title || app.job_listings?.job_title || null;
-  };
-
   const customFields = application.custom_fields && typeof application.custom_fields === 'object' 
     ? application.custom_fields as any 
     : {};
@@ -269,7 +246,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Position</label>
                 <p className="text-sm">
-                  {getJobTitle(application) || 'No job title provided'}
+                  {application.job_listings?.title || application.job_listings?.job_title || 'No job title provided'}
                 </p>
               </div>
               {getClientName(application) && (
