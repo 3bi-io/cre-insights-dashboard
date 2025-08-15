@@ -96,6 +96,13 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
     user_id: userId,
   };
 
+  // Ensure required title is present; fallback to job_id or client/location
+  if (!mapped.title || !String(mapped.title).trim()) {
+    const fallbackTitle = mapped.job_id || [mapped.client, mapped.location].filter(Boolean).join(' - ') || 'Untitled';
+    mapped.title = fallbackTitle;
+    mapped.job_title = fallbackTitle;
+  }
+
   console.log('Mapped job listing:', mapped);
   return mapped;
 };
