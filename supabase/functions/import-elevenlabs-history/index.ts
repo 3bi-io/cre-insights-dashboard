@@ -183,6 +183,17 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
     if (conversationDetail.analysis) {
       console.log('Found analysis:', conversationDetail.analysis);
       structuredData = { ...structuredData, ...conversationDetail.analysis };
+      // Flatten ElevenLabs analysis.data_collection_results -> { field: value }
+      if (conversationDetail.analysis.data_collection_results && typeof conversationDetail.analysis.data_collection_results === 'object') {
+        const dcr = conversationDetail.analysis.data_collection_results as Record<string, any>;
+        const flattened: Record<string, any> = {};
+        for (const [key, entry] of Object.entries(dcr)) {
+          if (entry && typeof entry === 'object' && 'value' in entry) {
+            flattened[key] = (entry as any).value;
+          }
+        }
+        structuredData = { ...structuredData, ...flattened };
+      }
     }
     
     // Also check the conversation itself for any stored data
@@ -190,7 +201,6 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       console.log('Found conversation metadata:', conversation.metadata);
       structuredData = { ...structuredData, ...conversation.metadata };
     }
-    
     console.log('Combined structured data:', structuredData);
     
     // Initialize application data with defaults
@@ -232,7 +242,7 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       'state': 'state',
       
       // Boolean fields - map to Yes/No strings
-      'over_21': 'over_21',
+      'over_21': 'age',
       'Class_A_CDL': 'cdl',
       'cdl': 'cdl',
       'can_pass_drug': 'drug',
@@ -257,7 +267,7 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
         let value = structuredData[elevenLabsField];
         
         // Convert boolean values to Yes/No strings for certain fields
-        if (['over_21', 'cdl', 'drug', 'veteran', 'consent', 'privacy'].includes(appField)) {
+        if (['age', 'cdl', 'drug', 'veteran', 'consent', 'privacy'].includes(appField)) {
           if (typeof value === 'boolean') {
             value = value ? 'Yes' : 'No';
           } else if (typeof value === 'string') {
