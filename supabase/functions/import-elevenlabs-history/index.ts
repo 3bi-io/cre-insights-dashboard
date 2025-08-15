@@ -248,6 +248,7 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       'jobTitle': 'job_title',
       
       // Boolean fields - map to Yes/No strings
+      'over_21': 'age',
       'age': 'age',
       'Class_A_CDL': 'cdl',
       'cdl': 'cdl',
@@ -306,6 +307,7 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
         jobListing = jobData;
         extractedData.job_listing_id = jobData.id;
         extractedData.job_id = jobData.job_id;
+        extractedData.client = jobData.client;
         console.log('Found matching job listing:', jobData);
       } else {
         console.log('No matching job listing found for:', extractedData.job_title);
@@ -313,12 +315,24 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
     }
     
     // Also try to parse any transcript if structured data is not available
-    if (Object.keys(structuredData).length === 0) {
-      console.log('No structured data found, trying transcript parsing...');
+    const hasStructured = ['applicant_email','first_name','last_name','phone','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_title'].some((f) => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');
+    if (!hasStructured) {
+      console.log('No structured data found or values are empty, trying transcript parsing...');
       
       let transcript = '';
       if (conversationDetail.transcript && typeof conversationDetail.transcript === 'string') {
         transcript = conversationDetail.transcript;
+      } else if (conversationDetail.transcript && Array.isArray(conversationDetail.transcript)) {
+        transcript = (conversationDetail.transcript as any[])
+          .map((msg: any) => {
+            if (typeof msg === 'string') return msg;
+            if (msg.message) return msg.message;
+            if (msg.text) return msg.text;
+            if (msg.content) return msg.content;
+            return '';
+          })
+          .filter(Boolean)
+          .join(' ');
       } else if (conversationDetail.messages && Array.isArray(conversationDetail.messages)) {
         transcript = conversationDetail.messages
           .map((msg: any) => {
@@ -353,9 +367,8 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
     }
 
     // Check if we have meaningful data
-    const hasData = extractedData.first_name || extractedData.last_name || 
-                   extractedData.applicant_email || extractedData.phone ||
-                   Object.keys(structuredData).length > 0;
+    const meaningfulFields = ['first_name','last_name','applicant_email','phone','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_id','job_listing_id','client'];
+    const hasData = meaningfulFields.some((f) => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');
     
     if (hasData) {
       console.log('Successfully extracted application data:', extractedData);
