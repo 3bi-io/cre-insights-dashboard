@@ -180,10 +180,10 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                       </p>
                     </div>
                   )}
-                  {application.months && (
+                  {(application.months || application.exp) && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Months</label>
-                      <p className="text-sm">{application.months}</p>
+                      <p className="text-sm">{application.months || application.exp}</p>
                     </div>
                   )}
                   {application.veteran && (
