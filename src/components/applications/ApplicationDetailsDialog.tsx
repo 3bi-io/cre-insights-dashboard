@@ -70,12 +70,15 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="application-details-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <User className="w-5 h-5" />
             Application Details
           </DialogTitle>
+          <div id="application-details-description" className="sr-only">
+            Detailed information about the job application including applicant information, job details, and application status.
+          </div>
         </DialogHeader>
         
         <div className="space-y-6">

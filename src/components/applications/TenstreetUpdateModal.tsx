@@ -185,12 +185,15 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="tenstreet-update-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
             Post to Tenstreet
           </DialogTitle>
+          <div id="tenstreet-update-description" className="sr-only">
+            Configure and send applicant data to Tenstreet. Map application fields to Tenstreet format and review before sending.
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">

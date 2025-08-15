@@ -160,12 +160,15 @@ const SmsConversationDialog: React.FC<SmsConversationDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col" aria-describedby="sms-conversation-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5" />
             SMS Conversation with {applicantName}
           </DialogTitle>
+          <div id="sms-conversation-description" className="sr-only">
+            Send and receive SMS messages with the job applicant. View conversation history and compose new messages.
+          </div>
           {application?.phone && (
             <p className="text-sm text-muted-foreground">
               Phone: {application.phone}
