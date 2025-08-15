@@ -164,15 +164,25 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                       <p className="text-sm">{application.cdl}</p>
                     </div>
                   )}
-                  {application.exp && (
+                  {(application.exp || application.months) && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Experience</label>
-                      <p className="text-sm">{application.exp}</p>
+                      <p className="text-sm">
+                        {(() => {
+                          const months = parseInt(application.months || application.exp || '0');
+                          if (months < 3) {
+                            return 'Less than 3 months';
+                          } else if (months >= 3) {
+                            return 'More than 3 months';
+                          }
+                          return application.exp || 'Not provided';
+                        })()}
+                      </p>
                     </div>
                   )}
                   {application.months && (
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Months Experience</label>
+                      <label className="text-sm font-medium text-muted-foreground">Months</label>
                       <p className="text-sm">{application.months}</p>
                     </div>
                   )}
