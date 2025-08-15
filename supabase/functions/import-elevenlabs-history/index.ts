@@ -196,21 +196,33 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       updated_at: new Date().toISOString(),
     };
 
-    // More flexible patterns for extracting data
+    // More flexible patterns for extracting data from ElevenLabs conversations
     const dataPatterns = {
-      first_name: /(?:first name|given name|my name is|i'm|i am)\s*:?\s*([a-zA-Z]{2,})/i,
-      last_name: /(?:last name|family name|surname)\s*:?\s*([a-zA-Z]{2,})/i,
-      applicant_email: /(?:email|e-mail|email address)\s*:?\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
-      phone: /(?:phone|telephone|phone number|cell)\s*:?\s*([+]?[\d\s\-\(\)\.]{10,})/i,
-      city: /(?:city|live in|from)\s*:?\s*([a-zA-Z\s]{2,})/i,
-      state: /(?:state|region)\s*:?\s*([a-zA-Z\s]{2,})/i,
-      zip: /(?:zip|postal code|zip code)\s*:?\s*(\d{5}(?:-\d{4})?)/i,
-      over_21: /(?:over 21|21 or older|are you 21)\s*:?\s*(yes|no|y|n)/i,
-      cdl: /(?:cdl|class a|commercial license)\s*:?\s*(yes|no|y|n)/i,
-      drug: /(?:drug test|pass.*drug|clean drug)\s*:?\s*(yes|no|y|n)/i,
-      veteran: /(?:veteran|military)\s*:?\s*(yes|no|y|n)/i,
-      consent: /(?:consent.*sms|sms.*consent|text messages)\s*:?\s*(yes|no|y|n)/i,
-      privacy: /(?:privacy policy|agree.*privacy)\s*:?\s*(yes|no|y|n)/i,
+      // Email patterns
+      applicant_email: /(?:InternetEmailAddress|email|e-mail|email address)\s*[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
+      
+      // Name patterns
+      first_name: /(?:GivenName|first name|given name|my name is|i'm|i am)\s*[:\s]*([a-zA-Z]{2,})/i,
+      last_name: /(?:FamilyName|last name|family name|surname)\s*[:\s]*([a-zA-Z]{2,})/i,
+      
+      // Phone patterns
+      phone: /(?:PrimaryPhone|phone|telephone|phone number|cell)\s*[:\s]*([+]?[\d\s\-\(\)\.]{10,})/i,
+      
+      // Location patterns
+      zip: /(?:PostalCode|zip|postal code|zip code)\s*[:\s]*(\d{5}(?:-\d{4})?)/i,
+      city: /(?:Municipality|city|live in|from)\s*[:\s]*([a-zA-Z\s]{2,})/i,
+      state: /(?:Region|state|region)\s*[:\s]*([a-zA-Z\s]{2,})/i,
+      
+      // Yes/No questions
+      over_21: /(?:over_21|over 21|21 or older|are you 21)\s*[:\s]*(yes|no|y|n)/i,
+      cdl: /(?:Class_A_CDL|cdl|class a|commercial license)\s*[:\s]*(yes|no|y|n)/i,
+      drug: /(?:can_pass_drug|drug test|pass.*drug|clean drug)\s*[:\s]*(yes|no|y|n)/i,
+      veteran: /(?:Veteran_Status|veteran|military)\s*[:\s]*(yes|no|y|n)/i,
+      consent: /(?:consentToSMS|consent.*sms|sms.*consent|text messages)\s*[:\s]*(yes|no|y|n)/i,
+      privacy: /(?:agree_privacy_policy|privacy policy|agree.*privacy)\s*[:\s]*(yes|no|y|n)/i,
+      
+      // Experience
+      exp: /(?:Class_A_CDL_experience|experience|months|years)\s*[:\s]*(\d+)/i,
     };
 
     // Extract data using patterns
