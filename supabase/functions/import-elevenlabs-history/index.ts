@@ -90,28 +90,95 @@ serve(async (req) => {
       }
     }
 
-    // Insert applications into database
+    // Insert or update applications in database (dedupe by phone)
     let insertedCount = 0;
-    const errors = [];
+    let updatedCount = 0;
+    const errors: string[] = [];
+
+    const normalizeDigits = (phone: string) => {
+      const digits = (phone || '').replace(/\D/g, '');
+      return digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+    };
+    const formatDash = (digits: string) =>
+      digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : digits;
 
     for (const appData of applications) {
       try {
-        const { data, error } = await supabase
-          .from('applications')
-          .insert([appData])
-          .select()
-          .single();
+        let existing: any = null;
 
-        if (error) {
-          console.error('Database insert error:', error);
-          errors.push(error.message);
-        } else {
-          insertedCount++;
-          console.log('Inserted application:', data.id);
+        if (appData.phone) {
+          const ten = normalizeDigits(appData.phone);
+          const dash = formatDash(ten);
+          const plus1 = `+1${ten}`;
+
+          // Try to find an existing application matching common phone formats
+          const { data: existingApp, error: findError } = await supabase
+            .from('applications')
+            .select('*')
+            .or(`phone.eq.${dash},phone.eq.${ten},phone.eq.${plus1}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (!findError && existingApp) {
+            existing = existingApp;
+          }
         }
-      } catch (error) {
-        console.error('Error inserting application:', error);
-        errors.push(error.message);
+
+        if (existing) {
+          // Merge: only fill empty fields on the existing record
+          const updatableFields = ['first_name','last_name','full_name','applicant_email','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_id','job_listing_id','client','source','notes'];
+          const updatePayload: Record<string, any> = { updated_at: new Date().toISOString() };
+
+          for (const field of updatableFields) {
+            const newVal = (appData as any)[field];
+            const oldVal = (existing as any)[field];
+            if ((newVal !== undefined && newVal !== null && String(newVal).trim() !== '') && (oldVal === null || oldVal === undefined || String(oldVal).trim() === '')) {
+              updatePayload[field] = newVal;
+            }
+          }
+
+          // Ensure phone saved in canonical dashed format if missing
+          if ((!existing.phone || String(existing.phone).trim() === '') && appData.phone) {
+            const ten = normalizeDigits(appData.phone);
+            updatePayload.phone = formatDash(ten);
+          }
+
+          if (Object.keys(updatePayload).length > 1) {
+            const { data, error } = await supabase
+              .from('applications')
+              .update(updatePayload)
+              .eq('id', existing.id)
+              .select()
+              .single();
+
+            if (error) {
+              console.error('Database update error:', error);
+              errors.push(error.message);
+            } else {
+              updatedCount++;
+              console.log('Updated existing application:', data.id);
+            }
+          } else {
+            console.log('No meaningful updates for existing application:', existing.id);
+          }
+        } else {
+          const { data, error } = await supabase
+            .from('applications')
+            .insert([appData])
+            .select()
+            .single();
+
+          if (error) {
+            console.error('Database insert error:', error);
+            errors.push(error.message);
+          } else {
+            insertedCount++;
+            console.log('Inserted application:', data.id);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error upserting application:', error);
+        errors.push(error.message || String(error));
       }
     }
 
@@ -121,8 +188,9 @@ serve(async (req) => {
         totalConversations: conversationsData.conversations?.length || 0,
         processedConversations: processedCount,
         insertedApplications: insertedCount,
+        updatedApplications: updatedCount,
         errors: errors.length > 0 ? errors : null,
-        message: `Successfully imported ${insertedCount} applications from ${processedCount} conversations`
+        message: `Imported ${insertedCount} new, updated ${updatedCount} existing from ${processedCount} conversations`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
