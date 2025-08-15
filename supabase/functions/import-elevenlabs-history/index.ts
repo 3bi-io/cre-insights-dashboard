@@ -273,6 +273,12 @@ function extractApplicationData(conversationDetail: any, conversation: any) {
       if (structuredData[elevenLabsField] !== undefined && structuredData[elevenLabsField] !== null) {
         let value = structuredData[elevenLabsField];
         
+        // Transform email addresses
+        if (appField === 'applicant_email' && typeof value === 'string') {
+          // Replace " at " with "@" in email addresses
+          value = value.replace(/ at /gi, '@');
+        }
+        
         // Convert boolean values to Yes/No strings for certain fields
         if (['age', 'cdl', 'drug', 'veteran', 'consent', 'privacy'].includes(appField)) {
           if (typeof value === 'boolean') {
