@@ -1,48 +1,19 @@
-import React, { useState } from 'react';
-import { useConversation } from '@11labs/react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
 const VoiceAgent = () => {
   const [agentId, setAgentId] = useState('agent_01jwedntnjf7tt0qma00a2276r');
   const [isConnected, setIsConnected] = useState(false);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const {
-    toast
-  } = useToast();
-  const conversation = useConversation({
-    onConnect: () => {
-      console.log('Connected to voice agent');
-      setIsConnected(true);
-      toast({
-        title: "Connected",
-        description: "Voice agent is now ready to chat!"
-      });
-    },
-    onDisconnect: () => {
-      console.log('Disconnected from voice agent');
-      setIsConnected(false);
-      toast({
-        title: "Disconnected",
-        description: "Voice agent conversation ended."
-      });
-    },
-    onMessage: message => {
-      console.log('Message received:', message);
-    },
-    onError: error => {
-      console.error('Voice agent error:', error);
-      toast({
-        title: "Error",
-        description: "Voice agent encountered an error. Please try again.",
-        variant: "destructive"
-      });
-    }
-  });
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const { toast } = useToast();
+
   const handleStartConversation = async () => {
     if (!agentId.trim()) {
       toast({
@@ -52,67 +23,82 @@ const VoiceAgent = () => {
       });
       return;
     }
+
+    setIsConnecting(true);
+    
     try {
       // Request microphone access first
       console.log('Requesting microphone access...');
-      await navigator.mediaDevices.getUserMedia({
-        audio: true
-      });
+      await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log('Microphone access granted');
 
-      // Get signed URL from our edge function
-      console.log('Requesting signed URL for agent:', agentId.trim());
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: {
-          agentId: agentId.trim()
+      // Connect to our edge function WebSocket
+      const wsUrl = `wss://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/elevenlabs-agent`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('Connected to voice agent');
+        setIsConnected(true);
+        setIsConnecting(false);
+        toast({
+          title: "Connected",
+          description: "Voice agent is now ready to chat!"
+        });
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received from agent:', data);
+        
+        if (data.type === 'speaking_start') {
+          setIsSpeaking(true);
+        } else if (data.type === 'speaking_end') {
+          setIsSpeaking(false);
+        } else if (data.type === 'error') {
+          toast({
+            title: "Error",
+            description: data.message || "Voice agent encountered an error.",
+            variant: "destructive"
+          });
         }
-      });
-      console.log('Edge function response:', {
-        data,
-        error
-      });
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || `Supabase function error: ${JSON.stringify(error)}`);
-      }
-      if (!data) {
-        throw new Error('No response data from edge function');
-      }
-      if (!data.success) {
-        console.error('Edge function returned error:', data);
-        throw new Error(data.error || `Edge function failed: ${JSON.stringify(data)}`);
-      }
-      if (!data.signedUrl) {
-        throw new Error('No signed URL received from edge function');
-      }
+      };
 
-      // Store the signed URL and start conversation
-      setSignedUrl(data.signedUrl);
-      console.log('Starting conversation with signed URL:', data.signedUrl);
+      ws.onclose = (event) => {
+        console.log('WebSocket closed:', event);
+        setIsConnected(false);
+        setIsConnecting(false);
+        setIsSpeaking(false);
+        
+        if (event.code !== 1000) {
+          toast({
+            title: "Disconnected",
+            description: event.reason || "Voice agent conversation ended."
+          });
+        }
+      };
 
-      // Use the startSession method with just the signedUrl parameter
-      const conversationId = await conversation.startSession({
-        signedUrl: data.signedUrl
-      });
-      console.log('Conversation started with ID:', conversationId);
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setIsConnecting(false);
+        toast({
+          title: "Connection Failed",
+          description: "Failed to connect to voice agent. Please try again.",
+          variant: "destructive"
+        });
+      };
+
     } catch (error) {
       console.error('Failed to start conversation:', error);
-
-      // More specific error messaging
+      setIsConnecting(false);
+      
       let errorMessage = "Failed to connect to voice agent.";
       const errorString = error?.message || error?.toString() || 'Unknown error';
-      if (errorString.includes('Agent ID')) {
-        errorMessage = "Invalid Agent ID. Please check your ElevenLabs Agent ID.";
-      } else if (errorString.includes('API key')) {
-        errorMessage = "ElevenLabs API key not configured properly.";
-      } else if (errorString.includes('signed_url') || errorString.includes('signedUrl')) {
-        errorMessage = "Failed to get authorization from ElevenLabs. Please check your Agent ID.";
-      } else if (errorString.includes('getUserMedia')) {
+      
+      if (errorString.includes('getUserMedia')) {
         errorMessage = "Microphone access is required. Please allow microphone permissions.";
       }
+      
       toast({
         title: "Connection Failed",
         description: `${errorMessage} Error: ${errorString}`,
@@ -120,23 +106,22 @@ const VoiceAgent = () => {
       });
     }
   };
-  const handleEndConversation = async () => {
-    try {
-      await conversation.endSession();
-    } catch (error) {
-      console.error('Failed to end conversation:', error);
+
+  const handleEndConversation = () => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
     }
+    setIsConnected(false);
+    setIsSpeaking(false);
+    toast({
+      title: "Disconnected",
+      description: "Voice agent conversation ended."
+    });
   };
-  const handleVolumeChange = async (volume: number) => {
-    try {
-      await conversation.setVolume({
-        volume
-      });
-    } catch (error) {
-      console.error('Failed to change volume:', error);
-    }
-  };
-  return <div className="p-6 max-w-7xl mx-auto">
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Voice Agent</h1>
@@ -156,50 +141,70 @@ const VoiceAgent = () => {
             {/* Agent ID Input */}
             <div className="space-y-2">
               <Label htmlFor="agentId">Agent ID</Label>
-              <Input id="agentId" placeholder="Enter your ElevenLabs Agent ID" value={agentId} onChange={e => setAgentId(e.target.value)} disabled={isConnected} />
-              <p className="text-sm text-muted-foreground">You can find your Agent ID in the dashboard under Conversational AI.</p>
+              <Input 
+                id="agentId" 
+                placeholder="Enter your ElevenLabs Agent ID" 
+                value={agentId} 
+                onChange={(e) => setAgentId(e.target.value)} 
+                disabled={isConnected || isConnecting} 
+              />
+              <p className="text-sm text-muted-foreground">
+                You can find your Agent ID in the ElevenLabs dashboard under Conversational AI.
+              </p>
             </div>
 
             {/* Connection Status */}
             <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : isConnecting ? 'bg-yellow-500' : 'bg-gray-300'}`} />
               <span className="text-sm">
-                {isConnected ? 'Connected to voice agent' : 'Not connected'}
+                {isConnected ? 'Connected to voice agent' : isConnecting ? 'Connecting...' : 'Not connected'}
               </span>
             </div>
 
             {/* Controls */}
             <div className="flex flex-wrap gap-4">
-              {!isConnected ? <Button onClick={handleStartConversation} className="flex items-center gap-2" disabled={!agentId.trim()}>
+              {!isConnected ? (
+                <Button 
+                  onClick={handleStartConversation} 
+                  className="flex items-center gap-2" 
+                  disabled={!agentId.trim() || isConnecting}
+                >
                   <Mic className="w-4 h-4" />
-                  Start Conversation
-                </Button> : <Button onClick={handleEndConversation} variant="destructive" className="flex items-center gap-2">
+                  {isConnecting ? 'Connecting...' : 'Start Conversation'}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleEndConversation} 
+                  variant="destructive" 
+                  className="flex items-center gap-2"
+                >
                   <PhoneOff className="w-4 h-4" />
                   End Conversation
-                </Button>}
+                </Button>
+              )}
             </div>
 
             {/* Voice Status */}
-            {isConnected && <div className="p-4 bg-muted rounded-lg">
+            {isConnected && (
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium">Voice Status</span>
                   <div className="flex items-center gap-2">
-                    {conversation.isSpeaking ? <>
+                    {isSpeaking ? (
+                      <>
                         <Volume2 className="w-4 h-4 text-blue-500" />
                         <span className="text-sm text-blue-500">Agent is speaking...</span>
-                      </> : <>
+                      </>
+                    ) : (
+                      <>
                         <Mic className="w-4 h-4 text-green-500" />
                         <span className="text-sm text-green-500">Listening...</span>
-                      </>}
+                      </>
+                    )}
                   </div>
                 </div>
-
-                {/* Volume Control */}
-                <div className="space-y-2">
-                  <Label htmlFor="volume">Volume</Label>
-                  <input id="volume" type="range" min="0" max="1" step="0.1" defaultValue="0.8" className="w-full" onChange={e => handleVolumeChange(parseFloat(e.target.value))} />
-                </div>
-              </div>}
+              </div>
+            )}
 
             {/* Instructions */}
             <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
@@ -216,6 +221,8 @@ const VoiceAgent = () => {
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default VoiceAgent;
