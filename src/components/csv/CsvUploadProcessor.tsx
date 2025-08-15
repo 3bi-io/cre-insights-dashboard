@@ -44,6 +44,7 @@ export const useCsvUploadProcessor = () => {
 
         const jobListings = csvData.map(row => ({
           ...mapCsvToJobListing(row, userId),
+          platform_id: platforms[0].id,
           category_id: categories[0].id,
         }));
 

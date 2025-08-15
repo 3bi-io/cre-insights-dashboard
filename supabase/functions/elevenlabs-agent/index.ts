@@ -7,14 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  const { headers } = req;
-  const upgradeHeader = headers.get("upgrade") || "";
-
-  // Handle WebSocket upgrade for voice conversations
-  if (upgradeHeader.toLowerCase() === "websocket") {
-    return handleWebSocketConnection(req);
-  }
-
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -85,93 +77,6 @@ serve(async (req) => {
     );
   }
 });
-
-async function handleWebSocketConnection(req: Request) {
-  const { socket, response } = Deno.upgradeWebSocket(req);
-  let elevenLabsWs: WebSocket | null = null;
-  
-  socket.onopen = async () => {
-    console.log('Client WebSocket connected');
-    
-    try {
-      const agentId = 'agent_01jwedntnjf7tt0qma00a2276r';
-      const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
-      
-      if (!elevenLabsApiKey) {
-        socket.send(JSON.stringify({ type: 'error', message: 'ElevenLabs API key not configured' }));
-        return;
-      }
-
-      // Get signed URL for ElevenLabs
-      const signedUrlResponse = await fetch(
-        `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
-        {
-          method: 'GET',
-          headers: {
-            'xi-api-key': elevenLabsApiKey,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!signedUrlResponse.ok) {
-        const errorText = await signedUrlResponse.text();
-        console.error('Failed to get signed URL:', errorText);
-        socket.send(JSON.stringify({ type: 'error', message: 'Failed to get signed URL' }));
-        return;
-      }
-
-      const signedUrlData = await signedUrlResponse.json();
-      
-      // Connect to ElevenLabs WebSocket
-      elevenLabsWs = new WebSocket(signedUrlData.signed_url);
-      
-      elevenLabsWs.onopen = () => {
-        console.log('Connected to ElevenLabs agent');
-        socket.send(JSON.stringify({ type: 'connected' }));
-      };
-      
-      elevenLabsWs.onmessage = (event) => {
-        // Forward messages from ElevenLabs to client
-        socket.send(event.data);
-      };
-      
-      elevenLabsWs.onclose = (event) => {
-        console.log('ElevenLabs WebSocket closed:', event.code, event.reason);
-        socket.send(JSON.stringify({ 
-          type: 'agent_disconnected', 
-          code: event.code, 
-          reason: event.reason 
-        }));
-      };
-      
-      elevenLabsWs.onerror = (error) => {
-        console.error('ElevenLabs WebSocket error:', error);
-        socket.send(JSON.stringify({ type: 'error', message: 'ElevenLabs connection error' }));
-      };
-      
-    } catch (error) {
-      console.error('Error setting up ElevenLabs connection:', error);
-      socket.send(JSON.stringify({ type: 'error', message: error.message }));
-    }
-  };
-
-  socket.onmessage = (event) => {
-    // Forward messages from client to ElevenLabs
-    if (elevenLabsWs && elevenLabsWs.readyState === WebSocket.OPEN) {
-      elevenLabsWs.send(event.data);
-    }
-  };
-
-  socket.onclose = () => {
-    console.log('Client WebSocket disconnected');
-    if (elevenLabsWs) {
-      elevenLabsWs.close();
-    }
-  };
-
-  return response;
-}
 
 async function handleDataCollection(data: any) {
   try {

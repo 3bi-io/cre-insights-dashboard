@@ -27,8 +27,6 @@ import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
 import ThankYou from "./pages/ThankYou";
 import Media from "./pages/Media";
-import PublicJobs from "./pages/PublicJobs";
-import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -41,9 +39,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/admin" element={<AdminLanding />} />
-              <Route path="/jobs" element={<PublicJobs />} />
+              <Route path="/" element={<AdminLanding />} />
               <Route path="/apply" element={<Apply />} />
               <Route path="/apply/detailed" element={<DetailedApply />} />
               <Route path="/thank-you" element={<ThankYou />} />
