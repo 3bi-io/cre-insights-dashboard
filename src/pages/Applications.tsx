@@ -11,6 +11,7 @@ import SmsConversationDialog from '@/components/applications/SmsConversationDial
 import ApplicationsOverview from '@/components/applications/ApplicationsOverview';
 import ApplicationsSearch from '@/components/applications/ApplicationsSearch';
 import ApplicationCard from '@/components/applications/ApplicationCard';
+import HistoryImportButton from '@/components/applications/HistoryImportButton';
 import { useApplications } from '@/hooks/useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
@@ -98,15 +99,18 @@ const Applications = () => {
           <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-foreground`}>Applications</h1>
           <p className="text-muted-foreground mt-1">Track and manage job applications</p>
         </div>
-        <Button
-          onClick={downloadApplicationsPDF}
-          className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
-          variant="outline"
-          size={isMobile ? 'lg' : 'default'}
-        >
-          <Download className="w-4 h-4" />
-          Export PDF
-        </Button>
+        <div className="flex gap-2">
+          <HistoryImportButton />
+          <Button
+            onClick={downloadApplicationsPDF}
+            className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
+            variant="outline"
+            size={isMobile ? 'lg' : 'default'}
+          >
+            <Download className="w-4 h-4" />
+            Export PDF
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="applications" className="w-full">
