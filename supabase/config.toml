@@ -35,3 +35,7 @@ verify_jwt = true
 
 [functions.import-elevenlabs-history]
 verify_jwt = false
+
+[functions.meta-leads-cron]
+verify_jwt = false
+
