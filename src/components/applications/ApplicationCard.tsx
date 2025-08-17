@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload } from 'lucide-react';
-import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory, getApplicantLocation } from '@/utils/applicationHelpers';
+import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload, MapPin, Loader2 } from 'lucide-react';
+import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 
 interface ApplicationCardProps {
   application: any;
@@ -28,12 +29,37 @@ const ApplicationCard = ({
   onTenstreetUpdate,
 }: ApplicationCardProps) => {
   const isMobile = useIsMobile();
+  const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
+  
   const applicantName = getApplicantName(application);
   const applicantEmail = getApplicantEmail(application);
-  const applicantLocation = getApplicantLocation(application);
   const clientName = getClientName(application);
   const category = getApplicantCategory(application);
   const jobTitle = application.job_listings?.title || application.job_listings?.job_title || 'Unknown Position';
+
+  // Get city and state with fallback logic
+  const displayCity = application.city || lookupCity;
+  const displayState = application.state || lookupState;
+  
+  // Format location as "City, ST" or fallback
+  const formatLocation = () => {
+    if (displayCity && displayState) {
+      return `${displayCity}, ${displayState}`;
+    } else if (displayCity) {
+      return displayCity;
+    } else if (displayState) {
+      return displayState;
+    } else if (isLookingUp && application.zip) {
+      return (
+        <div className="flex items-center gap-1">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Looking up...
+        </div>
+      );
+    } else {
+      return 'No location provided';
+    }
+  };
 
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -68,7 +94,10 @@ const ApplicationCard = ({
                   <span>{formatPhoneForDisplay(application.phone)}</span>
                 </div>
               )}
-              <div className="text-gray-500">{applicantLocation}</div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <MapPin className="w-4 h-4" />
+                <span>{formatLocation()}</span>
+              </div>
               <div className="text-xs text-gray-500">
                 Applied: {new Date(application.applied_at).toLocaleDateString()}
               </div>
