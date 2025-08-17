@@ -12,6 +12,7 @@ import ApplicationsOverview from '@/components/applications/ApplicationsOverview
 import ApplicationsSearch from '@/components/applications/ApplicationsSearch';
 import ApplicationCard from '@/components/applications/ApplicationCard';
 import HistoryImportButton from '@/components/applications/HistoryImportButton';
+import MetaBackfillButton from '@/components/applications/MetaBackfillButton';
 import { useApplications } from '@/hooks/useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
@@ -101,6 +102,8 @@ const Applications = () => {
         </div>
         <div className="flex gap-2">
           <HistoryImportButton />
+          {/* Backfill all historical Meta leads */}
+          <MetaBackfillButton />
           <Button
             onClick={downloadApplicationsPDF}
             className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
