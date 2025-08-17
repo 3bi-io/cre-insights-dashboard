@@ -121,7 +121,7 @@ serve(async (req) => {
             full_name: fullName || null,
             applicant_email: email,
             phone: phone,
-            source: 'meta',
+            source: 'fb', // Facebook/Meta leads
             status: 'pending',
             created_at: createdAt.toISOString(),
             applied_at: createdAt.toISOString(),

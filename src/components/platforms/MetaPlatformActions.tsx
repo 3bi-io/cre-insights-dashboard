@@ -450,7 +450,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                         try {
                           setIsLoading(true);
                           setSyncStatus('Manually syncing Meta leads...');
-                          const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/meta-leads-cron?sinceHours=720', {
+                          const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/meta-leads-cron?sinceHours=336', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                           });
@@ -460,6 +460,14 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                             description: `Synced ${result.inserted || 0} new leads, skipped ${result.skipped || 0} existing`,
                           });
                           setSyncStatus('');
+                          
+                          // Check total Meta leads after sync
+                          const { data: metaLeads } = await supabase
+                            .from('applications')
+                            .select('source')
+                            .in('source', ['fb', 'ig', 'meta']);
+                          
+                          console.log(`Total Meta leads (fb/ig/meta): ${metaLeads?.length || 0}`);
                         } catch (error: any) {
                           toast({
                             title: "Error",
@@ -472,7 +480,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                         }
                       }}
                       disabled={isLoading}
-                      title="Manual sync (last 30 days)"
+                      title="Manual sync (last 14 days)"
                     >
                       <RefreshCw className="w-3 h-3" />
                     </Button>
