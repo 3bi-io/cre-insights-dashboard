@@ -44,6 +44,31 @@ const getMetaDatePreset = (dateRange: string): string => {
   }
 };
 
+// Compute approximate days window for leads sync
+const getSinceDays = (dateRange: string): number => {
+  const now = new Date();
+  switch (dateRange) {
+    case 'last_7d':
+      return 7;
+    case 'last_14d':
+      return 14;
+    case 'last_30d':
+      return 30;
+    case 'last_60d':
+      return 60;
+    case 'last_90d':
+      return 90;
+    case 'this_month': {
+      const first = new Date(now.getFullYear(), now.getMonth(), 1);
+      return Math.max(1, Math.ceil((now.getTime() - first.getTime()) / (24 * 60 * 60 * 1000)));
+    }
+    case 'last_month':
+      return 30; // simple default
+    default:
+      return 30;
+  }
+};
+
 const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onRefresh }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentAction, setCurrentAction] = useState<string>('');
@@ -170,6 +195,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       console.log(`Attempting ${action} with accountId: ${accountId || CR_ENGLAND_ACCOUNT_ID}`);
       
       const metaDatePreset = getMetaDatePreset(dateRange);
+      const sinceDays = getSinceDays(dateRange);
       setSyncProgress(30);
       setSyncStatus(`Connecting to Meta API...`);
       
@@ -178,7 +204,8 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           action, 
           accountId: accountId || CR_ENGLAND_ACCOUNT_ID,
           campaignId,
-          datePreset: metaDatePreset
+          datePreset: metaDatePreset,
+          sinceDays
         }
       });
 
@@ -407,6 +434,28 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                     Sync Ads
                   </Button>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Sync Meta Leads</p>
+                    <p className="text-sm text-muted-foreground">
+                      Import Meta Lead Ads leads into Applications
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => handleMetaAction('sync_leads', CR_ENGLAND_ACCOUNT_ID)}
+                    disabled={isLoading}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {isLoading && currentAction === 'sync_leads' ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Sync Leads
+                  </Button>
+                </div>
               </>
             )}
           </div>
@@ -452,6 +501,15 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                         title="Sync ads for CR England"
                       >
                         <Zap className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleMetaAction('sync_leads', account.account_id)}
+                        disabled={isLoading}
+                        title="Sync leads for CR England"
+                      >
+                        <RefreshCw className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>

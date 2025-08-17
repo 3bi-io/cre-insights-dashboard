@@ -75,7 +75,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, accountId, campaignId, datePreset = 'last_30d' } = await req.json();
+    const { action, accountId, campaignId, datePreset = 'last_30d', sinceDays } = await req.json();
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -130,6 +130,12 @@ serve(async (req) => {
           throw new Error('Account ID is required for syncing insights');
         }
         return await syncInsights(user.id, accountId, campaignId, datePreset, metaAccessToken, supabase);
+      
+      case 'sync_leads':
+        if (!accountId) {
+          throw new Error('Account ID is required for syncing leads');
+        }
+        return await syncLeads(user.id, accountId, sinceDays ?? 30, metaAccessToken, supabase);
       
       default:
         throw new Error(`Unknown action: ${action}`);
@@ -505,6 +511,129 @@ async function syncAds(userId: string, accountId: string, campaignId: string | u
       success: true, 
       message: `Synced ${syncResults.length} ads`,
       ads: syncResults 
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function syncLeads(userId: string, accountId: string, sinceDays: number, accessToken: string, supabase: any) {
+  console.log(`Syncing Meta leads for account: ${accountId}, since last ${sinceDays} days`);
+  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  const cleanAccountId = accountId.replace(/^act_/, '');
+  const sinceDate = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const formsUrl = `https://graph.facebook.com/v18.0/${formattedAccountId}/leadgen_forms?fields=id,name,created_time&limit=50&access_token=${accessToken}`;
+
+  let forms: Array<{id: string; name?: string; created_time?: string}> = [];
+  try {
+    const resp = await fetch(formsUrl);
+    if (!resp.ok) {
+      const e = await resp.json();
+      throw new Error(`Meta API leadgen_forms error: ${e.error?.message || 'Unknown error'}`);
+    }
+    const json = await resp.json();
+    forms = json.data || [];
+  } catch (e: any) {
+    console.error('Failed to fetch leadgen forms:', e);
+    return new Response(JSON.stringify({ success: false, message: `Failed to fetch leadgen forms: ${e.message}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+
+  console.log(`Found ${forms.length} leadgen forms for account ${cleanAccountId}`);
+
+  let inserted = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  for (const form of forms) {
+    let nextUrl: string | null = `https://graph.facebook.com/v18.0/${form.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
+    while (nextUrl) {
+      const leadsResp = await fetch(nextUrl);
+      if (!leadsResp.ok) {
+        const e = await leadsResp.json();
+        console.error('Leads fetch error:', e);
+        errors++;
+        break;
+      }
+      const leadsJson = await leadsResp.json();
+      const leads = leadsJson.data || [];
+      for (const lead of leads) {
+        const createdAt = new Date(lead.created_time);
+        if (createdAt < sinceDate) {
+          skipped++;
+          continue;
+        }
+        const fieldsObj: Record<string, string> = {};
+        for (const f of lead.field_data || []) {
+          const key = (f.name || '').toLowerCase();
+          const val = Array.isArray(f.values) && f.values.length > 0 ? String(f.values[0]) : '';
+          if (key) fieldsObj[key] = val;
+        }
+
+        let firstName = fieldsObj['first_name'] || '';
+        let lastName = fieldsObj['last_name'] || '';
+        let fullName = fieldsObj['full_name'] || '';
+        const email = fieldsObj['email'] || fieldsObj['email_address'] || null;
+        const phone = fieldsObj['phone_number'] || fieldsObj['phone'] || null;
+
+        if (!fullName && (firstName || lastName)) {
+          fullName = [firstName, lastName].filter(Boolean).join(' ');
+        }
+        if (!firstName && fullName) {
+          const parts = fullName.split(' ');
+          firstName = parts[0] || '';
+          lastName = parts.slice(1).join(' ');
+        }
+
+        let exists = false;
+        if (email) {
+          const { data: existing } = await supabase
+            .from('applications')
+            .select('id')
+            .eq('applicant_email', email)
+            .gte('created_at', sinceDate.toISOString())
+            .limit(1)
+            .maybeSingle();
+          exists = !!existing;
+        }
+        if (exists) {
+          skipped++;
+          continue;
+        }
+
+        const insertPayload: any = {
+          first_name: firstName || null,
+          last_name: lastName || null,
+          full_name: fullName || null,
+          applicant_email: email,
+          phone: phone,
+          source: 'meta',
+          status: 'pending',
+          created_at: createdAt.toISOString(),
+          applied_at: createdAt.toISOString(),
+          notes: `Meta Lead • form ${form.name || form.id} • campaign ${lead.campaign_id || ''}`,
+          display_fields: fieldsObj,
+        };
+
+        const { error } = await supabase.from('applications').insert(insertPayload);
+        if (error) {
+          console.error('Insert application error:', error);
+          errors++;
+        } else {
+          inserted++;
+        }
+      }
+
+      nextUrl = leadsJson?.paging?.next || null;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`,
+      inserted,
+      skipped,
+      errors,
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
