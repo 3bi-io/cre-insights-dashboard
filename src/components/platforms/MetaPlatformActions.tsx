@@ -443,6 +443,39 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        try {
+                          setIsLoading(true);
+                          setSyncStatus('Manually syncing Meta leads...');
+                          const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/meta-leads-cron?sinceHours=720', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                          });
+                          const result = await response.json();
+                          toast({
+                            title: "Meta Leads Sync",
+                            description: `Synced ${result.inserted || 0} new leads, skipped ${result.skipped || 0} existing`,
+                          });
+                          setSyncStatus('');
+                        } catch (error: any) {
+                          toast({
+                            title: "Error",
+                            description: `Failed to sync leads: ${error.message}`,
+                            variant: "destructive",
+                          });
+                          setSyncStatus('');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      disabled={isLoading}
+                      title="Manual sync (last 30 days)"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                    </Button>
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-sm text-green-600 dark:text-green-400">Active</span>
                   </div>
