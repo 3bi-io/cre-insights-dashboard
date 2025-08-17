@@ -1453,6 +1453,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_phone_number: {
+        Args: { phone_input: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
