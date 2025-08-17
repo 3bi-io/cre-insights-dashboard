@@ -151,10 +151,9 @@ const SmsConversationDialog: React.FC<SmsConversationDialogProps> = ({
     });
   };
 
-  const applicantName = application?.full_name || 
-    (application?.first_name && application?.last_name 
-      ? `${application.first_name} ${application.last_name}` 
-      : 'Unknown Applicant');
+  const applicantName = (application?.first_name && application?.last_name) 
+    ? `${application.first_name} ${application.last_name}`
+    : application?.first_name || application?.last_name || 'Anonymous Applicant';
 
   const canSendMessage = application?.phone && currentRecruiterId;
 

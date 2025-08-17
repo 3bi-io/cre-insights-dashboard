@@ -186,7 +186,6 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
           first_name: data.firstName || application.first_name,
           last_name: data.lastName || application.last_name,
           middle_name: data.middleName,
-          full_name: application.full_name,
           date_of_birth: data.dateOfBirth,
           ssn: data.ssn,
           gender: data.gender,
@@ -298,7 +297,6 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
   };
 
   const getApplicantName = (app: any) => {
-    if (app.full_name) return app.full_name;
     if (app.first_name && app.last_name) return `${app.first_name} ${app.last_name}`;
     if (app.first_name) return app.first_name;
     if (app.last_name) return app.last_name;

@@ -122,7 +122,7 @@ const handler = async (req: Request): Promise<Response> => {
         'job_title', 'jobTitle', 'title', 'job_name', 'position', 'role'
       ]),
       applicant_name: extractValue(body, [
-        'applicant_name', 'applicantName', 'name', 'full_name', 'fullName', 'candidate_name'
+        'applicant_name', 'applicantName', 'name', 'candidate_name'
       ]),
       first_name: extractValue(body, [
         'first_name', 'firstName', 'applicant_first_name', 'fname', 'given_name'

@@ -90,7 +90,6 @@ const handler = async (req: Request): Promise<Response> => {
       // Personal information
       first_name: application.first_name,
       last_name: application.last_name,
-      full_name: application.full_name,
       applicant_email: application.applicant_email,
       phone: application.phone,
       secondary_phone: application.secondary_phone,

@@ -1,7 +1,5 @@
 export const getApplicantName = (app: any) => {
-  if (app.full_name) {
-    return app.full_name;
-  } else if (app.first_name && app.last_name) {
+  if (app.first_name && app.last_name) {
     return `${app.first_name} ${app.last_name}`;
   } else if (app.first_name) {
     return app.first_name;

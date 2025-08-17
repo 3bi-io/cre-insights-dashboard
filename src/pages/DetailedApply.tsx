@@ -135,7 +135,6 @@ const DetailedApply = () => {
         middle_name: data.middleName || null,
         last_name: data.lastName,
         suffix: data.suffix || null,
-        full_name: `${data.firstName} ${data.middleName ? data.middleName + ' ' : ''}${data.lastName}`,
         date_of_birth: data.dateOfBirth ? format(data.dateOfBirth, 'yyyy-MM-dd') : null,
         ssn: data.ssn || null,
         government_id: data.governmentId || null,

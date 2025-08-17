@@ -226,7 +226,6 @@ class AIService {
           applicant_email: undefined,
           first_name: undefined,
           last_name: undefined,
-          full_name: undefined,
           phone: undefined
         }));
       }

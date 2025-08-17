@@ -126,7 +126,7 @@ serve(async (req) => {
 
         if (existing) {
           // Merge: only fill empty fields on the existing record
-          const updatableFields = ['first_name','last_name','full_name','applicant_email','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_id','job_listing_id','client','source','notes'];
+          const updatableFields = ['first_name','last_name','applicant_email','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_id','job_listing_id','client','source','notes'];
           const updatePayload: Record<string, any> = { updated_at: new Date().toISOString() };
 
           for (const field of updatableFields) {

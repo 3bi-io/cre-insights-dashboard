@@ -147,7 +147,6 @@ const IntelliApply = () => {
       const { error } = await supabase.from('applications').insert({
         first_name: data.firstName,
         last_name: data.lastName,
-        full_name: `${data.firstName} ${data.lastName}`,
         applicant_email: data.email,
         phone: phoneNumber,
         city: data.city,

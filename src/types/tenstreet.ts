@@ -126,7 +126,6 @@ export const AVAILABLE_FIELD_TYPES = [
   // Basic contact info
   'first_name',
   'last_name',
-  'full_name',
   'email',
   'applicant_email',
   'phone',

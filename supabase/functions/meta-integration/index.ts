@@ -603,17 +603,17 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
 
         let firstName = fieldsObj['first_name'] || '';
         let lastName = fieldsObj['last_name'] || '';
-        let fullName = fieldsObj['full_name'] || '';
         const email = fieldsObj['email'] || fieldsObj['email_address'] || null;
         const phone = fieldsObj['phone_number'] || fieldsObj['phone'] || null;
 
-        if (!fullName && (firstName || lastName)) {
-          fullName = [firstName, lastName].filter(Boolean).join(' ');
-        }
-        if (!firstName && fullName) {
-          const parts = fullName.split(' ');
-          firstName = parts[0] || '';
-          lastName = parts.slice(1).join(' ');
+        // Extract names from full_name if needed
+        if (!firstName && !lastName) {
+          const fullName = fieldsObj['full_name'] || '';
+          if (fullName) {
+            const parts = fullName.split(' ');
+            firstName = parts[0] || '';
+            lastName = parts.slice(1).join(' ');
+          }
         }
 
         let exists = false;
@@ -674,7 +674,6 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
         const insertPayload: any = {
           first_name: firstName || null,
           last_name: lastName || null,
-          full_name: fullName || null,
           applicant_email: email,
           phone: normalizePhoneNumber(phone),
           city: city,

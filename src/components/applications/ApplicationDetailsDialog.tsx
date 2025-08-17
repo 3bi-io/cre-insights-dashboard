@@ -16,9 +16,7 @@ interface ApplicationDetailsDialogProps {
 
 const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
   const getApplicantName = (app: any) => {
-    if (app.full_name) {
-      return app.full_name;
-    } else if (app.first_name && app.last_name) {
+    if (app.first_name && app.last_name) {
       return `${app.first_name} ${app.last_name}`;
     } else if (app.first_name) {
       return app.first_name;
@@ -91,10 +89,6 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               Applicant Information
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                <p className="text-sm">{application.full_name || 'Not provided'}</p>
-              </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">First Name</label>
                 <p className="text-sm">{application.first_name || 'Not provided'}</p>
