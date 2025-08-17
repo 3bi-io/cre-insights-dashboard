@@ -6,6 +6,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Zip code lookup utility
+const lookupZipCode = async (zipCode: string) => {
+  if (!zipCode || zipCode.length < 5) {
+    return null;
+  }
+
+  // Clean zip code - take first 5 digits
+  const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
+  
+  if (cleanZip.length !== 5) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+    
+    if (!response.ok) {
+      console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.places && data.places.length > 0) {
+      const place = data.places[0];
+      return {
+        city: place['place name'],
+        state: place['state'],
+        stateAbbr: place['state abbreviation']
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error looking up zip code ${cleanZip}:`, error);
+    return null;
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -474,7 +513,24 @@ async function extractApplicationData(conversationDetail: any, conversation: any
         }
       }
     }
-
+    
+    // Lookup city/state from zip code if zip is provided but city/state are missing
+    if (extractedData.zip && (!extractedData.city || !extractedData.state)) {
+      console.log('Attempting zip code lookup for:', extractedData.zip);
+      const zipLookup = await lookupZipCode(extractedData.zip);
+      
+      if (zipLookup) {
+        if (!extractedData.city) {
+          extractedData.city = zipLookup.city;
+          console.log('Set city from zip lookup:', zipLookup.city);
+        }
+        if (!extractedData.state) {
+          extractedData.state = zipLookup.stateAbbr;
+          console.log('Set state from zip lookup:', zipLookup.stateAbbr);
+        }
+      }
+    }
+    
     // Check if we have meaningful data
     const meaningfulFields = ['first_name','last_name','applicant_email','phone','zip','city','state','age','cdl','drug','veteran','consent','privacy','exp','months','job_id','job_listing_id','client'];
     let hasData = meaningfulFields.some((f) => extractedData[f] !== undefined && extractedData[f] !== null && extractedData[f] !== '');

@@ -78,6 +78,45 @@ serve(async (req) => {
   }
 });
 
+// Zip code lookup utility
+const lookupZipCode = async (zipCode: string) => {
+  if (!zipCode || zipCode.length < 5) {
+    return null;
+  }
+
+  // Clean zip code - take first 5 digits
+  const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
+  
+  if (cleanZip.length !== 5) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+    
+    if (!response.ok) {
+      console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.places && data.places.length > 0) {
+      const place = data.places[0];
+      return {
+        city: place['place name'],
+        state: place['state'],
+        stateAbbr: place['state abbreviation']
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error looking up zip code ${cleanZip}:`, error);
+    return null;
+  }
+};
+
 async function handleDataCollection(data: any) {
   try {
     console.log('Handling data collection:', data);
@@ -90,7 +129,7 @@ async function handleDataCollection(data: any) {
     const collectedData = data.collectedData || {};
     
     // Map the collected data to application fields
-    const applicationData = {
+    let applicationData = {
       first_name: collectedData.GivenName || '',
       last_name: collectedData.FamilyName || '',
       applicant_email: collectedData.InternetEmailAddress || '',
@@ -111,6 +150,23 @@ async function handleDataCollection(data: any) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    // Lookup city/state from zip code if zip is provided but city/state are missing
+    if (applicationData.zip && (!applicationData.city || !applicationData.state)) {
+      console.log('Attempting zip code lookup for:', applicationData.zip);
+      const zipLookup = await lookupZipCode(applicationData.zip);
+      
+      if (zipLookup) {
+        if (!applicationData.city) {
+          applicationData.city = zipLookup.city;
+          console.log('Set city from zip lookup:', zipLookup.city);
+        }
+        if (!applicationData.state) {
+          applicationData.state = zipLookup.stateAbbr;
+          console.log('Set state from zip lookup:', zipLookup.stateAbbr);
+        }
+      }
+    }
 
     console.log('Mapped application data:', applicationData);
 
