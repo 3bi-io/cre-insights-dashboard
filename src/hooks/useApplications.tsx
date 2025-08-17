@@ -21,7 +21,7 @@ export const useApplications = (webhookConfig?: { url: string; enabled: boolean 
           job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name)),
           recruiters:recruiter_id(id, first_name, last_name, email)
         `)
-        .order('applied_at', { ascending: false });
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
