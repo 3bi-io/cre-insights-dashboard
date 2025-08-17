@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase } from 'lucide-react';
-import { getApplicantLocation } from '@/utils/applicationHelpers';
+import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2 } from 'lucide-react';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
+import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -15,6 +15,9 @@ interface ApplicationDetailsDialogProps {
 }
 
 const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
+  // Use zip code lookup for city and state display
+  const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
+
   const getApplicantName = (app: any) => {
     if (app.first_name && app.last_name) {
       return `${app.first_name} ${app.last_name}`;
@@ -50,6 +53,10 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
   const getClientName = (app: any) => {
     return app.job_listings?.clients?.name || app.job_listings?.client || null;
   };
+
+  // Get city and state with fallback logic
+  const displayCity = application.city || lookupCity || 'Not provided';
+  const displayState = application.state || lookupState || 'Not provided';
 
   const customFields = application.custom_fields && typeof application.custom_fields === 'object' 
     ? application.custom_fields as any 
@@ -122,8 +129,24 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                 </div>
               )}
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Location</label>
-                <p className="text-sm">{getApplicantLocation(application)}</p>
+                <label className="text-sm font-medium text-muted-foreground">City</label>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3 h-3" />
+                  <p className="text-sm">{displayCity}</p>
+                  {isLookingUp && application.zip && !application.city && (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">State</label>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3 h-3" />
+                  <p className="text-sm">{displayState}</p>
+                  {isLookingUp && application.zip && !application.state && (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  )}
+                </div>
               </div>
               {application.zip && (
                 <div>
