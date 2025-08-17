@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase } from 'lucide-react';
 import { getApplicantLocation } from '@/utils/applicationHelpers';
+import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -122,7 +123,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                   <label className="text-sm font-medium text-muted-foreground">Phone</label>
                   <p className="text-sm flex items-center gap-2">
                     <Phone className="w-3 h-3" />
-                    {application.phone}
+                    {formatPhoneForDisplay(application.phone)}
                   </p>
                 </div>
               )}

@@ -7,6 +7,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Phone number normalization utility
+function normalizePhoneNumber(phone: string | null | undefined): string | null {
+  if (!phone || typeof phone !== 'string') {
+    return null;
+  }
+
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Handle empty or invalid inputs
+  if (!digitsOnly || digitsOnly.length < 10) {
+    return null;
+  }
+
+  // Handle US numbers
+  if (digitsOnly.length === 10) {
+    // 10 digits - add +1 country code
+    return `+1${digitsOnly}`;
+  } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+    // 11 digits starting with 1 - already has country code
+    return `+${digitsOnly}`;
+  } else if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
+    // 11 digits not starting with 1 - assume it's a 10-digit number with extra digit
+    return `+1${digitsOnly.slice(-10)}`;
+  } else if (digitsOnly.length > 11) {
+    // More than 11 digits - take last 10 and add +1
+    return `+1${digitsOnly.slice(-10)}`;
+  }
+
+  // Fallback for edge cases
+  return null;
+}
+
 interface MetaAdAccount {
   id: string;
   name: string;
@@ -643,7 +676,7 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
           last_name: lastName || null,
           full_name: fullName || null,
           applicant_email: email,
-          phone: phone,
+          phone: normalizePhoneNumber(phone),
           city: city,
           state: state,
           zip: fieldsObj.zip,

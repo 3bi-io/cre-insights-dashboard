@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 
 interface FormData {
   firstName: string;
@@ -42,16 +43,6 @@ export const useApplicationForm = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const navigate = useNavigate();
 
-  const formatPhoneNumber = useCallback((phone: string) => {
-    const digits = phone.replace(/\D/g, '');
-    
-    if (digits.length === 10) {
-      return `+1${digits}`;
-    } else if (digits.length === 11 && digits.startsWith('1')) {
-      return `+${digits}`;
-    }
-    return `+1${digits}`;
-  }, []);
 
   const getExperienceValue = useCallback((months: string) => {
     if (!months) return '';
@@ -68,7 +59,7 @@ export const useApplicationForm = () => {
     mutationFn: async (data: FormData) => {
       const formattedData = {
         ...data,
-        phone: formatPhoneNumber(data.phone),
+        phone: normalizePhoneNumber(data.phone),
         months: data.experience,
         exp: getExperienceValue(data.experience),
       };

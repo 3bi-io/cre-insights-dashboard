@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 import { 
   Truck, 
   User, 
@@ -142,8 +143,8 @@ const DetailedApply = () => {
         
         // Contact
         applicant_email: data.email,
-        phone: data.phone,
-        secondary_phone: data.secondaryPhone || null,
+        phone: normalizePhoneNumber(data.phone),
+        secondary_phone: normalizePhoneNumber(data.secondaryPhone),
         preferred_contact_method: data.preferredContactMethod,
         
         // Address
@@ -156,7 +157,7 @@ const DetailedApply = () => {
         
         // Emergency contact
         emergency_contact_name: data.emergencyContactName || null,
-        emergency_contact_phone: data.emergencyContactPhone || null,
+        emergency_contact_phone: normalizePhoneNumber(data.emergencyContactPhone),
         emergency_contact_relationship: data.emergencyContactRelationship || null,
         
         // CDL & License

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload } from 'lucide-react';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory, getApplicantLocation } from '@/utils/applicationHelpers';
+import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ApplicationCardProps {
@@ -64,7 +65,7 @@ const ApplicationCard = ({
               {application.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  <span>{application.phone}</span>
+                  <span>{formatPhoneForDisplay(application.phone)}</span>
                 </div>
               )}
               <div className="text-gray-500">{applicantLocation}</div>
