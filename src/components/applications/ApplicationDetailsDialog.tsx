@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -64,28 +64,15 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      {trigger && (
-        <DialogTrigger asChild>
-          {trigger}
-        </DialogTrigger>
-      )}
-      {!trigger && isOpen === undefined && (
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Eye className="w-4 h-4" />
-            View Details
-          </Button>
-        </DialogTrigger>
-      )}
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="application-details-description">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <User className="w-5 h-5" />
             Application Details
           </DialogTitle>
-          <div id="application-details-description" className="sr-only">
+          <DialogDescription>
             Detailed information about the job application including applicant information, job details, and application status.
-          </div>
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">

@@ -34,7 +34,7 @@ export const useZipCodeLookup = (zipCode: string | null | undefined): UseZipCode
         } else {
           setCity(null);
           setState(null);
-          setError('Zip code not found');
+          // Don't set error for 404s, just silently handle invalid zip codes
         }
       } catch (err) {
         setCity(null);

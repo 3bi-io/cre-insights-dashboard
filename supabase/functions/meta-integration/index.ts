@@ -554,24 +554,47 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
   const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
   const cleanAccountId = accountId.replace(/^act_/, '');
   const sinceDate = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
-  const formsUrl = `https://graph.facebook.com/v18.0/${formattedAccountId}/leadgen_forms?fields=id,name,created_time&limit=50&access_token=${accessToken}`;
-
-  let forms: Array<{id: string; name?: string; created_time?: string}> = [];
+  
+  // First, try to get leads directly from campaigns with lead generation
+  const campaignsUrl = `https://graph.facebook.com/v18.0/${formattedAccountId}/campaigns?fields=id,name&effective_status=["ACTIVE","PAUSED"]&limit=50&access_token=${accessToken}`;
+  
+  let campaigns: Array<{id: string; name?: string}> = [];
   try {
-    const resp = await fetch(formsUrl);
+    const resp = await fetch(campaignsUrl);
     if (!resp.ok) {
       const e = await resp.json();
-      throw new Error(`Meta API leadgen_forms error: ${e.error?.message || 'Unknown error'}`);
+      throw new Error(`Meta API campaigns error: ${e.error?.message || 'Unknown error'}`);
     }
     const json = await resp.json();
-    forms = json.data || [];
+    campaigns = json.data || [];
   } catch (e: any) {
-    console.error('Failed to fetch leadgen forms:', e);
-    return new Response(JSON.stringify({ success: false, message: `Failed to fetch leadgen forms: ${e.message}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('Failed to fetch campaigns, trying leadgen_forms approach:', e);
+    
+    // Fallback: try leadgen_forms approach
+    const formsUrl = `https://graph.facebook.com/v18.0/${formattedAccountId}/leadgen_forms?fields=id,name,created_time&limit=50&access_token=${accessToken}`;
+    try {
+      const resp = await fetch(formsUrl);
+      if (!resp.ok) {
+        const e = await resp.json();
+        throw new Error(`Meta API leadgen_forms error: ${e.error?.message || 'Unknown error'}`);
+      }
+      const json = await resp.json();
+      const forms = json.data || [];
+      console.log(`Found ${forms.length} leadgen forms for account ${cleanAccountId}`);
+      return await processLeadgenForms(forms, accessToken, supabase, sinceDate, cleanAccountId);
+    } catch (e2: any) {
+      console.error('Both campaigns and leadgen_forms approaches failed:', e2);
+      return new Response(JSON.stringify({ success: false, message: `No lead generation data available: ${e2.message}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
   }
 
-  console.log(`Found ${forms.length} leadgen forms for account ${cleanAccountId}`);
+  console.log(`Found ${campaigns.length} campaigns for account ${cleanAccountId}`);
 
+  // Now process campaigns to find leads
+  return await processCampaignLeads(campaigns, accessToken, supabase, sinceDate, cleanAccountId);
+}
+
+async function processLeadgenForms(forms: Array<{id: string; name?: string; created_time?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string) {
   let inserted = 0;
   let skipped = 0;
   let errors = 0;
@@ -588,113 +611,10 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
       }
       const leadsJson = await leadsResp.json();
       const leads = leadsJson.data || [];
-      for (const lead of leads) {
-        const createdAt = new Date(lead.created_time);
-        if (createdAt < sinceDate) {
-          skipped++;
-          continue;
-        }
-        const fieldsObj: Record<string, string> = {};
-        for (const f of lead.field_data || []) {
-          const key = (f.name || '').toLowerCase();
-          const val = Array.isArray(f.values) && f.values.length > 0 ? String(f.values[0]) : '';
-          if (key) fieldsObj[key] = val;
-        }
-
-        let firstName = fieldsObj['first_name'] || '';
-        let lastName = fieldsObj['last_name'] || '';
-        const email = fieldsObj['email'] || fieldsObj['email_address'] || null;
-        const phone = fieldsObj['phone_number'] || fieldsObj['phone'] || null;
-
-        // Extract names from full_name if needed
-        if (!firstName && !lastName) {
-          const fullName = fieldsObj['full_name'] || '';
-          if (fullName) {
-            const parts = fullName.split(' ');
-            firstName = parts[0] || '';
-            lastName = parts.slice(1).join(' ');
-          }
-        }
-
-        let exists = false;
-        if (email) {
-          const { data: existing } = await supabase
-            .from('applications')
-            .select('id')
-            .eq('applicant_email', email)
-            .gte('created_at', sinceDate.toISOString())
-            .limit(1)
-            .maybeSingle();
-          exists = !!existing;
-        }
-        if (exists) {
-          skipped++;
-          continue;
-        }
-
-        // Lookup city/state from zip code for consistency
-        const lookupCityState = async (zipCode: string) => {
-          if (!zipCode || zipCode.length < 5) {
-            return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-          }
-
-          const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
-          
-          if (cleanZip.length !== 5) {
-            return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-          }
-
-          try {
-            const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
-            
-            if (!response.ok) {
-              console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
-              return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-            }
-
-            const data = await response.json();
-            
-            if (data.places && data.places.length > 0) {
-              const place = data.places[0];
-              return {
-                city: place['place name'],
-                state: place['state abbreviation']
-              };
-            }
-            
-            return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-          } catch (error) {
-            console.error(`Error looking up zip code ${cleanZip}:`, error);
-            return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-          }
-        };
-
-        const { city, state } = await lookupCityState(fieldsObj.zip);
-
-        const insertPayload: any = {
-          first_name: firstName || null,
-          last_name: lastName || null,
-          applicant_email: email,
-          phone: normalizePhoneNumber(phone),
-          city: city,
-          state: state,
-          zip: fieldsObj.zip,
-          source: 'fb', // Facebook/Meta leads
-          status: 'pending',
-          created_at: createdAt.toISOString(),
-          applied_at: createdAt.toISOString(),
-          notes: `Meta Lead • form ${form.name || form.id} • campaign ${lead.campaign_id || ''}`,
-          display_fields: fieldsObj,
-        };
-
-        const { error } = await supabase.from('applications').insert(insertPayload);
-        if (error) {
-          console.error('Insert application error:', error);
-          errors++;
-        } else {
-          inserted++;
-        }
-      }
+      const result = await processLeads(leads, supabase, sinceDate);
+      inserted += result.inserted;
+      skipped += result.skipped;
+      errors += result.errors;
 
       nextUrl = leadsJson?.paging?.next || null;
       await new Promise((r) => setTimeout(r, 50));
@@ -711,4 +631,166 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
+}
+
+async function processCampaignLeads(campaigns: Array<{id: string; name?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string) {
+  let inserted = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  for (const campaign of campaigns) {
+    // Try to get leads from campaign level
+    const leadsUrl = `https://graph.facebook.com/v18.0/${campaign.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
+    
+    try {
+      const leadsResp = await fetch(leadsUrl);
+      if (!leadsResp.ok) {
+        console.log(`No leads found for campaign ${campaign.id} (${campaign.name})`);
+        continue;
+      }
+      
+      const leadsJson = await leadsResp.json();
+      const leads = leadsJson.data || [];
+      
+      if (leads.length > 0) {
+        console.log(`Found ${leads.length} leads for campaign ${campaign.id}`);
+        const result = await processLeads(leads, supabase, sinceDate);
+        inserted += result.inserted;
+        skipped += result.skipped;
+        errors += result.errors;
+      }
+    } catch (e: any) {
+      console.error(`Error fetching leads for campaign ${campaign.id}:`, e);
+      errors++;
+    }
+
+    await new Promise((r) => setTimeout(r, 50));
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Campaign leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`,
+      inserted,
+      skipped,
+      errors,
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function processLeads(leads: any[], supabase: any, sinceDate: Date) {
+  let inserted = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  for (const lead of leads) {
+    const createdAt = new Date(lead.created_time);
+    if (createdAt < sinceDate) {
+      skipped++;
+      continue;
+    }
+    const fieldsObj: Record<string, string> = {};
+    for (const f of lead.field_data || []) {
+      const key = (f.name || '').toLowerCase();
+      const val = Array.isArray(f.values) && f.values.length > 0 ? String(f.values[0]) : '';
+      if (key) fieldsObj[key] = val;
+    }
+
+    let firstName = fieldsObj['first_name'] || '';
+    let lastName = fieldsObj['last_name'] || '';
+    const email = fieldsObj['email'] || fieldsObj['email_address'] || null;
+    const phone = fieldsObj['phone_number'] || fieldsObj['phone'] || null;
+
+    // Extract names from full_name if needed
+    if (!firstName && !lastName) {
+      const fullName = fieldsObj['full_name'] || '';
+      if (fullName) {
+        const parts = fullName.split(' ');
+        firstName = parts[0] || '';
+        lastName = parts.slice(1).join(' ');
+      }
+    }
+
+    let exists = false;
+    if (email) {
+      const { data: existing } = await supabase
+        .from('applications')
+        .select('id')
+        .eq('applicant_email', email)
+        .gte('created_at', sinceDate.toISOString())
+        .limit(1)
+        .maybeSingle();
+      exists = !!existing;
+    }
+    if (exists) {
+      skipped++;
+      continue;
+    }
+
+    // Lookup city/state from zip code for consistency
+    const lookupCityState = async (zipCode: string) => {
+      if (!zipCode || zipCode.length < 5) {
+        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+      }
+
+      const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
+      
+      if (cleanZip.length !== 5) {
+        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+      }
+
+      try {
+        const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+        
+        if (!response.ok) {
+          console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+          return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+        }
+
+        const data = await response.json();
+        
+        if (data.places && data.places.length > 0) {
+          const place = data.places[0];
+          return {
+            city: place['place name'],
+            state: place['state abbreviation']
+          };
+        }
+        
+        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+      } catch (error) {
+        console.error(`Error looking up zip code ${cleanZip}:`, error);
+        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+      }
+    };
+
+    const { city, state } = await lookupCityState(fieldsObj.zip);
+
+    const insertPayload: any = {
+      first_name: firstName || null,
+      last_name: lastName || null,
+      applicant_email: email,
+      phone: normalizePhoneNumber(phone),
+      city: city,
+      state: state,
+      zip: fieldsObj.zip,
+      source: 'fb', // Facebook/Meta leads
+      status: 'pending',
+      created_at: createdAt.toISOString(),
+      applied_at: createdAt.toISOString(),
+      notes: `Meta Lead • campaign ${lead.campaign_id || ''}`,
+      display_fields: fieldsObj,
+    };
+
+    const { error } = await supabase.from('applications').insert(insertPayload);
+    if (error) {
+      console.error('Insert application error:', error);
+      errors++;
+    } else {
+      inserted++;
+    }
+  }
+
+  return { inserted, skipped, errors };
 }
