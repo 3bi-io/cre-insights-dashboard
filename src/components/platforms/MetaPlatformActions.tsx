@@ -437,24 +437,15 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Sync Meta Leads</p>
+                    <p className="font-medium">Auto Meta Leads</p>
                     <p className="text-sm text-muted-foreground">
-                      Import Meta Lead Ads leads into Applications
+                      Meta leads are automatically imported every 6 hours
                     </p>
                   </div>
-                  <Button 
-                    onClick={() => handleMetaAction('sync_leads', CR_ENGLAND_ACCOUNT_ID)}
-                    disabled={isLoading}
-                    size="sm"
-                    variant="outline"
-                  >
-                    {isLoading && currentAction === 'sync_leads' ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    Sync Leads
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-600 dark:text-green-400">Active</span>
+                  </div>
                 </div>
               </>
             )}
@@ -474,44 +465,35 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                         ID: {account.account_id} • {account.currency} • {account.timezone_name}
                       </p>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
-                        disabled={isLoading}
-                        title="Sync campaigns for CR England"
-                      >
-                        <BarChart3 className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleMetaAction('sync_adsets', account.account_id)}
-                        disabled={isLoading}
-                        title="Sync ad sets for CR England"
-                      >
-                        <Users className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleMetaAction('sync_ads', account.account_id)}
-                        disabled={isLoading}
-                        title="Sync ads for CR England"
-                      >
-                        <Zap className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleMetaAction('sync_leads', account.account_id)}
-                        disabled={isLoading}
-                        title="Sync leads for CR England"
-                      >
-                        <RefreshCw className="w-3 h-3" />
-                      </Button>
-                    </div>
+                     <div className="flex gap-1">
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
+                         disabled={isLoading}
+                         title="Sync campaigns for CR England"
+                       >
+                         <BarChart3 className="w-3 h-3" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => handleMetaAction('sync_adsets', account.account_id)}
+                         disabled={isLoading}
+                         title="Sync ad sets for CR England"
+                       >
+                         <Users className="w-3 h-3" />
+                       </Button>
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         onClick={() => handleMetaAction('sync_ads', account.account_id)}
+                         disabled={isLoading}
+                         title="Sync ads for CR England"
+                       >
+                         <Zap className="w-3 h-3" />
+                       </Button>
+                     </div>
                   </div>
                 ))}
               </div>
