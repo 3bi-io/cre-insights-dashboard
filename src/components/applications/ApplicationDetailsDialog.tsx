@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase } from 'lucide-react';
+import { getApplicantLocation } from '@/utils/applicationHelpers';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -125,18 +126,10 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                   </p>
                 </div>
               )}
-              {application.city && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">City</label>
-                  <p className="text-sm">{application.city}</p>
-                </div>
-              )}
-              {application.state && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">State</label>
-                  <p className="text-sm">{application.state}</p>
-                </div>
-              )}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Location</label>
+                <p className="text-sm">{getApplicantLocation(application)}</p>
+              </div>
               {application.zip && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">ZIP Code</label>

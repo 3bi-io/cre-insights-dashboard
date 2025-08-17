@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload } from 'lucide-react';
-import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
+import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory, getApplicantLocation } from '@/utils/applicationHelpers';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ApplicationCardProps {
@@ -29,6 +29,7 @@ const ApplicationCard = ({
   const isMobile = useIsMobile();
   const applicantName = getApplicantName(application);
   const applicantEmail = getApplicantEmail(application);
+  const applicantLocation = getApplicantLocation(application);
   const clientName = getClientName(application);
   const category = getApplicantCategory(application);
   const jobTitle = application.job_listings?.title || application.job_listings?.job_title || 'Unknown Position';
@@ -66,6 +67,7 @@ const ApplicationCard = ({
                   <span>{application.phone}</span>
                 </div>
               )}
+              <div className="text-gray-500">{applicantLocation}</div>
               <div className="text-xs text-gray-500">
                 Applied: {new Date(application.applied_at).toLocaleDateString()}
               </div>

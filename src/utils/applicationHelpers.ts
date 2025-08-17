@@ -15,6 +15,20 @@ export const getApplicantEmail = (app: any) => {
   return app.applicant_email || app.email || 'No email provided';
 };
 
+export const getApplicantLocation = (app: any) => {
+  const city = app.city || '';
+  const state = app.state || '';
+  
+  if (!city && !state) return 'No location provided';
+  if (!city) return state;
+  if (!state) return city;
+  
+  // Use state abbreviation if it's longer than 2 characters
+  const stateDisplay = state.length > 2 ? state.substring(0, 2).toUpperCase() : state.toUpperCase();
+  
+  return `${city}, ${stateDisplay}`;
+};
+
 export const getClientName = (app: any) => {
   return app.job_listings?.clients?.name || app.job_listings?.client || null;
 };

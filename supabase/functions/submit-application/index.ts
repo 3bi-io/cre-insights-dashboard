@@ -43,14 +43,53 @@ Deno.serve(async (req) => {
       }
     };
 
+    // Lookup city/state from zip code for consistency
+    const lookupCityState = async (zipCode: string) => {
+      if (!zipCode || zipCode.length < 5) {
+        return { city: formData.city || '', state: formData.state || '' };
+      }
+
+      const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
+      
+      if (cleanZip.length !== 5) {
+        return { city: formData.city || '', state: formData.state || '' };
+      }
+
+      try {
+        const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+        
+        if (!response.ok) {
+          console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+          return { city: formData.city || '', state: formData.state || '' };
+        }
+
+        const data = await response.json();
+        
+        if (data.places && data.places.length > 0) {
+          const place = data.places[0];
+          return {
+            city: place['place name'],
+            state: place['state abbreviation']
+          };
+        }
+        
+        return { city: formData.city || '', state: formData.state || '' };
+      } catch (error) {
+        console.error(`Error looking up zip code ${cleanZip}:`, error);
+        return { city: formData.city || '', state: formData.state || '' };
+      }
+    };
+
+    const { city, state } = await lookupCityState(formData.zip);
+
     // Map form data to applications table schema
     const applicationData = {
       first_name: formData.firstName,
       last_name: formData.lastName,
       applicant_email: formData.email,
       phone: formData.phone,
-      city: formData.city,
-      state: formData.state,
+      city: city,
+      state: state,
       zip: formData.zip,
       age: formData.over21,
       cdl: formData.cdl,

@@ -115,12 +115,54 @@ serve(async (req) => {
             continue;
           }
 
+          // Lookup city/state from zip code for consistency
+          const lookupCityState = async (zipCode: string) => {
+            if (!zipCode || zipCode.length < 5) {
+              return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+            }
+
+            const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
+            
+            if (cleanZip.length !== 5) {
+              return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+            }
+
+            try {
+              const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+              
+              if (!response.ok) {
+                console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+                return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+              }
+
+              const data = await response.json();
+              
+              if (data.places && data.places.length > 0) {
+                const place = data.places[0];
+                return {
+                  city: place['place name'],
+                  state: place['state abbreviation']
+                };
+              }
+              
+              return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+            } catch (error) {
+              console.error(`Error looking up zip code ${cleanZip}:`, error);
+              return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
+            }
+          };
+
+          const { city, state } = await lookupCityState(fieldsObj.zip);
+
           const insertPayload: any = {
             first_name: firstName || null,
             last_name: lastName || null,
             full_name: fullName || null,
             applicant_email: email,
             phone: phone,
+            city: city,
+            state: state,
+            zip: fieldsObj.zip,
             source: 'fb', // Facebook/Meta leads
             status: 'pending',
             created_at: createdAt.toISOString(),
