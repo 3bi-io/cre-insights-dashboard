@@ -35,20 +35,22 @@ const Settings = () => {
   const { user, userRole } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
+const [loading, setLoading] = useState(false);
+const [newAdminEmail, setNewAdminEmail] = useState('');
+const [addingAdmin, setAddingAdmin] = useState(false);
 
-  const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    budgetWarnings: true,
-    weeklyReports: false,
-    applicationUpdates: true,
-  });
+const [notifications, setNotifications] = useState({
+  emailAlerts: true,
+  budgetWarnings: true,
+  weeklyReports: false,
+  applicationUpdates: true,
+});
 
-  const [privacy, setPrivacy] = useState({
-    dataSharing: false,
-    analytics: true,
-    marketing: false,
-  });
+const [privacy, setPrivacy] = useState({
+  dataSharing: false,
+  analytics: true,
+  marketing: false,
+});
 
   // Fetch administrators
   const { data: administrators, isLoading: adminLoading } = useQuery({
@@ -156,18 +158,65 @@ const Settings = () => {
     setLoading(false);
   };
 
-  const handleSavePrivacy = async () => {
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: "Privacy settings updated",
-      description: "Your privacy preferences have been saved.",
-    });
-    setLoading(false);
-  };
+const handleSavePrivacy = async () => {
+  setLoading(true);
+  // Simulate API call
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  toast({
+    title: "Privacy settings updated",
+    description: "Your privacy preferences have been saved.",
+  });
+  setLoading(false);
+};
 
-  const handleRemoveAdmin = (userId: string) => {
+const handleAddAdmin = async (e?: React.MouseEvent) => {
+  e?.preventDefault?.();
+  const email = newAdminEmail.trim().toLowerCase();
+  if (!email) return;
+  try {
+    setAddingAdmin(true);
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+    if (!profile?.id) {
+      toast({
+        title: 'User not found',
+        description: 'Ask the user to sign up first so a profile exists.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const { error: insertError } = await supabase
+      .from('user_roles')
+      .insert({ user_id: profile.id, role: 'admin' });
+
+    if (insertError) {
+      // Unique violation -> already has this role
+      // @ts-ignore
+      if (insertError.code === '23505') {
+        toast({ title: 'Already an admin', description: `${email} already has admin role.` });
+      } else {
+        throw insertError;
+      }
+    } else {
+      toast({ title: 'Admin granted', description: `${email} is now an administrator.` });
+      setNewAdminEmail('');
+      queryClient.invalidateQueries({ queryKey: ['administrators'] });
+    }
+  } catch (err) {
+    console.error('Error adding admin:', err);
+    toast({ title: 'Error', description: 'Failed to grant admin role.', variant: 'destructive' });
+  } finally {
+    setAddingAdmin(false);
+  }
+};
+
+const handleRemoveAdmin = (userId: string) => {
     if (userId === user?.id) {
       toast({
         title: "Cannot remove yourself",
@@ -482,18 +531,37 @@ const Settings = () => {
                     <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Current Administrators</p>
-                        <p className="text-sm text-gray-600">
-                          {administrators?.length || 0} administrator{administrators?.length !== 1 ? 's' : ''} found
-                        </p>
-                      </div>
-                      <Badge variant="secondary">
-                        Total: {administrators?.length || 0}
-                      </Badge>
-                    </div>
+<div className="space-y-4">
+  <div className="rounded-xl border border-border p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+    <div className="w-full sm:w-auto flex-1">
+      <Label htmlFor="adminEmail" className="mb-1 block">Add Administrator by Email</Label>
+      <div className="flex gap-2">
+        <Input
+          id="adminEmail"
+          type="email"
+          placeholder="user@example.com"
+          value={newAdminEmail}
+          onChange={(e) => setNewAdminEmail(e.target.value)}
+        />
+        <Button onClick={handleAddAdmin} disabled={addingAdmin || !newAdminEmail}>
+          {addingAdmin ? 'Granting...' : 'Grant Admin'}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">User must have signed up at least once.</p>
+    </div>
+  </div>
+
+  <div className="flex items-center justify-between">
+    <div className="space-y-1">
+      <p className="text-sm font-medium">Current Administrators</p>
+      <p className="text-sm text-gray-600">
+        {administrators?.length || 0} administrator{administrators?.length !== 1 ? 's' : ''} found
+      </p>
+    </div>
+    <Badge variant="secondary">
+      Total: {administrators?.length || 0}
+    </Badge>
+  </div>
 
                     <div className="bg-card rounded-xl border border-border">
                       <Table>
