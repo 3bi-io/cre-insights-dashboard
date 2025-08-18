@@ -23,47 +23,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching user role:', error);
-        setUserRole('user'); // Default to 'user' role
-      } else {
-        console.log('User role fetched:', data?.role);
-        setUserRole(data?.role || 'user');
-      }
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      setUserRole('user'); // Default to 'user' role
+const fetchUserRole = async (_userId: string) => {
+  try {
+    const { data, error } = await supabase.rpc('get_current_user_role');
+    if (error) {
+      console.error('Error fetching user role:', error?.message || error);
+      setUserRole('user');
+    } else {
+      console.log('User role fetched:', data);
+      setUserRole((data as string) || 'user');
     }
-  };
+  } catch (error: any) {
+    console.error('Error fetching user role:', error?.message || error);
+    setUserRole('user');
+  }
+};
 
   useEffect(() => {
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Use setTimeout to prevent potential deadlocks
-          setTimeout(() => {
-            fetchUserRole(session.user.id);
-          }, 0);
-        } else {
-          setUserRole(null);
-        }
-        
-        setLoading(false);
-      }
-    );
+const { data: { subscription } } = supabase.auth.onAuthStateChange(
+  (event, session) => {
+    console.log('Auth state changed:', event, session);
+    setSession(session);
+    setUser(session?.user ?? null);
+    
+    if (session?.user) {
+      // Use setTimeout to prevent potential deadlocks
+      setTimeout(() => {
+        fetchUserRole(session.user.id);
+      }, 0);
+    } else {
+      setUserRole(null);
+    }
+    
+    setLoading(false);
+  }
+);
 
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
