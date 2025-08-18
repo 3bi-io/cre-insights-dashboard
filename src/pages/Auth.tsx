@@ -5,15 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const { signIn, user } = useAuth();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   React.useEffect(() => {
     if (user) {
@@ -21,16 +26,39 @@ const Auth = () => {
     }
   }, [user]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError(error.message);
-    }
-    setLoading(false);
-  };
+const handleSignIn = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  const { error } = await signIn(email, password);
+  if (error) {
+    setError(error.message);
+  }
+  setLoading(false);
+};
+
+const handlePasswordReset = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+    
+    if (error) throw error;
+    
+    setResetSent(true);
+    toast({
+      title: "Password reset sent",
+      description: "Check your email for password reset instructions.",
+    });
+  } catch (error: any) {
+    setError(error.message);
+  }
+  setLoading(false);
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -46,39 +74,103 @@ const Auth = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
+            <CardTitle>{resetMode ? 'Reset Password' : 'Welcome Back'}</CardTitle>
             <CardDescription>
-              Sign in to your account to access the dashboard
+              {resetMode 
+                ? 'Enter your email to receive password reset instructions'
+                : 'Sign in to your account to access the dashboard'
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  required 
-                  placeholder="Enter your email" 
-                />
+            {resetSent ? (
+              <div className="text-center space-y-4">
+                <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium">Check your email</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    We've sent password reset instructions to {email}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setResetSent(false);
+                    setResetMode(false);
+                    setEmail('');
+                  }}
+                >
+                  Back to Sign In
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  required 
-                  placeholder="Enter your password" 
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Button>
-            </form>
+            ) : (
+              <>
+                {resetMode ? (
+                  <form onSubmit={handlePasswordReset} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={email} 
+                        onChange={e => setEmail(e.target.value)} 
+                        required 
+                        placeholder="Enter your email" 
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? 'Sending...' : 'Send Reset Instructions'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="w-full" 
+                      onClick={() => setResetMode(false)}
+                    >
+                      Back to Sign In
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={email} 
+                        onChange={e => setEmail(e.target.value)} 
+                        required 
+                        placeholder="Enter your email" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)} 
+                        required 
+                        placeholder="Enter your password" 
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="w-full" 
+                      onClick={() => setResetMode(true)}
+                    >
+                      Forgot your password?
+                    </Button>
+                  </form>
+                )}
+              </>
+            )}
 
             {error && (
               <Alert variant="destructive" className="mt-4">
