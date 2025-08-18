@@ -551,37 +551,51 @@ async function syncAds(userId: string, accountId: string, campaignId: string | u
 
 async function syncLeads(userId: string, accountId: string, sinceDays: number, accessToken: string, supabase: any) {
   console.log(`Syncing Meta leads for account: ${accountId}, since last ${sinceDays} days`);
-  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  
   const cleanAccountId = accountId.replace(/^act_/, '');
-  const sinceDate = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000);
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - sinceDays);
   
-  // First, try to get leads directly from campaigns with lead generation
-  const campaignsUrl = `https://graph.facebook.com/v18.0/${formattedAccountId}/campaigns?fields=id,name&effective_status=["ACTIVE","PAUSED"]&limit=50&access_token=${accessToken}`;
+  // Get existing emails to avoid duplicates
+  const { data: existingEmails } = await supabase
+    .from('applications')
+    .select('applicant_email')
+    .not('applicant_email', 'is', null)
+    .gte('created_at', sinceDate.toISOString());
   
+  const existingEmailSet = new Set(
+    (existingEmails || []).map((app: any) => app.applicant_email?.toLowerCase()).filter(Boolean)
+  );
+  
+  console.log(`Found ${existingEmailSet.size} existing emails in applications since ${sinceDate.toISOString()}`);
+  
+  // Try to get campaigns first
+  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
   let campaigns: Array<{id: string; name?: string}> = [];
+  
   try {
-    const resp = await fetch(campaignsUrl);
-    if (!resp.ok) {
-      const e = await resp.json();
-      throw new Error(`Meta API campaigns error: ${e.error?.message || 'Unknown error'}`);
-    }
-    const json = await resp.json();
-    campaigns = json.data || [];
-  } catch (e: any) {
-    console.error('Failed to fetch campaigns, trying leadgen_forms approach:', e);
+    const campaignsResp = await fetch(
+      `https://graph.facebook.com/v18.0/${formattedAccountId}/campaigns?fields=id,name&access_token=${accessToken}`
+    );
     
-    // Fallback: try leadgen_forms approach
-    const formsUrl = `https://graph.facebook.com/v18.0/${formattedAccountId}/leadgen_forms?fields=id,name,created_time&limit=50&access_token=${accessToken}`;
+    if (!campaignsResp.ok) {
+      throw new Error(`Failed to fetch campaigns: ${campaignsResp.status}`);
+    }
+    
+    const campaignsJson = await campaignsResp.json();
+    campaigns = campaignsJson.data || [];
+  } catch (e1: any) {
+    console.error('Error fetching campaigns, trying leadgen_forms approach:', e1);
+    // Fallback to leadgen_forms
     try {
-      const resp = await fetch(formsUrl);
+      const resp = await fetch(`https://graph.facebook.com/v18.0/${formattedAccountId}/leadgen_forms?fields=id,name,created_time&access_token=${accessToken}`);
       if (!resp.ok) {
-        const e = await resp.json();
-        throw new Error(`Meta API leadgen_forms error: ${e.error?.message || 'Unknown error'}`);
+        throw new Error(`Meta API leadgen_forms error: ${resp.status} ${resp.statusText}`);
       }
       const json = await resp.json();
       const forms = json.data || [];
       console.log(`Found ${forms.length} leadgen forms for account ${cleanAccountId}`);
-      return await processLeadgenForms(forms, accessToken, supabase, sinceDate, cleanAccountId);
+      return await processLeadgenForms(forms, accessToken, supabase, sinceDate, cleanAccountId, existingEmailSet);
     } catch (e2: any) {
       console.error('Both campaigns and leadgen_forms approaches failed:', e2);
       return new Response(JSON.stringify({ success: false, message: `No lead generation data available: ${e2.message}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -591,16 +605,18 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
   console.log(`Found ${campaigns.length} campaigns for account ${cleanAccountId}`);
 
   // Now process campaigns to find leads
-  return await processCampaignLeads(campaigns, accessToken, supabase, sinceDate, cleanAccountId);
+  return await processCampaignLeads(campaigns, accessToken, supabase, sinceDate, cleanAccountId, existingEmailSet);
 }
 
-async function processLeadgenForms(forms: Array<{id: string; name?: string; created_time?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string) {
+async function processLeadgenForms(forms: Array<{id: string; name?: string; created_time?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string, existingEmailSet: Set<string>) {
   let inserted = 0;
   let skipped = 0;
   let errors = 0;
 
   for (const form of forms) {
+    console.log(`Processing leadgen form: ${form.name || form.id}`);
     let nextUrl: string | null = `https://graph.facebook.com/v18.0/${form.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
+    
     while (nextUrl) {
       const leadsResp = await fetch(nextUrl);
       if (!leadsResp.ok) {
@@ -611,13 +627,15 @@ async function processLeadgenForms(forms: Array<{id: string; name?: string; crea
       }
       const leadsJson = await leadsResp.json();
       const leads = leadsJson.data || [];
-      const result = await processLeads(leads, supabase, sinceDate);
+      console.log(`Found ${leads.length} leads from form ${form.id}`);
+      
+      const result = await processLeads(leads, supabase, sinceDate, existingEmailSet);
       inserted += result.inserted;
       skipped += result.skipped;
       errors += result.errors;
 
       nextUrl = leadsJson?.paging?.next || null;
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 100)); // Slightly longer delay
     }
   }
 
@@ -633,38 +651,48 @@ async function processLeadgenForms(forms: Array<{id: string; name?: string; crea
   );
 }
 
-async function processCampaignLeads(campaigns: Array<{id: string; name?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string) {
+async function processCampaignLeads(campaigns: Array<{id: string; name?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string, existingEmailSet: Set<string>) {
   let inserted = 0;
   let skipped = 0;
   let errors = 0;
 
   for (const campaign of campaigns) {
-    // Try to get leads from campaign level
-    const leadsUrl = `https://graph.facebook.com/v18.0/${campaign.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
+    console.log(`Processing campaign: ${campaign.name || campaign.id}`);
+    
+    // Try to get leads from campaign level with pagination
+    let nextUrl: string | null = `https://graph.facebook.com/v18.0/${campaign.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
     
     try {
-      const leadsResp = await fetch(leadsUrl);
-      if (!leadsResp.ok) {
-        console.log(`No leads found for campaign ${campaign.id} (${campaign.name})`);
-        continue;
-      }
-      
-      const leadsJson = await leadsResp.json();
-      const leads = leadsJson.data || [];
-      
-      if (leads.length > 0) {
-        console.log(`Found ${leads.length} leads for campaign ${campaign.id}`);
-        const result = await processLeads(leads, supabase, sinceDate);
-        inserted += result.inserted;
-        skipped += result.skipped;
-        errors += result.errors;
+      while (nextUrl) {
+        const leadsResp = await fetch(nextUrl);
+        if (!leadsResp.ok) {
+          if (leadsResp.status === 404) {
+            console.log(`No leads found for campaign ${campaign.id} (${campaign.name})`);
+          } else {
+            console.error(`Error fetching leads for campaign ${campaign.id}: ${leadsResp.status}`);
+            errors++;
+          }
+          break;
+        }
+        
+        const leadsJson = await leadsResp.json();
+        const leads = leadsJson.data || [];
+        
+        if (leads.length > 0) {
+          console.log(`Found ${leads.length} leads for campaign ${campaign.id}`);
+          const result = await processLeads(leads, supabase, sinceDate, existingEmailSet);
+          inserted += result.inserted;
+          skipped += result.skipped;
+          errors += result.errors;
+        }
+        
+        nextUrl = leadsJson?.paging?.next || null;
+        await new Promise((r) => setTimeout(r, 100)); // Rate limiting
       }
     } catch (e: any) {
       console.error(`Error fetching leads for campaign ${campaign.id}:`, e);
       errors++;
     }
-
-    await new Promise((r) => setTimeout(r, 50));
   }
 
   return new Response(
@@ -679,7 +707,7 @@ async function processCampaignLeads(campaigns: Array<{id: string; name?: string}
   );
 }
 
-async function processLeads(leads: any[], supabase: any, sinceDate: Date) {
+async function processLeads(leads: any[], supabase: any, sinceDate: Date, existingEmailSet: Set<string>) {
   let inserted = 0;
   let skipped = 0;
   let errors = 0;
@@ -690,6 +718,7 @@ async function processLeads(leads: any[], supabase: any, sinceDate: Date) {
       skipped++;
       continue;
     }
+    
     const fieldsObj: Record<string, string> = {};
     for (const f of lead.field_data || []) {
       const key = (f.name || '').toLowerCase();
@@ -712,18 +741,8 @@ async function processLeads(leads: any[], supabase: any, sinceDate: Date) {
       }
     }
 
-    let exists = false;
-    if (email) {
-      const { data: existing } = await supabase
-        .from('applications')
-        .select('id')
-        .eq('applicant_email', email)
-        .gte('created_at', sinceDate.toISOString())
-        .limit(1)
-        .maybeSingle();
-      exists = !!existing;
-    }
-    if (exists) {
+    // Skip if email already exists in our pre-loaded set
+    if (email && existingEmailSet.has(email.toLowerCase())) {
       skipped++;
       continue;
     }
