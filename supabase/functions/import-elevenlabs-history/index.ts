@@ -45,6 +45,22 @@ const lookupZipCode = async (zipCode: string) => {
   }
 };
 
+// Remove empty string/whitespace-only values from application payloads
+function sanitizeApplicationData(data: Record<string, any>) {
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed.length === 0) continue;
+      cleaned[key] = trimmed;
+    } else {
+      cleaned[key] = value;
+    }
+  }
+  return cleaned;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -119,7 +135,8 @@ serve(async (req) => {
         const applicationData = await extractApplicationData(conversationDetail, conversation, supabase);
         
         if (applicationData) {
-          applications.push(applicationData);
+          const sanitized = sanitizeApplicationData(applicationData);
+          applications.push(sanitized);
           processedCount++;
         }
 
