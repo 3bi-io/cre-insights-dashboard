@@ -34,15 +34,7 @@ export const useJobs = () => {
     queryFn: async () => {
       console.log('Fetching job listings...');
       
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user?.id);
-      
-      if (!user) {
-        console.log('No authenticated user found');
-        return [];
-      }
-      
+      // Fetch all job listings for all users
       const { data, error } = await supabase
         .from('job_listings')
         .select(`
