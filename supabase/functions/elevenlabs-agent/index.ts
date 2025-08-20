@@ -85,6 +85,28 @@ serve(async (req) => {
   }
 });
 
+// Phone number normalization utility
+const normalizePhoneNumber = (phone: string | null | undefined): string | null => {
+  if (!phone) return null;
+  
+  // Remove all non-numeric characters
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Handle different phone number formats
+  if (cleaned.length === 11 && cleaned.startsWith('1')) {
+    // Remove leading 1 for US numbers
+    return cleaned.substring(1);
+  } else if (cleaned.length === 10) {
+    return cleaned;
+  } else if (cleaned.length === 7) {
+    // Assume local number, might need area code
+    return cleaned;
+  }
+  
+  // Return original if we can't normalize it
+  return phone;
+};
+
 // Zip code lookup utility
 const lookupZipCode = async (zipCode: string) => {
   if (!zipCode || zipCode.length < 5) {
@@ -135,22 +157,37 @@ async function handleDataCollection(data: any) {
     // Extract collected data from the voice agent
     const collectedData = data.collectedData || {};
     
+    // Handle multiple field name mappings (new conversation flow and legacy)
+    const firstName = collectedData.firstName || collectedData.GivenName || '';
+    const lastName = collectedData.lastName || collectedData.FamilyName || '';
+    const rawPhone = collectedData.cellPhone || collectedData.PrimaryPhone || '';
+    const email = collectedData.email || collectedData.InternetEmailAddress || null; // Email is now optional
+    const zipCode = collectedData.zipCode || collectedData.PostalCode || '';
+    const city = collectedData.city || collectedData.Municipality || '';
+    const state = collectedData.state || collectedData.Region || '';
+    
+    // Normalize phone number and validate it's provided (required field)
+    const normalizedPhone = normalizePhoneNumber(rawPhone);
+    if (!normalizedPhone) {
+      throw new Error('Phone number is required and must be valid');
+    }
+    
     // Map the collected data to application fields
     let applicationData = {
-      first_name: collectedData.GivenName || '',
-      last_name: collectedData.FamilyName || '',
-      applicant_email: collectedData.InternetEmailAddress || '',
-      phone: collectedData.PrimaryPhone || '',
-      city: collectedData.Municipality || '',
-      state: collectedData.Region || '',
-      zip: collectedData.PostalCode || '',
-      over_21: collectedData.over_21 || '',
-      cdl: collectedData.Class_A_CDL || '',
-      experience: collectedData.Class_A_CDL_experience || '',
-      drug: collectedData.can_pass_drug || '',
-      veteran: collectedData.Veteran_Status || '',
-      consent: collectedData.consentToSMS || '',
-      privacy: collectedData.agree_privacy_policy || '',
+      first_name: firstName,
+      last_name: lastName,
+      applicant_email: email, // Can be null/empty now
+      phone: normalizedPhone, // Normalized and validated
+      city: city,
+      state: state,
+      zip: zipCode,
+      over_21: collectedData.isOver21 || collectedData.over_21 || '',
+      cdl: collectedData.hasClassACDL || collectedData.Class_A_CDL || '',
+      experience: collectedData.drivingExperienceMonths || collectedData.Class_A_CDL_experience || '',
+      drug: collectedData.canPassDrugTest || collectedData.can_pass_drug || '',
+      veteran: collectedData.hasServedMilitary || collectedData.Veteran_Status || '',
+      consent: collectedData.consentGiven || collectedData.consentToSMS || '',
+      privacy: collectedData.consentGiven || collectedData.agree_privacy_policy || '', // Use same consent for privacy
       source: 'ElevenLabs Voice Agent',
       status: 'pending',
       applied_at: new Date().toISOString(),
@@ -158,7 +195,7 @@ async function handleDataCollection(data: any) {
       updated_at: new Date().toISOString(),
       // Add job context if provided
       job_listing_id: data.jobContext?.jobId || null,
-      notes: data.jobContext ? `Applied via voice for: ${data.jobContext.jobTitle} at ${data.jobContext.company}` : null
+      notes: data.jobContext ? `Applied via voice for: ${data.jobContext.jobTitle}` : 'Applied via voice agent'
     };
 
     // Lookup city/state from zip code if zip is provided but city/state are missing
