@@ -5,7 +5,7 @@ export interface ZipCodeData {
   stateAbbr: string;
 }
 
-// Free zip code lookup using Zippopotam.us API
+// Free zip code lookup using Zippopotam.us API with retry logic
 export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null> => {
   if (!zipCode || zipCode.length < 5) {
     return null;
@@ -18,11 +18,31 @@ export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null
     return null;
   }
 
+  // Cache for failed lookups to avoid repeated requests
+  const failedLookups = new Set<string>();
+  
+  if (failedLookups.has(cleanZip)) {
+    return null;
+  }
+
   try {
-    const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+      if (response.status === 404) {
+        // Cache failed lookups to prevent repeated attempts
+        failedLookups.add(cleanZip);
+      }
       return null;
     }
 
@@ -39,7 +59,12 @@ export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null
     
     return null;
   } catch (error) {
-    console.error(`Error looking up zip code ${cleanZip}:`, error);
+    if (error.name === 'AbortError') {
+      console.warn(`Zip code lookup timed out for ${cleanZip}`);
+    } else {
+      console.warn(`Zip code lookup failed for ${cleanZip}:`, error.message);
+    }
+    failedLookups.add(cleanZip);
     return null;
   }
 };
