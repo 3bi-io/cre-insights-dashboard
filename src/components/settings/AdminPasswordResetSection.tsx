@@ -21,12 +21,23 @@ export const AdminPasswordResetSection: React.FC = () => {
     e.preventDefault();
     if (!email || !password) return;
     setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('admin_password_reset', {
+
+    const tryInvoke = async (name: string) => {
+      return supabase.functions.invoke(name, {
         body: { email, new_password: password },
       });
+    };
+
+    try {
+      // Try underscore name first, then hyphenated as fallback
+      let { data, error } = await tryInvoke('admin_password_reset');
+      if ((error as any)?.message?.includes('404') || (error as any)?.context?.status === 404) {
+        ({ data, error } = await tryInvoke('admin-update-password'));
+      }
+
       if (error) throw error as any;
       if (data?.error) throw new Error(data.error);
+
       toast({ title: 'Password updated', description: `Password reset for ${email}.` });
       setEmail('');
       setPassword('');
