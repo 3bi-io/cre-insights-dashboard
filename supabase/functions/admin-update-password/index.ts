@@ -46,11 +46,18 @@ serve(async (req) => {
     }
 
     // Check role (allow admin or super_admin)
-    const { data: role, error: roleError } = await admin.rpc(
+    const { data: role, error: roleError } = await supabase.rpc(
       "get_current_user_role",
     );
 
-    if (roleError || !role || (role !== "admin" && role !== "super_admin")) {
+    if (roleError) {
+      return new Response(JSON.stringify({ error: roleError.message }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (!role || (role !== "admin" && role !== "super_admin")) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { "Content-Type": "application/json", ...corsHeaders },
