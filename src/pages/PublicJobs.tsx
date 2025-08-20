@@ -116,15 +116,12 @@ const PublicJobs = () => {
       // Request microphone access
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Get signed URL from edge function
+      // Get signed URL from edge function with only job title
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
         body: { 
           agentId,
           jobContext: {
             jobTitle: job.title || job.job_title,
-            jobDescription: job.job_summary,
-            company: job.clients?.name || job.client,
-            location: job.location || `${job.city}, ${job.state}`,
             jobId: job.id
           }
         }
