@@ -22,7 +22,7 @@ export const AdminPasswordResetSection: React.FC = () => {
     if (!email || !password) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('admin-update-password', {
+      const { data, error } = await supabase.functions.invoke('admin_password_reset', {
         body: { email, new_password: password },
       });
       if (error) throw error as any;
