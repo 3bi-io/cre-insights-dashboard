@@ -20,11 +20,27 @@ export const AdminPasswordResetSection: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setLoading(true);
+    // Build payload and resolve user_id from profiles by email if possible
+    const payload: any = { new_password: password };
+    try {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .limit(1);
+      if (profiles && profiles.length > 0) {
+        payload.user_id = profiles[0].id;
+      } else {
+        payload.email = email;
+      }
+    } catch (resolveErr) {
+      // Fall back to email if lookup fails
+      payload.email = email;
+    }
 
     const tryInvoke = async (name: string) => {
       return supabase.functions.invoke(name, {
-        body: { email, new_password: password },
+        body: payload,
       });
     };
 
@@ -69,7 +85,7 @@ export const AdminPasswordResetSection: React.FC = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
-              <Input id="newPassword" type="text" placeholder="Enter new password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="newPassword" type="password" placeholder="Enter new password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           </div>
           <div className="flex gap-2">
