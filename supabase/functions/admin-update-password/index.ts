@@ -34,30 +34,48 @@ serve(async (req) => {
     // Admin client for privileged operations
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const {
-      data: { user: currentUser },
-      error: currentUserError,
-    } = await supabase.auth.getUser();
-
-    if (currentUserError || !currentUser) {
+    // Verify JWT from Authorization header and extract caller user id
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Check role (allow admin or super_admin)
-    const { data: role, error: roleError } = await supabase.rpc(
-      "get_current_user_role",
-    );
+    let callerUserId = "";
+    try {
+      const jwt = authHeader.split(" ")[1]!;
+      const payload = JSON.parse(atob(jwt.split(".")[1] || ""));
+      callerUserId = payload.sub || "";
+    } catch (_e) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
-    if (roleError) {
-      return new Response(JSON.stringify({ error: roleError.message }), {
+    if (!callerUserId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    // Check role (allow admin or super_admin) via user_roles table using admin client
+    const { data: roleRow, error: roleQueryError } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUserId)
+      .maybeSingle();
+
+    if (roleQueryError) {
+      return new Response(JSON.stringify({ error: roleQueryError.message }), {
         status: 403,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
+    const role = (roleRow as any)?.role as string | undefined;
     if (!role || (role !== "admin" && role !== "super_admin")) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
