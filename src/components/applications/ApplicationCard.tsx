@@ -99,7 +99,7 @@ const ApplicationCard = ({
                 <span>{formatLocation()}</span>
               </div>
               <div className="text-xs text-gray-500">
-                Applied: {new Date(application.applied_at).toLocaleDateString()}
+                Applied: {new Date(application.applied_at).toLocaleString()}
               </div>
             </div>
           </div>
