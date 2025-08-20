@@ -39,3 +39,6 @@ verify_jwt = false
 [functions.meta-leads-cron]
 verify_jwt = false
 
+[functions.admin-update-password]
+verify_jwt = true
+
