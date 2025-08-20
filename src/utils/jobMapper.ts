@@ -4,7 +4,7 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   
   // Try multiple possible column names for job title
   const jobTitle = csvRow.job_title || csvRow['Job Title'] || csvRow.title || csvRow.Title || '';
-  const description = csvRow.description || csvRow.Description || '';
+  const jobSummary = csvRow.job_summary || csvRow.summary || csvRow.description || csvRow.Description || '';
   
   // Handle location fields more flexibly
   const city = csvRow.city || csvRow.City || csvRow.dest_city || '';
@@ -32,7 +32,7 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   
   const mapped = {
     title: jobTitle,
-    description: description,
+    job_summary: jobSummary,
     location: location,
     budget: budget,
     experience_level: 'entry',

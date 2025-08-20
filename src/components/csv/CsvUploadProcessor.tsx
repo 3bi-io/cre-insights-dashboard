@@ -28,11 +28,11 @@ export const useCsvUploadProcessor = () => {
         console.log(`Parsed ${csvData.length} rows from CSV`);
 
         // Get default platform and category IDs
-        const { data: platforms } = await supabase.from('platforms').select('id').limit(1);
+        
         const { data: categories } = await supabase.from('job_categories').select('id').limit(1);
 
-        if (!platforms?.length || !categories?.length) {
-          const errorMsg = "Please ensure platforms and job categories exist before uploading.";
+        if (!categories?.length) {
+          const errorMsg = "Please ensure job categories exist before uploading.";
           toast({
             title: "Setup required",
             description: errorMsg,
@@ -44,7 +44,6 @@ export const useCsvUploadProcessor = () => {
 
         const jobListings = csvData.map(row => ({
           ...mapCsvToJobListing(row, userId),
-          platform_id: platforms[0].id,
           category_id: categories[0].id,
         }));
 
