@@ -22,6 +22,7 @@ import {
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
 import WebhookDocumentation from '@/components/settings/WebhookDocumentation';
 import { AdminMagicLinkSection } from '@/components/settings/AdminMagicLinkSection';
+import { AdminPasswordResetSection } from '@/components/settings/AdminPasswordResetSection';
 import { generateChangelogPDF } from '@/utils/changelogPdfGenerator';
 
 interface AdminUser {
@@ -512,6 +513,7 @@ const handleRemoveAdmin = (userId: string) => {
         {userRole === 'admin' && (
           <TabsContent value="administrators" className="space-y-6">
             <AdminMagicLinkSection />
+            <AdminPasswordResetSection />
             
             <Card>
               <CardHeader>
