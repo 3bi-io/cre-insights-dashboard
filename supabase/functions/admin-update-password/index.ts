@@ -86,20 +86,35 @@ serve(async (req) => {
           { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
         );
       }
-      // Look up user id via profiles table
-      const { data: profile, error: profileError } = await admin
-        .from("profiles")
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (profileError || !profile?.id) {
-        return new Response(JSON.stringify({ error: "User not found" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+      // Try to resolve user_id via Auth (admin) by email
+      try {
+        const { data: usersList, error: listError } = await admin.auth.admin.listUsers();
+        if (!listError && usersList?.users?.length) {
+          const match = usersList.users.find((u: any) => (u.email || "").toLowerCase() === email);
+          if (match?.id) {
+            userId = match.id as string;
+          }
+        }
+      } catch (e) {
+        console.warn('admin-update-password: listUsers failed', e);
       }
-      userId = profile.id as string;
+
+      // Fallback: Look up user id via profiles table
+      if (!userId) {
+        const { data: profile, error: profileError } = await admin
+          .from("profiles")
+          .select("id")
+          .eq("email", email)
+          .maybeSingle();
+
+        if (profileError || !profile?.id) {
+          return new Response(JSON.stringify({ error: "User not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+        userId = profile.id as string;
+      }
     }
 
     // Update password using Admin API

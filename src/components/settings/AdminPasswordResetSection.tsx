@@ -20,6 +20,7 @@ export const AdminPasswordResetSection: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
+    setLoading(true);
     // Build payload and resolve user_id from profiles by email if possible
     const payload: any = { new_password: password };
     try {
@@ -45,14 +46,9 @@ export const AdminPasswordResetSection: React.FC = () => {
     };
 
     try {
-      // Try underscore name first, then hyphenated as fallback
-      let { data, error } = await tryInvoke('admin_password_reset');
-      if ((error as any)?.message?.includes('404') || (error as any)?.context?.status === 404) {
-        ({ data, error } = await tryInvoke('admin-update-password'));
-      }
-
+      const { data, error } = await tryInvoke('admin_password_reset');
       if (error) throw error as any;
-      if (data?.error) throw new Error(data.error);
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast({ title: 'Password updated', description: `Password reset for ${email}.` });
       setEmail('');
