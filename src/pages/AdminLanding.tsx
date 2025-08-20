@@ -77,6 +77,12 @@ const AdminLanding = () => {
               />
             </div>
             <div className="flex gap-3">
+              <Button variant="outline" asChild>
+                <Link to="/jobs">
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  View Jobs
+                </Link>
+              </Button>
               <Button asChild>
                 <Link to="/auth">
                   Access Platform
@@ -118,8 +124,14 @@ const AdminLanding = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+                <Link to="/jobs">
+                  Browse Jobs
+                  <Briefcase className="w-5 h-5 ml-2" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
                 <Link to="/apply">
-                  Apply for Jobs
+                  Quick Apply
                   <Users className="w-5 h-5 ml-2" />
                 </Link>
               </Button>

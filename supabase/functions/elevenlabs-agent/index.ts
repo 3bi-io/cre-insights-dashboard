@@ -14,9 +14,9 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { agentId, action } = body;
+    const { agentId, action, jobContext } = body;
     
-    console.log('Received request:', { agentId, action, body });
+    console.log('Received request:', { agentId, action, jobContext, body });
     
     if (!agentId) {
       throw new Error('Agent ID is required');
@@ -34,9 +34,15 @@ serve(async (req) => {
     }
 
     // Generate signed URL for the conversation
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
-      {
+    let url = `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`;
+    
+    // If job context is provided, we'll include it in the conversation metadata
+    if (jobContext) {
+      console.log('Job context provided:', jobContext);
+      // We'll store this to pass to the agent after connection
+    }
+    
+    const response = await fetch(url, {
         method: 'GET',
         headers: {
           'xi-api-key': elevenLabsApiKey,
@@ -56,7 +62,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         signedUrl: data.signed_url,
-        success: true 
+        success: true,
+        jobContext: jobContext || null
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -148,7 +155,10 @@ async function handleDataCollection(data: any) {
       status: 'pending',
       applied_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      // Add job context if provided
+      job_listing_id: data.jobContext?.jobId || null,
+      notes: data.jobContext ? `Applied via voice for: ${data.jobContext.jobTitle} at ${data.jobContext.company}` : null
     };
 
     // Lookup city/state from zip code if zip is provided but city/state are missing
