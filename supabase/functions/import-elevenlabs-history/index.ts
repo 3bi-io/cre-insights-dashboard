@@ -71,6 +71,18 @@ serve(async (req) => {
     const { agentId } = await req.json();
     
     console.log('Starting historic conversation import for agent:', agentId);
+    // Sync disabled: no import will be performed
+    return new Response(
+      JSON.stringify({
+        success: true,
+        totalConversations: 0,
+        processedConversations: 0,
+        insertedApplications: 0,
+        updatedApplications: 0,
+        message: 'ElevenLabs history import is disabled'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
     
     if (agentId !== 'agent_01jwedntnjf7tt0qma00a2276r') {
       throw new Error('Invalid agent ID');

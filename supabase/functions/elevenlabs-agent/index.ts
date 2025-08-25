@@ -149,6 +149,14 @@ const lookupZipCode = async (zipCode: string) => {
 async function handleDataCollection(data: any) {
   try {
     console.log('Handling data collection:', data);
+    // Sync disabled: do not store applications
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'ElevenLabs application syncing is disabled',
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

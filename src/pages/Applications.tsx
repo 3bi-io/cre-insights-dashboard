@@ -11,7 +11,7 @@ import SmsConversationDialog from '@/components/applications/SmsConversationDial
 import ApplicationsOverview from '@/components/applications/ApplicationsOverview';
 import ApplicationsSearch from '@/components/applications/ApplicationsSearch';
 import ApplicationCard from '@/components/applications/ApplicationCard';
-import HistoryImportButton from '@/components/applications/HistoryImportButton';
+
 import MetaBackfillButton from '@/components/applications/MetaBackfillButton';
 import RecentMetaLeadsButton from '@/components/applications/RecentMetaLeadsButton';
 import { useApplications } from '@/hooks/useApplications';
@@ -102,7 +102,7 @@ const Applications = () => {
           <p className="text-muted-foreground mt-1">Track and manage job applications</p>
         </div>
         <div className="flex gap-2">
-          <HistoryImportButton />
+          
           {/* Pull recent Meta leads */}
           <RecentMetaLeadsButton />
           {/* Backfill all historical Meta leads */}
