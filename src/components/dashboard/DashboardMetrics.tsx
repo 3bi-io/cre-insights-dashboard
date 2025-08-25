@@ -73,6 +73,61 @@ const DashboardMetrics = () => {
         </div>
       </div>;
   }
-  return;
+  const costPerLead = costData?.costPerLead || 0;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+        <MetricsCard
+          title="Total Spend"
+          value={`$${metrics?.totalSpend?.toLocaleString() || '0'}`}
+          change="+12.3%"
+          changeType="positive"
+          icon={DollarSign}
+          description="Meta advertising spend"
+        />
+        
+        <MetricsCard
+          title="Total Leads"
+          value={metrics?.totalLeads?.toLocaleString() || '0'}
+          change="+8.7%"
+          changeType="positive"
+          icon={Users}
+          description="Applications received"
+        />
+        
+        <MetricsCard
+          title="Cost Per Lead"
+          value={`$${costPerLead.toFixed(2)}`}
+          change="-5.2%"
+          changeType="positive"
+          icon={Target}
+          description="Average cost per application"
+        />
+        
+        <MetricsCard
+          title="Total Reach"
+          value={metrics?.totalReach?.toLocaleString() || '0'}
+          change="+15.1%"
+          changeType="positive"
+          icon={TrendingUp}
+          description="People reached on Meta"
+        />
+        
+        <MetricsCard
+          title="Active Jobs"
+          value={metrics?.totalJobs?.toLocaleString() || '0'}
+          change="+2.4%"
+          changeType="positive"
+          icon={Briefcase}
+          description="Currently active positions"
+        />
+      </div>
+    </div>
+  );
 };
 export default DashboardMetrics;
