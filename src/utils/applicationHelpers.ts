@@ -65,12 +65,13 @@ export const getApplicantCategory = (app: any) => {
   return { code: 'N/A', label: 'Uncategorized', color: 'bg-gray-100 text-gray-800' };
 };
 
-export const filterApplications = (applications: any[], searchTerm: string, categoryFilter: string) => {
+export const filterApplications = (applications: any[], searchTerm: string, categoryFilter: string, sourceFilter: string) => {
   return applications?.filter(app => {
     const applicantName = getApplicantName(app);
     const applicantEmail = getApplicantEmail(app);
     const jobTitle = app.job_listings?.title || app.job_listings?.job_title || '';
     const category = getApplicantCategory(app);
+    const source = app.source || 'Other';
     
     const matchesSearch = (
       applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,8 +80,9 @@ export const filterApplications = (applications: any[], searchTerm: string, cate
     );
     
     const matchesCategory = categoryFilter === 'all' || category.code === categoryFilter;
+    const matchesSource = sourceFilter === 'all' || source === sourceFilter;
     
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesSource;
   });
 };
 

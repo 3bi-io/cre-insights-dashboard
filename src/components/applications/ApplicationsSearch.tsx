@@ -6,15 +6,19 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface ApplicationsSearchProps {
   searchTerm: string;
   categoryFilter: string;
+  sourceFilter: string;
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
+  onSourceChange: (value: string) => void;
 }
 
 const ApplicationsSearch = ({
   searchTerm,
   categoryFilter,
+  sourceFilter,
   onSearchChange,
   onCategoryChange,
+  onSourceChange,
 }: ApplicationsSearchProps) => {
   const isMobile = useIsMobile();
 
@@ -39,6 +43,20 @@ const ApplicationsSearch = ({
           <SelectItem value="SC">SC - New CDL Holder</SelectItem>
           <SelectItem value="SR">SR - Student Ready</SelectItem>
           <SelectItem value="N/A">N/A - Uncategorized</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={sourceFilter} onValueChange={onSourceChange}>
+        <SelectTrigger className={`${isMobile ? 'w-full h-12 text-base' : 'w-48'}`}>
+          <SelectValue placeholder="Filter by source" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Sources</SelectItem>
+          <SelectItem value="Zapier">Zapier</SelectItem>
+          <SelectItem value="Meta">Meta</SelectItem>
+          <SelectItem value="Indeed">Indeed</SelectItem>
+          <SelectItem value="Google">Google</SelectItem>
+          <SelectItem value="Direct">Direct</SelectItem>
+          <SelectItem value="Other">Other</SelectItem>
         </SelectContent>
       </Select>
     </div>

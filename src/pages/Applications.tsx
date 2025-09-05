@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -70,7 +71,7 @@ const Applications = () => {
     }
   };
 
-  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter);
+  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
   const statusCounts = getStatusCounts(applications || []);
   const categoryCounts = getCategoryCounts(applications || []);
 
@@ -137,8 +138,10 @@ const Applications = () => {
           <ApplicationsSearch
             searchTerm={searchTerm}
             categoryFilter={categoryFilter}
+            sourceFilter={sourceFilter}
             onSearchChange={setSearchTerm}
             onCategoryChange={setCategoryFilter}
+            onSourceChange={setSourceFilter}
           />
 
           {/* Applications List */}
