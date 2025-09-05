@@ -107,7 +107,7 @@ const GoogleJobsPlatformActions: React.FC = () => {
     setIsNotifying(true);
     try {
       const { data, error } = await supabase.functions.invoke('google-indexing', {
-        body: { action: 'publish_all' }
+        body: { action: 'publish_from_feed', feed_url: feedUrl }
       });
 
       if (error) throw error;

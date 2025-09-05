@@ -7,8 +7,9 @@ const corsHeaders = {
 }
 
 interface IndexingRequest {
-  action: 'publish_all' | 'publish_urls' | 'remove_urls'
+  action: 'publish_all' | 'publish_from_feed' | 'publish_urls' | 'remove_urls'
   urls?: string[]
+  feed_url?: string
 }
 
 interface IndexingResult {
@@ -31,7 +32,7 @@ serve(async (req) => {
       throw new Error('Authorization header required')
     }
 
-    const { action, urls }: IndexingRequest = await req.json()
+    const { action, urls, feed_url }: IndexingRequest = await req.json()
 
     if (!action) {
       throw new Error('Action parameter required')
@@ -64,7 +65,23 @@ serve(async (req) => {
 
       urlsToProcess = jobs
         .map(job => job.url || job.apply_url)
-        .filter(Boolean)
+        .filter(Boolean) as string[]
+    } else if (action === 'publish_from_feed') {
+      if (!feed_url) {
+        throw new Error('feed_url parameter required for publish_from_feed')
+      }
+      const feedResp = await fetch(feed_url)
+      if (!feedResp.ok) {
+        throw new Error(`Failed to fetch feed: ${feedResp.status} ${feedResp.statusText}`)
+      }
+      const xmlText = await feedResp.text()
+      const linkRegex = /<item>[\s\S]*?<link>(.*?)<\/link>[\s\S]*?<\/item>/g
+      const links: string[] = []
+      let match
+      while ((match = linkRegex.exec(xmlText)) !== null) {
+        if (match[1]) links.push(match[1].trim())
+      }
+      urlsToProcess = Array.from(new Set(links)).filter(Boolean)
     } else {
       if (!urls || urls.length === 0) {
         throw new Error('URLs parameter required for this action')
