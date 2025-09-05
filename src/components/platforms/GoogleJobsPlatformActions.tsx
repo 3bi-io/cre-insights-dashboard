@@ -54,7 +54,7 @@ const GoogleJobsPlatformActions: React.FC = () => {
         const parseError = xmlDoc.querySelector('parsererror');
         
         if (!parseError) {
-          const items = xmlDoc.querySelectorAll('item');
+          const items = xmlDoc.querySelectorAll('url, item');
           setJobCount(items.length);
           setLastValidated(new Date().toLocaleString());
           
@@ -262,8 +262,7 @@ const GoogleJobsPlatformActions: React.FC = () => {
         <Alert>
           <FileText className="h-4 w-4" />
           <AlertDescription>
-            <strong>XML Feed Features:</strong> Automatically generates RSS 2.0 compliant feed with Google Base namespace extensions. 
-            Includes job title, description, location, company, salary, and application URL for all active job listings.
+            <strong>XML Feed Features:</strong> Generates a Google-compliant XML Sitemap listing all active job posting URLs. Ensure each URL contains valid JobPosting structured data (JSON-LD).
           </AlertDescription>
         </Alert>
       </CardContent>

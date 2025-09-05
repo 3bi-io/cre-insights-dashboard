@@ -116,41 +116,35 @@ ${xmlJobs}
 }
 
 function generateGoogleJobsXML(jobs: any[]): string {
-  const xmlJobs = jobs.map(job => {
-    const title = escapeXml(job.title || job.job_title || '')
-    const description = escapeXml(job.job_summary || job.job_description || '')
-    const location = formatLocation(job.location, job.city, job.state)
-    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
-    const jobType = formatJobType(job.job_type)
-    const experienceLevel = formatExperienceLevel(job.experience_level)
-    const validThrough = getValidThroughDate(job.created_at)
-    const identifier = escapeXml(job.id || '')
-    const datePosted = new Date(job.created_at).toISOString().split('T')[0]
+  // Build a standard XML Sitemap for job postings (URLs only)
+  const uniqueUrls = Array.from(
+    new Set(
+      (jobs || [])
+        .map((job) => (job.url || job.apply_url || '').trim())
+        .filter(Boolean)
+    )
+  ) as string[]
 
-    return `    <item>
-      <title><![CDATA[${title}]]></title>
-      <description><![CDATA[${description}]]></description>
-      <g:job_type>${jobType}</g:job_type>
-      <g:location>${location}</g:location>
-      <g:salary>${salary}</g:salary>
-      <g:experience_level>${experienceLevel}</g:experience_level>
-      <g:job_function>Transportation</g:job_function>
-      <g:expiration_date>${validThrough}</g:expiration_date>
-      <g:id>${identifier}</g:id>
-      <pubDate>${datePosted}</pubDate>
-      <link>${escapeXml(job.url || job.apply_url || '')}</link>
-    </item>`
-  }).join('\n')
+  const urlEntries = (jobs || [])
+    .map((job) => {
+      const loc = (job.url || job.apply_url || '').trim()
+      if (!loc) return ''
+      const lastmod = new Date(job.updated_at || job.created_at || new Date()).toISOString().split('T')[0]
+      return `  <url>\n    <loc>${escapeXml(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>`
+    })
+    .filter(Boolean)
 
-  return `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
-  <channel>
-    <title>Job Listings</title>
-    <description>Active job listings feed for Google Jobs</description>
-    <link>https://example.com</link>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-${xmlJobs}
-  </channel>
-</rss>`
+  // De-duplicate while preserving first occurrence lastmod
+  const seen = new Set<string>()
+  const deduped = urlEntries.filter((entry) => {
+    const match = entry.match(/<loc>(.*?)<\/loc>/)
+    const loc = match?.[1] || ''
+    if (!loc || seen.has(loc)) return false
+    seen.add(loc)
+    return true
+  })
+
+  return `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${deduped.join('\n')}\n</urlset>`
 }
 
 function formatLocation(location?: string, city?: string, state?: string): string {

@@ -75,13 +75,18 @@ serve(async (req) => {
         throw new Error(`Failed to fetch feed: ${feedResp.status} ${feedResp.statusText}`)
       }
       const xmlText = await feedResp.text()
+      // Support both RSS <item><link> and Sitemap <url><loc>
       const linkRegex = /<item>[\s\S]*?<link>(.*?)<\/link>[\s\S]*?<\/item>/g
+      const locRegex = /<url>[\s\S]*?<loc>(.*?)<\/loc>[\s\S]*?<\/url>/g
       const links: string[] = []
       let match
       while ((match = linkRegex.exec(xmlText)) !== null) {
         if (match[1]) links.push(match[1].trim())
       }
-      urlsToProcess = Array.from(new Set(links)).filter(Boolean)
+      while ((match = locRegex.exec(xmlText)) !== null) {
+        if (match[1]) links.push(match[1].trim())
+      }
+      urlsToProcess = Array.from(new Set(links)).filter(Boolean) as string[]
     } else {
       if (!urls || urls.length === 0) {
         throw new Error('URLs parameter required for this action')
