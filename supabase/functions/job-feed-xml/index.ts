@@ -25,23 +25,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Build query for job listings
+    // Build query for job listings (include ALL active jobs)
+    const selectFields = `
+      *,
+      job_categories:category_id(name)
+    `
+
     let query = supabaseClient
       .from('job_listings')
-      .select(`
-        *,
-        job_categories:category_id(name),
-        job_platform_associations!inner(
-          platform_id,
-          platforms!inner(name)
-        )
-      `)
+      .select(selectFields)
       .eq('status', 'active')
 
-    // Filter by platform if specified
-    if (platform) {
-      query = query.eq('job_platform_associations.platforms.name', platform)
-    }
 
     // Filter by user if specified
     if (user_id) {

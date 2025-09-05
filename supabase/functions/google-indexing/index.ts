@@ -59,7 +59,6 @@ serve(async (req) => {
         .from('job_listings')
         .select('url, apply_url')
         .eq('status', 'active')
-        .not('url', 'is', null)
 
       if (error) throw error
 
