@@ -19,12 +19,14 @@ interface ValidationResult {
   errors: string[];
   warnings: string[];
   xmlPreview: string;
+  jsonLdPreview?: string;
 }
 
 const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => {
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showXmlPreview, setShowXmlPreview] = useState(false);
+  const [showJsonLdPreview, setShowJsonLdPreview] = useState(false);
   const { toast } = useToast();
 
   const validateXMLStructure = (xmlText: string): ValidationResult => {
@@ -82,7 +84,8 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
         warnings.push('No job items found in the feed');
       }
 
-      // Validate each job item
+      // Validate each job item (and map to JSON-LD JobPosting)
+      let jsonLdPreview = '';
       items.forEach((item, index) => {
         const requiredJobFields = [
           'g\\:job_title',
@@ -93,29 +96,92 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
         ];
 
         requiredJobFields.forEach(field => {
-          const selector = field.replace('\\:', '\\:');
+          const selector = field; // namespace already escaped
           if (!item.querySelector(selector)) {
             errors.push(`Job ${index + 1}: Missing required field ${field.replace('g\\:', '')}`);
           }
         });
 
         // Check for valid URLs
-        const appUrl = item.querySelector('g\\:application_url');
-        if (appUrl && appUrl.textContent) {
-          try {
-            new URL(appUrl.textContent);
-          } catch {
-            errors.push(`Job ${index + 1}: Invalid application URL`);
-          }
+        const appUrl = item.querySelector('g\\:application_url')?.textContent?.trim() || '';
+        if (appUrl) {
+          try { new URL(appUrl); } catch { errors.push(`Job ${index + 1}: Invalid application URL`); }
         }
 
         // Check date formats
-        const datePosted = item.querySelector('g\\:date_posted');
-        if (datePosted && datePosted.textContent) {
-          const date = new Date(datePosted.textContent);
+        const datePostedText = item.querySelector('g\\:date_posted')?.textContent?.trim() || '';
+        if (datePostedText) {
+          const date = new Date(datePostedText);
           if (isNaN(date.getTime())) {
             errors.push(`Job ${index + 1}: Invalid date_posted format`);
           }
+        } else {
+          warnings.push(`Job ${index + 1}: Missing date_posted (required for JobPosting.datePosted)`);
+        }
+
+        // JSON-LD JobPosting schema checks based on provided template
+        const title = item.querySelector('g\\:job_title')?.textContent?.trim() || '';
+        const description = item.querySelector('g\\:job_description')?.textContent?.trim() || '';
+        const company = item.querySelector('g\\:company_name')?.textContent?.trim() || '';
+        const jobId = item.querySelector('g\\:job_id')?.textContent?.trim() || item.querySelector('guid')?.textContent?.trim() || '';
+        const jobType = item.querySelector('g\\:job_type')?.textContent?.trim() || '';
+        const location = item.querySelector('g\\:job_location')?.textContent?.trim() || '';
+        const validThrough = item.querySelector('g\\:valid_through')?.textContent?.trim() || '';
+        const salaryText = item.querySelector('g\\:salary')?.textContent?.trim() || '';
+
+        if (!jobId) {
+          warnings.push(`Job ${index + 1}: Missing job_id/guid for identifier.value`);
+        }
+        const allowedEmployment = ['FULL_TIME','PART_TIME','CONTRACTOR','TEMPORARY','INTERN','VOLUNTEER'];
+        if (jobType && !allowedEmployment.includes(jobType.toUpperCase())) {
+          warnings.push(`Job ${index + 1}: job_type "${jobType}" not in ${allowedEmployment.join(', ')}`);
+        }
+        // Location -> PostalAddress expectations
+        const hasCity = /,/.test(location) || /\b[A-Z]{2}\b/.test(location);
+        if (!hasCity) {
+          warnings.push(`Job ${index + 1}: job_location should include city and region (e.g., "City, ST") for PostalAddress`);
+        }
+        // validThrough formatting
+        if (validThrough) {
+          const dt = new Date(validThrough);
+          if (isNaN(dt.getTime())) {
+            errors.push(`Job ${index + 1}: Invalid valid_through format`);
+          }
+        } else {
+          warnings.push(`Job ${index + 1}: Missing valid_through (JobPosting.validThrough)`);
+        }
+        // Salary mapping note
+        if (salaryText) {
+          const hasUnit = /(hour|week|year)/i.test(salaryText);
+          if (!hasUnit) {
+            warnings.push(`Job ${index + 1}: salary should include unit (HOUR/WEEK/YEAR) for JSON-LD baseSalary.value.unitText`);
+          }
+        } else {
+          warnings.push(`Job ${index + 1}: Missing salary; JSON-LD baseSalary is recommended`);
+        }
+
+        // Build JSON-LD preview for first item
+        if (index === 0) {
+          // Attempt to derive minimal JSON-LD object
+          const unit = /hour/i.test(salaryText) ? 'HOUR' : /week/i.test(salaryText) ? 'WEEK' : /year/i.test(salaryText) ? 'YEAR' : undefined;
+          const valueMatch = salaryText.match(/\$?([\d,]+(\.\d+)?)/);
+          const numericValue = valueMatch ? Number(valueMatch[1].replace(/,/g,'')) : undefined;
+          const jsonLd: any = {
+            "@context": "https://schema.org/",
+            "@type": "JobPosting",
+            title,
+            description,
+            identifier: jobId ? { "@type": "PropertyValue", name: company || 'Company', value: jobId } : undefined,
+            datePosted: datePostedText ? datePostedText.split('T')[0] : undefined,
+            validThrough: validThrough || undefined,
+            employmentType: jobType || undefined,
+            hiringOrganization: company ? { "@type": "Organization", name: company } : undefined,
+            jobLocation: location ? { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: location.split(',')[0]?.trim(), addressRegion: location.split(',')[1]?.trim() } } : undefined,
+            baseSalary: unit && numericValue ? { "@type": "MonetaryAmount", currency: "USD", value: { "@type": "QuantitativeValue", value: numericValue, unitText: unit } } : undefined
+          };
+          // Remove undefined keys
+          const clean = JSON.parse(JSON.stringify(jsonLd));
+          jsonLdPreview = JSON.stringify(clean, null, 2);
         }
       });
 
@@ -124,7 +190,8 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
         jobCount,
         errors,
         warnings,
-        xmlPreview: xmlText.substring(0, 1000)
+        xmlPreview: xmlText.substring(0, 1000),
+        jsonLdPreview
       };
 
     } catch (error) {
@@ -314,6 +381,30 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
                     value={validationResult.xmlPreview + (validationResult.xmlPreview.length >= 1000 ? '...' : '')}
                     readOnly
                     className="font-mono text-xs h-32"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* JSON-LD Preview */}
+            {validationResult.jsonLdPreview && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">JSON-LD Preview (JobPosting):</h4>
+                  <Button
+                    onClick={() => setShowJsonLdPreview(!showJsonLdPreview)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {showJsonLdPreview ? 'Hide' : 'Show'} JSON-LD
+                  </Button>
+                </div>
+                {showJsonLdPreview && (
+                  <Textarea
+                    value={validationResult.jsonLdPreview}
+                    readOnly
+                    className="font-mono text-xs h-48"
                   />
                 )}
               </div>
