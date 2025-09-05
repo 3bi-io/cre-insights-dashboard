@@ -29,7 +29,7 @@ serve(async (req) => {
     }
 
     // Handle data collection from voice agent
-    if (action === 'collect_data' && agentId === 'agent_01jwedntnjf7tt0qma00a2276r') {
+    if (action === 'collect_data' && agentId === 'agent_1501k4dpkf2hfevs6eh5e7947a65') {
       return await handleDataCollection(body);
     }
 
