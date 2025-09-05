@@ -9,12 +9,14 @@ interface JobGridProps {
   jobs: any[] | undefined;
   onViewAnalytics: (job: any) => void;
   onShowUploadDialog: () => void;
+  onVoiceApply?: (job: any) => void;
 }
 
 const JobGrid: React.FC<JobGridProps> = ({ 
   jobs, 
   onViewAnalytics, 
-  onShowUploadDialog 
+  onShowUploadDialog,
+  onVoiceApply 
 }) => {
   if (!jobs || jobs.length === 0) {
     return (
@@ -42,6 +44,7 @@ const JobGrid: React.FC<JobGridProps> = ({
           key={job.id}
           job={job}
           onViewAnalytics={onViewAnalytics}
+          onVoiceApply={onVoiceApply}
         />
       ))}
     </div>

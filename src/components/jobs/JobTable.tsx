@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic } from 'lucide-react';
 
 interface JobTableProps {
   jobs: any[] | undefined;
   onViewAnalytics: (job: any) => void;
   onShowUploadDialog: () => void;
+  onVoiceApply?: (job: any) => void;
 }
 
 type SortField = 'title' | 'job_id' | 'platform' | 'category' | 'location' | 'status' | 'created_at' | 'salary';
@@ -19,7 +20,8 @@ type SortDirection = 'asc' | 'desc';
 const JobTable: React.FC<JobTableProps> = ({ 
   jobs, 
   onViewAnalytics, 
-  onShowUploadDialog 
+  onShowUploadDialog,
+  onVoiceApply 
 }) => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -300,6 +302,18 @@ const JobTable: React.FC<JobTableProps> = ({
                           View Details
                         </Button>
                         
+                        {onVoiceApply && (
+                          <Button 
+                            variant="default"
+                            size="sm"
+                            onClick={() => onVoiceApply(job)}
+                            className="hidden lg:flex bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Mic className="w-4 h-4 mr-1" />
+                            Voice Apply
+                          </Button>
+                        )}
+                        
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -312,6 +326,12 @@ const JobTable: React.FC<JobTableProps> = ({
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
+                            {onVoiceApply && (
+                              <DropdownMenuItem onClick={() => onVoiceApply(job)}>
+                                <Mic className="w-4 h-4 mr-2" />
+                                Apply with Voice
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit Job

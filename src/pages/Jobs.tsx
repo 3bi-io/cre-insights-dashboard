@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table, X, Download } from 'lucide-react';
+import { Upload, Search, MapPin, DollarSign, Clock, Eye, Plus, AlertCircle, RefreshCw, Grid3X3, Table, X, Download, Mic, MicOff, Phone, PhoneOff } from 'lucide-react';
 import { useJobs } from '@/hooks/useJobs';
 import CsvUpload from '@/components/CsvUpload';
 import JobTable from '@/components/jobs/JobTable';
 import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
 import { generateJobsPDF } from '@/utils/jobsPdfGenerator';
+import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import JobGrid from '@/components/jobs/JobGrid';
 
 type ViewMode = 'grid' | 'table';
 
@@ -63,6 +65,32 @@ const Jobs = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Voice application functionality
+  const {
+    isConnected: isVoiceConnected,
+    selectedJob: selectedVoiceJob,
+    isSpeaking,
+    startVoiceApplication,
+    endVoiceApplication,
+  } = useElevenLabsVoice();
+
+  const handleVoiceApply = async (job: any) => {
+    const displayTitle = job.title || job.job_title || 'Untitled Job';
+    const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
+    
+    const jobContext = {
+      jobId: job.id,
+      jobTitle: displayTitle,
+      jobDescription: job.job_summary || job.description || `${displayTitle} position at our company`,
+      company: job.clients?.name || job.client || 'C.R. England',
+      location: displayLocation || 'Various locations',
+      salary: salary || 'Competitive compensation package'
+    };
+
+    await startVoiceApplication(jobContext);
   };
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
@@ -224,105 +252,56 @@ const Jobs = () => {
         </div>
       </div>
 
+      {/* Voice Application Status - Show when voice session is active */}
+      {isVoiceConnected && selectedVoiceJob && (
+        <Card className="mb-6 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                <div>
+                  <p className="font-medium">Voice Application: {selectedVoiceJob.jobTitle}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {isVoiceConnected ? 'Connected - Speak naturally to apply' : 'Connecting to voice agent...'}
+                  </p>
+                </div>
+                {isSpeaking && (
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Phone className="w-4 h-4" />
+                    <span className="text-sm">Agent speaking...</span>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={endVoiceApplication}
+                className="flex items-center gap-2"
+              >
+                <PhoneOff className="w-4 h-4" />
+                End Call
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Content based on view mode */}
       {viewMode === 'table' ? (
         <JobTable 
           jobs={filteredJobs}
           onViewAnalytics={handleViewAnalytics}
           onShowUploadDialog={() => setShowUploadDialog(true)}
+          onVoiceApply={handleVoiceApply}
         />
       ) : (
         /* Jobs Grid */
-        !filteredJobs || filteredJobs.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">No job listings found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || hasClientFilter ? 'Try adjusting your search terms or filters.' : 'Get started by uploading a CSV file with your job listings.'}
-              </p>
-              {!searchTerm && !hasClientFilter && (
-                <Button variant="outline" onClick={() => setShowUploadDialog(true)}>
-                  Upload CSV
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredJobs.map((job) => {
-              const displayTitle = job.title || job.job_title || 'Untitled Job';
-              const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
-              const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-              
-              return (
-                <Card key={job.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg leading-tight">{displayTitle}</CardTitle>
-                      <Badge className={getStatusColor(job.status || 'active')}>
-                        {job.status || 'active'}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No platforms'} • {job.job_categories?.name}
-                    </div>
-                    {job.job_id && (
-                      <div className="text-xs text-muted-foreground font-mono">
-                        ID: {job.job_id}
-                      </div>
-                    )}
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-3">
-                    {(job.clients?.name || job.client) && (
-                      <div className="text-sm font-medium text-primary">
-                        {job.clients?.name || job.client}
-                      </div>
-                    )}
-                    
-                    {displayLocation && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="w-4 h-4" />
-                        <span>{displayLocation}</span>
-                      </div>
-                    )}
-
-                    {salary && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <DollarSign className="w-4 h-4" />
-                        <span>{salary}</span>
-                      </div>
-                    )}
-
-                    {job.dest_city && job.dest_state && (
-                      <div className="text-sm text-muted-foreground">
-                        <span className="font-medium">Destination:</span> {job.dest_city}, {job.dest_state}
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(job.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full mt-3"
-                      onClick={() => handleViewAnalytics(job)}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Details
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )
+        <JobGrid
+          jobs={filteredJobs}
+          onViewAnalytics={handleViewAnalytics}
+          onShowUploadDialog={() => setShowUploadDialog(true)}
+          onVoiceApply={handleVoiceApply}
+        />
       )}
 
       {/* Analytics Dialog */}

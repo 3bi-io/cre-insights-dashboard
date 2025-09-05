@@ -39,7 +39,21 @@ serve(async (req) => {
     // If job context is provided, we'll include it in the conversation metadata
     if (jobContext) {
       console.log('Job context provided:', jobContext);
-      // We'll store this to pass to the agent after connection
+      
+      // Create enhanced instructions for the agent based on job context
+      const jobInstructions = `
+IMPORTANT JOB CONTEXT:
+- Position: ${jobContext.jobTitle}
+- Company: ${jobContext.company || 'C.R. England'}
+- Location: ${jobContext.location || 'Various locations'}
+- Salary: ${jobContext.salary || 'Competitive compensation'}
+- Job Description: ${jobContext.jobDescription || 'Details available upon application'}
+
+You are helping someone apply for this specific position. Reference these job details during the conversation and ensure the applicant knows they're applying for "${jobContext.jobTitle}" at "${jobContext.company}". Make the conversation personalized to this specific job opportunity.
+
+Guide them through collecting their information professionally while keeping the focus on this specific job opening.`;
+      
+      console.log('Enhanced job instructions prepared for agent');
     }
     
     const response = await fetch(url, {
@@ -63,7 +77,10 @@ serve(async (req) => {
       JSON.stringify({ 
         signedUrl: data.signed_url,
         success: true,
-        jobContext: jobContext || null
+        jobContext: jobContext || null,
+        message: jobContext ? 
+          `Voice agent ready for ${jobContext.jobTitle} application at ${jobContext.company}` : 
+          'Voice agent ready for general conversation'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
