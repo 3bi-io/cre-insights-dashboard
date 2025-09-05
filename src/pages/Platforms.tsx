@@ -5,7 +5,7 @@ import { usePlatforms } from '@/hooks/usePlatforms';
 import PlatformsHeader from '@/components/platforms/PlatformsHeader';
 import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
-import GoogleJobsSetup from '@/components/platforms/GoogleJobsSetup';
+import GoogleJobsPlatformActions from '@/components/platforms/GoogleJobsPlatformActions';
 import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, FileText, Settings } from 'lucide-react';
@@ -86,7 +86,7 @@ const Platforms = () => {
         </TabsContent>
 
         <TabsContent value="google-jobs" className="space-y-6 mt-6">
-          <GoogleJobsSetup />
+          <GoogleJobsPlatformActions />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6 mt-6">
