@@ -51,12 +51,9 @@ const ApplicationsSearch = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Sources</SelectItem>
-          <SelectItem value="Zapier">Zapier</SelectItem>
-          <SelectItem value="Meta">Meta</SelectItem>
-          <SelectItem value="Indeed">Indeed</SelectItem>
-          <SelectItem value="Google">Google</SelectItem>
-          <SelectItem value="Direct">Direct</SelectItem>
-          <SelectItem value="Other">Other</SelectItem>
+          <SelectItem value="fb">fb</SelectItem>
+          <SelectItem value="in">in</SelectItem>
+          <SelectItem value="ElevenLabs">ElevenLabs</SelectItem>
         </SelectContent>
       </Select>
     </div>
