@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useConversation } from '@11labs/react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,21 @@ export const useElevenLabsVoice = () => {
   const [selectedJob, setSelectedJob] = useState<JobContext | null>(null);
   const { toast } = useToast();
 
+  const agentOverrides = useMemo(() => {
+    if (!selectedJob) return undefined;
+    const company = selectedJob.company || 'C.R. England';
+    const prompt = `You are assisting a candidate to apply for ${selectedJob.jobTitle} at ${company}. Location: ${selectedJob.location || 'Various locations'}. Salary: ${selectedJob.salary || 'Competitive compensation package'}. Job Description: ${selectedJob.jobDescription || 'Details will be collected during application.'} Personalize the conversation to this specific job and guide the applicant through the application.`;
+    return {
+      agent: {
+        prompt: { prompt },
+        firstMessage: `I can help you apply for ${selectedJob.jobTitle} at ${company}. May I start with your first name?`,
+        language: 'en'
+      }
+    } as const;
+  }, [selectedJob]);
+
   const conversation = useConversation({
+    overrides: agentOverrides,
     onConnect: () => {
       console.log('Connected to voice agent');
       setIsConnected(true);
@@ -82,24 +96,12 @@ export const useElevenLabsVoice = () => {
       setSelectedJob(job);
       
       // Start voice conversation with job context
-      await conversation.startSession({ signedUrl: data.signedUrl });
+      // Delay start to ensure overrides are applied with selected job context
+      setTimeout(() => {
+        conversation.startSession({ signedUrl: data.signedUrl });
+      }, 0);
       
-      // Send job context to the voice agent immediately after connection
-      const contextMessage = {
-        jobContext: {
-          ...jobContext,
-          instructions: `You are helping someone apply for the position: ${job.jobTitle}. 
-          Job Description: ${job.jobDescription || 'Details available upon application'}. 
-          Company: ${job.company || 'C.R. England'}. 
-          Location: ${job.location || 'Various locations'}.
-          Salary: ${job.salary || 'Competitive compensation package'}.
-          
-          Please guide them through the application process and collect their information professionally. 
-          Make sure to mention the specific job details when appropriate during the conversation.`
-        }
-      };
-      
-      console.log('Sending job context to voice agent:', contextMessage);
+      // Job context is applied via conversation overrides; no manual message needed.
       
     } catch (error: any) {
       console.error('Failed to start voice application:', error);
