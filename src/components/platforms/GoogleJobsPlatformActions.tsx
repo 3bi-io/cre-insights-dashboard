@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const GoogleJobsPlatformActions: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,8 @@ const GoogleJobsPlatformActions: React.FC = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [jobCount, setJobCount] = useState(0);
   const [lastValidated, setLastValidated] = useState('');
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [lastNotified, setLastNotified] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -100,6 +103,42 @@ const GoogleJobsPlatformActions: React.FC = () => {
     window.open('https://developers.google.com/search/docs/appearance/structured-data/job-posting', '_blank');
   };
 
+  const notifyGoogle = async () => {
+    setIsNotifying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-indexing', {
+        body: { action: 'publish_all' }
+      });
+
+      if (error) throw error;
+
+      const result = data as { total: number; successes: number; failures: number; errors: string[] };
+      
+      setLastNotified(new Date().toLocaleString());
+      
+      if (result.failures > 0) {
+        toast({
+          title: "Partially successful",
+          description: `Notified Google about ${result.successes}/${result.total} jobs. ${result.failures} failed.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Google notified successfully",
+          description: `Successfully notified Google about ${result.successes} job listings`
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Notification failed",
+        description: (error as Error).message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsNotifying(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -134,8 +173,8 @@ const GoogleJobsPlatformActions: React.FC = () => {
           
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <div className="text-sm font-medium">Last Validated</div>
-            <div className="text-xs text-purple-600">{lastValidated || 'Never'}</div>
+            <div className="text-sm font-medium">Last Notified</div>
+            <div className="text-xs text-purple-600">{lastNotified || 'Never'}</div>
           </div>
         </div>
 
@@ -178,9 +217,28 @@ const GoogleJobsPlatformActions: React.FC = () => {
             )}
           </Button>
           
+          <Button 
+            onClick={notifyGoogle}
+            disabled={isNotifying}
+            variant="secondary"
+            className="flex-1"
+          >
+            {isNotifying ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Notifying...
+              </>
+            ) : (
+              <>
+                <Globe className="w-4 h-4 mr-2" />
+                Notify Google
+              </>
+            )}
+          </Button>
+          
           <Button onClick={openGoogleJobsConsole} variant="outline">
             <ExternalLink className="w-4 h-4 mr-2" />
-            Google Jobs Docs
+            Docs
           </Button>
         </div>
 

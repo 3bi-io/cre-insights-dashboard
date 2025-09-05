@@ -45,3 +45,6 @@ verify_jwt = true
 [functions.admin_password_reset]
 verify_jwt = true
 
+[functions.google-indexing]
+verify_jwt = true
+
