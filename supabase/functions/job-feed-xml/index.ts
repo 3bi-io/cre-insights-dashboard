@@ -116,35 +116,61 @@ ${xmlJobs}
 }
 
 function generateGoogleJobsXML(jobs: any[]): string {
-  // Build a standard XML Sitemap for job postings (URLs only)
-  const uniqueUrls = Array.from(
-    new Set(
-      (jobs || [])
-        .map((job) => (job.url || job.apply_url || '').trim())
-        .filter(Boolean)
-    )
-  ) as string[]
+  const xmlJobs = jobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const jobType = formatJobType(job.job_type)
+    const experienceLevel = formatExperienceLevel(job.experience_level)
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const validThrough = getValidThroughDate(job.created_at || new Date().toISOString())
+    const datePosted = new Date(job.created_at || new Date()).toISOString().split('T')[0]
 
-  const urlEntries = (jobs || [])
-    .map((job) => {
-      const loc = (job.url || job.apply_url || '').trim()
-      if (!loc) return ''
-      const lastmod = new Date(job.updated_at || job.created_at || new Date()).toISOString().split('T')[0]
-      return `  <url>\n    <loc>${escapeXml(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>`
-    })
-    .filter(Boolean)
+    return `    <job>
+      <title>${title}</title>
+      <location>
+        <country>US</country>
+        <region>${location}</region>
+      </location>
+      <description>${description}</description>
+      <datePosted>${datePosted}</datePosted>
+      <validThrough>${validThrough}</validThrough>
+      <employmentType>${jobType}</employmentType>
+      <hiringOrganization>
+        <name>${company}</name>
+      </hiringOrganization>
+      <jobLocation>
+        <address>
+          <addressRegion>${location}</addressRegion>
+          <addressCountry>US</addressCountry>
+        </address>
+      </jobLocation>
+      <baseSalary>
+        <currency>USD</currency>
+        <value>${salary}</value>
+      </baseSalary>
+      <experienceRequirements>${experienceLevel}</experienceRequirements>
+      <url>${applyUrl}</url>
+      <identifier>
+        <name>${company}</name>
+        <value>${id}</value>
+      </identifier>
+    </job>`
+  }).join('\n')
 
-  // De-duplicate while preserving first occurrence lastmod
-  const seen = new Set<string>()
-  const deduped = urlEntries.filter((entry) => {
-    const match = entry.match(/<loc>(.*?)<\/loc>/)
-    const loc = match?.[1] || ''
-    if (!loc || seen.has(loc)) return false
-    seen.add(loc)
-    return true
-  })
-
-  return `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${deduped.join('\n')}\n</urlset>`
+  return `<jobs xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:noNamespaceSchemaLocation="https://www.google.com/schemas/sitemap-jobs/1.0/sitemap-jobs.xsd">
+  <job_feed>
+    <metadata>
+      <generated_at>${new Date().toISOString()}</generated_at>
+      <job_count>${jobs.length}</job_count>
+    </metadata>
+${xmlJobs}
+  </job_feed>
+</jobs>`
 }
 
 function formatLocation(location?: string, city?: string, state?: string): string {
