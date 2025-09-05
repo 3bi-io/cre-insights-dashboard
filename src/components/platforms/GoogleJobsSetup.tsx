@@ -32,7 +32,7 @@ const GoogleJobsSetup: React.FC = () => {
 
   useEffect(() => {
     if (user?.id) {
-      const url = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml?user_id=${user.id}`;
+      const url = 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/job-feed-xml?platform=google%20jobs';
       setFeedUrl(url);
     }
   }, [user]);
