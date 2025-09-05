@@ -44,7 +44,7 @@ const PublicJobs = () => {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [agentId] = useState('agent_01jwedntnjf7tt0qma00a2276r');
+  const [agentId] = useState('agent_1501k4dpkf2hfevs6eh5e7947a65');
   const { toast } = useToast();
 
   const conversation = useConversation({

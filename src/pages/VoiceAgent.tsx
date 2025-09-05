@@ -8,7 +8,7 @@ import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 const VoiceAgent = () => {
-  const [agentId, setAgentId] = useState('agent_01jwedntnjf7tt0qma00a2276r');
+  const [agentId, setAgentId] = useState('agent_1501k4dpkf2hfevs6eh5e7947a65');
   const [isConnected, setIsConnected] = useState(false);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const {

@@ -13,7 +13,7 @@ const HistoryImportButton = () => {
     
     try {
       const { data, error } = await supabase.functions.invoke('import-elevenlabs-history', {
-        body: { agentId: 'agent_01jwedntnjf7tt0qma00a2276r' }
+        body: { agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65' }
       });
 
       if (error) {
