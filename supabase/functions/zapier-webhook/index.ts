@@ -30,6 +30,7 @@ interface ZapierApplicationData {
   drug?: string;
   exp?: string;
   cdl?: string;
+  elevenlabs_call_transcript?: string;
 }
 
 // Helper function to safely extract value from multiple possible field names
@@ -108,6 +109,25 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Normalize cases where body is wrapped as a single key/value containing JSON
+    if (body && typeof body === 'object') {
+      const keys = Object.keys(body);
+      if (keys.length === 1) {
+        const onlyKey = keys[0];
+        const keyStr = typeof onlyKey === 'string' ? onlyKey.trim() : '';
+        const valStr = typeof body[onlyKey] === 'string' ? (body[onlyKey] as string).trim() : '';
+        try {
+          if (keyStr.startsWith('{') && keyStr.endsWith('}')) {
+            body = JSON.parse(keyStr);
+          } else if (valStr.startsWith('{') && valStr.endsWith('}')) {
+            body = JSON.parse(valStr);
+          }
+        } catch (e) {
+          console.log('Single-key JSON normalization failed:', e);
+        }
+      }
+    }
+
     console.log('Parsed webhook data:', JSON.stringify(body, null, 2));
 
     // More flexible field extraction with multiple possible field names - INCLUDING job_id
@@ -177,10 +197,17 @@ const handler = async (req: Request): Promise<Response> => {
       ]),
       cdl: extractValue(body, [
         'cdl', 'cdl_license', 'commercial_license'
+      ]),
+      elevenlabs_call_transcript: extractValue(body, [
+        'elevenlabs_call_transcript', 'elevenlab_call_transcript', 'elevenlabs_call_trnascript',
+        'call_transcript', 'transcript', 'conversation_transcript', 'elevenlabs_transcript', 'eleven_labs_call_transcript'
       ])
     };
 
     console.log('Processed application data:', JSON.stringify(applicationData, null, 2));
+    if (applicationData.elevenlabs_call_transcript) {
+      console.log('Transcript length:', applicationData.elevenlabs_call_transcript.length);
+    }
 
     // Use job_id as job_listing_id if job_listing_id is not provided
     const jobIdentifier = applicationData.job_listing_id || applicationData.job_id;
@@ -334,6 +361,7 @@ const handler = async (req: Request): Promise<Response> => {
       drug: applicationData.drug,
       exp: applicationData.exp,
       cdl: applicationData.cdl,
+      elevenlabs_call_transcript: applicationData.elevenlabs_call_transcript,
       job_id: customFieldValue,
       applied_at: new Date().toISOString()
     };
