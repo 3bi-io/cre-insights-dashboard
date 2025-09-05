@@ -162,6 +162,7 @@ export type Database = {
           driving_experience_years: number | null
           drug: string | null
           education_level: string | null
+          elevenlabs_call_transcript: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
@@ -243,6 +244,7 @@ export type Database = {
           driving_experience_years?: number | null
           drug?: string | null
           education_level?: string | null
+          elevenlabs_call_transcript?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
@@ -324,6 +326,7 @@ export type Database = {
           driving_experience_years?: number | null
           drug?: string | null
           education_level?: string | null
+          elevenlabs_call_transcript?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
