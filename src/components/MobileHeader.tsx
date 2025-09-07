@@ -25,18 +25,18 @@ const MobileHeader = () => {
   const getPageTitle = () => {
     const path = location.pathname;
     const routes: Record<string, string> = {
-      '/dashboard': 'Dashboard',
-      '/dashboard/jobs': 'Job Listings',
-      '/dashboard/applications': 'Applications',
-      '/dashboard/ai-analytics': 'AI Analytics',
-      '/dashboard/ai-impact': 'AI Impact',
-      '/dashboard/voice-agent': 'Voice Agent',
-      '/dashboard/tenstreet': 'Tenstreet',
-      '/dashboard/routes': 'Routes',
-      '/dashboard/platforms': 'Platforms',
-      '/dashboard/clients': 'Clients',
-      '/dashboard/privacy-controls': 'Privacy Controls',
-      '/dashboard/settings': 'Settings',
+      '/': 'Dashboard',
+      '/jobs': 'Job Listings',
+      '/applications': 'Applications',
+      '/ai-analytics': 'AI Analytics',
+      '/ai-impact': 'AI Impact',
+      '/voice-agent': 'Voice Agent',
+      '/tenstreet': 'Tenstreet',
+      '/routes': 'Routes',
+      '/platforms': 'Platforms',
+      '/clients': 'Clients',
+      '/privacy-controls': 'Privacy Controls',
+      '/settings': 'Settings',
     };
     return routes[path] || 'Dashboard';
   };

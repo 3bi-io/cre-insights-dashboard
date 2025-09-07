@@ -30,11 +30,8 @@ const LayoutContent = () => {
   // Extract page name from current route
   const getCurrentPage = () => {
     const path = location.pathname;
-    if (path === '/dashboard') return 'dashboard';
-    if (path.includes('/dashboard/')) {
-      return path.split('/dashboard/')[1];
-    }
-    return 'dashboard';
+    if (path === '/') return 'dashboard';
+    return path.slice(1) || 'dashboard';
   };
 
   const getRoleBadgeColor = (role: string | null) => {
@@ -79,11 +76,11 @@ const LayoutContent = () => {
                       className="h-8 w-auto"
                     />
                   ) : (
-                    <img 
-                      src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
-                      alt={organization.name} 
-                      className="h-8 w-auto"
-                    />
+                     <img 
+                       src="/ats-io-logo.png" 
+                       alt={organization.name} 
+                       className="h-8 w-auto"
+                     />
                   )}
                   <span className="text-sm font-medium text-muted-foreground">
                     {organization.name}

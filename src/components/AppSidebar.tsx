@@ -20,71 +20,71 @@ const AppSidebar = () => {
   const navigationItems = [{
     group: "Analytics",
     items: [{
-      path: '/dashboard',
+      path: '/',
       label: 'Dashboard',
       icon: LayoutDashboard
     }]
   }, {
     group: "Recruitment",
     items: [{
-      path: '/dashboard/jobs',
+      path: '/jobs',
       label: 'Job Listings',
       icon: BriefcaseIcon
     }, {
-      path: '/dashboard/applications',
+      path: '/applications',
       label: 'Applications',
       icon: Users
     }, {
-      path: '/dashboard/campaigns',
+      path: '/campaigns',
       label: 'Campaigns',
       icon: MessageSquare
     }, {
-      path: '/dashboard/voice-agent',
+      path: '/voice-agent',
       label: 'Voice Agent',
       icon: Phone
     }]
   }, {
     group: "Management",
     items: [{
-      path: '/dashboard/routes',
+      path: '/routes',
       label: 'Routes',
       icon: Route
     }, {
-      path: '/dashboard/platforms',
+      path: '/platforms',
       label: 'Platforms',
       icon: Share2
     }, {
-      path: '/dashboard/clients',
+      path: '/clients',
       label: 'Clients',
       icon: Building
     }, ...(userRole === 'admin' || userRole === 'super_admin' ? [{
-      path: '/dashboard/organizations',
+      path: '/organizations',
       label: 'Organizations',
       icon: Building
     }] : []), {
-      path: '/dashboard/tenstreet',
+      path: '/tenstreet',
       label: 'Tenstreet',
       icon: Share2
     }, {
-      path: '/dashboard/media',
+      path: '/media',
       label: 'Media',
       icon: FileImage
     }]
   }, {
     group: "Settings",
     items: [{
-      path: '/dashboard/privacy-controls',
+      path: '/privacy-controls',
       label: 'Privacy Controls',
       icon: Shield
     }, {
-      path: '/dashboard/settings',
+      path: '/settings',
       label: 'Settings',
       icon: Settings
     }]
   }];
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
+    if (path === '/') {
+      return location.pathname === '/';
     }
     return location.pathname === path;
   };
@@ -122,7 +122,7 @@ const AppSidebar = () => {
                 />
               ) : (
                 <img 
-                  src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                  src="/ats-io-logo.png" 
                   alt={organization.name} 
                   className="h-8 w-auto" 
                 />
