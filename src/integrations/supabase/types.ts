@@ -1690,6 +1690,10 @@ export type Database = {
         Args: { _email: string; _org_slug: string }
         Returns: undefined
       }
+      ensure_super_admin_for_email: {
+        Args: { _email: string }
+        Returns: undefined
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
