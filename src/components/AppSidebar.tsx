@@ -23,7 +23,11 @@ const AppSidebar = () => {
       path: '/',
       label: 'Dashboard',
       icon: LayoutDashboard
-    }]
+    }, ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+      path: '/dashboard',
+      label: 'Admin Dashboard',
+      icon: Settings
+    }] : [])]
   }, {
     group: "Recruitment",
     items: [{

@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import Jobs from "./pages/Jobs";
 import Campaigns from "./pages/Campaigns";
 import Applications from "./pages/Applications";
@@ -48,7 +49,8 @@ const App = () => (
               <Route path="/thank-you" element={<ThankYou />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>

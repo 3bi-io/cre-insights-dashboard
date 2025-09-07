@@ -26,6 +26,7 @@ const MobileHeader = () => {
     const path = location.pathname;
     const routes: Record<string, string> = {
       '/': 'Dashboard',
+      '/dashboard': 'Admin Dashboard',
       '/jobs': 'Job Listings',
       '/applications': 'Applications',
       '/ai-analytics': 'AI Analytics',
