@@ -52,7 +52,7 @@ const ApplicationsSearch = ({
         <SelectContent>
           <SelectItem value="all">All Sources</SelectItem>
           <SelectItem value="fb">fb</SelectItem>
-          <SelectItem value="in">in</SelectItem>
+          <SelectItem value="ig">ig</SelectItem>
           <SelectItem value="ElevenLabs">ElevenLabs</SelectItem>
         </SelectContent>
       </Select>
