@@ -49,7 +49,11 @@ const App = () => (
               <Route path="/thank-you" element={<ThankYou />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <Layout />

@@ -19,76 +19,74 @@ const AppSidebar = () => {
   } = useAuth();
   const navigationItems = [{
     group: "Analytics",
-    items: [{
-      path: '/',
-      label: 'Dashboard',
-      icon: LayoutDashboard
-    }, ...(userRole === 'super_admin' || userRole === 'admin' ? [{
-      path: '/dashboard',
-      label: 'Admin Dashboard',
-      icon: Settings
-    }] : [])]
+    items: [
+      ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+        path: '/dashboard',
+        label: 'Admin Dashboard',
+        icon: Settings
+      }] : [])
+    ]
   }, {
-    group: "Recruitment",
+    group: "Recruitment", 
     items: [{
-      path: '/jobs',
+      path: '/admin/jobs',
       label: 'Job Listings',
       icon: BriefcaseIcon
     }, {
-      path: '/applications',
+      path: '/admin/applications',
       label: 'Applications',
       icon: Users
     }, {
-      path: '/campaigns',
+      path: '/admin/campaigns',
       label: 'Campaigns',
       icon: MessageSquare
     }, {
-      path: '/voice-agent',
+      path: '/admin/voice-agent',
       label: 'Voice Agent',
       icon: Phone
     }]
   }, {
     group: "Management",
     items: [{
-      path: '/routes',
+      path: '/admin/routes',
       label: 'Routes',
       icon: Route
     }, {
-      path: '/platforms',
+      path: '/admin/platforms',
       label: 'Platforms',
       icon: Share2
     }, {
-      path: '/clients',
+      path: '/admin/clients',
       label: 'Clients',
       icon: Building
     }, ...(userRole === 'admin' || userRole === 'super_admin' ? [{
-      path: '/organizations',
+      path: '/admin/organizations',
       label: 'Organizations',
       icon: Building
     }] : []), {
-      path: '/tenstreet',
+      path: '/admin/tenstreet',
       label: 'Tenstreet',
       icon: Share2
     }, {
-      path: '/media',
+      path: '/admin/media',
       label: 'Media',
       icon: FileImage
     }]
   }, {
     group: "Settings",
     items: [{
-      path: '/privacy-controls',
+      path: '/admin/privacy-controls',
       label: 'Privacy Controls',
       icon: Shield
     }, {
-      path: '/settings',
+      path: '/admin/settings',
       label: 'Settings',
       icon: Settings
     }]
   }];
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
     }
     return location.pathname === path;
   };
@@ -98,13 +96,13 @@ const AppSidebar = () => {
   const getRoleBadgeColor = (role: string | null) => {
     switch (role) {
       case 'super_admin':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+        return 'bg-primary/10 text-primary border-primary/20';
       case 'admin':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'moderator':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+        return 'bg-muted text-muted-foreground border-muted';
     }
   };
   const getUserInitials = () => {
@@ -213,7 +211,8 @@ const AppSidebar = () => {
                   {userRole && (
                     <Badge className={`text-xs ${getRoleBadgeColor(userRole)}`}>
                       {userRole === 'super_admin' ? 'Super Admin' : 
-                       userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                       userRole === 'admin' ? 'Admin' :
+                       userRole === 'moderator' ? 'Moderator' : 'User'}
                     </Badge>
                   )}
                 </div>

@@ -25,31 +25,35 @@ const MobileHeader = () => {
   const getPageTitle = () => {
     const path = location.pathname;
     const routes: Record<string, string> = {
-      '/': 'Dashboard',
+      '/': 'Home',
       '/dashboard': 'Admin Dashboard',
-      '/jobs': 'Job Listings',
-      '/applications': 'Applications',
-      '/ai-analytics': 'AI Analytics',
-      '/ai-impact': 'AI Impact',
-      '/voice-agent': 'Voice Agent',
-      '/tenstreet': 'Tenstreet',
-      '/routes': 'Routes',
-      '/platforms': 'Platforms',
-      '/clients': 'Clients',
-      '/privacy-controls': 'Privacy Controls',
-      '/settings': 'Settings',
+      '/admin/jobs': 'Job Listings',
+      '/admin/applications': 'Applications',
+      '/admin/campaigns': 'Campaigns',
+      '/admin/ai-impact': 'AI Impact',
+      '/admin/voice-agent': 'Voice Agent',
+      '/admin/tenstreet': 'Tenstreet',
+      '/admin/routes': 'Routes',
+      '/admin/platforms': 'Platforms',
+      '/admin/clients': 'Clients',
+      '/admin/organizations': 'Organizations',
+      '/admin/media': 'Media',
+      '/admin/privacy-controls': 'Privacy Controls',
+      '/admin/settings': 'Settings',
     };
     return routes[path] || 'Dashboard';
   };
 
   const getRoleBadgeColor = (role: string | null) => {
     switch (role) {
+      case 'super_admin':
+        return 'bg-primary/10 text-primary border-primary/20';
       case 'admin':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'moderator':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+        return 'bg-muted text-muted-foreground border-muted';
     }
   };
 
@@ -111,7 +115,9 @@ const MobileHeader = () => {
                   </p>
                   {userRole && (
                     <Badge className={`${getRoleBadgeColor(userRole)} text-xs w-fit mt-1`}>
-                      {userRole}
+                      {userRole === 'super_admin' ? 'Super Admin' : 
+                       userRole === 'admin' ? 'Admin' :
+                       userRole === 'moderator' ? 'Moderator' : 'User'}
                     </Badge>
                   )}
                 </div>
