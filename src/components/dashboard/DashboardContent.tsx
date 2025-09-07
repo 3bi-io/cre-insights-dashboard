@@ -362,7 +362,9 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Cost Per Lead"
-                  value={`$${costData?.costPerLead?.toFixed(2) || '0.00'}`}
+                  value={`$${metaAnalyticsData?.summary?.totalSpend && (analyticsData?.totalApplications || totalApplications) 
+                    ? (metaAnalyticsData.summary.totalSpend / (analyticsData?.totalApplications || totalApplications)).toFixed(2)
+                    : costData?.costPerLead?.toFixed(2) || '0.00'}`}
                   change="-5.2%"
                   changeType="positive"
                   icon={Target}
