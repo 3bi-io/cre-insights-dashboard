@@ -73,7 +73,8 @@ export const OrganizationFeatureBadges = ({
 }: OrganizationFeatureBadgesProps) => {
   const enabledFeatures = Object.entries(features)
     .filter(([_, enabled]) => enabled)
-    .map(([key]) => key as keyof typeof FEATURE_CONFIG);
+    .map(([key]) => key as keyof typeof FEATURE_CONFIG)
+    .filter(key => FEATURE_CONFIG[key]); // Only include keys that exist in our config
 
   if (enabledFeatures.length === 0 && !showAll) {
     return (
@@ -92,6 +93,10 @@ export const OrganizationFeatureBadges = ({
       {featuresToShow.map((featureKey) => {
         const config = FEATURE_CONFIG[featureKey];
         const isEnabled = features[featureKey];
+        
+        // Safety check - skip if config doesn't exist
+        if (!config) return null;
+        
         const Icon = config.icon;
         
         if (!showAll && !isEnabled) return null;
