@@ -9,8 +9,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Route, Share2, Shield, FileImage } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 const AppSidebar = () => {
   const location = useLocation();
+  const isMobile = useIsMobile();
   const {
     user,
     userRole,
@@ -111,6 +113,10 @@ const AppSidebar = () => {
   };
   const regularGroups = navigationItems.filter(group => group.group === "Analytics" || group.group === "Recruitment");
   const accordionGroups = navigationItems.filter(group => group.group === "Management" || group.group === "Settings");
+  
+  // Auto-expand all accordion groups on /dashboard for desktop and tablet devices
+  const shouldExpandAll = location.pathname === '/dashboard' && !isMobile;
+  const defaultExpandedValues = shouldExpandAll ? accordionGroups.map(group => group.group) : [];
   return <Sidebar>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-4 py-3">
@@ -173,7 +179,7 @@ const AppSidebar = () => {
 
         {/* Accordion groups */}
         <div className="px-2">
-          <Accordion type="multiple" defaultValue={[]}>
+          <Accordion type="multiple" defaultValue={defaultExpandedValues}>
             {accordionGroups.map(group => <AccordionItem key={group.group} value={group.group}>
                 <AccordionTrigger className="text-xs font-medium text-sidebar-foreground/70 hover:no-underline py-2">
                   {group.group}
