@@ -101,6 +101,14 @@ serve(async (req) => {
       const act = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
 
       try {
+        // Resolve organization for this user
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('organization_id')
+          .eq('id', userId)
+          .maybeSingle();
+        const orgId = profile?.organization_id ?? null;
+
         // Refresh account meta (name/currency/timezone) from Graph and upsert
         try {
           const accResp = await fetch(
@@ -110,6 +118,7 @@ serve(async (req) => {
             const acc = await accResp.json();
             await supabase.from('meta_ad_accounts').upsert({
               user_id: userId,
+              organization_id: orgId,
               account_id: accountId,
               account_name: acc.name,
               currency: acc.currency,
@@ -132,6 +141,7 @@ serve(async (req) => {
         for (const c of campaigns) {
           const { error } = await supabase.from('meta_campaigns').upsert({
             user_id: userId,
+            organization_id: orgId,
             account_id: accountId,
             campaign_id: c.id,
             campaign_name: c.name,
@@ -153,6 +163,7 @@ serve(async (req) => {
         for (const s of adsets) {
           const { error } = await supabase.from('meta_ad_sets').upsert({
             user_id: userId,
+            organization_id: orgId,
             account_id: accountId,
             campaign_id: s.campaign_id,
             adset_id: s.id,
@@ -180,6 +191,7 @@ serve(async (req) => {
         for (const ad of ads) {
           const { error } = await supabase.from('meta_ads').upsert({
             user_id: userId,
+            organization_id: orgId,
             account_id: accountId,
             campaign_id: ad.campaign_id,
             adset_id: ad.adset_id,

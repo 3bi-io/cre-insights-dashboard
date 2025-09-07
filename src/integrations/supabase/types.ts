@@ -55,6 +55,7 @@ export type Database = {
           id: string
           improvement_percentage: number | null
           metric_type: string
+          organization_id: string | null
           traditional_value: number | null
           user_id: string
         }
@@ -65,6 +66,7 @@ export type Database = {
           id?: string
           improvement_percentage?: number | null
           metric_type: string
+          organization_id?: string | null
           traditional_value?: number | null
           user_id: string
         }
@@ -75,10 +77,19 @@ export type Database = {
           id?: string
           improvement_percentage?: number | null
           metric_type?: string
+          organization_id?: string | null
           traditional_value?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_settings: {
         Row: {
@@ -92,6 +103,7 @@ export type Database = {
           explainability_level: string | null
           id: string
           industry_focus: string | null
+          organization_id: string | null
           sensitive_data_processing: boolean | null
           updated_at: string
           user_id: string
@@ -107,6 +119,7 @@ export type Database = {
           explainability_level?: string | null
           id?: string
           industry_focus?: string | null
+          organization_id?: string | null
           sensitive_data_processing?: boolean | null
           updated_at?: string
           user_id: string
@@ -122,11 +135,20 @@ export type Database = {
           explainability_level?: string | null
           id?: string
           industry_focus?: string | null
+          organization_id?: string | null
           sensitive_data_processing?: boolean | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       applications: {
         Row: {
@@ -397,6 +419,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           id: string
+          organization_id: string | null
           parameters: Json
           results: Json | null
           status: string
@@ -408,6 +431,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          organization_id?: string | null
           parameters?: Json
           results?: Json | null
           status?: string
@@ -419,6 +443,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          organization_id?: string | null
           parameters?: Json
           results?: Json | null
           status?: string
@@ -426,7 +451,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "background_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budget_allocations: {
         Row: {
@@ -436,6 +469,7 @@ export type Database = {
           id: string
           month: number
           monthly_budget: number
+          organization_id: string | null
           user_id: string
           year: number
         }
@@ -446,6 +480,7 @@ export type Database = {
           id?: string
           month: number
           monthly_budget: number
+          organization_id?: string | null
           user_id: string
           year: number
         }
@@ -456,6 +491,7 @@ export type Database = {
           id?: string
           month?: number
           monthly_budget?: number
+          organization_id?: string | null
           user_id?: string
           year?: number
         }
@@ -472,6 +508,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "job_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -518,6 +561,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          organization_id: string | null
           status: string | null
           updated_at: string
           user_id: string
@@ -527,6 +571,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           status?: string | null
           updated_at?: string
           user_id: string
@@ -536,11 +581,20 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           status?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
@@ -582,6 +636,7 @@ export type Database = {
           context: string | null
           created_at: string
           id: string
+          organization_id: string | null
           page: string | null
           title: string
           updated_at: string
@@ -591,6 +646,7 @@ export type Database = {
           context?: string | null
           created_at?: string
           id?: string
+          organization_id?: string | null
           page?: string | null
           title?: string
           updated_at?: string
@@ -600,12 +656,21 @@ export type Database = {
           context?: string | null
           created_at?: string
           id?: string
+          organization_id?: string | null
           page?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clients: {
         Row: {
@@ -617,6 +682,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          organization_id: string | null
           phone: string | null
           state: string | null
           status: string
@@ -632,6 +698,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
           state?: string | null
           status?: string
@@ -647,13 +714,22 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          organization_id?: string | null
           phone?: string | null
           state?: string | null
           status?: string
           updated_at?: string
           zip_code?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_spend: {
         Row: {
@@ -732,6 +808,7 @@ export type Database = {
           job_title: string | null
           job_type: string | null
           location: string | null
+          organization_id: string | null
           radius: number | null
           remote_type: string | null
           salary_max: number | null
@@ -761,6 +838,7 @@ export type Database = {
           job_title?: string | null
           job_type?: string | null
           location?: string | null
+          organization_id?: string | null
           radius?: number | null
           remote_type?: string | null
           salary_max?: number | null
@@ -790,6 +868,7 @@ export type Database = {
           job_title?: string | null
           job_type?: string | null
           location?: string | null
+          organization_id?: string | null
           radius?: number | null
           remote_type?: string | null
           salary_max?: number | null
@@ -815,6 +894,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -862,6 +948,7 @@ export type Database = {
           created_at: string
           currency: string | null
           id: string
+          organization_id: string | null
           timezone_name: string | null
           updated_at: string
           user_id: string
@@ -872,6 +959,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          organization_id?: string | null
           timezone_name?: string | null
           updated_at?: string
           user_id: string
@@ -882,11 +970,20 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          organization_id?: string | null
           timezone_name?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meta_ad_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_ad_sets: {
         Row: {
@@ -907,6 +1004,7 @@ export type Database = {
           id: string
           impressions: number | null
           lifetime_budget: number | null
+          organization_id: string | null
           reach: number | null
           results: string | null
           spend: number | null
@@ -935,6 +1033,7 @@ export type Database = {
           id?: string
           impressions?: number | null
           lifetime_budget?: number | null
+          organization_id?: string | null
           reach?: number | null
           results?: string | null
           spend?: number | null
@@ -963,6 +1062,7 @@ export type Database = {
           id?: string
           impressions?: number | null
           lifetime_budget?: number | null
+          organization_id?: string | null
           reach?: number | null
           results?: string | null
           spend?: number | null
@@ -973,7 +1073,15 @@ export type Database = {
           updated_time?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meta_ad_sets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_ads: {
         Row: {
@@ -986,6 +1094,7 @@ export type Database = {
           created_time: string | null
           creative_id: string | null
           id: string
+          organization_id: string | null
           preview_url: string | null
           status: string | null
           updated_at: string
@@ -1002,6 +1111,7 @@ export type Database = {
           created_time?: string | null
           creative_id?: string | null
           id?: string
+          organization_id?: string | null
           preview_url?: string | null
           status?: string | null
           updated_at?: string
@@ -1018,13 +1128,22 @@ export type Database = {
           created_time?: string | null
           creative_id?: string | null
           id?: string
+          organization_id?: string | null
           preview_url?: string | null
           status?: string | null
           updated_at?: string
           updated_time?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meta_ads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_campaigns: {
         Row: {
@@ -1035,6 +1154,7 @@ export type Database = {
           created_time: string | null
           id: string
           objective: string | null
+          organization_id: string | null
           status: string | null
           updated_at: string
           updated_time: string | null
@@ -1048,6 +1168,7 @@ export type Database = {
           created_time?: string | null
           id?: string
           objective?: string | null
+          organization_id?: string | null
           status?: string | null
           updated_at?: string
           updated_time?: string | null
@@ -1061,12 +1182,21 @@ export type Database = {
           created_time?: string | null
           id?: string
           objective?: string | null
+          organization_id?: string | null
           status?: string | null
           updated_at?: string
           updated_time?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meta_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_daily_spend: {
         Row: {
@@ -1084,6 +1214,7 @@ export type Database = {
           frequency: number | null
           id: string
           impressions: number | null
+          organization_id: string | null
           reach: number | null
           spend: number | null
           updated_at: string
@@ -1104,6 +1235,7 @@ export type Database = {
           frequency?: number | null
           id?: string
           impressions?: number | null
+          organization_id?: string | null
           reach?: number | null
           spend?: number | null
           updated_at?: string
@@ -1124,10 +1256,55 @@ export type Database = {
           frequency?: number | null
           id?: string
           impressions?: number | null
+          organization_id?: string | null
           reach?: number | null
           spend?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_daily_spend_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          settings: Json | null
+          slug: string
+          subscription_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          settings?: Json | null
+          slug: string
+          subscription_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          settings?: Json | null
+          slug?: string
+          subscription_status?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1138,6 +1315,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1146,6 +1324,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1154,9 +1333,18 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          organization_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "platforms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1165,6 +1353,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          organization_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1173,6 +1362,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          organization_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1181,9 +1371,18 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          organization_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recruiters: {
         Row: {
@@ -1192,6 +1391,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          organization_id: string | null
           phone: string | null
           status: string
           updated_at: string
@@ -1203,6 +1403,7 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          organization_id?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
@@ -1214,18 +1415,28 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          organization_id?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recruiters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_conversations: {
         Row: {
           application_id: string
           created_at: string
           id: string
+          organization_id: string | null
           phone_number: string
           recruiter_id: string
           updated_at: string
@@ -1234,6 +1445,7 @@ export type Database = {
           application_id: string
           created_at?: string
           id?: string
+          organization_id?: string | null
           phone_number: string
           recruiter_id: string
           updated_at?: string
@@ -1242,6 +1454,7 @@ export type Database = {
           application_id?: string
           created_at?: string
           id?: string
+          organization_id?: string | null
           phone_number?: string
           recruiter_id?: string
           updated_at?: string
@@ -1252,6 +1465,13 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1349,6 +1569,7 @@ export type Database = {
           id: string
           is_default: boolean
           mapping_name: string
+          organization_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1358,6 +1579,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           mapping_name?: string
+          organization_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1367,37 +1589,58 @@ export type Database = {
           id?: string
           is_default?: boolean
           mapping_name?: string
+          organization_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenstreet_field_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhook_configurations: {
         Row: {
           created_at: string
           enabled: boolean
           id: string
+          organization_id: string | null
           updated_at: string
           user_id: string
           webhook_url: string
@@ -1406,6 +1649,7 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          organization_id?: string | null
           updated_at?: string
           user_id: string
           webhook_url: string
@@ -1414,11 +1658,20 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          organization_id?: string | null
           updated_at?: string
           user_id?: string
           webhook_url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "webhook_configurations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1441,6 +1694,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_org_id_by_slug: {
+        Args: { _slug: string }
+        Returns: string
+      }
       get_platform_breakdown_data: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1448,6 +1705,10 @@ export type Database = {
       get_spend_chart_data: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_user_organization_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       has_role: {
         Args: {
