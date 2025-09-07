@@ -18,11 +18,6 @@ const Landing = () => {
               <span className="text-xl font-bold text-foreground">ATS.IO</span>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" asChild>
-                <Link to="/jobs">
-                  View Jobs
-                </Link>
-              </Button>
               <Button asChild>
                 <Link to="/auth">
                   Sign In
