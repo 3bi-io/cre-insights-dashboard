@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardFilters } from '@/hooks/useDashboardFilters';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
-import Landing from './Landing';
 import DashboardLoading from '@/components/dashboard/DashboardLoading';
+import { Navigate } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/AppSidebar';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -165,9 +165,9 @@ const Home = () => {
     return <DashboardLoading />;
   }
 
-  // If user is not authenticated, show landing page
+  // If user is not authenticated, redirect to auth page
   if (!user) {
-    return <Landing />;
+    return <Navigate to="/auth" replace />;
   }
 
   // If user is authenticated, show dashboard with layout
