@@ -129,19 +129,19 @@ const AppSidebar = () => {
               )}
               <div className="flex flex-col">
                 <span className="font-semibold text-sm">{organization.name}</span>
-                <span className="text-xs text-muted-foreground">Analytics Platform</span>
+                <span className="text-xs text-muted-foreground">ATS Platform</span>
               </div>
             </>
           ) : (
             <>
               <img 
-                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
-                alt="Analytics Platform" 
+                src="/ats-io-logo.png" 
+                alt="ATS.IO" 
                 className="h-8 w-auto" 
               />
               <div className="flex flex-col">
-                <span className="font-semibold text-sm">Analytics Platform</span>
-                <span className="text-xs text-muted-foreground">Loading...</span>
+                <span className="font-semibold text-sm">ATS.IO</span>
+                <span className="text-xs text-muted-foreground">Applicant Tracking System</span>
               </div>
             </>
           )}

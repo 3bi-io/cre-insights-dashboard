@@ -61,14 +61,17 @@ const handlePasswordReset = async (e: React.FormEvent) => {
 };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            C.R. England Analytics
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Job advertising analytics and management platform
+          <div className="flex items-center justify-center mb-4">
+            <img src="/ats-io-logo.png" alt="ATS.IO" className="w-16 h-16 mr-3" />
+            <h2 className="text-3xl font-bold text-foreground">
+              ATS.IO
+            </h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Next-Generation Applicant Tracking System
           </p>
         </div>
 

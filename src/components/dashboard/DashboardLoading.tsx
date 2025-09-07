@@ -8,10 +8,10 @@ const DashboardLoading = () => {
         <div className="container mx-auto px-8 py-6 max-w-7xl">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              C.R. England - Job Advertising Analytics
+              ATS.IO - Applicant Tracking System
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              Monitor spend, track performance, and optimize your job advertising campaigns across all platforms
+              Streamline recruitment with AI-powered analytics and automated workflows
             </p>
           </div>
         </div>

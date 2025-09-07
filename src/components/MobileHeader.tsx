@@ -70,8 +70,8 @@ const MobileHeader = () => {
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
           <img 
-            src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
-            alt="C.R. England" 
+            src="/ats-io-logo.png" 
+            alt="ATS.IO" 
             className="h-8 w-auto"
           />
           <div className="flex flex-col">
@@ -79,7 +79,7 @@ const MobileHeader = () => {
               {getPageTitle()}
             </h1>
             <p className="text-xs text-muted-foreground leading-none mt-0.5">
-              CRE Insights
+              ATS Platform
             </p>
           </div>
         </div>

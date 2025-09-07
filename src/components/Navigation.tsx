@@ -65,7 +65,7 @@ const Navigation = () => {
               <div className="bg-blue-600 text-white p-2 rounded-lg">
                 <BriefcaseIcon className="w-6 h-6" />
               </div>
-              <span className="text-xl font-bold text-gray-900">C.R. England Analytics</span>
+              <span className="text-xl font-bold text-gray-900">ATS.IO</span>
             </Link>
           </div>
 
