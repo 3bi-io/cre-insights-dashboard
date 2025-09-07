@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
+import { Building2, Plus, Edit, Trash2, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { OrganizationSettings } from './OrganizationSettings';
 import { OrganizationFeatureManagement } from './OrganizationFeatureManagement';
 import { OrganizationFeatureBadges } from './OrganizationFeatureBadges';
 
@@ -27,6 +28,7 @@ const OrganizationManagement = () => {
   const { toast } = useToast();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingOrg, setEditingOrg] = useState<any>(null);
+  const [selectedOrgForSettings, setSelectedOrgForSettings] = useState<any>(null);
   const [formData, setFormData] = useState<OrganizationFormData>({
     name: '',
     slug: '',
@@ -237,6 +239,13 @@ const OrganizationManagement = () => {
                       <TableCell>{new Date(org.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedOrgForSettings(org)}
+                          >
+                            <Settings className="w-4 h-4" />
+                          </Button>
                           <OrganizationFeatureManagement
                             organization={org}
                             onUpdate={handleFeatureUpdate}
@@ -272,6 +281,22 @@ const OrganizationManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Organization Settings Dialog */}
+      {selectedOrgForSettings && (
+        <Dialog open={!!selectedOrgForSettings} onOpenChange={() => setSelectedOrgForSettings(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <OrganizationSettings
+              organization={selectedOrgForSettings}
+              onUpdate={(orgId, updateData) => {
+                updateOrganization({ id: orgId, ...updateData });
+                setSelectedOrgForSettings(null);
+              }}
+              canManageFeatures={userRole === 'super_admin'}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

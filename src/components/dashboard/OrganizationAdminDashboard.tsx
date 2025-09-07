@@ -15,6 +15,7 @@ import { OrganizationOverview } from './organization/OrganizationOverview';
 import { OrganizationUserManagement } from './organization/OrganizationUserManagement';
 import { OrganizationJobManagement } from './organization/OrganizationJobManagement';
 import { OrganizationFeatureStatus } from './organization/OrganizationFeatureStatus';
+import { OrganizationBrandingPanel } from './organization/OrganizationBrandingPanel';
 import { AIFeaturesPanel } from './organization/AIFeaturesPanel';
 import { FeatureGuard } from '@/components/FeatureGuard';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
@@ -84,8 +85,9 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
@@ -115,6 +117,10 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
 
           <TabsContent value="overview" className="mt-6">
             <OrganizationOverview />
+          </TabsContent>
+
+          <TabsContent value="branding" className="mt-6">
+            <OrganizationBrandingPanel />
           </TabsContent>
 
           <TabsContent value="features" className="mt-6">

@@ -18,6 +18,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   loading: boolean;
 }
 
@@ -158,6 +159,12 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     navigate('/');
   };
 
+  const refreshUser = async () => {
+    if (user?.id) {
+      await fetchUserRoleAndOrganization(user.id);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -167,6 +174,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       signIn,
       signUp,
       signOut,
+      refreshUser,
       loading
     }}>
       {children}
