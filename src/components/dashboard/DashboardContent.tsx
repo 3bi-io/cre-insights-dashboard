@@ -124,6 +124,12 @@ const DashboardContent = () => {
   const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic'>('basic');
   const [totalApplications, setTotalApplications] = useState<number>(0);
   const [dateRange, setDateRange] = useState('last_30d');
+  const [dashboardMetrics, setDashboardMetrics] = useState({
+    totalSpend: 0,
+    totalLeads: 0,
+    totalJobs: 0,
+    totalReach: 0
+  });
   const { toast } = useToast();
 
   // Get cost per lead data using the selected date range
@@ -178,19 +184,54 @@ const DashboardContent = () => {
     const totalJobs = jobsData.data?.length || 0;
     const totalReach = metaSpendData.data?.reduce((sum, item) => sum + Number(item.reach || 0), 0) || 0;
 
-    return {
+    const metrics = {
       totalSpend,
       totalLeads,
       totalJobs,
       totalReach
     };
+
+    setDashboardMetrics(metrics);
+    return metrics;
   };
 
   const generateAnalytics = async () => {
     setLoading(true);
     try {
-      // Fetch applications data
-      const { data: applications, error } = await supabase.from('applications').select('*');
+      // Calculate date filter based on selected date range
+      const today = new Date();
+      let startDate: string;
+      
+      switch (dateRange) {
+        case 'last_7d':
+          startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last_14d':
+          startDate = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last_60d':
+          startDate = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last_90d':
+          startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'this_month':
+          startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+          break;
+        case 'last_month':
+          const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          startDate = lastMonth.toISOString().split('T')[0];
+          break;
+        default:
+          // last_30d
+          startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      }
+
+      // Fetch applications data filtered by date range
+      const { data: applications, error } = await supabase
+        .from('applications')
+        .select('*')
+        .gte('applied_at', startDate);
       if (error) throw error;
 
       console.log(`Fetched ${applications?.length || 0} applications for analysis`);
@@ -287,11 +328,14 @@ const DashboardContent = () => {
   useEffect(() => {
     generateAnalytics();
     generateMetaAnalytics();
+    // Also refresh the dashboard metrics for the cards
+    fetchDashboardMetrics(dateRange);
   }, [dateRange]);
 
   useEffect(() => {
     generateAnalytics();
     generateMetaAnalytics();
+    fetchDashboardMetrics(dateRange);
   }, []);
 
   return (
