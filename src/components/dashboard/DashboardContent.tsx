@@ -126,6 +126,7 @@ const DashboardContent = () => {
   const [dateRange, setDateRange] = useState('last_30d');
   const [dashboardMetrics, setDashboardMetrics] = useState({
     totalSpend: 0,
+    totalImpressions: 0,
     totalLeads: 0,
     totalJobs: 0,
     totalReach: 0
@@ -180,12 +181,14 @@ const DashboardContent = () => {
     ]);
 
     const totalSpend = metaSpendData.data?.reduce((sum, item) => sum + Number(item.spend), 0) || 0;
+    const totalImpressions = metaSpendData.data?.reduce((sum, item) => sum + Number(item.impressions || 0), 0) || 0;
     const totalLeads = applicationsData.data?.length || 0;
     const totalJobs = jobsData.data?.length || 0;
     const totalReach = metaSpendData.data?.reduce((sum, item) => sum + Number(item.reach || 0), 0) || 0;
 
     const metrics = {
       totalSpend,
+      totalImpressions,
       totalLeads,
       totalJobs,
       totalReach
@@ -388,7 +391,7 @@ const DashboardContent = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
                 <MetricsCard
                   title="Total Spend"
-                  value={`$${metaAnalyticsData?.summary?.totalSpend?.toLocaleString() || '0'}`}
+                  value={`$${dashboardMetrics.totalSpend?.toLocaleString() || '0'}`}
                   change="+12.3%"
                   changeType="positive"
                   icon={DollarSign}
@@ -406,8 +409,8 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Cost Per Lead"
-                  value={`$${metaAnalyticsData?.summary?.totalSpend && (analyticsData?.totalApplications || totalApplications) 
-                    ? (metaAnalyticsData.summary.totalSpend / (analyticsData?.totalApplications || totalApplications)).toFixed(2)
+                  value={`$${dashboardMetrics.totalSpend && (analyticsData?.totalApplications || totalApplications) 
+                    ? (dashboardMetrics.totalSpend / (analyticsData?.totalApplications || totalApplications)).toFixed(2)
                     : costData?.costPerLead?.toFixed(2) || '0.00'}`}
                   change="-5.2%"
                   changeType="positive"
@@ -417,7 +420,7 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Total Reach"
-                  value={metaAnalyticsData?.summary?.totalReach?.toLocaleString() || '0'}
+                  value={dashboardMetrics.totalReach?.toLocaleString() || '0'}
                   change="+15.1%"
                   changeType="positive"
                   icon={TrendingUp}
@@ -426,7 +429,7 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Active Jobs"
-                  value="39"
+                  value={dashboardMetrics.totalJobs?.toString() || '39'}
                   change="+2.4%"
                   changeType="positive"
                   icon={Briefcase}
@@ -549,7 +552,7 @@ const DashboardContent = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
                 <MetricsCard
                   title="Total Spend"
-                  value={`$${metaAnalyticsData?.summary?.totalSpend?.toLocaleString() || '0'}`}
+                  value={`$${dashboardMetrics.totalSpend?.toLocaleString() || '0'}`}
                   change="+12.3%"
                   changeType="positive"
                   icon={DollarSign}
@@ -558,7 +561,7 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Total Leads"
-                  value={metaAnalyticsData?.summary?.totalResults?.toLocaleString() || '0'}
+                  value={dashboardMetrics.totalLeads?.toLocaleString() || '0'}
                   change="+8.7%"
                   changeType="positive"
                   icon={Users}
@@ -567,7 +570,9 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Cost Per Lead"
-                  value={`$${metaAnalyticsData?.summary?.costPerResult?.toFixed(2) || '0.00'}`}
+                  value={`$${dashboardMetrics.totalSpend && dashboardMetrics.totalLeads 
+                    ? (dashboardMetrics.totalSpend / dashboardMetrics.totalLeads).toFixed(2)
+                    : '0.00'}`}
                   change="-5.2%"
                   changeType="positive"
                   icon={Target}
@@ -576,7 +581,7 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Total Reach"
-                  value={metaAnalyticsData?.summary?.totalReach?.toLocaleString() || '0'}
+                  value={dashboardMetrics.totalReach?.toLocaleString() || '0'}
                   change="+15.1%"
                   changeType="positive"
                   icon={TrendingUp}
@@ -585,7 +590,7 @@ const DashboardContent = () => {
                 
                 <MetricsCard
                   title="Active Jobs"
-                  value="39"
+                  value={dashboardMetrics.totalJobs?.toString() || '39'}
                   change="+2.4%"
                   changeType="positive"
                   icon={Briefcase}
