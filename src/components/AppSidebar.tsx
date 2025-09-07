@@ -14,6 +14,7 @@ const AppSidebar = () => {
   const {
     user,
     userRole,
+    organization,
     signOut
   } = useAuth();
   const navigationItems = [{
@@ -56,7 +57,11 @@ const AppSidebar = () => {
       path: '/dashboard/clients',
       label: 'Clients',
       icon: Building
-    }, {
+    }, ...(userRole === 'admin' ? [{
+      path: '/dashboard/organizations',
+      label: 'Organizations',
+      icon: Building
+    }] : []), {
       path: '/dashboard/tenstreet',
       label: 'Tenstreet',
       icon: Share2
@@ -105,8 +110,39 @@ const AppSidebar = () => {
   return <Sidebar>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-4 py-3">
-          <img src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" alt="C.R. England" className="h-8 w-auto" />
-          
+          {organization ? (
+            <>
+              {organization.logo_url ? (
+                <img 
+                  src={organization.logo_url} 
+                  alt={organization.name} 
+                  className="h-8 w-auto" 
+                />
+              ) : (
+                <img 
+                  src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                  alt={organization.name} 
+                  className="h-8 w-auto" 
+                />
+              )}
+              <div className="flex flex-col">
+                <span className="font-semibold text-sm">{organization.name}</span>
+                <span className="text-xs text-muted-foreground">Analytics Platform</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <img 
+                src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                alt="Analytics Platform" 
+                className="h-8 w-auto" 
+              />
+              <div className="flex flex-col">
+                <span className="font-semibold text-sm">Analytics Platform</span>
+                <span className="text-xs text-muted-foreground">Loading...</span>
+              </div>
+            </>
+          )}
         </div>
       </SidebarHeader>
       

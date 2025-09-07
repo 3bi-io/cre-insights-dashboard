@@ -8,6 +8,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: string | null;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string;
+    settings?: any;
+  } | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -20,22 +27,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [organization, setOrganization] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string;
+    settings?: any;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-const fetchUserRole = async (_userId: string) => {
+const fetchUserRoleAndOrganization = async (_userId: string) => {
   try {
-    const { data, error } = await supabase.rpc('get_current_user_role');
-    if (error) {
-      console.error('Error fetching user role:', error?.message || error);
+    // Fetch user role
+    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+    if (roleError) {
+      console.error('Error fetching user role:', roleError?.message || roleError);
       setUserRole('user');
     } else {
-      console.log('User role fetched:', data);
-      setUserRole((data as string) || 'user');
+      console.log('User role fetched:', roleData);
+      setUserRole((roleData as string) || 'user');
+    }
+
+    // Fetch user's organization via profile
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        organization_id,
+        organizations:organization_id(
+          id,
+          name,
+          slug,
+          logo_url,
+          settings
+        )
+      `)
+      .eq('id', _userId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      setOrganization(null);
+    } else if (profileData?.organizations) {
+      console.log('User organization fetched:', profileData.organizations);
+      setOrganization(profileData.organizations as any);
+    } else {
+      setOrganization(null);
     }
   } catch (error: any) {
-    console.error('Error fetching user role:', error?.message || error);
+    console.error('Error fetching user data:', error?.message || error);
     setUserRole('user');
+    setOrganization(null);
   }
 };
 
@@ -50,10 +92,11 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     if (session?.user) {
       // Use setTimeout to prevent potential deadlocks
       setTimeout(() => {
-        fetchUserRole(session.user.id);
+        fetchUserRoleAndOrganization(session.user.id);
       }, 0);
     } else {
       setUserRole(null);
+      setOrganization(null);
     }
     
     setLoading(false);
@@ -66,7 +109,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserRole(session.user.id);
+        await fetchUserRoleAndOrganization(session.user.id);
       }
       
       setLoading(false);
@@ -105,6 +148,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
   const signOut = async () => {
     await supabase.auth.signOut();
     setUserRole(null);
+    setOrganization(null);
     navigate('/');
   };
 
@@ -113,6 +157,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       user,
       session,
       userRole,
+      organization,
       signIn,
       signUp,
       signOut,

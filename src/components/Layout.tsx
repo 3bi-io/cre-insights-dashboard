@@ -25,7 +25,7 @@ const LayoutContent = () => {
   const { state } = useSidebar();
   const isMobile = useIsMobile();
   const location = useLocation();
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, organization, signOut } = useAuth();
   
   // Extract page name from current route
   const getCurrentPage = () => {
@@ -70,12 +70,25 @@ const LayoutContent = () => {
           <header className="h-16 flex items-center justify-between border-b bg-card px-4 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
-              {(state === 'collapsed') && (
-                <img 
-                  src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
-                  alt="C.R. England" 
-                  className="h-8 w-auto"
-                />
+              {(state === 'collapsed') && organization && (
+                <div className="flex items-center gap-2">
+                  {organization.logo_url ? (
+                    <img 
+                      src={organization.logo_url} 
+                      alt={organization.name} 
+                      className="h-8 w-auto"
+                    />
+                  ) : (
+                    <img 
+                      src="/lovable-uploads/8d8eed20-4fcb-4be0-adba-5d8a3a949c9e.png" 
+                      alt={organization.name} 
+                      className="h-8 w-auto"
+                    />
+                  )}
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {organization.name}
+                  </span>
+                </div>
               )}
             </div>
             
@@ -102,6 +115,11 @@ const LayoutContent = () => {
                         <p className="text-xs leading-none text-muted-foreground truncate">
                           {user.email}
                         </p>
+                        {organization && (
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {organization.name}
+                          </p>
+                        )}
                         {userRole && (
                           <Badge className={`${getRoleBadgeColor(userRole)} text-xs w-fit mt-1`}>
                             {userRole}

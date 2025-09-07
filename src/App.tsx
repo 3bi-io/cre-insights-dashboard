@@ -26,6 +26,7 @@ import AdminLanding from "./pages/AdminLanding";
 import NotFound from "./pages/NotFound";
 import PrivacyControls from "./pages/PrivacyControls";
 import ThankYou from "./pages/ThankYou";
+import Organizations from "./pages/Organizations";
 import Media from "./pages/Media";
 import PublicJobs from "./pages/PublicJobs";
 
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="routes" element={<RoutesPage />} />
                 <Route path="platforms" element={<Platforms />} />
                 <Route path="clients" element={<Clients />} />
+                <Route path="organizations" element={<Organizations />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="media" element={<Media />} />
               </Route>

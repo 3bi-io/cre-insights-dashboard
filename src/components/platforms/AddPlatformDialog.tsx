@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AddPlatformDialogProps {
   open: boolean;
@@ -23,6 +24,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
   const [apiEndpoint, setApiEndpoint] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { organization } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
           name: name.trim(),
           logo_url: logoUrl.trim() || null,
           api_endpoint: apiEndpoint.trim() || null,
+          organization_id: organization?.id,
         });
 
       if (error) throw error;
