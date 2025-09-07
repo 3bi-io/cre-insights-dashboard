@@ -11,6 +11,7 @@ import { useOrganizations } from '@/hooks/useOrganizations';
 import { useAuth } from '@/hooks/useAuth';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { OrganizationFeatureManagement } from './OrganizationFeatureManagement';
 
 interface OrganizationFormData {
   name: string;
@@ -44,6 +45,10 @@ const OrganizationManagement = () => {
       </Card>
     );
   }
+
+  const handleFeatureUpdate = (organizationId: string, settings: any) => {
+    updateOrganization({ id: organizationId, settings });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,6 +232,10 @@ const OrganizationManagement = () => {
                       <TableCell>{new Date(org.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
+                          <OrganizationFeatureManagement
+                            organization={org}
+                            onUpdate={handleFeatureUpdate}
+                          />
                           <Button
                             variant="outline"
                             size="sm"

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import OrganizationManagement from '@/components/organizations/OrganizationManagement';
+import { OrganizationFeatureManagement } from '@/components/organizations/OrganizationFeatureManagement';
 
 const Organizations = () => {
   const { userRole } = useAuth();
