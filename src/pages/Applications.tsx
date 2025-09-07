@@ -12,8 +12,6 @@ import ApplicationsOverview from '@/components/applications/ApplicationsOverview
 import ApplicationsSearch from '@/components/applications/ApplicationsSearch';
 import ApplicationCard from '@/components/applications/ApplicationCard';
 
-import MetaBackfillButton from '@/components/applications/MetaBackfillButton';
-import RecentMetaLeadsButton from '@/components/applications/RecentMetaLeadsButton';
 import { useApplications } from '@/hooks/useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
@@ -103,11 +101,6 @@ const Applications = () => {
           <p className="text-muted-foreground mt-1">Track and manage job applications</p>
         </div>
         <div className="flex gap-2">
-          
-          {/* Pull recent Meta leads */}
-          <RecentMetaLeadsButton />
-          {/* Backfill all historical Meta leads */}
-          <MetaBackfillButton />
           <Button
             onClick={downloadApplicationsPDF}
             className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
