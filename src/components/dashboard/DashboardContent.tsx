@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardCategoryTiles from './DashboardCategoryTiles';
 import DashboardMetricsSection from './DashboardMetricsSection';
+import { useAuth } from '@/hooks/useAuth';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -117,6 +118,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
 
 const DashboardContent = () => {
+  const { organization } = useAuth();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [metaAnalyticsData, setMetaAnalyticsData] = useState<MetaAnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -169,15 +171,17 @@ const DashboardContent = () => {
     const [metaSpendData, applicationsData, jobsData] = await Promise.all([
       supabase.from('meta_daily_spend')
         .select('spend, impressions, clicks, reach')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .eq('organization_id', organization?.id)
         .gte('date_start', startDate),
       supabase.from('applications')
-        .select('id, source, applied_at')
+        .select('id, source, applied_at, job_listings!inner(organization_id)')
         .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram')
+        .eq('job_listings.organization_id', organization?.id)
         .gte('applied_at', startDate),
       supabase.from('job_listings')
         .select('id')
         .eq('status', 'active')
+        .eq('organization_id', organization?.id)
     ]);
 
     const totalSpend = metaSpendData.data?.reduce((sum, item) => sum + Number(item.spend), 0) || 0;
@@ -230,10 +234,11 @@ const DashboardContent = () => {
           startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
 
-      // Fetch applications data filtered by date range
+      // Fetch applications data filtered by date range and organization
       const { data: applications, error } = await supabase
         .from('applications')
-        .select('*')
+        .select('*, job_listings!inner(organization_id)')
+        .eq('job_listings.organization_id', organization?.id)
         .gte('applied_at', startDate);
       if (error) throw error;
 

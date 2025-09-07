@@ -1,9 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useSpendTrendData = () => {
+  const { organization } = useAuth();
+  
   return useQuery({
-    queryKey: ['spend-trend-data'],
+    queryKey: ['spend-trend-data', organization?.id],
     queryFn: async () => {
       const { data: spendData, error } = await supabase
         .from('daily_spend')
@@ -12,8 +15,9 @@ export const useSpendTrendData = () => {
           amount,
           clicks,
           views,
-          job_listings!inner(*)
+          job_listings!inner(organization_id)
         `)
+        .eq('job_listings.organization_id', organization?.id)
         .order('date', { ascending: true })
         .limit(30);
 
@@ -31,10 +35,11 @@ export const useSpendTrendData = () => {
         return acc;
       }, {});
 
-      // Get applications count per day
+      // Get applications count per day (organization-scoped)
       const { data: applicationsData } = await supabase
         .from('applications')
-        .select('applied_at')
+        .select('applied_at, job_listings!inner(organization_id)')
+        .eq('job_listings.organization_id', organization?.id)
         .gte('applied_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
       // Add applications to grouped data
@@ -49,5 +54,6 @@ export const useSpendTrendData = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!organization?.id, // Only run when organization is available
   });
 };

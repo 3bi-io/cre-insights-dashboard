@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { getApplicantCategory } from '@/utils/applicationHelpers';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CategoryData {
   category: string;
@@ -39,16 +40,23 @@ const getCategoryDetails = (category: string) => {
 };
 
 const DashboardCategoryTiles: React.FC = () => {
+  const { organization } = useAuth();
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalApplications, setTotalApplications] = useState(0);
 
   useEffect(() => {
     const fetchCategoryData = async () => {
+      if (!organization?.id) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data: applications, error } = await supabase
           .from('applications')
-          .select('*');
+          .select('*, job_listings!inner(organization_id)')
+          .eq('job_listings.organization_id', organization.id);
 
         if (error) throw error;
 
@@ -79,7 +87,7 @@ const DashboardCategoryTiles: React.FC = () => {
     };
 
     fetchCategoryData();
-  }, []);
+  }, [organization?.id]);
 
   if (loading) {
     return (

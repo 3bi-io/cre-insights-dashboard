@@ -2,25 +2,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOutboundWebhook } from '@/hooks/useOutboundWebhook';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useApplications = (webhookConfig?: { url: string; enabled: boolean }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useAuth();
   const { triggerWebhook } = useOutboundWebhook({
     webhookUrl: webhookConfig?.url,
     enabled: webhookConfig?.enabled
   });
 
   const { data: applications, isLoading } = useQuery({
-    queryKey: ['applications'],
+    queryKey: ['applications', organization?.id],
     queryFn: async () => {
       const { data: appsWithListings, error } = await supabase
         .from('applications')
         .select(`
           *,
-          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name)),
+          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name), organization_id),
           recruiters:recruiter_id(id, first_name, last_name, email)
         `)
+        .eq('job_listings.organization_id', organization?.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -35,7 +38,8 @@ export const useApplications = (webhookConfig?: { url: string; enabled: boolean 
         const { data: jobListings } = await supabase
           .from('job_listings')
           .select('job_id, title, job_title, client, client_id, clients:client_id(name)')
-          .in('job_id', missingJobIds);
+          .in('job_id', missingJobIds)
+          .eq('organization_id', organization?.id);
         
         if (jobListings) {
           jobListings.forEach(job => {
@@ -55,20 +59,23 @@ export const useApplications = (webhookConfig?: { url: string; enabled: boolean 
       
       return enhancedData;
     },
+    enabled: !!organization?.id, // Only run when organization is available
   });
 
   const { data: recruiters } = useQuery({
-    queryKey: ['recruiters'],
+    queryKey: ['recruiters', organization?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('recruiters')
         .select('*')
         .eq('status', 'active')
+        .eq('organization_id', organization?.id)
         .order('first_name');
       
       if (error) throw error;
       return data;
     },
+    enabled: !!organization?.id, // Only run when organization is available
   });
 
   const { data: currentRecruiter } = useQuery({

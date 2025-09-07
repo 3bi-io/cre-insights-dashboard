@@ -1,30 +1,42 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
 
 export const usePlatformPerformanceData = () => {
+  const { organization } = useAuth();
+  
   return useQuery({
-    queryKey: ['platform-performance-data'],
+    queryKey: ['platform-performance-data', organization?.id],
     queryFn: async () => {
-      // Get Meta data for CR England account specifically
-      const { data: metaData, error: metaError } = await supabase
+      // Get Meta data for current organization
+      let metaQuery = supabase
         .from('meta_daily_spend')
-        .select('spend, impressions, clicks')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID);
+        .select('spend, impressions, clicks');
+        
+      if (organization?.id) {
+        metaQuery = metaQuery.eq('organization_id', organization.id);
+      } else {
+        // Fallback for existing data without organization_id
+        metaQuery = metaQuery.eq('account_id', CR_ENGLAND_ACCOUNT_ID);
+      }
+
+      const { data: metaData, error: metaError } = await metaQuery;
 
       if (metaError) throw metaError;
 
-      // Get applications from Meta sources (fb, ig, meta)
+      // Get applications from Meta sources (organization-scoped)
       const { data: applicationsData, error: appsError } = await supabase
         .from('applications')
-        .select('id, source')
-        .or('source.eq.fb,source.eq.ig,source.eq.meta');
+        .select('id, source, job_listings!inner(organization_id)')
+        .or('source.eq.fb,source.eq.ig,source.eq.meta')
+        .eq('job_listings.organization_id', organization?.id);
 
       if (appsError) throw appsError;
 
-      // Get other platform data (non-Meta)
+      // Get other platform data (non-Meta, organization-scoped)
       const { data: platformData, error } = await supabase
         .from('platforms')
         .select(`
@@ -32,6 +44,7 @@ export const usePlatformPerformanceData = () => {
           job_platform_associations(
             job_listings(
               id,
+              organization_id,
               daily_spend(amount),
               applications(id, source)
             )
@@ -39,7 +52,8 @@ export const usePlatformPerformanceData = () => {
         `)
         .not('name', 'ilike', '%meta%')
         .not('name', 'ilike', '%facebook%')
-        .not('name', 'ilike', '%instagram%');
+        .not('name', 'ilike', '%instagram%')
+        .eq('job_platform_associations.job_listings.organization_id', organization?.id);
 
       if (error) throw error;
 
@@ -83,5 +97,6 @@ export const usePlatformPerformanceData = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!organization?.id, // Only run when organization is available
   });
 };

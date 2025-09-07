@@ -1,11 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const PLATFORM_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
 
 export const usePlatformDistributionData = () => {
+  const { organization } = useAuth();
+  
   return useQuery({
-    queryKey: ['platform-distribution-data'],
+    queryKey: ['platform-distribution-data', organization?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('applications')
@@ -13,11 +16,13 @@ export const usePlatformDistributionData = () => {
           id,
           source,
           job_listings!inner(
+            organization_id,
             job_platform_associations!inner(
               platforms!inner(name)
             )
           )
-        `);
+        `)
+        .eq('job_listings.organization_id', organization?.id);
 
       if (error) throw error;
 
@@ -48,5 +53,6 @@ export const usePlatformDistributionData = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!organization?.id, // Only run when organization is available
   });
 };

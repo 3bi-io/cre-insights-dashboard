@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
 
@@ -13,8 +14,10 @@ interface CostPerLeadData {
 }
 
 export const useCostPerLead = (dateRange?: string) => {
+  const { organization } = useAuth();
+  
   return useQuery({
-    queryKey: ['cost-per-lead', dateRange],
+    queryKey: ['cost-per-lead', dateRange, organization?.id],
     queryFn: async () => {
       // Calculate date filter if provided
       let dateFilter = '';
@@ -48,11 +51,17 @@ export const useCostPerLead = (dateRange?: string) => {
         dateFilter = startDate;
       }
 
-      // Get Meta data for CR England account specifically
+      // Get Meta data for current organization
       let metaQuery = supabase
         .from('meta_daily_spend')
-        .select('spend, impressions, clicks')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID);
+        .select('spend, impressions, clicks');
+        
+      if (organization?.id) {
+        metaQuery = metaQuery.eq('organization_id', organization.id);
+      } else {
+        // Fallback for existing data without organization_id
+        metaQuery = metaQuery.eq('account_id', CR_ENGLAND_ACCOUNT_ID);
+      }
       
       if (dateFilter) {
         metaQuery = metaQuery.gte('date_start', dateFilter);
@@ -61,11 +70,15 @@ export const useCostPerLead = (dateRange?: string) => {
       const { data: metaData, error: metaError } = await metaQuery;
       if (metaError) throw metaError;
 
-      // Get Meta applications
+      // Get Meta applications for current organization
       let metaAppsQuery = supabase
         .from('applications')
-        .select('id, source, applied_at')
+        .select('id, source, applied_at, job_listings!inner(organization_id)')
         .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram');
+        
+      if (organization?.id) {
+        metaAppsQuery = metaAppsQuery.eq('job_listings.organization_id', organization.id);
+      }
       
       if (dateFilter) {
         metaAppsQuery = metaAppsQuery.gte('applied_at', dateFilter);
@@ -74,8 +87,14 @@ export const useCostPerLead = (dateRange?: string) => {
       const { data: metaApplicationsData, error: metaAppsError } = await metaAppsQuery;
       if (metaAppsError) throw metaAppsError;
 
-      // Get all applications for total calculation
-      let allAppsQuery = supabase.from('applications').select('id, applied_at');
+      // Get all applications for total calculation (organization-scoped)
+      let allAppsQuery = supabase
+        .from('applications')
+        .select('id, applied_at, job_listings!inner(organization_id)');
+        
+      if (organization?.id) {
+        allAppsQuery = allAppsQuery.eq('job_listings.organization_id', organization.id);
+      }
       if (dateFilter) {
         allAppsQuery = allAppsQuery.gte('applied_at', dateFilter);
       }
@@ -83,10 +102,14 @@ export const useCostPerLead = (dateRange?: string) => {
       const { data: allApplicationsData, error: allAppsError } = await allAppsQuery;
       if (allAppsError) throw allAppsError;
 
-      // Get total spend from all platforms
+      // Get total spend from all platforms (organization-scoped)
       let allSpendQuery = supabase
         .from('daily_spend')
-        .select('amount, date');
+        .select('amount, date, job_listings!inner(organization_id)');
+        
+      if (organization?.id) {
+        allSpendQuery = allSpendQuery.eq('job_listings.organization_id', organization.id);
+      }
       
       if (dateFilter) {
         allSpendQuery = allSpendQuery.gte('date', dateFilter);
@@ -120,5 +143,6 @@ export const useCostPerLead = (dateRange?: string) => {
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!organization?.id, // Only run when organization is available
   });
 };

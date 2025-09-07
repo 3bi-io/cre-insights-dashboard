@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useOpenAI } from '@/hooks/useOpenAI';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MetaSpendMetrics {
   totalSpend: number;
@@ -15,6 +16,7 @@ interface MetaSpendMetrics {
 }
 
 export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
+  const { organization } = useAuth();
   const [metrics, setMetrics] = useState<MetaSpendMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,11 +50,19 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
 
       console.log('Fetching Meta spend data from:', startDate);
 
-      // Fetch Meta spend data
-      const { data: spendData, error: spendError } = await supabase
+      // Fetch Meta spend data for current organization
+      let metaQuery = supabase
         .from('meta_daily_spend')
-        .select('*')
-        .eq('account_id', '435031743763874')
+        .select('*');
+        
+      if (organization?.id) {
+        metaQuery = metaQuery.eq('organization_id', organization.id);
+      } else {
+        // Fallback for existing data without organization_id
+        metaQuery = metaQuery.eq('account_id', '435031743763874');
+      }
+      
+      const { data: spendData, error: spendError } = await metaQuery
         .gte('date_start', startDate)
         .order('date_start', { ascending: false });
 
@@ -63,11 +73,12 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
 
       console.log('Meta spend data fetched:', spendData?.length || 0, 'records');
 
-      // Get lead generation applications data (from Meta sources)
+      // Get lead generation applications data (from Meta sources, organization-scoped)
       const { data: applicationsData } = await supabase
         .from('applications')
-        .select('id, source, applied_at')
+        .select('id, source, applied_at, job_listings!inner(organization_id)')
         .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram')
+        .eq('job_listings.organization_id', organization?.id)
         .gte('applied_at', startDate);
 
       const totalLeads = applicationsData?.length || 0;
