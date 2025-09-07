@@ -32,14 +32,14 @@ const OrganizationManagement = () => {
     domain: ''
   });
 
-  // Only admins can access this
-  if (userRole !== 'admin') {
+  // Only admins and super admins can access this
+  if (userRole !== 'admin' && userRole !== 'super_admin') {
     return (
       <Card>
         <CardContent className="text-center py-12">
           <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-lg font-medium mb-2">Access Denied</h3>
-          <p className="text-sm text-muted-foreground">You need admin permissions to manage organizations.</p>
+          <p className="text-sm text-muted-foreground">You need admin or super admin permissions to manage organizations.</p>
         </CardContent>
       </Card>
     );

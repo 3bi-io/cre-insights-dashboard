@@ -57,7 +57,7 @@ const AppSidebar = () => {
       path: '/dashboard/clients',
       label: 'Clients',
       icon: Building
-    }, ...(userRole === 'admin' ? [{
+    }, ...(userRole === 'admin' || userRole === 'super_admin' ? [{
       path: '/dashboard/organizations',
       label: 'Organizations',
       icon: Building
@@ -93,6 +93,8 @@ const AppSidebar = () => {
   };
   const getRoleBadgeColor = (role: string | null) => {
     switch (role) {
+      case 'super_admin':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'admin':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'moderator':
@@ -194,6 +196,36 @@ const AppSidebar = () => {
         </div>
       </SidebarContent>
       
+      <SidebarFooter className="border-t">
+        <div className="p-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full justify-start">
+                <Avatar className="w-8 h-8 mr-3">
+                  <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 text-left">
+                  <div className="text-sm font-medium">{user?.email}</div>
+                  {userRole && (
+                    <Badge className={`text-xs ${getRoleBadgeColor(userRole)}`}>
+                      {userRole === 'super_admin' ? 'Super Admin' : 
+                       userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                    </Badge>
+                  )}
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </SidebarFooter>
       
     </Sidebar>;
 };

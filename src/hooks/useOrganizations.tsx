@@ -50,7 +50,7 @@ export const useOrganizations = () => {
       console.log('Organizations fetched:', data?.length);
       return data as Organization[];
     },
-    enabled: userRole === 'admin', // Only admins can view all organizations
+    enabled: userRole === 'admin' || userRole === 'super_admin', // Allow both admin and super admin
   });
 
   // Create organization (admin-only)

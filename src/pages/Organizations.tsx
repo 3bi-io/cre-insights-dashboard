@@ -5,12 +5,12 @@ import OrganizationManagement from '@/components/organizations/OrganizationManag
 const Organizations = () => {
   const { userRole } = useAuth();
 
-  if (userRole !== 'admin') {
+  if (userRole !== 'admin' && userRole !== 'super_admin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
-          <p className="text-muted-foreground">You need admin permissions to access organization management.</p>
+          <p className="text-muted-foreground">You need admin or super admin permissions to access organization management.</p>
         </div>
       </div>
     );
@@ -21,7 +21,12 @@ const Organizations = () => {
       <div className="container mx-auto px-8 py-8 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Organizations</h1>
-          <p className="text-muted-foreground">Manage multi-tenant organizations and settings.</p>
+          <p className="text-muted-foreground">
+            Manage multi-tenant organizations and settings.
+            {userRole === 'super_admin' && (
+              <span className="ml-2 text-primary font-medium">(Super Administrator View)</span>
+            )}
+          </p>
         </div>
         
         <OrganizationManagement />

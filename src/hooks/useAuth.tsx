@@ -46,10 +46,15 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       setUserRole('user');
     } else {
       console.log('User role fetched:', roleData);
-      setUserRole((roleData as string) || 'user');
+      // Check if user is super admin by email or role
+      if (roleData === 'super_admin') {
+        setUserRole('super_admin');
+      } else {
+        setUserRole((roleData as string) || 'user');
+      }
     }
 
-    // Fetch user's organization via profile
+    // Fetch user's organization via profile (super admins may not have an organization)
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select(`
@@ -72,6 +77,7 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       console.log('User organization fetched:', profileData.organizations);
       setOrganization(profileData.organizations as any);
     } else {
+      // Super admins don't need an organization
       setOrganization(null);
     }
   } catch (error: any) {

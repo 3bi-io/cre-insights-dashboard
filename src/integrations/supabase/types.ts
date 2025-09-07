@@ -1717,6 +1717,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       normalize_phone_number: {
         Args: { phone_input: string }
         Returns: string
