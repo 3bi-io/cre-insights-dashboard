@@ -59,19 +59,19 @@ const AppSidebar = () => {
       path: '/admin/clients',
       label: 'Clients',
       icon: Building
-    }, ...(userRole === 'admin' || userRole === 'super_admin' ? [{
+    }, ...(userRole === 'super_admin' ? [{
       path: '/admin/organizations',
       label: 'Organizations',
       icon: Building
-    }] : []), {
+     }] : []), {
       path: '/admin/tenstreet',
       label: 'Tenstreet',
       icon: Share2
-    }, {
+    }, ...(userRole === 'super_admin' ? [{
       path: '/admin/media',
       label: 'Media',
       icon: FileImage
-    }]
+    }] : [])]
   }, {
     group: "Settings",
     items: [{
