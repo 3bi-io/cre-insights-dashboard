@@ -11,6 +11,7 @@ import { OrganizationMetricsCard } from './organization/OrganizationMetrics';
 import { OrganizationOverview } from './organization/OrganizationOverview';
 import { OrganizationUserManagement } from './organization/OrganizationUserManagement';
 import { OrganizationJobManagement } from './organization/OrganizationJobManagement';
+import { OrganizationFeatureStatus } from './organization/OrganizationFeatureStatus';
 import DashboardTabs from './DashboardTabs';
 
 interface OrganizationAdminDashboardProps {
@@ -71,8 +72,9 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -80,6 +82,10 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
 
           <TabsContent value="overview" className="mt-6">
             <OrganizationOverview />
+          </TabsContent>
+
+          <TabsContent value="features" className="mt-6">
+            <OrganizationFeatureStatus />
           </TabsContent>
 
           <TabsContent value="jobs" className="mt-6">

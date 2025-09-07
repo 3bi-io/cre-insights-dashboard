@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Building2, Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { OrganizationFeatureManagement } from './OrganizationFeatureManagement';
+import { OrganizationFeatureBadges } from './OrganizationFeatureBadges';
 
 interface OrganizationFormData {
   name: string;
@@ -203,7 +204,7 @@ const OrganizationManagement = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Slug</TableHead>
-                    <TableHead>Domain</TableHead>
+                    <TableHead>Features</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -223,7 +224,11 @@ const OrganizationManagement = () => {
                       <TableCell>
                         <code className="text-sm bg-muted px-2 py-1 rounded">{org.slug}</code>
                       </TableCell>
-                      <TableCell>{org.domain || '-'}</TableCell>
+                      <TableCell>
+                        <OrganizationFeatureBadges 
+                          features={org.settings?.features || {}} 
+                        />
+                      </TableCell>
                       <TableCell>
                         <Badge variant={org.subscription_status === 'active' ? 'default' : 'secondary'}>
                           {org.subscription_status}
