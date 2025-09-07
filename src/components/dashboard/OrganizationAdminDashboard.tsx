@@ -5,13 +5,19 @@ import {
   Users, 
   BarChart3, 
   UserCheck,
-  TrendingUp
+  TrendingUp,
+  Phone,
+  Bot,
+  Share2
 } from 'lucide-react';
 import { OrganizationMetricsCard } from './organization/OrganizationMetrics';
 import { OrganizationOverview } from './organization/OrganizationOverview';
 import { OrganizationUserManagement } from './organization/OrganizationUserManagement';
 import { OrganizationJobManagement } from './organization/OrganizationJobManagement';
 import { OrganizationFeatureStatus } from './organization/OrganizationFeatureStatus';
+import { AIFeaturesPanel } from './organization/AIFeaturesPanel';
+import { FeatureGuard } from '@/components/FeatureGuard';
+import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import DashboardTabs from './DashboardTabs';
 
 interface OrganizationAdminDashboardProps {
@@ -20,6 +26,12 @@ interface OrganizationAdminDashboardProps {
 
 export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { 
+    hasTenstreetAccess, 
+    hasVoiceAgent, 
+    hasAdvancedAnalytics,
+    hasAIAccess 
+  } = useOrganizationFeatures();
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,12 +84,33 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger 
+              value="ai" 
+              disabled={!hasAIAccess()}
+              className="flex items-center gap-2"
+            >
+              <Bot className="w-4 h-4" />
+              AI Tools
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tenstreet" 
+              disabled={!hasTenstreetAccess()}
+              className="flex items-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Tenstreet
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              disabled={!hasAdvancedAnalytics()}
+            >
+              Analytics
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -89,15 +122,58 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
           </TabsContent>
 
           <TabsContent value="jobs" className="mt-6">
-            <OrganizationJobManagement />
+            <FeatureGuard 
+              feature="meta_integration" 
+              featureName="Job Management"
+              showUpgrade={false}
+            >
+              <OrganizationJobManagement />
+            </FeatureGuard>
           </TabsContent>
 
           <TabsContent value="users" className="mt-6">
             <OrganizationUserManagement />
           </TabsContent>
 
+          <TabsContent value="ai" className="mt-6">
+            <FeatureGuard 
+              feature="openai_access"
+              featureName="AI Features"
+              showUpgrade={false}
+              fallback={
+                <FeatureGuard feature="anthropic_access" featureName="AI Features">
+                  <AIFeaturesPanel />
+                </FeatureGuard>
+              }
+            >
+              <AIFeaturesPanel />
+            </FeatureGuard>
+          </TabsContent>
+
+          <TabsContent value="tenstreet" className="mt-6">
+            <FeatureGuard 
+              feature="tenstreet_access"
+              featureName="Tenstreet Integration"
+            >
+              <div className="space-y-6">
+                <div className="text-center py-12">
+                  <Share2 className="w-12 h-12 mx-auto mb-4 text-primary" />
+                  <h3 className="text-lg font-medium mb-2">Tenstreet Integration Active</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your organization has access to Tenstreet ATS integration features.
+                  </p>
+                </div>
+              </div>
+            </FeatureGuard>
+          </TabsContent>
+
           <TabsContent value="analytics" className="mt-6">
-            <DashboardTabs activeTab="dashboard" onTabChange={() => {}} />
+            <FeatureGuard 
+              feature="advanced_analytics"
+              featureName="Advanced Analytics"
+            >
+              <DashboardTabs activeTab="dashboard" onTabChange={() => {}} />
+            </FeatureGuard>
           </TabsContent>
         </Tabs>
       </div>

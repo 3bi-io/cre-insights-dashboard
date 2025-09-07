@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
+import { useMemo } from 'react';
 
 interface OrganizationFeatures {
   tenstreet_access?: boolean;
@@ -14,16 +14,13 @@ interface OrganizationFeatures {
 export const useOrganizationFeatures = () => {
   const { organization, userRole } = useAuth();
 
-  const { data: features, isLoading } = useQuery({
-    queryKey: ['organization-features', organization?.id],
-    queryFn: () => {
-      if (!organization?.settings?.features) {
-        return {} as OrganizationFeatures;
-      }
-      return organization.settings.features as OrganizationFeatures;
-    },
-    enabled: !!organization,
-  });
+  // Get features directly from auth context (reactive to changes)
+  const features = useMemo(() => {
+    if (!organization?.settings?.features) {
+      return {} as OrganizationFeatures;
+    }
+    return organization.settings.features as OrganizationFeatures;
+  }, [organization?.settings?.features]);
 
   // Super admins have access to all features
   const hasFeature = (featureKey: keyof OrganizationFeatures): boolean => {
@@ -45,7 +42,7 @@ export const useOrganizationFeatures = () => {
 
   return {
     features: features || {},
-    isLoading,
+    isLoading: false, // No longer async since we get data from context
     hasFeature,
     hasTenstreetAccess,
     hasOpenAIAccess,
