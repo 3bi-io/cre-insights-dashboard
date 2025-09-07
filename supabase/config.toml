@@ -48,3 +48,5 @@ verify_jwt = true
 [functions.google-indexing]
 verify_jwt = true
 
+[functions.meta-sync-cron]
+verify_jwt = false
