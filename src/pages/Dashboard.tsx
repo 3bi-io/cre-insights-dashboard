@@ -24,6 +24,7 @@ import {
   Trash2
 } from 'lucide-react';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
+import { OrganizationAdminDashboard } from '@/components/dashboard/OrganizationAdminDashboard';
 
 const AdminMetricsCard = ({ title, value, description, icon: Icon, trend }: {
   title: string;
@@ -346,60 +347,7 @@ const Dashboard = () => {
   }
 
   // Organization admin view - organization-specific access
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                {organization?.name} Dashboard
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                Organization management and analytics
-              </p>
-            </div>
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              Organization Admin
-            </Badge>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <AdminMetricsCard
-            title="Active Users"
-            value="24"
-            description="Organization members"
-            icon={Users}
-            trend={{ value: "+2 this month", positive: true }}
-          />
-          <AdminMetricsCard
-            title="Active Jobs"
-            value="156"
-            description="Currently posted"
-            icon={BarChart3}
-            trend={{ value: "+8 this week", positive: true }}
-          />
-          <AdminMetricsCard
-            title="Applications"
-            value="2,847"
-            description="This month"
-            icon={UserCheck}
-            trend={{ value: "+15.2%", positive: true }}
-          />
-          <AdminMetricsCard
-            title="Monthly Spend"
-            value="$45,280"
-            description="Advertising budget"
-            icon={TrendingUp}
-            trend={{ value: "-2.1%", positive: false }}
-          />
-        </div>
-
-        <DashboardTabs activeTab="dashboard" onTabChange={() => {}} />
-      </div>
-    </div>
-  );
+  return <OrganizationAdminDashboard organizationName={organization?.name} />;
 };
 
 export default Dashboard;
