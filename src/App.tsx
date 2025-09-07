@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
+import Home from "./pages/Home";
 import Jobs from "./pages/Jobs";
 import Campaigns from "./pages/Campaigns";
 import Applications from "./pages/Applications";
@@ -47,12 +47,12 @@ const App = () => (
               <Route path="/apply/detailed" element={<DetailedApply />} />
               <Route path="/thank-you" element={<ThankYou />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={
+              <Route path="/" element={<Home />} />
+              <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
               }>
-                <Route index element={<Index />} />
                 <Route path="jobs" element={<Jobs />} />
                 <Route path="campaigns" element={<Campaigns />} />
                 <Route path="applications" element={<Applications />} />
