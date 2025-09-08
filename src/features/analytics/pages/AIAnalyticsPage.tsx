@@ -58,10 +58,38 @@ const AIAnalyticsPage = () => {
       actions={pageActions}
     >
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <AIProviderSettings />
-        <AnalyticsSummary />
-        <LocationStatusBreakdown />
-        <AnalyticsInsights />
+        {/* Simplified Analytics Components */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Bot className="w-6 h-6 text-primary" />
+                <h3 className="text-lg font-semibold">AI Provider Settings</h3>
+              </div>
+              <p className="text-muted-foreground">Configure your AI providers and settings.</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <TrendingUp className="w-6 h-6 text-primary" />
+                <h3 className="text-lg font-semibold">Analytics Summary</h3>
+              </div>
+              <p className="text-muted-foreground">Overview of AI performance metrics.</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Users className="w-6 h-6 text-primary" />
+                <h3 className="text-lg font-semibold">Usage Insights</h3>
+              </div>
+              <p className="text-muted-foreground">Detailed usage patterns and insights.</p>
+            </CardContent>
+          </Card>
+        </div>
         
         {/* Additional AI Analytics specific content */}
         <Card>

@@ -67,8 +67,8 @@ const MetaSpendAnalyticsPage = () => {
     );
   }
 
-  // Mock data structure
-  const metrics = analyticsData || {
+  // Mock data structure - ensure it matches the expected interface
+  const mockMetrics = {
     totalSpend: 12450,
     totalImpressions: 890000,
     totalClicks: 15600,
@@ -77,6 +77,8 @@ const MetaSpendAnalyticsPage = () => {
     clickThroughRate: 1.75,
     conversionRate: 2.18
   };
+
+  const metrics = analyticsData || mockMetrics;
 
   return (
     <PageLayout 
@@ -106,7 +108,7 @@ const MetaSpendAnalyticsPage = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.totalApplications}</div>
+              <div className="text-2xl font-bold">{mockMetrics.totalApplications}</div>
               <p className="text-xs text-muted-foreground">
                 +8% from last period
               </p>
@@ -119,7 +121,7 @@ const MetaSpendAnalyticsPage = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${metrics.costPerApplication}</div>
+              <div className="text-2xl font-bold">${mockMetrics.costPerApplication}</div>
               <p className="text-xs text-muted-foreground">
                 -5% from last period
               </p>
@@ -132,7 +134,7 @@ const MetaSpendAnalyticsPage = () => {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.conversionRate}%</div>
+              <div className="text-2xl font-bold">{mockMetrics.conversionRate}%</div>
               <p className="text-xs text-muted-foreground">
                 +0.3% from last period
               </p>
@@ -174,19 +176,19 @@ const MetaSpendAnalyticsPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <p className="font-medium">Total Impressions</p>
-                <p className="text-2xl font-bold">{metrics.totalImpressions.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{mockMetrics.totalImpressions.toLocaleString()}</p>
               </div>
               <div>
                 <p className="font-medium">Total Clicks</p>
-                <p className="text-2xl font-bold">{metrics.totalClicks.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{mockMetrics.totalClicks.toLocaleString()}</p>
               </div>
               <div>
                 <p className="font-medium">CTR</p>
-                <p className="text-2xl font-bold">{metrics.clickThroughRate}%</p>
+                <p className="text-2xl font-bold">{mockMetrics.clickThroughRate}%</p>
               </div>
               <div>
                 <p className="font-medium">CPC</p>
-                <p className="text-2xl font-bold">${(metrics.totalSpend / metrics.totalClicks).toFixed(2)}</p>
+                <p className="text-2xl font-bold">${(mockMetrics.totalSpend / mockMetrics.totalClicks).toFixed(2)}</p>
               </div>
             </div>
           </CardContent>

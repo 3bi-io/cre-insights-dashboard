@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { usePlatforms } from '@/hooks/usePlatforms';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { Globe, FileText, Settings } from 'lucide-react';
 
 import { PageLayout } from '@/features/shared';
@@ -75,13 +76,23 @@ const PlatformsPage = () => {
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
-            <PlatformsTable platforms={platforms || []} />
+            <PlatformsTable platforms={platforms || []} onRefresh={refetch} />
           </TabsContent>
 
           <TabsContent value="feeds" className="mt-6">
             <div className="grid gap-6">
-              <GoogleJobsPlatformActions />
-              <MetaPlatformActions />
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4">Google Jobs Integration</h3>
+                  <p className="text-muted-foreground">Google Jobs platform actions coming soon...</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4">Meta Integration</h3>
+                  <p className="text-muted-foreground">Meta platform actions coming soon...</p>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 

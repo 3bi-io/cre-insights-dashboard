@@ -59,7 +59,7 @@ const ClientsPage = () => {
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <ClientsHeader clientsCount={clients?.length || 0} />
         <div className="mt-6 space-y-6">
-          <ClientsSearch />
+          <ClientsSearch clientsCount={clients?.length || 0} />
           <ClientsTable clients={clients || []} />
           <ClientsSummary clients={clients || []} />
         </div>
