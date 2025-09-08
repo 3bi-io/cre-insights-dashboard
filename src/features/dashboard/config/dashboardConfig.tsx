@@ -5,9 +5,9 @@ import { OrganizationBrandingPanel } from '@/components/dashboard/organization/O
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
 import { OrganizationUserManagement } from '@/components/dashboard/organization/OrganizationUserManagement';
 import { AIFeaturesPanel } from '@/components/dashboard/organization/AIFeaturesPanel';
-import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { FeatureGuard } from '@/components/FeatureGuard';
 import AIImpactDashboard from '@/pages/AIImpactDashboard';
+import DashboardContent from '@/components/dashboard/DashboardContent';
 
 export interface DashboardTab {
   id: string;
@@ -24,7 +24,7 @@ export interface DashboardTab {
 }
 
 const AnalyticsComponent: React.FC = () => (
-  <DashboardTabs activeTab="dashboard" onTabChange={() => {}} />
+  <DashboardContent />
 );
 
 const AIFallbackComponent: React.FC = () => (
