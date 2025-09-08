@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Users, 
@@ -13,15 +12,10 @@ import {
   BarChart3, 
   Settings, 
   Shield, 
-  Activity,
   TrendingUp,
-  Database,
-  UserCheck,
-  Globe,
-  AlertTriangle,
-  Plus
+  UserCheck
 } from 'lucide-react';
-import { useAdminDashboardData, useUserActivityData } from '@/hooks/useAdminDashboardData';
+import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 
 const AdminMetricsCard = ({ title, value, description, icon: Icon, trend }: {
   title: string;
@@ -157,139 +151,6 @@ const SystemOverviewPanel = () => {
   );
 };
 
-const UserManagementPanel = () => {
-  const { data: metrics, isLoading: metricsLoading } = useAdminDashboardData();
-  const { data: userActivity, isLoading: activityLoading } = useUserActivityData();
-
-  if (metricsLoading || activityLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">User Management</h3>
-          <Button disabled>
-            <Plus className="w-4 h-4 mr-2" />
-            Invite User
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-4 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-20" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between py-2 border-b">
-                  <div className="space-y-1">
-                    <Skeleton className="h-4 w-48" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                  <Skeleton className="h-6 w-16" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">User Management</h3>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Invite User
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <UserCheck className="w-4 h-4" />
-              Active Users
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">Total registered users</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              Admin Users
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.totalAdmins || 0}</div>
-            <p className="text-xs text-muted-foreground">Admin & super admin roles</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              Recent Signups
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.recentSignups || 0}</div>
-            <p className="text-xs text-muted-foreground">Last 7 days</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent User Activity</CardTitle>
-          <CardDescription>Latest user registrations and activity</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {userActivity?.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">No recent user activity</p>
-          ) : (
-            <div className="space-y-3">
-              {userActivity?.map((user) => (
-                <div key={user.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{user.email}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user.organization_name} • Joined {new Date(user.last_sign_in_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge variant={user.role === 'admin' || user.role === 'super_admin' ? 'secondary' : 'outline'}>
-                    {user.role}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
 const AdminDashboard = () => {
   const { user, userRole, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -327,17 +188,12 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="overview">System Overview</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
             <SystemOverviewPanel />
-          </TabsContent>
-
-          <TabsContent value="users" className="mt-6">
-            <UserManagementPanel />
           </TabsContent>
         </Tabs>
       </div>

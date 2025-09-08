@@ -81,7 +81,7 @@ const AppSidebar = () => {
         icon: Share2
       }
     ]
-  }, {
+      }, {
     group: "Settings",
     items: [
       {
@@ -94,6 +94,11 @@ const AppSidebar = () => {
         label: 'Settings',
         icon: Settings
       },
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/user-management',
+        label: 'User Management',
+        icon: Users
+      }] : []),
       {
         path: '/admin/zapier-integrations',
         label: 'Zapier Integrations',

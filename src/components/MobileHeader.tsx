@@ -39,6 +39,7 @@ const MobileHeader = () => {
       '/admin/media': 'Media',
       '/admin/privacy-controls': 'Privacy Controls',
       '/admin/settings': 'Settings',
+      '/admin/user-management': 'User Management',
       '/admin/zapier-integrations': 'Zapier Integrations',
     };
     return routes[path] || 'Dashboard';
