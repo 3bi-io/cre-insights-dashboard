@@ -7,24 +7,29 @@ import { useAuth } from '@/hooks/useAuth';
 export const useApplications = (webhookConfig?: { url: string; enabled: boolean }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { organization } = useAuth();
+  const { organization, userRole } = useAuth();
   const { triggerWebhook } = useOutboundWebhook({
     webhookUrl: webhookConfig?.url,
     enabled: webhookConfig?.enabled
   });
 
   const { data: applications, isLoading } = useQuery({
-    queryKey: ['applications', organization?.id],
+    queryKey: ['applications', organization?.id, userRole],
     queryFn: async () => {
-      const { data: appsWithListings, error } = await supabase
+      let query = supabase
         .from('applications')
         .select(`
           *,
-          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name), organization_id),
+          job_listings:job_listing_id(title, job_title, client, client_id, clients:client_id(name), organization_id, organizations:organization_id(name)),
           recruiters:recruiter_id(id, first_name, last_name, email)
-        `)
-        .eq('job_listings.organization_id', organization?.id)
-        .order('created_at', { ascending: false });
+        `);
+
+      // Super admins can see all applications, others are filtered by organization
+      if (userRole !== 'super_admin' && organization?.id) {
+        query = query.eq('job_listings.organization_id', organization.id);
+      }
+
+      const { data: appsWithListings, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
       
@@ -35,11 +40,17 @@ export const useApplications = (webhookConfig?: { url: string; enabled: boolean 
       
       let jobListingsMap = new Map();
       if (missingJobIds.length > 0) {
-        const { data: jobListings } = await supabase
+        let jobListingsQuery = supabase
           .from('job_listings')
           .select('job_id, title, job_title, client, client_id, clients:client_id(name)')
-          .in('job_id', missingJobIds)
-          .eq('organization_id', organization?.id);
+          .in('job_id', missingJobIds);
+
+        // Apply same organization filtering logic for job listings lookup
+        if (userRole !== 'super_admin' && organization?.id) {
+          jobListingsQuery = jobListingsQuery.eq('organization_id', organization.id);
+        }
+
+        const { data: jobListings } = await jobListingsQuery;
         
         if (jobListings) {
           jobListings.forEach(job => {
@@ -59,7 +70,7 @@ export const useApplications = (webhookConfig?: { url: string; enabled: boolean 
       
       return enhancedData;
     },
-    enabled: !!organization?.id, // Only run when organization is available
+    enabled: userRole === 'super_admin' || !!organization?.id, // Super admin or when organization is available
   });
 
   const { data: recruiters } = useQuery({

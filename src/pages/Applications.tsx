@@ -14,6 +14,8 @@ import ApplicationCard from '@/components/applications/ApplicationCard';
 import PageLayout from '@/components/PageLayout';
 
 import { useApplications } from '@/hooks/useApplications';
+import { useOrganizations } from '@/hooks/useOrganizations';
+import { useAuth } from '@/hooks/useAuth';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,12 +25,14 @@ const Applications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [organizationFilter, setOrganizationFilter] = useState('all');
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [tenstreetModalOpen, setTenstreetModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { userRole } = useAuth();
 
   const {
     applications,
@@ -38,6 +42,9 @@ const Applications = () => {
     assignRecruiter,
     updateStatus,
   } = useApplications();
+
+  // Fetch organizations for super admin filter
+  const { organizations } = useOrganizations();
 
   const handleSmsOpen = (application: any) => {
     setSelectedApplication(application);
@@ -70,7 +77,7 @@ const Applications = () => {
     }
   };
 
-  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
+  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter, organizationFilter);
   const statusCounts = getStatusCounts(applications || []);
   const categoryCounts = getCategoryCounts(applications || []);
 
@@ -131,9 +138,13 @@ const Applications = () => {
             searchTerm={searchTerm}
             categoryFilter={categoryFilter}
             sourceFilter={sourceFilter}
+            organizationFilter={organizationFilter}
             onSearchChange={setSearchTerm}
             onCategoryChange={setCategoryFilter}
             onSourceChange={setSourceFilter}
+            onOrganizationChange={setOrganizationFilter}
+            showOrganizationFilter={userRole === 'super_admin'}
+            organizations={organizations?.map(org => ({ id: org.id, name: org.name })) || []}
           />
 
           {/* Applications List */}
