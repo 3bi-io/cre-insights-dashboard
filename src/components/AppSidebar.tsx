@@ -26,16 +26,19 @@ const AppSidebar = () => {
       path: '/dashboard',
       label: 'Admin Dashboard',
       icon: Settings
-    }] : []),
-    // Campaigns as main menu item
-    {
-      path: '/admin/campaigns',
-      label: 'Campaigns',
-      icon: MessageSquare
-    }
+    }] : [])
   ];
 
   const navigationItems = [{
+    group: "Campaigns",
+    items: [
+      {
+        path: '/admin/job-groups',
+        label: 'Job Groups',
+        icon: BriefcaseIcon
+      }
+    ]
+  }, {
     group: "Recruitment", 
     items: [
       {
@@ -129,7 +132,7 @@ const AppSidebar = () => {
     return user.email.charAt(0).toUpperCase();
   };
   const regularGroups = navigationItems.filter(group => group.group === "Recruitment");
-  const accordionGroups = navigationItems.filter(group => group.group === "Management" || group.group === "Settings");
+  const accordionGroups = navigationItems.filter(group => group.group === "Campaigns" || group.group === "Management" || group.group === "Settings");
   
   // Auto-expand all accordion groups on /dashboard for desktop and tablet devices
   const shouldExpandAll = location.pathname === '/dashboard' && !isMobile;

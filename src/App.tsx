@@ -40,6 +40,7 @@ const PrivacyControls = React.lazy(() => import("./pages/PrivacyControls"));
 const ThankYou = React.lazy(() => import("./pages/ThankYou"));
 const Organizations = React.lazy(() => import("./pages/Organizations"));
 const Media = React.lazy(() => import("./pages/Media"));
+const JobGroups = React.lazy(() => import("./pages/JobGroups"));
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -217,6 +218,14 @@ const App = React.memo(() => (
                   element={
                     <Suspense fallback={<PageSkeleton />}>
                       <Campaigns />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="job-groups"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <JobGroups />
                     </Suspense>
                   }
                 />
