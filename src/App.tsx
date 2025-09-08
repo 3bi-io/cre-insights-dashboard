@@ -41,6 +41,7 @@ const ThankYou = React.lazy(() => import("./pages/ThankYou"));
 const Organizations = React.lazy(() => import("./pages/Organizations"));
 const Media = React.lazy(() => import("./pages/Media"));
 const JobGroups = React.lazy(() => import("./pages/JobGroups"));
+const ZapierIntegrations = React.lazy(() => import("./pages/ZapierIntegrations"));
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -314,6 +315,14 @@ const App = React.memo(() => (
                   element={
                     <Suspense fallback={<PageSkeleton />}>
                       <Media />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="zapier-integrations"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ZapierIntegrations />
                     </Suspense>
                   }
                 />

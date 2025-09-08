@@ -103,6 +103,11 @@ const AppSidebar = () => {
         path: '/admin/settings',
         label: 'Settings',
         icon: Settings
+      },
+      {
+        path: '/admin/zapier-integrations',
+        label: 'Zapier Integrations',
+        icon: Share2
       }
     ]
   }];

@@ -1,9 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Webhook } from 'lucide-react';
-import ZapierWebhookSetup from '@/components/applications/ZapierWebhookSetup';
+import { Download } from 'lucide-react';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import TenstreetUpdateDialog from '@/components/applications/TenstreetUpdateDialog';
 import TenstreetUpdateModal from '@/components/applications/TenstreetUpdateModal';
@@ -119,61 +117,47 @@ const Applications = () => {
           </Button>
         </div>
 
-      <Tabs defaultValue="applications" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-          <TabsTrigger value="webhook-setup" className="flex items-center gap-2">
-            <Webhook className="w-4 h-4" />
-            Zapier Integration
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <ApplicationsOverview 
+          statusCounts={statusCounts}
+          categoryCounts={categoryCounts}
+        />
 
-        <TabsContent value="applications" className="space-y-6">
-          <ApplicationsOverview 
-            statusCounts={statusCounts}
-            categoryCounts={categoryCounts}
-          />
+        <ApplicationsSearch
+          searchTerm={searchTerm}
+          categoryFilter={categoryFilter}
+          sourceFilter={sourceFilter}
+          organizationFilter={organizationFilter}
+          onSearchChange={setSearchTerm}
+          onCategoryChange={setCategoryFilter}
+          onSourceChange={setSourceFilter}
+          onOrganizationChange={setOrganizationFilter}
+          showOrganizationFilter={userRole === 'super_admin'}
+          organizations={organizations?.map(org => ({ id: org.id, name: org.name })) || []}
+        />
 
-          <ApplicationsSearch
-            searchTerm={searchTerm}
-            categoryFilter={categoryFilter}
-            sourceFilter={sourceFilter}
-            organizationFilter={organizationFilter}
-            onSearchChange={setSearchTerm}
-            onCategoryChange={setCategoryFilter}
-            onSourceChange={setSourceFilter}
-            onOrganizationChange={setOrganizationFilter}
-            showOrganizationFilter={userRole === 'super_admin'}
-            organizations={organizations?.map(org => ({ id: org.id, name: org.name })) || []}
-          />
+        {/* Applications List */}
+        <div className="space-y-4">
+          {filteredApplications?.map((application) => (
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              recruiters={recruiters}
+              onStatusChange={(id, status) => updateStatus({ applicationId: id, newStatus: status })}
+              onRecruiterAssignment={(id, recruiterId) => assignRecruiter({ applicationId: id, recruiterId })}
+              onSmsOpen={handleSmsOpen}
+              onDetailsView={handleDetailsView}
+              onTenstreetUpdate={handleTenstreetUpdate}
+            />
+          ))}
 
-          {/* Applications List */}
-          <div className="space-y-4">
-            {filteredApplications?.map((application) => (
-              <ApplicationCard
-                key={application.id}
-                application={application}
-                recruiters={recruiters}
-                onStatusChange={(id, status) => updateStatus({ applicationId: id, newStatus: status })}
-                onRecruiterAssignment={(id, recruiterId) => assignRecruiter({ applicationId: id, recruiterId })}
-                onSmsOpen={handleSmsOpen}
-                onDetailsView={handleDetailsView}
-                onTenstreetUpdate={handleTenstreetUpdate}
-              />
-            ))}
-
-            {filteredApplications?.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                No applications found matching your criteria.
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="webhook-setup">
-          <ZapierWebhookSetup />
-        </TabsContent>
-      </Tabs>
+          {filteredApplications?.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              No applications found matching your criteria.
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Application Details Dialog */}
       {selectedApplication && (
