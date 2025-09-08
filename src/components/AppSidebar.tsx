@@ -76,8 +76,8 @@ const AppSidebar = () => {
         icon: Building
        }] : []),
       {
-        path: '/admin/platforms',
-        label: 'Platforms',
+        path: '/admin/publishers',
+        label: 'Publishers',
         icon: Share2
       },
       {

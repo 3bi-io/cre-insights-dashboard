@@ -29,7 +29,7 @@ const AIImpactDashboard = React.lazy(() => import("./pages/AIImpactDashboard"));
 const VoiceAgent = React.lazy(() => import("./pages/VoiceAgent"));
 const TenstreetIntegration = React.lazy(() => import("./pages/TenstreetIntegration"));
 const RoutesPage = React.lazy(() => import("./pages/Routes"));
-const Platforms = React.lazy(() => import("./pages/Platforms"));
+const Publishers = React.lazy(() => import("./pages/Platforms"));
 const Clients = React.lazy(() => import("./pages/Clients"));
 const Settings = React.lazy(() => import("./pages/Settings"));
 const Auth = React.lazy(() => import("./pages/Auth"));
@@ -278,10 +278,10 @@ const App = React.memo(() => (
                   }
                 />
                 <Route
-                  path="platforms"
+                  path="publishers"
                   element={
                     <Suspense fallback={<PageSkeleton />}>
-                      <Platforms />
+                      <Publishers />
                     </Suspense>
                   }
                 />

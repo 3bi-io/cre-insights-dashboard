@@ -34,7 +34,7 @@ const MobileHeader = () => {
       '/admin/voice-agent': 'Voice Agent',
       '/admin/tenstreet': 'Tenstreet',
       '/admin/routes': 'Routes',
-      '/admin/platforms': 'Platforms',
+      '/admin/publishers': 'Publishers',
       '/admin/clients': 'Clients',
       '/admin/organizations': 'Organizations',
       '/admin/media': 'Media',

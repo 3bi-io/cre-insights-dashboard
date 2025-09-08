@@ -25,7 +25,7 @@ const Platforms = () => {
     refetch();
     toast({
       title: "Success",
-      description: "Platform added successfully",
+      description: "Publisher added successfully",
     });
   };
 
@@ -42,8 +42,8 @@ const Platforms = () => {
 
   return (
     <PageLayout 
-      title="Platforms" 
-      description="Manage your job posting platforms and integrations"
+      title="Publishers" 
+      description="Manage your job posting publishers and integrations"
     >
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <PlatformsHeader
@@ -58,7 +58,7 @@ const Platforms = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
-            Platforms
+            Publishers
           </TabsTrigger>
           <TabsTrigger value="meta" className="flex items-center gap-2">
             <img src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" alt="Meta" className="w-4 h-4" />
@@ -97,7 +97,7 @@ const Platforms = () => {
         <TabsContent value="settings" className="space-y-6 mt-6">
           <div className="text-center py-12">
             <Settings className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Platform settings coming soon</p>
+            <p className="text-muted-foreground">Publisher settings coming soon</p>
           </div>
         </TabsContent>
       </Tabs>

@@ -29,7 +29,7 @@ const PlatformsHeader: React.FC<PlatformsHeaderProps> = ({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">
-              Advertising Platforms
+              Advertising Publishers
             </h1>
             {xPlatformConfigured && (
               <Badge variant="outline" className="hidden sm:flex items-center gap-1">
@@ -39,7 +39,7 @@ const PlatformsHeader: React.FC<PlatformsHeaderProps> = ({
             )}
           </div>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage your advertising platforms • 6
+            Manage your advertising publishers • 6
             {xPlatformConfigured && ' • Enhanced X integration enabled'}
           </p>
         </div>
@@ -50,7 +50,7 @@ const PlatformsHeader: React.FC<PlatformsHeaderProps> = ({
             className="flex items-center gap-2 flex-1 sm:flex-none"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Platform</span>
+            <span>Add Publisher</span>
           </Button>
         </div>
       </div>

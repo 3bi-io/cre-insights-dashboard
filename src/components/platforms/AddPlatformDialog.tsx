@@ -32,7 +32,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
     if (!name.trim()) {
       toast({
         title: "Error",
-        description: "Platform name is required",
+        description: "Publisher name is required",
         variant: "destructive",
       });
       return;
@@ -54,7 +54,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
 
       toast({
         title: "Success",
-        description: "Platform added successfully",
+        description: "Publisher added successfully",
       });
 
       // Reset form
@@ -63,10 +63,10 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
       setApiEndpoint('');
       onSuccess();
     } catch (error) {
-      console.error('Error adding platform:', error);
+      console.error('Error adding publisher:', error);
       toast({
         title: "Error",
-        description: "Failed to add platform. Please try again.",
+        description: "Failed to add publisher. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -78,14 +78,14 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md mx-4">
         <DialogHeader>
-          <DialogTitle>Add New Platform</DialogTitle>
+          <DialogTitle>Add New Publisher</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="platform-name">Platform Name</Label>
+            <Label htmlFor="publisher-name">Publisher Name</Label>
             <Input
-              id="platform-name"
+              id="publisher-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Meta, X, Google Ads, Talroo"
@@ -110,7 +110,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
               id="api-endpoint"
               value={apiEndpoint}
               onChange={(e) => setApiEndpoint(e.target.value)}
-              placeholder="https://api.platform.com/v1"
+              placeholder="https://api.publisher.com/v1"
               type="url"
             />
           </div>
@@ -130,7 +130,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
               className="flex-1"
               disabled={isLoading}
             >
-              {isLoading ? 'Adding...' : 'Add Platform'}
+              {isLoading ? 'Adding...' : 'Add Publisher'}
             </Button>
           </div>
         </form>
