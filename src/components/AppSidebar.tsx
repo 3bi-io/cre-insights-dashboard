@@ -98,12 +98,7 @@ const AppSidebar = () => {
         path: '/admin/user-management',
         label: 'User Management',
         icon: Users
-      }] : []),
-      {
-        path: '/admin/zapier-integrations',
-        label: 'Zapier Integrations',
-        icon: Share2
-      }
+      }] : [])
     ]
   }];
   const isActive = (path: string) => {
