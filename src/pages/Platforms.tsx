@@ -9,6 +9,7 @@ import GoogleJobsPlatformActions from '@/components/platforms/GoogleJobsPlatform
 import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, FileText, Settings } from 'lucide-react';
+import PageLayout from '@/components/PageLayout';
 
 const Platforms = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -40,14 +41,18 @@ const Platforms = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      <PlatformsHeader
-        platformsCount={platforms?.length || 0}
-        showAddDialog={showAddDialog}
-        onShowAddDialog={setShowAddDialog}
-        onAddSuccess={handleAddSuccess}
-        platforms={platforms}
-      />
+    <PageLayout 
+      title="Platforms" 
+      description="Manage your job posting platforms and integrations"
+    >
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <PlatformsHeader
+          platformsCount={platforms?.length || 0}
+          showAddDialog={showAddDialog}
+          onShowAddDialog={setShowAddDialog}
+          onAddSuccess={handleAddSuccess}
+          platforms={platforms}
+        />
 
       <Tabs defaultValue="platforms" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -104,7 +109,8 @@ const Platforms = () => {
           onSuccess={handleAddSuccess}
         />
       )}
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

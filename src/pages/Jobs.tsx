@@ -13,6 +13,7 @@ import JobAnalyticsDialog from '@/components/JobAnalyticsDialog';
 import { generateJobsPDF } from '@/utils/jobsPdfGenerator';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import JobGrid from '@/components/jobs/JobGrid';
+import PageLayout from '@/components/PageLayout';
 
 type ViewMode = 'grid' | 'table';
 
@@ -156,23 +157,26 @@ const Jobs = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Job Listings</h1>
-          <p className="text-muted-foreground mt-1">
-            {filteredJobs?.length || 0} of {jobListings?.length || 0} listings
-            {hasClientFilter && (
-              <span className="ml-2">for {clientFilter}</span>
-            )}
-          </p>
-          {jobListings?.length === 0 && (
-            <p className="text-sm text-orange-600 mt-1">
-              No job listings found. You may need to upload some jobs or check your authentication.
+    <PageLayout 
+      title="Job Listings" 
+      description="Manage and monitor your job listings across all platforms"
+    >
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
+          <div>
+            <p className="text-muted-foreground mt-1">
+              {filteredJobs?.length || 0} of {jobListings?.length || 0} listings
+              {hasClientFilter && (
+                <span className="ml-2">for {clientFilter}</span>
+              )}
             </p>
-          )}
-        </div>
+            {jobListings?.length === 0 && (
+              <p className="text-sm text-orange-600 mt-1">
+                No job listings found. You may need to upload some jobs or check your authentication.
+              </p>
+            )}
+          </div>
         
         <div className="flex items-center gap-2">
           <Button
@@ -312,7 +316,8 @@ const Jobs = () => {
           onOpenChange={setShowAnalyticsDialog}
         />
       )}
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

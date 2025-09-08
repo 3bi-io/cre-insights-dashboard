@@ -11,6 +11,7 @@ import SmsConversationDialog from '@/components/applications/SmsConversationDial
 import ApplicationsOverview from '@/components/applications/ApplicationsOverview';
 import ApplicationsSearch from '@/components/applications/ApplicationsSearch';
 import ApplicationCard from '@/components/applications/ApplicationCard';
+import PageLayout from '@/components/PageLayout';
 
 import { useApplications } from '@/hooks/useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
@@ -94,13 +95,12 @@ const Applications = () => {
   }
 
   return (
-    <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
-      <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-col sm:flex-row'} justify-between items-start sm:items-center gap-4 mb-8`}>
-        <div>
-          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-foreground`}>Applications</h1>
-          <p className="text-muted-foreground mt-1">Track and manage job applications</p>
-        </div>
-        <div className="flex gap-2">
+    <PageLayout 
+      title="Applications" 
+      description="Track and manage job applications"
+    >
+      <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
+        <div className="flex gap-2 mb-8 justify-end">
           <Button
             onClick={downloadApplicationsPDF}
             className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
@@ -111,7 +111,6 @@ const Applications = () => {
             Export PDF
           </Button>
         </div>
-      </div>
 
       <Tabs defaultValue="applications" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -196,7 +195,8 @@ const Applications = () => {
           application={selectedApplication}
         />
       )}
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 
