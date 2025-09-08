@@ -49,6 +49,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
 
+  const currentTab = searchParams.get('tab');
+  const showPageHeader = currentTab !== 'features';
+
   const pageActions = (
     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
       Organization Admin
@@ -57,9 +60,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <PageLayout 
-      title="Dashboard" 
-      description="Organization management and analytics"
-      actions={pageActions}
+      title={showPageHeader ? "Dashboard" : undefined} 
+      description={showPageHeader ? "Organization management and analytics" : undefined}
+      actions={showPageHeader ? pageActions : undefined}
     >
       <div className="p-6 max-w-7xl mx-auto">
         <div className="space-y-6">
