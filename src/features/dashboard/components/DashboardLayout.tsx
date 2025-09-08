@@ -67,7 +67,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className="p-6 max-w-7xl mx-auto">
         <div className="space-y-6">
           {/* Metrics Section */}
-          <DashboardMetrics />
+          {!hideHeader && <DashboardMetrics />}
 
           {/* Content Section */}
           {renderTabContent()}
