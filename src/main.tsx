@@ -1,6 +1,12 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
+
+// Start performance monitoring in development
+if (process.env.NODE_ENV === 'development') {
+  startPerformanceMonitoring();
+}
 
 // Suppress noisy third‑party RUM/recorder errors blocked by ad blockers
 // e.g. "Failed to fetch (ingesteer.services-prod.nsvcs.net)"
@@ -24,4 +30,3 @@ window.addEventListener('error', (event: ErrorEvent) => {
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
-

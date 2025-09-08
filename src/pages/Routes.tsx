@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Filter, MapPin, ArrowRight, Eye } from 'lucide-react';
+import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
+import { useDebouncedCallback, useStableFilter } from '@/utils/performance';
 
 interface Route {
   origin_city: string;
@@ -15,53 +16,63 @@ interface Route {
   job_count: number;
 }
 
-const Routes = () => {
+const Routes = React.memo(() => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  const { data: routes, isLoading } = useQuery({
+  // Memoized query function
+  const fetchRoutes = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('job_listings')
+      .select('city, state, dest_city, dest_state')
+      .not('city', 'is', null)
+      .not('state', 'is', null)
+      .not('dest_city', 'is', null)
+      .not('dest_state', 'is', null);
+    
+    if (error) throw error;
+
+    // Group by unique origin-destination pairs and count occurrences
+    const routeMap = new Map<string, Route>();
+    
+    data.forEach(job => {
+      const key = `${job.city}-${job.state}-${job.dest_city}-${job.dest_state}`;
+      if (routeMap.has(key)) {
+        routeMap.get(key)!.job_count += 1;
+      } else {
+        routeMap.set(key, {
+          origin_city: job.city,
+          origin_state: job.state,
+          dest_city: job.dest_city,
+          dest_state: job.dest_state,
+          job_count: 1
+        });
+      }
+    });
+
+    return Array.from(routeMap.values()).sort((a, b) => b.job_count - a.job_count);
+  }, []);
+
+  const { data: routes, isLoading } = useOptimizedQuery({
     queryKey: ['routes'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('job_listings')
-        .select('city, state, dest_city, dest_state')
-        .not('city', 'is', null)
-        .not('state', 'is', null)
-        .not('dest_city', 'is', null)
-        .not('dest_state', 'is', null);
-      
-      if (error) throw error;
-
-      // Group by unique origin-destination pairs and count occurrences
-      const routeMap = new Map<string, Route>();
-      
-      data.forEach(job => {
-        const key = `${job.city}-${job.state}-${job.dest_city}-${job.dest_state}`;
-        if (routeMap.has(key)) {
-          routeMap.get(key)!.job_count += 1;
-        } else {
-          routeMap.set(key, {
-            origin_city: job.city,
-            origin_state: job.state,
-            dest_city: job.dest_city,
-            dest_state: job.dest_state,
-            job_count: 1
-          });
-        }
-      });
-
-      return Array.from(routeMap.values()).sort((a, b) => b.job_count - a.job_count);
-    },
+    queryFn: fetchRoutes,
+    staleTime: 15 * 60 * 1000, // 15 minutes - routes don't change often
+    cacheTime: 30 * 60 * 1000, // 30 minutes
   });
 
-  const filteredRoutes = routes?.filter(route =>
+  // Memoized filter predicate
+  const filterPredicate = useCallback((route: Route) =>
     route.origin_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     route.origin_state?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     route.dest_city?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     route.dest_state?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  , [searchTerm]);
 
-  const handleViewJobs = (route: Route) => {
+  // Stable filtered routes to prevent unnecessary re-renders
+  const filteredRoutes = useStableFilter(routes, filterPredicate, [searchTerm]);
+
+  // Memoized navigation handler
+  const handleViewJobs = useCallback((route: Route) => {
     const params = new URLSearchParams({
       origin_city: route.origin_city,
       origin_state: route.origin_state,
@@ -69,7 +80,10 @@ const Routes = () => {
       dest_state: route.dest_state
     });
     navigate(`/dashboard/jobs?${params.toString()}`);
-  };
+  }, [navigate]);
+
+  // Debounced search to improve performance
+  const debouncedSetSearchTerm = useDebouncedCallback(setSearchTerm, 300);
 
   if (isLoading) {
     return (
@@ -103,7 +117,7 @@ const Routes = () => {
           <Input
             placeholder="Search by origin or destination city/state..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => debouncedSetSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -176,6 +190,8 @@ const Routes = () => {
       )}
     </div>
   );
-};
+});
+
+Routes.displayName = "Routes";
 
 export default Routes;
