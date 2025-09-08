@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
-import { OrganizationAdminDashboard } from '@/components/dashboard/OrganizationAdminDashboard';
+import { DashboardLayout } from '@/features/dashboard';
 
 const Dashboard = () => {
   const { user, userRole, organization, loading } = useAuth();
@@ -25,7 +25,7 @@ const Dashboard = () => {
   }
 
   // Organization admin view - organization-specific access only
-  return <OrganizationAdminDashboard organizationName={organization?.name} />;
+  return <DashboardLayout organizationName={organization?.name} />;
 };
 
 export default Dashboard;

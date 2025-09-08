@@ -1,5 +1,7 @@
 // Dashboard feature exports
-export { default as DashboardPage } from './pages/DashboardPage';
-export { default as IndexPage } from './pages/IndexPage';
-export * from './components';
-export * from './hooks';
+export { DashboardLayout } from './components/DashboardLayout';
+export { DashboardMetrics } from './components/DashboardMetrics';
+export { DashboardTabsComponent } from './components/DashboardTabs';
+export { useDashboardTabs } from './hooks/useDashboardTabs';
+export { dashboardTabs } from './config/dashboardConfig';
+export type { DashboardTab } from './config/dashboardConfig';

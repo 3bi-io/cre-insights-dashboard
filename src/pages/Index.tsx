@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { IndexPage } from '@/features/dashboard';
+import Home from './Home';
 
 const Index = () => {
-  return <IndexPage />;
+  return <Home />;
 };
 
 export default Index;
