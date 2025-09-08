@@ -25,6 +25,11 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAdminDashboardData, useOrganizationsData, useUserActivityData } from '@/hooks/useAdminDashboardData';
+import { CreateOrganizationDialog } from '@/components/admin/CreateOrganizationDialog';
+import { EditOrganizationDialog } from '@/components/admin/EditOrganizationDialog';
+import { OrganizationFeaturesDialog } from '@/components/admin/OrganizationFeaturesDialog';
+import { DeleteOrganizationDialog } from '@/components/admin/DeleteOrganizationDialog';
+import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 
 const AdminMetricsCard = ({ title, value, description, icon: Icon, trend }: {
   title: string;
@@ -91,17 +96,22 @@ const OrganizationManagementPanel = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Organization Management</h3>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          New Organization
-        </Button>
+        <CreateOrganizationDialog />
       </div>
       
       <div className="grid gap-4">
         {organizations?.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">No organizations found</p>
+              <p className="text-muted-foreground mb-4">No organizations found</p>
+              <CreateOrganizationDialog 
+                trigger={
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Your First Organization
+                  </Button>
+                }
+              />
             </CardContent>
           </Card>
         ) : (
@@ -117,12 +127,10 @@ const OrganizationManagementPanel = () => {
                     <Badge variant={org.subscription_status === 'active' ? 'secondary' : 'outline'}>
                       {org.subscription_status}
                     </Badge>
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <OrganizationFeaturesDialog organization={org} />
+                    <EditOrganizationDialog organization={org} />
+                    <UserManagementDialog organization={org} />
+                    <DeleteOrganizationDialog organization={org} />
                   </div>
                 </div>
               </CardHeader>

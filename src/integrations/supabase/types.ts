@@ -1272,6 +1272,44 @@ export type Database = {
           },
         ]
       }
+      organization_features: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          feature_name: string
+          id: string
+          organization_id: string
+          settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          feature_name: string
+          id?: string
+          organization_id: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          feature_name?: string
+          id?: string
+          organization_id?: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_features_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1686,6 +1724,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_organization: {
+        Args: { _admin_email?: string; _name: string; _slug: string }
+        Returns: string
+      }
       ensure_admin_for_email: {
         Args: { _email: string; _org_slug: string }
         Returns: undefined
@@ -1705,6 +1747,10 @@ export type Database = {
       get_org_id_by_slug: {
         Args: { _slug: string }
         Returns: string
+      }
+      get_organization_with_stats: {
+        Args: { _org_id: string }
+        Returns: Json
       }
       get_platform_breakdown_data: {
         Args: Record<PropertyKey, never>
@@ -1732,6 +1778,10 @@ export type Database = {
       normalize_phone_number: {
         Args: { phone_input: string }
         Returns: string
+      }
+      update_organization_features: {
+        Args: { _features: Json; _org_id: string }
+        Returns: undefined
       }
     }
     Enums: {
