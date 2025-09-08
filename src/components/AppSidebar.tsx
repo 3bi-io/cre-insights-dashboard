@@ -19,72 +19,89 @@ const AppSidebar = () => {
     organization,
     signOut
   } = useAuth();
-  const navigationItems = [{
-    group: "Analytics",
-    items: [
-      ...(userRole === 'super_admin' || userRole === 'admin' ? [{
-        path: '/dashboard',
-        label: 'Admin Dashboard',
-        icon: Settings
-      }] : [])
-    ]
-  }, {
-    group: "Recruitment", 
-    items: [{
-      path: '/admin/jobs',
-      label: 'Job Listings',
-      icon: BriefcaseIcon
-    }, {
-      path: '/admin/applications',
-      label: 'Applications',
-      icon: Users
-    }, {
+  // Main standalone items
+  const mainItems = [
+    // Analytics group items
+    ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+      path: '/dashboard',
+      label: 'Admin Dashboard',
+      icon: Settings
+    }] : []),
+    // Campaigns as main menu item
+    {
       path: '/admin/campaigns',
       label: 'Campaigns',
       icon: MessageSquare
-    }, {
-      path: '/admin/voice-agent',
-      label: 'Voice Agent',
-      icon: Phone
-    }]
+    }
+  ];
+
+  const navigationItems = [{
+    group: "Recruitment", 
+    items: [
+      {
+        path: '/admin/applications',
+        label: 'Applications',
+        icon: Users
+      },
+      {
+        path: '/admin/jobs',
+        label: 'Job Listings',
+        icon: BriefcaseIcon
+      },
+      {
+        path: '/admin/voice-agent',
+        label: 'Voice Agent',
+        icon: Phone
+      }
+    ]
   }, {
     group: "Management",
-    items: [{
-      path: '/admin/routes',
-      label: 'Routes',
-      icon: Route
-    }, {
-      path: '/admin/platforms',
-      label: 'Platforms',
-      icon: Share2
-    }, {
-      path: '/admin/clients',
-      label: 'Clients',
-      icon: Building
-    }, ...(userRole === 'super_admin' ? [{
-      path: '/admin/organizations',
-      label: 'Organizations',
-      icon: Building
-     }] : []), {
-      path: '/admin/tenstreet',
-      label: 'Tenstreet',
-      icon: Share2
-    }, ...(userRole === 'super_admin' ? [{
-      path: '/admin/media',
-      label: 'Media',
-      icon: FileImage
-    }] : [])]
+    items: [
+      {
+        path: '/admin/clients',
+        label: 'Clients',
+        icon: Building
+      },
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/media',
+        label: 'Media',
+        icon: FileImage
+      }] : []),
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/organizations',
+        label: 'Organizations',
+        icon: Building
+       }] : []),
+      {
+        path: '/admin/platforms',
+        label: 'Platforms',
+        icon: Share2
+      },
+      {
+        path: '/admin/routes',
+        label: 'Routes',
+        icon: Route
+      },
+      {
+        path: '/admin/tenstreet',
+        label: 'Tenstreet',
+        icon: Share2
+      }
+    ]
   }, {
     group: "Settings",
-    items: [{
-      path: '/admin/privacy-controls',
-      label: 'Privacy Controls',
-      icon: Shield
-    }, {
-      path: '/admin/settings',
-      label: 'Settings',
-      icon: Settings
-    }]
+    items: [
+      {
+        path: '/admin/privacy-controls',
+        label: 'Privacy Controls',
+        icon: Shield
+      },
+      {
+        path: '/admin/settings',
+        label: 'Settings',
+        icon: Settings
+      }
+    ]
   }];
   const isActive = (path: string) => {
     if (path === '/dashboard') {
@@ -111,7 +128,7 @@ const AppSidebar = () => {
     if (!user?.email) return 'U';
     return user.email.charAt(0).toUpperCase();
   };
-  const regularGroups = navigationItems.filter(group => group.group === "Analytics" || group.group === "Recruitment");
+  const regularGroups = navigationItems.filter(group => group.group === "Recruitment");
   const accordionGroups = navigationItems.filter(group => group.group === "Management" || group.group === "Settings");
   
   // Auto-expand all accordion groups on /dashboard for desktop and tablet devices
@@ -157,49 +174,80 @@ const AppSidebar = () => {
       </SidebarHeader>
       
       <SidebarContent>
-        {/* Regular groups */}
-        {regularGroups.map(group => <SidebarGroup key={group.group}>
-            <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
+        {/* Main standalone items */}
+        {mainItems.length > 0 && (
+          <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map(item => {
-              const Icon = item.icon;
-              return <SidebarMenuItem key={item.path}>
+                {mainItems.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton asChild isActive={isActive(item.path)}>
                         <Link to={item.path} className="flex items-center gap-3">
                           <Icon className="w-4 h-4" />
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
-                    </SidebarMenuItem>;
-            })}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
-          </SidebarGroup>)}
+          </SidebarGroup>
+        )}
+
+        {/* Regular groups */}
+        {regularGroups.map(group => (
+          <SidebarGroup key={group.group}>
+            <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton asChild isActive={isActive(item.path)}>
+                        <Link to={item.path} className="flex items-center gap-3">
+                          <Icon className="w-4 h-4" />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
 
         {/* Accordion groups */}
         <div className="px-2">
           <Accordion type="multiple" defaultValue={defaultExpandedValues}>
-            {accordionGroups.map(group => <AccordionItem key={group.group} value={group.group}>
+            {accordionGroups.map(group => (
+              <AccordionItem key={group.group} value={group.group}>
                 <AccordionTrigger className="text-xs font-medium text-sidebar-foreground/70 hover:no-underline py-2">
                   {group.group}
                 </AccordionTrigger>
                 <AccordionContent className="pb-1">
                   <SidebarMenu>
                     {group.items.map(item => {
-                  const Icon = item.icon;
-                  return <SidebarMenuItem key={item.path}>
+                      const Icon = item.icon;
+                      return (
+                        <SidebarMenuItem key={item.path}>
                           <SidebarMenuButton asChild isActive={isActive(item.path)}>
                             <Link to={item.path} className="flex items-center gap-3">
                               <Icon className="w-4 h-4" />
                               <span>{item.label}</span>
                             </Link>
                           </SidebarMenuButton>
-                        </SidebarMenuItem>;
-                })}
+                        </SidebarMenuItem>
+                      );
+                    })}
                   </SidebarMenu>
                 </AccordionContent>
-              </AccordionItem>)}
+              </AccordionItem>
+            ))}
           </Accordion>
         </div>
       </SidebarContent>
