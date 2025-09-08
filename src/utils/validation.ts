@@ -230,12 +230,39 @@ export function validateData<T>(
   }
 }
 
-export function validatePartialData<T>(
+export function validatePartialData<T extends Record<string, any>>(
   schema: z.ZodType<T>, 
   data: unknown
 ): ValidationResult<Partial<T>> {
-  const partialSchema = schema.partial();
-  return validateData(partialSchema, data);
+  try {
+    // Only object schemas have .partial() method
+    if (schema instanceof z.ZodObject) {
+      const partialSchema = schema.partial();
+      const result = partialSchema.parse(data);
+      return ValidationResult.success(result as Partial<T>);
+    }
+    
+    // For non-object schemas, validate the full schema but allow partial data
+    const result = schema.parse(data);
+    return ValidationResult.success(result as Partial<T>);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const validationErrors: ValidationError[] = error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+        code: err.code,
+        value: err.path.reduce((obj: any, key) => obj?.[key], data)
+      }));
+
+      return ValidationResult.failure(validationErrors);
+    }
+
+    return ValidationResult.failure([{
+      field: 'unknown',
+      message: `Partial validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      code: 'validation_error'
+    }]);
+  }
 }
 
 export async function validateDataAsync<T>(
