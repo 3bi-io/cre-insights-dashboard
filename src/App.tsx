@@ -7,8 +7,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Layout from "@/components/Layout";
+import PublicLayout from "@/components/public/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Public pages
+const LandingPage = React.lazy(() => import("./pages/public/LandingPage"));
+const FeaturesPage = React.lazy(() => import("./pages/public/FeaturesPage"));
+const PricingPage = React.lazy(() => import("./pages/public/PricingPage"));
+const AboutPage = React.lazy(() => import("./pages/public/AboutPage"));
+const ContactPage = React.lazy(() => import("./pages/public/ContactPage"));
 
 // Lazy load all pages for code splitting
 const Home = React.lazy(() => import("./pages/Home"));
@@ -101,6 +109,51 @@ const App = React.memo(() => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<PublicLayout />}>
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <LandingPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="features"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <FeaturesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="pricing"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <PricingPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="about"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <AboutPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="contact"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <ContactPage />
+                    </Suspense>
+                  }
+                />
+              </Route>
+
+              {/* Application Routes */}
               <Route
                 path="/apply"
                 element={
@@ -130,14 +183,6 @@ const App = React.memo(() => (
                 element={
                   <Suspense fallback={<PageSkeleton />}>
                     <Auth />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/"
-                element={
-                  <Suspense fallback={<PageSkeleton />}>
-                    <Home />
                   </Suspense>
                 }
               />
