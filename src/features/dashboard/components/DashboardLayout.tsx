@@ -55,10 +55,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     </Badge>
   );
 
+  const currentTab = searchParams.get('tab');
+  const hideHeader = currentTab === 'features';
+
   return (
     <PageLayout 
-      title="Dashboard" 
-      description="Organization management and analytics"
+      title={hideHeader ? undefined : "Dashboard"} 
+      description={hideHeader ? undefined : "Organization management and analytics"}
       actions={pageActions}
     >
       <div className="p-6 max-w-7xl mx-auto">
