@@ -1,180 +1,161 @@
-import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useDashboardFilters } from '@/hooks/useDashboardFilters';
-import DashboardTabs from '@/components/dashboard/DashboardTabs';
-import DashboardLoading from '@/components/dashboard/DashboardLoading';
-import { Navigate } from 'react-router-dom';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/AppSidebar';
-import ThemeToggle from '@/components/ThemeToggle';
-import { useIsMobile } from '@/hooks/use-mobile';
-import ChatBot from '@/components/chat/MobileChatBot';
-import MobileHeader from '@/components/MobileHeader';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
-
-const DashboardContent = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const { dateRange, setDateRange, filters, updateFilters, resetFilters } = useDashboardFilters();
-
-  return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
-      <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
-    </div>
-  );
-};
-
-const LayoutContent = () => {
-  const { state } = useSidebar();
-  const isMobile = useIsMobile();
-  const { user, userRole, organization, signOut } = useAuth();
-  
-  const getRoleBadgeColor = (role: string | null) => {
-    switch (role) {
-      case 'super_admin':
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'admin':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'moderator':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-      default:
-        return 'bg-muted text-muted-foreground border-muted';
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  const getUserInitials = () => {
-    if (!user?.email) return 'U';
-    return user.email.charAt(0).toUpperCase();
-  };
-  
-  return (
-    <div className="min-h-screen flex w-full">
-      <AppSidebar />
-      
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Always show mobile header on mobile, desktop header on desktop */}
-        <div className="md:hidden">
-          <MobileHeader />
-        </div>
-        <div className="hidden md:block">
-          <header className="h-16 flex items-center justify-between border-b bg-card px-4 shrink-0">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              {(state === 'collapsed') && organization && (
-                <div className="flex items-center gap-2">
-                  {organization.logo_url ? (
-                    <img 
-                      src={organization.logo_url} 
-                      alt={organization.name} 
-                      className="h-8 w-auto"
-                    />
-                  ) : (
-                    <img 
-                      src="/ats-io-logo.png" 
-                      alt={organization.name} 
-                      className="h-8 w-auto"
-                    />
-                  )}
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {organization.name}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Right side - User menu and theme toggle */}
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              
-              {/* User Profile Dropdown */}
-              {user && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-                          {getUserInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Account</p>
-                        <p className="text-xs leading-none text-muted-foreground truncate">
-                          {user.email}
-                        </p>
-                        {organization && (
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {organization.name}
-                          </p>
-                        )}
-                        {userRole && (
-                          <Badge className={`${getRoleBadgeColor(userRole)} text-xs w-fit mt-1`}>
-                            {userRole === 'super_admin' ? 'Super Admin' : 
-                             userRole === 'admin' ? 'Admin' :
-                             userRole === 'moderator' ? 'Moderator' : 'User'}
-                          </Badge>
-                        )}
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sign out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-          </header>
-        </div>
-        
-        <main className="flex-1 overflow-auto">
-          <DashboardContent />
-        </main>
-        
-        {/* Global ChatBot */}
-        <ChatBot page="dashboard" />
-      </div>
-    </div>
-  );
-};
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import ThemeToggle from '@/components/ThemeToggle';
+import { 
+  BarChart3, 
+  Bot, 
+  Shield, 
+  Zap, 
+  Users, 
+  Target,
+  ArrowRight,
+  Building2
+} from 'lucide-react';
 
 const Home = () => {
-  const { user, loading } = useAuth();
-  const isMobile = useIsMobile();
+  const features = [
+    {
+      icon: BarChart3,
+      title: 'Advanced Analytics',
+      description: 'Get detailed insights into your recruitment performance with AI-powered analytics and reporting.'
+    },
+    {
+      icon: Bot,
+      title: 'AI-Powered Features',
+      description: 'Leverage OpenAI and Anthropic models for intelligent applicant screening and automated workflows.'
+    },
+    {
+      icon: Shield,
+      title: 'Enterprise Security',
+      description: 'Bank-level security with role-based access control and comprehensive audit trails.'
+    },
+    {
+      icon: Zap,
+      title: 'Multi-Platform Integration',
+      description: 'Connect with Meta, Indeed, Google Jobs, Tenstreet and more platforms seamlessly.'
+    },
+    {
+      icon: Users,
+      title: 'Applicant Management',
+      description: 'Streamline your hiring process with centralized application tracking and management.'
+    },
+    {
+      icon: Target,
+      title: 'Smart Targeting',
+      description: 'Optimize your job postings with intelligent targeting and budget allocation.'
+    }
+  ];
 
-  if (loading) {
-    return <DashboardLoading />;
-  }
-
-  // If user is not authenticated, redirect to auth page
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // If user is authenticated, show dashboard with layout
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
-      <LayoutContent />
-    </SidebarProvider>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/ats-io-logo.png" alt="ATS.IO" className="h-8 w-auto" />
+            <span className="text-xl font-bold">ATS.IO</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Button asChild variant="outline">
+              <Link to="/auth">Sign In</Link>
+            </Button>
+            <Button asChild>
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-24 px-4">
+        <div className="container mx-auto text-center max-w-4xl">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Modern Recruitment Platform
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Streamline your hiring process with AI-powered analytics, multi-platform integration, 
+            and comprehensive applicant management tools.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild size="lg" className="text-lg px-8">
+              <Link to="/auth">
+                Get Started
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="text-lg px-8">
+              <Link to="/dashboard">View Dashboard</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-24 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Powerful Features</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Everything you need to revolutionize your recruitment process and attract top talent.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card key={index} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-base leading-relaxed">
+                      {feature.description}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 px-4">
+        <div className="container mx-auto text-center max-w-4xl">
+          <Building2 className="w-16 h-16 mx-auto mb-6 text-primary" />
+          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Hiring?</h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Join leading organizations using ATS.IO to streamline their recruitment process.
+          </p>
+          <Button asChild size="lg" className="text-lg px-8">
+            <Link to="/auth">
+              Start Free Trial
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-card py-12 px-4">
+        <div className="container mx-auto text-center">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <img src="/ats-io-logo.png" alt="ATS.IO" className="h-6 w-auto" />
+            <span className="font-semibold">ATS.IO</span>
+          </div>
+          <p className="text-muted-foreground">
+            © 2024 ATS.IO. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
   );
 };
 
