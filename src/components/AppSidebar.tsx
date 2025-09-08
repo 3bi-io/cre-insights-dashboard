@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 const AppSidebar = () => {
   const location = useLocation();
@@ -79,6 +79,16 @@ const AppSidebar = () => {
         path: '/admin/tenstreet',
         label: 'ATS Integrations',
         icon: Share2
+      },
+      {
+        path: '/dashboard?tab=features',
+        label: 'Features',
+        icon: Zap
+      },
+      {
+        path: '/dashboard?tab=ai',
+        label: 'AI Tools',
+        icon: Bot
       }
     ]
       }, {
@@ -103,7 +113,11 @@ const AppSidebar = () => {
   }];
   const isActive = (path: string) => {
     if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
+      return location.pathname === '/dashboard' && !location.search;
+    }
+    if (path.includes('?')) {
+      const [basePath, query] = path.split('?');
+      return location.pathname === basePath && location.search === `?${query}`;
     }
     return location.pathname === path;
   };

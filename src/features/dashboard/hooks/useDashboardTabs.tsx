@@ -5,14 +5,11 @@ import { dashboardTabs, type DashboardTab } from '../config/dashboardConfig';
 export const useDashboardTabs = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { 
-    hasAdvancedAnalytics,
-    hasAIAccess 
+    hasAdvancedAnalytics
   } = useOrganizationFeatures();
 
   const getAccessFunction = (tabId: string) => {
     switch (tabId) {
-      case 'ai':
-        return hasAIAccess;
       case 'analytics':
         return hasAdvancedAnalytics;
       default:

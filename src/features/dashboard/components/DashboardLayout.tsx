@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { DashboardMetrics } from './DashboardMetrics';
 import { DashboardTabsComponent } from './DashboardTabs';
+import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
+import { AIFeaturesPanel } from '@/components/dashboard/organization/AIFeaturesPanel';
+import { useDashboardTabs } from '../hooks/useDashboardTabs';
 
 interface DashboardLayoutProps {
   organizationName?: string;
@@ -12,7 +16,28 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   organizationName 
 }) => {
   const { organization } = useAuth();
+  const { setActiveTab } = useDashboardTabs();
+  const [searchParams] = useSearchParams();
   const displayName = organizationName || organization?.name || 'Organization';
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams, setActiveTab]);
+
+  const renderTabContent = () => {
+    const tab = searchParams.get('tab');
+    switch (tab) {
+      case 'features':
+        return <OrganizationFeatureStatus />;
+      case 'ai':
+        return <AIFeaturesPanel />;
+      default:
+        return <DashboardTabsComponent />;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -36,8 +61,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Metrics Section */}
       <DashboardMetrics />
 
-      {/* Tabs Section */}
-      <DashboardTabsComponent />
+      {/* Content Section */}
+      {renderTabContent()}
     </div>
   );
 };

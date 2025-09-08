@@ -44,26 +44,9 @@ export const dashboardTabs: DashboardTab[] = [
     component: OrganizationBrandingPanel,
   },
   {
-    id: 'features',
-    label: 'Features',
-    component: OrganizationFeatureStatus,
-  },
-  {
     id: 'users',
     label: 'Users',
     component: OrganizationUserManagement,
-  },
-  {
-    id: 'ai',
-    label: 'AI Tools',
-    icon: Bot,
-    component: AIFeaturesPanel,
-    featureGuard: {
-      feature: 'openai_access',
-      featureName: 'AI Features',
-      showUpgrade: false,
-      fallback: AIFallbackComponent,
-    },
   },
   {
     id: 'analytics',
