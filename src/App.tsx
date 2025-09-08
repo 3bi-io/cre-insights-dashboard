@@ -189,14 +189,16 @@ const App = React.memo(() => (
                   </Suspense>
                 }
               />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRouteWrapper>
-                    <Dashboard />
-                  </ProtectedRouteWrapper>
-                }
-              />
+              <Route path="/dashboard" element={<LayoutWrapper />}>
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <Dashboard />
+                    </Suspense>
+                  }
+                />
+              </Route>
               <Route path="/admin" element={<LayoutWrapper />}>
                 <Route
                   index

@@ -38,10 +38,9 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
   } = useOrganizationFeatures();
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 {organizationName || 'Organization'} Dashboard
@@ -53,10 +52,10 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
               Organization Admin
             </Badge>
-          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {isLoading ? (
             <>
               {[1, 2, 3, 4].map((i) => (
@@ -100,7 +99,7 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
           )}
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
@@ -197,8 +196,7 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
               <DashboardTabs activeTab="dashboard" onTabChange={() => {}} />
             </FeatureGuard>
           </TabsContent>
-        </Tabs>
-      </div>
+      </Tabs>
     </div>
   );
 };
