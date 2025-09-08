@@ -83,9 +83,6 @@ const MobileHeader = () => {
             <h1 className="text-lg font-semibold leading-none text-foreground">
               {getPageTitle()}
             </h1>
-            <p className="text-xs text-muted-foreground leading-none mt-0.5">
-              ATS Platform
-            </p>
           </div>
         </div>
       </div>

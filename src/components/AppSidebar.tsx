@@ -176,7 +176,6 @@ const AppSidebar = () => {
               )}
               <div className="flex flex-col">
                 <span className="font-semibold text-sm">{organization.name}</span>
-                <span className="text-xs text-muted-foreground">ATS Platform</span>
               </div>
             </>
           ) : (
