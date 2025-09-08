@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Users, 
   BarChart3, 
@@ -19,6 +20,7 @@ import { OrganizationBrandingPanel } from './organization/OrganizationBrandingPa
 import { AIFeaturesPanel } from './organization/AIFeaturesPanel';
 import { FeatureGuard } from '@/components/FeatureGuard';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
+import { useOrganizationDashboardData } from '@/hooks/useOrganizationDashboardData';
 import DashboardTabs from './DashboardTabs';
 
 interface OrganizationAdminDashboardProps {
@@ -27,6 +29,7 @@ interface OrganizationAdminDashboardProps {
 
 export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const { data: metrics, isLoading } = useOrganizationDashboardData();
   const { 
     hasTenstreetAccess, 
     hasVoiceAgent, 
@@ -54,34 +57,47 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <OrganizationMetricsCard
-            title="Active Users"
-            value="24"
-            description="Organization members"
-            icon={Users}
-            trend={{ value: "+2 this month", positive: true }}
-          />
-          <OrganizationMetricsCard
-            title="Active Jobs"
-            value="156"
-            description="Currently posted"
-            icon={BarChart3}
-            trend={{ value: "+8 this week", positive: true }}
-          />
-          <OrganizationMetricsCard
-            title="Applications"
-            value="2,847"
-            description="This month"
-            icon={UserCheck}
-            trend={{ value: "+15.2%", positive: true }}
-          />
-          <OrganizationMetricsCard
-            title="Monthly Spend"
-            value="$45,280"
-            description="Advertising budget"
-            icon={TrendingUp}
-            trend={{ value: "-2.1%", positive: false }}
-          />
+          {isLoading ? (
+            <>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-card rounded-lg border p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-4" />
+                  </div>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <OrganizationMetricsCard
+                title="Active Users"
+                value={metrics?.activeUsers || 0}
+                description="Organization members"
+                icon={Users}
+              />
+              <OrganizationMetricsCard
+                title="Active Jobs"
+                value={metrics?.activeJobs || 0}
+                description="Currently posted"
+                icon={BarChart3}
+              />
+              <OrganizationMetricsCard
+                title="Applications"
+                value={metrics?.totalApplications || 0}
+                description="Total received"
+                icon={UserCheck}
+              />
+              <OrganizationMetricsCard
+                title="Monthly Spend"
+                value={`$${(metrics?.monthlySpend || 0).toLocaleString()}`}
+                description="Advertising budget"
+                icon={TrendingUp}
+              />
+            </>
+          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
