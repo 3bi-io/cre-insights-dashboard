@@ -77,7 +77,7 @@ const AppSidebar = () => {
       },
       {
         path: '/admin/tenstreet',
-        label: 'Tenstreet',
+        label: 'ATS Integrations',
         icon: Share2
       }
     ]

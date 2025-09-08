@@ -33,7 +33,7 @@ const MobileHeader = () => {
       '/admin/job-groups': 'Job Groups',
       '/admin/ai-impact': 'AI Impact',
       '/admin/voice-agent': 'Voice Agent',
-      '/admin/tenstreet': 'Tenstreet',
+      '/admin/tenstreet': 'ATS Integrations',
       '/admin/publishers': 'Publishers',
       '/admin/organizations': 'Organizations',
       '/admin/media': 'Media',
