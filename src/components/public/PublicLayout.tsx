@@ -18,10 +18,12 @@ import {
   Github
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const PublicLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
+  const { user, userRole } = useAuth();
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -71,17 +73,27 @@ const PublicLayout = () => {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link to="/auth">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/auth">
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+              {user ? (
+                <Link to={userRole === 'super_admin' ? '/admin' : '/'}>
+                  <Button variant="ghost" size="sm">
+                    {userRole === 'super_admin' ? 'Admin' : 'Dashboard'}
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/auth">
+                    <Button variant="ghost" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/auth">
+                    <Button size="sm" className="bg-primary hover:bg-primary/90">
+                      Start Free Trial
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -116,17 +128,27 @@ const PublicLayout = () => {
                   </Link>
                 ))}
                 <div className="pt-4 space-y-2">
-                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                    <Button size="sm" className="w-full bg-primary hover:bg-primary/90">
-                      Start Free Trial
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
+                  {user ? (
+                    <Link to={userRole === 'super_admin' ? '/admin' : '/'} onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        {userRole === 'super_admin' ? 'Admin' : 'Dashboard'}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <>
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                        <Button size="sm" className="w-full bg-primary hover:bg-primary/90">
+                          Start Free Trial
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

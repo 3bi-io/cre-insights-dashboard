@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   BarChart3, 
   Bot, 
@@ -15,6 +16,8 @@ import {
 } from 'lucide-react';
 
 const Home = () => {
+  const { user, userRole } = useAuth();
+  
   const features = [
     {
       icon: BarChart3,
@@ -59,12 +62,17 @@ const Home = () => {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button asChild variant="outline">
-              <Link to="/auth">Sign In</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/dashboard">Dashboard</Link>
-            </Button>
+            {user ? (
+              <Button asChild>
+                <Link to={userRole === 'super_admin' ? '/admin' : '/'}>
+                  {userRole === 'super_admin' ? 'Admin' : 'Dashboard'}
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link to="/auth">Sign In</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
