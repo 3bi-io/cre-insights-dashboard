@@ -132,7 +132,19 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     });
     
     if (!error) {
-      navigate('/dashboard');
+      try {
+        const { data: roleData } = await supabase.rpc('get_current_user_role');
+        const role = (roleData as string) || 'user';
+        if (role === 'super_admin') {
+          navigate('/admin');
+        } else if (role === 'admin') {
+          navigate('/');
+        } else {
+          navigate('/');
+        }
+      } catch {
+        navigate('/');
+      }
     }
     
     return { error };

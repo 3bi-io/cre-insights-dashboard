@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
-  const { signIn, user } = useAuth();
+  const { signIn, user, userRole } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,9 +22,15 @@ const Auth = () => {
 
   React.useEffect(() => {
     if (user) {
-      window.location.href = '/dashboard';
+      if (userRole === 'super_admin') {
+        window.location.href = '/admin';
+      } else if (userRole === 'admin') {
+        window.location.href = '/';
+      } else {
+        window.location.href = '/';
+      }
     }
-  }, [user]);
+  }, [user, userRole]);
 
 const handleSignIn = async (e: React.FormEvent) => {
   e.preventDefault();
