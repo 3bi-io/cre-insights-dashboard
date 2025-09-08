@@ -121,12 +121,12 @@ const App = React.memo(() => {
       >
         <QueryClientProvider client={queryClient}>
           <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-            <FeatureProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AuthProvider>
+            <BrowserRouter>
+              <AuthProvider>
+                <FeatureProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
                     <Routes>
               {/* Public Routes */}
               <Route path="/" element={<PublicLayout />}>
@@ -361,18 +361,18 @@ const App = React.memo(() => {
                   </Suspense>
                 }
               />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-        
-        {/* Development Tools */}
-        <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
-        <DevToolsPanel 
-          isVisible={showDevTools} 
-          onToggle={() => setShowDevTools(!showDevTools)} 
-        />
-      </TooltipProvider>
-    </FeatureProvider>
+                    </Routes>
+                    
+                    {/* Development Tools */}
+                    <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
+                    <DevToolsPanel 
+                      isVisible={showDevTools} 
+                      onToggle={() => setShowDevTools(!showDevTools)} 
+                    />
+                  </TooltipProvider>
+                </FeatureProvider>
+              </AuthProvider>
+            </BrowserRouter>
   </ThemeProvider>
 </QueryClientProvider>
 </GlobalErrorBoundary>
