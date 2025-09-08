@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 const AppSidebar = () => {
   const location = useLocation();
@@ -94,6 +94,16 @@ const AppSidebar = () => {
       }, {
     group: "Settings",
     items: [
+      {
+        path: '/dashboard?tab=branding',
+        label: 'Branding',
+        icon: Palette
+      },
+      {
+        path: '/dashboard?tab=users',
+        label: 'Users',
+        icon: UserCog
+      },
       {
         path: '/admin/privacy-controls',
         label: 'Privacy Controls',

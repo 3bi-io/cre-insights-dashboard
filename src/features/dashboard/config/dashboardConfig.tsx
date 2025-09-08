@@ -39,16 +39,6 @@ export const dashboardTabs: DashboardTab[] = [
     component: OrganizationOverview,
   },
   {
-    id: 'branding',
-    label: 'Branding',
-    component: OrganizationBrandingPanel,
-  },
-  {
-    id: 'users',
-    label: 'Users',
-    component: OrganizationUserManagement,
-  },
-  {
     id: 'analytics',
     label: 'Analytics',
     component: AnalyticsComponent,

@@ -6,6 +6,8 @@ import { DashboardMetrics } from './DashboardMetrics';
 import { DashboardTabsComponent } from './DashboardTabs';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
 import { AIFeaturesPanel } from '@/components/dashboard/organization/AIFeaturesPanel';
+import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
+import { OrganizationUserManagement } from '@/components/dashboard/organization/OrganizationUserManagement';
 import { useDashboardTabs } from '../hooks/useDashboardTabs';
 
 interface DashboardLayoutProps {
@@ -34,6 +36,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         return <OrganizationFeatureStatus />;
       case 'ai':
         return <AIFeaturesPanel />;
+      case 'branding':
+        return <OrganizationBrandingPanel />;
+      case 'users':
+        return <OrganizationUserManagement />;
       default:
         return <DashboardTabsComponent />;
     }
