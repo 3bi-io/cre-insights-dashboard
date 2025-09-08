@@ -5,6 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import JobsSearch from '@/components/jobs/JobsSearch';
 import { 
   Upload, 
   Search, 
@@ -36,10 +40,13 @@ const JobsPage = () => {
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const { toast } = useToast();
+  const { userRole } = useAuth();
   
   const {
     searchTerm,
     setSearchTerm,
+    organizationFilter,
+    setOrganizationFilter,
     jobListings,
     filteredJobs,
     isLoading,
@@ -47,8 +54,24 @@ const JobsPage = () => {
     refetch,
     clientFilter,
     hasClientFilter,
-    clearClientFilter
+    clearClientFilter,
+    showAllOrganizations
   } = useJobs();
+
+  // Fetch organizations for super admin filter
+  const { data: organizations } = useQuery({
+    queryKey: ['organizations-for-filter'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: userRole === 'super_admin',
+  });
 
   const {
     isConnected: isVoiceConnected,
@@ -224,19 +247,18 @@ const JobsPage = () => {
           </div>
         )}
 
-        {/* Search and View Selector */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search jobs by title, location, platform..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        {/* Search and Filters */}
+        <div className="flex flex-col gap-4 mb-6">
+          <JobsSearch
+            searchTerm={searchTerm}
+            organizationFilter={organizationFilter}
+            onSearchChange={setSearchTerm}
+            onOrganizationChange={setOrganizationFilter}
+            showOrganizationFilter={showAllOrganizations}
+            organizations={organizations}
+          />
           
-          <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+          <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"

@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export const useJobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [organizationFilter, setOrganizationFilter] = useState('all');
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const { organization, userRole } = useAuth();
@@ -104,8 +105,12 @@ export const useJobs = () => {
       job.dest_city === routeFilter.dest_city &&
       job.dest_state === routeFilter.dest_state
     );
+
+    // Apply organization filter if present (for super admins)
+    const matchesOrganization = organizationFilter === 'all' || 
+      job.organization_id === organizationFilter;
     
-    return matchesSearch && matchesRoute;
+    return matchesSearch && matchesRoute && matchesOrganization;
   });
 
   const clearRouteFilter = () => {
@@ -122,6 +127,8 @@ export const useJobs = () => {
   return {
     searchTerm,
     setSearchTerm,
+    organizationFilter,
+    setOrganizationFilter,
     jobListings,
     filteredJobs,
     isLoading,
@@ -132,6 +139,7 @@ export const useJobs = () => {
     clearRouteFilter,
     clientFilter,
     hasClientFilter,
-    clearClientFilter
+    clearClientFilter,
+    showAllOrganizations
   };
 };
