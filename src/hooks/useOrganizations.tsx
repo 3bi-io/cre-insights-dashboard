@@ -9,6 +9,11 @@ interface Organization {
   slug: string;
   logo_url?: string;
   domain?: string;
+  domain_status?: string;
+  domain_verification_token?: string;
+  domain_ssl_status?: string;
+  domain_deployed_at?: string;
+  domain_dns_records?: any;
   settings?: any;
   subscription_status: string;
   created_at: string;
@@ -20,6 +25,11 @@ interface CreateOrganizationData {
   slug: string;
   logo_url?: string;
   domain?: string;
+  domain_status?: string;
+  domain_verification_token?: string;
+  domain_ssl_status?: string;
+  domain_deployed_at?: string;
+  domain_dns_records?: any;
   settings?: any;
 }
 

@@ -1314,6 +1314,11 @@ export type Database = {
         Row: {
           created_at: string
           domain: string | null
+          domain_deployed_at: string | null
+          domain_dns_records: Json | null
+          domain_ssl_status: string | null
+          domain_status: string | null
+          domain_verification_token: string | null
           id: string
           logo_url: string | null
           name: string
@@ -1325,6 +1330,11 @@ export type Database = {
         Insert: {
           created_at?: string
           domain?: string | null
+          domain_deployed_at?: string | null
+          domain_dns_records?: Json | null
+          domain_ssl_status?: string | null
+          domain_status?: string | null
+          domain_verification_token?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -1336,6 +1346,11 @@ export type Database = {
         Update: {
           created_at?: string
           domain?: string | null
+          domain_deployed_at?: string | null
+          domain_dns_records?: Json | null
+          domain_ssl_status?: string | null
+          domain_status?: string | null
+          domain_verification_token?: string | null
           id?: string
           logo_url?: string | null
           name?: string

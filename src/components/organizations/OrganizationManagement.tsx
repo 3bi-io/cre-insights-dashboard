@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { OrganizationSettings } from './OrganizationSettings';
 import { OrganizationFeatureManagement } from './OrganizationFeatureManagement';
 import { OrganizationFeatureBadges } from './OrganizationFeatureBadges';
+import QuickDomainActions from './QuickDomainActions';
 
 interface OrganizationFormData {
   name: string;
@@ -206,6 +207,7 @@ const OrganizationManagement = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Slug</TableHead>
+                    <TableHead>Domain</TableHead>
                     <TableHead>Features</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
@@ -225,6 +227,12 @@ const OrganizationManagement = () => {
                       </TableCell>
                       <TableCell>
                         <code className="text-sm bg-muted px-2 py-1 rounded">{org.slug}</code>
+                      </TableCell>
+                      <TableCell>
+                        <QuickDomainActions
+                          organization={org}
+                          onOpenDomainSettings={() => setSelectedOrgForSettings(org)}
+                        />
                       </TableCell>
                       <TableCell>
                         <OrganizationFeatureBadges 
