@@ -21,6 +21,7 @@ const ContactPage = React.lazy(() => import("./pages/public/ContactPage"));
 // Lazy load all pages for code splitting
 const Home = React.lazy(() => import("./pages/Home"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
 const Jobs = React.lazy(() => import("./pages/Jobs"));
 const Campaigns = React.lazy(() => import("./pages/Campaigns"));
 const Applications = React.lazy(() => import("./pages/Applications"));
@@ -195,6 +196,14 @@ const App = React.memo(() => (
                 }
               />
               <Route path="/admin" element={<LayoutWrapper />}>
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  }
+                />
                 <Route
                   path="jobs"
                   element={
