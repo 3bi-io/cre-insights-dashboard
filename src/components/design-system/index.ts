@@ -61,7 +61,9 @@ export type {
 
 // Re-export components for compatibility
 export { StandardButton, StandardCard } from '@/components/common';
-export { LazyImage, MemoizedCard } from '@/components/optimized';
+export { LazyImage } from '@/components/optimized/LazyImage';
+export { MemoizedCard } from '@/components/optimized/MemoizedCard';
+export { OptimizedDataTable } from '@/components/optimized/OptimizedDataTable';
 
 // === DESIGN TOKENS ===
 export const designTokens = {

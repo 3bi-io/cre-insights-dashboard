@@ -218,9 +218,9 @@ export interface CardProps extends
 export interface InputProps extends 
   FormFieldProps,
   InteractiveProps,
-  React.InputHTMLAttributes<HTMLInputElement> {
+  Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   /** Input size */
-  size?: SizeVariant;
+  inputSize?: SizeVariant;
   /** Left icon */
   leftIcon?: LucideIcon;
   /** Right icon */

@@ -120,7 +120,6 @@ export interface EnhancedCardProps
   /** ARIA disabled */
   'aria-disabled'?: boolean;
 }
-}
 
 const Card = forwardRef<HTMLDivElement, EnhancedCardProps>(
   ({ 
@@ -267,17 +266,15 @@ const CardTitle = forwardRef<
   const finalSize = size || defaultSizeByLevel[level];
   
   return (
-    <Component
-      ref={ref}
-      className={cn(
+    React.createElement(Component, {
+      ref,
+      className: cn(
         sizeClasses[finalSize],
         "leading-none tracking-tight",
         className
-      )}
-      {...props}
-    >
-      {children}
-    </Component>
+      ),
+      ...props
+    }, children)
   );
 });
 

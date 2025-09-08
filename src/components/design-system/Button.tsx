@@ -73,10 +73,9 @@ const buttonVariants = cva(
           "bg-gradient-accent text-accent-foreground",
           "shadow-md hover:shadow-lg",
           "hover:scale-105 active:scale-95"
-        icon: [
-          "aspect-square p-0 rounded-lg",
-          "[&_svg]:h-4 [&_svg]:w-4"
         ]
+      },
+      size: {
         xs: [
           "h-7 px-2.5 text-xs rounded-md",
           "[&_svg]:h-3 [&_svg]:w-3"
@@ -126,23 +125,23 @@ const buttonVariants = cva(
       // Size-specific icon variants
       {
         size: ["xs", "sm"],
-        variant: "icon",
-        className: "h-7 w-7"
+        variant: "default",
+        className: "h-7 w-7 p-0 [&_svg]:h-3 [&_svg]:w-3"
       },
       {
         size: "md",
-        variant: "icon", 
-        className: "h-9 w-9"
+        variant: "default", 
+        className: "h-9 w-9 p-0 [&_svg]:h-4 [&_svg]:w-4"
       },
       {
         size: ["lg", "xl"],
-        variant: "icon",
-        className: "h-10 w-10"
+        variant: "default",
+        className: "h-10 w-10 p-0 [&_svg]:h-4 [&_svg]:w-4"
       },
       {
         size: "xxl",
-        variant: "icon",
-        className: "h-12 w-12"
+        variant: "default",
+        className: "h-12 w-12 p-0 [&_svg]:h-6 [&_svg]:w-6"
       },
       // Loading state adjustments
       {
@@ -184,7 +183,6 @@ export interface EnhancedButtonProps
   'aria-label'?: string;
   /** ARIA disabled */
   'aria-disabled'?: boolean;
-}
 }
 
 const Button = forwardRef<HTMLButtonElement, EnhancedButtonProps>(

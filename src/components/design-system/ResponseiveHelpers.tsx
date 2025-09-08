@@ -119,19 +119,17 @@ export const ResponsiveText: React.FC<ResponsiveTextProps> = ({
   ].filter(Boolean).join(' ');
 
   return (
-    <Component
-      className={cn(
+    React.createElement(Component, {
+      className: cn(
         sizeClass,
         weightClass,
         alignClass,
         variantClasses[variant],
         responsiveClasses,
         className
-      )}
-      {...props}
-    >
-      {children}
-    </Component>
+      ),
+      ...props
+    }, children)
   );
 };
 
