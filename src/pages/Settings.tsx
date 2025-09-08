@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +33,7 @@ interface AdminUser {
 }
 
 const Settings = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, refreshUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 const [loading, setLoading] = useState(false);
@@ -52,6 +52,42 @@ const [privacy, setPrivacy] = useState({
   analytics: true,
   marketing: false,
 });
+
+// Profile editing state
+const [firstName, setFirstName] = useState('');
+const [lastName, setLastName] = useState('');
+const [company, setCompany] = useState('');
+const [profileSaving, setProfileSaving] = useState(false);
+
+// Initialize profile form from user metadata and profile table
+useEffect(() => {
+  const init = async () => {
+    const metaFull = (user as any)?.user_metadata?.full_name as string | undefined;
+    const metaCompany = (user as any)?.user_metadata?.company as string | undefined;
+
+    if (metaFull) {
+      const parts = metaFull.trim().split(/\s+/);
+      setFirstName(parts.slice(0, -1).join(' ') || parts[0] || '');
+      setLastName(parts.slice(-1).join(' ') || '');
+    }
+    if (metaCompany) setCompany(metaCompany);
+
+    if (user?.id) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (data?.full_name && !metaFull) {
+        const p = data.full_name.trim().split(/\s+/);
+        setFirstName(p.slice(0, -1).join(' ') || p[0] || '');
+        setLastName(p.slice(-1).join(' ') || '');
+      }
+    }
+  };
+  init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [user?.id]);
 
   // Fetch administrators
   const { data: administrators, isLoading: adminLoading } = useQuery({
@@ -170,6 +206,38 @@ const handleSavePrivacy = async () => {
   setLoading(false);
 };
 
+const handleSaveProfile = async () => {
+  if (!user?.id) return;
+  setProfileSaving(true);
+  try {
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    // Update Supabase auth user metadata
+    const { error: authErr } = await supabase.auth.updateUser({
+      data: {
+        full_name: fullName || undefined,
+        company: company || undefined,
+      },
+    });
+    if (authErr) throw authErr;
+
+    // Keep profiles table in sync (for app queries)
+    const { error: profErr } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName || null })
+      .eq('id', user.id);
+    if (profErr) throw profErr;
+
+    await refreshUser();
+    toast({ title: 'Profile updated', description: 'Your profile has been saved.' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    toast({ title: 'Update failed', description: 'Could not save your profile.', variant: 'destructive' });
+  } finally {
+    setProfileSaving(false);
+  }
+};
+
 const handleAddAdmin = async (e?: React.MouseEvent) => {
   e?.preventDefault?.();
   const email = newAdminEmail.trim().toLowerCase();
@@ -277,17 +345,17 @@ const handleRemoveAdmin = (userId: string) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="Enter your first name" />
+                  <Input id="firstName" placeholder="Enter your first name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Enter your last name" />
+                  <Input id="lastName" placeholder="Enter your last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="company">Company</Label>
-                <Input id="company" placeholder="C.R. England" />
+                <Input id="company" placeholder="C.R. England" value={company} onChange={(e) => setCompany(e.target.value)} />
               </div>
 
               <div className="space-y-2">
@@ -295,9 +363,9 @@ const handleRemoveAdmin = (userId: string) => {
                 <Input id="timezone" value="UTC-07:00 (Mountain Time)" disabled />
               </div>
 
-              <Button className="flex items-center gap-2">
+              <Button className="flex items-center gap-2" onClick={handleSaveProfile} disabled={profileSaving}>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {profileSaving ? 'Saving...' : 'Save Changes'}
               </Button>
             </CardContent>
           </Card>
