@@ -439,11 +439,10 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">System Overview</TabsTrigger>
             <TabsTrigger value="organizations">Organizations</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -456,18 +455,6 @@ const AdminDashboard = () => {
 
           <TabsContent value="users" className="mt-6">
             <UserManagementPanel />
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-                <CardDescription>Configure system-wide settings and parameters</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">System configuration interface coming soon...</p>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
