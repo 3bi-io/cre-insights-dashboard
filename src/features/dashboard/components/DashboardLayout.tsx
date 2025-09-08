@@ -10,6 +10,7 @@ import { OrganizationBrandingPanel } from '@/components/dashboard/organization/O
 import { OrganizationUserManagement } from '@/components/dashboard/organization/OrganizationUserManagement';
 import { useDashboardTabs } from '../hooks/useDashboardTabs';
 import AIImpactDashboard from '@/pages/AIImpactDashboard';
+import { PageLayout } from '@/features/shared';
 
 interface DashboardLayoutProps {
   organizationName?: string;
@@ -48,31 +49,28 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
 
+  const pageActions = (
+    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+      Organization Admin
+    </Badge>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Dashboard Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Organization management and analytics
-            </p>
-          </div>
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            Organization Admin
-          </Badge>
+    <PageLayout 
+      title="Dashboard" 
+      description="Organization management and analytics"
+      actions={pageActions}
+    >
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="space-y-6">
+          {/* Metrics Section */}
+          <DashboardMetrics />
+
+          {/* Content Section */}
+          {renderTabContent()}
         </div>
       </div>
-
-      {/* Metrics Section */}
-      <DashboardMetrics />
-
-      {/* Content Section */}
-      {renderTabContent()}
-    </div>
+    </PageLayout>
   );
 };
 
