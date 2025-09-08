@@ -1688,6 +1688,50 @@ export type Database = {
           },
         ]
       }
+      voice_agents: {
+        Row: {
+          agent_id: string
+          agent_name: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          agent_name: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          agent_name?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_configurations: {
         Row: {
           created_at: string
