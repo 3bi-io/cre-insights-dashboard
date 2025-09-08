@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, MapPin, Eye, Edit, Trash2, DollarSign, Clock, Mic } from 'lucide-react';
+import type { JobListing } from '@/types/common.types';
 
 interface JobCardProps {
-  job: any;
-  onViewAnalytics: (job: any) => void;
-  onVoiceApply?: (job: any) => void;
+  job: JobListing;
+  onViewAnalytics: (job: JobListing) => void;
+  onVoiceApply?: (job: JobListing) => void;
 }
 
 const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics, onVoiceApply }) => {

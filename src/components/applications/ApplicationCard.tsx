@@ -8,15 +8,16 @@ import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategor
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
+import type { Application, Recruiter } from '@/types/common.types';
 
 interface ApplicationCardProps {
-  application: any;
-  recruiters?: any[];
+  application: Application;
+  recruiters?: Recruiter[];
   onStatusChange: (applicationId: string, newStatus: string) => void;
   onRecruiterAssignment: (applicationId: string, recruiterId: string | null) => void;
-  onSmsOpen: (application: any) => void;
-  onDetailsView: (application: any) => void;
-  onTenstreetUpdate: (application: any) => void;
+  onSmsOpen: (application: Application) => void;
+  onDetailsView: (application: Application) => void;
+  onTenstreetUpdate: (application: Application) => void;
 }
 
 const ApplicationCard = ({

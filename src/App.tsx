@@ -10,6 +10,8 @@ import Layout from "@/components/Layout";
 import PublicLayout from "@/components/public/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Skeleton } from "@/components/ui/skeleton";
+import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
+import { logger } from "@/services/loggerService";
 
 // Public pages
 const LandingPage = React.lazy(() => import("./pages/public/LandingPage"));
@@ -105,14 +107,19 @@ const LayoutWrapper = React.memo(() => (
 LayoutWrapper.displayName = "LayoutWrapper";
 
 const App = React.memo(() => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
+  <GlobalErrorBoundary
+    onError={(error, errorInfo) => {
+      logger.error('App-level error caught', { error, errorInfo }, 'App');
+    }}
+  >
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
               {/* Public Routes */}
               <Route path="/" element={<PublicLayout />}>
                 <Route
@@ -352,6 +359,7 @@ const App = React.memo(() => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </GlobalErrorBoundary>
 ));
 
 App.displayName = "App";
