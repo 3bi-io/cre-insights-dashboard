@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Users, 
@@ -153,7 +152,6 @@ const SystemOverviewPanel = () => {
 
 const AdminDashboard = () => {
   const { user, userRole, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
 
   if (loading) {
     return (
@@ -187,15 +185,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="overview">System Overview</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="mt-6">
-            <SystemOverviewPanel />
-          </TabsContent>
-        </Tabs>
+        <SystemOverviewPanel />
       </div>
     </div>
   );
