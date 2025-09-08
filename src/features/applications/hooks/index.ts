@@ -1,2 +1,3 @@
-// Applications hooks
-export { useApplications } from '@/hooks/useApplications';
+// Applications hooks exports
+export { default as useApplications } from './useApplications';
+export type { ApplicationFilters } from './useApplications';

@@ -9,7 +9,7 @@ export interface JobFilters extends FilterOptions {
   experience_level?: string;
 }
 
-export function useJobs(options?: { 
+export function useJobsService(options?: { 
   enabled?: boolean;
   filters?: JobFilters;
 }) {

@@ -135,7 +135,7 @@ class ApplicationsService extends BaseFeatureService {
   async createApplication(data: CreateApplicationData): Promise<ApiResponse<Application>> {
     const validation = this.validation.validateCreate(data);
     if (validation.error) {
-      return validation;
+      return { data: null, error: validation.error };
     }
 
     // Add applied_at timestamp
@@ -150,12 +150,12 @@ class ApplicationsService extends BaseFeatureService {
   async updateApplication(id: string, data: UpdateApplicationData): Promise<ApiResponse<Application>> {
     const idValidation = this.validation.validateId(id);
     if (idValidation.error) {
-      return idValidation;
+      return { data: null, error: idValidation.error };
     }
 
     const dataValidation = this.validation.validateUpdate(data);
     if (dataValidation.error) {
-      return dataValidation;
+      return { data: null, error: dataValidation.error };
     }
 
     // Add reviewed_at timestamp if status is being updated
@@ -173,7 +173,7 @@ class ApplicationsService extends BaseFeatureService {
   async deleteApplication(id: string): Promise<ApiResponse<void>> {
     const validation = this.validation.validateId(id);
     if (validation.error) {
-      return validation;
+      return { data: null, error: validation.error };
     }
 
     return this.delete(id);
@@ -182,7 +182,7 @@ class ApplicationsService extends BaseFeatureService {
   async getApplicationById(id: string): Promise<ApiResponse<Application>> {
     const validation = this.validation.validateId(id);
     if (validation.error) {
-      return validation;
+      return { data: null, error: validation.error };
     }
 
     return this.getById<Application>(id);

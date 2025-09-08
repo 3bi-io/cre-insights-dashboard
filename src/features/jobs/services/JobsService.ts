@@ -137,7 +137,7 @@ class JobsService extends BaseFeatureService {
   async getJobById(id: string): Promise<ApiResponse<Job>> {
     const validation = this.validation.validateId(id);
     if (validation.error) {
-      return validation;
+      return { data: null, error: validation.error };
     }
 
     return this.getById<Job>(id);
