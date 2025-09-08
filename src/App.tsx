@@ -26,6 +26,7 @@ const Jobs = React.lazy(() => import("./pages/Jobs"));
 const Campaigns = React.lazy(() => import("./pages/Campaigns"));
 const Applications = React.lazy(() => import("./pages/Applications"));
 const AIImpactDashboard = React.lazy(() => import("./pages/AIImpactDashboard"));
+const AITools = React.lazy(() => import("./pages/AITools"));
 const VoiceAgent = React.lazy(() => import("./pages/VoiceAgent"));
 const TenstreetIntegration = React.lazy(() => import("./pages/TenstreetIntegration"));
 const RoutesPage = React.lazy(() => import("./pages/Routes"));
@@ -245,6 +246,14 @@ const App = React.memo(() => (
                   element={
                     <Suspense fallback={<PageSkeleton />}>
                       <AIImpactDashboard />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="ai-tools"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <AITools />
                     </Suspense>
                   }
                 />

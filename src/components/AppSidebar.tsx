@@ -86,7 +86,7 @@ const AppSidebar = () => {
         icon: Zap
       },
       {
-        path: '/dashboard?tab=ai',
+        path: '/admin/ai-tools',
         label: 'AI Tools',
         icon: Bot
       }
