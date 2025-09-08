@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +11,9 @@ import PublicLayout from "@/components/public/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Skeleton } from "@/components/ui/skeleton";
 import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
+import { ErrorBoundaryEnhanced } from "@/components/debug/ErrorBoundaryEnhanced";
+import { DevToolsPanel, DevToolsToggle } from "@/components/debug/DevToolsPanel";
+import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/services/loggerService";
 
 // Public pages
@@ -106,20 +109,25 @@ const LayoutWrapper = React.memo(() => (
 
 LayoutWrapper.displayName = "LayoutWrapper";
 
-const App = React.memo(() => (
-  <GlobalErrorBoundary
-    onError={(error, errorInfo) => {
-      logger.error('App-level error caught', { error, errorInfo }, 'App');
-    }}
-  >
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <Routes>
+const App = React.memo(() => {
+  const [showDevTools, setShowDevTools] = useState(false);
+  
+  return (
+    <ErrorBoundaryEnhanced showDetailedError={true}>
+      <GlobalErrorBoundary
+        onError={(error, errorInfo) => {
+          logger.error('App-level error caught', { error, errorInfo }, 'App');
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+            <FeatureProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AuthProvider>
+                    <Routes>
               {/* Public Routes */}
               <Route path="/" element={<PublicLayout />}>
                 <Route
@@ -356,11 +364,21 @@ const App = React.memo(() => (
             </Routes>
           </AuthProvider>
         </BrowserRouter>
+        
+        {/* Development Tools */}
+        <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
+        <DevToolsPanel 
+          isVisible={showDevTools} 
+          onToggle={() => setShowDevTools(!showDevTools)} 
+        />
       </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-  </GlobalErrorBoundary>
-));
+    </FeatureProvider>
+  </ThemeProvider>
+</QueryClientProvider>
+</GlobalErrorBoundary>
+</ErrorBoundaryEnhanced>
+);
+});
 
 App.displayName = "App";
 
