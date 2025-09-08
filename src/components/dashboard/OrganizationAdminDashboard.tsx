@@ -19,8 +19,6 @@ import { OrganizationBrandingPanel } from './organization/OrganizationBrandingPa
 import { AIFeaturesPanel } from './organization/AIFeaturesPanel';
 import { FeatureGuard } from '@/components/FeatureGuard';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
-import { useAuth } from '@/hooks/useAuth';
-import { OrganizationPageFrameworks } from '../organizations/OrganizationPageFrameworks';
 import DashboardTabs from './DashboardTabs';
 
 interface OrganizationAdminDashboardProps {
@@ -29,18 +27,12 @@ interface OrganizationAdminDashboardProps {
 
 export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdminDashboardProps) => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { organization } = useAuth();
   const { 
     hasTenstreetAccess, 
     hasVoiceAgent, 
     hasAdvancedAnalytics,
     hasAIAccess 
   } = useOrganizationFeatures();
-
-  const handleUpdateOrganization = (organizationId: string, settings: any) => {
-    // This would typically call an API to update the organization
-    console.log('Update organization:', organizationId, settings);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,10 +85,9 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="branding">Branding</TabsTrigger>
-            <TabsTrigger value="frameworks">Frameworks</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
@@ -130,15 +121,6 @@ export const OrganizationAdminDashboard = ({ organizationName }: OrganizationAdm
 
           <TabsContent value="branding" className="mt-6">
             <OrganizationBrandingPanel />
-          </TabsContent>
-
-          <TabsContent value="frameworks" className="mt-6">
-            {organization && (
-              <OrganizationPageFrameworks 
-                organization={organization}
-                onUpdate={handleUpdateOrganization}
-              />
-            )}
           </TabsContent>
 
           <TabsContent value="features" className="mt-6">
