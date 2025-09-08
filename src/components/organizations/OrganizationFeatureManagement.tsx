@@ -14,16 +14,14 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+
 import {
   Settings,
   Bot,
   Phone,
   BarChart3,
   Share2,
-  Zap,
-  Crown,
-  AlertTriangle
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -157,7 +155,7 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
     return AVAILABLE_FEATURES.filter(feature => feature.category === category);
   };
 
-  const isCrEngland = organization.slug === 'cr-england';
+  
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -182,14 +180,6 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
           </DialogDescription>
         </DialogHeader>
 
-        {isCrEngland && (
-          <Alert>
-            <Crown className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Primary Client:</strong> CR England retains access to all premium features including Tenstreet integration.
-            </AlertDescription>
-          </Alert>
-        )}
 
         <div className="space-y-6">
           {/* AI & ML Features */}
@@ -201,8 +191,7 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
             <div className="grid gap-4">
               {getCategoryFeatures('ai').map((feature) => {
                 const Icon = feature.icon;
-                const isEnabled = features[feature.key] || (isCrEngland && feature.key === 'tenstreet_access');
-                const isLocked = isCrEngland && feature.key === 'tenstreet_access';
+                const isEnabled = !!features[feature.key];
                 
                 return (
                   <Card key={feature.key} className={`p-4 ${isEnabled ? 'border-primary/20 bg-primary/5' : ''}`}>
@@ -217,12 +206,6 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
                                 Premium
                               </Badge>
                             )}
-                            {isLocked && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Crown className="w-3 h-3 mr-1" />
-                                Locked
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">{feature.description}</p>
                         </div>
@@ -230,7 +213,6 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
                       <Switch
                         checked={isEnabled}
                         onCheckedChange={(checked) => handleFeatureToggle(feature.key, checked)}
-                        disabled={isLocked}
                       />
                     </div>
                   </Card>
@@ -250,8 +232,7 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
             <div className="grid gap-4">
               {getCategoryFeatures('integrations').map((feature) => {
                 const Icon = feature.icon;
-                const isEnabled = features[feature.key] || (isCrEngland && feature.key === 'tenstreet_access');
-                const isLocked = isCrEngland && feature.key === 'tenstreet_access';
+                const isEnabled = !!features[feature.key];
                 
                 return (
                   <Card key={feature.key} className={`p-4 ${isEnabled ? 'border-primary/20 bg-primary/5' : ''}`}>
@@ -266,12 +247,6 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
                                 Premium
                               </Badge>
                             )}
-                            {isLocked && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Crown className="w-3 h-3 mr-1" />
-                                Locked
-                              </Badge>
-                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">{feature.description}</p>
                         </div>
@@ -279,7 +254,6 @@ export const OrganizationFeatureManagement = ({ organization, onUpdate }: Organi
                       <Switch
                         checked={isEnabled}
                         onCheckedChange={(checked) => handleFeatureToggle(feature.key, checked)}
-                        disabled={isLocked}
                       />
                     </div>
                   </Card>
