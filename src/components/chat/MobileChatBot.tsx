@@ -351,7 +351,7 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
       'applications': '📋 Welcome! I can analyze your application data and help optimize your recruitment funnel. How can I assist?',
       'jobs': '💼 Hello! I can help you analyze job performance and optimize your job postings. What insights do you need?',
       'clients': '👥 Hi there! I can provide client analytics and relationship insights. What would you like to explore?',
-      'platforms': '🚀 Welcome! I can analyze platform performance and help optimize your strategy. How can I help?',
+      'publishers': '🚀 Welcome! I can analyze publisher performance and help optimize your strategy. How can I help?',
       'general': '🤖 Hi! I\'m your ƷBI Analytics Assistant. Ask me anything about your recruitment data!'
     };
 
@@ -364,7 +364,7 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
       'applications': 'The user is reviewing applications on mobile.',
       'jobs': 'The user is managing jobs on mobile.',
       'clients': 'The user is managing clients on mobile.',
-      'platforms': 'The user is reviewing platforms on mobile.',
+      'publishers': 'The user is reviewing publishers on mobile.',
     };
 
     return contexts[currentPage] || 'The user is on mobile.';

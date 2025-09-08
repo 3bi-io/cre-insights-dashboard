@@ -32,7 +32,7 @@ const JobsHeader: React.FC<JobsHeaderProps> = ({
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Job Listings</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage your job postings across platforms • {filteredJobsCount} of {totalJobsCount} listings
+            Manage your job postings across publishers • {filteredJobsCount} of {totalJobsCount} listings
             {hasRouteFilter && (
               <span className="text-primary"> (filtered by route)</span>
             )}

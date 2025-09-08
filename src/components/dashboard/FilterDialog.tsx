@@ -102,10 +102,10 @@ const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {
               onValueChange={(value) => setFilters({ ...filters, platform: value })}
             >
               <SelectTrigger>
-                <SelectValue placeholder="All platforms" />
+                <SelectValue placeholder="All publishers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All platforms</SelectItem>
+                <SelectItem value="">All publishers</SelectItem>
                 <SelectItem value="indeed">Indeed</SelectItem>
                 <SelectItem value="ziprecruiter">ZipRecruiter</SelectItem>
                 <SelectItem value="facebook">Facebook</SelectItem>

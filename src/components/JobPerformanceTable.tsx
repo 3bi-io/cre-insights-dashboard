@@ -67,7 +67,7 @@ const JobPerformanceTable = () => {
         return {
           id: job.id,
           title: job.title || job.job_title || 'Untitled Job',
-          platform: job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No Platform',
+          publisher: job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No Publisher',
           client: job.clients?.name || job.client || 'No Client',
           spend: totalSpend,
           applications: applicationCount,
@@ -127,7 +127,7 @@ const JobPerformanceTable = () => {
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-3 px-4 font-medium text-muted-foreground">Job Title</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Platform</th>
+              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Publisher</th>
               <th className="text-left py-3 px-4 font-medium text-muted-foreground">Client</th>
               <th className="text-right py-3 px-4 font-medium text-muted-foreground">Spend</th>
               <th className="text-right py-3 px-4 font-medium text-muted-foreground">Applications</th>
@@ -144,7 +144,7 @@ const JobPerformanceTable = () => {
                   <div className="font-medium text-foreground">{job.title}</div>
                 </td>
                 <td className="py-4 px-4">
-                  <span className="text-muted-foreground">{job.platform}</span>
+                  <span className="text-muted-foreground">{job.publisher}</span>
                 </td>
                 <td className="py-4 px-4">
                   <span className="font-medium text-primary">{job.client}</span>

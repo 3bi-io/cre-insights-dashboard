@@ -13,7 +13,7 @@ const DashboardHeader = () => {
               C.R. England - Job Advertising Analytics
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              Monitor spend, track performance, and optimize your job advertising campaigns across all platforms
+              Monitor spend, track performance, and optimize your job advertising campaigns across all publishers
             </p>
           </div>
           

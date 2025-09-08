@@ -119,9 +119,9 @@ const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
     const pageMessages: Record<string, string> = {
       'dashboard': '👋 Hi! I can help you understand your dashboard metrics, analyze trends, and provide insights about your recruitment marketing performance. What would you like to know?',
       'applications': '📋 Welcome! I can analyze your application data, show conversion rates, identify top sources, and help optimize your recruitment funnel. How can I assist?',
-      'jobs': '💼 Hello! I can help you analyze job performance, compare platforms, track spending efficiency, and optimize your job postings. What insights do you need?',
+      'jobs': '💼 Hello! I can help you analyze job performance, compare publishers, track spending efficiency, and optimize your job postings. What insights do you need?',
       'clients': '👥 Hi there! I can provide client analytics, relationship insights, and help you understand client patterns and opportunities. What would you like to explore?',
-      'platforms': '🚀 Welcome! I can analyze platform performance, compare costs, show ROI metrics, and help optimize your platform strategy. How can I help?',
+      'publishers': '🚀 Welcome! I can analyze publisher performance, compare costs, show ROI metrics, and help optimize your publisher strategy. How can I help?',
       'settings': '⚙️ Hello! I can help you understand system configuration, user analytics, and provide insights about your account setup. What do you need help with?',
       'general': '🤖 Hi! I\'m your ƷBI Analytics Assistant. I can analyze your recruitment data, provide insights on applications, jobs, spending, and performance metrics. Ask me anything about your data!'
     };
@@ -135,7 +135,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
       'applications': 'The user is on the applications page reviewing candidate applications and application analytics.',
       'jobs': 'The user is on the jobs page managing job listings and job performance.',
       'clients': 'The user is on the clients page managing client relationships and client data.',
-      'platforms': 'The user is on the platforms page managing job posting platforms and platform analytics.',
+      'publishers': 'The user is on the publishers page managing job posting publishers and publisher analytics.',
       'settings': 'The user is on the settings page configuring system settings.',
     };
 

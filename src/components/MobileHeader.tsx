@@ -30,6 +30,7 @@ const MobileHeader = () => {
       '/admin/jobs': 'Job Listings',
       '/admin/applications': 'Applications',
       '/admin/campaigns': 'Campaigns',
+      '/admin/job-groups': 'Job Groups',
       '/admin/ai-impact': 'AI Impact',
       '/admin/voice-agent': 'Voice Agent',
       '/admin/tenstreet': 'Tenstreet',

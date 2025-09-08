@@ -274,7 +274,7 @@ const IntegrationsTab = () => {
               <div className="text-sm">
                 <p className="font-medium text-amber-800 dark:text-amber-200">Setup Required</p>
                 <p className="text-amber-700 dark:text-amber-300 mb-2">
-                  Configure your X platform in the Platforms section to enable API features.
+                  Configure your X publisher in the Publishers section to enable API features.
                 </p>
                 <Button variant="outline" size="sm" asChild className="mt-2">
                   <a href="/dashboard/platforms">

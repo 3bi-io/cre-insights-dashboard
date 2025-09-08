@@ -94,7 +94,7 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
             <CardContent className="space-y-2">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">Platform:</span> {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name || 'N/A'}
+                  <span className="font-medium">Publisher:</span> {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name || 'N/A'}
                 </div>
                 <div>
                   <span className="font-medium">Category:</span> {job.job_categories?.name || 'N/A'}

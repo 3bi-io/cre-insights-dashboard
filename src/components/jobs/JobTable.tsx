@@ -260,7 +260,7 @@ const JobTable: React.FC<JobTableProps> = ({
                           <Badge key={index} variant="secondary" className="text-xs">
                             {assoc.platforms?.name || 'Unknown'}
                           </Badge>
-                        )) || <span className="text-muted-foreground">No platforms</span>}
+                        )) || <span className="text-muted-foreground">No publishers</span>}
                       </div>
                     </TableCell>
                     <TableCell>
