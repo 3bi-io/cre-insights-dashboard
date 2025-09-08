@@ -7,6 +7,7 @@ import { OrganizationUserManagement } from '@/components/dashboard/organization/
 import { AIFeaturesPanel } from '@/components/dashboard/organization/AIFeaturesPanel';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { FeatureGuard } from '@/components/FeatureGuard';
+import AIImpactDashboard from '@/pages/AIImpactDashboard';
 
 export interface DashboardTab {
   id: string;
@@ -37,6 +38,11 @@ export const dashboardTabs: DashboardTab[] = [
     id: 'overview',
     label: 'Overview',
     component: OrganizationOverview,
+  },
+  {
+    id: 'ai-impact',
+    label: 'AI Impact',
+    component: AIImpactDashboard,
   },
   {
     id: 'analytics',

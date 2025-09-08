@@ -9,6 +9,7 @@ import { AIFeaturesPanel } from '@/components/dashboard/organization/AIFeaturesP
 import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
 import { OrganizationUserManagement } from '@/components/dashboard/organization/OrganizationUserManagement';
 import { useDashboardTabs } from '../hooks/useDashboardTabs';
+import AIImpactDashboard from '@/pages/AIImpactDashboard';
 
 interface DashboardLayoutProps {
   organizationName?: string;
@@ -40,6 +41,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         return <OrganizationBrandingPanel />;
       case 'users':
         return <OrganizationUserManagement />;
+      case 'ai-impact':
+        return <AIImpactDashboard />;
       default:
         return <DashboardTabsComponent />;
     }
