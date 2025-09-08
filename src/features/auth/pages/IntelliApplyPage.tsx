@@ -18,4 +18,6 @@ const IntelliApplyPage = () => {
       </div>
     </PageLayout>
   );
+};
+
 export default IntelliApplyPage;

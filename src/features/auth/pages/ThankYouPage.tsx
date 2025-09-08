@@ -29,4 +29,7 @@ const ThankYouPage = () => {
         </Card>
       </div>
     </div>
+  );
+};
+
 export default ThankYouPage;
