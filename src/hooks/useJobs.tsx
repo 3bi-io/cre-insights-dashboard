@@ -1,14 +1,20 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export const useJobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
-  const { organization } = useAuth();
+  const location = useLocation();
+  const { organization, userRole } = useAuth();
+
+  // Check if super admin is on admin jobs page
+  const isAdminJobsPage = location.pathname === '/admin/jobs';
+  const isSuperAdmin = userRole === 'super_admin';
+  const showAllOrganizations = isSuperAdmin && isAdminJobsPage;
 
   // Get route filter parameters from URL
   const routeFilter = {
@@ -32,12 +38,12 @@ export const useJobs = () => {
   }, [clientFilter, searchTerm]);
 
   const { data: jobListings, isLoading, refetch, error } = useQuery({
-    queryKey: ['job-listings', organization?.id],
+    queryKey: ['job-listings', showAllOrganizations ? 'all' : organization?.id],
     queryFn: async () => {
-      console.log('Fetching job listings...');
+      console.log('Fetching job listings...', showAllOrganizations ? 'for all organizations' : 'for current organization');
       
-      // Fetch job listings for current organization
-      const { data, error } = await supabase
+      // Build the query
+      let query = supabase
         .from('job_listings')
         .select(`
           *,
@@ -48,10 +54,16 @@ export const useJobs = () => {
             )
           ),
           job_categories:category_id(name),
-          clients:client_id(name)
-        `)
-        .eq('organization_id', organization?.id)
-        .order('created_at', { ascending: false });
+          clients:client_id(name),
+          organizations:organization_id(name, slug)
+        `);
+
+      // Only filter by organization if not showing all organizations
+      if (!showAllOrganizations && organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching job listings:', error);
@@ -64,7 +76,7 @@ export const useJobs = () => {
     },
     retry: 2,
     retryDelay: 1000,
-    enabled: !!organization?.id, // Only run when organization is available
+    enabled: showAllOrganizations || !!organization?.id, // Run for super admins or when organization is available
   });
 
   const filteredJobs = jobListings?.filter(job => {
