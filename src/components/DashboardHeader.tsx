@@ -10,7 +10,7 @@ const DashboardHeader = () => {
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              Dashboard
+              C.R. England - Job Advertising Analytics
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
               Monitor spend, track performance, and optimize your job advertising campaigns across all publishers
