@@ -30,10 +30,10 @@ export const Logo: React.FC<LogoProps> = ({
   
   // Determine which logo to use based on theme and variant
   const getLogoSrc = () => {
-    if (variant === 'light') return '/intel-ats-logo-light.png';
-    if (variant === 'dark') return '/intel-ats-logo-300x48.png';
+    if (variant === 'light') return '/intel-ats-logo-300x48.png';
+    if (variant === 'dark') return '/intel-ats-logo-light.png';
     
-    // Auto mode - use light logo for dark themes, dark logo for light themes
+    // Auto mode - use light text logo for dark themes, dark text logo for light themes
     if (theme === 'dark') return '/intel-ats-logo-light.png';
     return '/intel-ats-logo-300x48.png';
   };
