@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Logo } from '@/components/common';
 
 const MobileHeader = () => {
   const location = useLocation();
@@ -74,11 +75,7 @@ const MobileHeader = () => {
         
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
-          <img 
-            src="/intel-ats-logo.png" 
-            alt="INTEL ATS" 
-            className="h-10 w-auto"
-          />
+          <Logo size="md" showAsLink={false} />
           <div className="flex flex-col">
             <h1 className="text-lg font-semibold leading-none text-foreground">
               {getPageTitle()}

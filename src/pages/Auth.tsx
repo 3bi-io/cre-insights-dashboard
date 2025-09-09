@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/common';
 
 const Auth = () => {
   const { signIn, user, userRole } = useAuth();
@@ -71,7 +73,7 @@ const handlePasswordReset = async (e: React.FormEvent) => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="w-20 h-20" />
+            <Logo size="xl" showAsLink={false} />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Next-Generation Applicant Tracking System

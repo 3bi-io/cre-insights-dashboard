@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
+import { Logo } from '@/components/common';
 
 const Footer = () => {
   return (
@@ -8,11 +9,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <img 
-              src="/intel-ats-logo.png" 
-              alt="ATS Platform" 
-              className="h-8 w-auto"
-            />
+          <Logo size="sm" showAsLink={false} />
             <span className="text-sm text-muted-foreground">
               © 2024 ATS Platform. All rights reserved.
             </span>

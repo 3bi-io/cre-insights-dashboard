@@ -10,6 +10,7 @@ import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Logo } from '@/components/common';
 const AppSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -180,11 +181,7 @@ const AppSidebar = () => {
             </>
           ) : (
             <>
-              <img 
-                src="/intel-ats-logo.png" 
-                alt="INTEL ATS" 
-                className="h-10 w-auto" 
-              />
+              <Logo size="md" showAsLink={false} />
             </>
           )}
         </div>

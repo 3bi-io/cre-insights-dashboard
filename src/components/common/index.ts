@@ -18,6 +18,10 @@ export {
 } from './StandardCard';
 export type { StandardCardProps } from './StandardCard';
 
+// New reusable components
+export { Logo } from './Logo';
+export { Header } from './Header';
+
 // Re-export optimized components for convenience
 export { OptimizedDataTable } from '../optimized/OptimizedDataTable';
 export { LazyImage } from '../optimized/LazyImage';
