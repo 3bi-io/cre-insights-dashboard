@@ -22,6 +22,9 @@ const FeaturesPage = React.lazy(() => import("./pages/public/FeaturesPage"));
 const PricingPage = React.lazy(() => import("./pages/public/PricingPage"));
 const AboutPage = React.lazy(() => import("./pages/public/AboutPage"));
 const ContactPage = React.lazy(() => import("./pages/public/ContactPage"));
+const PrivacyPolicyPage = React.lazy(() => import("./pages/public/PrivacyPolicyPage"));
+const TermsOfServicePage = React.lazy(() => import("./pages/public/TermsOfServicePage"));
+const CookiePolicyPage = React.lazy(() => import("./pages/public/CookiePolicyPage"));
 
 // Lazy load all pages for code splitting
 const Home = React.lazy(() => import("./pages/Home"));
@@ -167,6 +170,30 @@ const App = React.memo(() => {
                   element={
                     <Suspense fallback={<PageSkeleton />}>
                       <ContactPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="privacy-policy"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <PrivacyPolicyPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="terms-of-service"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <TermsOfServicePage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="cookie-policy"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <CookiePolicyPage />
                     </Suspense>
                   }
                 />

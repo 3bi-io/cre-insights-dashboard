@@ -18,21 +18,27 @@ const Footer = () => {
             </span>
           </div>
           
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex flex-wrap items-center gap-6 text-sm">
             <Link 
-              to="/privacy-controls" 
+              to="/privacy-policy" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Privacy
+              Privacy Policy
             </Link>
             <Link 
-              to="/settings" 
+              to="/terms-of-service" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              Settings
+              Terms of Service
+            </Link>
+            <Link 
+              to="/cookie-policy" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cookie Policy
             </Link>
             <a 
-              href="mailto:support@ats-platform.com" 
+              href="mailto:support@intelats.com" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Support
