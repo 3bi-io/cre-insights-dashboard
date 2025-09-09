@@ -71,9 +71,9 @@ const handlePasswordReset = async (e: React.FormEvent) => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-4">
-            <img src="/ats-io-logo.png" alt="ATS.IO" className="w-16 h-16 mr-3" />
+            <img src="/ats-io-logo.png" alt="INTEL ATS" className="w-16 h-16 mr-3" />
             <h2 className="text-3xl font-bold text-foreground">
-              ATS.IO
+              INTEL ATS
             </h2>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">

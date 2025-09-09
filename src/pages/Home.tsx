@@ -57,8 +57,8 @@ const Home = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/ats-io-logo.png" alt="ATS.IO" className="h-8 w-auto" />
-            <span className="text-xl font-bold">ATS.IO</span>
+            <img src="/ats-io-logo.png" alt="INTEL ATS" className="h-8 w-auto" />
+            <span className="text-xl font-bold">INTEL ATS</span>
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
@@ -140,7 +140,7 @@ const Home = () => {
           <Building2 className="w-16 h-16 mx-auto mb-6 text-primary" />
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Hiring?</h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join leading organizations using ATS.IO to streamline their recruitment process.
+            Join leading organizations using INTEL ATS to streamline their recruitment process.
           </p>
           <Button asChild size="lg" className="text-lg px-8">
             <Link to="/auth">
@@ -155,11 +155,11 @@ const Home = () => {
       <footer className="border-t bg-card py-12 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img src="/ats-io-logo.png" alt="ATS.IO" className="h-6 w-auto" />
-            <span className="font-semibold">ATS.IO</span>
+            <img src="/ats-io-logo.png" alt="INTEL ATS" className="h-6 w-auto" />
+            <span className="font-semibold">INTEL ATS</span>
           </div>
           <p className="text-muted-foreground">
-            © 2024 ATS.IO. All rights reserved.
+            © 2024 INTEL ATS. All rights reserved.
           </p>
         </div>
       </footer>

@@ -66,7 +66,7 @@ const LandingPage = () => {
 
   const testimonials = [
     {
-      quote: "ATS.IO transformed our hiring process completely. We're now hiring 3x faster with better quality candidates.",
+      quote: "INTEL ATS transformed our hiring process completely. We're now hiring 3x faster with better quality candidates.",
       author: "Sarah Johnson",
       role: "VP of Talent",
       company: "TechCorp"
@@ -208,7 +208,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-6">
-                Why Organizations Choose ATS.IO
+                Why Organizations Choose INTEL ATS
               </h2>
               <div className="space-y-4">
                 {[
@@ -254,7 +254,7 @@ const LandingPage = () => {
               Trusted by Industry Leaders
             </h2>
             <p className="text-xl text-muted-foreground">
-              See what our customers are saying about ATS.IO
+              See what our customers are saying about INTEL ATS
             </p>
           </div>
           
@@ -290,7 +290,7 @@ const LandingPage = () => {
             Ready to Transform Your Hiring?
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of organizations that have revolutionized their recruitment process with ATS.IO.
+            Join thousands of organizations that have revolutionized their recruitment process with INTEL ATS.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">

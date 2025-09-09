@@ -45,11 +45,11 @@ const PublicLayout = () => {
             <Link to="/" className="flex items-center space-x-2">
               <img 
                 src="/ats-io-logo.png" 
-                alt="ATS.IO" 
+                alt="INTEL ATS"
                 className="h-8 w-auto"
               />
               <span className="font-playfair font-bold text-xl text-foreground">
-                ATS.IO
+                INTEL ATS
               </span>
             </Link>
 
@@ -170,11 +170,11 @@ const PublicLayout = () => {
               <Link to="/" className="flex items-center space-x-2 mb-4">
                 <img 
                   src="/ats-io-logo.png" 
-                  alt="ATS.IO" 
+                  alt="INTEL ATS" 
                   className="h-8 w-auto"
                 />
                 <span className="font-playfair font-bold text-xl text-foreground">
-                  ATS.IO
+                  INTEL ATS
                 </span>
               </Link>
               <p className="text-muted-foreground mb-6 max-w-md">
@@ -243,7 +243,7 @@ const PublicLayout = () => {
 
           <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-muted-foreground text-sm">
-              © 2024 ATS.IO. All rights reserved.
+              © 2024 INTEL ATS. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-muted-foreground hover:text-primary text-sm transition-colors">
