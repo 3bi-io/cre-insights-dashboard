@@ -60,6 +60,7 @@ const LandingPage = () => {
   const stats = [
     { number: "95%", label: "Faster Hiring Process" },
     { number: "80%", label: "Cost Reduction" },
+    { number: "10,000+", label: "Companies Trust Us" },
     { number: "99.9%", label: "Uptime Guarantee" }
   ];
 
@@ -134,7 +135,15 @@ const LandingPage = () => {
             </div>
             
             {/* Social Proof */}
-            <div className="text-center text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <span className="text-sm">Rated 4.9/5 by 10,000+ users</span>
+              </div>
               <div className="text-sm">
                 Trusted by Fortune 500 companies worldwide
               </div>
