@@ -12,7 +12,7 @@ interface LogoProps {
 const sizeClasses = {
   xs: 'h-6 w-auto',
   sm: 'h-10 w-auto', 
-  md: 'h-14 w-[280px] object-contain',
+  md: 'h-12 w-[300px] object-contain',
   lg: 'h-16 w-auto',
   xl: 'h-20 w-auto'
 };
@@ -25,7 +25,7 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   const logoElement = (
     <img 
-      src="/intel-ats-logo-280x56.png" 
+      src="/intel-ats-logo-300x48.png" 
       alt="INTEL ATS"
       className={cn(sizeClasses[size], className)}
     />
