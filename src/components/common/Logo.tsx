@@ -1,12 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 interface LogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   linkTo?: string;
   className?: string;
   showAsLink?: boolean;
+  variant?: 'light' | 'dark' | 'auto';
 }
 
 const sizeClasses = {
@@ -21,13 +23,26 @@ export const Logo: React.FC<LogoProps> = ({
   size = 'md', 
   linkTo = '/', 
   className,
-  showAsLink = true 
+  showAsLink = true,
+  variant = 'auto'
 }) => {
+  const { theme } = useTheme();
+  
+  // Determine which logo to use based on theme and variant
+  const getLogoSrc = () => {
+    if (variant === 'light') return '/intel-ats-logo-light.png';
+    if (variant === 'dark') return '/intel-ats-logo-300x48.png';
+    
+    // Auto mode - use light logo for dark themes, dark logo for light themes
+    if (theme === 'dark') return '/intel-ats-logo-light.png';
+    return '/intel-ats-logo-300x48.png';
+  };
+
   const logoElement = (
     <img 
-      src="/intel-ats-logo-300x48.png" 
+      src={getLogoSrc()}
       alt="INTEL ATS"
-      className={cn(sizeClasses[size], className)}
+      className={cn(sizeClasses[size], 'transition-opacity duration-200', className)}
     />
   );
 
@@ -36,7 +51,7 @@ export const Logo: React.FC<LogoProps> = ({
   }
 
   return (
-    <Link to={linkTo} className="flex items-center">
+    <Link to={linkTo} className="flex items-center hover:opacity-80 transition-opacity">
       {logoElement}
     </Link>
   );
