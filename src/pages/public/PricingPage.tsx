@@ -28,8 +28,8 @@ const PricingPage = () => {
     {
       name: "Starter",
       description: "Perfect for small teams getting started",
-      monthlyPrice: 203,
-      annualPrice: 175,
+      monthlyPrice: 175,
+      annualPrice: 149,
       icon: Users,
       color: "border-muted",
       buttonVariant: "outline" as const,
@@ -52,8 +52,8 @@ const PricingPage = () => {
     {
       name: "Professional",
       description: "Everything growing teams need to scale",
-      monthlyPrice: 553,
-      annualPrice: 483,
+      monthlyPrice: 475,
+      annualPrice: 399,
       icon: Zap,
       color: "border-primary",
       buttonVariant: "default" as const,
@@ -77,8 +77,8 @@ const PricingPage = () => {
     {
       name: "Enterprise",
       description: "Advanced features for large organizations",
-      monthlyPrice: 1043,
-      annualPrice: 903,
+      monthlyPrice: 875,
+      annualPrice: 749,
       icon: Crown,
       color: "border-accent",
       buttonVariant: "outline" as const,
