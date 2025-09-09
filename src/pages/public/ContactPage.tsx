@@ -64,21 +64,6 @@ const ContactPage = () => {
     }
   ];
 
-  const contactInfo = [
-    {
-      title: "Email Support",
-      description: "Get help from our support team",
-      contact: "support@intelats.com",
-      icon: Mail
-    },
-    {
-      title: "Sales Team",
-      description: "Speak with our sales experts",
-      contact: "sales@intelats.com", 
-      icon: MessageSquare
-    }
-  ];
-
   const faqs = [
     {
       question: "How quickly can we get started?",
@@ -275,33 +260,8 @@ const ContactPage = () => {
               </Card>
             </div>
 
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-6">
-                  Get In Touch
-                </h3>
-                <div className="space-y-6">
-                  {contactInfo.map((info, index) => (
-                    <Card key={index}>
-                      <CardContent className="p-6">
-                        <div className="flex items-center space-x-3 mb-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <info.icon className="h-4 w-4 text-primary" />
-                          </div>
-                          <h4 className="text-lg font-semibold text-foreground">
-                            {info.title}
-                          </h4>
-                        </div>
-                        <p className="text-muted-foreground mb-2">{info.description}</p>
-                        <p className="text-primary font-medium">{info.contact}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-
-              <div>
+            {/* FAQ Section */}
+            <div>
                 <h3 className="text-2xl font-bold text-foreground mb-6">
                   Frequently Asked Questions
                 </h3>
@@ -320,7 +280,6 @@ const ContactPage = () => {
                   ))}
                 </div>
               </div>
-            </div>
           </div>
         </div>
       </section>
