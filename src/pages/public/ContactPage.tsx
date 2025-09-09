@@ -11,8 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Mail, 
-  Phone, 
-  MapPin,
   Clock,
   MessageSquare,
   Users,
@@ -47,43 +45,37 @@ const ContactPage = () => {
       icon: MessageSquare,
       title: "Sales Inquiries",
       description: "Questions about pricing, features, or demos",
-      contact: "sales@ats.io",
+      contact: "sales@intelats.com",
       action: "Contact Sales"
     },
     {
       icon: Headphones,
       title: "Customer Support",
       description: "Technical support for existing customers",
-      contact: "support@ats.io",
+      contact: "support@intelats.com",
       action: "Get Support"
     },
     {
       icon: Users,
       title: "Partnerships",
       description: "Integration partnerships and collaborations",
-      contact: "partners@ats.io",
+      contact: "partners@intelats.com",
       action: "Partner With Us"
     }
   ];
 
-  const officeLocations = [
+  const contactInfo = [
     {
-      city: "San Francisco",
-      address: "123 Market Street, Suite 400\nSan Francisco, CA 94105",
-      phone: "+1 (555) 123-4567",
-      timezone: "PST (UTC-8)"
+      title: "Email Support",
+      description: "Get help from our support team",
+      contact: "support@intelats.com",
+      icon: Mail
     },
     {
-      city: "New York",
-      address: "456 Broadway, Floor 12\nNew York, NY 10013",
-      phone: "+1 (555) 234-5678",
-      timezone: "EST (UTC-5)"
-    },
-    {
-      city: "London",
-      address: "789 Shoreditch High Street\nLondon E1 6AN, UK",
-      phone: "+44 20 7123 4567",
-      timezone: "GMT (UTC+0)"
+      title: "Sales Team",
+      description: "Speak with our sales experts",
+      contact: "sales@intelats.com", 
+      icon: MessageSquare
     }
   ];
 
@@ -287,29 +279,22 @@ const ContactPage = () => {
             <div className="space-y-8">
               <div>
                 <h3 className="text-2xl font-bold text-foreground mb-6">
-                  Our Offices
+                  Get In Touch
                 </h3>
                 <div className="space-y-6">
-                  {officeLocations.map((office, index) => (
+                  {contactInfo.map((info, index) => (
                     <Card key={index}>
                       <CardContent className="p-6">
-                        <h4 className="text-lg font-semibold text-foreground mb-3">
-                          {office.city}
-                        </h4>
-                        <div className="space-y-2 text-muted-foreground">
-                          <div className="flex items-start space-x-2">
-                            <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
-                            <span className="whitespace-pre-line">{office.address}</span>
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <info.icon className="h-4 w-4 text-primary" />
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Phone className="h-4 w-4 flex-shrink-0" />
-                            <span>{office.phone}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Clock className="h-4 w-4 flex-shrink-0" />
-                            <span>{office.timezone}</span>
-                          </div>
+                          <h4 className="text-lg font-semibold text-foreground">
+                            {info.title}
+                          </h4>
                         </div>
+                        <p className="text-muted-foreground mb-2">{info.description}</p>
+                        <p className="text-primary font-medium">{info.contact}</p>
                       </CardContent>
                     </Card>
                   ))}
