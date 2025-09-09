@@ -11,10 +11,10 @@ interface LogoProps {
 
 const sizeClasses = {
   xs: 'h-6 w-auto',
-  sm: 'h-8 w-auto', 
-  md: 'h-10 w-auto',
-  lg: 'h-12 w-auto',
-  xl: 'h-16 w-auto'
+  sm: 'h-10 w-auto', 
+  md: 'h-14 w-auto',
+  lg: 'h-16 w-auto',
+  xl: 'h-20 w-auto'
 };
 
 export const Logo: React.FC<LogoProps> = ({ 
