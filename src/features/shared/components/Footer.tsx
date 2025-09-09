@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <img 
-              src="/ats-io-logo.png" 
+              src="/intel-ats-logo.png" 
               alt="ATS Platform" 
               className="h-6 w-auto"
             />

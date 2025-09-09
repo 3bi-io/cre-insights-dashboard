@@ -62,7 +62,7 @@ export const OrganizationBrandingPanel = () => {
                   alt={`${organization.name} logo`} 
                   className="w-16 h-16 object-contain rounded-lg border"
                   onError={(e) => {
-                    e.currentTarget.src = '/ats-io-logo.png';
+                    e.currentTarget.src = '/intel-ats-logo.png';
                   }}
                 />
                 <div>

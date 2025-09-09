@@ -169,7 +169,7 @@ const AppSidebar = () => {
                 />
               ) : (
                 <img 
-                  src="/ats-io-logo.png" 
+                  src="/intel-ats-logo.png" 
                   alt={organization.name} 
                   className="h-8 w-auto" 
                 />
@@ -181,7 +181,7 @@ const AppSidebar = () => {
           ) : (
             <>
               <img 
-                src="/ats-io-logo.png" 
+                src="/intel-ats-logo.png" 
                 alt="INTEL ATS" 
                 className="h-8 w-auto" 
               />

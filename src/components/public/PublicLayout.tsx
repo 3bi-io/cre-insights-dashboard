@@ -44,7 +44,7 @@ const PublicLayout = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src="/ats-io-logo.png" 
+                src="/intel-ats-logo.png" 
                 alt="INTEL ATS"
                 className="h-8 w-auto"
               />
@@ -169,7 +169,7 @@ const PublicLayout = () => {
             <div className="col-span-1 md:col-span-2">
               <Link to="/" className="flex items-center space-x-2 mb-4">
                 <img 
-                  src="/ats-io-logo.png" 
+                  src="/intel-ats-logo.png" 
                   alt="INTEL ATS" 
                   className="h-8 w-auto"
                 />

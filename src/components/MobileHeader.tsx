@@ -75,7 +75,7 @@ const MobileHeader = () => {
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
           <img 
-            src="/ats-io-logo.png" 
+            src="/intel-ats-logo.png" 
             alt="INTEL ATS" 
             className="h-8 w-auto"
           />

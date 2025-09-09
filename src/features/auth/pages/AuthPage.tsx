@@ -56,7 +56,7 @@ const AuthPage = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img 
-            src="/ats-io-logo.png" 
+            src="/intel-ats-logo.png" 
             alt="ATS Platform" 
             className="h-12 w-auto mx-auto mb-4"
           />
