@@ -134,8 +134,8 @@ const PricingPage = () => {
       answer: "We accept all major credit cards, PayPal, and bank transfers for annual plans. Enterprise customers can also pay by invoice."
     },
     {
-      question: "Is there a free trial?",
-      answer: "Yes, all plans come with a 14-day free trial. No credit card required to start your trial."
+      question: "Is there a money-back guarantee?",
+      answer: "Yes, we offer a 30-day money-back guarantee. If you're not satisfied with our service, contact us within 30 days for a full refund."
     }
   ];
 
@@ -159,8 +159,8 @@ const PricingPage = () => {
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Pricing</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Choose the perfect plan for your organization. All plans include a 14-day free trial 
-            with full access to features.
+            Choose the perfect plan for your organization. Start building your 
+            recruitment pipeline today.
           </p>
           
           {/* Billing Toggle */}
@@ -243,13 +243,12 @@ const PricingPage = () => {
                       className="w-full"
                       size="lg"
                     >
-                      Start Free Trial
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      Get Started
                     </Button>
                   </Link>
                   
                   <p className="text-xs text-muted-foreground text-center">
-                    No credit card required
+                    Start your subscription today
                   </p>
                 </CardContent>
               </Card>
