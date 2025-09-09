@@ -24,7 +24,7 @@ const AboutPage = React.lazy(() => import("./pages/public/AboutPage"));
 const ContactPage = React.lazy(() => import("./pages/public/ContactPage"));
 
 // Lazy load all pages for code splitting
-const Home = React.lazy(() => import("./pages/Home"));
+const Index = React.lazy(() => import("./pages/Index"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
 const Jobs = React.lazy(() => import("./pages/Jobs"));
@@ -134,7 +134,7 @@ const App = React.memo(() => {
                   index
                   element={
                     <Suspense fallback={<PageSkeleton />}>
-                      <LandingPage />
+                      <Index />
                     </Suspense>
                   }
                 />
