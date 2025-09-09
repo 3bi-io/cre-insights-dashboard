@@ -42,15 +42,12 @@ const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center">
               <img 
                 src="/intel-ats-logo.png" 
                 alt="INTEL ATS"
-                className="h-8 w-auto"
+                className="h-10 w-auto"
               />
-              <span className="font-playfair font-bold text-xl text-foreground">
-                INTEL ATS
-              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -167,15 +164,12 @@ const PublicLayout = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Company Info */}
             <div className="col-span-1 md:col-span-2">
-              <Link to="/" className="flex items-center space-x-2 mb-4">
+              <Link to="/" className="flex items-center mb-4">
                 <img 
                   src="/intel-ats-logo.png" 
                   alt="INTEL ATS" 
-                  className="h-8 w-auto"
+                  className="h-10 w-auto"
                 />
-                <span className="font-playfair font-bold text-xl text-foreground">
-                  INTEL ATS
-                </span>
               </Link>
               <p className="text-muted-foreground mb-6 max-w-md">
                 Revolutionize your hiring process with AI-powered analytics, automated workflows, 

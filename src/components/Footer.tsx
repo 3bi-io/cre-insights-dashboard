@@ -11,7 +11,7 @@ const Footer = () => {
             <img 
               src="/intel-ats-logo.png" 
               alt="ATS Platform" 
-              className="h-6 w-auto"
+              className="h-8 w-auto"
             />
             <span className="text-sm text-muted-foreground">
               © 2024 ATS Platform. All rights reserved.

@@ -57,8 +57,7 @@ const Home = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="h-8 w-auto" />
-            <span className="text-xl font-bold">INTEL ATS</span>
+            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="h-10 w-auto" />
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
@@ -154,9 +153,8 @@ const Home = () => {
       {/* Footer */}
       <footer className="border-t bg-card py-12 px-4">
         <div className="container mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="h-6 w-auto" />
-            <span className="font-semibold">INTEL ATS</span>
+          <div className="flex items-center justify-center mb-4">
+            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="h-8 w-auto" />
           </div>
           <p className="text-muted-foreground">
             © 2024 INTEL ATS. All rights reserved.

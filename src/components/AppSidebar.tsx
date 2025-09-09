@@ -183,11 +183,8 @@ const AppSidebar = () => {
               <img 
                 src="/intel-ats-logo.png" 
                 alt="INTEL ATS" 
-                className="h-8 w-auto" 
+                className="h-10 w-auto" 
               />
-              <div className="flex flex-col">
-                <span className="font-semibold text-sm">INTEL ATS</span>
-              </div>
             </>
           )}
         </div>

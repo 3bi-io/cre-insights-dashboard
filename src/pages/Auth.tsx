@@ -70,11 +70,8 @@ const handlePasswordReset = async (e: React.FormEvent) => {
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="w-16 h-16 mr-3" />
-            <h2 className="text-3xl font-bold text-foreground">
-              INTEL ATS
-            </h2>
+          <div className="flex items-center justify-center mb-6">
+            <img src="/intel-ats-logo.png" alt="INTEL ATS" className="w-20 h-20" />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Next-Generation Applicant Tracking System

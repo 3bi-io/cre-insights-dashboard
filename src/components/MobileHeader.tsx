@@ -77,7 +77,7 @@ const MobileHeader = () => {
           <img 
             src="/intel-ats-logo.png" 
             alt="INTEL ATS" 
-            className="h-8 w-auto"
+            className="h-10 w-auto"
           />
           <div className="flex flex-col">
             <h1 className="text-lg font-semibold leading-none text-foreground">
