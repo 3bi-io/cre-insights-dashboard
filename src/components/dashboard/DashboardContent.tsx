@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardCategoryTiles from './DashboardCategoryTiles';
 import DashboardMetricsSection from './DashboardMetricsSection';
 import { useAuth } from '@/hooks/useAuth';
+import { getActualAccountId } from '@/utils/metaAccountAlias';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -115,7 +116,10 @@ interface MetaAnalyticsData {
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
-const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
+// Display account ID (alias)  
+const CR_ENGLAND_DISPLAY_ID = '897639563274136';
+// Actual account ID for data queries
+const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 
 const DashboardContent = () => {
   const { organization } = useAuth();

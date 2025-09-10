@@ -5,7 +5,11 @@ import MetricsCard from '@/components/MetricsCard';
 import DateRangeFilter from '@/components/platforms/DateRangeFilter';
 import { DollarSign, Users, TrendingUp, Target, Briefcase } from 'lucide-react';
 import { useCostPerLead } from '@/hooks/useCostPerLead';
-const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
+import { getActualAccountId } from '@/utils/metaAccountAlias';
+// Display account ID (alias)
+const CR_ENGLAND_DISPLAY_ID = '897639563274136'; 
+// Actual account ID for data queries
+const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 const DashboardMetrics = () => {
   const [dateRange, setDateRange] = useState('last_30d');
   const {
@@ -45,7 +49,7 @@ const DashboardMetrics = () => {
           // last_30d
           startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
-      const [metaSpendData, applicationsData, jobsData] = await Promise.all([supabase.from('meta_daily_spend').select('spend, impressions, clicks, reach').eq('account_id', CR_ENGLAND_ACCOUNT_ID).gte('date_start', startDate), supabase.from('applications').select('id, source, applied_at').or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram').gte('applied_at', startDate), supabase.from('job_listings').select('id').eq('status', 'active')]);
+      const [metaSpendData, applicationsData, jobsData] = await Promise.all([supabase.from('meta_daily_spend').select('spend, impressions, clicks, reach').eq('account_id', CR_ENGLAND_ACTUAL_ID).gte('date_start', startDate), supabase.from('applications').select('id, source, applied_at').or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram').gte('applied_at', startDate), supabase.from('job_listings').select('id').eq('status', 'active')]);
       console.log('Meta spend data:', metaSpendData.data?.length);
       console.log('Applications data:', applicationsData.data?.length);
       console.log('Jobs data:', jobsData.data?.length);

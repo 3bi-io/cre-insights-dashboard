@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { getActualAccountId } from '@/utils/metaAccountAlias';
 
-const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
+// Display account ID (alias) 
+const CR_ENGLAND_DISPLAY_ID = '897639563274136';
+// Actual account ID for data queries
+const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 
 interface CostPerLeadData {
   totalSpend: number;
@@ -60,7 +64,7 @@ export const useCostPerLead = (dateRange?: string) => {
         metaQuery = metaQuery.eq('organization_id', organization.id);
       } else {
         // Fallback for existing data without organization_id
-        metaQuery = metaQuery.eq('account_id', CR_ENGLAND_ACCOUNT_ID);
+        metaQuery = metaQuery.eq('account_id', CR_ENGLAND_ACTUAL_ID);
       }
       
       if (dateFilter) {

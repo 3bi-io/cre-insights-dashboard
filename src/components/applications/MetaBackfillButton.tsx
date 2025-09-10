@@ -4,9 +4,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { History, RefreshCw } from 'lucide-react';
+import { getActualAccountId } from '@/utils/metaAccountAlias';
 
-// CR England Meta Ad Account ID used across the app
-const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
+// Display account ID (alias)
+const CR_ENGLAND_DISPLAY_ID = '897639563274136';
+// Actual account ID for API calls  
+const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 
 const MetaBackfillButton: React.FC = () => {
   const { toast } = useToast();
@@ -17,7 +20,7 @@ const MetaBackfillButton: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: {
           action: 'sync_leads',
-          accountId: CR_ENGLAND_ACCOUNT_ID,
+          accountId: CR_ENGLAND_ACTUAL_ID,
           sinceDays: 3650, // ~10 years to cover full history
         },
       });

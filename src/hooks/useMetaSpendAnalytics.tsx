@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useOpenAI } from '@/hooks/useOpenAI';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { getActualAccountId } from '@/utils/metaAccountAlias';
 
 interface MetaSpendMetrics {
   totalSpend: number;
@@ -59,7 +60,7 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
         metaQuery = metaQuery.eq('organization_id', organization.id);
       } else {
         // Fallback for existing data without organization_id
-        metaQuery = metaQuery.eq('account_id', '897639563274136');
+        metaQuery = metaQuery.eq('account_id', getActualAccountId('897639563274136'));
       }
       
       const { data: spendData, error: spendError } = await metaQuery

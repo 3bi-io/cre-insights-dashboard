@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import DateRangeFilter from './DateRangeFilter';
 import MetaSpendMetrics from './MetaSpendMetrics';
+import { getActualAccountId, getDisplayAccountId, transformAccountDataForDisplay } from '@/utils/metaAccountAlias';
 
 interface MetaPlatformActionsProps {
   platform: {
@@ -20,7 +21,10 @@ interface MetaPlatformActionsProps {
   onRefresh: () => void;
 }
 
-const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
+// Display account ID (alias)
+const CR_ENGLAND_DISPLAY_ID = '897639563274136';
+// Actual account ID for API calls
+const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 
 // Map our frontend date ranges to Meta API valid date_preset values
 const getMetaDatePreset = (dateRange: string): string => {
@@ -78,31 +82,34 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { toast } = useToast();
 
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
-    queryKey: ['meta-accounts'],
+    queryKey: ['meta-accounts', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
-      console.log('Fetching Meta accounts...');
+      console.log('Fetching Meta accounts for actual ID:', CR_ENGLAND_ACTUAL_ID);
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .eq('account_id', CR_ENGLAND_ACTUAL_ID)
         .order('account_name');
       
       if (error) throw error;
       console.log('Meta accounts fetched:', data?.length);
-      return data;
+      
+      // Transform data to show display IDs
+      const transformedData = data?.map(transformAccountDataForDisplay);
+      return transformedData;
     },
     retry: 2,
     retryDelay: 1000,
   });
 
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
-    queryKey: ['meta-campaigns'],
+    queryKey: ['meta-campaigns', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
-      console.log('Fetching Meta campaigns...');
+      console.log('Fetching Meta campaigns for actual ID:', CR_ENGLAND_ACTUAL_ID);
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .eq('account_id', CR_ENGLAND_ACTUAL_ID)
         .order('campaign_name');
       
       if (error) throw error;
@@ -145,7 +152,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       const { data, error } = await supabase
         .from('meta_daily_spend')
         .select('*')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .eq('account_id', CR_ENGLAND_ACTUAL_ID)
         .gte('date_start', startDate)
         .order('date_start', { ascending: false });
       
@@ -161,7 +168,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       const { data, error } = await supabase
         .from('meta_ad_sets')
         .select('*')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .eq('account_id', CR_ENGLAND_ACTUAL_ID)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -176,7 +183,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       const { data, error } = await supabase
         .from('meta_ads')
         .select('*')
-        .eq('account_id', CR_ENGLAND_ACCOUNT_ID)
+        .eq('account_id', CR_ENGLAND_ACTUAL_ID)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -192,7 +199,9 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     setSyncStatus(`Starting ${action}...`);
 
     try {
-      console.log(`Attempting ${action} with accountId: ${accountId || CR_ENGLAND_ACCOUNT_ID}`);
+      // Use actual account ID for API calls, but display account ID for logging
+      const actualAccountId = getActualAccountId(accountId || CR_ENGLAND_DISPLAY_ID);
+      console.log(`Attempting ${action} with display accountId: ${accountId || CR_ENGLAND_DISPLAY_ID}, actual: ${actualAccountId}`);
       
       const metaDatePreset = getMetaDatePreset(dateRange);
       const sinceDays = getSinceDays(dateRange);
@@ -202,7 +211,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: { 
           action, 
-          accountId: accountId || CR_ENGLAND_ACCOUNT_ID,
+          accountId: actualAccountId,
           campaignId,
           datePreset: metaDatePreset,
           sinceDays
@@ -354,7 +363,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                 </p>
               </div>
               <Button 
-                onClick={() => handleMetaAction('sync_accounts', CR_ENGLAND_ACCOUNT_ID)}
+                onClick={() => handleMetaAction('sync_accounts', CR_ENGLAND_DISPLAY_ID)}
                 disabled={isLoading}
                 size="sm"
               >
@@ -377,7 +386,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                     </p>
                   </div>
                   <Button 
-                    onClick={() => handleMetaAction('sync_campaigns', CR_ENGLAND_ACCOUNT_ID)}
+                    onClick={() => handleMetaAction('sync_campaigns', CR_ENGLAND_DISPLAY_ID)}
                     disabled={isLoading}
                     size="sm"
                     variant="outline"
@@ -399,7 +408,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                     </p>
                   </div>
                   <Button 
-                    onClick={() => handleMetaAction('sync_adsets', CR_ENGLAND_ACCOUNT_ID)}
+                    onClick={() => handleMetaAction('sync_adsets', CR_ENGLAND_DISPLAY_ID)}
                     disabled={isLoading}
                     size="sm"
                     variant="outline"
@@ -421,7 +430,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                     </p>
                   </div>
                   <Button 
-                    onClick={() => handleMetaAction('sync_ads', CR_ENGLAND_ACCOUNT_ID)}
+                    onClick={() => handleMetaAction('sync_ads', CR_ENGLAND_DISPLAY_ID)}
                     disabled={isLoading}
                     size="sm"
                     variant="outline"
@@ -507,13 +516,13 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                       </p>
                     </div>
                      <div className="flex gap-1">
-                       <Button
-                         size="sm"
-                         variant="ghost"
-                         onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
-                         disabled={isLoading}
-                         title="Sync campaigns for CR England"
-                       >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleMetaAction('sync_campaigns', account.account_id)}
+                          disabled={isLoading}
+                          title="Sync campaigns for CR England"
+                        >
                          <BarChart3 className="w-3 h-3" />
                        </Button>
                        <Button
