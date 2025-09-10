@@ -42,7 +42,6 @@ const BenefitsSection = () => {
             <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
               <div className="text-center">
                 <BarChart3 className="h-24 w-24 text-primary/60 mx-auto mb-4" />
-                <p className="text-muted-foreground">Interactive Dashboard Preview</p>
               </div>
             </div>
           </div>
