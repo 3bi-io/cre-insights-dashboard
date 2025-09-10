@@ -394,56 +394,6 @@ const DashboardContent = () => {
                 <DateRangeFilter value={dateRange} onChange={setDateRange} />
               </div>
 
-              {/* Key Metrics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
-                <MetricsCard
-                  title="Total Spend"
-                  value={`$${dashboardMetrics.totalSpend?.toLocaleString() || '0'}`}
-                  change="+12.3%"
-                  changeType="positive"
-                  icon={DollarSign}
-                  description="Meta advertising spend"
-                />
-                
-                <MetricsCard
-                  title="Total Leads"
-                  value={dashboardMetrics.totalLeads?.toLocaleString() || '0'}
-                  change="+8.7%"
-                  changeType="positive"
-                  icon={Users}
-                  description="Applications received"
-                />
-                
-                <MetricsCard
-                  title="Cost Per Lead"
-                  value={`$${dashboardMetrics.totalSpend && dashboardMetrics.totalLeads 
-                    ? (dashboardMetrics.totalSpend / dashboardMetrics.totalLeads).toFixed(2)
-                    : '0.00'}`}
-                  change="-5.2%"
-                  changeType="positive"
-                  icon={Target}
-                  description="Average cost per application"
-                />
-                
-                <MetricsCard
-                  title="Total Reach"
-                  value={dashboardMetrics.totalReach?.toLocaleString() || '0'}
-                  change="+15.1%"
-                  changeType="positive"
-                  icon={TrendingUp}
-                  description="People reached on Meta"
-                />
-                
-                <MetricsCard
-                  title="Active Jobs"
-                  value={dashboardMetrics.totalJobs?.toString() || '39'}
-                  change="+2.4%"
-                  changeType="positive"
-                  icon={Briefcase}
-                  description="Currently active positions"
-                />
-              </div>
-
               {/* CR England Ad Account Info */}
               <div className="bg-card border rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
