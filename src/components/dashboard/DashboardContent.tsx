@@ -627,6 +627,27 @@ const DashboardContent = () => {
                     </Card>
                   </div>
 
+                  {/* CR England Ad Account Info */}
+                  <div className="bg-card border rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-2">CR England Ad Account:</h4>
+                        <div className="flex items-center gap-3 mb-2">
+                          <Badge variant="default" className="bg-primary text-primary-foreground">
+                            cre-25-0601
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          ID: 897639563274136 • USD • America/Chicago
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-muted-foreground" />
+                        <UserCheck className="w-5 h-5 text-muted-foreground" />
+                        <Zap className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <Card>
