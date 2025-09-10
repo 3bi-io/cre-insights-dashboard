@@ -666,8 +666,6 @@ const DashboardContent = () => {
           </Tabs>
         </CardContent>
       </Card>
-
-      <DashboardMetricsSection />
     </div>
   );
 };
