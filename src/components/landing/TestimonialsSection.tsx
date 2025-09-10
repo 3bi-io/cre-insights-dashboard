@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 const TestimonialsSection = () => {
   const testimonials = [
     {
-      quote: "INTEL ATS transformed our hiring process completely. We're now hiring 3x faster with better quality candidates.",
+      quote: "ATS INTEL transformed our hiring process completely. We're now hiring 3x faster with better quality candidates.",
       author: "Sarah Johnson",
       role: "VP of Talent",
       company: "TechCorp"
@@ -32,7 +32,7 @@ const TestimonialsSection = () => {
             Trusted by Industry Leaders
           </h2>
           <p className="text-xl text-muted-foreground">
-            See what our customers are saying about INTEL ATS
+            See what our customers are saying about ATS INTEL
           </p>
         </div>
         

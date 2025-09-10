@@ -30,7 +30,7 @@ export const Brand: React.FC<BrandProps> = ({
       "transition-all duration-200 hover:from-primary/90 hover:to-primary/70",
       className
     )}>
-      INTEL ATS
+      ATS INTEL
     </div>
   );
 

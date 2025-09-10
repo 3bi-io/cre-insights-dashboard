@@ -140,7 +140,7 @@ const Home = () => {
           <Building2 className="w-16 h-16 mx-auto mb-6 text-primary" />
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Hiring?</h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join leading organizations using INTEL ATS to streamline their recruitment process.
+            Join leading organizations using ATS INTEL to streamline their recruitment process.
           </p>
           <Button asChild size="lg" className="text-lg px-8">
             <Link to="/auth">
@@ -158,7 +158,7 @@ const Home = () => {
             <Brand size="sm" showAsLink={false} />
           </div>
           <p className="text-muted-foreground">
-            © 2024 INTEL ATS. All rights reserved.
+            © 2024 ATS INTEL. All rights reserved.
           </p>
         </div>
       </footer>

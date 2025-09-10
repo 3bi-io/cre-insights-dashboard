@@ -18,7 +18,7 @@ const BenefitsSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-6">
-            Why Organizations Choose INTEL ATS
+            Why Organizations Choose ATS INTEL
           </h2>
           <div className="space-y-4">
             {benefits.map((benefit, index) => (

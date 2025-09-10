@@ -28,7 +28,7 @@ const CookiePolicyPage = () => {
             <Alert>
               <Cookie className="h-4 w-4" />
               <AlertDescription>
-                This Cookie Policy explains how INTEL ATS uses cookies and similar technologies 
+                This Cookie Policy explains how ATS INTEL uses cookies and similar technologies 
                 to recognize you when you visit our platform.
               </AlertDescription>
             </Alert>

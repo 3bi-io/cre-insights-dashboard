@@ -335,7 +335,7 @@ const AboutPage = () => {
             Ready to Transform Your Hiring?
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of organizations that trust INTEL ATS to power their recruitment success.
+            Join thousands of organizations that trust ATS INTEL to power their recruitment success.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">

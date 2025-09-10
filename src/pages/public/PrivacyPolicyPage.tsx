@@ -38,7 +38,7 @@ const PrivacyPolicyPage = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Usage Information</h3>
                   <p className="text-muted-foreground">
-                    We automatically collect information about how you use INTEL ATS, including your 
+                    We automatically collect information about how you use ATS INTEL, including your 
                     interactions with the platform, features used, and performance metrics to improve 
                     our services.
                   </p>
@@ -187,7 +187,7 @@ const PrivacyPolicyPage = () => {
                 </p>
                 <div className="space-y-2">
                   <p className="text-foreground font-medium">Email: privacy@intelats.com</p>
-                  <p className="text-foreground font-medium">Address: INTEL ATS Privacy Office</p>
+                  <p className="text-foreground font-medium">Address: ATS INTEL Privacy Office</p>
                 </div>
               </CardContent>
             </Card>
