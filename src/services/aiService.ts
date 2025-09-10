@@ -149,7 +149,26 @@ class AIService {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
         systemPrompt: this.buildSystemPrompt(parameters),
-        model: 'claude-3-5-sonnet-20241022'
+        model: 'claude-3-5-sonnet-20241022' // Latest Claude model
+      }
+    });
+
+    if (response.error) throw new Error(response.error.message);
+
+    return {
+      content: response.data.generatedText,
+      processingType: 'ai',
+      confidence: 0.90,
+      explanation: 'Generated using latest Anthropic Claude with enhanced reasoning capabilities'
+    };
+  }
+
+  private async callOpenAI(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+    const response = await supabase.functions.invoke('openai-chat', {
+      body: {
+        message: this.buildPrompt(prompt, data, parameters),
+        systemPrompt: this.buildSystemPrompt(parameters),
+        model: 'gpt-5-2025-08-07' // Latest flagship model
       }
     });
 
@@ -159,26 +178,7 @@ class AIService {
       content: response.data.generatedText,
       processingType: 'ai',
       confidence: 0.85,
-      explanation: 'Generated using Anthropic Claude with advanced reasoning capabilities'
-    };
-  }
-
-  private async callOpenAI(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
-    const response = await supabase.functions.invoke('openai-chat', {
-      body: {
-        message: this.buildPrompt(prompt, data, parameters),
-        systemPrompt: this.buildSystemPrompt(parameters),
-        model: 'gpt-4-turbo'
-      }
-    });
-
-    if (response.error) throw new Error(response.error.message);
-
-    return {
-      content: response.data.generatedText,
-      processingType: 'ai',
-      confidence: 0.80,
-      explanation: 'Generated using OpenAI GPT-4 with broad knowledge and pattern recognition'
+      explanation: 'Generated using OpenAI GPT-5 with advanced reasoning and enhanced performance'
     };
   }
 

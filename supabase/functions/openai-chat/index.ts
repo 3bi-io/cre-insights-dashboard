@@ -58,7 +58,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, model = 'gpt-4.1-2025-04-14', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
+    const { message, model = 'gpt-5-2025-08-07', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
 
     console.log('Received chat request:', { message, model, includeAnalytics });
 
@@ -133,8 +133,7 @@ If asked about data you don't have access to, explain what information you'd nee
       body: JSON.stringify({
         model,
         messages,
-        temperature: 0.7,
-        max_tokens: 1000,
+        max_completion_tokens: 1000, // Updated for GPT-5 compatibility
       }),
     });
 

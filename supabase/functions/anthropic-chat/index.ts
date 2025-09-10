@@ -61,7 +61,6 @@ Your responses should be:
 
 When analyzing data or trends, always explain your methodology and highlight key findings that drive business value.`;
 
-    // Prepare the messages array for Claude
     const messages = [
       {
         role: 'user',
@@ -81,8 +80,7 @@ When analyzing data or trends, always explain your methodology and highlight key
       },
       body: JSON.stringify({
         model: model,
-        max_tokens: 1000,
-        temperature: 0.7,
+        max_tokens: 1500,
         system: systemPrompt || defaultSystemPrompt,
         messages: messages
       }),
@@ -97,7 +95,6 @@ When analyzing data or trends, always explain your methodology and highlight key
     const data = await response.json();
     console.log('Anthropic API response received');
 
-    // Extract the generated text from Claude's response
     const generatedText = data.content?.[0]?.text || 'I apologize, but I couldn\'t generate a response. Please try again.';
 
     return new Response(JSON.stringify({ 

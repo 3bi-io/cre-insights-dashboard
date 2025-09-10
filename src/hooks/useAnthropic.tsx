@@ -1,42 +1,43 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface OpenAIRequest {
+interface AnthropicRequest {
   message: string;
   model?: string;
   systemPrompt?: string;
   includeAnalytics?: boolean;
 }
 
-interface OpenAIResponse {
+interface AnthropicResponse {
   generatedText: string;
-  source: 'openai' | 'analytics' | 'fallback';
+  source: 'anthropic' | 'analytics' | 'fallback';
   model?: string;
+  provider: 'anthropic';
   data?: any;
 }
 
-interface UseOpenAIOptions {
+interface UseAnthropicOptions {
   functionName?: string;
-  onSuccess?: (data: OpenAIResponse) => void;
+  onSuccess?: (data: AnthropicResponse) => void;
   onError?: (error: Error) => void;
 }
 
-export const useOpenAI = (options: UseOpenAIOptions = {}) => {
+export const useAnthropic = (options: UseAnthropicOptions = {}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const {
-    functionName = 'openai-chat',
+    functionName = 'anthropic-chat',
     onSuccess,
     onError
   } = options;
 
-  const invoke = async (request: OpenAIRequest): Promise<OpenAIResponse | null> => {
+  const invoke = async (request: AnthropicRequest): Promise<AnthropicResponse | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('Invoking OpenAI function:', functionName, request);
+      console.log('Invoking Anthropic function:', functionName, request);
 
       const response = await supabase.functions.invoke(functionName, {
         body: request
@@ -46,13 +47,13 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
         throw new Error(response.error.message);
       }
 
-      const data = response.data as OpenAIResponse;
+      const data = response.data as AnthropicResponse;
       
       if (!data || !data.generatedText) {
-        throw new Error('Invalid response from OpenAI function');
+        throw new Error('Invalid response from Anthropic function');
       }
 
-      console.log('OpenAI response received:', data);
+      console.log('Anthropic response received:', data);
 
       if (onSuccess) {
         onSuccess(data);
@@ -62,7 +63,7 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('OpenAI function error:', errorMessage);
+      console.error('Anthropic function error:', errorMessage);
       
       setError(errorMessage);
 
@@ -89,36 +90,19 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
   };
 };
 
-// Utility function to build OpenAI requests
-export const buildOpenAIRequest = (
+// Utility function to build Anthropic requests
+export const buildAnthropicRequest = (
   message: string,
   options: {
     model?: string;
     systemPrompt?: string;
     includeAnalytics?: boolean;
   } = {}
-): OpenAIRequest => {
+): AnthropicRequest => {
   return {
     message,
-    model: options.model || 'gpt-5-2025-08-07', // Updated to latest flagship model
+    model: options.model || 'claude-3-5-sonnet-20241022',
     systemPrompt: options.systemPrompt,
     includeAnalytics: options.includeAnalytics || false
   };
-};
-
-// Utility function to format AI responses
-export const formatAIResponse = (response: any): string => {
-  if (typeof response === 'string') {
-    return response;
-  }
-
-  if (response && typeof response.generatedText === 'string') {
-    return response.generatedText;
-  }
-
-  if (response && typeof response.response === 'string') {
-    return response.response;
-  }
-
-  return 'I apologize, but I couldn\'t process your request properly. Please try again.';
 };
