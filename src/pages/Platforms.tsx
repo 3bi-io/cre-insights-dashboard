@@ -8,7 +8,7 @@ import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
 import GoogleJobsPlatformActions from '@/components/platforms/GoogleJobsPlatformActions';
 import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Globe, FileText, Settings } from 'lucide-react';
+import { Globe, FileText } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 
 const Platforms = () => {
@@ -55,7 +55,7 @@ const Platforms = () => {
         />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Publishers
@@ -67,10 +67,6 @@ const Platforms = () => {
           <TabsTrigger value="google-jobs" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Google Jobs
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Settings
           </TabsTrigger>
         </TabsList>
 
@@ -92,13 +88,6 @@ const Platforms = () => {
 
         <TabsContent value="google-jobs" className="space-y-6 mt-6">
           <GoogleJobsPlatformActions />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6 mt-6">
-          <div className="text-center py-12">
-            <Settings className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Publisher settings coming soon</p>
-          </div>
         </TabsContent>
       </Tabs>
 
