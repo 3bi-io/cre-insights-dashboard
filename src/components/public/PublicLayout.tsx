@@ -79,11 +79,6 @@ const PublicLayout = () => {
               <h3 className="font-semibold text-foreground mb-4">Company</h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                    About Us
-                  </a>
-                </li>
-                <li>
                   <a href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
                     Contact
                   </a>
