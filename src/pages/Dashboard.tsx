@@ -19,9 +19,9 @@ const Dashboard = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  // Redirect if user doesn't have admin privileges
-  if (!user || userRole !== 'admin') {
-    return <Navigate to="/" replace />;
+  // Redirect if user is not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   // Organization admin view - organization-specific access only
