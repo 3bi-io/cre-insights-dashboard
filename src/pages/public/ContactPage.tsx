@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Mail, 
-  Clock,
   MessageSquare,
   Users,
   Headphones,
@@ -284,35 +283,6 @@ const ContactPage = () => {
         </div>
       </section>
 
-      {/* Business Hours */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-3xl mx-auto">
-            <Clock className="h-16 w-16 text-primary mx-auto mb-6" />
-            <p className="text-xl text-muted-foreground mb-8">
-              Our team is available during business hours in all major time zones. 
-              Enterprise customers get 24/7 priority support.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-              <div className="text-center">
-                <h3 className="font-semibold text-foreground mb-2">Americas</h3>
-                <p className="text-muted-foreground">Monday - Friday</p>
-                <p className="text-muted-foreground">6 AM - 6 PM PST</p>
-              </div>
-              <div className="text-center">
-                <h3 className="font-semibold text-foreground mb-2">Europe</h3>
-                <p className="text-muted-foreground">Monday - Friday</p>
-                <p className="text-muted-foreground">9 AM - 6 PM GMT</p>
-              </div>
-              <div className="text-center">
-                <h3 className="font-semibold text-foreground mb-2">Asia Pacific</h3>
-                <p className="text-muted-foreground">Monday - Friday</p>
-                <p className="text-muted-foreground">9 AM - 6 PM JST</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };
