@@ -1451,6 +1451,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string | null
+          enabled: boolean
           full_name: string | null
           id: string
           organization_id: string | null
@@ -1460,6 +1461,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          enabled?: boolean
           full_name?: string | null
           id: string
           organization_id?: string | null
@@ -1469,6 +1471,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          enabled?: boolean
           full_name?: string | null
           id?: string
           organization_id?: string | null
@@ -1887,6 +1890,10 @@ export type Database = {
       }
       update_organization_features: {
         Args: { _features: Json; _org_id: string }
+        Returns: undefined
+      }
+      update_user_status: {
+        Args: { _enabled: boolean; _user_id: string }
         Returns: undefined
       }
     }

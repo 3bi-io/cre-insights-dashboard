@@ -5,19 +5,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { 
   Users, 
   Shield, 
   Globe,
   Plus,
-  UserCheck
+  UserCheck,
+  UserX
 } from 'lucide-react';
 import { useAdminDashboardData, useUserActivityData } from '@/hooks/useAdminDashboardData';
+import { useSuperAdminUsers } from '@/hooks/useSuperAdminUsers';
 
 const UserManagement = () => {
   const { user, userRole, loading } = useAuth();
   const { data: metrics, isLoading: metricsLoading } = useAdminDashboardData();
   const { data: userActivity, isLoading: activityLoading } = useUserActivityData();
+  const { users, isLoading: usersLoading, updateUserStatus, isUpdating } = useSuperAdminUsers();
 
   if (loading) {
     return (
@@ -32,7 +36,7 @@ const UserManagement = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (metricsLoading || activityLoading) {
+  if (metricsLoading || activityLoading || usersLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
@@ -149,6 +153,56 @@ const UserManagement = () => {
               </CardContent>
             </Card>
           </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+              <CardDescription>Enable or disable platform users (excluding super administrators)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {users?.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No users found</p>
+              ) : (
+                <div className="space-y-3">
+                  {users?.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between py-3 border-b last:border-0">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{user.email}</p>
+                          {!user.enabled && (
+                            <UserX className="h-4 w-4 text-destructive" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {user.organization_name} • {user.full_name || 'No name'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={user.role === 'admin' || user.role === 'super_admin' ? 'secondary' : 'outline'}>
+                          {user.role}
+                        </Badge>
+                        {user.role !== 'super_admin' && (
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs ${user.enabled ? 'text-emerald-600' : 'text-red-600'}`}>
+                              {user.enabled ? 'Enabled' : 'Disabled'}
+                            </span>
+                            <Switch
+                              checked={user.enabled}
+                              onCheckedChange={(enabled) => updateUserStatus({ userId: user.id, enabled })}
+                              disabled={isUpdating}
+                            />
+                          </div>
+                        )}
+                        {user.role === 'super_admin' && (
+                          <span className="text-xs text-muted-foreground">Super Admin</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
           
           <Card>
             <CardHeader>
