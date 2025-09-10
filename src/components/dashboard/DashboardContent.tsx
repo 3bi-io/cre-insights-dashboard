@@ -379,11 +379,6 @@ const DashboardContent = () => {
           <Tabs defaultValue="meta-spend" className="w-full">
             <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="meta-spend" className="flex items-center gap-2">
-                <img 
-                  src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" 
-                  alt="Meta" 
-                  className="w-4 h-4"
-                />
                 Meta Spend Analytics
               </TabsTrigger>
             </TabsList>
