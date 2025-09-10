@@ -27,9 +27,9 @@ const Auth = () => {
       if (userRole === 'super_admin') {
         window.location.href = '/admin';
       } else if (userRole === 'admin') {
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }
     }
   }, [user, userRole]);

@@ -138,9 +138,9 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
         if (role === 'super_admin') {
           navigate('/admin');
         } else if (role === 'admin') {
-          navigate('/');
+          navigate('/dashboard');
         } else {
-          navigate('/');
+          navigate('/dashboard');
         }
       } catch {
         navigate('/');
