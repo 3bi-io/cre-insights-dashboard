@@ -20,7 +20,6 @@ import { logger } from "@/services/loggerService";
 const LandingPage = React.lazy(() => import("./pages/public/LandingPage"));
 const FeaturesPage = React.lazy(() => import("./pages/public/FeaturesPage"));
 const PricingPage = React.lazy(() => import("./pages/public/PricingPage"));
-const AboutPage = React.lazy(() => import("./pages/public/AboutPage"));
 const ContactPage = React.lazy(() => import("./pages/public/ContactPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./pages/public/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("./pages/public/TermsOfServicePage"));
@@ -154,14 +153,6 @@ const App = React.memo(() => {
                   element={
                     <Suspense fallback={<PageSkeleton />}>
                       <PricingPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="about"
-                  element={
-                    <Suspense fallback={<PageSkeleton />}>
-                      <AboutPage />
                     </Suspense>
                   }
                 />
