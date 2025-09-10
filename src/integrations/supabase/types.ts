@@ -837,6 +837,72 @@ export type Database = {
         }
         Relationships: []
       }
+      job_group_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          job_group_id: string
+          job_listing_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_group_id: string
+          job_listing_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_group_id?: string
+          job_listing_id?: string
+        }
+        Relationships: []
+      }
+      job_groups: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string | null
+          publisher_endpoint: string | null
+          publisher_name: string
+          status: string | null
+          updated_at: string
+          user_id: string
+          xml_feed_settings: Json | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+          publisher_endpoint?: string | null
+          publisher_name: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          xml_feed_settings?: Json | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+          publisher_endpoint?: string | null
+          publisher_name?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          xml_feed_settings?: Json | null
+        }
+        Relationships: []
+      }
       job_listings: {
         Row: {
           apply_url: string | null
