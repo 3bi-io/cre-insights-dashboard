@@ -289,9 +289,6 @@ const ContactPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-3xl mx-auto">
             <Clock className="h-16 w-16 text-primary mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
-              We're Here When You Need Us
-            </h2>
             <p className="text-xl text-muted-foreground mb-8">
               Our team is available during business hours in all major time zones. 
               Enterprise customers get 24/7 priority support.
