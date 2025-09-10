@@ -19,7 +19,7 @@ export {
 export type { StandardCardProps } from './StandardCard';
 
 // New reusable components
-export { Logo } from './Logo';
+export { Brand } from './Brand';
 export { Header } from './Header';
 
 // Re-export optimized components for convenience

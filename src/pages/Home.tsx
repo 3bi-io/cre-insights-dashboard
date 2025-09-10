@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Building2
 } from 'lucide-react';
-import { Logo } from '@/components/common';
+import { Brand } from '@/components/common';
 
 const Home = () => {
   const { user, userRole } = useAuth();
@@ -58,7 +58,7 @@ const Home = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Logo size="md" showAsLink={false} />
+            <Brand size="md" showAsLink={false} />
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
@@ -155,7 +155,7 @@ const Home = () => {
       <footer className="border-t bg-card py-12 px-4">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center mb-4">
-            <Logo size="sm" showAsLink={false} />
+            <Brand size="sm" showAsLink={false} />
           </div>
           <p className="text-muted-foreground">
             © 2024 INTEL ATS. All rights reserved.

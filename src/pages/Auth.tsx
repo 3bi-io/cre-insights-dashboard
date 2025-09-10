@@ -10,7 +10,7 @@ import { AlertCircle, Mail } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Logo } from '@/components/common';
+import { Brand } from '@/components/common';
 
 const Auth = () => {
   const { signIn, user, userRole } = useAuth();
@@ -73,7 +73,7 @@ const handlePasswordReset = async (e: React.FormEvent) => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <Logo size="xl" showAsLink={false} />
+            <Brand size="xl" showAsLink={false} />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Next-Generation Applicant Tracking System
