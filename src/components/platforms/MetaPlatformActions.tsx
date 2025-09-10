@@ -20,7 +20,7 @@ interface MetaPlatformActionsProps {
   onRefresh: () => void;
 }
 
-const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
 
 // Map our frontend date ranges to Meta API valid date_preset values
 const getMetaDatePreset = (dateRange: string): string => {

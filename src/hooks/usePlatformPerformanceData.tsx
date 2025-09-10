@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
 
 export const usePlatformPerformanceData = () => {
   const { organization } = useAuth();

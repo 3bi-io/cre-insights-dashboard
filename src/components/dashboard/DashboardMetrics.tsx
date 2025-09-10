@@ -5,7 +5,7 @@ import MetricsCard from '@/components/MetricsCard';
 import DateRangeFilter from '@/components/platforms/DateRangeFilter';
 import { DollarSign, Users, TrendingUp, Target, Briefcase } from 'lucide-react';
 import { useCostPerLead } from '@/hooks/useCostPerLead';
-const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+const CR_ENGLAND_ACCOUNT_ID = '897639563274136';
 const DashboardMetrics = () => {
   const [dateRange, setDateRange] = useState('last_30d');
   const {

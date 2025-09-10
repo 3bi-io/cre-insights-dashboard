@@ -59,7 +59,7 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
         metaQuery = metaQuery.eq('organization_id', organization.id);
       } else {
         // Fallback for existing data without organization_id
-        metaQuery = metaQuery.eq('account_id', '435031743763874');
+        metaQuery = metaQuery.eq('account_id', '897639563274136');
       }
       
       const { data: spendData, error: spendError } = await metaQuery
