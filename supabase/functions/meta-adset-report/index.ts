@@ -89,14 +89,11 @@ serve(async (req) => {
     // Fetch all ad sets for the user/organization
     let adSetsQuery = supabase
       .from('meta_ad_sets')
-      .select(`
-        *,
-        meta_campaigns!inner(campaign_name, campaign_id, organization_id)
-      `)
+      .select('*')
       .eq('user_id', user.id);
 
     if (organizationId) {
-      adSetsQuery = adSetsQuery.eq('meta_campaigns.organization_id', organizationId);
+      adSetsQuery = adSetsQuery.eq('organization_id', organizationId);
     }
 
     const { data: adSets, error: adSetsError } = await adSetsQuery;
@@ -107,6 +104,21 @@ serve(async (req) => {
     }
 
     console.log(`Found ${adSets?.length || 0} ad sets`);
+
+    // Fetch campaigns to map campaign_name by campaign_id
+    let campaignsQuery = supabase
+      .from('meta_campaigns')
+      .select('campaign_id, campaign_name, organization_id, user_id')
+      .eq('user_id', user.id);
+    if (organizationId) {
+      campaignsQuery = campaignsQuery.eq('organization_id', organizationId);
+    }
+    const { data: campaigns, error: campaignsError } = await campaignsQuery;
+    if (campaignsError) {
+      console.error('Error fetching campaigns:', campaignsError);
+      throw campaignsError;
+    }
+    const campaignsMap = new Map((campaigns || []).map((c: any) => [c.campaign_id, c]));
 
     // Fetch spend data for the date range
     const { data: spendData, error: spendError } = await supabase
@@ -126,7 +138,7 @@ serve(async (req) => {
     // Fetch leads for the date range (Meta sources)
     const { data: leadsData, error: leadsError } = await supabase
       .from('applications')
-      .select('id, source, applied_at, notes, display_fields, job_listings!inner(organization_id)')
+      .select('id, source, applied_at, notes, display_fields, adset_id, campaign_id')
       .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram')
       .gte('applied_at', startDate);
 
@@ -207,7 +219,7 @@ serve(async (req) => {
       const reportItem: AdSetReportData = {
         adSetName: adSet.adset_name || `Ad Set ${adSet.adset_id}`,
         adSetId: adSet.adset_id,
-        campaignName: adSet.meta_campaigns?.campaign_name || 'Unknown Campaign',
+        campaignName: (campaignsMap.get(adSet.campaign_id)?.campaign_name) || 'Unknown Campaign',
         campaignId: adSet.campaign_id,
         totalSpend,
         totalLeads,
@@ -238,9 +250,12 @@ serve(async (req) => {
       totalLeads: adSetReport.reduce((sum, item) => sum + item.totalLeads, 0),
       totalImpressions: adSetReport.reduce((sum, item) => sum + item.impressions, 0),
       totalClicks: adSetReport.reduce((sum, item) => sum + item.clicks, 0),
-      averageCostPerLead: adSetReport.length > 0 
-        ? adSetReport.reduce((sum, item) => sum + (item.costPerLead || 0), 0) / adSetReport.filter(item => item.costPerLead > 0).length || 0
-        : 0,
+      averageCostPerLead: (() => {
+        const withLeads = adSetReport.filter(item => item.totalLeads > 0);
+        if (withLeads.length === 0) return 0;
+        const sum = withLeads.reduce((acc, item) => acc + (item.costPerLead || 0), 0);
+        return sum / withLeads.length;
+      })(),
       dateRange: {
         start: startDate,
         end: today.toISOString().split('T')[0]
