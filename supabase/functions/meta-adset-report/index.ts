@@ -167,24 +167,30 @@ serve(async (req) => {
         : Number(adSet.frequency) || 0;
 
       // Try to correlate leads with this ad set
-      // Method 1: Direct correlation if notes contain campaign/adset ID
+      // Method 1: Direct correlation using new attribution fields (most accurate)
       let directLeads = leadsData?.filter(lead => {
-        const notes = lead.notes || '';
-        return notes.includes(adSet.campaign_id) || notes.includes(adSet.adset_id);
+        return lead.adset_id === adSet.adset_id || 
+               lead.campaign_id === adSet.campaign_id;
       }) || [];
 
-      // Method 2: Time-based correlation for leads without direct attribution
+      // Method 2: Correlation via notes if direct attribution not available
+      if (directLeads.length === 0) {
+        directLeads = leadsData?.filter(lead => {
+          const notes = lead.notes || '';
+          return notes.includes(adSet.campaign_id) || notes.includes(adSet.adset_id);
+        }) || [];
+      }
+
+      // Method 3: Time-based correlation for leads without direct attribution
       // Find leads that occurred while this ad set was active and spending
-      const adSetStartDate = new Date(startDate);
-      const adSetEndDate = new Date();
-      
       if (directLeads.length === 0 && adSetSpendData.length > 0) {
         // Get leads in time windows where this ad set had spend
         const spendDates = adSetSpendData.map(spend => spend.date_start);
         
         const timeBasedLeads = leadsData?.filter(lead => {
           const leadDate = new Date(lead.applied_at).toISOString().split('T')[0];
-          return spendDates.includes(leadDate);
+          return spendDates.includes(leadDate) && 
+                 (!lead.adset_id && !lead.campaign_id); // Only unattributed leads
         }) || [];
 
         // Proportionally attribute leads based on spend share

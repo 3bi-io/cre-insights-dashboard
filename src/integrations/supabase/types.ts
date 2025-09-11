@@ -153,13 +153,16 @@ export type Database = {
       applications: {
         Row: {
           accident_history: string | null
+          ad_id: string | null
           address_1: string | null
           address_2: string | null
+          adset_id: string | null
           age: string | null
           agree_privacy_policy: string | null
           applicant_email: string | null
           applied_at: string | null
           background_check_consent: string | null
+          campaign_id: string | null
           can_pass_drug_test: string | null
           can_pass_physical: string | null
           can_work_nights: string | null
@@ -235,13 +238,16 @@ export type Database = {
         }
         Insert: {
           accident_history?: string | null
+          ad_id?: string | null
           address_1?: string | null
           address_2?: string | null
+          adset_id?: string | null
           age?: string | null
           agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
           background_check_consent?: string | null
+          campaign_id?: string | null
           can_pass_drug_test?: string | null
           can_pass_physical?: string | null
           can_work_nights?: string | null
@@ -317,13 +323,16 @@ export type Database = {
         }
         Update: {
           accident_history?: string | null
+          ad_id?: string | null
           address_1?: string | null
           address_2?: string | null
+          adset_id?: string | null
           age?: string | null
           agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
           background_check_consent?: string | null
+          campaign_id?: string | null
           can_pass_drug_test?: string | null
           can_pass_physical?: string | null
           can_work_nights?: string | null

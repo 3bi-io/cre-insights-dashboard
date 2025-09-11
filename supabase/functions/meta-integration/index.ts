@@ -798,8 +798,12 @@ async function processLeads(leads: any[], supabase: any, sinceDate: Date, existi
       status: 'pending',
       created_at: createdAt.toISOString(),
       applied_at: createdAt.toISOString(),
-      notes: `Meta Lead • campaign ${lead.campaign_id || ''}`,
+      notes: `Meta Lead • campaign ${lead.campaign_id || ''} • adset ${lead.adset_id || ''} • ad ${lead.ad_id || ''}`,
       display_fields: fieldsObj,
+      // Enhanced attribution fields
+      campaign_id: lead.campaign_id || null,
+      adset_id: lead.adset_id || null,
+      ad_id: lead.ad_id || null,
     };
 
     const { error } = await supabase.from('applications').insert(insertPayload);
