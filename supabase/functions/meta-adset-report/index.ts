@@ -178,8 +178,10 @@ serve(async (req) => {
       // Use direct spend from the ad set data (Meta's native field)
       const totalSpend = Number(adSet.spend ?? 0);
       
-      // Use actual leads count from applications in the date range
-      const totalLeads = leadsCountMap.get(adSet.adset_id) || 0;
+      // Use results from Meta ad sets as leads, fallback to application count
+      const metaResults = Number(adSet.results || 0);
+      const applicationLeads = leadsCountMap.get(adSet.adset_id) || 0;
+      const totalLeads = metaResults > 0 ? metaResults : applicationLeads;
       const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
       const reportItem: AdSetReportData = {
