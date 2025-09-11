@@ -184,6 +184,12 @@ serve(async (req) => {
       }
     });
 
+    // Function to generate anonymized 18-digit ID starting with 6
+    const generateAnonymizedId = () => {
+      const remainingDigits = Math.floor(Math.random() * Math.pow(10, 17)).toString().padStart(17, '0');
+      return '6' + remainingDigits;
+    };
+
     for (const adSet of adSets || []) {
       // Use direct spend from the ad set data (Meta's native field)
       const totalSpend = Number(adSet.spend ?? 0);
@@ -194,7 +200,7 @@ serve(async (req) => {
 
       const reportItem: AdSetReportData = {
         adSetName: adSet.adset_name || `Ad Set ${adSet.adset_id}`,
-        adSetId: adSet.adset_id,
+        adSetId: generateAnonymizedId(), // Anonymized 18-digit ID starting with 6
         campaignName: (campaignsMap.get(adSet.campaign_id)?.campaign_name) || 'Unknown Campaign',
         campaignId: adSet.campaign_id,
         totalSpend,
