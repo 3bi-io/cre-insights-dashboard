@@ -50,6 +50,7 @@ const Organizations = React.lazy(() => import("./pages/Organizations"));
 const Media = React.lazy(() => import("./pages/Media"));
 const JobGroups = React.lazy(() => import("./pages/JobGroups"));
 const UserManagement = React.lazy(() => import("./pages/UserManagement"));
+const MetaAdSetReportPage = React.lazy(() => import("./pages/MetaAdSetReportPage"));
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -367,6 +368,14 @@ const App = React.memo(() => {
                   element={
                     <Suspense fallback={<PageSkeleton />}>
                       <UserManagement />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="meta-adset-report"
+                  element={
+                    <Suspense fallback={<PageSkeleton />}>
+                      <MetaAdSetReportPage />
                     </Suspense>
                   }
                 />

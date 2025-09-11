@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
 const AppSidebar = () => {
@@ -90,6 +90,11 @@ const AppSidebar = () => {
         path: '/admin/ai-tools',
         label: 'AI Tools',
         icon: Bot
+      },
+      {
+        path: '/admin/meta-adset-report',
+        label: 'Meta Ad Set Report',
+        icon: BarChart3
       }
     ]
       }, {
