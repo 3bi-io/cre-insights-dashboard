@@ -93,7 +93,8 @@ serve(async (req) => {
       .eq('user_id', user.id);
 
     if (organizationId) {
-      adSetsQuery = adSetsQuery.eq('organization_id', organizationId);
+      // Include rows where organization_id matches OR is null (backfill compatibility)
+      adSetsQuery = adSetsQuery.or(`organization_id.eq.${organizationId},organization_id.is.null`);
     }
 
     const { data: adSets, error: adSetsError } = await adSetsQuery;
@@ -125,8 +126,16 @@ serve(async (req) => {
 
     for (const adSet of adSets || []) {
       // Use direct fields from the ad set data (Meta's native fields)
-      const totalSpend = Number(adSet.spend || 0);
-      const totalLeads = Number(adSet.results || 0);
+      const totalSpend = Number(adSet.spend ?? 0);
+      // results can be text/number; normalize to a number
+      let totalLeads = 0;
+      if (typeof adSet.results === 'number') {
+        totalLeads = adSet.results;
+      } else if (adSet.results != null) {
+        const cleaned = String(adSet.results).replace(/[^0-9.]/g, '');
+        const parsed = cleaned ? parseFloat(cleaned) : 0;
+        totalLeads = Number.isFinite(parsed) ? parsed : 0;
+      }
       const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
       const reportItem: AdSetReportData = {
