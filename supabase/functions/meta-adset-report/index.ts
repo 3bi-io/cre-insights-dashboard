@@ -84,13 +84,61 @@ serve(async (req) => {
         startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     }
 
-    console.log('Generating report for date range:', startDate, 'to', today.toISOString().split('T')[0]);
+    const endDate = today.toISOString().split('T')[0];
+    console.log('Generating report for date range:', startDate, 'to', endDate);
 
-    // Fetch all ad sets for the user/organization
+    // First, fetch applications (leads) within the date range to determine which ad sets to include
+    const { data: leadsInRange, error: leadsError } = await supabase
+      .from('applications')
+      .select('id, applied_at, adset_id, campaign_id, source')
+      .gte('applied_at', startDate + 'T00:00:00.000Z')
+      .lte('applied_at', endDate + 'T23:59:59.999Z')
+      .not('adset_id', 'is', null); // Only leads with adset attribution
+
+    if (leadsError) {
+      console.error('Error fetching leads in date range:', leadsError);
+      throw leadsError;
+    }
+
+    console.log(`Found ${leadsInRange?.length || 0} leads in date range`);
+
+    // If no leads in date range, return empty report
+    if (!leadsInRange || leadsInRange.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          summary: {
+            totalAdSets: 0,
+            totalSpend: 0,
+            totalLeads: 0,
+            totalImpressions: 0,
+            totalClicks: 0,
+            averageCostPerLead: 0,
+            dateRange: {
+              start: startDate,
+              end: endDate
+            }
+          },
+          adSets: [],
+          generatedAt: new Date().toISOString()
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Get unique ad set IDs from leads in date range
+    const adSetIdsWithLeads = [...new Set(leadsInRange.map(lead => lead.adset_id).filter(Boolean))];
+    
+    console.log(`Found ${adSetIdsWithLeads.length} unique ad sets with leads in date range`);
+
+    // Fetch ad sets that have leads in the date range
     let adSetsQuery = supabase
       .from('meta_ad_sets')
       .select('*')
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .in('adset_id', adSetIdsWithLeads);
 
     if (organizationId) {
       // Include rows where organization_id matches OR is null (backfill compatibility)
@@ -104,16 +152,20 @@ serve(async (req) => {
       throw adSetsError;
     }
 
-    console.log(`Found ${adSets?.length || 0} ad sets`);
+    console.log(`Found ${adSets?.length || 0} ad sets with leads in date range`);
 
     // Fetch campaigns to map campaign_name by campaign_id
+    const campaignIds = [...new Set(adSets?.map(as => as.campaign_id).filter(Boolean) || [])];
     let campaignsQuery = supabase
       .from('meta_campaigns')
-      .select('campaign_id, campaign_name, organization_id, user_id')
-      .eq('user_id', user.id);
+      .select('campaign_id, campaign_name')
+      .eq('user_id', user.id)
+      .in('campaign_id', campaignIds);
+    
     if (organizationId) {
-      campaignsQuery = campaignsQuery.eq('organization_id', organizationId);
+      campaignsQuery = campaignsQuery.or(`organization_id.eq.${organizationId},organization_id.is.null`);
     }
+    
     const { data: campaigns, error: campaignsError } = await campaignsQuery;
     if (campaignsError) {
       console.error('Error fetching campaigns:', campaignsError);
@@ -121,21 +173,23 @@ serve(async (req) => {
     }
     const campaignsMap = new Map((campaigns || []).map((c: any) => [c.campaign_id, c]));
 
-    // Process data and create report using direct fields from meta_ad_sets
+    // Process data and create report using leads received in date range
     const adSetReport: AdSetReportData[] = [];
 
-    for (const adSet of adSets || []) {
-      // Use direct fields from the ad set data (Meta's native fields)
-      const totalSpend = Number(adSet.spend ?? 0);
-      // results can be text/number; normalize to a number
-      let totalLeads = 0;
-      if (typeof adSet.results === 'number') {
-        totalLeads = adSet.results;
-      } else if (adSet.results != null) {
-        const cleaned = String(adSet.results).replace(/[^0-9.]/g, '');
-        const parsed = cleaned ? parseFloat(cleaned) : 0;
-        totalLeads = Number.isFinite(parsed) ? parsed : 0;
+    // Create a map of ad set ID to leads count in date range
+    const leadsCountMap = new Map<string, number>();
+    leadsInRange.forEach(lead => {
+      if (lead.adset_id) {
+        leadsCountMap.set(lead.adset_id, (leadsCountMap.get(lead.adset_id) || 0) + 1);
       }
+    });
+
+    for (const adSet of adSets || []) {
+      // Use direct spend from the ad set data (Meta's native field)
+      const totalSpend = Number(adSet.spend ?? 0);
+      
+      // Use actual leads count from applications in the date range
+      const totalLeads = leadsCountMap.get(adSet.adset_id) || 0;
       const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
 
       const reportItem: AdSetReportData = {
@@ -180,7 +234,7 @@ serve(async (req) => {
       })(),
       dateRange: {
         start: startDate,
-        end: today.toISOString().split('T')[0]
+        end: endDate
       }
     };
 
