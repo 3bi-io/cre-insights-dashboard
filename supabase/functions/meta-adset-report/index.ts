@@ -263,14 +263,21 @@ serve(async (req) => {
     };
 
     console.log('Meta Ad Set Report generated successfully');
+    console.log('Final report summary:', JSON.stringify(summary, null, 2));
+    console.log('Final adSetReport length:', adSetReport.length);
+    console.log('Sample adSet:', adSetReport.length > 0 ? JSON.stringify(adSetReport[0], null, 2) : 'No ad sets');
+
+    const response = {
+      success: true,
+      summary,
+      adSets: adSetReport,
+      generatedAt: new Date().toISOString()
+    };
+
+    console.log('Returning response with adSets count:', response.adSets.length);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        summary,
-        adSets: adSetReport,
-        generatedAt: new Date().toISOString()
-      }),
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
