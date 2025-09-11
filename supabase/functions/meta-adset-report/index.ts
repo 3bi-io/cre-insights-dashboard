@@ -102,30 +102,9 @@ serve(async (req) => {
 
     console.log(`Found ${leadsInRange?.length || 0} leads in date range`);
 
-    // If no leads in date range, return empty report
+    // If no leads in date range, continue to return ad sets (with 0 leads)
     if (!leadsInRange || leadsInRange.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          summary: {
-            totalAdSets: 0,
-            totalSpend: 0,
-            totalLeads: 0,
-            totalImpressions: 0,
-            totalClicks: 0,
-            averageCostPerLead: 0,
-            dateRange: {
-              start: startDate,
-              end: endDate
-            }
-          },
-          adSets: [],
-          generatedAt: new Date().toISOString()
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      console.log('No leads found in date range; including all ad sets with 0 leads.');
     }
 
     // Get unique ad set IDs from leads in date range
@@ -133,12 +112,15 @@ serve(async (req) => {
     
     console.log(`Found ${adSetIdsWithLeads.length} unique ad sets with leads in date range`);
 
-    // Fetch ad sets that have leads in the date range
+    // Fetch ad sets (if leads exist, filter to those; otherwise include all)
     let adSetsQuery = supabase
       .from('meta_ad_sets')
       .select('*')
-      .eq('user_id', user.id)
-      .in('adset_id', adSetIdsWithLeads);
+      .eq('user_id', user.id);
+
+    if (adSetIdsWithLeads.length > 0) {
+      adSetsQuery = adSetsQuery.in('adset_id', adSetIdsWithLeads);
+    }
 
     if (organizationId) {
       // Include rows where organization_id matches OR is null (backfill compatibility)
@@ -159,8 +141,10 @@ serve(async (req) => {
     let campaignsQuery = supabase
       .from('meta_campaigns')
       .select('campaign_id, campaign_name')
-      .eq('user_id', user.id)
-      .in('campaign_id', campaignIds);
+      .eq('user_id', user.id);
+    if (campaignIds.length > 0) {
+      campaignsQuery = campaignsQuery.in('campaign_id', campaignIds);
+    }
     
     if (organizationId) {
       campaignsQuery = campaignsQuery.or(`organization_id.eq.${organizationId},organization_id.is.null`);
