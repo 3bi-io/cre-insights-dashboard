@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,22 +13,58 @@ import {
   Eye,
   AlertCircle,
   MapPin,
-  DollarSign
+  DollarSign,
+  CheckCircle,
+  XCircle,
+  Upload,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const CraigslistPlatformActions: React.FC = () => {
   const [feedUrl, setFeedUrl] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.id) {
       const url = 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/job-feed-xml?platform=craigslist';
       setFeedUrl(url);
+      checkConnectionStatus();
     }
   }, [user]);
+
+  const checkConnectionStatus = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.functions.invoke('craigslist-integration', {
+        body: { action: 'status' }
+      });
+
+      if (error) throw error;
+      setConnectionStatus(data);
+    } catch (error) {
+      console.error('Failed to check connection status:', error);
+      setConnectionStatus({ connected: false, error: 'Failed to check connection' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testConnection = async () => {
+    await checkConnectionStatus();
+    toast({
+      title: connectionStatus?.connected ? "Connection successful" : "Connection failed",
+      description: connectionStatus?.connected ? 
+        `Connected as ${connectionStatus.username}` : 
+        connectionStatus?.error || "Unable to connect to Craigslist",
+      variant: connectionStatus?.connected ? "default" : "destructive"
+    });
+  };
 
   const copyFeedUrl = async () => {
     try {
@@ -71,10 +107,24 @@ const CraigslistPlatformActions: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Status Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            {loading ? (
+              <Loader2 className="w-6 h-6 mx-auto mb-2 text-muted-foreground animate-spin" />
+            ) : connectionStatus?.connected ? (
+              <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-600" />
+            ) : (
+              <XCircle className="w-6 h-6 mx-auto mb-2 text-red-600" />
+            )}
+            <div className="text-sm font-medium">Connection Status</div>
+            <div className={`text-lg font-bold ${connectionStatus?.connected ? 'text-green-600' : 'text-red-600'}`}>
+              {loading ? 'Checking...' : connectionStatus?.connected ? 'Connected' : 'Disconnected'}
+            </div>
+          </div>
+          
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <FileText className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <div className="text-sm font-medium">RSS Feed Status</div>
+            <div className="text-sm font-medium">RSS Feed</div>
             <div className="text-lg font-bold text-purple-600">
               {feedUrl ? 'Active' : 'Not Set'}
             </div>
@@ -82,7 +132,7 @@ const CraigslistPlatformActions: React.FC = () => {
           
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <MapPin className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-            <div className="text-sm font-medium">Market Coverage</div>
+            <div className="text-sm font-medium">Coverage</div>
             <div className="text-lg font-bold text-blue-600">Nationwide</div>
           </div>
           
@@ -93,9 +143,69 @@ const CraigslistPlatformActions: React.FC = () => {
           </div>
         </div>
 
+        {/* Connection Status Details */}
+        {connectionStatus && (
+          <Alert className={connectionStatus.connected ? "border-green-200" : "border-red-200"}>
+            {connectionStatus.connected ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <XCircle className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription>
+              {connectionStatus.connected ? (
+                <div className="space-y-1">
+                  <p className="font-medium text-green-800">Connected to Craigslist</p>
+                  <p className="text-sm text-green-700">
+                    Username: {connectionStatus.username} | Account: {connectionStatus.accountId}
+                  </p>
+                  <p className="text-sm text-green-600">
+                    Last checked: {new Date(connectionStatus.lastChecked).toLocaleString()}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="font-medium text-red-800">Connection Failed</p>
+                  <p className="text-sm text-red-700">
+                    {connectionStatus.error || 'Unable to connect to Craigslist'}
+                  </p>
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Connection Actions */}
+        <div className="flex gap-2">
+          <Button 
+            onClick={testConnection} 
+            disabled={loading}
+            className="flex-1"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <CheckCircle className="w-4 h-4 mr-2" />
+            )}
+            Test Connection
+          </Button>
+          
+          <Button onClick={openCraigslistInfo} variant="outline">
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Posting Guide
+          </Button>
+          
+          <Button 
+            onClick={() => window.open('https://accounts.craigslist.org/', '_blank')} 
+            variant="outline"
+          >
+            <Globe className="w-4 h-4 mr-2" />
+            Account Portal
+          </Button>
+        </div>
+
         {/* Feed URL Section */}
         <div className="space-y-3">
-          <Label>Craigslist RSS Feed URL</Label>
+          <Label>RSS Feed URL for Third-Party Tools</Label>
           <div className="flex gap-2">
             <Input
               value={feedUrl}
@@ -112,33 +222,18 @@ const CraigslistPlatformActions: React.FC = () => {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button onClick={openCraigslistInfo} className="flex-1">
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Bulk Posting Info
-          </Button>
-          
-          <Button 
-            onClick={() => window.open('https://craigslist.org/', '_blank')} 
-            variant="outline"
-          >
-            <Globe className="w-4 h-4 mr-2" />
-            Visit Site
-          </Button>
-        </div>
-
         {/* Integration Instructions */}
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-2">
-              <p className="font-medium">Craigslist Posting Guidelines:</p>
+              <p className="font-medium">Enhanced Craigslist Integration:</p>
               <div className="text-sm space-y-1">
-                <p>1. Craigslist requires manual posting for most job categories</p>
-                <p>2. Use the RSS feed with third-party automation tools</p>
-                <p>3. Follow Craigslist's Terms of Use and posting guidelines</p>
-                <p>4. Consider posting in multiple relevant city locations</p>
+                <p>• Account credentials configured for API access</p>
+                <p>• Direct posting capabilities (where permitted by Craigslist)</p>
+                <p>• RSS feed generation for third-party automation tools</p>
+                <p>• Connection monitoring and status tracking</p>
+                <p>• Category management and posting optimization</p>
               </div>
             </div>
           </AlertDescription>
@@ -148,7 +243,7 @@ const CraigslistPlatformActions: React.FC = () => {
         <Alert>
           <FileText className="h-4 w-4" />
           <AlertDescription>
-            <strong>RSS Feed Features:</strong> Generates Craigslist-compatible RSS format with job titles, descriptions, locations, and compensation details for automated posting tools.
+            <strong>Integration Features:</strong> Authenticated account access, automated posting where supported, RSS feed compatibility, multi-city posting support, and compliance with Craigslist posting guidelines.
           </AlertDescription>
         </Alert>
       </CardContent>

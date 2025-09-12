@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.job-feed-xml]
 verify_jwt = false
 
+[functions.craigslist-integration]
+verify_jwt = true
+
 [functions.ai-analytics]
 verify_jwt = true
 
