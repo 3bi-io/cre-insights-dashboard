@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus } from 'lucide-react';
+import { Plus, Settings, Shield } from 'lucide-react';
 import { useOrganizationsData } from '@/hooks/useAdminDashboardData';
 import { CreateOrganizationDialog } from '@/components/admin/CreateOrganizationDialog';
 import { EditOrganizationDialog } from '@/components/admin/EditOrganizationDialog';
 import { OrganizationFeaturesDialog } from '@/components/admin/OrganizationFeaturesDialog';
 import { DeleteOrganizationDialog } from '@/components/admin/DeleteOrganizationDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
+import { OrganizationPlatformAccessDialog } from '@/components/admin';
 
 const Organizations = () => {
   const { userRole } = useAuth();
   const { data: organizations, isLoading } = useOrganizationsData();
+  const [selectedOrgForPlatforms, setSelectedOrgForPlatforms] = useState<any>(null);
+  const [showPlatformDialog, setShowPlatformDialog] = useState(false);
+
+  const handlePlatformAccess = (org: any) => {
+    setSelectedOrgForPlatforms(org);
+    setShowPlatformDialog(true);
+  };
 
   if (userRole !== 'super_admin') {
     return (
@@ -92,6 +100,14 @@ const Organizations = () => {
                             {org.subscription_status}
                           </Badge>
                           <OrganizationFeaturesDialog organization={org} />
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handlePlatformAccess(org)}
+                          >
+                            <Shield className="w-4 h-4 mr-1" />
+                            Platforms
+                          </Button>
                           <EditOrganizationDialog organization={org} />
                           <UserManagementDialog organization={org} />
                           <DeleteOrganizationDialog organization={org} />
@@ -125,6 +141,12 @@ const Organizations = () => {
           )}
         </div>
       </div>
+
+      <OrganizationPlatformAccessDialog
+        open={showPlatformDialog}
+        onOpenChange={setShowPlatformDialog}
+        organization={selectedOrgForPlatforms}
+      />
     </div>
   );
 };

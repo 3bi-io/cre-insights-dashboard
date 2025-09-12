@@ -1432,6 +1432,41 @@ export type Database = {
           },
         ]
       }
+      organization_platform_access: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          organization_id: string
+          platform_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id: string
+          platform_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          organization_id?: string
+          platform_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_platform_access_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1932,6 +1967,14 @@ export type Database = {
         Args: { _slug: string }
         Returns: string
       }
+      get_organization_platform_access: {
+        Args: { _org_id: string }
+        Returns: {
+          enabled: boolean
+          platform_name: string
+          updated_at: string
+        }[]
+      }
       get_organization_with_stats: {
         Args: { _org_id: string }
         Returns: Json
@@ -1948,6 +1991,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_platform_access: {
+        Args: { _platform_name: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1962,6 +2009,14 @@ export type Database = {
       normalize_phone_number: {
         Args: { phone_input: string }
         Returns: string
+      }
+      organization_has_platform_access: {
+        Args: { _org_id: string; _platform_name: string }
+        Returns: boolean
+      }
+      set_organization_platform_access: {
+        Args: { _enabled: boolean; _org_id: string; _platform_name: string }
+        Returns: undefined
       }
       update_organization_features: {
         Args: { _features: Json; _org_id: string }

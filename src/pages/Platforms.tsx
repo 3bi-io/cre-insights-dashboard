@@ -12,6 +12,7 @@ import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatfo
 import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
 import TruckDriverJobs411PlatformActions from '@/components/platforms/TruckDriverJobs411PlatformActions';
 import EveryTruckJobPlatformActions from '@/components/platforms/EveryTruckJobPlatformActions';
+import { PlatformAccessGuard } from '@/components/admin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, FileText, DollarSign, Building2 } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
@@ -103,39 +104,53 @@ const Platforms = () => {
         </TabsContent>
 
         <TabsContent value="meta" className="space-y-6 mt-6">
-          {platforms?.find(p => p.name.toLowerCase().includes('meta')) && (
-            <MetaPlatformActions 
-              platform={platforms.find(p => p.name.toLowerCase().includes('meta'))!}
-              onRefresh={refetch}
-            />
-          )}
+          <PlatformAccessGuard platformName="meta">
+            {platforms?.find(p => p.name.toLowerCase().includes('meta')) && (
+              <MetaPlatformActions 
+                platform={platforms.find(p => p.name.toLowerCase().includes('meta'))!}
+                onRefresh={refetch}
+              />
+            )}
+          </PlatformAccessGuard>
         </TabsContent>
 
         <TabsContent value="google-jobs" className="space-y-6 mt-6">
-          <GoogleJobsPlatformActions />
+          <PlatformAccessGuard platformName="google-jobs">
+            <GoogleJobsPlatformActions />
+          </PlatformAccessGuard>
         </TabsContent>
 
         <TabsContent value="craigslist" className="space-y-6 mt-6">
-          <CraigslistPlatformActions />
+          <PlatformAccessGuard platformName="craigslist">
+            <CraigslistPlatformActions />
+          </PlatformAccessGuard>
         </TabsContent>
 
         <TabsContent value="simplyhired" className="space-y-6 mt-6">
-          <SimplyHiredPlatformActions />
+          <PlatformAccessGuard platformName="simplyhired">
+            <SimplyHiredPlatformActions />
+          </PlatformAccessGuard>
         </TabsContent>
 
         <TabsContent value="glassdoor" className="space-y-6 mt-6">
-          <GlassdoorPlatformActions />
+          <PlatformAccessGuard platformName="glassdoor">
+            <GlassdoorPlatformActions />
+          </PlatformAccessGuard>
         </TabsContent>
 
         <TabsContent value="trucking" className="space-y-6 mt-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <TruckDriverJobs411PlatformActions />
-            <EveryTruckJobPlatformActions />
-          </div>
+          <PlatformAccessGuard platformName="truck-driver-jobs-411">
+            <div className="grid gap-6 md:grid-cols-2">
+              <TruckDriverJobs411PlatformActions />
+              <EveryTruckJobPlatformActions />
+            </div>
+          </PlatformAccessGuard>
         </TabsContent>
 
         <TabsContent value="everytruckjob" className="space-y-6 mt-6">
-          <EveryTruckJobPlatformActions />
+          <PlatformAccessGuard platformName="everytruckjob">
+            <EveryTruckJobPlatformActions />
+          </PlatformAccessGuard>
         </TabsContent>
       </Tabs>
 
