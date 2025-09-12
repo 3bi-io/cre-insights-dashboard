@@ -64,7 +64,36 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
       description: 'Talroo Platform Integration',
       created: '6/15/2025'
     },
-    // New Free Platforms
+    // Trucking-Specific Free Platforms
+    {
+      name: 'Truck Driver Jobs 411',
+      logo: 'https://cdn-icons-png.flaticon.com/512/1149/1149168.png',
+      status: 'CDL Ready',
+      description: 'Free Trucking Job Board - CDL Focused',
+      created: '1/13/2025'
+    },
+    {
+      name: 'EveryTruckJob',
+      logo: 'https://cdn-icons-png.flaticon.com/512/4208/4208479.png',
+      status: 'CDL Ready',
+      description: 'Free CDL Driver Job Platform',
+      created: '1/13/2025'
+    },
+    {
+      name: 'NewJobs4You',
+      logo: 'https://cdn-icons-png.flaticon.com/512/2917/2917995.png',
+      status: 'CDL Ready',
+      description: 'Free Transportation Jobs Board',
+      created: '1/13/2025'
+    },
+    {
+      name: 'RoadWarriors',
+      logo: 'https://cdn-icons-png.flaticon.com/512/3774/3774299.png',
+      status: 'CDL Ready',
+      description: 'Free Trucking Community & Jobs',
+      created: '1/13/2025'
+    },
+    // General Free Platforms
     {
       name: 'Craigslist',
       logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Craigslist.svg/128px-Craigslist.svg.png',

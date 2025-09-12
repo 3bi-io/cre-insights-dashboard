@@ -73,6 +73,18 @@ serve(async (req) => {
       case 'jooble':
         xmlContent = generateJoobleXML(jobListings || [])
         break
+      case 'truck-driver-jobs-411':
+        xmlContent = generateTruckDriverJobs411XML(jobListings || [])
+        break
+      case 'everytruckjob':
+        xmlContent = generateEveryTruckJobXML(jobListings || [])
+        break
+      case 'newjobs4you':
+        xmlContent = generateNewJobs4YouXML(jobListings || [])
+        break
+      case 'roadwarriors':
+        xmlContent = generateRoadWarriorsXML(jobListings || [])
+        break
       default:
         xmlContent = generateJobFeedXML(jobListings || [])
     }
@@ -398,6 +410,259 @@ function generateJoobleXML(jobs: any[]): string {
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${xmlJobs}
 </vacancies>`
+}
+
+// Trucking platform-specific XML generators
+function generateTruckDriverJobs411XML(jobs: any[]): string {
+  const truckingJobs = jobs.filter(job => 
+    job.title?.toLowerCase().includes('driver') || 
+    job.title?.toLowerCase().includes('cdl') ||
+    job.title?.toLowerCase().includes('truck')
+  )
+
+  const xmlJobs = truckingJobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const jobType = formatTruckingJobType(job.job_type)
+    const cdlRequired = extractCDLRequirement(job.title, job.job_summary)
+    const routeType = extractRouteType(job.job_summary)
+    const homeTime = extractHomeTime(job.job_summary)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    
+    return `  <job>
+    <jobId>${id}</jobId>
+    <title>${title}</title>
+    <description>${description}</description>
+    <location>${location}</location>
+    <company>${company}</company>
+    <jobType>${jobType}</jobType>
+    <cdlRequired>${cdlRequired}</cdlRequired>
+    <routeType>${routeType}</routeType>
+    <homeTime>${homeTime}</homeTime>
+    <salary>${salary}</salary>
+    <applyUrl>${applyUrl}</applyUrl>
+    <datePosted>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</datePosted>
+  </job>`
+  }).join('\n')
+
+  return `<truckDriverJobs>
+  <source>
+    <name>CDL Job Feed</name>
+    <url>https://yourcompany.com</url>
+    <generatedAt>${new Date().toISOString()}</generatedAt>
+  </source>
+${xmlJobs}
+</truckDriverJobs>`
+}
+
+function generateEveryTruckJobXML(jobs: any[]): string {
+  const truckingJobs = jobs.filter(job => 
+    job.title?.toLowerCase().includes('driver') || 
+    job.title?.toLowerCase().includes('cdl') ||
+    job.title?.toLowerCase().includes('truck')
+  )
+
+  const xmlJobs = truckingJobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const cdlClass = extractCDLClass(job.title, job.job_summary)
+    const experience = extractExperienceRequirement(job.job_summary)
+    const benefits = extractBenefits(job.job_summary)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    
+    return `  <position>
+    <id>${id}</id>
+    <jobTitle>${title}</jobTitle>
+    <jobDescription>${description}</jobDescription>
+    <location>${location}</location>
+    <employer>${company}</employer>
+    <cdlClass>${cdlClass}</cdlClass>
+    <experienceRequired>${experience}</experienceRequired>
+    <benefits>${benefits}</benefits>
+    <compensation>${salary}</compensation>
+    <applicationUrl>${applyUrl}</applicationUrl>
+    <postedDate>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</postedDate>
+  </position>`
+  }).join('\n')
+
+  return `<jobFeed xmlns="http://everytruckjob.com/schema/jobs">
+  <metadata>
+    <publisher>CDL Jobs Feed</publisher>
+    <publishDate>${new Date().toISOString()}</publishDate>
+    <jobCount>${truckingJobs.length}</jobCount>
+  </metadata>
+${xmlJobs}
+</jobFeed>`
+}
+
+function generateNewJobs4YouXML(jobs: any[]): string {
+  const transportationJobs = jobs.filter(job => 
+    job.title?.toLowerCase().includes('driver') || 
+    job.title?.toLowerCase().includes('transport') ||
+    job.title?.toLowerCase().includes('logistics')
+  )
+
+  const xmlJobs = transportationJobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const category = 'Transportation'
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    
+    return `    <job id="${id}">
+      <title>${title}</title>
+      <description>${description}</description>
+      <category>${category}</category>
+      <location>${location}</location>
+      <company>${company}</company>
+      <salary>${salary}</salary>
+      <url>${applyUrl}</url>
+      <datePosted>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</datePosted>
+    </job>`
+  }).join('\n')
+
+  return `<jobs>
+  <feed>
+    <title>Transportation Jobs Feed</title>
+    <description>Current transportation and logistics opportunities</description>
+    <lastUpdated>${new Date().toISOString()}</lastUpdated>
+  </feed>
+${xmlJobs}
+</jobs>`
+}
+
+function generateRoadWarriorsXML(jobs: any[]): string {
+  const driverJobs = jobs.filter(job => 
+    job.title?.toLowerCase().includes('driver') || 
+    job.title?.toLowerCase().includes('cdl') ||
+    job.title?.toLowerCase().includes('otr') ||
+    job.title?.toLowerCase().includes('regional')
+  )
+
+  const xmlJobs = driverJobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const routeType = extractRouteType(job.job_summary)
+    const truckType = extractTruckType(job.job_summary)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    
+    return `  <driverPosition>
+    <positionId>${id}</positionId>
+    <jobTitle>${title}</jobTitle>
+    <jobDescription>${description}</jobDescription>
+    <location>${location}</location>
+    <company>${company}</company>
+    <routeType>${routeType}</routeType>
+    <truckType>${truckType}</truckType>
+    <payPackage>${salary}</payPackage>
+    <applyLink>${applyUrl}</applyLink>
+    <publishDate>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</publishDate>
+  </driverPosition>`
+  }).join('\n')
+
+  return `<driverJobs>
+  <community>RoadWarriors</community>
+  <feedInfo>
+    <generated>${new Date().toISOString()}</generated>
+    <totalPositions>${driverJobs.length}</totalPositions>
+  </feedInfo>
+${xmlJobs}
+</driverJobs>`
+}
+
+// Helper functions for trucking-specific data extraction
+function formatTruckingJobType(jobType?: string): string {
+  const truckingTypes: { [key: string]: string } = {
+    'full-time': 'Full-Time Driver',
+    'part-time': 'Part-Time Driver',
+    'contract': 'Owner Operator',
+    'temporary': 'Temporary Driver',
+    'otr': 'Over The Road',
+    'regional': 'Regional Driver',
+    'local': 'Local Driver'
+  }
+  return truckingTypes[jobType?.toLowerCase() || ''] || 'Full-Time Driver'
+}
+
+function extractCDLRequirement(title?: string, description?: string): string {
+  const text = `${title} ${description}`.toLowerCase()
+  if (text.includes('cdl a') || text.includes('class a')) return 'CDL Class A'
+  if (text.includes('cdl b') || text.includes('class b')) return 'CDL Class B'
+  if (text.includes('cdl c') || text.includes('class c')) return 'CDL Class C'
+  if (text.includes('cdl')) return 'CDL Required'
+  return 'CDL Preferred'
+}
+
+function extractCDLClass(title?: string, description?: string): string {
+  const text = `${title} ${description}`.toLowerCase()
+  if (text.includes('class a') || text.includes('cdl a')) return 'A'
+  if (text.includes('class b') || text.includes('cdl b')) return 'B'
+  if (text.includes('class c') || text.includes('cdl c')) return 'C'
+  return 'A'
+}
+
+function extractRouteType(description?: string): string {
+  const text = description?.toLowerCase() || ''
+  if (text.includes('otr') || text.includes('over the road')) return 'OTR'
+  if (text.includes('regional')) return 'Regional'
+  if (text.includes('local') || text.includes('home daily')) return 'Local'
+  if (text.includes('dedicated')) return 'Dedicated'
+  return 'Regional'
+}
+
+function extractHomeTime(description?: string): string {
+  const text = description?.toLowerCase() || ''
+  if (text.includes('home daily') || text.includes('daily home time')) return 'Home Daily'
+  if (text.includes('home weekly') || text.includes('weekends home')) return 'Home Weekly'
+  if (text.includes('home every other week')) return 'Home Bi-weekly'
+  if (text.includes('2 weeks out')) return '2 Weeks Out'
+  return 'Varies'
+}
+
+function extractExperienceRequirement(description?: string): string {
+  const text = description?.toLowerCase() || ''
+  if (text.includes('no experience') || text.includes('entry level')) return 'Entry Level'
+  if (text.includes('1 year') || text.includes('12 months')) return '1+ Years'
+  if (text.includes('2 years') || text.includes('24 months')) return '2+ Years'
+  if (text.includes('3 years')) return '3+ Years'
+  if (text.includes('5 years')) return '5+ Years'
+  return '1+ Years'
+}
+
+function extractBenefits(description?: string): string {
+  const text = description?.toLowerCase() || ''
+  const benefits = []
+  if (text.includes('health insurance')) benefits.push('Health Insurance')
+  if (text.includes('401k') || text.includes('retirement')) benefits.push('401k')
+  if (text.includes('paid time off') || text.includes('pto')) benefits.push('PTO')
+  if (text.includes('dental')) benefits.push('Dental')
+  if (text.includes('vision')) benefits.push('Vision')
+  return benefits.join(', ') || 'Competitive Benefits'
+}
+
+function extractTruckType(description?: string): string {
+  const text = description?.toLowerCase() || ''
+  if (text.includes('flatbed')) return 'Flatbed'
+  if (text.includes('dry van')) return 'Dry Van'
+  if (text.includes('refrigerated') || text.includes('reefer')) return 'Refrigerated'
+  if (text.includes('tanker')) return 'Tanker'
+  if (text.includes('car hauler')) return 'Auto Transport'
+  return 'Dry Van'
 }
 
 function escapeXml(unsafe: string): string {

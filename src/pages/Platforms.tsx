@@ -10,6 +10,8 @@ import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
 import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatformActions';
 import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
 import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
+import TruckDriverJobs411PlatformActions from '@/components/platforms/TruckDriverJobs411PlatformActions';
+import EveryTruckJobPlatformActions from '@/components/platforms/EveryTruckJobPlatformActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, FileText, DollarSign, Building2 } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
@@ -58,10 +60,14 @@ const Platforms = () => {
         />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Publishers
+          </TabsTrigger>
+          <TabsTrigger value="trucking" className="flex items-center gap-2">
+            <img src="https://cdn-icons-png.flaticon.com/512/1149/1149168.png" alt="Trucking" className="w-4 h-4" />
+            CDL Jobs
           </TabsTrigger>
           <TabsTrigger value="meta" className="flex items-center gap-2">
             <img src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" alt="Meta" className="w-4 h-4" />
@@ -82,6 +88,10 @@ const Platforms = () => {
           <TabsTrigger value="glassdoor" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Glassdoor
+          </TabsTrigger>
+          <TabsTrigger value="everytruckjob" className="flex items-center gap-2">
+            <img src="https://cdn-icons-png.flaticon.com/512/4208/4208479.png" alt="EveryTruckJob" className="w-4 h-4" />
+            EveryTruckJob
           </TabsTrigger>
         </TabsList>
 
@@ -115,6 +125,17 @@ const Platforms = () => {
 
         <TabsContent value="glassdoor" className="space-y-6 mt-6">
           <GlassdoorPlatformActions />
+        </TabsContent>
+
+        <TabsContent value="trucking" className="space-y-6 mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <TruckDriverJobs411PlatformActions />
+            <EveryTruckJobPlatformActions />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="everytruckjob" className="space-y-6 mt-6">
+          <EveryTruckJobPlatformActions />
         </TabsContent>
       </Tabs>
 
