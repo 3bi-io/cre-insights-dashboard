@@ -44,7 +44,12 @@ const extractValue = (data: any, fieldNames: string[]): string | undefined => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('Zapier webhook received:', req.method);
+  console.log('=== ZAPIER WEBHOOK TRIGGERED ===', {
+    method: req.method,
+    timestamp: new Date().toISOString(),
+    url: req.url,
+    headers: Object.fromEntries(req.headers)
+  });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -128,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log('Parsed webhook data:', JSON.stringify(body, null, 2));
+    console.log('=== PARSED WEBHOOK DATA ===', JSON.stringify(body, null, 2));
 
     // More flexible field extraction with multiple possible field names - INCLUDING job_id
     const applicationData: ZapierApplicationData = {
@@ -204,9 +209,9 @@ const handler = async (req: Request): Promise<Response> => {
       ])
     };
 
-    console.log('Processed application data:', JSON.stringify(applicationData, null, 2));
+    console.log('=== PROCESSED APPLICATION DATA ===', JSON.stringify(applicationData, null, 2));
     if (applicationData.elevenlabs_call_transcript) {
-      console.log('Transcript length:', applicationData.elevenlabs_call_transcript.length);
+      console.log('=== TRANSCRIPT RECEIVED ===', 'Length:', applicationData.elevenlabs_call_transcript.length);
     }
 
     // Use job_id as job_listing_id if job_listing_id is not provided
@@ -366,7 +371,7 @@ const handler = async (req: Request): Promise<Response> => {
       applied_at: new Date().toISOString()
     };
 
-    console.log('Final application data for insertion:', JSON.stringify(finalApplicationData, null, 2));
+    console.log('=== FINAL APPLICATION DATA FOR DB ===', JSON.stringify(finalApplicationData, null, 2));
 
     // Insert the application into the database
     const { data: application, error: insertError } = await supabase
@@ -391,7 +396,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Application created successfully:', application);
+    console.log('=== APPLICATION CREATED SUCCESSFULLY ===', {
+      id: application.id,
+      email: application.applicant_email,
+      job_listing_id: application.job_listing_id,
+      job_id: application.job_id,
+      status: application.status
+    });
 
     // TODO: Trigger outbound webhook here if configured
     // This would require storing webhook configuration in the database
