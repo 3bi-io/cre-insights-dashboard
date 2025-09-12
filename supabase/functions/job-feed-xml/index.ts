@@ -52,9 +52,30 @@ serve(async (req) => {
 
     // Generate XML based on platform
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>'
-    const xmlContent = platform === 'google jobs' 
-      ? generateGoogleJobsXML(jobListings || [])
-      : generateJobFeedXML(jobListings || [])
+    let xmlContent: string
+    
+    switch (platform?.toLowerCase()) {
+      case 'google jobs':
+        xmlContent = generateGoogleJobsXML(jobListings || [])
+        break
+      case 'simplyhired':
+        xmlContent = generateSimplyHiredXML(jobListings || [])
+        break
+      case 'craigslist':
+        xmlContent = generateCraigslistXML(jobListings || [])
+        break
+      case 'glassdoor':
+        xmlContent = generateGlassdoorXML(jobListings || [])
+        break
+      case 'dice':
+        xmlContent = generateDiceXML(jobListings || [])
+        break
+      case 'jooble':
+        xmlContent = generateJoobleXML(jobListings || [])
+        break
+      default:
+        xmlContent = generateJobFeedXML(jobListings || [])
+    }
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {
@@ -218,6 +239,165 @@ function getValidThroughDate(createdAt: string): string {
   const date = new Date(createdAt)
   date.setDate(date.getDate() + 30)
   return date.toISOString().split('T')[0]
+}
+
+// Platform-specific XML generators
+function generateSimplyHiredXML(jobs: any[]): string {
+  const xmlJobs = jobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const jobType = job.job_type || 'Full-Time'
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const datePosted = new Date(job.created_at || new Date()).toISOString().split('T')[0]
+    
+    return `    <job>
+      <reference>${id}</reference>
+      <title>${title}</title>
+      <description>${description}</description>
+      <location>${location}</location>
+      <company>${company}</company>
+      <jobtype>${jobType}</jobtype>
+      <url>${applyUrl}</url>
+      <date>${datePosted}</date>
+    </job>`
+  }).join('\n')
+
+  return `<source>
+  <publisher>Your Company</publisher>
+  <publisherurl>https://yourcompany.com</publisherurl>
+  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${xmlJobs}
+</source>`
+}
+
+function generateCraigslistXML(jobs: any[]): string {
+  const xmlJobs = jobs.map(job => {
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const compensation = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    
+    return `    <item>
+      <title>${title} - ${location}</title>
+      <description>${description}</description>
+      <compensation>${compensation}</compensation>
+      <link>${applyUrl}</link>
+      <pubDate>${new Date(job.created_at || new Date()).toUTCString()}</pubDate>
+    </item>`
+  }).join('\n')
+
+  return `<rss version="2.0">
+  <channel>
+    <title>Job Listings Feed</title>
+    <description>Current job openings</description>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${xmlJobs}
+  </channel>
+</rss>`
+}
+
+function generateGlassdoorXML(jobs: any[]): string {
+  const xmlJobs = jobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const jobType = formatJobType(job.job_type)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const datePosted = new Date(job.created_at || new Date()).toISOString()
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    
+    return `  <job id="${id}">
+    <title>${title}</title>
+    <description>${description}</description>
+    <location>${location}</location>
+    <company>${company}</company>
+    <employmentType>${jobType}</employmentType>
+    <applicationUrl>${applyUrl}</applicationUrl>
+    <datePosted>${datePosted}</datePosted>
+    <salary>${salary}</salary>
+  </job>`
+  }).join('\n')
+
+  return `<jobs>
+  <source>Your Company Jobs Feed</source>
+  <version>1.0</version>
+  <generatedAt>${new Date().toISOString()}</generatedAt>
+${xmlJobs}
+</jobs>`
+}
+
+function generateDiceXML(jobs: any[]): string {
+  const xmlJobs = jobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const skills = job.job_categories?.name || 'Technology'
+    
+    return `  <job>
+    <jobId>${id}</jobId>
+    <jobTitle>${title}</jobTitle>
+    <jobDescription>${description}</jobDescription>
+    <jobLocation>${location}</jobLocation>
+    <company>${company}</company>
+    <skills>${skills}</skills>
+    <applyUrl>${applyUrl}</applyUrl>
+    <datePosted>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</datePosted>
+  </job>`
+  }).join('\n')
+
+  return `<jobfeed>
+  <metadata>
+    <partner>Your Company</partner>
+    <generatedDate>${new Date().toISOString()}</generatedDate>
+    <jobCount>${jobs.length}</jobCount>
+  </metadata>
+${xmlJobs}
+</jobfeed>`
+}
+
+function generateJoobleXML(jobs: any[]): string {
+  const xmlJobs = jobs.map(job => {
+    const id = escapeXml(job.id || '')
+    const title = escapeXml(job.title || job.job_title || '')
+    const description = escapeXml(job.job_summary || job.job_description || '')
+    const location = formatLocation(job.location, job.city, job.state)
+    const company = escapeXml(job.client || 'Company')
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
+    const applyUrl = escapeXml(job.apply_url || job.url || '')
+    const datePosted = new Date(job.created_at || new Date()).toISOString().split('T')[0]
+    
+    return `  <vacancy>
+    <id>${id}</id>
+    <title>${title}</title>
+    <description>${description}</description>
+    <salary>${salary}</salary>
+    <location>
+      <country>US</country>
+      <region>${location}</region>
+    </location>
+    <company>${company}</company>
+    <url>${applyUrl}</url>
+    <date>${datePosted}</date>
+  </vacancy>`
+  }).join('\n')
+
+  return `<vacancies>
+  <publisher>
+    <name>Your Company</name>
+    <url>https://yourcompany.com</url>
+  </publisher>
+  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${xmlJobs}
+</vacancies>`
 }
 
 function escapeXml(unsafe: string): string {

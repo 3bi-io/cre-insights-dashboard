@@ -7,8 +7,11 @@ import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
 import GoogleJobsPlatformActions from '@/components/platforms/GoogleJobsPlatformActions';
 import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
+import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatformActions';
+import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
+import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Globe, FileText } from 'lucide-react';
+import { Globe, FileText, DollarSign, Building2 } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 
 const Platforms = () => {
@@ -55,7 +58,7 @@ const Platforms = () => {
         />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Publishers
@@ -67,6 +70,18 @@ const Platforms = () => {
           <TabsTrigger value="google-jobs" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Google Jobs
+          </TabsTrigger>
+          <TabsTrigger value="craigslist" className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4" />
+            Craigslist
+          </TabsTrigger>
+          <TabsTrigger value="simplyhired" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" />
+            SimplyHired
+          </TabsTrigger>
+          <TabsTrigger value="glassdoor" className="flex items-center gap-2">
+            <Building2 className="w-4 h-4" />
+            Glassdoor
           </TabsTrigger>
         </TabsList>
 
@@ -88,6 +103,18 @@ const Platforms = () => {
 
         <TabsContent value="google-jobs" className="space-y-6 mt-6">
           <GoogleJobsPlatformActions />
+        </TabsContent>
+
+        <TabsContent value="craigslist" className="space-y-6 mt-6">
+          <CraigslistPlatformActions />
+        </TabsContent>
+
+        <TabsContent value="simplyhired" className="space-y-6 mt-6">
+          <SimplyHiredPlatformActions />
+        </TabsContent>
+
+        <TabsContent value="glassdoor" className="space-y-6 mt-6">
+          <GlassdoorPlatformActions />
         </TabsContent>
       </Tabs>
 
