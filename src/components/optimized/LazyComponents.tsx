@@ -1,16 +1,14 @@
 import { lazy } from 'react';
 
-// Lazy load heavy components for better performance
-export const AIToolsPage = lazy(() => import('@/pages/AITools'));
-export const ApplicationsPage = lazy(() => import('@/pages/Applications'));
-export const DashboardPage = lazy(() => import('@/pages/Dashboard'));
-export const JobsPage = lazy(() => import('@/pages/Jobs'));
-export const PlatformsPage = lazy(() => import('@/pages/Platforms'));
-export const OrganizationsPage = lazy(() => import('@/pages/Organizations'));
-export const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
-export const MetaSpendAnalyticsPage = lazy(() => import('@/pages/MetaSpendAnalytics'));
-export const AIAnalyticsPage = lazy(() => import('@/pages/AIAnalytics'));
-export const AIImpactDashboardPage = lazy(() => import('@/pages/AIImpactDashboard'));
+// Lazy load commonly used pages for better code splitting
+export const LazyDashboard = lazy(() => import('@/pages/Dashboard'));
+export const LazyApplications = lazy(() => import('@/pages/Applications'));
+export const LazyPlatforms = lazy(() => import('@/pages/Platforms'));
+export const LazySettings = lazy(() => import('@/pages/Settings'));
+export const LazyAuth = lazy(() => import('@/pages/Auth'));
+export const LazyApply = lazy(() => import('@/pages/Apply'));
+export const LazyDetailedApply = lazy(() => import('@/pages/DetailedApply'));
+export const LazyNotFound = lazy(() => import('@/pages/NotFound'));
 
 // Lazy load heavy components within pages
 export const DashboardCharts = lazy(() => import('@/components/dashboard/DashboardCharts'));
