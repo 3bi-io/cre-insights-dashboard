@@ -24,7 +24,7 @@ const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const AdminDashboard = React.lazy(() => import("@/pages/AdminDashboard"));
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
-const Campaigns = React.lazy(() => import("@/pages/Campaigns"));
+const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
 const Applications = React.lazy(() => import("@/pages/Applications"));
 const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
