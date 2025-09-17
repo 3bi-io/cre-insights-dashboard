@@ -1,4 +1,6 @@
 import { useAuth } from './useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
 
 interface OrganizationFeatures {
@@ -14,13 +16,34 @@ interface OrganizationFeatures {
 export const useOrganizationFeatures = () => {
   const { organization, userRole } = useAuth();
 
-  // Get features directly from auth context (reactive to changes)
+  // Fetch features from organization_features table
+  const featuresQuery = useQuery({
+    queryKey: ['organization-features', organization?.id],
+    queryFn: async (): Promise<OrganizationFeatures> => {
+      if (!organization?.id) return {};
+
+      const { data, error } = await supabase
+        .from('organization_features')
+        .select('feature_name, enabled')
+        .eq('organization_id', organization.id);
+
+      if (error) throw error;
+
+      // Convert array to object
+      const featuresObj = (data || []).reduce((acc, feature) => {
+        acc[feature.feature_name as keyof OrganizationFeatures] = feature.enabled;
+        return acc;
+      }, {} as OrganizationFeatures);
+
+      return featuresObj;
+    },
+    enabled: !!organization?.id,
+  });
+
+  // Get features from query or fallback to empty object
   const features = useMemo(() => {
-    if (!organization?.settings?.features) {
-      return {} as OrganizationFeatures;
-    }
-    return organization.settings.features as OrganizationFeatures;
-  }, [organization?.settings?.features]);
+    return featuresQuery.data || {} as OrganizationFeatures;
+  }, [featuresQuery.data]);
 
   // Super admins have access to all features
   const hasFeature = (featureKey: keyof OrganizationFeatures): boolean => {
@@ -42,7 +65,7 @@ export const useOrganizationFeatures = () => {
 
   return {
     features: features || {},
-    isLoading: false, // No longer async since we get data from context
+    isLoading: featuresQuery.isLoading,
     hasFeature,
     hasTenstreetAccess,
     hasOpenAIAccess,
