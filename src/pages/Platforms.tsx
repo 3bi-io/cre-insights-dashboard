@@ -11,7 +11,6 @@ import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatform
 import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
 import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
 import TruckDriverJobs411PlatformActions from '@/components/platforms/TruckDriverJobs411PlatformActions';
-import EveryTruckJobPlatformActions from '@/components/platforms/EveryTruckJobPlatformActions';
 import { PlatformAccessGuard } from '@/components/admin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Globe, FileText, DollarSign, Building2 } from 'lucide-react';
@@ -61,7 +60,7 @@ const Platforms = () => {
         />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Publishers
@@ -89,10 +88,6 @@ const Platforms = () => {
           <TabsTrigger value="glassdoor" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Glassdoor
-          </TabsTrigger>
-          <TabsTrigger value="everytruckjob" className="flex items-center gap-2">
-            <img src="https://cdn-icons-png.flaticon.com/512/4208/4208479.png" alt="EveryTruckJob" className="w-4 h-4" />
-            EveryTruckJob
           </TabsTrigger>
         </TabsList>
 
@@ -140,16 +135,7 @@ const Platforms = () => {
 
         <TabsContent value="trucking" className="space-y-6 mt-6">
           <PlatformAccessGuard platformName="truck-driver-jobs-411">
-            <div className="grid gap-6 md:grid-cols-2">
-              <TruckDriverJobs411PlatformActions />
-              <EveryTruckJobPlatformActions />
-            </div>
-          </PlatformAccessGuard>
-        </TabsContent>
-
-        <TabsContent value="everytruckjob" className="space-y-6 mt-6">
-          <PlatformAccessGuard platformName="everytruckjob">
-            <EveryTruckJobPlatformActions />
+            <TruckDriverJobs411PlatformActions />
           </PlatformAccessGuard>
         </TabsContent>
       </Tabs>

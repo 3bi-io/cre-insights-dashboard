@@ -71,13 +71,6 @@ const AVAILABLE_PLATFORMS = [
     description: 'Free CDL-focused job board'
   },
   {
-    name: 'EveryTruckJob',
-    key: 'everytruckjob',
-    icon: Truck,
-    category: 'Trucking',
-    description: 'Free CDL driver job platform'
-  },
-  {
     name: 'NewJobs4You',
     key: 'newjobs4you',
     icon: Truck,
