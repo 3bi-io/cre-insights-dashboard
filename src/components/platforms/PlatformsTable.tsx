@@ -116,13 +116,6 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
       created: '1/12/2025'
     },
     {
-      name: 'AngelList',
-      logo: 'https://angel.co/images/shared/angel_co_fallback.png',
-      status: 'Startup Ready',
-      description: 'Startup & Tech Job Platform',
-      created: '1/12/2025'
-    },
-    {
       name: 'Dice',
       logo: 'https://www.dice.com/favicon.ico',
       status: 'Tech Jobs Ready',

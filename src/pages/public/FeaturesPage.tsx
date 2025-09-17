@@ -142,7 +142,7 @@ const FeaturesPage = () => {
 
   const integrations = [
     "Slack", "Microsoft Teams", "Google Workspace", "LinkedIn", "Indeed", 
-    "Glassdoor", "AngelList", "Workday", "BambooHR", "Greenhouse", 
+    "Glassdoor", "ZipRecruiter", "Workday", "BambooHR", "Greenhouse", 
     "Lever", "SmartRecruiters"
   ];
 
