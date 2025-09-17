@@ -122,6 +122,7 @@ const AppRoutes: React.FC = () => {
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
+        <Route path="publishers" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
         <Route path="clients" element={<ProtectedRouteWrapper><Clients /></ProtectedRouteWrapper>} />
         <Route path="organizations" element={<ProtectedRouteWrapper><Organizations /></ProtectedRouteWrapper>} />
         <Route path="settings" element={<ProtectedRouteWrapper><Settings /></ProtectedRouteWrapper>} />
