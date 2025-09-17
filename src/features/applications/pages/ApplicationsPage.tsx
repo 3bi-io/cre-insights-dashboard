@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, Webhook } from 'lucide-react';
 
 import { PageLayout } from '@/features/shared';
-import { useApplications } from '@/hooks/useApplications';
+import { useApplications } from '../hooks/useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -35,11 +35,11 @@ const ApplicationsPage = () => {
 
   const {
     applications,
-    recruiters,
-    currentRecruiter,
-    isLoading,
-    assignRecruiter,
-    updateStatus,
+    loading,
+    error,
+    createApplication,
+    updateApplication,
+    deleteApplication,
   } = useApplications();
 
   const handleSmsOpen = (application: any) => {
@@ -86,7 +86,7 @@ const ApplicationsPage = () => {
     </Button>
   );
 
-  if (isLoading) {
+  if (loading) {
     return (
       <PageLayout title="Applications" description="Track and manage job applications">
         <div className="p-6">
@@ -179,7 +179,7 @@ const ApplicationsPage = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-semibold">{application.first_name} {application.last_name}</h4>
-                          <p className="text-muted-foreground">{application.applicant_email || 'No email'}</p>
+                          <p className="text-muted-foreground">{application.email || 'No email'}</p>
                           <p className="text-sm text-muted-foreground">{application.phone || 'No phone'}</p>
                         </div>
                         <div className="flex gap-2">
@@ -248,7 +248,7 @@ const ApplicationsPage = () => {
                     <h3 className="font-semibold mb-4">Application Details</h3>
                     <div className="space-y-2">
                       <p><strong>Name:</strong> {selectedApplication.first_name} {selectedApplication.last_name}</p>
-                      <p><strong>Email:</strong> {selectedApplication.applicant_email || selectedApplication.email || 'No email'}</p>
+                      <p><strong>Email:</strong> {selectedApplication.email || 'No email'}</p>
                       <p><strong>Phone:</strong> {selectedApplication.phone || 'No phone'}</p>
                     </div>
                     <Button onClick={() => setDetailsDialogOpen(false)} className="mt-4">Close</Button>

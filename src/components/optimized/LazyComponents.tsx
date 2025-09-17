@@ -2,7 +2,7 @@ import { lazy } from 'react';
 
 // Lazy load commonly used pages for better code splitting
 export const LazyDashboard = lazy(() => import('@/pages/Dashboard'));
-export const LazyApplications = lazy(() => import('@/pages/Applications'));
+export const LazyApplications = lazy(() => import('@/features/applications').then(m => ({ default: m.ApplicationsPage })));
 export const LazyPlatforms = lazy(() => import('@/pages/Platforms'));
 export const LazySettings = lazy(() => import('@/pages/Settings'));
 export const LazyAuth = lazy(() => import('@/pages/Auth'));
