@@ -130,7 +130,8 @@ class LoggerService {
 }
 
 // Create singleton instance
-export const logger = new LoggerService();
+export const loggerService = new LoggerService();
+export const logger = loggerService; // Alias for backward compatibility
 
 // Export types for use in other files
 export type { LogLevel, LogEntry };

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { cacheService } from './cacheService';
+import { truthContractService, type TruthContractRequest, type TruthContractValidation } from './truthContract';
 
 export type AIProvider = 'openai' | 'anthropic' | 'basic';
 export type DataSensitivity = 'public' | 'internal' | 'sensitive' | 'restricted';
@@ -28,6 +29,9 @@ export interface AIResponse {
   explanation?: string;
   fallbackUsed: boolean;
   processingTime: number;
+  truthValidation?: TruthContractValidation;
+  isValidated: boolean;
+  originalContent?: string; // Store original before truth contract corrections
 }
 
 class AIService {
@@ -64,23 +68,61 @@ class AIService {
       
       try {
         const result = await this.tryProvider(provider, request);
+        
+        // Apply Truth Contract validation
+        const truthValidation = await this.validateWithTruthContract({
+          content: result.content || '',
+          prompt: request.prompt,
+          context: request.data,
+          provider: provider,
+          model: this.getModelForProvider(provider)
+        });
+
+        let finalContent = result.content;
+        let isValidated = false;
+
+        // If truth contract validation fails, attempt correction or rejection
+        if (!truthValidation.isValid) {
+          console.warn('Truth Contract validation failed:', truthValidation);
+          
+          if (truthValidation.score < 50 || truthValidation.violations.some(v => v.severity === 'critical')) {
+            // Critical failures - reject and try next provider
+            throw new Error(`Truth Contract validation failed with critical violations: ${truthValidation.violations.map(v => v.description).join(', ')}`);
+          } else {
+            // Attempt correction
+            const correctedContent = await this.attemptTruthCorrection(result.content || '', truthValidation);
+            if (correctedContent) {
+              finalContent = correctedContent;
+              isValidated = true;
+            }
+          }
+        } else {
+          isValidated = true;
+        }
+
         const response = {
           ...result,
+          content: finalContent,
+          originalContent: result.content !== finalContent ? result.content : undefined,
           provider,
           fallbackUsed: i > 0,
-          processingTime: Date.now() - startTime
+          processingTime: Date.now() - startTime,
+          truthValidation,
+          isValidated
         } as AIResponse;
 
-        // Cache successful AI results
-        await cacheService.set(
-          request.data, 
-          response, 
-          provider, 
-          request.parameters, 
-          24, 
-          'ai', 
-          response.confidence
-        );
+        // Only cache validated responses
+        if (isValidated) {
+          await cacheService.set(
+            request.data, 
+            response, 
+            provider, 
+            request.parameters, 
+            24, 
+            'ai', 
+            response.confidence
+          );
+        }
 
         return response;
       } catch (error) {
@@ -210,7 +252,14 @@ class AIService {
         ? 'AI providers unavailable - using rule-based analysis as fallback'
         : 'Using optimized rule-based analysis for cost efficiency',
       fallbackUsed: isFallback,
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
+      isValidated: true, // Rule-based responses are considered validated
+      truthValidation: {
+        isValid: true,
+        score: 95, // High score for rule-based logic
+        violations: [],
+        recommendations: []
+      }
     };
   }
 
@@ -286,6 +335,71 @@ class AIService {
     this.preferredProviders = providers;
   }
 
+  private async validateWithTruthContract(request: TruthContractRequest): Promise<TruthContractValidation> {
+    try {
+      return await truthContractService.validateResponse(request);
+    } catch (error) {
+      console.error('Truth Contract validation error:', error);
+      // Return minimal validation on error
+      return {
+        isValid: false,
+        score: 0,
+        violations: [{
+          type: 'factual_error',
+          severity: 'critical',
+          description: 'Unable to validate response due to system error'
+        }],
+        recommendations: ['Manual review required']
+      };
+    }
+  }
+
+  private async attemptTruthCorrection(content: string, validation: TruthContractValidation): Promise<string | null> {
+    if (validation.violations.length === 0) return content;
+
+    const correctionPrompt = `
+Original content has truth contract violations. Please provide a corrected version that addresses these issues:
+
+VIOLATIONS:
+${validation.violations.map(v => `- ${v.type} (${v.severity}): ${v.description}`).join('\n')}
+
+RECOMMENDATIONS:
+${validation.recommendations.join('\n')}
+
+ORIGINAL CONTENT:
+${content}
+
+Provide only the corrected content that maintains the original intent while fixing all violations.
+`;
+
+    try {
+      const response = await supabase.functions.invoke('anthropic-chat', {
+        body: {
+          message: correctionPrompt,
+          systemPrompt: 'You are a content corrector. Provide only the corrected content without explanations.',
+          model: 'claude-3-5-sonnet-20241022'
+        }
+      });
+
+      if (response.error) return null;
+      return response.data.generatedText;
+    } catch (error) {
+      console.error('Truth correction failed:', error);
+      return null;
+    }
+  }
+
+  private getModelForProvider(provider: AIProvider): string {
+    switch (provider) {
+      case 'openai':
+        return 'gpt-5-2025-08-07';
+      case 'anthropic':
+        return 'claude-3-5-sonnet-20241022';
+      default:
+        return 'rule-based';
+    }
+  }
+
   // Method to check provider health
   async checkProviderHealth(): Promise<Record<AIProvider, boolean>> {
     const health: Record<AIProvider, boolean> = {
@@ -310,6 +424,19 @@ class AIService {
     }
 
     return health;
+  }
+
+  // Truth Contract management methods
+  async getTruthContractHealth() {
+    return await truthContractService.healthCheck();
+  }
+
+  updateTruthContractConfig(config: any) {
+    truthContractService.updateConfig(config);
+  }
+
+  getTruthContractConfig() {
+    return truthContractService.getConfig();
   }
 }
 
