@@ -169,10 +169,10 @@ const EveryTruckJobPlatformActions = () => {
           </div>
 
           <Alert>
-            <Truck className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Free Platform Benefits:</strong> EveryTruckJob offers free job posting for trucking companies. 
-              Include CDL class requirements, home time, and route information for best results.
+              <strong>Platform Offline:</strong> EveryTruckJob.com is currently showing a 404 error and appears to be offline.
+              This platform integration is temporarily disabled until the platform becomes available again.
             </AlertDescription>
           </Alert>
         </CardContent>

@@ -73,13 +73,6 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
       created: '1/13/2025'
     },
     {
-      name: 'EveryTruckJob',
-      logo: 'https://cdn-icons-png.flaticon.com/512/4208/4208479.png',
-      status: 'CDL Ready',
-      description: 'Free CDL Driver Job Platform',
-      created: '1/13/2025'
-    },
-    {
       name: 'NewJobs4You',
       logo: 'https://cdn-icons-png.flaticon.com/512/2917/2917995.png',
       status: 'CDL Ready',

@@ -76,9 +76,6 @@ serve(async (req) => {
       case 'truck-driver-jobs-411':
         xmlContent = generateTruckDriverJobs411XML(jobListings || [])
         break
-      case 'everytruckjob':
-        xmlContent = generateEveryTruckJobXML(jobListings || [])
-        break
       case 'newjobs4you':
         xmlContent = generateNewJobs4YouXML(jobListings || [])
         break
@@ -459,49 +456,6 @@ ${xmlJobs}
 </truckDriverJobs>`
 }
 
-function generateEveryTruckJobXML(jobs: any[]): string {
-  const truckingJobs = jobs.filter(job => 
-    job.title?.toLowerCase().includes('driver') || 
-    job.title?.toLowerCase().includes('cdl') ||
-    job.title?.toLowerCase().includes('truck')
-  )
-
-  const xmlJobs = truckingJobs.map(job => {
-    const id = escapeXml(job.id || '')
-    const title = escapeXml(job.title || job.job_title || '')
-    const description = escapeXml(job.job_summary || job.job_description || '')
-    const location = formatLocation(job.location, job.city, job.state)
-    const company = escapeXml(job.client || 'Company')
-    const cdlClass = extractCDLClass(job.title, job.job_summary)
-    const experience = extractExperienceRequirement(job.job_summary)
-    const benefits = extractBenefits(job.job_summary)
-    const applyUrl = escapeXml(job.apply_url || job.url || '')
-    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
-    
-    return `  <position>
-    <id>${id}</id>
-    <jobTitle>${title}</jobTitle>
-    <jobDescription>${description}</jobDescription>
-    <location>${location}</location>
-    <employer>${company}</employer>
-    <cdlClass>${cdlClass}</cdlClass>
-    <experienceRequired>${experience}</experienceRequired>
-    <benefits>${benefits}</benefits>
-    <compensation>${salary}</compensation>
-    <applicationUrl>${applyUrl}</applicationUrl>
-    <postedDate>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</postedDate>
-  </position>`
-  }).join('\n')
-
-  return `<jobFeed xmlns="http://everytruckjob.com/schema/jobs">
-  <metadata>
-    <publisher>CDL Jobs Feed</publisher>
-    <publishDate>${new Date().toISOString()}</publishDate>
-    <jobCount>${truckingJobs.length}</jobCount>
-  </metadata>
-${xmlJobs}
-</jobFeed>`
-}
 
 function generateNewJobs4YouXML(jobs: any[]): string {
   const transportationJobs = jobs.filter(job => 
