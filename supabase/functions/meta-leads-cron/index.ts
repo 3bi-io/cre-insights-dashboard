@@ -40,7 +40,7 @@ function normalizePhoneNumber(phone: string | null | undefined): string | null {
 }
 
 // Hardcoded CR England Meta Ad Account ID used elsewhere in the app
-const CR_ENGLAND_ACCOUNT_ID = '435031743763874';
+const CR_ENGLAND_ACCOUNT_ID = '1594827328159714';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
