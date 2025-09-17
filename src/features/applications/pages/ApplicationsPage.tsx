@@ -52,16 +52,16 @@ const ApplicationsPage = () => {
     setDetailsDialogOpen(true);
   };
 
-  const downloadApplicationsPDF = () => {
+  const downloadApplicationsPDF = async () => {
     try {
-      const filteredApps = applications || [];
-      // Simplified PDF generation call
-      console.log('Generating PDF for', filteredApps.length, 'applications');
+      const filteredApps = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
+      await generateApplicationsPDF(filteredApps);
       toast({
         title: "PDF Downloaded",
         description: "Applications report has been downloaded successfully",
       });
     } catch (error) {
+      console.error('PDF generation error:', error);
       toast({
         title: "Export Failed",
         description: "Failed to generate PDF report",
@@ -70,9 +70,9 @@ const ApplicationsPage = () => {
     }
   };
 
-  const filteredApplications = applications || [];
-  const statusCounts = { new: 0, in_progress: 0, completed: 0, rejected: 0 };
-  const categoryCounts = { all: applications?.length || 0 };
+  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
+  const statusCounts = getStatusCounts(applications || []);
+  const categoryCounts = getCategoryCounts(applications || []);
 
   const pageActions = (
     <Button
@@ -127,85 +127,48 @@ const ApplicationsPage = () => {
           <TabsContent value="applications" className="space-y-6">
             <Card>
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Applications Overview</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">{applications?.length || 0}</div>
-                    <div className="text-sm text-muted-foreground">Total</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">0</div>
-                    <div className="text-sm text-muted-foreground">New</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-600">0</div>
-                    <div className="text-sm text-muted-foreground">In Progress</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">0</div>
-                    <div className="text-sm text-muted-foreground">Completed</div>
-                  </div>
-                </div>
+                <h3 className="text-lg font-semibold mb-6">Applications Overview</h3>
+                <ApplicationsOverview 
+                  statusCounts={statusCounts} 
+                  categoryCounts={categoryCounts} 
+                />
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Search Applications</h3>
-                <div className="flex gap-4">
-                  <input 
-                    type="text" 
-                    placeholder="Search applications..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1 px-3 py-2 border rounded-md"
-                  />
-                  <select 
-                    value={categoryFilter} 
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="px-3 py-2 border rounded-md"
-                  >
-                    <option value="all">All Categories</option>
-                  </select>
-                </div>
-              </CardContent>
-            </Card>
+            <ApplicationsSearch
+              searchTerm={searchTerm}
+              categoryFilter={categoryFilter}
+              sourceFilter={sourceFilter}
+              onSearchChange={setSearchTerm}
+              onCategoryChange={setCategoryFilter}
+              onSourceChange={setSourceFilter}
+            />
 
             <div className="space-y-4">
               {filteredApplications.length > 0 ? (
-                filteredApplications.map((application) => (
-                  <Card key={application.id}>
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold">{application.first_name} {application.last_name}</h4>
-                          <p className="text-muted-foreground">{application.email || 'No email'}</p>
-                          <p className="text-sm text-muted-foreground">{application.phone || 'No phone'}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDetailsView(application)}
-                          >
-                            View Details
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSmsOpen(application)}
-                          >
-                            SMS
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                filteredApplications.map((application, index) => (
+                  <ApplicationCard
+                    key={application.id || index}
+                    application={application}
+                    onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
+                    onRecruiterAssignment={(applicationId, recruiterId) => {
+                      // Note: recruiter_id field is not part of the current UpdateApplicationData schema
+                      console.log('Recruiter assignment requested for:', applicationId, recruiterId);
+                    }}
+                    onDetailsView={() => handleDetailsView(application)}
+                    onSmsOpen={() => handleSmsOpen(application)}
+                    onTenstreetUpdate={() => {
+                      setSelectedApplication(application);
+                      setTenstreetModalOpen(true);
+                    }}
+                  />
                 ))
               ) : (
                 <Card>
                   <CardContent className="p-12 text-center">
-                    <p className="text-muted-foreground">No applications found</p>
+                    <p className="text-muted-foreground">
+                      {loading ? "Loading applications..." : "No applications found"}
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -213,49 +176,30 @@ const ApplicationsPage = () => {
           </TabsContent>
 
           <TabsContent value="webhook-setup">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Zapier Integration</h3>
-                <p className="text-muted-foreground">
-                  Zapier webhook integration setup coming soon...
-                </p>
-              </CardContent>
-            </Card>
+            <ZapierWebhookSetup />
           </TabsContent>
         </Tabs>
 
-        {/* Simplified Dialogs */}
+        {/* Enhanced Dialogs */}
         {selectedApplication && (
           <>
-            {smsDialogOpen && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-md">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">SMS Conversation</h3>
-                    <p className="text-muted-foreground mb-4">
-                      SMS conversation with {selectedApplication.first_name} {selectedApplication.last_name}
-                    </p>
-                    <Button onClick={() => setSmsDialogOpen(false)}>Close</Button>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            <SmsConversationDialog
+              application={selectedApplication}
+              open={smsDialogOpen}
+              onOpenChange={setSmsDialogOpen}
+            />
             
-            {detailsDialogOpen && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-2xl">
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold mb-4">Application Details</h3>
-                    <div className="space-y-2">
-                      <p><strong>Name:</strong> {selectedApplication.first_name} {selectedApplication.last_name}</p>
-                      <p><strong>Email:</strong> {selectedApplication.email || 'No email'}</p>
-                      <p><strong>Phone:</strong> {selectedApplication.phone || 'No phone'}</p>
-                    </div>
-                    <Button onClick={() => setDetailsDialogOpen(false)} className="mt-4">Close</Button>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            <ApplicationDetailsDialog
+              application={selectedApplication}
+              isOpen={detailsDialogOpen}
+              onClose={() => setDetailsDialogOpen(false)}
+            />
+            
+            <TenstreetUpdateModal
+              application={selectedApplication}
+              isOpen={tenstreetModalOpen}
+              onClose={() => setTenstreetModalOpen(false)}
+            />
           </>
         )}
       </div>
