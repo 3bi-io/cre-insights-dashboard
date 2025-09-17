@@ -6,7 +6,7 @@ import PlatformsHeader from '@/components/platforms/PlatformsHeader';
 import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
 import GoogleJobsPlatformActions from '@/components/platforms/GoogleJobsPlatformActions';
-import MetaPlatformActions from '@/components/platforms/MetaPlatformActions';
+
 import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatformActions';
 import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
 import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
@@ -60,7 +60,7 @@ const Platforms = () => {
         />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Publishers
@@ -68,10 +68,6 @@ const Platforms = () => {
           <TabsTrigger value="trucking" className="flex items-center gap-2">
             <img src="https://cdn-icons-png.flaticon.com/512/1149/1149168.png" alt="Trucking" className="w-4 h-4" />
             CDL Jobs
-          </TabsTrigger>
-          <TabsTrigger value="meta" className="flex items-center gap-2">
-            <img src="/lovable-uploads/9d2222a9-c812-4222-ba8e-20535dc278b6.png" alt="Meta" className="w-4 h-4" />
-            Meta API
           </TabsTrigger>
           <TabsTrigger value="google-jobs" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
@@ -98,16 +94,6 @@ const Platforms = () => {
           />
         </TabsContent>
 
-        <TabsContent value="meta" className="space-y-6 mt-6">
-          <PlatformAccessGuard platformName="meta">
-            {platforms?.find(p => p.name.toLowerCase().includes('meta')) && (
-              <MetaPlatformActions 
-                platform={platforms.find(p => p.name.toLowerCase().includes('meta'))!}
-                onRefresh={refetch}
-              />
-            )}
-          </PlatformAccessGuard>
-        </TabsContent>
 
         <TabsContent value="google-jobs" className="space-y-6 mt-6">
           <PlatformAccessGuard platformName="google-jobs">
