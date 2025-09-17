@@ -86,13 +86,6 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
       description: 'Free Transportation Jobs Board',
       created: '1/13/2025'
     },
-    {
-      name: 'RoadWarriors',
-      logo: 'https://cdn-icons-png.flaticon.com/512/3774/3774299.png',
-      status: 'CDL Ready',
-      description: 'Free Trucking Community & Jobs',
-      created: '1/13/2025'
-    },
     // General Free Platforms
     {
       name: 'Craigslist',
