@@ -31,6 +31,9 @@ interface ZapierApplicationData {
   exp?: string;
   cdl?: string;
   elevenlabs_call_transcript?: string;
+  organization_id?: string;
+  organization_slug?: string;
+  organization_name?: string;
 }
 
 // Helper function to safely extract value from multiple possible field names
@@ -206,6 +209,15 @@ const handler = async (req: Request): Promise<Response> => {
       elevenlabs_call_transcript: extractValue(body, [
         'elevenlabs_call_transcript', 'elevenlab_call_transcript', 'elevenlabs_call_trnascript',
         'call_transcript', 'transcript', 'conversation_transcript', 'elevenlabs_transcript', 'eleven_labs_call_transcript'
+      ]),
+      organization_id: extractValue(body, [
+        'organization_id', 'organizationId', 'org_id', 'orgId', 'organisation_id'
+      ]),
+      organization_slug: extractValue(body, [
+        'organization_slug', 'organizationSlug', 'org_slug', 'orgSlug', 'organisation_slug', 'company_slug'
+      ]),
+      organization_name: extractValue(body, [
+        'organization_name', 'organizationName', 'org_name', 'orgName', 'organisation_name', 'company_name', 'company'
       ])
     };
 
@@ -214,14 +226,60 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('=== TRANSCRIPT RECEIVED ===', 'Length:', applicationData.elevenlabs_call_transcript.length);
     }
 
-    // Use job_id as job_listing_id if job_listing_id is not provided
-    const jobIdentifier = applicationData.job_listing_id || applicationData.job_id;
-
     // Helper function to check if a string is a valid UUID
     const isValidUUID = (str: string): boolean => {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       return uuidRegex.test(str);
     };
+
+    // Organization resolution logic
+    let resolvedOrganization = null;
+    if (applicationData.organization_id || applicationData.organization_slug) {
+      console.log('=== RESOLVING ORGANIZATION ===', {
+        organization_id: applicationData.organization_id,
+        organization_slug: applicationData.organization_slug,
+        organization_name: applicationData.organization_name
+      });
+
+      if (applicationData.organization_id && isValidUUID(applicationData.organization_id)) {
+        // Try to find organization by ID
+        const { data: orgById, error: orgByIdError } = await supabase
+          .from('organizations')
+          .select('id, name, slug')
+          .eq('id', applicationData.organization_id)
+          .maybeSingle();
+        
+        if (!orgByIdError && orgById) {
+          resolvedOrganization = orgById;
+          console.log('Found organization by ID:', resolvedOrganization);
+        } else if (orgByIdError) {
+          console.log('Error searching organization by ID:', orgByIdError);
+        }
+      }
+
+      // If not found by ID, try by slug
+      if (!resolvedOrganization && applicationData.organization_slug) {
+        const { data: orgBySlug, error: orgBySlugError } = await supabase
+          .from('organizations')
+          .select('id, name, slug')
+          .eq('slug', applicationData.organization_slug)
+          .maybeSingle();
+        
+        if (!orgBySlugError && orgBySlug) {
+          resolvedOrganization = orgBySlug;
+          console.log('Found organization by slug:', resolvedOrganization);
+        } else if (orgBySlugError) {
+          console.log('Error searching organization by slug:', orgBySlugError);
+        }
+      }
+
+      if (!resolvedOrganization) {
+        console.log('Organization not found with provided identifiers');
+      }
+    }
+
+    // Use job_id as job_listing_id if job_listing_id is not provided
+    const jobIdentifier = applicationData.job_listing_id || applicationData.job_id;
 
     // Job identification is now optional - applications can be created without matching job listings
 
@@ -310,6 +368,29 @@ const handler = async (req: Request): Promise<Response> => {
         .maybeSingle();
 
       if (platforms && categories) {
+        // Determine user_id and organization_id for the new job listing
+        let jobUserId = '00000000-0000-0000-0000-000000000000'; // System user fallback
+        let jobOrgId = null;
+
+        if (resolvedOrganization) {
+          // Find an admin user for this organization to assign as owner
+          const { data: orgAdmin } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('organization_id', resolvedOrganization.id)
+            .limit(1)
+            .maybeSingle();
+          
+          if (orgAdmin) {
+            jobUserId = orgAdmin.id;
+          }
+          jobOrgId = resolvedOrganization.id;
+          console.log('Using organization for new job listing:', { 
+            org_id: jobOrgId, 
+            user_id: jobUserId 
+          });
+        }
+
         const { data: newJob, error: createError } = await supabase
           .from('job_listings')
           .insert([{
@@ -317,7 +398,8 @@ const handler = async (req: Request): Promise<Response> => {
             job_title: applicationData.job_title,
             platform_id: platforms.id,
             category_id: categories.id,
-            user_id: '00000000-0000-0000-0000-000000000000', // System user for auto-created jobs
+            user_id: jobUserId,
+            organization_id: jobOrgId,
             status: 'active'
           }])
           .select('id, title, job_title')
@@ -326,6 +408,8 @@ const handler = async (req: Request): Promise<Response> => {
         if (!createError && newJob) {
           jobListing = newJob;
           console.log('Created new job listing:', jobListing);
+        } else if (createError) {
+          console.error('Error creating job listing:', createError);
         }
       }
     }
@@ -424,6 +508,13 @@ const handler = async (req: Request): Promise<Response> => {
           job_listing: {
             id: jobListing.id,
             title: jobListing.title || jobListing.job_title
+          }
+        }),
+        ...(resolvedOrganization && {
+          organization: {
+            id: resolvedOrganization.id,
+            name: resolvedOrganization.name,
+            slug: resolvedOrganization.slug
           }
         })
       }),
