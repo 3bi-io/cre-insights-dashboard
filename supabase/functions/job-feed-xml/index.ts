@@ -50,6 +50,12 @@ serve(async (req) => {
       throw error
     }
 
+    // Validate XML feed before generation
+    const validation = validateXMLFeed(platform, jobListings || [])
+    if (validation.warnings.length > 0) {
+      console.warn('XML Feed Validation Warnings:', validation.warnings)
+    }
+
     // Generate XML based on platform
     const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>'
     let xmlContent: string
@@ -146,61 +152,26 @@ ${xmlJobs}
 }
 
 function generateGoogleJobsXML(jobs: any[]): string {
+  // NOTE: Google Jobs primarily uses JSON-LD structured data, not XML feeds
+  // This generates a job sitemap for crawling pages with JobPosting structured data
   const xmlJobs = jobs.map(job => {
-    const id = escapeXml(job.id || '')
-    const title = escapeXml(job.title || job.job_title || '')
-    const description = escapeXml(job.job_summary || job.job_description || '')
-    const location = formatLocation(job.location, job.city, job.state)
-    const company = escapeXml(job.client || 'Company')
-    const jobType = formatJobType(job.job_type)
-    const experienceLevel = formatExperienceLevel(job.experience_level)
-    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
-    const applyUrl = escapeXml(job.apply_url || job.url || '')
-    const validThrough = getValidThroughDate(job.created_at || new Date().toISOString())
-    const datePosted = new Date(job.created_at || new Date()).toISOString().split('T')[0]
+    const applyUrl = escapeXml(job.apply_url || job.url || '#')
+    const lastMod = new Date(job.updated_at || job.created_at || new Date()).toISOString().split('T')[0]
 
-    return `    <job>
-      <title>${title}</title>
-      <location>
-        <country>US</country>
-        <region>${location}</region>
-      </location>
-      <description>${description}</description>
-      <datePosted>${datePosted}</datePosted>
-      <validThrough>${validThrough}</validThrough>
-      <employmentType>${jobType}</employmentType>
-      <hiringOrganization>
-        <name>${company}</name>
-      </hiringOrganization>
-      <jobLocation>
-        <address>
-          <addressRegion>${location}</addressRegion>
-          <addressCountry>US</addressCountry>
-        </address>
-      </jobLocation>
-      <baseSalary>
-        <currency>USD</currency>
-        <value>${salary}</value>
-      </baseSalary>
-      <experienceRequirements>${experienceLevel}</experienceRequirements>
-      <url>${applyUrl}</url>
-      <identifier>
-        <name>${company}</name>
-        <value>${id}</value>
-      </identifier>
-    </job>`
+    return `  <url>
+    <loc>${applyUrl}</loc>
+    <lastmod>${lastMod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`
   }).join('\n')
 
-  return `<jobs xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xsi:noNamespaceSchemaLocation="https://www.google.com/schemas/sitemap-jobs/1.0/sitemap-jobs.xsd">
-  <job_feed>
-    <metadata>
-      <generated_at>${new Date().toISOString()}</generated_at>
-      <job_count>${jobs.length}</job_count>
-    </metadata>
+  return `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<!-- Job Sitemap for Google Jobs - Pages should contain JobPosting JSON-LD -->
+<!-- Generated: ${new Date().toISOString()} -->
+<!-- Job Count: ${jobs.length} -->
 ${xmlJobs}
-  </job_feed>
-</jobs>`
+</urlset>`
 }
 
 function formatLocation(location?: string, city?: string, state?: string): string {
@@ -258,28 +229,47 @@ function generateSimplyHiredXML(jobs: any[]): string {
     const description = escapeXml(job.job_summary || job.job_description || '')
     const location = formatLocation(job.location, job.city, job.state)
     const company = escapeXml(job.client || 'Company')
-    const jobType = job.job_type || 'Full-Time'
+    const jobType = formatSimplyHiredJobType(job.job_type)
     const applyUrl = escapeXml(job.apply_url || job.url || '')
     const datePosted = new Date(job.created_at || new Date()).toISOString().split('T')[0]
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
     
     return `    <job>
       <reference>${id}</reference>
       <title>${title}</title>
-      <description>${description}</description>
+      <description><![CDATA[${job.job_summary || job.job_description || ''}]]></description>
       <location>${location}</location>
       <company>${company}</company>
       <jobtype>${jobType}</jobtype>
       <url>${applyUrl}</url>
       <date>${datePosted}</date>
+      <salary>${salary}</salary>
     </job>`
   }).join('\n')
 
   return `<source>
-  <publisher>Your Company</publisher>
+  <publisher>Job Feed Publisher</publisher>
   <publisherurl>https://yourcompany.com</publisherurl>
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+  <count>${jobs.length}</count>
 ${xmlJobs}
 </source>`
+}
+
+function formatSimplyHiredJobType(jobType?: string): string {
+  const typeMap: { [key: string]: string } = {
+    'full-time': 'Full-Time',
+    'full_time': 'Full-Time', 
+    'part-time': 'Part-Time',
+    'part_time': 'Part-Time',
+    'contract': 'Contract',
+    'contractor': 'Contract',
+    'temporary': 'Temporary',
+    'temp': 'Temporary',
+    'internship': 'Internship',
+    'intern': 'Internship'
+  }
+  return typeMap[jobType?.toLowerCase() || ''] || 'Full-Time'
 }
 
 function generateCraigslistXML(jobs: any[]): string {
@@ -310,6 +300,8 @@ ${xmlJobs}
 }
 
 function generateGlassdoorXML(jobs: any[]): string {
+  // NOTE: Glassdoor primarily uses API integration, not XML feeds
+  // This generates a generic XML format that could be adapted for their needs
   const xmlJobs = jobs.map(job => {
     const id = escapeXml(job.id || '')
     const title = escapeXml(job.title || job.job_title || '')
@@ -321,55 +313,79 @@ function generateGlassdoorXML(jobs: any[]): string {
     const datePosted = new Date(job.created_at || new Date()).toISOString()
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
     
-    return `  <job id="${id}">
+    return `  <job>
+    <jobId>${id}</jobId>
     <title>${title}</title>
-    <description>${description}</description>
-    <location>${location}</location>
+    <description><![CDATA[${job.job_summary || job.job_description || ''}]]></description>
+    <location>
+      <city>${escapeXml(job.city || '')}</city>
+      <state>${escapeXml(job.state || '')}</state>
+      <country>US</country>
+    </location>
     <company>${company}</company>
     <employmentType>${jobType}</employmentType>
     <applicationUrl>${applyUrl}</applicationUrl>
     <datePosted>${datePosted}</datePosted>
     <salary>${salary}</salary>
+    <category>${escapeXml(job.job_categories?.name || 'General')}</category>
   </job>`
   }).join('\n')
 
   return `<jobs>
-  <source>Your Company Jobs Feed</source>
+  <source>Job Feed for Glassdoor Integration</source>
   <version>1.0</version>
   <generatedAt>${new Date().toISOString()}</generatedAt>
+  <jobCount>${jobs.length}</jobCount>
 ${xmlJobs}
 </jobs>`
 }
 
 function generateDiceXML(jobs: any[]): string {
-  const xmlJobs = jobs.map(job => {
+  // Filter for technology-related jobs for Dice
+  const techJobs = jobs.filter(job => 
+    job.title?.toLowerCase().includes('developer') || 
+    job.title?.toLowerCase().includes('engineer') ||
+    job.title?.toLowerCase().includes('programmer') ||
+    job.title?.toLowerCase().includes('analyst') ||
+    job.job_categories?.name?.toLowerCase().includes('technology') ||
+    job.job_categories?.name?.toLowerCase().includes('software') ||
+    job.job_categories?.name?.toLowerCase().includes('it')
+  )
+
+  const xmlJobs = techJobs.map(job => {
     const id = escapeXml(job.id || '')
     const title = escapeXml(job.title || job.job_title || '')
     const description = escapeXml(job.job_summary || job.job_description || '')
     const location = formatLocation(job.location, job.city, job.state)
     const company = escapeXml(job.client || 'Company')
     const applyUrl = escapeXml(job.apply_url || job.url || '')
-    const skills = job.job_categories?.name || 'Technology'
+    const skills = escapeXml(job.job_categories?.name || 'Technology')
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type)
     
     return `  <job>
     <jobId>${id}</jobId>
     <jobTitle>${title}</jobTitle>
-    <jobDescription>${description}</jobDescription>
+    <jobDescription><![CDATA[${job.job_summary || job.job_description || ''}]]></jobDescription>
     <jobLocation>${location}</jobLocation>
     <company>${company}</company>
     <skills>${skills}</skills>
+    <salary>${salary}</salary>
     <applyUrl>${applyUrl}</applyUrl>
     <datePosted>${new Date(job.created_at || new Date()).toISOString().split('T')[0]}</datePosted>
+    <employmentType>${formatJobType(job.job_type)}</employmentType>
   </job>`
   }).join('\n')
 
   return `<jobfeed>
   <metadata>
-    <partner>Your Company</partner>
+    <partner>Technology Job Feed</partner>
     <generatedDate>${new Date().toISOString()}</generatedDate>
-    <jobCount>${jobs.length}</jobCount>
+    <jobCount>${techJobs.length}</jobCount>
+    <totalSubmitted>${jobs.length}</totalSubmitted>
   </metadata>
+  <jobs>
 ${xmlJobs}
+  </jobs>
 </jobfeed>`
 }
 
@@ -617,6 +633,68 @@ function extractTruckType(description?: string): string {
   if (text.includes('tanker')) return 'Tanker'
   if (text.includes('car hauler')) return 'Auto Transport'
   return 'Dry Van'
+}
+
+// XML validation helper function
+function validateXMLFeed(platform: string, jobs: any[]): { isValid: boolean; warnings: string[] } {
+  const warnings: string[] = []
+  
+  // Check job count
+  if (!jobs || jobs.length === 0) {
+    warnings.push('No active jobs found for XML feed generation')
+  }
+
+  // Platform-specific validations
+  switch (platform?.toLowerCase()) {
+    case 'google jobs':
+      jobs.forEach((job, index) => {
+        if (!job.apply_url && !job.url) {
+          warnings.push(`Job ${index + 1}: Missing apply URL for Google Jobs`)
+        }
+        if (!job.title) {
+          warnings.push(`Job ${index + 1}: Missing job title`)
+        }
+      })
+      break
+      
+    case 'indeed':
+      jobs.forEach((job, index) => {
+        if (!job.city || !job.state) {
+          warnings.push(`Job ${index + 1}: Indeed requires city and state`)
+        }
+        if (!job.client && !job.company) {
+          warnings.push(`Job ${index + 1}: Indeed requires company name`)
+        }
+      })
+      break
+      
+    case 'craigslist':
+      jobs.forEach((job, index) => {
+        if (!job.title) {
+          warnings.push(`Job ${index + 1}: Craigslist requires job title`)
+        }
+        if (!job.job_summary && !job.job_description) {
+          warnings.push(`Job ${index + 1}: Craigslist requires job description`)
+        }
+      })
+      break
+
+    case 'truck-driver-jobs-411':
+      const driverJobs = jobs.filter(job => 
+        job.title?.toLowerCase().includes('driver') || 
+        job.title?.toLowerCase().includes('cdl') ||
+        job.title?.toLowerCase().includes('truck')
+      )
+      if (driverJobs.length === 0) {
+        warnings.push('No driver/CDL jobs found for trucking platform')
+      }
+      break
+  }
+
+  return {
+    isValid: warnings.length === 0,
+    warnings
+  }
 }
 
 function escapeXml(unsafe: string): string {

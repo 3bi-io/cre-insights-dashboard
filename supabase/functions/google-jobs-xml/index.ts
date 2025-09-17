@@ -102,55 +102,26 @@ Deno.serve(async (req) => {
 function generateGoogleJobsXML(jobListings: any[], userId: string): string {
   const currentDate = new Date().toISOString();
   
+  // Google Jobs requires JSON-LD structured data, not RSS/XML feeds
+  // This generates a sitemap that points to job pages with JSON-LD structured data
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
-  <channel>
-    <title>Job Listings Feed - User ${userId}</title>
-    <description>Active job listings for Google Jobs integration</description>
-    <link>https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml?user_id=${userId}</link>
-    <language>en-US</language>
-    <lastBuildDate>${currentDate}</lastBuildDate>
-    <generator>Lovable Job Feed Generator</generator>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 `;
 
   jobListings.forEach(job => {
-    const jobTitle = escapeXML(job.title || 'Position Available');
-    const jobDescription = escapeXML(job.job_summary || 'Job opportunity available. Contact us for more details.');
-    const location = formatLocation(job.location, job.city, job.state);
-    const company = escapeXML(job.client || 'Hiring Company');
-    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const jobType = formatJobType(job.job_type);
-    const experienceLevel = formatExperienceLevel(job.experience_level);
     const applyUrl = job.apply_url || `https://apply.example.com/job/${job.id}`;
-    const datePosted = new Date(job.created_at).toISOString();
-    const validThrough = getValidThroughDate(job.created_at);
+    const lastMod = new Date(job.updated_at || job.created_at).toISOString().split('T')[0];
 
-    xml += `
-    <item>
-      <title>${jobTitle}</title>
-      <description><![CDATA[${jobDescription}]]></description>
-      <link>${escapeXML(applyUrl)}</link>
-      <guid isPermaLink="false">job-${job.id}</guid>
-      <pubDate>${datePosted}</pubDate>
-      
-      <!-- Google Jobs specific fields -->
-      <g:job_title>${jobTitle}</g:job_title>
-      <g:job_description><![CDATA[${jobDescription}]]></g:job_description>
-      <g:job_location>${escapeXML(location)}</g:job_location>
-      <g:company_name>${company}</g:company_name>
-      <g:job_type>${jobType}</g:job_type>
-      <g:experience_level>${experienceLevel}</g:experience_level>
-      <g:application_url>${escapeXML(applyUrl)}</g:application_url>
-      <g:date_posted>${datePosted}</g:date_posted>
-      <g:valid_through>${validThrough}</g:valid_through>
-      ${salary ? `<g:salary>${escapeXML(salary)}</g:salary>` : ''}
-      <g:job_id>job-${job.id}</g:job_id>
-    </item>`;
+    xml += `  <url>
+    <loc>${escapeXML(applyUrl)}</loc>
+    <lastmod>${lastMod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
   });
 
-  xml += `
-  </channel>
-</rss>`;
+  xml += `</urlset>`;
 
   return xml;
 }
