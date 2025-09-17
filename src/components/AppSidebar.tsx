@@ -91,11 +91,6 @@ const AppSidebar = () => {
         label: 'AI Tools',
         icon: Bot
       },
-      {
-        path: '/admin/meta-adset-report',
-        label: 'Meta Ad Set Report',
-        icon: BarChart3
-      }
     ]
       }, {
     group: "Settings",
