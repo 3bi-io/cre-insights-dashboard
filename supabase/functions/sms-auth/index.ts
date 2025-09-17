@@ -64,7 +64,8 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
       phone_number: phoneNumber,
       token: token,
       expires_at: expiresAt.toISOString(),
-      used: false
+      used: false,
+      user_id: null // Will be associated when verified or during application process
     });
 
   if (dbError) {

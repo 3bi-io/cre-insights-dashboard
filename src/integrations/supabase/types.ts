@@ -1705,6 +1705,7 @@ export type Database = {
           phone_number: string
           token: string
           used: boolean
+          user_id: string | null
         }
         Insert: {
           application_id?: string | null
@@ -1714,6 +1715,7 @@ export type Database = {
           phone_number: string
           token: string
           used?: boolean
+          user_id?: string | null
         }
         Update: {
           application_id?: string | null
@@ -1723,6 +1725,7 @@ export type Database = {
           phone_number?: string
           token?: string
           used?: boolean
+          user_id?: string | null
         }
         Relationships: [
           {
