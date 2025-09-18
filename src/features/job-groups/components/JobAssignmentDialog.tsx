@@ -31,21 +31,73 @@ export function JobAssignmentDialog({
   const [selectedJobs, setSelectedJobs] = useState<string[]>(currentAssignments);
   
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
-    queryKey: ['jobs-for-assignment', search],
+    queryKey: ['jobs-for-assignment', search, jobGroup.id],
     queryFn: async () => {
       let query = supabase
         .from('job_listings')
-        .select('id, title, status, location, job_type')
+        .select(`
+          id, 
+          title, 
+          job_title,
+          status, 
+          location, 
+          city,
+          state,
+          job_type,
+          job_platform_associations(
+            platforms(name)
+          )
+        `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (search) {
-        query = query.ilike('title', `%${search}%`);
+        query = query.or(`title.ilike.%${search}%,job_title.ilike.%${search}%`);
       }
 
-      const { data, error } = await query;
+      const { data: allJobs, error } = await query;
       if (error) throw error;
-      return data || [];
+      
+      // Apply job group filters if they exist
+      let filteredJobs = allJobs || [];
+      const settings = jobGroup.xml_feed_settings as any;
+      const filters = settings?.filters;
+      
+      if (filters) {
+        // Filter by platforms
+        if (filters.platforms && filters.platforms.length > 0) {
+          filteredJobs = filteredJobs.filter(job => 
+            job.job_platform_associations?.some(assoc => 
+              filters.platforms.includes(assoc.platforms?.name)
+            )
+          );
+        }
+        
+        // Filter by locations
+        if (filters.locations && filters.locations.length > 0) {
+          filteredJobs = filteredJobs.filter(job => {
+            const jobLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : '');
+            return filters.locations.includes(jobLocation);
+          });
+        }
+        
+        // Filter by job titles
+        if (filters.jobTitles && filters.jobTitles.length > 0) {
+          filteredJobs = filteredJobs.filter(job => 
+            filters.jobTitles.includes(job.title) || 
+            filters.jobTitles.includes(job.job_title)
+          );
+        }
+        
+        // Filter by specific job IDs
+        if (filters.jobIds && filters.jobIds.length > 0) {
+          filteredJobs = filteredJobs.filter(job => 
+            filters.jobIds.includes(job.id)
+          );
+        }
+      }
+      
+      return filteredJobs;
     },
     enabled: open
   });
@@ -82,6 +134,47 @@ export function JobAssignmentDialog({
           <DialogTitle>
             Assign Jobs to "{jobGroup.name}"
           </DialogTitle>
+          {/* Show active filters */}
+          {(() => {
+            const settings = jobGroup.xml_feed_settings as any;
+            const filters = settings?.filters;
+            const hasFilters = filters && (
+              (filters.platforms && filters.platforms.length > 0) ||
+              (filters.locations && filters.locations.length > 0) ||
+              (filters.jobTitles && filters.jobTitles.length > 0) ||
+              (filters.jobIds && filters.jobIds.length > 0)
+            );
+            
+            if (!hasFilters) return null;
+            
+            return (
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>Active filters for this job group:</p>
+                <div className="flex flex-wrap gap-1">
+                  {filters.platforms?.map((platform: string) => (
+                    <Badge key={platform} variant="outline" className="text-xs">
+                      Platform: {platform}
+                    </Badge>
+                  ))}
+                  {filters.locations?.map((location: string) => (
+                    <Badge key={location} variant="outline" className="text-xs">
+                      Location: {location}
+                    </Badge>
+                  ))}
+                  {filters.jobTitles?.map((title: string) => (
+                    <Badge key={title} variant="outline" className="text-xs">
+                      Title: {title}
+                    </Badge>
+                  ))}
+                  {filters.jobIds?.map((id: string) => (
+                    <Badge key={id} variant="outline" className="text-xs">
+                      ID: {id}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </DialogHeader>
         
         <div className="space-y-4">
