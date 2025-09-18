@@ -48,7 +48,7 @@ export const transformAccountDataForDisplay = (account: any): any => {
     account_id: getDisplayAccountId(account.account_id),
     // Update display name if it's the CR England account
     account_name: account.account_id === '1594827328159714' 
-      ? 'cre-25-0601' 
+      ? 'cre-25-0801' 
       : account.account_name
   };
 };

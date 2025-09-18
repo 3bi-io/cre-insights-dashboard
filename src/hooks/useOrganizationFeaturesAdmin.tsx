@@ -99,6 +99,12 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
       category: 'AI',
     },
     {
+      name: 'elevenlabs_access',
+      label: 'ElevenLabs Voice AI',
+      description: 'Access to ElevenLabs voice synthesis and conversational AI',
+      category: 'AI',
+    },
+    {
       name: 'advanced_analytics',
       label: 'Advanced Analytics',
       description: 'Advanced reporting and analytics features',

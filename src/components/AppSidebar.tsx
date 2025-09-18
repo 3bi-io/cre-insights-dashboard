@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,6 +21,7 @@ const AppSidebar = () => {
     organization,
     signOut
   } = useAuth();
+  const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
   // Main standalone items
   const mainItems = [
     // Analytics group items
@@ -52,11 +54,11 @@ const AppSidebar = () => {
         label: 'Job Listings',
         icon: BriefcaseIcon
       },
-      {
+      ...(hasVoiceAgent() ? [{
         path: '/admin/voice-agent',
         label: 'Voice Agent',
         icon: Phone
-      }
+      }] : [])
     ]
   }, {
     group: "Management",
@@ -76,11 +78,11 @@ const AppSidebar = () => {
         label: 'Publishers',
         icon: Share2
       },
-      {
+      ...(hasTenstreetAccess() ? [{
         path: '/admin/tenstreet',
         label: 'ATS Integrations',
         icon: Share2
-      },
+      }] : []),
       {
         path: '/dashboard?tab=features',
         label: 'Features',
@@ -90,6 +92,11 @@ const AppSidebar = () => {
         path: '/admin/ai-tools',
         label: 'AI Tools',
         icon: Bot
+      },
+      {
+        path: '/admin/ai-settings',
+        label: 'AI Settings',
+        icon: Settings
       },
     ]
       }, {

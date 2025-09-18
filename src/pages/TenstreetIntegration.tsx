@@ -18,7 +18,7 @@ const TenstreetIntegration = () => {
   
   // Tenstreet Configuration
   const [config, setConfig] = useState({
-    clientId: '978',
+    clientId: '',
     password: 'lS%!r3pjy@0SzMs!8Ln',
     service: 'subject_upload',
     mode: 'PROD',
@@ -248,6 +248,7 @@ const TenstreetIntegration = () => {
                     id="clientId"
                     value={config.clientId}
                     onChange={(e) => setConfig({...config, clientId: e.target.value})}
+                    placeholder="e.g. 123"
                   />
                 </div>
                 <div>
@@ -319,7 +320,7 @@ const TenstreetIntegration = () => {
                     id="jobId"
                     value={config.jobId}
                     onChange={(e) => setConfig({...config, jobId: e.target.value})}
-                    placeholder="1234"
+                    placeholder="****"
                   />
                 </div>
                 <div>

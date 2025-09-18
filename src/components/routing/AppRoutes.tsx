@@ -31,6 +31,7 @@ const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
 const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ default: m.AIToolsPage })));
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
+const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/pages/Routes"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
 const Clients = React.lazy(() => import("@/pages/Clients"));
@@ -120,6 +121,7 @@ const AppRoutes: React.FC = () => {
         <Route path="privacy-controls" element={<ProtectedRouteWrapper><PrivacyControls /></ProtectedRouteWrapper>} />
         <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
+        <Route path="ai-settings" element={<ProtectedRouteWrapper><AIPlatformSettings /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
         <Route path="publishers" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />

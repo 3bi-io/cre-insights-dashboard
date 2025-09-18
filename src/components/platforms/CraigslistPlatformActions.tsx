@@ -156,7 +156,7 @@ const CraigslistPlatformActions: React.FC = () => {
                 <div className="space-y-1">
                   <p className="font-medium text-green-800">Connected to Craigslist</p>
                   <p className="text-sm text-green-700">
-                    Username: {connectionStatus.username} | Account: {connectionStatus.accountId}
+                    Username: ****@**** | Account: ****1234
                   </p>
                   <p className="text-sm text-green-600">
                     Last checked: {new Date(connectionStatus.lastChecked).toLocaleString()}
