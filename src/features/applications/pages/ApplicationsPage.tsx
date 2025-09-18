@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Webhook } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
@@ -12,7 +11,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 
 import {
-  ZapierWebhookSetup,
   ApplicationDetailsDialog,
   TenstreetUpdateDialog,
   TenstreetUpdateModal,
@@ -115,70 +113,56 @@ const ApplicationsPage = () => {
       actions={pageActions}
     >
       <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
-        <Tabs defaultValue="applications" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="applications">Applications</TabsTrigger>
-            <TabsTrigger value="webhook-setup" className="flex items-center gap-2">
-              <Webhook className="w-4 h-4" />
-              Zapier Integration
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-6">Applications Overview</h3>
+              <ApplicationsOverview 
+                statusCounts={statusCounts} 
+                categoryCounts={categoryCounts} 
+              />
+            </CardContent>
+          </Card>
+          
+          <ApplicationsSearch
+            searchTerm={searchTerm}
+            categoryFilter={categoryFilter}
+            sourceFilter={sourceFilter}
+            onSearchChange={setSearchTerm}
+            onCategoryChange={setCategoryFilter}
+            onSourceChange={setSourceFilter}
+          />
 
-          <TabsContent value="applications" className="space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-6">Applications Overview</h3>
-                <ApplicationsOverview 
-                  statusCounts={statusCounts} 
-                  categoryCounts={categoryCounts} 
+          <div className="space-y-4">
+            {filteredApplications.length > 0 ? (
+              filteredApplications.map((application, index) => (
+                <ApplicationCard
+                  key={application.id || index}
+                  application={application}
+                  onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
+                  onRecruiterAssignment={(applicationId, recruiterId) => {
+                    // Note: recruiter_id field is not part of the current UpdateApplicationData schema
+                    console.log('Recruiter assignment requested for:', applicationId, recruiterId);
+                  }}
+                  onDetailsView={() => handleDetailsView(application)}
+                  onSmsOpen={() => handleSmsOpen(application)}
+                  onTenstreetUpdate={() => {
+                    setSelectedApplication(application);
+                    setTenstreetModalOpen(true);
+                  }}
                 />
-              </CardContent>
-            </Card>
-            
-            <ApplicationsSearch
-              searchTerm={searchTerm}
-              categoryFilter={categoryFilter}
-              sourceFilter={sourceFilter}
-              onSearchChange={setSearchTerm}
-              onCategoryChange={setCategoryFilter}
-              onSourceChange={setSourceFilter}
-            />
-
-            <div className="space-y-4">
-              {filteredApplications.length > 0 ? (
-                filteredApplications.map((application, index) => (
-                  <ApplicationCard
-                    key={application.id || index}
-                    application={application}
-                    onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
-                    onRecruiterAssignment={(applicationId, recruiterId) => {
-                      // Note: recruiter_id field is not part of the current UpdateApplicationData schema
-                      console.log('Recruiter assignment requested for:', applicationId, recruiterId);
-                    }}
-                    onDetailsView={() => handleDetailsView(application)}
-                    onSmsOpen={() => handleSmsOpen(application)}
-                    onTenstreetUpdate={() => {
-                      setSelectedApplication(application);
-                      setTenstreetModalOpen(true);
-                    }}
-                  />
-                ))
-              ) : (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <p className="text-muted-foreground">
-                      {loading ? "Loading applications..." : "No applications found"}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="webhook-setup">
-            <ZapierWebhookSetup />
-          </TabsContent>
-        </Tabs>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <p className="text-muted-foreground">
+                    {loading ? "Loading applications..." : "No applications found"}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
 
         {/* Enhanced Dialogs */}
         {selectedApplication && (
