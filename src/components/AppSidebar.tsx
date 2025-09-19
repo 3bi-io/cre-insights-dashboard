@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
 const AppSidebar = () => {
@@ -53,6 +53,16 @@ const AppSidebar = () => {
         path: '/admin/jobs',
         label: 'Job Listings',
         icon: BriefcaseIcon
+      },
+      {
+        path: '/admin/clients',
+        label: 'Clients',
+        icon: UserCheck
+      },
+      {
+        path: '/admin/routes',
+        label: 'Routes',
+        icon: MapPin
       },
       ...(hasVoiceAgent() ? [{
         path: '/admin/voice-agent',

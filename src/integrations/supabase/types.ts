@@ -1958,6 +1958,10 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      get_application_organization_id: {
+        Args: { _application_id: string }
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1969,6 +1973,21 @@ export type Database = {
       get_org_id_by_slug: {
         Args: { _slug: string }
         Returns: string
+      }
+      get_organization_applications: {
+        Args: { _limit?: number; _offset?: number; _org_id: string }
+        Returns: {
+          applicant_email: string
+          applied_at: string
+          first_name: string
+          id: string
+          job_listing_id: string
+          job_title: string
+          last_name: string
+          organization_name: string
+          phone: string
+          status: string
+        }[]
       }
       get_organization_platform_access: {
         Args: { _org_id: string }
