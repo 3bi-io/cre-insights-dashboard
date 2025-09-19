@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download } from 'lucide-react';
@@ -9,6 +9,8 @@ import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 import {
   ApplicationDetailsDialog,
@@ -24,12 +26,18 @@ const ApplicationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [organizationFilter, setOrganizationFilter] = useState('all');
+  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; }>>([]);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [tenstreetModalOpen, setTenstreetModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { userRole } = useAuth();
+
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const isSuperAdmin = userRole === 'super_admin';
 
   const {
     applications,
@@ -38,7 +46,30 @@ const ApplicationsPage = () => {
     createApplication,
     updateApplication,
     deleteApplication,
-  } = useApplications();
+    refresh,
+  } = useApplications({
+    filters: {
+      search: searchTerm,
+      organization_id: organizationFilter === 'all' ? undefined : organizationFilter,
+    }
+  });
+
+  // Fetch organizations for super admin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      const fetchOrganizations = async () => {
+        const { data, error } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .order('name');
+        
+        if (!error && data) {
+          setOrganizations(data);
+        }
+      };
+      fetchOrganizations();
+    }
+  }, [isSuperAdmin]);
 
   const handleSmsOpen = (application: any) => {
     setSelectedApplication(application);
@@ -68,7 +99,7 @@ const ApplicationsPage = () => {
     }
   };
 
-  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
+  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter, organizationFilter !== 'all' ? organizationFilter : undefined);
   const statusCounts = getStatusCounts(applications || []);
   const categoryCounts = getCategoryCounts(applications || []);
 
@@ -128,9 +159,13 @@ const ApplicationsPage = () => {
             searchTerm={searchTerm}
             categoryFilter={categoryFilter}
             sourceFilter={sourceFilter}
+            organizationFilter={organizationFilter}
             onSearchChange={setSearchTerm}
             onCategoryChange={setCategoryFilter}
             onSourceChange={setSourceFilter}
+            onOrganizationChange={setOrganizationFilter}
+            showOrganizationFilter={isSuperAdmin}
+            organizations={organizations}
           />
 
           <div className="space-y-4">

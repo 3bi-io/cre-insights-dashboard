@@ -55,22 +55,33 @@ class ApplicationsService extends BaseFeatureService {
     experience_years_min?: number;
     city?: string;
     state?: string;
+    organization_id?: string;
   }): Promise<ApiResponse<any>> {
     return this.handleApiCall(async () => {
       let query = (this.supabase as any).from(this.tableName)
         .select(`
           *,
-          job_listings:job_id (
+          job_listings:job_listing_id (
             title,
             location,
-            employment_type
+            job_type,
+            organization_id,
+            organizations:organization_id (
+              name,
+              slug
+            )
           )
         `, { count: 'exact' })
         .order('applied_at', { ascending: false });
 
       // Apply application-specific filters
       if (filters?.job_id) {
-        query = query.eq('job_id', filters.job_id);
+        query = query.eq('job_listing_id', filters.job_id);
+      }
+
+      if (filters?.organization_id) {
+        // Filter by organization through job_listings relationship
+        query = query.eq('job_listings.organization_id', filters.organization_id);
       }
       
       if (filters?.status) {
