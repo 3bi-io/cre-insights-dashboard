@@ -7,7 +7,7 @@ import { createCrudValidation, commonSchemas } from '@/features/shared/utils/fea
 const applicationSchema = z.object({
   id: commonSchemas.id.optional(),
   organization_id: commonSchemas.organizationId,
-  job_id: commonSchemas.id,
+  job_listing_id: commonSchemas.id,
   first_name: z.string().min(1, 'First name is required').max(100, 'First name too long'),
   last_name: z.string().min(1, 'Last name is required').max(100, 'Last name too long'),
   email: commonSchemas.email,
@@ -31,7 +31,7 @@ const applicationSchema = z.object({
 
 export type Application = z.infer<typeof applicationSchema>;
 export type CreateApplicationData = Omit<Application, 'id' | 'applied_at' | 'reviewed_at'>;
-export type UpdateApplicationData = Partial<Omit<CreateApplicationData, 'organization_id' | 'job_id'> & { 
+export type UpdateApplicationData = Partial<Omit<CreateApplicationData, 'organization_id' | 'job_listing_id'> & { 
   status: Application['status']; 
   reviewed_at?: string;
 }>;
@@ -218,7 +218,7 @@ class ApplicationsService extends BaseFeatureService {
       let query = (this.supabase as any).from(this.tableName).select('status, cdl_license, veteran_status');
       
       if (jobId) {
-        query = query.eq('job_id', jobId);
+        query = query.eq('job_listing_id', jobId);
       }
 
       const result = await query;

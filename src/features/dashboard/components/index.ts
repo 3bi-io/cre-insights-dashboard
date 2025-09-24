@@ -1,7 +1,7 @@
 // Dashboard components
 export { default as DashboardTabs } from '@/components/dashboard/DashboardTabs';
 export { default as DashboardContent } from '@/components/dashboard/DashboardContent';
-export { default as DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
+export { DashboardMetrics } from './DashboardMetrics';
 export { default as DashboardCharts } from '@/components/dashboard/DashboardCharts';
 export { OrganizationAdminDashboard } from '@/components/dashboard/OrganizationAdminDashboard';
 export { default as DashboardLoading } from '@/components/dashboard/DashboardLoading';

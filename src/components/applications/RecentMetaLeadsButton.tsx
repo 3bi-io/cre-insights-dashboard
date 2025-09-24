@@ -4,23 +4,19 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Download, RefreshCw } from 'lucide-react';
-import { getActualAccountId } from '@/utils/metaAccountAlias';
-
-// Display account ID (alias)
-const CR_ENGLAND_DISPLAY_ID = '897639563274136';
-// Actual account ID for API calls
-const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
+import { useAuth } from '@/hooks/useAuth';
 
 const RecentMetaLeadsButton: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useAuth();
 
   const syncRecentLeadsMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: {
           action: 'sync_leads',
-          accountId: CR_ENGLAND_ACTUAL_ID,
+          organizationId: organization?.id,
           sinceDays: 7, // Last 7 days only for recent leads
         },
       });

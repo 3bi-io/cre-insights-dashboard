@@ -47,7 +47,7 @@ class JobsService extends BaseFeatureService {
   }): Promise<ApiResponse<any>> {
     return this.handleApiCall(async () => {
       let query = (this.supabase as any).from(this.tableName)
-        .select('*', { count: 'exact' })
+        .select('*, organizations:organization_id(name, slug)', { count: 'exact' })
         .order('posted_at', { ascending: false });
 
       // Apply job-specific filters

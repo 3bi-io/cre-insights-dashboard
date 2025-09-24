@@ -4,10 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getActualAccountId } from '@/utils/metaAccountAlias';
 
-// Display account ID (alias)
-const CR_ENGLAND_DISPLAY_ID = '897639563274136';
-// Actual account ID for data queries  
-const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 
 export const usePlatformPerformanceData = () => {
   const { organization } = useAuth();
@@ -22,9 +18,6 @@ export const usePlatformPerformanceData = () => {
         
       if (organization?.id) {
         metaQuery = metaQuery.eq('organization_id', organization.id);
-      } else {
-        // Fallback for existing data without organization_id
-        metaQuery = metaQuery.eq('account_id', CR_ENGLAND_ACTUAL_ID);
       }
 
       const { data: metaData, error: metaError } = await metaQuery;

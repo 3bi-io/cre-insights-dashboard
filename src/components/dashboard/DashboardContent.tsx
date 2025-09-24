@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardCategoryTiles from './DashboardCategoryTiles';
-import DashboardMetricsSection from './DashboardMetricsSection';
+import { DashboardMetrics } from '@/features/dashboard/components/DashboardMetrics';
 import { useAuth } from '@/hooks/useAuth';
 import { getActualAccountId } from '@/utils/metaAccountAlias';
 
@@ -118,10 +118,6 @@ interface MetaAnalyticsData {
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16'];
-// Display account ID (alias)  
-const CR_ENGLAND_DISPLAY_ID = '897639563274136';
-// Actual account ID for data queries
-const CR_ENGLAND_ACTUAL_ID = getActualAccountId(CR_ENGLAND_DISPLAY_ID);
 
 const DashboardContent = () => {
   const { organization } = useAuth();
@@ -132,81 +128,8 @@ const DashboardContent = () => {
   const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic'>('basic');
   const [totalApplications, setTotalApplications] = useState<number>(0);
   const [dateRange, setDateRange] = useState('last_30d');
-  const [dashboardMetrics, setDashboardMetrics] = useState({
-    totalSpend: 0,
-    totalImpressions: 0,
-    totalLeads: 0,
-    totalJobs: 0,
-    totalReach: 0
-  });
   const { toast } = useToast();
 
-  // Get cost per lead data using the selected date range
-  const { data: costData } = useCostPerLead(dateRange);
-
-  // Fetch dashboard metrics based on date range
-  const fetchDashboardMetrics = async (selectedDateRange: string) => {
-    let startDate: string;
-    const today = new Date();
-    
-    switch (selectedDateRange) {
-      case 'last_7d':
-        startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case 'last_14d':
-        startDate = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case 'last_60d':
-        startDate = new Date(today.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case 'last_90d':
-        startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case 'this_month':
-        startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        break;
-      case 'last_month':
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        startDate = lastMonth.toISOString().split('T')[0];
-        break;
-      default:
-        // last_30d
-        startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    }
-
-    const [metaSpendData, applicationsData, jobsData] = await Promise.all([
-      supabase.from('meta_daily_spend')
-        .select('spend, impressions, clicks, reach')
-        .eq('organization_id', organization?.id)
-        .gte('date_start', startDate),
-      supabase.from('applications')
-        .select('id, source, applied_at, job_listings!inner(organization_id)')
-        .or('source.eq.fb,source.eq.ig,source.eq.meta,source.eq.facebook,source.eq.instagram')
-        .eq('job_listings.organization_id', organization?.id)
-        .gte('applied_at', startDate),
-      supabase.from('job_listings')
-        .select('id')
-        .eq('status', 'active')
-        .eq('organization_id', organization?.id)
-    ]);
-
-    const totalSpend = metaSpendData.data?.reduce((sum, item) => sum + Number(item.spend), 0) || 0;
-    const totalImpressions = metaSpendData.data?.reduce((sum, item) => sum + Number(item.impressions || 0), 0) || 0;
-    const totalLeads = applicationsData.data?.length || 0;
-    const totalJobs = jobsData.data?.length || 0;
-    const totalReach = metaSpendData.data?.reduce((sum, item) => sum + Number(item.reach || 0), 0) || 0;
-
-    const metrics = {
-      totalSpend,
-      totalImpressions,
-      totalLeads,
-      totalJobs,
-      totalReach
-    };
-
-    setDashboardMetrics(metrics);
-    return metrics;
-  };
 
   const generateAnalytics = async () => {
     setLoading(true);
@@ -342,14 +265,11 @@ const DashboardContent = () => {
   useEffect(() => {
     generateAnalytics();
     generateMetaAnalytics();
-    // Also refresh the dashboard metrics for the cards
-    fetchDashboardMetrics(dateRange);
   }, [dateRange]);
 
   useEffect(() => {
     generateAnalytics();
     generateMetaAnalytics();
-    fetchDashboardMetrics(dateRange);
   }, []);
 
   return (
@@ -638,7 +558,7 @@ const DashboardContent = () => {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          ID: 897639563274136 • USD • America/Chicago
+                          Organization: {organization?.name || 'Unknown'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
