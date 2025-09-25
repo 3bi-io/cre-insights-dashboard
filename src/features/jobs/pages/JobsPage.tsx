@@ -31,7 +31,6 @@ import {
   JobAnalyticsDialog 
 } from '../components';
 import { useJobs, useElevenLabsVoice } from '../hooks';
-import { FeatureGuard } from '@/components/FeatureGuard';
 
 type ViewMode = 'grid' | 'table';
 
@@ -282,40 +281,38 @@ const JobsPage = () => {
         </div>
 
         {/* Voice Application Status */}
-        <FeatureGuard feature="elevenlabs_access">
-          {isVoiceConnected && selectedVoiceJob && (
-            <Card className="mb-6 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                    <div>
-                      <p className="font-medium">Voice Application: {selectedVoiceJob.jobTitle}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {isVoiceConnected ? 'Connected - Speak naturally to apply' : 'Connecting to voice agent...'}
-                      </p>
-                    </div>
-                    {isSpeaking && (
-                      <div className="flex items-center gap-2 text-blue-600">
-                        <Phone className="w-4 h-4" />
-                        <span className="text-sm">Agent speaking...</span>
-                      </div>
-                    )}
+        {isVoiceConnected && selectedVoiceJob && (
+          <Card className="mb-6 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div>
+                    <p className="font-medium">Voice Application: {selectedVoiceJob.jobTitle}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isVoiceConnected ? 'Connected - Speak naturally to apply' : 'Connecting to voice agent...'}
+                    </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={endVoiceApplication}
-                    className="flex items-center gap-2"
-                  >
-                    <PhoneOff className="w-4 h-4" />
-                    End Call
-                  </Button>
+                  {isSpeaking && (
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Phone className="w-4 h-4" />
+                      <span className="text-sm">Agent speaking...</span>
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </FeatureGuard>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={endVoiceApplication}
+                  className="flex items-center gap-2"
+                >
+                  <PhoneOff className="w-4 h-4" />
+                  End Call
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Content based on view mode */}
         {viewMode === 'table' ? (
