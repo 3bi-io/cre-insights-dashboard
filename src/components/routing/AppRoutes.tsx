@@ -34,7 +34,7 @@ const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegrati
 const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
-const Clients = React.lazy(() => import("@/pages/Clients"));
+const ClientsPage = React.lazy(() => import("@/features/clients").then(m => ({ default: m.ClientsPage })));
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
 const Settings = React.lazy(() => import("@/pages/Settings"));
 const Media = React.lazy(() => import("@/pages/Media"));
@@ -125,7 +125,7 @@ const AppRoutes: React.FC = () => {
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
         <Route path="publishers" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
-        <Route path="clients" element={<ProtectedRouteWrapper><Clients /></ProtectedRouteWrapper>} />
+        <Route path="clients" element={<ProtectedRouteWrapper><ClientsPage /></ProtectedRouteWrapper>} />
         <Route path="organizations" element={<ProtectedRouteWrapper><Organizations /></ProtectedRouteWrapper>} />
         <Route path="settings" element={<ProtectedRouteWrapper><Settings /></ProtectedRouteWrapper>} />
         <Route path="media" element={<ProtectedRouteWrapper><Media /></ProtectedRouteWrapper>} />
