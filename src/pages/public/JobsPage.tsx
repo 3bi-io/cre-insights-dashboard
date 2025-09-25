@@ -36,7 +36,7 @@ const JobsPage = () => {
       }
 
       // Apply location filter
-      if (locationFilter) {
+      if (locationFilter && locationFilter !== '__ALL__') {
         query = query.or(`city.ilike.%${locationFilter}%,state.ilike.%${locationFilter}%,location.ilike.%${locationFilter}%`);
       }
 
@@ -122,7 +122,7 @@ const JobsPage = () => {
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="__ALL__">All Locations</SelectItem>
                 {locations.map((location) => (
                   <SelectItem key={location} value={location}>
                     {location}

@@ -6,6 +6,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { ErrorFallback } from './ErrorFallback';
 import { errorService } from '@/services/errorService';
+import { logError } from '@/utils/loggerUtils';
 import type { ErrorBoundaryState, ErrorBoundaryProps } from '@/types/error.types';
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -32,7 +33,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const errorId = this.state.errorId || `error_${Date.now()}`;
     
     // Log error details
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logError('ErrorBoundary caught an error', { error: error.message, stack: error.stack, componentStack: errorInfo.componentStack }, 'ErrorBoundary');
 
     // Update state with error info
     this.setState({

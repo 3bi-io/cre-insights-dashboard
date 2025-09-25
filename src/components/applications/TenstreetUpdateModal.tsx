@@ -323,16 +323,19 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
                       <div key={field} className="grid grid-cols-2 gap-2 items-center">
                         <Label className="text-sm">{field}</Label>
                         <Select
-                          value={fieldMappings[field] || ''}
+                          value={fieldMappings[field] || '__UNMAPPED__'}
                           onValueChange={(value) => 
-                            setFieldMappings(prev => ({ ...prev, [field]: value }))
+                            setFieldMappings(prev => ({ 
+                              ...prev, 
+                              [field]: value === '__UNMAPPED__' ? '' : value 
+                            }))
                           }
                         >
                           <SelectTrigger className="h-8">
                             <SelectValue placeholder="Select field" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Not mapped</SelectItem>
+                            <SelectItem value="__UNMAPPED__">Not mapped</SelectItem>
                             {Object.keys(application || {}).map((appField) => (
                               <SelectItem key={appField} value={appField}>
                                 {appField.replace(/_/g, ' ')}

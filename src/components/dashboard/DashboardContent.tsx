@@ -4,6 +4,7 @@ import DashboardCategoryTiles from './DashboardCategoryTiles';
 import { DashboardMetrics } from '@/features/dashboard/components/DashboardMetrics';
 import { useAuth } from '@/hooks/useAuth';
 import { getActualAccountId } from '@/utils/metaAccountAlias';
+import { logInfo, logError, logDebug } from '@/utils/loggerUtils';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -171,7 +172,7 @@ const DashboardContent = () => {
         .gte('applied_at', startDate);
       if (error) throw error;
 
-      console.log(`Fetched ${applications?.length || 0} applications for analysis`);
+      logInfo(`Fetched ${applications?.length || 0} applications for analysis`, { applicationCount: applications?.length || 0 }, 'Dashboard');
       setTotalApplications(applications?.length || 0);
 
       // Call enhanced edge function with selected AI provider
@@ -197,7 +198,7 @@ const DashboardContent = () => {
         description: `AI analysis completed for ${applications?.length || 0} applications using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`
       });
     } catch (error) {
-      console.error('Error generating analytics:', error);
+      logError('Error generating analytics', error, 'Dashboard');
       toast({
         title: "Error",
         description: "Failed to generate analytics",
@@ -211,7 +212,7 @@ const DashboardContent = () => {
   const generateMetaAnalytics = async () => {
     setMetaLoading(true);
     try {
-      console.log('Generating Meta spend analytics...');
+      logDebug('Generating Meta spend analytics', { dateRange }, 'Dashboard');
       
       const { data: result, error } = await supabase.functions.invoke('meta-spend-analytics', {
         body: {

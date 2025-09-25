@@ -45,10 +45,10 @@ const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {
 
   const handleResetFilters = () => {
     const resetFilters = {
-      status: '',
-      platform: '',
-      category: '',
-      location: '',
+      status: '__ALL__',
+      platform: '__ALL__',
+      category: '__ALL__',
+      location: '__ALL__',
       metrics: {
         showSpend: true,
         showApplications: true,
@@ -85,7 +85,7 @@ const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All statuses</SelectItem>
+                <SelectItem value="__ALL__">All statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="paused">Paused</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
@@ -105,7 +105,7 @@ const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {
                 <SelectValue placeholder="All publishers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All publishers</SelectItem>
+                <SelectItem value="__ALL__">All publishers</SelectItem>
                 <SelectItem value="indeed">Indeed</SelectItem>
                 <SelectItem value="ziprecruiter">ZipRecruiter</SelectItem>
                 <SelectItem value="facebook">Facebook</SelectItem>
@@ -126,7 +126,7 @@ const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="__ALL__">All categories</SelectItem>
                 <SelectItem value="cdl-a">CDL-A</SelectItem>
                 <SelectItem value="cdl-b">CDL-B</SelectItem>
                 <SelectItem value="local">Local</SelectItem>

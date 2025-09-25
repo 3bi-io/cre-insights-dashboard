@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logInfo, logError, logDebug } from '@/utils/loggerUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +39,7 @@ const AdministratorsSettingsTab = () => {
   const { data: administrators, isLoading: adminLoading } = useQuery({
     queryKey: ['administrators'],
     queryFn: async (): Promise<AdminUser[]> => {
-      console.log('Fetching administrators...');
+      logDebug('Fetching administrators', {}, 'AdminSettings');
       
       // Get admin roles
       const { data: adminRoles, error: rolesError } = await supabase
@@ -47,14 +48,14 @@ const AdministratorsSettingsTab = () => {
         .eq('role', 'admin');
       
       if (rolesError) {
-        console.error('Error fetching admin roles:', rolesError);
+        logError('Error fetching admin roles', rolesError, 'AdminSettings');
         throw rolesError;
       }
 
-      console.log('Admin roles found:', adminRoles);
+      logDebug('Admin roles found', { count: adminRoles?.length || 0 }, 'AdminSettings');
 
       if (!adminRoles || adminRoles.length === 0) {
-        console.log('No admin roles found');
+        logInfo('No admin roles found', {}, 'AdminSettings');
         return [];
       }
 
@@ -71,7 +72,7 @@ const AdministratorsSettingsTab = () => {
         };
       });
 
-      console.log('Final administrators result:', result);
+      logDebug('Final administrators result', { count: result.length }, 'AdminSettings');
       return result;
     },
     enabled: userRole === 'admin' || userRole === 'super_admin', // Only fetch if current user is admin or super_admin

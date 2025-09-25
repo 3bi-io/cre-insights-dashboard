@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { logInfo, logError, logDebug } from '@/utils/loggerUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -40,13 +41,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const fetchUserRoleAndOrganization = async (_userId: string) => {
   try {
-    // Fetch user role
-    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
-    if (roleError) {
-      console.error('Error fetching user role:', roleError?.message || roleError);
-      setUserRole('user');
-    } else {
-      console.log('User role fetched:', roleData);
+  // Fetch user role
+  const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+  if (roleError) {
+    logError('Error fetching user role', roleError, 'Auth');
+    setUserRole('user');
+  } else {
+    logDebug('User role fetched', { role: roleData }, 'Auth');
       // Check if user is super admin by email or role
       if (roleData === 'super_admin') {
         setUserRole('super_admin');
@@ -72,17 +73,17 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       .maybeSingle();
 
     if (profileError) {
-      console.error('Error fetching user profile:', profileError);
+      logError('Error fetching user profile', profileError, 'Auth');
       setOrganization(null);
     } else if (profileData?.organizations) {
-      console.log('User organization fetched:', profileData.organizations);
+      logDebug('User organization fetched', { organization: profileData.organizations }, 'Auth');
       setOrganization(profileData.organizations as any);
     } else {
       // Super admins don't need an organization
       setOrganization(null);
     }
   } catch (error: any) {
-    console.error('Error fetching user data:', error?.message || error);
+    logError('Error fetching user data', error, 'Auth');
     setUserRole('user');
     setOrganization(null);
   }
@@ -92,7 +93,7 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
     // Set up auth state listener
 const { data: { subscription } } = supabase.auth.onAuthStateChange(
   (event, session) => {
-    console.log('Auth state changed:', event, session);
+    logDebug('Auth state changed', { event, hasSession: !!session }, 'Auth');
     setSession(session);
     setUser(session?.user ?? null);
     
