@@ -115,8 +115,53 @@ Deno.serve(async (req) => {
 
     const { city, state } = await lookupCityState(formData.zip);
 
+    // Get or create a job listing for the application
+    let jobListingId = formData.job_listing_id;
+    
+    if (!jobListingId) {
+      // Get the CR England organization ID
+      const { data: crEnglandOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', 'cr-england')
+        .single();
+        
+      if (crEnglandOrg) {
+        // Find an active job listing for CR England
+        const { data: activeJob } = await supabase
+          .from('job_listings')
+          .select('id')
+          .eq('organization_id', crEnglandOrg.id)
+          .eq('status', 'active')
+          .limit(1)
+          .single();
+          
+        if (activeJob) {
+          jobListingId = activeJob.id;
+        } else {
+          // Create a default job listing if none exists
+          const { data: defaultJob, error: jobError } = await supabase
+            .from('job_listings')
+            .insert({
+              title: 'General Application',
+              organization_id: crEnglandOrg.id,
+              user_id: crEnglandOrg.id, // Temporary user_id, should be updated by admin
+              category_id: (await supabase.from('job_categories').select('id').limit(1).single())?.data?.id,
+              status: 'active'
+            })
+            .select('id')
+            .single();
+            
+          if (!jobError && defaultJob) {
+            jobListingId = defaultJob.id;
+          }
+        }
+      }
+    }
+
     // Map form data to applications table schema
     const applicationData = {
+      job_listing_id: jobListingId,
       first_name: formData.firstName,
       last_name: formData.lastName,
       applicant_email: formData.email,

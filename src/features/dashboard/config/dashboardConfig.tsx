@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot } from 'lucide-react';
+import { Bot, Users } from 'lucide-react';
 import { OrganizationOverview } from '@/components/dashboard/organization/OrganizationOverview';
 import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
@@ -8,6 +8,7 @@ import { AIFeaturesPanel } from '@/components/dashboard/organization/AIFeaturesP
 import { FeatureGuard } from '@/components/FeatureGuard';
 import AIImpactDashboard from '@/pages/AIImpactDashboard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
+import { OrganizationApplicationsTab } from '@/components/dashboard/organization/OrganizationApplicationsTab';
 
 export interface DashboardTab {
   id: string;
@@ -38,6 +39,12 @@ export const dashboardTabs: DashboardTab[] = [
     id: 'overview',
     label: 'Overview',
     component: OrganizationOverview,
+  },
+  {
+    id: 'applications',
+    label: 'Applications',
+    icon: Users,
+    component: OrganizationApplicationsTab,
   },
   {
     id: 'ai-impact',
