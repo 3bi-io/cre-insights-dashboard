@@ -48,7 +48,7 @@ const HeroSection = () => {
               className="px-8 py-3 text-lg border-primary text-primary hover:bg-primary/10"
             >
               <Play className="mr-2 h-5 w-5" />
-              Watch Demo
+              Launch Demo
             </Button>
           </div>
           
