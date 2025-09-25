@@ -1,43 +1,24 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Mail, Phone, Building, Eye } from 'lucide-react';
-
-interface Client {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  company: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip_code: string | null;
-  notes: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import type { Client, ConsolidatedClient } from '../types/client.types';
 
 interface ClientsTableProps {
   clients: Client[];
+  onEditClient?: (client: Client) => void;
+  onDeleteClient?: (clientId: string) => void;
 }
 
-interface ConsolidatedClient {
-  name: string;
-  locations: string[];
-  totalLocations: number;
-  status: string;
-  latestDate: string;
-  emails: string[];
-  phones: string[];
-}
-
-const ClientsTable = ({ clients }: ClientsTableProps) => {
+const ClientsTable: React.FC<ClientsTableProps> = ({ 
+  clients, 
+  onEditClient,
+  onDeleteClient 
+}) => {
   const navigate = useNavigate();
 
   const getStatusColor = (status: string) => {
@@ -53,8 +34,8 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
     }
   };
 
-  // Consolidate clients by name
-  const consolidatedClients = React.useMemo(() => {
+  // Consolidate clients by name to avoid duplicates
+  const consolidatedClients = useMemo(() => {
     const clientMap = new Map<string, ConsolidatedClient>();
 
     clients.forEach(client => {
@@ -107,7 +88,23 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
 
   const handleViewJobs = (clientName: string) => {
     // Navigate to jobs page with client filter
-    navigate(`/dashboard/jobs?client=${encodeURIComponent(clientName)}`);
+    navigate(`/admin/jobs?client=${encodeURIComponent(clientName)}`);
+  };
+
+  const handleEditClient = (clientName: string) => {
+    // Find the first client with this name to edit
+    const clientToEdit = clients.find(c => c.name === clientName);
+    if (clientToEdit && onEditClient) {
+      onEditClient(clientToEdit);
+    }
+  };
+
+  const handleDeleteClient = (clientName: string) => {
+    // Find the first client with this name to delete
+    const clientToDelete = clients.find(c => c.name === clientName);
+    if (clientToDelete && onDeleteClient) {
+      onDeleteClient(clientToDelete.id);
+    }
   };
 
   if (clients.length === 0) {
@@ -117,7 +114,7 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
           <div className="text-muted-foreground">
             <Building className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="text-lg font-medium mb-2">No clients found</h3>
-            <p className="text-sm">Start by adding your first client.</p>
+            <p className="text-sm">Start by adding your first client or adjust your search filters.</p>
           </div>
         </CardContent>
       </Card>
@@ -199,15 +196,38 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewJobs(client.name)}
-                      className="flex items-center gap-2"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View Jobs
-                    </Button>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewJobs(client.name)}
+                        className="gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Jobs
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit Client
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClient(client.name)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Client
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

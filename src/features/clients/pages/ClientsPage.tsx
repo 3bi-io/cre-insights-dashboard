@@ -1,55 +1,101 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { PageLayout } from '@/features/shared';
 import {
   ClientsHeader,
   ClientsSearch,
   ClientsTable,
   ClientsSummary,
-  ClientsLoading
+  ClientsLoading,
+  CreateClientDialog,
+  EditClientDialog
 } from '../components';
-import { useClients } from '../hooks';
+import { useClientsService } from '../hooks';
+import { useAuth } from '@/hooks/useAuth';
+import type { Client, ClientFilters } from '../types/client.types';
 
 const ClientsPage = () => {
+  const [filters, setFilters] = useState<ClientFilters>({});
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  
+  const { userRole, organization } = useAuth();
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+
   const {
     clients,
-    isLoading,
+    loading,
     error,
-    isAdmin,
-    organization,
-    userRole
-  } = useClients();
-
-  // Debug logging
-  console.log('Clients Page Debug:', {
-    clientsCount: clients?.length || 0,
-    loading: isLoading,
-    error,
-    userRole,
-    isAdmin,
-    organization: organization?.name || 'No organization',
-    organizationId: organization?.id || 'No ID'
+    createClient,
+    updateClient,
+    deleteClient,
+    getClientsBySearch,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    refresh
+  } = useClientsService({
+    enabled: !!organization || userRole === 'super_admin'
   });
 
-  if (isLoading) {
-    return (
-      <PageLayout title="Clients" description="Manage your client relationships and contact information">
-        <div className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 bg-muted rounded-lg"></div>
-              ))}
-            </div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-muted rounded-lg"></div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </PageLayout>
-    );
+  // Filter clients based on current filters
+  const filteredClients = useMemo(() => {
+    if (!clients) return [];
+    
+    let filtered = clients;
+
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(client =>
+        client.name.toLowerCase().includes(searchLower) ||
+        client.company?.toLowerCase().includes(searchLower) ||
+        client.email?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply status filter
+    if (filters.status && filters.status !== 'all') {
+      filtered = filtered.filter(client => client.status === filters.status);
+    }
+
+    // Apply location filter
+    if (filters.location) {
+      const locationLower = filters.location.toLowerCase();
+      filtered = filtered.filter(client =>
+        client.city?.toLowerCase().includes(locationLower) ||
+        client.state?.toLowerCase().includes(locationLower)
+      );
+    }
+
+    return filtered;
+  }, [clients, filters]);
+
+  const handleCreateClient = () => {
+    setShowCreateDialog(true);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    if (confirm('Are you sure you want to delete this client?')) {
+      deleteClient(clientId);
+    }
+  };
+
+  const handleCreateSubmit = (data: any) => {
+    createClient(data);
+    setShowCreateDialog(false);
+  };
+
+  const handleEditSubmit = (id: string, data: any) => {
+    updateClient(id, data);
+    setEditingClient(null);
+  };
+
+  if (loading) {
+    return <ClientsLoading />;
   }
 
   if (error) {
@@ -71,6 +117,12 @@ const ClientsPage = () => {
                 No organization found. Please contact your administrator.
               </p>
             )}
+            <button 
+              onClick={refresh}
+              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       </PageLayout>
@@ -83,13 +135,40 @@ const ClientsPage = () => {
       description="Manage your client relationships and contact information"
     >
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <ClientsHeader clientsCount={clients?.length || 0} />
+        <ClientsHeader 
+          clientsCount={filteredClients.length} 
+          onCreateClient={handleCreateClient}
+        />
         <div className="mt-6 space-y-6">
-          <ClientsSearch clientsCount={clients?.length || 0} />
-          <ClientsTable clients={clients || []} />
-          <ClientsSummary clients={clients || []} />
+          <ClientsSearch 
+            clientsCount={filteredClients.length}
+            onFiltersChange={setFilters}
+            filters={filters}
+          />
+          <ClientsTable 
+            clients={filteredClients}
+            onEditClient={handleEditClient}
+            onDeleteClient={handleDeleteClient}
+          />
+          <ClientsSummary clients={filteredClients} />
         </div>
       </div>
+
+      {/* Dialogs */}
+      <CreateClientDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSubmit={handleCreateSubmit}
+        isLoading={isCreating}
+      />
+
+      <EditClientDialog
+        open={!!editingClient}
+        onOpenChange={(open) => !open && setEditingClient(null)}
+        onSubmit={handleEditSubmit}
+        client={editingClient}
+        isLoading={isUpdating}
+      />
     </PageLayout>
   );
 };
