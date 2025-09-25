@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, MapPin, Eye, Edit, Trash2, DollarSign, Clock, Mic } from 'lucide-react';
 import type { JobListing } from '@/types/common.types';
+import { FeatureGuard } from '@/components/FeatureGuard';
 
 interface JobCardProps {
   job: JobListing;
@@ -143,17 +144,19 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics, onVoiceApply })
             <Eye className="w-4 h-4 mr-2" />
             View Details
           </Button>
-          {onVoiceApply && (
-            <Button 
-              variant="default"
-              size="sm" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => onVoiceApply(job)}
-            >
-              <Mic className="w-4 h-4 mr-2" />
-              Apply with Voice
-            </Button>
-          )}
+          <FeatureGuard feature="elevenlabs_access">
+            {onVoiceApply && (
+              <Button 
+                variant="default"
+                size="sm" 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => onVoiceApply(job)}
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Apply with Voice
+              </Button>
+            )}
+          </FeatureGuard>
         </div>
       </CardContent>
     </Card>

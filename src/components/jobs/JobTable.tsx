@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic } from 'lucide-react';
+import { FeatureGuard } from '@/components/FeatureGuard';
 
 interface JobTableProps {
   jobs: any[] | undefined;
@@ -302,17 +303,19 @@ const JobTable: React.FC<JobTableProps> = ({
                           View Details
                         </Button>
                         
-                        {onVoiceApply && (
-                          <Button 
-                            variant="default"
-                            size="sm"
-                            onClick={() => onVoiceApply(job)}
-                            className="hidden lg:flex bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Mic className="w-4 h-4 mr-1" />
-                            Voice Apply
-                          </Button>
-                        )}
+                        <FeatureGuard feature="elevenlabs_access">
+                          {onVoiceApply && (
+                            <Button 
+                              variant="default"
+                              size="sm"
+                              onClick={() => onVoiceApply(job)}
+                              className="hidden lg:flex bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Mic className="w-4 h-4 mr-1" />
+                              Voice Apply
+                            </Button>
+                          )}
+                        </FeatureGuard>
                         
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -326,12 +329,14 @@ const JobTable: React.FC<JobTableProps> = ({
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
                             </DropdownMenuItem>
-                            {onVoiceApply && (
-                              <DropdownMenuItem onClick={() => onVoiceApply(job)}>
-                                <Mic className="w-4 h-4 mr-2" />
-                                Apply with Voice
-                              </DropdownMenuItem>
-                            )}
+                            <FeatureGuard feature="elevenlabs_access">
+                              {onVoiceApply && (
+                                <DropdownMenuItem onClick={() => onVoiceApply(job)}>
+                                  <Mic className="w-4 h-4 mr-2" />
+                                  Apply with Voice
+                                </DropdownMenuItem>
+                              )}
+                            </FeatureGuard>
                             <DropdownMenuItem>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit Job
