@@ -2205,9 +2205,60 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      get_application_basic_data: {
+        Args: { application_id: string }
+        Returns: {
+          applicant_email: string
+          applied_at: string
+          cdl: string
+          city: string
+          education_level: string
+          exp: string
+          first_name: string
+          id: string
+          job_listing_id: string
+          last_name: string
+          notes: string
+          phone: string
+          source: string
+          state: string
+          status: string
+          work_authorization: string
+          zip: string
+        }[]
+      }
       get_application_organization_id: {
         Args: { _application_id: string }
         Returns: string
+      }
+      get_application_sensitive_data: {
+        Args: { access_reason?: string; application_id: string }
+        Returns: {
+          date_of_birth: string
+          employment_history: Json
+          felony_details: string
+          full_address: string
+          government_id: string
+          government_id_type: string
+          id: string
+          medical_card_expiration: string
+          military_history: Json
+          ssn: string
+        }[]
+      }
+      get_application_summary: {
+        Args: { application_id: string }
+        Returns: {
+          applied_at: string
+          can_start_soon: boolean
+          candidate_name: string
+          experience_level: string
+          has_required_credentials: boolean
+          id: string
+          job_title: string
+          location: string
+          status: string
+        }[]
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>

@@ -66,11 +66,7 @@ class ApplicationsService extends BaseFeatureService {
             title,
             location,
             job_type,
-            organization_id,
-            organizations:organization_id (
-              name,
-              slug
-            )
+            organization_id
           )
         `, { count: 'exact' })
         .order('applied_at', { ascending: false });
