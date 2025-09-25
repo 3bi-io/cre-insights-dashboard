@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 import { BaseFeatureService } from '@/features/shared/services/BaseFeatureService';
 import { ApiResponse, FilterOptions } from '@/features/shared/types/feature.types';
 import { createCrudValidation, commonSchemas } from '@/features/shared/utils/featureValidation';
@@ -58,7 +59,7 @@ class ApplicationsService extends BaseFeatureService {
     organization_id?: string;
   }): Promise<ApiResponse<any>> {
     return this.handleApiCall(async () => {
-      let query = (this.supabase as any).from(this.tableName)
+      let query = (supabase as any).from(this.tableName)
         .select(`
           *,
           job_listings:job_listing_id (
@@ -215,7 +216,7 @@ class ApplicationsService extends BaseFeatureService {
     byVeteran: { veteran: number; nonVeteran: number };
   }>> {
     return this.handleApiCall(async () => {
-      let query = (this.supabase as any).from(this.tableName).select('status, cdl_license, veteran_status');
+      let query = (supabase as any).from(this.tableName).select('status, cdl_license, veteran_status');
       
       if (jobId) {
         query = query.eq('job_listing_id', jobId);
@@ -245,9 +246,6 @@ class ApplicationsService extends BaseFeatureService {
     }, 'getApplicationStats');
   }
 
-  private get supabase() {
-    return (this as any).supabase || require('@/integrations/supabase/client').supabase;
-  }
 }
 
 export const applicationsService = new ApplicationsService();
