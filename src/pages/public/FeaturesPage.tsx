@@ -164,7 +164,7 @@ const FeaturesPage = () => {
           </p>
           <Link to="/auth">
             <Button size="lg" className="bg-primary hover:bg-primary/90">
-              Start Free Trial
+              Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
@@ -283,12 +283,12 @@ const FeaturesPage = () => {
             Experience All Features Risk-Free
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Start your 14-day free trial and see how ATS.me can transform your hiring process.
+            Get started and see how ATS.me can transform your hiring process.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">
               <Button size="lg" variant="secondary" className="px-8 py-3 text-lg bg-white text-primary hover:bg-white/90">
-                Start Free Trial
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>

@@ -16,7 +16,7 @@ const CTASection = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/auth">
             <Button size="lg" variant="secondary" className="px-8 py-3 text-lg bg-white text-primary hover:bg-white/90">
-              Start Your Free Trial
+              Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
@@ -27,7 +27,7 @@ const CTASection = () => {
           </Link>
         </div>
         <p className="text-sm text-white/70 mt-4">
-          No credit card required • 14-day free trial • Cancel anytime
+          No credit card required • Get started instantly
         </p>
       </div>
     </section>
