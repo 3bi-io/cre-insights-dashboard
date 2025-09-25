@@ -23,7 +23,17 @@ interface ClientsSummaryProps {
 }
 
 const ClientsSummary = ({ clients }: ClientsSummaryProps) => {
-  const activeClients = clients.filter(c => c.status === 'active').length;
+  // Consolidate clients by name to avoid counting duplicates
+  const consolidatedClients = clients.reduce((acc, client) => {
+    const existing = acc.find(c => c.name === client.name);
+    if (!existing) {
+      acc.push(client);
+    }
+    return acc;
+  }, [] as Client[]);
+
+  const uniqueClientCount = consolidatedClients.length;
+  const activeClients = consolidatedClients.filter(c => c.status === 'active').length;
   const uniqueCompanies = new Set(clients.filter(c => c.company).map(c => c.company)).size;
   const uniqueLocations = new Set(clients.filter(c => c.city).map(c => c.city)).size;
 
@@ -36,7 +46,7 @@ const ClientsSummary = ({ clients }: ClientsSummaryProps) => {
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Clients</p>
-            <p className="text-2xl font-bold text-foreground">{clients.length}</p>
+            <p className="text-2xl font-bold text-foreground">{uniqueClientCount}</p>
           </div>
         </div>
       </div>

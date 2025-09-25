@@ -52,6 +52,7 @@ export const useClients = () => {
     queryKey: ['clients', organization?.id],
     queryFn: async (): Promise<Client[]> => {
       console.log('Fetching clients for organization:', organization?.id);
+      console.log('User role:', userRole);
       
       const { data, error } = await supabase
         .from('clients')
@@ -63,8 +64,20 @@ export const useClients = () => {
         throw error;
       }
 
-      console.log('Clients fetched:', data?.length || 0);
-      return data || [];
+      console.log('Raw clients fetched from DB:', data?.length || 0, data);
+      console.log('User organization ID:', organization?.id);
+      
+      // Filter out test/duplicate clients if needed
+      const filteredClients = data?.filter(client => {
+        // Log each client for debugging
+        console.log('Client:', client.name, 'Org:', client.organization_id, 'Status:', client.status);
+        
+        // Only show clients that belong to the user's organization
+        return client.organization_id === organization?.id;
+      }) || [];
+      
+      console.log('Filtered clients for user org:', filteredClients.length, filteredClients);
+      return filteredClients;
     },
     enabled: !!organization || userRole === 'super_admin',
   });
