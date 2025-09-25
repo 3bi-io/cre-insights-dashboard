@@ -4,7 +4,20 @@ import { z } from 'zod';
 import type { Client, CreateClientData, UpdateClientData, ClientFilters } from '../types/client.types';
 
 // Validation schemas
-const clientSchema = z.object({
+const createClientSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip_code: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'pending']).default('active'),
+});
+
+const updateClientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
@@ -61,11 +74,11 @@ export class ClientsService {
   async createClient(data: CreateClientData): Promise<{ data: Client | null; error: string | null }> {
     try {
       // Validate input data
-      const validatedData = clientSchema.parse(data);
+      const validatedData = createClientSchema.parse(data);
 
       const { data: result, error } = await supabase
         .from('clients')
-        .insert([validatedData])
+        .insert(validatedData as any)
         .select()
         .single();
 
@@ -88,7 +101,7 @@ export class ClientsService {
     try {
       // Validate input data
       const validatedId = clientIdSchema.parse(id);
-      const validatedData = clientSchema.parse(data);
+      const validatedData = updateClientSchema.parse(data);
 
       const { data: result, error } = await supabase
         .from('clients')

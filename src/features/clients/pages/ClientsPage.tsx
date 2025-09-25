@@ -118,7 +118,7 @@ const ClientsPage = () => {
               </p>
             )}
             <button 
-              onClick={refresh}
+              onClick={() => refresh()}
               className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
             >
               Try Again

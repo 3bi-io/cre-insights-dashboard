@@ -1,2 +1,3 @@
-// Client hooks
-export { useClients } from './useClients';
+// Clients hooks exports
+export { useClientsService } from './useClientsService';
+export type { ClientsFilters } from './useClientsService';
