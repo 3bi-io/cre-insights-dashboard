@@ -65,7 +65,7 @@ export const OrganizationApplicationsTab = () => {
 
   const handleStatusChange = async (applicationId: string, newStatus: string) => {
     try {
-      await updateApplication(applicationId, { status: newStatus as any });
+      await updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' });
       toast({
         title: "Status Updated",
         description: "Application status has been updated successfully",

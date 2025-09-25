@@ -24,7 +24,12 @@ interface TruthContractConfig {
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
-  details: any;
+  details: {
+    lastScore?: number;
+    validationWorking?: boolean;
+    error?: string;
+    [key: string]: unknown;
+  };
 }
 
 const TruthContractMonitor: React.FC = () => {

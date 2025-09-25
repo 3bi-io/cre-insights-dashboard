@@ -11,7 +11,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 
 interface JobEditDialogProps {
-  job: any;
+  job: {
+    id: string;
+    title: string;
+    description?: string;
+    location?: string;
+    status: string;
+    experience_level?: string;
+    [key: string]: unknown;
+  };
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
@@ -29,7 +37,13 @@ const JobEditDialog: React.FC<JobEditDialogProps> = ({ job, open, onOpenChange, 
     },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: {
+    title: string;
+    description: string;
+    location: string;
+    status: string;
+    experience_level: string;
+  }) => {
     try {
       const { error } = await supabase
         .from('job_listings')

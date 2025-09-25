@@ -23,7 +23,7 @@ export const AdminPasswordResetSection: React.FC = () => {
     if (!email || !password) return;
     setLoading(true);
     // Build payload and resolve user_id from profiles by email if possible
-    const payload: any = { new_password: password };
+    const payload: { new_password: string; user_id?: string; email?: string } = { new_password: password };
     try {
       const { data: profiles } = await supabase
         .from('profiles')
@@ -48,8 +48,8 @@ export const AdminPasswordResetSection: React.FC = () => {
 
     try {
       const { data, error } = await tryInvoke('admin-update-password');
-      if (error) throw error as any;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      if (error) throw error as Error;
+      if ((data as Record<string, unknown>)?.error) throw new Error(String((data as Record<string, unknown>).error));
 
       toast({ title: 'Password updated', description: `Password reset for ${email}.` });
       setEmail('');

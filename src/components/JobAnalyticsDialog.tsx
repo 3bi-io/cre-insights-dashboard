@@ -8,7 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Eye, MousePointer, DollarSign } from 'lucide-react';
 
 interface JobAnalyticsDialogProps {
-  job: any;
+  job: {
+    id: string;
+    title: string;
+    status: string;
+    location?: string;
+    created_at: string;
+    updated_at: string;
+    platforms?: { name: string };
+    job_categories?: { name: string };
+    [key: string]: unknown;
+  };
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

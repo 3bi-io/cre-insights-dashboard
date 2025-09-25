@@ -14,10 +14,10 @@ interface AuthContextType {
     name: string;
     slug: string;
     logo_url?: string;
-    settings?: any;
+    settings?: Record<string, unknown>;
   } | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string;
     slug: string;
     logo_url?: string;
-    settings?: any;
+    settings?: Record<string, unknown>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -82,7 +82,7 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       // Super admins don't need an organization
       setOrganization(null);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     logError('Error fetching user data', error, 'Auth');
     setUserRole('user');
     setOrganization(null);

@@ -13,7 +13,7 @@ interface AnthropicResponse {
   source: 'anthropic' | 'analytics' | 'fallback';
   model?: string;
   provider: 'anthropic';
-  data?: any;
+  data?: unknown;
 }
 
 interface UseAnthropicOptions {

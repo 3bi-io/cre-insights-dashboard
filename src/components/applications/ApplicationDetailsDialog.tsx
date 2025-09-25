@@ -59,7 +59,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
   const displayState = application.state || lookupState || 'Not provided';
 
   const customFields = application.custom_fields && typeof application.custom_fields === 'object' 
-    ? application.custom_fields as any 
+    ? application.custom_fields as Record<string, unknown>
     : {};
 
   return (
@@ -334,7 +334,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                       variant="outline" 
                       size="sm" 
                       className="flex items-center gap-1"
-                      onClick={() => window.open(customFields.resume_url, '_blank')}
+                      onClick={() => window.open(String(customFields.resume_url), '_blank')}
                     >
                       <ExternalLink className="w-3 h-3" />
                       Resume
@@ -345,7 +345,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                       variant="outline" 
                       size="sm" 
                       className="flex items-center gap-1"
-                      onClick={() => window.open(customFields.linkedin_url, '_blank')}
+                      onClick={() => window.open(String(customFields.linkedin_url), '_blank')}
                     >
                       <ExternalLink className="w-3 h-3" />
                       LinkedIn
@@ -356,7 +356,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                       variant="outline" 
                       size="sm" 
                       className="flex items-center gap-1"
-                      onClick={() => window.open(customFields.portfolio_url, '_blank')}
+                      onClick={() => window.open(String(customFields.portfolio_url), '_blank')}
                     >
                       <ExternalLink className="w-3 h-3" />
                       Portfolio

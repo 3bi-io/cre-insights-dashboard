@@ -12,7 +12,7 @@ interface Organization {
   name: string;
   slug: string;
   subscription_status: string;
-  settings?: any;
+  settings?: Record<string, unknown>;
 }
 
 interface EditOrganizationDialogProps {
@@ -47,7 +47,7 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
       return;
     }
 
-    const updates: any = {};
+    const updates: Record<string, string> = {};
     
     if (formData.name !== organization.name) {
       updates.name = formData.name.trim();

@@ -166,7 +166,7 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
           const unit = /hour/i.test(salaryText) ? 'HOUR' : /week/i.test(salaryText) ? 'WEEK' : /year/i.test(salaryText) ? 'YEAR' : undefined;
           const valueMatch = salaryText.match(/\$?([\d,]+(\.\d+)?)/);
           const numericValue = valueMatch ? Number(valueMatch[1].replace(/,/g,'')) : undefined;
-          const jsonLd: any = {
+          const jsonLd: Record<string, unknown> = {
             "@context": "https://schema.org/",
             "@type": "JobPosting",
             title,

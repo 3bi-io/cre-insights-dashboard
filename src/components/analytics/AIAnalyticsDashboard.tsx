@@ -51,8 +51,8 @@ const AIAnalyticsDashboard: React.FC<AIAnalyticsDashboardProps> = ({
   const { data: rawRankings = [], isLoading: rankingsLoading } = useJobRankings(jobListingId || '');
   const { data: scores = [], isLoading: scoresLoading } = useApplicationScores(applicationId || '');
   
-  // Transform rankings data to include applications
-  const rankings: CandidateRankingWithApplication[] = rawRankings as unknown as CandidateRankingWithApplication[];
+  // Transform rankings data 
+  const rankings = rawRankings || [];
 
   // Calculate analytics metrics
   const analyticMetrics = React.useMemo(() => {
@@ -135,7 +135,7 @@ const AIAnalyticsDashboard: React.FC<AIAnalyticsDashboardProps> = ({
 
   const handleBulkAnalyze = () => {
     if (jobListingId && rankings.length > 0) {
-      const applicationIds = rankings.map(r => r.applications.id);
+      const applicationIds = rankings.map(r => r.application_id);
       bulkAnalyze({ jobListingId, applicationIds });
     }
   };
@@ -225,7 +225,7 @@ const AIAnalyticsDashboard: React.FC<AIAnalyticsDashboardProps> = ({
           
           <TabsContent value="rankings" className="space-y-4">
             <CandidateRankingTable 
-              rankings={rankings} 
+              rankings={rankings as unknown as CandidateRankingWithApplication[]} 
               isLoading={rankingsLoading}
             />
           </TabsContent>
