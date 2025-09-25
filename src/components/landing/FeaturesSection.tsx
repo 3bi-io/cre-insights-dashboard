@@ -1,9 +1,14 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Brain, Zap, Shield, BarChart3, Users, Globe } from 'lucide-react';
+import { Brain, Zap, Shield, BarChart3, Users, Globe, Mic } from 'lucide-react';
 
 const FeaturesSection = () => {
   const features = [
+    {
+      icon: Mic,
+      title: "Voice Apply Technology",
+      description: "Revolutionary voice-powered application process that allows candidates to apply using natural speech, making recruitment more accessible and engaging."
+    },
     {
       icon: Brain,
       title: "AI-Powered Analytics",
