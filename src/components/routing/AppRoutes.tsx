@@ -32,7 +32,7 @@ const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ defa
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
-const RoutesPage = React.lazy(() => import("@/pages/Routes"));
+const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
 const Clients = React.lazy(() => import("@/pages/Clients"));
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
