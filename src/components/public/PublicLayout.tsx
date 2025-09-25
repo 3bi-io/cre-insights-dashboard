@@ -52,6 +52,11 @@ const PublicLayout = () => {
               <h3 className="font-semibold text-foreground mb-4">Product</h3>
               <ul className="space-y-3">
                 <li>
+                  <a href="/jobs" className="text-muted-foreground hover:text-primary transition-colors">
+                    Jobs
+                  </a>
+                </li>
+                <li>
                   <a href="/features" className="text-muted-foreground hover:text-primary transition-colors">
                     Features
                   </a>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Play, Star } from 'lucide-react';
+import { ArrowRight, Play, Star, Search } from 'lucide-react';
 
 const HeroSection = () => {
   return (
@@ -40,6 +40,16 @@ const HeroSection = () => {
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg">
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/jobs">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="px-8 py-3 text-lg border-primary text-primary hover:bg-primary/10"
+              >
+                <Search className="mr-2 h-5 w-5" />
+                Browse Jobs
               </Button>
             </Link>
             <Button 

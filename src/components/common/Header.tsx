@@ -18,6 +18,7 @@ interface HeaderProps {
 }
 
 const defaultNavigation: NavigationItem[] = [
+  { name: 'Jobs', href: '/jobs' },
   { name: 'Features', href: '/features' },
   { name: 'Pricing', href: '/pricing' },
   { name: 'Contact', href: '/contact' }

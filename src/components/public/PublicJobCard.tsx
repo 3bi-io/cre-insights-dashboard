@@ -1,0 +1,107 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, DollarSign, Building2, Clock, ExternalLink } from 'lucide-react';
+
+interface PublicJobCardProps {
+  job: any;
+}
+
+export const PublicJobCard: React.FC<PublicJobCardProps> = ({ job }) => {
+  const displayTitle = job.title || job.job_title || 'Untitled Job';
+  const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
+  const displayDescription = job.job_summary || job.description;
+  const companyName = job.organizations?.name || job.clients?.name || job.client || 'Company';
+
+  const formatSalary = (min: number | null, max: number | null, type: string | null) => {
+    if (!min && !max) return null;
+    
+    const formatAmount = (amount: number) => {
+      if (type === 'hourly') return `$${amount}/hr`;
+      if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
+      return `$${amount.toLocaleString()}`;
+    };
+
+    if (min && max) {
+      return `${formatAmount(min)} - ${formatAmount(max)}`;
+    }
+    return formatAmount(min || max || 0);
+  };
+
+  const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
+
+  // Create apply URL with job information
+  const applyUrl = `/apply?job_id=${job.id}&org_slug=${job.organizations?.slug || 'default'}`;
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-200 border-border/50 hover:border-border">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg leading-tight mb-2 line-clamp-2">
+              {displayTitle}
+            </CardTitle>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <Building2 className="w-4 h-4 flex-shrink-0" />
+              <span className="font-medium text-foreground">{companyName}</span>
+            </div>
+            {job.job_categories?.name && (
+              <Badge variant="secondary" className="text-xs">
+                {job.job_categories.name}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {displayDescription && (
+          <p className="text-sm text-muted-foreground line-clamp-3">
+            {displayDescription}
+          </p>
+        )}
+
+        <div className="space-y-2">
+          {displayLocation && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span>{displayLocation}</span>
+            </div>
+          )}
+
+          {salary && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <DollarSign className="w-4 h-4 flex-shrink-0" />
+              <span>{salary}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4 flex-shrink-0" />
+            <span>Posted {new Date(job.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {job.dest_city && job.dest_state && (
+          <div className="text-sm">
+            <span className="font-medium">Destination:</span>
+            <span className="text-muted-foreground ml-1">
+              {job.dest_city}, {job.dest_state}
+            </span>
+          </div>
+        )}
+
+        <div className="pt-4 border-t">
+          <Link to={applyUrl} className="block">
+            <Button className="w-full" size="lg">
+              Apply Now
+              <ExternalLink className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
