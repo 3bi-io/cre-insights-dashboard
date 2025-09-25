@@ -15,7 +15,8 @@ export const AdminPasswordResetSection: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (userRole !== 'admin') return null;
+  // Show for both admin and super_admin
+  if (userRole !== 'admin' && userRole !== 'super_admin') return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +47,7 @@ export const AdminPasswordResetSection: React.FC = () => {
     };
 
     try {
-      const { data, error } = await tryInvoke('admin_password_reset');
+      const { data, error } = await tryInvoke('admin-update-password');
       if (error) throw error as any;
       if ((data as any)?.error) throw new Error((data as any).error);
 
@@ -69,7 +70,7 @@ export const AdminPasswordResetSection: React.FC = () => {
           Admin Password Reset
         </CardTitle>
         <CardDescription>
-          Update a user's password by email. Admins only. Avoid reusing passwords.
+          Update any user's password by email. Super admin privilege required. Use strong, unique passwords.
         </CardDescription>
       </CardHeader>
       <CardContent>

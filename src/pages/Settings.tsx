@@ -27,7 +27,7 @@ const Settings = () => {
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
-          {userRole === 'admin' && <TabsTrigger value="administrators">Administrators</TabsTrigger>}
+          {(userRole === 'admin' || userRole === 'super_admin') && <TabsTrigger value="administrators">Administrators</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -54,7 +54,7 @@ const Settings = () => {
           <PrivacySettingsTab />
         </TabsContent>
 
-        {userRole === 'admin' && (
+        {(userRole === 'admin' || userRole === 'super_admin') && (
           <TabsContent value="administrators" className="space-y-6">
             <AdministratorsSettingsTab />
           </TabsContent>

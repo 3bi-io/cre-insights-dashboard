@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AdminMagicLinkSection } from './AdminMagicLinkSection';
 import { AdminPasswordResetSection } from './AdminPasswordResetSection';
+import { SuperAdminUserManagement } from './SuperAdminUserManagement';
 
 interface AdminUser {
   id: string;
@@ -73,7 +74,7 @@ const AdministratorsSettingsTab = () => {
       console.log('Final administrators result:', result);
       return result;
     },
-    enabled: userRole === 'admin', // Only fetch if current user is admin
+    enabled: userRole === 'admin' || userRole === 'super_admin', // Only fetch if current user is admin or super_admin
   });
 
   // Mutation to remove admin role
@@ -301,6 +302,7 @@ const AdministratorsSettingsTab = () => {
 
       <AdminMagicLinkSection />
       <AdminPasswordResetSection />
+      <SuperAdminUserManagement />
     </div>
   );
 };
