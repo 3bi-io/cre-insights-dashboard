@@ -423,6 +423,59 @@ export type Database = {
           },
         ]
       }
+      assessment_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          organization_id: string | null
+          questions: Json
+          scoring_criteria: Json
+          status: string
+          time_limit: number | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          organization_id?: string | null
+          questions?: Json
+          scoring_criteria?: Json
+          status?: string
+          time_limit?: number | null
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string | null
+          questions?: Json
+          scoring_criteria?: Json
+          status?: string
+          time_limit?: number | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -645,6 +698,200 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_assessments: {
+        Row: {
+          application_id: string | null
+          assessment_template_id: string | null
+          completed_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          organization_id: string | null
+          responses: Json
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id?: string | null
+          assessment_template_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          organization_id?: string | null
+          responses?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string | null
+          assessment_template_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          organization_id?: string | null
+          responses?: Json
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_assessments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_assessments_assessment_template_id_fkey"
+            columns: ["assessment_template_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_assessments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_rankings: {
+        Row: {
+          application_id: string | null
+          created_at: string
+          id: string
+          job_listing_id: string | null
+          last_updated: string
+          match_percentage: number
+          organization_id: string | null
+          overall_score: number
+          rank_position: number
+          ranking_factors: Json
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string
+          id?: string
+          job_listing_id?: string | null
+          last_updated?: string
+          match_percentage: number
+          organization_id?: string | null
+          overall_score: number
+          rank_position: number
+          ranking_factors?: Json
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string
+          id?: string
+          job_listing_id?: string | null
+          last_updated?: string
+          match_percentage?: number
+          organization_id?: string | null
+          overall_score?: number
+          rank_position?: number
+          ranking_factors?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_rankings_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_rankings_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_rankings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      candidate_scores: {
+        Row: {
+          ai_analysis: Json
+          application_id: string | null
+          concerns: string[] | null
+          confidence_level: number | null
+          created_at: string
+          factors: Json
+          id: string
+          model_version: string | null
+          organization_id: string | null
+          recommendations: string[] | null
+          score: number
+          score_type: string
+          strengths: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_analysis?: Json
+          application_id?: string | null
+          concerns?: string[] | null
+          confidence_level?: number | null
+          created_at?: string
+          factors?: Json
+          id?: string
+          model_version?: string | null
+          organization_id?: string | null
+          recommendations?: string[] | null
+          score: number
+          score_type: string
+          strengths?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_analysis?: Json
+          application_id?: string | null
+          concerns?: string[] | null
+          confidence_level?: number | null
+          created_at?: string
+          factors?: Json
+          id?: string
+          model_version?: string | null
+          organization_id?: string | null
+          recommendations?: string[] | null
+          score?: number
+          score_type?: string
+          strengths?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_scores_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_scores_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
