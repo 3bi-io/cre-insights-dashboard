@@ -1,21 +1,91 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { 
   Plus, 
   UserCheck, 
   Shield, 
   Users,
   Mail,
-  MoreHorizontal
+  MoreHorizontal,
+  UserX,
+  Edit3
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useOrganizationUserData } from '@/hooks/useOrganizationUserData';
+import { UserInviteDialog } from './UserInviteDialog';
+import { UserRoleEditDialog } from './UserRoleEditDialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export const OrganizationUserManagement = () => {
   const { data: userData, isLoading } = useOrganizationUserData();
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [userToRemove, setUserToRemove] = useState<any>(null);
+  
+  const { toast } = useToast();
+  const { organization } = useAuth();
+  const queryClient = useQueryClient();
+
+  const removeUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      // Remove from organization
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ organization_id: null })
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      // Remove user roles for this organization
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('organization_id', organization?.id);
+
+      if (roleError) throw roleError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-user-data'] });
+      setRemoveDialogOpen(false);
+      setUserToRemove(null);
+      toast({
+        title: 'User Removed',
+        description: 'User has been removed from the organization.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to remove user',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleEditRole = (user: any) => {
+    setEditingUser(user);
+    setRoleDialogOpen(true);
+  };
+
+  const handleRemoveUser = (user: any) => {
+    setUserToRemove(user);
+    setRemoveDialogOpen(true);
+  };
+
+  const confirmRemoveUser = () => {
+    if (userToRemove) {
+      removeUserMutation.mutate(userToRemove.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -74,10 +144,7 @@ export const OrganizationUserManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">User Management</h3>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Invite User
-        </Button>
+        <UserInviteDialog />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -129,10 +196,14 @@ export const OrganizationUserManagement = () => {
           {!userData?.recentUsers?.length ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No team members found</p>
-              <Button className="mt-4">
-                <Plus className="w-4 h-4 mr-2" />
-                Invite Your First Team Member
-              </Button>
+              <UserInviteDialog 
+                trigger={
+                  <Button className="mt-4">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Invite Your First Team Member
+                  </Button>
+                } 
+              />
             </div>
           ) : (
             <div className="space-y-3">
@@ -161,12 +232,14 @@ export const OrganizationUserManagement = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Mail className="w-4 h-4 mr-2" />
-                          Send Message
+                        <DropdownMenuItem onClick={() => handleEditRole(user)}>
+                          <Edit3 className="w-4 h-4 mr-2" />
+                          Edit Role
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Edit Role</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Remove User</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleRemoveUser(user)} className="text-destructive">
+                          <UserX className="w-4 h-4 mr-2" />
+                          Remove User
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -176,6 +249,37 @@ export const OrganizationUserManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <UserRoleEditDialog
+        user={editingUser}
+        open={roleDialogOpen}
+        onClose={() => {
+          setRoleDialogOpen(false);
+          setEditingUser(null);
+        }}
+      />
+
+      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {userToRemove?.full_name || userToRemove?.email} from the organization? 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToRemove(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmRemoveUser}
+              disabled={removeUserMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {removeUserMutation.isPending ? 'Removing...' : 'Remove User'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

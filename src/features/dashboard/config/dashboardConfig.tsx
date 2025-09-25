@@ -47,6 +47,12 @@ export const dashboardTabs: DashboardTab[] = [
     component: OrganizationApplicationsTab,
   },
   {
+    id: 'users',
+    label: 'Users',
+    icon: Users,
+    component: OrganizationUserManagement,
+  },
+  {
     id: 'ai-impact',
     label: 'AI Impact',
     component: AIImpactDashboard,
