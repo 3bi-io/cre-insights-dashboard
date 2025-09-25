@@ -48,9 +48,10 @@ const ApplicationsPage = () => {
     deleteApplication,
     refresh,
   } = useApplications({
+    enabled: true,
     filters: {
+      // Remove organization filter to see all applications the user has access to
       search: searchTerm,
-      organization_id: organizationFilter === 'all' ? undefined : organizationFilter,
     }
   });
 
@@ -99,9 +100,30 @@ const ApplicationsPage = () => {
     }
   };
 
-  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter, organizationFilter !== 'all' ? organizationFilter : undefined);
+  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
   const statusCounts = getStatusCounts(applications || []);
   const categoryCounts = getCategoryCounts(applications || []);
+
+  // Debug logging
+  console.log('Applications Debug:', {
+    applicationsCount: applications?.length || 0,
+    filteredCount: filteredApplications?.length || 0,
+    loading,
+    error,
+    userRole,
+    isAdmin,
+    searchTerm,
+    categoryFilter,
+    sourceFilter,
+    organizationFilter,
+    sampleApplication: applications?.[0] ? {
+      id: applications[0].id,
+      firstName: applications[0].first_name,
+      lastName: applications[0].last_name,
+      jobListings: applications[0].job_listings,
+      organizationData: applications[0].job_listings?.organizations || applications[0].job_listings?.organization_id
+    } : null
+  });
 
   const pageActions = (
     <Button
@@ -120,15 +142,15 @@ const ApplicationsPage = () => {
       <PageLayout title="Applications" description="Track and manage job applications">
         <div className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-8 bg-muted rounded w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-24 bg-muted rounded-lg"></div>
               ))}
             </div>
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
+                <div key={i} className="h-20 bg-muted rounded-lg"></div>
               ))}
             </div>
           </div>
