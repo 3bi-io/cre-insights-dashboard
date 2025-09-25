@@ -169,7 +169,6 @@ const ApplicationsPage = () => {
         <div className="space-y-6">
           <Card>
             <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-6">Applications Overview</h3>
               <ApplicationsOverview 
                 statusCounts={statusCounts} 
                 categoryCounts={categoryCounts} 

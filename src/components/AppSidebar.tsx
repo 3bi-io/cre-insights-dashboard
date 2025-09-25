@@ -104,6 +104,11 @@ const AppSidebar = () => {
         icon: Bot
       },
       {
+        path: '/admin/ai-analytics',
+        label: 'AI Analytics',
+        icon: BarChart3
+      },
+      {
         path: '/admin/ai-settings',
         label: 'AI Settings',
         icon: Settings

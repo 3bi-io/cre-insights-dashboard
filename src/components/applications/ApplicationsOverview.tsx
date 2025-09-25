@@ -1,5 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Brain, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ApplicationsOverviewProps {
   statusCounts?: Record<string, number>;
@@ -14,8 +17,25 @@ const ApplicationsOverview = ({ statusCounts, categoryCounts }: ApplicationsOver
     { code: 'N/A', label: 'Uncategorized', color: 'bg-gray-100 text-gray-800', desc: 'Other combinations' }
   ];
 
+  const totalApplications = Object.values(statusCounts || {}).reduce((sum, count) => sum + count, 0);
+
   return (
     <>
+      {/* Header with AI Analytics Link */}
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold">Applications Overview</h3>
+        <div className="flex gap-2">
+          <Link to="/admin/ai-analytics">
+            <Button variant="outline" size="sm">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              AI Analytics
+            </Button>
+          </Link>
+          <Badge variant="outline" className="bg-primary/10">
+            {totalApplications} Total Applications
+          </Badge>
+        </div>
+      </div>
       {/* Status Overview */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
