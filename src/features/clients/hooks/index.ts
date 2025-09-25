@@ -1,2 +1,2 @@
-// Client hooks placeholder
-// Add client-specific hooks here as needed
+// Client hooks
+export { useClients } from './useClients';

@@ -43,13 +43,13 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-success/10 text-success border-success/20';
       case 'inactive':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-warning/10 text-warning border-warning/20';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -115,7 +115,7 @@ const ClientsTable = ({ clients }: ClientsTableProps) => {
       <Card>
         <CardContent className="text-center py-12">
           <div className="text-muted-foreground">
-            <Building className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <Building className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="text-lg font-medium mb-2">No clients found</h3>
             <p className="text-sm">Start by adding your first client.</p>
           </div>
