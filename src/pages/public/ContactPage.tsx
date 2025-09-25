@@ -44,21 +44,21 @@ const ContactPage = () => {
       icon: MessageSquare,
       title: "Sales Inquiries",
       description: "Questions about pricing, features, or demos",
-      contact: "sales@intelats.com",
+      contact: "sales@ats.me",
       action: "Contact Sales"
     },
     {
       icon: Headphones,
       title: "Customer Support",
       description: "Technical support for existing customers",
-      contact: "support@intelats.com",
+      contact: "support@ats.me",
       action: "Get Support"
     },
     {
       icon: Users,
       title: "Partnerships",
       description: "Integration partnerships and collaborations",
-      contact: "partners@intelats.com",
+      contact: "partners@ats.me",
       action: "Partner With Us"
     }
   ];

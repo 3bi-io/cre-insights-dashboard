@@ -11,7 +11,7 @@ const CTASection = () => {
           Ready to Transform Your Hiring?
         </h2>
         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-          Join thousands of organizations that have revolutionized their recruitment process with ATS INTEL.
+          Join thousands of organizations that have revolutionized their recruitment process with ATS.me.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/auth">

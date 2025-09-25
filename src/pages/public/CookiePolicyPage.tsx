@@ -28,7 +28,7 @@ const CookiePolicyPage = () => {
             <Alert>
               <Cookie className="h-4 w-4" />
               <AlertDescription>
-                This Cookie Policy explains how ATS INTEL uses cookies and similar technologies 
+                This Cookie Policy explains how ATS.me uses cookies and similar technologies 
                 to recognize you when you visit our platform.
               </AlertDescription>
             </Alert>
@@ -244,7 +244,7 @@ const CookiePolicyPage = () => {
                   If you have any questions about our use of cookies, please contact us at:
                 </p>
                 <div className="space-y-2">
-                  <p className="text-foreground font-medium">Email: privacy@intelats.com</p>
+                  <p className="text-foreground font-medium">Email: privacy@ats.me</p>
                   <p className="text-foreground font-medium">Subject: Cookie Policy Inquiry</p>
                 </div>
               </CardContent>

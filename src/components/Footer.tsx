@@ -35,7 +35,7 @@ const Footer = () => {
               Cookie Policy
             </Link>
             <a 
-              href="mailto:support@intelats.com" 
+              href="mailto:support@ats.me" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Support
