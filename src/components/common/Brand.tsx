@@ -10,11 +10,11 @@ interface BrandProps {
 }
 
 const sizeClasses = {
-  xs: 'text-lg',
-  sm: 'text-xl', 
-  md: 'text-2xl',
-  lg: 'text-3xl',
-  xl: 'text-4xl'
+  xs: 'h-6',
+  sm: 'h-8', 
+  md: 'h-10',
+  lg: 'h-12',
+  xl: 'h-16'
 };
 
 export const Brand: React.FC<BrandProps> = ({ 
@@ -24,14 +24,15 @@ export const Brand: React.FC<BrandProps> = ({
   showAsLink = true
 }) => {
   const brandElement = (
-    <div className={cn(
-      "font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent",
-      sizeClasses[size],
-      "transition-all duration-200 hover:from-primary/90 hover:to-primary/70",
-      className
-    )}>
-      ATS.me
-    </div>
+    <img 
+      src="/intel-ats-logo.png" 
+      alt="ATS.me" 
+      className={cn(
+        "w-auto object-contain transition-all duration-200 hover:opacity-90",
+        sizeClasses[size],
+        className
+      )}
+    />
   );
 
   if (!showAsLink) {
