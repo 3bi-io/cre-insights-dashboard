@@ -88,7 +88,7 @@ const SuperAdminFeeds = () => {
     if (userRole === 'super_admin') {
       fetchFeeds();
     }
-  }, [userRole]);
+  }, [userRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Restrict access to super admins only
   if (userRole !== 'super_admin') {

@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +12,16 @@ serve(async (req) => {
   }
 
   try {
-    const { user } = await req.json();
+    let user: string;
+    
+    // Handle both GET and POST requests
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      user = url.searchParams.get('user') || '*';
+    } else {
+      const body = await req.json();
+      user = body.user;
+    }
     
     if (!user) {
       return new Response(
