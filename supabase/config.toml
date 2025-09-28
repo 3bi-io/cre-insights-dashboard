@@ -9,50 +9,11 @@ verify_jwt = false
 [functions.job-feed-xml]
 verify_jwt = false
 
-[functions.craigslist-integration]
-verify_jwt = true
-
-[functions.ai-analytics]
-verify_jwt = true
-
-[functions.ai-analytics-enhanced]
-verify_jwt = true
-
-[functions.chatbot-analytics]
-verify_jwt = true
-
-[functions.openai-chat]
-verify_jwt = true
-
-[functions.anthropic-chat]
-verify_jwt = true
-
-[functions.data-analysis]
-verify_jwt = true
-
-[functions.background-tasks]
-verify_jwt = true
-
 [functions.submit-application]
-verify_jwt = false
-
-[functions.meta-spend-analytics]
-verify_jwt = true
-
-[functions.import-elevenlabs-history]
 verify_jwt = false
 
 [functions.meta-leads-cron]
 verify_jwt = false
-
-[functions.admin-update-password]
-verify_jwt = true
-
-[functions.admin_password_reset]
-verify_jwt = true
-
-[functions.google-indexing]
-verify_jwt = true
 
 [functions.meta-sync-cron]
 verify_jwt = false
