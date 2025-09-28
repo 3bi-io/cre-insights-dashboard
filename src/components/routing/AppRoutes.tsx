@@ -43,6 +43,7 @@ const Media = React.lazy(() => import("@/pages/Media"));
 const UserManagement = React.lazy(() => import("@/pages/UserManagement"));
 const MetaAdSetReportPage = React.lazy(() => import("@/pages/MetaAdSetReportPage"));
 const MetaSpendAnalytics = React.lazy(() => import("@/pages/MetaSpendAnalytics"));
+const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const PrivacyControls = React.lazy(() => import("@/pages/PrivacyControls"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 
@@ -134,6 +135,7 @@ const AppRoutes: React.FC = () => {
         <Route path="settings" element={<ProtectedRouteWrapper><Settings /></ProtectedRouteWrapper>} />
         <Route path="media" element={<ProtectedRouteWrapper><Media /></ProtectedRouteWrapper>} />
         <Route path="user-management" element={<ProtectedRouteWrapper><UserManagement /></ProtectedRouteWrapper>} />
+        <Route path="super-admin-feeds" element={<ProtectedRouteWrapper><SuperAdminFeeds /></ProtectedRouteWrapper>} />
         <Route path="meta-adset-report" element={<ProtectedRouteWrapper><MetaAdSetReportPage /></ProtectedRouteWrapper>} />
         <Route path="meta-spend-analytics" element={<ProtectedRouteWrapper><MetaSpendAnalytics /></ProtectedRouteWrapper>} />
       </Route>
