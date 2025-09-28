@@ -6,54 +6,83 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('Fetch feeds function called:', req.method, req.url);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    let user: string;
+    let user: string = '*'; // Default to '*'
     
     // Handle both GET and POST requests
     if (req.method === 'GET') {
       const url = new URL(req.url);
       user = url.searchParams.get('user') || '*';
-    } else {
-      const body = await req.json();
-      user = body.user;
-    }
-    
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'User parameter is required' }), 
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      console.log('GET request, user from query:', user);
+    } else if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        user = body.user || '*';
+        console.log('POST request, user from body:', user);
+      } catch (e) {
+        console.log('Failed to parse JSON body, using default user "*"');
+        user = '*';
+      }
     }
 
     console.log('Fetching feeds for user:', user);
 
     // Fetch feeds from the external API
     const feedsUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(user)}`;
-    const response = await fetch(feedsUrl);
+    console.log('Calling external API:', feedsUrl);
+    
+    const response = await fetch(feedsUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Supabase-Edge-Function/1.0',
+        'Accept': 'application/json, text/plain, */*',
+      },
+    });
+    
+    console.log('External API response status:', response.status);
+    console.log('External API response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
-      console.error('External API error:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('External API error:', response.status, response.statusText, errorText);
       return new Response(
         JSON.stringify({ 
-          error: `External API error: ${response.status} ${response.statusText}` 
+          success: false,
+          error: `External API error: ${response.status} ${response.statusText}`,
+          details: errorText
         }), 
         { 
-          status: response.status, 
+          status: 200, // Return 200 so frontend can handle the error
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
     
-    const data = await response.json();
-    console.log('Successfully fetched feeds:', data);
+    const contentType = response.headers.get('content-type');
+    console.log('Response content-type:', contentType);
+    
+    let data;
+    if (contentType?.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      console.log('Non-JSON response received:', text);
+      // Try to parse as JSON anyway
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { feeds: [], message: 'Received non-JSON response', raw: text };
+      }
+    }
+    
+    console.log('Successfully fetched feeds:', JSON.stringify(data).substring(0, 500) + '...');
     
     return new Response(
       JSON.stringify({ success: true, data }), 
@@ -64,12 +93,16 @@ serve(async (req) => {
     
   } catch (error) {
     console.error('Error in fetch-feeds function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+        success: false,
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : 'No stack trace available'
       }), 
       { 
-        status: 500, 
+        status: 200, // Return 200 so frontend can handle the error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
