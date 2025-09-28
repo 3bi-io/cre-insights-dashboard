@@ -16,27 +16,34 @@ serve(async (req) => {
 
   try {
     let user: string = '*'; // Default to '*'
+    let board: string | null = null;
     
     // Handle both GET and POST requests
     if (req.method === 'GET') {
       const url = new URL(req.url);
       user = url.searchParams.get('user') || '*';
-      console.log('GET request, user from query:', user);
+      board = url.searchParams.get('board');
+      console.log('GET request, user from query:', user, 'board:', board);
     } else if (req.method === 'POST') {
       try {
         const body = await req.json();
         user = body.user || '*';
-        console.log('POST request, user from body:', user);
+        board = body.board || null;
+        console.log('POST request, user from body:', user, 'board:', board);
       } catch (e) {
-        console.log('Failed to parse JSON body, using default user "*"');
+        console.log('Failed to parse JSON body, using defaults');
         user = '*';
+        board = null;
       }
     }
 
-    console.log('Fetching feeds for user:', user);
+    console.log('Fetching feeds for user:', user, 'board:', board);
 
     // Fetch feeds from the external API
-    const feedsUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(user)}`;
+    let feedsUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(user)}`;
+    if (board) {
+      feedsUrl += `&board=${encodeURIComponent(board)}`;
+    }
     console.log('Calling external API:', feedsUrl);
     
     const response = await fetch(feedsUrl, {

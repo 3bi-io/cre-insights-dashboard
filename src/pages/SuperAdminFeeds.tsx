@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,9 @@ const SuperAdminFeeds = () => {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userParam, setUserParam] = useState('*');
+  const [userParam, setUserParam] = useState('danny_herman_trucking');
+  const [boardParam, setBoardParam] = useState('AIRecruiter');
+  const [importing, setImporting] = useState(false);
 
   const fetchFeeds = async () => {
     setLoading(true);
@@ -38,7 +40,7 @@ const SuperAdminFeeds = () => {
       console.log('Fetching feeds for user:', userParam);
       
       const { data, error: functionError } = await supabase.functions.invoke('fetch-feeds', {
-        body: { user: userParam }
+        body: { user: userParam, board: boardParam }
       });
       
       if (functionError) {
@@ -81,6 +83,43 @@ const SuperAdminFeeds = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const importJobsFromFeed = async (feedUrl: string) => {
+    setImporting(true);
+    try {
+      console.log('Importing jobs from feed:', feedUrl);
+      
+      const { data, error: functionError } = await supabase.functions.invoke('import-jobs-from-feed', {
+        body: { 
+          feedUrl: feedUrl,
+          organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c' // Hayes Recruiting Solutions
+        }
+      });
+      
+      if (functionError) {
+        throw new Error(`Function error: ${functionError.message}`);
+      }
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to import jobs');
+      }
+      
+      toast({
+        title: "Jobs imported successfully",
+        description: data.message,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to import jobs';
+      console.error('Error importing jobs:', err);
+      toast({
+        title: "Error importing jobs",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -131,17 +170,29 @@ const SuperAdminFeeds = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
                 <Label htmlFor="userParam">User Parameter</Label>
                 <Input
                   id="userParam"
                   value={userParam}
                   onChange={(e) => setUserParam(e.target.value)}
-                  placeholder="Enter user parameter (e.g., * for all feeds)"
+                  placeholder="Enter user parameter"
                   className="mt-1"
                 />
               </div>
+              <div>
+                <Label htmlFor="boardParam">Board Parameter</Label>
+                <Input
+                  id="boardParam"
+                  value={boardParam}
+                  onChange={(e) => setBoardParam(e.target.value)}
+                  placeholder="Enter board parameter"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
               <Button onClick={fetchFeeds} disabled={loading || !userParam.trim()}>
                 {loading ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -152,8 +203,14 @@ const SuperAdminFeeds = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              URL: https://cdljobcast.com/client/recruiting/getfeeds?user={userParam}
+              URL: https://cdljobcast.com/client/recruiting/getfeeds?user={userParam}{boardParam ? `&board=${boardParam}` : ''}
             </p>
+            <Alert className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Current target: Hayes Recruiting Solutions feed (danny_herman_trucking + AIRecruiter)
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
         {error && (
@@ -253,25 +310,45 @@ const SuperAdminFeeds = () => {
                     )}
 
                     {/* Display any additional fields */}
-                    {Object.entries(feed).map(([key, value]) => {
-                      if (['id', 'name', 'title', 'url', 'status', 'type', 'description', 'last_updated'].includes(key)) {
-                        return null;
-                      }
-                      if (typeof value === 'string' || typeof value === 'number') {
-                        return (
-                          <div key={key} className="flex justify-between text-sm">
-                            <span className="text-muted-foreground capitalize">
-                              {key.replace(/_/g, ' ')}:
-                            </span>
-                            <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                              {String(value)}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                  </CardContent>
+                     {Object.entries(feed).map(([key, value]) => {
+                       if (['id', 'name', 'title', 'url', 'status', 'type', 'description', 'last_updated'].includes(key)) {
+                         return null;
+                       }
+                       if (typeof value === 'string' || typeof value === 'number') {
+                         return (
+                           <div key={key} className="flex justify-between text-sm">
+                             <span className="text-muted-foreground capitalize">
+                               {key.replace(/_/g, ' ')}:
+                             </span>
+                             <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                               {String(value)}
+                             </span>
+                           </div>
+                         );
+                       }
+                       return null;
+                     })}
+                     
+                     {/* Import Jobs Button */}
+                     <div className="pt-3 border-t">
+                       <Button 
+                         onClick={() => {
+                           const feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${userParam}${boardParam ? `&board=${boardParam}` : ''}`;
+                           importJobsFromFeed(feedUrl);
+                         }}
+                         disabled={importing}
+                         className="w-full"
+                         variant="outline"
+                       >
+                         {importing ? (
+                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                         ) : (
+                           <Download className="h-4 w-4 mr-2" />
+                         )}
+                         Import Jobs to Hayes Recruiting
+                       </Button>
+                     </div>
+                   </CardContent>
                 </Card>
               ))}
             </div>
