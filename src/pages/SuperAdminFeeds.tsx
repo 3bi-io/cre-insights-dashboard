@@ -4,9 +4,12 @@ import PageLayout from '@/components/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Feed {
   id?: string;
@@ -25,39 +28,52 @@ const SuperAdminFeeds = () => {
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userParam, setUserParam] = useState('*');
 
   const fetchFeeds = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('https://cdljobcast.com/client/recruiting/getfeeds?');
+      console.log('Fetching feeds for user:', userParam);
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      const { data, error: functionError } = await supabase.functions.invoke('fetch-feeds', {
+        body: { user: userParam }
+      });
+      
+      if (functionError) {
+        throw new Error(`Function error: ${functionError.message}`);
       }
       
-      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch feeds');
+      }
+      
+      const apiData = data.data;
+      let processedFeeds: Feed[] = [];
       
       // Handle different possible response structures
-      if (Array.isArray(data)) {
-        setFeeds(data);
-      } else if (data.feeds && Array.isArray(data.feeds)) {
-        setFeeds(data.feeds);
-      } else if (data.data && Array.isArray(data.data)) {
-        setFeeds(data.data);
-      } else {
+      if (Array.isArray(apiData)) {
+        processedFeeds = apiData;
+      } else if (apiData.feeds && Array.isArray(apiData.feeds)) {
+        processedFeeds = apiData.feeds;
+      } else if (apiData.data && Array.isArray(apiData.data)) {
+        processedFeeds = apiData.data;
+      } else if (typeof apiData === 'object' && apiData !== null) {
         // If it's an object, convert to array
-        setFeeds([data]);
+        processedFeeds = [apiData];
       }
+      
+      setFeeds(processedFeeds);
       
       toast({
         title: "Feeds loaded successfully",
-        description: `Found ${feeds.length} feeds`,
+        description: `Found ${processedFeeds.length} feeds for user: ${userParam}`,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch feeds';
       setError(errorMessage);
+      console.error('Error fetching feeds:', err);
       toast({
         title: "Error loading feeds",
         description: errorMessage,
@@ -106,6 +122,40 @@ const SuperAdminFeeds = () => {
       }
     >
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* User Parameter Input */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Feed Configuration</CardTitle>
+            <CardDescription>
+              Configure the user parameter to fetch specific feeds
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Label htmlFor="userParam">User Parameter</Label>
+                <Input
+                  id="userParam"
+                  value={userParam}
+                  onChange={(e) => setUserParam(e.target.value)}
+                  placeholder="Enter user parameter (e.g., * for all feeds)"
+                  className="mt-1"
+                />
+              </div>
+              <Button onClick={fetchFeeds} disabled={loading || !userParam.trim()}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Fetch Feeds
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              URL: https://cdljobcast.com/client/recruiting/getfeeds?user={userParam}
+            </p>
+          </CardContent>
+        </Card>
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />

@@ -1,5 +1,8 @@
 project_id = "auwhcdpppldjlcaxzsme"
 
+[functions.fetch-feeds]
+verify_jwt = true
+
 [functions.zapier-webhook]
 verify_jwt = false
 
