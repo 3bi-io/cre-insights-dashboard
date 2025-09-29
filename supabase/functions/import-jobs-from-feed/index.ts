@@ -67,34 +67,108 @@ serve(async (req) => {
     }
 
     const contentType = feedResponse.headers.get('content-type');
-    let feedData;
+    let jobs = [];
+    
+    const text = await feedResponse.text();
+    console.log('Feed response received:', text.substring(0, 500) + '...');
     
     if (contentType?.includes('application/json')) {
-      feedData = await feedResponse.json();
-    } else {
-      const text = await feedResponse.text();
       try {
-        feedData = JSON.parse(text);
-      } catch {
+        const feedData = JSON.parse(text);
+        if (Array.isArray(feedData)) {
+          jobs = feedData;
+        } else if (feedData.jobs && Array.isArray(feedData.jobs)) {
+          jobs = feedData.jobs;
+        } else if (feedData.data && Array.isArray(feedData.data)) {
+          jobs = feedData.data;
+        } else if (typeof feedData === 'object' && feedData !== null) {
+          jobs = [feedData];
+        }
+      } catch (error) {
         return new Response(
           JSON.stringify({ success: false, error: 'Invalid JSON response from feed' }), 
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-    }
-
-    console.log('Feed data received:', JSON.stringify(feedData).substring(0, 500) + '...');
-
-    // Extract jobs from feed data
-    let jobs = [];
-    if (Array.isArray(feedData)) {
-      jobs = feedData;
-    } else if (feedData.jobs && Array.isArray(feedData.jobs)) {
-      jobs = feedData.jobs;
-    } else if (feedData.data && Array.isArray(feedData.data)) {
-      jobs = feedData.data;
-    } else if (typeof feedData === 'object' && feedData !== null) {
-      jobs = [feedData];
+    } else if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
+      // Parse XML feed
+      try {
+        // Extract job elements from XML using regex
+        const jobMatches = text.matchAll(/<job>(.*?)<\/job>/gs);
+        
+        for (const match of jobMatches) {
+          const jobXml = match[1];
+          
+          // Extract fields from each job XML
+          const extractField = (field: string) => {
+            const regex = new RegExp(`<${field}><!\\[CDATA\\[(.*?)\\]\\]><\/${field}>`, 'i');
+            const match = jobXml.match(regex);
+            if (match) return match[1].trim();
+            
+            // Fallback for non-CDATA fields
+            const simpleRegex = new RegExp(`<${field}>(.*?)<\/${field}>`, 'i');
+            const simpleMatch = jobXml.match(simpleRegex);
+            return simpleMatch ? simpleMatch[1].trim() : null;
+          };
+          
+          // Parse salary from format like "$65000 - $80000 per year"
+          const parseSalaryRange = (salaryText: string) => {
+            if (!salaryText) return { min: null, max: null, type: 'yearly' };
+            
+            const match = salaryText.match(/\$(\d+)(?:,(\d+))?\s*-\s*\$(\d+)(?:,(\d+))?\s+per\s+(\w+)/i);
+            if (match) {
+              const minSalary = parseInt(match[1] + (match[2] || ''));
+              const maxSalary = parseInt(match[3] + (match[4] || ''));
+              const period = match[5].toLowerCase();
+              
+              return {
+                min: minSalary,
+                max: maxSalary,
+                type: period === 'year' ? 'yearly' : period === 'hour' ? 'hourly' : 'yearly'
+              };
+            }
+            
+            return { min: null, max: null, type: 'yearly' };
+          };
+          
+          const salary = parseSalaryRange(extractField('salary'));
+          
+          jobs.push({
+            title: extractField('title'),
+            description: extractField('description'),
+            company: extractField('company'),
+            city: extractField('city'),
+            state: extractField('state'),
+            url: extractField('url'),
+            phone: extractField('phone'),
+            salary: extractField('salary'),
+            salary_min: salary.min,
+            salary_max: salary.max,
+            salary_type: salary.type,
+            jobtype: extractField('jobtype'),
+            category: extractField('category'),
+            referencenumber: extractField('referencenumber'),
+            experience: extractField('experience'),
+            education: extractField('education'),
+            country: extractField('country'),
+            postalcode: extractField('postalcode')
+          });
+        }
+        
+        console.log(`Parsed ${jobs.length} jobs from XML feed`);
+        
+      } catch (error) {
+        console.error('Error parsing XML:', error);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to parse XML feed' }), 
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unsupported content type. Expected JSON or XML.' }), 
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Found ${jobs.length} jobs to import`);
@@ -147,34 +221,39 @@ serve(async (req) => {
     // Import each job
     for (const job of jobs) {
       try {
+        // Map XML fields to database schema
+        const location = job.city && job.state ? `${job.city}, ${job.state}` : 
+                        job.city || job.state || null;
+        
         const jobData = {
-          title: job.title || job.job_title || job.name || 'Untitled Position',
-          job_summary: job.description || job.summary || job.details || null,
-          location: job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null),
+          title: job.title || 'Untitled Position',
+          job_summary: job.description || null,
+          location: location,
           city: job.city || null,
           state: job.state || null,
-          salary_min: job.salary_min || job.min_salary || null,
-          salary_max: job.salary_max || job.max_salary || null,
+          salary_min: job.salary_min || null,
+          salary_max: job.salary_max || null,
           salary_type: job.salary_type || 'yearly',
-          experience_level: job.experience_level || job.experience || null,
-          remote_type: job.remote_type || job.remote || 'onsite',
-          job_type: job.job_type || job.type || 'full-time',
+          experience_level: job.experience || null,
+          remote_type: 'onsite', // Default for trucking jobs
+          job_type: job.jobtype === 'Full-time' ? 'full-time' : 'full-time',
           status: 'active',
           user_id: superAdminId,
           organization_id: organizationId,
           category_id: defaultCategoryId,
-          url: job.url || job.apply_url || null,
-          apply_url: job.apply_url || job.url || null,
-          job_id: job.id || job.external_id || null,
+          url: job.url || null,
+          apply_url: job.url || null,
+          job_id: job.referencenumber || null,
+          client: job.company || 'Hayes Recruiting Solutions'
         };
 
-        // Check if job already exists by external ID or title + location
+        // Check if job already exists by reference number or title + location
         let existingJob = null;
-        if (job.id || job.external_id) {
+        if (job.referencenumber) {
           const { data: existing } = await supabase
             .from('job_listings')
             .select('id')
-            .eq('job_id', job.id || job.external_id)
+            .eq('job_id', job.referencenumber)
             .eq('organization_id', organizationId)
             .limit(1);
           existingJob = existing?.[0];
