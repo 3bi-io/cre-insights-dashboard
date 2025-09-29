@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,20 @@ const SuperAdminFeeds = () => {
   const [userParam, setUserParam] = useState('danny_herman_trucking');
   const [boardParam, setBoardParam] = useState('AIRecruiter');
   const [importing, setImporting] = useState(false);
+
+  // Available user options for the dropdown
+  const availableUsers = [
+    { value: 'danny_herman_trucking', label: 'Danny Herman Trucking' },
+    { value: 'prime_inc', label: 'Prime Inc' },
+    { value: 'schneider', label: 'Schneider' },
+    { value: 'swift_transportation', label: 'Swift Transportation' },
+    { value: 'jb_hunt', label: 'J.B. Hunt' },
+    { value: 'werner', label: 'Werner Enterprises' },
+    { value: 'crete_carrier', label: 'Crete Carrier' },
+    { value: 'maverick', label: 'Maverick Transportation' },
+    { value: 'covenant', label: 'Covenant Transport' },
+    { value: 'roehl', label: 'Roehl Transport' }
+  ];
 
   const fetchFeeds = async () => {
     setLoading(true);
@@ -173,13 +188,18 @@ const SuperAdminFeeds = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <Label htmlFor="userParam">User Parameter</Label>
-                <Input
-                  id="userParam"
-                  value={userParam}
-                  onChange={(e) => setUserParam(e.target.value)}
-                  placeholder="Enter user parameter"
-                  className="mt-1"
-                />
+                <Select value={userParam} onValueChange={setUserParam}>
+                  <SelectTrigger className="mt-1 bg-background">
+                    <SelectValue placeholder="Select a user" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-md z-50">
+                    {availableUsers.map((user) => (
+                      <SelectItem key={user.value} value={user.value} className="hover:bg-muted">
+                        {user.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="boardParam">Board Parameter</Label>
