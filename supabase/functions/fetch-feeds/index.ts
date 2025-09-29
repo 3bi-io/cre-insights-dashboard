@@ -81,12 +81,76 @@ serve(async (req) => {
       data = await response.json();
     } else {
       const text = await response.text();
-      console.log('Non-JSON response received:', text);
-      // Try to parse as JSON anyway
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { feeds: [], message: 'Received non-JSON response', raw: text };
+      console.log('Non-JSON response received:', text.substring(0, 500) + '...');
+      
+      // Parse XML response
+      if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
+        try {
+          // Extract jobs from XML
+          const jobMatches = text.matchAll(/<job>(.*?)<\/job>/gs);
+          const feeds = [];
+          
+          for (const match of jobMatches) {
+            const jobXml = match[1];
+            
+            // Extract fields from each job XML
+            const extractField = (field: string) => {
+              const regex = new RegExp(`<${field}><!\\[CDATA\\[(.*?)\\]\\]><\/${field}>`, 'i');
+              const cdataMatch = jobXml.match(regex);
+              if (cdataMatch) return cdataMatch[1].trim();
+              
+              // Fallback for non-CDATA fields
+              const simpleRegex = new RegExp(`<${field}>(.*?)<\/${field}>`, 'i');
+              const simpleMatch = jobXml.match(simpleRegex);
+              return simpleMatch ? simpleMatch[1].trim() : '';
+            };
+            
+            const job = {
+              id: extractField('referencenumber') || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              name: extractField('title') || 'Untitled Job',
+              title: extractField('title') || 'Untitled Job', 
+              description: extractField('description') || '',
+              company: extractField('company') || '',
+              location: `${extractField('city')}, ${extractField('state')}`.replace(/^,\s*|,\s*$/g, '') || 'Location not specified',
+              city: extractField('city'),
+              state: extractField('state'),
+              country: extractField('country'),
+              salary: extractField('salary'),
+              jobtype: extractField('jobtype'),
+              category: extractField('category'),
+              url: extractField('url'),
+              phone: extractField('phone'),
+              experience: extractField('experience'),
+              education: extractField('education'),
+              date: extractField('date'),
+              referencenumber: extractField('referencenumber'),
+              status: 'active',
+              type: 'job_listing',
+              last_updated: new Date().toISOString()
+            };
+            
+            feeds.push(job);
+          }
+          
+          console.log(`Parsed ${feeds.length} jobs from XML feed`);
+          data = { 
+            feeds, 
+            message: `Found ${feeds.length} job listings`,
+            source: 'XML',
+            parsed_at: new Date().toISOString()
+          };
+          
+        } catch (error) {
+          console.error('Error parsing XML:', error);
+          data = { feeds: [], message: 'Failed to parse XML feed', error: error.message };
+        }
+      } else {
+        // Try to parse as JSON anyway
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { feeds: [], message: 'Received non-JSON response', raw: text };
+        }
       }
     }
     
