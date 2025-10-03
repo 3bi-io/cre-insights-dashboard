@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
 import WebhookDocumentation from '@/components/settings/WebhookDocumentation';
+import ApiDocumentation from '@/components/settings/ApiDocumentation';
 import ProfileSettingsTab from '@/components/settings/ProfileSettingsTab';
 import NotificationsSettingsTab from '@/components/settings/NotificationsSettingsTab';
 import PrivacySettingsTab from '@/components/settings/PrivacySettingsTab';
@@ -20,11 +21,12 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="zapier">Zapier</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="documentation">API Docs</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           {(userRole === 'admin' || userRole === 'super_admin') && <TabsTrigger value="administrators">Administrators</TabsTrigger>}
@@ -44,6 +46,10 @@ const Settings = () => {
 
         <TabsContent value="webhooks" className="space-y-6">
           <WebhookDocumentation />
+        </TabsContent>
+
+        <TabsContent value="documentation" className="space-y-6">
+          <ApiDocumentation />
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
