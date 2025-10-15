@@ -151,6 +151,11 @@ const AppSidebar = () => {
         path: '/admin/super-admin-feeds',
         label: 'Feed Management',
         icon: Rss
+      }] : []),
+      ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+        path: '/admin/webhook-management',
+        label: 'Webhook Management',
+        icon: Share2
       }] : [])
     ]
   }];

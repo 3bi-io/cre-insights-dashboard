@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.trucking-platform-integration]
 verify_jwt = false
+
+[functions.inbound-applications]
+verify_jwt = false
