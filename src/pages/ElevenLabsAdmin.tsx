@@ -12,6 +12,7 @@ import { ConversationHistoryTable } from '@/components/voice/ConversationHistory
 import { ConversationAnalytics } from '@/components/voice/ConversationAnalytics';
 import { ConversationFilters } from '@/components/voice/ConversationFilters';
 import { ConversationExport } from '@/components/voice/ConversationExport';
+import { OrganizationAgentAssignment } from '@/components/voice/OrganizationAgentAssignment';
 import VoiceAgentCard from '@/components/voice/VoiceAgentCard';
 import VoiceAgentDialog from '@/components/voice/VoiceAgentDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -204,11 +205,14 @@ const ElevenLabsAdmin = () => {
         {/* Main Content */}
         <Tabs defaultValue="conversations" className="space-y-4">
           <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="conversations">Conversations</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="agents">Voice Agents</TabsTrigger>
-            </TabsList>
+          <TabsList>
+            <TabsTrigger value="conversations">Conversations</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="agents">Voice Agents</TabsTrigger>
+            {userRole === 'super_admin' && (
+              <TabsTrigger value="assignments">Org Assignments</TabsTrigger>
+            )}
+          </TabsList>
 
             <div className="flex items-center gap-2">
               {voiceAgents && voiceAgents.length > 0 && (
@@ -337,6 +341,29 @@ const ElevenLabsAdmin = () => {
                   />
                 </CardContent>
               </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="assignments" className="space-y-4">
+            {userRole === 'super_admin' ? (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Organization Agent Assignments</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Assign unique ElevenLabs voice agents to each organization
+                    </p>
+                  </div>
+                </div>
+
+                <OrganizationAgentAssignment />
+              </>
+            ) : (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Only super admins can manage organization agent assignments.
+                </AlertDescription>
+              </Alert>
             )}
           </TabsContent>
         </Tabs>
