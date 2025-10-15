@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      adzuna_analytics: {
+        Row: {
+          applications: number | null
+          campaign_id: string
+          clicks: number | null
+          cpc: number | null
+          created_at: string | null
+          ctr: number | null
+          date: string
+          id: string
+          impressions: number | null
+          job_id: string | null
+          organization_id: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applications?: number | null
+          campaign_id: string
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applications?: number | null
+          campaign_id?: string
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adzuna_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_analysis_cache: {
         Row: {
           analysis_result: Json
@@ -899,6 +958,65 @@ export type Database = {
           },
         ]
       }
+      cdl_jobcast_analytics: {
+        Row: {
+          applications: number | null
+          campaign_id: string
+          clicks: number | null
+          cpc: number | null
+          created_at: string | null
+          ctr: number | null
+          date: string
+          id: string
+          impressions: number | null
+          job_id: string | null
+          organization_id: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applications?: number | null
+          campaign_id: string
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applications?: number | null
+          campaign_id?: string
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cdl_jobcast_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           id: string
@@ -1027,6 +1145,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      craigslist_analytics: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          date: string
+          id: string
+          organization_id: string | null
+          posting_id: string
+          replies: number | null
+          updated_at: string | null
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          organization_id?: string | null
+          posting_id: string
+          replies?: number | null
+          updated_at?: string | null
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          organization_id?: string | null
+          posting_id?: string
+          replies?: number | null
+          updated_at?: string | null
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "craigslist_analytics_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1213,6 +1378,121 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "elevenlabs_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glassdoor_analytics: {
+        Row: {
+          applications: number | null
+          clicks: number | null
+          cpc: number | null
+          created_at: string | null
+          ctr: number | null
+          date: string
+          id: string
+          impressions: number | null
+          job_id: string
+          organization_id: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applications?: number | null
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          job_id: string
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applications?: number | null
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          job_id?: string
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glassdoor_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indeed_analytics: {
+        Row: {
+          applications: number | null
+          clicks: number | null
+          cpc: number | null
+          created_at: string | null
+          ctr: number | null
+          date: string
+          employer_id: string
+          id: string
+          impressions: number | null
+          job_id: string | null
+          organization_id: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applications?: number | null
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date: string
+          employer_id: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applications?: number | null
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date?: string
+          employer_id?: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indeed_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2107,6 +2387,62 @@ export type Database = {
           },
         ]
       }
+      simplyhired_analytics: {
+        Row: {
+          applications: number | null
+          clicks: number | null
+          cpc: number | null
+          created_at: string | null
+          ctr: number | null
+          date: string
+          id: string
+          impressions: number | null
+          job_key: string
+          organization_id: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applications?: number | null
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          job_key: string
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applications?: number | null
+          clicks?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          job_key?: string
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simplyhired_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_conversations: {
         Row: {
           application_id: string
@@ -2237,6 +2573,68 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "sms_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      talroo_analytics: {
+        Row: {
+          applications: number | null
+          campaign_id: string
+          clicks: number | null
+          cost_per_application: number | null
+          cpc: number | null
+          created_at: string | null
+          ctr: number | null
+          date: string
+          id: string
+          impressions: number | null
+          job_id: string | null
+          organization_id: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          applications?: number | null
+          campaign_id: string
+          clicks?: number | null
+          cost_per_application?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          applications?: number | null
+          campaign_id?: string
+          clicks?: number | null
+          cost_per_application?: number | null
+          cpc?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          job_id?: string | null
+          organization_id?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "talroo_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

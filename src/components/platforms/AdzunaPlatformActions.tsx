@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, TrendingUp, MousePointer, Eye, Users } from 'lucide-react';
 
-const TalrooPlatformActions = () => {
+const AdzunaPlatformActions = () => {
   const [campaignId, setCampaignId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -17,7 +17,7 @@ const TalrooPlatformActions = () => {
     if (!campaignId) {
       toast({
         title: "Missing Campaign ID",
-        description: "Please enter your Talroo campaign ID",
+        description: "Please enter your Adzuna campaign ID",
         variant: "destructive"
       });
       return;
@@ -28,7 +28,7 @@ const TalrooPlatformActions = () => {
       const endDate = new Date().toISOString().split('T')[0];
       const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-      const { data, error } = await supabase.functions.invoke('talroo-integration', {
+      const { data, error } = await supabase.functions.invoke('adzuna-integration', {
         body: {
           action: 'sync_analytics',
           campaignId,
@@ -44,6 +44,7 @@ const TalrooPlatformActions = () => {
         description: data.message
       });
 
+      // Fetch stats after sync
       await handleGetStats();
     } catch (error: any) {
       toast({
@@ -61,7 +62,7 @@ const TalrooPlatformActions = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('talroo-integration', {
+      const { data, error } = await supabase.functions.invoke('adzuna-integration', {
         body: {
           action: 'get_stats',
           campaignId
@@ -69,6 +70,7 @@ const TalrooPlatformActions = () => {
       });
 
       if (error) throw error;
+
       setStats(data.totals);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
@@ -83,14 +85,14 @@ const TalrooPlatformActions = () => {
         <CardHeader>
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/2ba5a3f3-dba1-46c4-8caf-fe192c25c828.png" 
-              alt="Talroo" 
+              src="https://www.adzuna.com/static/images/adzuna_logo.png" 
+              alt="Adzuna" 
               className="h-8"
             />
             <div>
-              <CardTitle>Talroo Integration</CardTitle>
+              <CardTitle>Adzuna Integration</CardTitle>
               <CardDescription>
-                Programmatic job advertising with performance-based pricing
+                Programmatic job advertising with performance analytics
               </CardDescription>
             </div>
           </div>
@@ -101,7 +103,7 @@ const TalrooPlatformActions = () => {
               <Label htmlFor="campaignId">Campaign ID</Label>
               <Input
                 id="campaignId"
-                placeholder="Enter Talroo campaign ID"
+                placeholder="Enter Adzuna campaign ID"
                 value={campaignId}
                 onChange={(e) => setCampaignId(e.target.value)}
               />
@@ -180,11 +182,11 @@ const TalrooPlatformActions = () => {
           <div className="space-y-2 pt-4 border-t">
             <h3 className="font-semibold">Integration Features</h3>
             <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-              <li>Programmatic bidding with real-time optimization</li>
-              <li>Performance-based CPA/CPC pricing models</li>
-              <li>Multi-channel job distribution network</li>
-              <li>Advanced targeting and audience segmentation</li>
+              <li>Programmatic job advertising with real-time bidding</li>
+              <li>Performance-based pricing (CPC/CPA models)</li>
+              <li>CDL Job Cast partnership for trucking roles</li>
               <li>Comprehensive analytics and reporting</li>
+              <li>Multi-country job distribution</li>
             </ul>
           </div>
         </CardContent>
@@ -193,4 +195,4 @@ const TalrooPlatformActions = () => {
   );
 };
 
-export default TalrooPlatformActions;
+export default AdzunaPlatformActions;

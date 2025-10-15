@@ -26,3 +26,12 @@ verify_jwt = false
 
 [functions.generate-hayes-applications]
 verify_jwt = false
+
+[functions.indeed-integration]
+verify_jwt = true
+
+[functions.adzuna-integration]
+verify_jwt = true
+
+[functions.talroo-integration]
+verify_jwt = true

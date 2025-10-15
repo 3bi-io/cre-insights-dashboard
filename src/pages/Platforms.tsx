@@ -11,9 +11,11 @@ import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatform
 import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
 import GlassdoorPlatformActions from '@/components/platforms/GlassdoorPlatformActions';
 import TruckDriverJobs411PlatformActions from '@/components/platforms/TruckDriverJobs411PlatformActions';
+import AdzunaPlatformActions from '@/components/platforms/AdzunaPlatformActions';
+import TalrooPlatformActions from '@/components/platforms/TalrooPlatformActions';
 import { PlatformAccessGuard } from '@/components/admin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Globe, FileText, DollarSign, Building2 } from 'lucide-react';
+import { Globe, FileText, DollarSign, Building2, TrendingUp } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 
 const Platforms = () => {
@@ -60,7 +62,7 @@ const Platforms = () => {
         />
 
       <Tabs defaultValue="platforms" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="platforms" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Publishers
@@ -76,6 +78,14 @@ const Platforms = () => {
           <TabsTrigger value="craigslist" className="flex items-center gap-2">
             <DollarSign className="w-4 h-4" />
             Craigslist
+          </TabsTrigger>
+          <TabsTrigger value="adzuna" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Adzuna
+          </TabsTrigger>
+          <TabsTrigger value="talroo" className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Talroo
           </TabsTrigger>
           <TabsTrigger value="simplyhired" className="flex items-center gap-2">
             <Globe className="w-4 h-4" />
@@ -122,6 +132,18 @@ const Platforms = () => {
         <TabsContent value="trucking" className="space-y-6 mt-6">
           <PlatformAccessGuard platformName="truck-driver-jobs-411">
             <TruckDriverJobs411PlatformActions />
+          </PlatformAccessGuard>
+        </TabsContent>
+
+        <TabsContent value="adzuna" className="space-y-6 mt-6">
+          <PlatformAccessGuard platformName="adzuna">
+            <AdzunaPlatformActions />
+          </PlatformAccessGuard>
+        </TabsContent>
+
+        <TabsContent value="talroo" className="space-y-6 mt-6">
+          <PlatformAccessGuard platformName="talroo">
+            <TalrooPlatformActions />
           </PlatformAccessGuard>
         </TabsContent>
       </Tabs>
