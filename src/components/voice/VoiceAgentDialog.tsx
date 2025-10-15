@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, Edit, ExternalLink, Info } from 'lucide-react';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { LLMModelSelect } from '@/features/elevenlabs';
 
@@ -96,6 +97,23 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-sm">Each organization needs its own unique ElevenLabs agent ID</span>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-auto p-0"
+                onClick={() => window.open('https://elevenlabs.io/app/conversational-ai', '_blank')}
+              >
+                Open ElevenLabs Dashboard
+                <ExternalLink className="ml-1 h-3 w-3" />
+              </Button>
+            </AlertDescription>
+          </Alert>
+
           <div className="space-y-2">
             <Label htmlFor="organization">Organization</Label>
             <Select
@@ -128,7 +146,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="elevenlabs_agent_id">ElevenLabs Agent ID</Label>
+            <Label htmlFor="elevenlabs_agent_id">ElevenLabs Agent ID *</Label>
             <Input
               id="elevenlabs_agent_id"
               placeholder="agent_xxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -137,7 +155,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
               required
             />
             <p className="text-xs text-muted-foreground">
-              Find this in your ElevenLabs dashboard under Conversational AI
+              Copy from your ElevenLabs dashboard: Settings → Agent ID (starts with "agent_")
             </p>
           </div>
 

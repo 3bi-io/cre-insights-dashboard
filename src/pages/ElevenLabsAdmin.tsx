@@ -137,6 +137,26 @@ const ElevenLabsAdmin = () => {
       description="Manage AI voice agents, conversations, and transcripts"
     >
       <div className="space-y-6">
+        {/* Info Alert */}
+        <Alert>
+          <Bot className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-center justify-between">
+              <span>
+                Each organization needs a unique ElevenLabs agent ID. Get yours from the{' '}
+                <a 
+                  href="https://elevenlabs.io/app/conversational-ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-medium underline"
+                >
+                  ElevenLabs Dashboard
+                </a>
+              </span>
+            </div>
+          </AlertDescription>
+        </Alert>
+
         {/* Summary Stats */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
