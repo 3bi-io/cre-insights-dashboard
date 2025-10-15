@@ -209,8 +209,50 @@ const SuperAdminFeeds = () => {
       
       toast({
         title: "Feed data loaded",
-        description: `Found ${jobListings.length} job listings available for import from ${userParam}`,
+        description: `Found ${jobListings.length} job listings from ${userParam}. Importing now...`,
       });
+
+      // Automatically import the fetched jobs
+      if (jobListings.length > 0) {
+        setImporting(true);
+        try {
+          // Construct the feed URL for import
+          let feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(userParam)}`;
+          if (boardParam) {
+            feedUrl += `&board=${encodeURIComponent(boardParam)}`;
+          }
+
+          const { data: importData, error: importError } = await supabase.functions.invoke('import-jobs-from-feed', {
+            body: { 
+              feedUrl: feedUrl,
+              organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c' // Hayes Recruiting Solutions
+            }
+          });
+          
+          if (importError) {
+            throw new Error(`Import error: ${importError.message}`);
+          }
+          
+          if (!importData.success) {
+            throw new Error(importData.error || 'Failed to import jobs');
+          }
+          
+          toast({
+            title: "Jobs imported successfully",
+            description: `${importData.message}. Total: ${importData.total}, Imported: ${importData.imported}`,
+          });
+        } catch (importErr) {
+          const errorMessage = importErr instanceof Error ? importErr.message : 'Failed to import jobs';
+          console.error('Error importing jobs:', importErr);
+          toast({
+            title: "Error importing jobs",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        } finally {
+          setImporting(false);
+        }
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch feeds';
       setError(errorMessage);
