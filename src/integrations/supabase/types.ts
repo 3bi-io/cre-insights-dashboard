@@ -2323,6 +2323,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          llm_model: string | null
           organization_id: string
           updated_at: string
         }
@@ -2334,6 +2335,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          llm_model?: string | null
           organization_id: string
           updated_at?: string
         }
@@ -2345,6 +2347,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          llm_model?: string | null
           organization_id?: string
           updated_at?: string
         }

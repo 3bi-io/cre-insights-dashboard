@@ -199,8 +199,15 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
           <p className="text-sm text-muted-foreground">{agent.description}</p>
         )}
 
-        <div className="text-xs text-muted-foreground">
-          Agent ID: <code className="bg-muted px-1 rounded">{agent.agent_id}</code>
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <div>
+            Agent ID: <code className="bg-muted px-1 rounded">{agent.agent_id}</code>
+          </div>
+          {agent.llm_model && (
+            <div>
+              LLM Model: <Badge variant="outline" className="text-xs">{agent.llm_model}</Badge>
+            </div>
+          )}
         </div>
 
         {/* Connection Status */}

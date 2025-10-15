@@ -28,6 +28,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
     agent_name: '',
     agent_id: '',
     description: '',
+    llm_model: 'gpt-4o-mini',
     is_active: true
   });
 
@@ -40,6 +41,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         agent_name: agent.agent_name || '',
         agent_id: agent.agent_id || '',
         description: agent.description || '',
+        llm_model: agent.llm_model || 'gpt-4o-mini',
         is_active: agent.is_active ?? true
       });
     } else {
@@ -48,6 +50,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         agent_name: '',
         agent_id: '',
         description: '',
+        llm_model: 'gpt-4o-mini',
         is_active: true
       });
     }
@@ -143,6 +146,36 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="llm_model">LLM Model</Label>
+            <Select
+              value={formData.llm_model}
+              onValueChange={(value) => setFormData({ ...formData, llm_model: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select LLM model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gpt-5-2025-08-07">GPT-5 (Latest Flagship)</SelectItem>
+                <SelectItem value="gpt-5-mini-2025-08-07">GPT-5 Mini (Fast & Efficient)</SelectItem>
+                <SelectItem value="gpt-5-nano-2025-08-07">GPT-5 Nano (Fastest)</SelectItem>
+                <SelectItem value="gpt-4.1-2025-04-14">GPT-4.1 (Reliable)</SelectItem>
+                <SelectItem value="o3-2025-04-16">O3 (Reasoning)</SelectItem>
+                <SelectItem value="o4-mini-2025-04-16">O4 Mini (Fast Reasoning)</SelectItem>
+                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Legacy)</SelectItem>
+                <SelectItem value="gpt-4o">GPT-4o (Legacy Vision)</SelectItem>
+                <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
+                <SelectItem value="claude-opus-4-1-20250805">Claude Opus 4.1</SelectItem>
+                <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4</SelectItem>
+                <SelectItem value="grok-beta">Grok (Beta)</SelectItem>
+                <SelectItem value="grok-2-latest">Grok 2 (Latest)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose the AI model powering your voice agent's responses
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">
