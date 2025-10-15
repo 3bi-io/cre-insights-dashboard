@@ -221,7 +221,7 @@ export const OrganizationLogoUpload = ({
                 className="w-16 h-16 object-contain rounded-lg border"
                 onError={(e) => {
                   console.error('Logo load error:', e);
-                  e.currentTarget.src = '/intel-ats-logo.png';
+                  e.currentTarget.src = '/logo.png';
                 }}
               />
             </div>

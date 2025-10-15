@@ -25,7 +25,7 @@ export const Brand: React.FC<BrandProps> = ({
 }) => {
   const brandElement = (
     <img 
-      src="/intel-ats-logo.png" 
+      src="/logo.png" 
       alt="ATS.me" 
       className={cn(
         "w-auto object-contain transition-all duration-200 hover:opacity-90",

@@ -8,12 +8,12 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <img 
-              src="/intel-ats-logo.png" 
-              alt="ATS Platform" 
+              src="/logo.png" 
+              alt="ATS.me" 
               className="h-6 w-auto"
             />
             <span className="text-sm text-muted-foreground">
-              © 2024 ATS Platform. All rights reserved.
+              © 2024 ATS.me. All rights reserved.
             </span>
           </div>
           

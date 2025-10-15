@@ -79,7 +79,7 @@ const LayoutContent = () => {
                     />
                   ) : (
                      <img 
-                       src="/intel-ats-logo.png" 
+                       src="/logo.png" 
                        alt={organization.name} 
                        className="h-8 w-auto"
                      />
