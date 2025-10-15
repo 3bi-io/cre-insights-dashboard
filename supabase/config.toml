@@ -38,3 +38,9 @@ verify_jwt = true
 
 [functions.tenstreet-explorer]
 verify_jwt = true
+
+[functions.tenstreet-sync]
+verify_jwt = true
+
+[functions.tenstreet-webhook]
+verify_jwt = false
