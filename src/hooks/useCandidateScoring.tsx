@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/services/loggerService';
 
 interface CandidateScore {
   id: string;
@@ -47,7 +48,7 @@ export const useCandidateScoring = () => {
     return useQuery({
       queryKey: ['candidate-scores', applicationId],
       queryFn: async (): Promise<CandidateScore[]> => {
-        console.log('Fetching scores for application:', applicationId);
+        logger.debug('Fetching scores for application', { applicationId }, 'CandidateScoring');
         
         const { data, error } = await supabase
           .from('candidate_scores')
@@ -56,7 +57,7 @@ export const useCandidateScoring = () => {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('Error fetching candidate scores:', error);
+          logger.error('Error fetching candidate scores', error, 'CandidateScoring');
           throw error;
         }
 
@@ -71,7 +72,7 @@ export const useCandidateScoring = () => {
     return useQuery({
       queryKey: ['candidate-rankings', jobListingId],
       queryFn: async (): Promise<CandidateRanking[]> => {
-        console.log('Fetching rankings for job:', jobListingId);
+        logger.debug('Fetching rankings for job', { jobListingId }, 'CandidateScoring');
         
         const { data, error } = await supabase
           .from('candidate_rankings')
@@ -91,7 +92,7 @@ export const useCandidateScoring = () => {
           .order('rank_position', { ascending: true });
 
         if (error) {
-          console.error('Error fetching candidate rankings:', error);
+          logger.error('Error fetching candidate rankings', error, 'CandidateScoring');
           throw error;
         }
 
@@ -104,7 +105,7 @@ export const useCandidateScoring = () => {
   // Run AI analysis mutation
   const runAnalysisMutation = useMutation({
     mutationFn: async (request: AnalysisRequest) => {
-      console.log('Starting AI analysis:', request);
+      logger.info('Starting AI analysis', { analysisType: request.analysisType }, 'CandidateScoring');
 
       const { data, error } = await supabase.functions.invoke('ai-candidate-analysis', {
         body: request
@@ -128,7 +129,7 @@ export const useCandidateScoring = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Analysis error:', error);
+      logger.error('Analysis error', error, 'CandidateScoring');
       toast({
         title: 'Analysis Failed',
         description: error.message || 'Failed to complete AI analysis',
@@ -140,7 +141,7 @@ export const useCandidateScoring = () => {
   // Bulk analyze candidates for a job
   const bulkAnalyzeMutation = useMutation({
     mutationFn: async ({ jobListingId, applicationIds }: { jobListingId: string; applicationIds: string[] }) => {
-      console.log('Starting bulk analysis for job:', jobListingId, 'applications:', applicationIds);
+      logger.info('Starting bulk analysis', { jobListingId, count: applicationIds.length }, 'CandidateScoring');
 
       const results = [];
       for (const applicationId of applicationIds) {
@@ -154,7 +155,7 @@ export const useCandidateScoring = () => {
           });
           results.push({ applicationId, success: true, data });
         } catch (error) {
-          console.error(`Failed to analyze application ${applicationId}:`, error);
+          logger.error('Failed to analyze application', { applicationId, error }, 'CandidateScoring');
           results.push({ applicationId, success: false, error });
         }
       }

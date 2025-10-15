@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useOpenAI } from '@/hooks/useOpenAI';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/services/loggerService';
 import { getActualAccountId } from '@/utils/metaAccountAlias';
 
 interface MetaSpendMetrics {
@@ -49,7 +50,7 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
           startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
 
-      console.log('Fetching Meta spend data from:', startDate);
+      logger.debug('Fetching Meta spend data', { startDate }, 'MetaSpend');
 
       // Fetch Meta spend data for current organization
       let metaQuery = supabase
@@ -65,11 +66,11 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
         .order('date_start', { ascending: false });
 
       if (spendError) {
-        console.error('Error fetching spend data:', spendError);
+        logger.error('Error fetching spend data', spendError, 'MetaSpend');
         throw spendError;
       }
 
-      console.log('Meta spend data fetched:', spendData?.length || 0, 'records');
+      logger.debug('Meta spend data fetched', { recordCount: spendData?.length || 0 }, 'MetaSpend');
 
       // Get lead generation applications data (from Meta sources, organization-scoped)
       const { data: applicationsData } = await supabase
@@ -80,10 +81,10 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
         .gte('applied_at', startDate);
 
       const totalLeads = applicationsData?.length || 0;
-      console.log('Total leads from Meta campaigns:', totalLeads);
+      logger.debug('Total leads from Meta campaigns', { totalLeads }, 'MetaSpend');
 
       if (!spendData || spendData.length === 0) {
-        console.log('No Meta spend data found for the selected period');
+        logger.info('No Meta spend data found for the selected period', undefined, 'MetaSpend');
         setMetrics({
           totalSpend: 0,
           totalImpressions: 0,
@@ -123,14 +124,14 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
       const costPerLead = totalLeads > 0 ? totalSpend / totalLeads : 0;
       const conversionRate = totalClicks > 0 ? (totalLeads / totalClicks) * 100 : 0;
 
-      console.log('Calculated lead generation metrics:', {
-        totalSpend,
+      logger.debug('Calculated lead generation metrics', {
+        totalSpend: totalSpend.toFixed(2),
         totalImpressions,
         totalClicks,
         totalLeads,
-        costPerLead,
-        conversionRate
-      });
+        costPerLead: costPerLead.toFixed(2),
+        conversionRate: conversionRate.toFixed(2)
+      }, 'MetaSpend');
 
       // Use OpenAI to analyze the lead generation data
       const analysisPrompt = `
@@ -192,7 +193,7 @@ export const useMetaSpendAnalytics = (dateRange: string = 'last_30d') => {
       });
 
     } catch (err) {
-      console.error('Error analyzing Meta lead generation metrics:', err);
+      logger.error('Error analyzing Meta lead generation metrics', err, 'MetaSpend');
       setError(err instanceof Error ? err.message : 'Failed to analyze Meta lead generation data');
     } finally {
       setIsLoading(false);

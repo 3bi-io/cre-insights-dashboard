@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useConversation } from '@11labs/react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/services/loggerService';
 
 interface JobContext {
   jobId: string;
@@ -33,7 +34,7 @@ export const useElevenLabsVoice = () => {
   const conversation = useConversation({
     overrides: agentOverrides,
     onConnect: () => {
-      console.log('Connected to voice agent');
+      logger.info('Connected to voice agent', undefined, 'ElevenLabsVoice');
       setIsConnected(true);
       toast({
         title: "Voice Agent Connected",
@@ -41,7 +42,7 @@ export const useElevenLabsVoice = () => {
       });
     },
     onDisconnect: () => {
-      console.log('Disconnected from voice agent');
+      logger.info('Disconnected from voice agent', undefined, 'ElevenLabsVoice');
       setIsConnected(false);
       setSelectedJob(null);
       toast({
@@ -50,10 +51,10 @@ export const useElevenLabsVoice = () => {
       });
     },
     onMessage: (message) => {
-      console.log('Voice agent message:', message);
+      logger.debug('Voice agent message received', undefined, 'ElevenLabsVoice');
     },
     onError: (error) => {
-      console.error('Voice agent error:', error);
+      logger.error('Voice agent error', error, 'ElevenLabsVoice');
       toast({
         title: "Voice Agent Error",
         description: "Voice agent encountered an error. Please try again.",
@@ -79,7 +80,7 @@ export const useElevenLabsVoice = () => {
         salary: job.salary || 'Competitive salary'
       };
 
-      console.log('Starting voice application for job:', jobContext);
+      logger.info('Starting voice application', { jobId: jobContext.jobId, jobTitle: jobContext.jobTitle }, 'ElevenLabsVoice');
 
       // Get signed URL with job context
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
@@ -104,7 +105,7 @@ export const useElevenLabsVoice = () => {
       // Job context is applied via conversation overrides; no manual message needed.
       
     } catch (error: any) {
-      console.error('Failed to start voice application:', error);
+      logger.error('Failed to start voice application', error, 'ElevenLabsVoice');
       
       let errorMessage = "Failed to start voice application.";
       if (error?.message?.includes?.('getUserMedia')) {
@@ -123,7 +124,7 @@ export const useElevenLabsVoice = () => {
     try {
       await conversation.endSession();
     } catch (error) {
-      console.error('Failed to end voice application:', error);
+      logger.error('Failed to end voice application', error, 'ElevenLabsVoice');
     }
   };
 
