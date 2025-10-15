@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import PageLayout from '@/components/PageLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Bot, MessageSquare, AudioLines } from 'lucide-react';
+import { RefreshCw, Bot, MessageSquare, AudioLines, BarChart3 } from 'lucide-react';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { ConversationHistoryTable } from '@/components/voice/ConversationHistoryTable';
+import { ConversationAnalytics } from '@/components/voice/ConversationAnalytics';
+import { ConversationFilters } from '@/components/voice/ConversationFilters';
+import { ConversationExport } from '@/components/voice/ConversationExport';
 import VoiceAgentCard from '@/components/voice/VoiceAgentCard';
 import VoiceAgentDialog from '@/components/voice/VoiceAgentDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 const ElevenLabsAdmin = () => {
   const { userRole } = useAuth();
@@ -27,9 +31,15 @@ const ElevenLabsAdmin = () => {
   } = useVoiceAgents();
   const [selectedAgent, setSelectedAgent] = useState<string>('all');
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const {
-    conversations,
+    conversations: allConversations,
     loadingConversations,
     syncConversations,
     isSyncing,
@@ -38,6 +48,52 @@ const ElevenLabsAdmin = () => {
   } = useElevenLabsConversations(
     selectedAgent === 'all' ? undefined : selectedAgent
   );
+
+  // Apply filters
+  const filteredConversations = useMemo(() => {
+    if (!allConversations) return [];
+
+    return allConversations.filter(conv => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const agentName = conv.voice_agents?.agent_name?.toLowerCase() || '';
+        const orgName = conv.voice_agents?.organizations?.name?.toLowerCase() || '';
+        const conversationId = conv.conversation_id?.toLowerCase() || '';
+        
+        if (!agentName.includes(searchLower) && 
+            !orgName.includes(searchLower) && 
+            !conversationId.includes(searchLower)) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (statusFilter !== 'all' && conv.status !== statusFilter) {
+        return false;
+      }
+
+      // Date filters
+      if (dateFrom) {
+        const convDate = format(new Date(conv.started_at), 'yyyy-MM-dd');
+        if (convDate < dateFrom) return false;
+      }
+
+      if (dateTo) {
+        const convDate = format(new Date(conv.started_at), 'yyyy-MM-dd');
+        if (convDate > dateTo) return false;
+      }
+
+      return true;
+    });
+  }, [allConversations, searchTerm, statusFilter, dateFrom, dateTo]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setDateFrom('');
+    setDateTo('');
+  };
 
   // Check if user is super admin or org admin
   const isAuthorized = userRole === 'super_admin' || userRole === 'admin';
@@ -70,9 +126,10 @@ const ElevenLabsAdmin = () => {
     }
   };
 
-  const totalConversations = conversations?.length || 0;
+  const totalConversations = allConversations?.length || 0;
+  const filteredCount = filteredConversations.length;
   const activeAgents = voiceAgents?.filter(a => a.is_active).length || 0;
-  const totalDuration = conversations?.reduce((sum, conv) => sum + (conv.duration_seconds || 0), 0) || 0;
+  const totalDuration = allConversations?.reduce((sum, conv) => sum + (conv.duration_seconds || 0), 0) || 0;
 
   return (
     <PageLayout
@@ -129,6 +186,7 @@ const ElevenLabsAdmin = () => {
           <div className="flex items-center justify-between">
             <TabsList>
               <TabsTrigger value="conversations">Conversations</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="agents">Voice Agents</TabsTrigger>
             </TabsList>
 
@@ -149,22 +207,42 @@ const ElevenLabsAdmin = () => {
                 </Select>
               )}
 
-              <Button
-                onClick={handleSyncConversations}
-                disabled={isSyncing || !voiceAgents || voiceAgents.length === 0}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                Sync Conversations
-              </Button>
+              <div className="flex gap-2">
+                <ConversationExport 
+                  conversations={filteredConversations}
+                  disabled={loadingConversations}
+                />
+                <Button
+                  onClick={handleSyncConversations}
+                  disabled={isSyncing || !voiceAgents || voiceAgents.length === 0}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  Sync Conversations
+                </Button>
+              </div>
             </div>
           </div>
 
           <TabsContent value="conversations" className="space-y-4">
+            <ConversationFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              dateFrom={dateFrom}
+              onDateFromChange={setDateFrom}
+              dateTo={dateTo}
+              onDateToChange={setDateTo}
+              onClearFilters={clearFilters}
+            />
+
             <Card>
               <CardHeader>
                 <CardTitle>Conversation History</CardTitle>
                 <CardDescription>
-                  View and manage all voice agent conversations
+                  {filteredCount === totalConversations 
+                    ? `Viewing all ${totalConversations} conversations`
+                    : `Showing ${filteredCount} of ${totalConversations} conversations`}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -174,7 +252,7 @@ const ElevenLabsAdmin = () => {
                   </div>
                 ) : (
                   <ConversationHistoryTable
-                    conversations={conversations || []}
+                    conversations={filteredConversations}
                     onViewDetails={setSelectedConversation}
                     onDownloadAudio={downloadAudio}
                     isDownloadingAudio={isDownloadingAudio}
@@ -182,6 +260,16 @@ const ElevenLabsAdmin = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            {loadingConversations ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading analytics...
+              </div>
+            ) : (
+              <ConversationAnalytics conversations={allConversations || []} />
+            )}
           </TabsContent>
 
           <TabsContent value="agents" className="space-y-4">
