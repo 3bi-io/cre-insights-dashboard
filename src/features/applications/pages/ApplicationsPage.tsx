@@ -11,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/services/loggerService';
 
 import {
   ApplicationDetailsDialog,
@@ -91,7 +92,7 @@ const ApplicationsPage = () => {
         description: "Applications report has been downloaded successfully",
       });
     } catch (error) {
-      console.error('PDF generation error:', error);
+      logger.error('PDF generation error', error, 'Applications');
       toast({
         title: "Export Failed",
         description: "Failed to generate PDF report",
@@ -105,25 +106,13 @@ const ApplicationsPage = () => {
   const categoryCounts = getCategoryCounts(applications || []);
 
   // Debug logging
-  console.log('Applications Debug:', {
+  logger.debug('Applications page state', {
     applicationsCount: applications?.length || 0,
     filteredCount: filteredApplications?.length || 0,
-    loading,
-    error,
     userRole,
     isAdmin,
-    searchTerm,
-    categoryFilter,
-    sourceFilter,
-    organizationFilter,
-    sampleApplication: applications?.[0] ? {
-      id: applications[0].id,
-      firstName: applications[0].first_name,
-      lastName: applications[0].last_name,
-      jobListings: applications[0].job_listings,
-      organizationData: applications[0].job_listings?.organizations || applications[0].job_listings?.organization_id
-    } : null
-  });
+    filters: { searchTerm, categoryFilter, sourceFilter, organizationFilter }
+  }, 'Applications');
 
   const pageActions = (
     <Button
@@ -197,8 +186,7 @@ const ApplicationsPage = () => {
                   application={application}
                   onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
                   onRecruiterAssignment={(applicationId, recruiterId) => {
-                    // Note: recruiter_id field is not part of the current UpdateApplicationData schema
-                    console.log('Recruiter assignment requested for:', applicationId, recruiterId);
+                    logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
                   }}
                   onDetailsView={() => handleDetailsView(application)}
                   onSmsOpen={() => handleSmsOpen(application)}

@@ -3,12 +3,13 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/services/loggerService';
 
 const PlatformBreakdown = () => {
   const { data: platformData = [], isLoading, refetch } = useQuery({
     queryKey: ['platform-breakdown'],
     queryFn: async () => {
-      console.log('Fetching platform breakdown data...');
+      logger.debug('Fetching platform breakdown data', undefined, 'PlatformBreakdown');
       
       const { data: spendData, error } = await supabase
         .from('daily_spend')
@@ -22,11 +23,11 @@ const PlatformBreakdown = () => {
         `);
 
       if (error) {
-        console.error('Error fetching platform breakdown:', error);
+        logger.error('Error fetching platform breakdown', error, 'PlatformBreakdown');
         throw error;
       }
 
-      console.log('Platform breakdown data fetched:', spendData?.length);
+      logger.debug('Platform breakdown data fetched', { count: spendData?.length }, 'PlatformBreakdown');
 
       if (!spendData) return [];
 

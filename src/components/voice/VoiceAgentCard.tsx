@@ -20,6 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import VoiceAgentDialog from './VoiceAgentDialog';
+import { logger } from '@/services/loggerService';
 
 interface VoiceAgentCardProps {
   agent: any;
@@ -42,7 +43,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log('Connected to voice agent:', agent.agent_name);
+      logger.info('Connected to voice agent', { agentName: agent.agent_name }, 'VoiceAgent');
       setIsConnected(true);
       toast({
         title: "Connected",
@@ -50,7 +51,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
       });
     },
     onDisconnect: () => {
-      console.log('Disconnected from voice agent:', agent.agent_name);
+      logger.info('Disconnected from voice agent', { agentName: agent.agent_name }, 'VoiceAgent');
       setIsConnected(false);
       toast({
         title: "Disconnected",
@@ -58,10 +59,10 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
       });
     },
     onMessage: message => {
-      console.log('Message received from', agent.agent_name, ':', message);
+      logger.debug('Voice agent message received', { agentName: agent.agent_name }, 'VoiceAgent');
     },
     onError: error => {
-      console.error('Voice agent error for', agent.agent_name, ':', error);
+      logger.error('Voice agent error', { agentName: agent.agent_name, error }, 'VoiceAgent');
       toast({
         title: "Error",
         description: `${agent.agent_name} encountered an error. Please try again.`,
@@ -73,18 +74,18 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
   const handleStartConversation = async () => {
     try {
       // Request microphone access first
-      console.log('Requesting microphone access...');
+      logger.debug('Requesting microphone access', undefined, 'VoiceAgent');
       await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('Microphone access granted');
+      logger.debug('Microphone access granted', undefined, 'VoiceAgent');
 
       // Get signed URL from our edge function
-      console.log('Requesting signed URL for agent:', agent.agent_id);
+      logger.debug('Requesting signed URL', { agentId: agent.agent_id }, 'VoiceAgent');
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
         body: { agentId: agent.agent_id }
       });
 
       if (error) {
-        console.error('Supabase function error:', error);
+        logger.error('Supabase function error', error, 'VoiceAgent');
         throw new Error(error.message || `Supabase function error: ${JSON.stringify(error)}`);
       }
 
@@ -94,14 +95,14 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
 
       // Store the signed URL and start conversation
       setSignedUrl(data.signedUrl);
-      console.log('Starting conversation with signed URL:', data.signedUrl);
+      logger.info('Starting conversation', undefined, 'VoiceAgent');
 
       const conversationId = await conversation.startSession({
         signedUrl: data.signedUrl
       });
-      console.log('Conversation started with ID:', conversationId);
+      logger.info('Conversation started', { conversationId }, 'VoiceAgent');
     } catch (error) {
-      console.error('Failed to start conversation:', error);
+      logger.error('Failed to start conversation', error, 'VoiceAgent');
       
       let errorMessage = "Failed to connect to voice agent.";
       const errorString = error?.message || error?.toString() || 'Unknown error';
@@ -126,7 +127,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
     try {
       await conversation.endSession();
     } catch (error) {
-      console.error('Failed to end conversation:', error);
+      logger.error('Failed to end conversation', error, 'VoiceAgent');
     }
   };
 

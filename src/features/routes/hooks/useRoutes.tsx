@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/services/loggerService';
 
 interface Route {
   origin_city: string;
@@ -23,7 +24,7 @@ export const useRoutes = () => {
   } = useQuery({
     queryKey: ['routes', organization?.id, userRole],
     queryFn: async (): Promise<Route[]> => {
-      console.log('Fetching routes for organization:', organization?.id, 'role:', userRole);
+      logger.debug('Fetching routes', { organizationId: organization?.id, userRole }, 'Routes');
       
       let query = supabase
         .from('job_listings')
@@ -41,11 +42,11 @@ export const useRoutes = () => {
       const { data, error } = await query;
       
       if (error) {
-        console.error('Error fetching routes data:', error);
+        logger.error('Error fetching routes data', error, 'Routes');
         throw error;
       }
 
-      console.log('Raw route data fetched:', data?.length || 0);
+      logger.debug('Raw route data fetched', { count: data?.length || 0 }, 'Routes');
 
       // Group by unique origin-destination pairs and count occurrences
       const routeMap = new Map<string, Route>();
@@ -67,7 +68,7 @@ export const useRoutes = () => {
       });
 
       const routesArray = Array.from(routeMap.values()).sort((a, b) => b.job_count - a.job_count);
-      console.log('Processed routes:', routesArray.length);
+      logger.debug('Processed routes', { count: routesArray.length }, 'Routes');
       return routesArray;
     },
     enabled: !!organization || userRole === 'super_admin',

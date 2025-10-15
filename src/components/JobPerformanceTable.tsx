@@ -6,12 +6,13 @@ import { MoreHorizontal, TrendingUp, TrendingDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { logger } from '@/services/loggerService';
 
 const JobPerformanceTable = () => {
   const { data: jobData = [], isLoading, refetch } = useQuery({
     queryKey: ['job-performance'],
     queryFn: async () => {
-      console.log('Fetching job performance data...');
+      logger.debug('Fetching job performance data', undefined, 'JobPerformance');
       
       // Get job listings with their spend and application data
       const { data: jobs, error } = await supabase
@@ -35,11 +36,11 @@ const JobPerformanceTable = () => {
         .limit(10);
 
       if (error) {
-        console.error('Error fetching job performance:', error);
+        logger.error('Error fetching job performance', error, 'JobPerformance');
         throw error;
       }
 
-      console.log('Job performance data fetched:', jobs?.length);
+      logger.debug('Job performance data fetched', { count: jobs?.length }, 'JobPerformance');
 
       if (!jobs) return [];
 

@@ -3,12 +3,13 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/services/loggerService';
 
 const SpendChart = () => {
   const { data: spendData = [], isLoading, refetch } = useQuery({
     queryKey: ['spend-chart'],
     queryFn: async () => {
-      console.log('Fetching spend chart data...');
+      logger.debug('Fetching spend chart data', undefined, 'SpendChart');
       
       // Get daily spend data for the last 30 days
       const thirtyDaysAgo = new Date();
@@ -27,11 +28,11 @@ const SpendChart = () => {
         .order('date');
 
       if (error) {
-        console.error('Error fetching spend chart data:', error);
+        logger.error('Error fetching spend chart data', error, 'SpendChart');
         throw error;
       }
 
-      console.log('Spend chart data fetched:', dailySpend?.length);
+      logger.debug('Spend chart data fetched', { count: dailySpend?.length }, 'SpendChart');
 
       if (!dailySpend) return [];
 
