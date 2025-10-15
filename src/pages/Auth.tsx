@@ -21,6 +21,9 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [resetMode, setResetMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [updatePasswordMode, setUpdatePasswordMode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   React.useEffect(() => {
     if (user) {
@@ -33,6 +36,13 @@ const Auth = () => {
       }
     }
   }, [user, userRole]);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === 'true') {
+      setUpdatePasswordMode(true);
+    }
+  }, []);
 
 const handleSignIn = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -68,6 +78,45 @@ const handlePasswordReset = async (e: React.FormEvent) => {
   setLoading(false);
 };
 
+const handleUpdatePassword = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  
+  if (newPassword !== confirmPassword) {
+    setError('Passwords do not match');
+    setLoading(false);
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    setError('Password must be at least 6 characters');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const { error } = await supabase.auth.updateUser({ 
+      password: newPassword 
+    });
+    
+    if (error) throw error;
+    
+    toast({
+      title: "Password updated",
+      description: "Your password has been successfully updated. Please sign in.",
+    });
+    
+    setUpdatePasswordMode(false);
+    setNewPassword('');
+    setConfirmPassword('');
+    window.history.replaceState({}, '', '/auth');
+  } catch (error: any) {
+    setError(error.message || 'Failed to update password. The reset link may have expired.');
+  }
+  setLoading(false);
+};
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -82,16 +131,48 @@ const handlePasswordReset = async (e: React.FormEvent) => {
 
         <Card>
           <CardHeader>
-            <CardTitle>{resetMode ? 'Reset Password' : 'Welcome Back'}</CardTitle>
+            <CardTitle>
+              {updatePasswordMode ? 'Update Password' : resetMode ? 'Reset Password' : 'Welcome Back'}
+            </CardTitle>
             <CardDescription>
-              {resetMode 
-                ? 'Enter your email to receive password reset instructions'
-                : 'Sign in to your account to access the dashboard'
+              {updatePasswordMode
+                ? 'Enter your new password below'
+                : resetMode 
+                  ? 'Enter your email to receive password reset instructions'
+                  : 'Sign in to your account to access the dashboard'
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {resetSent ? (
+            {updatePasswordMode ? (
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input 
+                    id="newPassword" 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={e => setNewPassword(e.target.value)} 
+                    required 
+                    placeholder="Enter new password" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    type="password" 
+                    value={confirmPassword} 
+                    onChange={e => setConfirmPassword(e.target.value)} 
+                    required 
+                    placeholder="Confirm new password" 
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Updating...' : 'Update Password'}
+                </Button>
+              </form>
+            ) : resetSent ? (
               <div className="text-center space-y-4">
                 <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <Mail className="w-6 h-6 text-green-600" />
