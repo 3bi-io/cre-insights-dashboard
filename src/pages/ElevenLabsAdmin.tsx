@@ -13,6 +13,7 @@ import { ConversationAnalytics } from '@/components/voice/ConversationAnalytics'
 import { ConversationFilters } from '@/components/voice/ConversationFilters';
 import { ConversationExport } from '@/components/voice/ConversationExport';
 import { OrganizationAgentAssignment } from '@/components/voice/OrganizationAgentAssignment';
+import { WebhookManager } from '@/components/integrations/WebhookManager';
 import VoiceAgentCard from '@/components/voice/VoiceAgentCard';
 import VoiceAgentDialog from '@/components/voice/VoiceAgentDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -210,7 +211,10 @@ const ElevenLabsAdmin = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="agents">Voice Agents</TabsTrigger>
             {userRole === 'super_admin' && (
-              <TabsTrigger value="assignments">Org Assignments</TabsTrigger>
+              <>
+                <TabsTrigger value="assignments">Org Assignments</TabsTrigger>
+                <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -362,6 +366,18 @@ const ElevenLabsAdmin = () => {
               <Alert variant="destructive">
                 <AlertDescription>
                   Only super admins can manage organization agent assignments.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+
+          <TabsContent value="webhooks" className="space-y-4">
+            {userRole === 'super_admin' ? (
+              <WebhookManager />
+            ) : (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Only super admins can manage webhooks.
                 </AlertDescription>
               </Alert>
             )}
