@@ -36,6 +36,7 @@ const ApplicationsPage = () => {
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const isSuperAdmin = userRole === 'super_admin';
+  const isOrgAdmin = userRole === 'admin' && !isSuperAdmin;
 
   // Use refactored hooks
   const { organizations } = useOrganizationData(isSuperAdmin);
@@ -67,6 +68,12 @@ const ApplicationsPage = () => {
     enabled: true,
     filters: {
       search: searchTerm,
+      // Org admins see only their organization's applications
+      organization_id: isOrgAdmin && organizationFilter === 'all' 
+        ? undefined // Let RLS handle it for org admins
+        : organizationFilter !== 'all' 
+          ? organizationFilter 
+          : undefined,
     }
   });
 
@@ -98,6 +105,7 @@ const ApplicationsPage = () => {
     filteredCount: filteredApplications?.length || 0,
     userRole,
     isAdmin,
+    isOrgAdmin,
     filters: { searchTerm, categoryFilter, sourceFilter, organizationFilter }
   }, 'Applications');
 
@@ -158,7 +166,11 @@ const ApplicationsPage = () => {
   return (
     <PageLayout 
       title="Applications" 
-      description="Track and manage job applications"
+      description={
+        isOrgAdmin 
+          ? "Manage job applications for your organization"
+          : "Track and manage job applications"
+      }
       actions={pageActions}
     >
       <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
