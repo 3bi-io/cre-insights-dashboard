@@ -63,56 +63,71 @@ const ApplicationCard = ({
   };
 
   const statusColors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    reviewed: 'bg-blue-100 text-blue-800',
-    interviewed: 'bg-purple-100 text-purple-800',
-    hired: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
+    pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    reviewed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    interviewed: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    hired: 'bg-green-500/20 text-green-400 border-green-500/30',
+    rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className={`flex ${isMobile ? 'flex-col' : 'justify-between'} items-start gap-4`}>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-lg text-white truncate">{applicantName}</h3>
-              <Badge className={`${category.color} text-xs`}>
-                {category.code}
-              </Badge>
+    <Card className="group hover:shadow-lg hover:scale-[1.01] transition-all duration-300 border-border/40 hover:border-primary/30 bg-card/50 backdrop-blur-sm animate-fade-in">
+      <CardContent className="p-6">
+        <div className={`flex ${isMobile ? 'flex-col' : 'justify-between'} items-start gap-6`}>
+          <div className="flex-1 min-w-0 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <span className="text-lg font-bold text-primary">
+                  {applicantName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-xl text-foreground truncate group-hover:text-primary transition-colors">{applicantName}</h3>
+                  <Badge variant="outline" className={`${category.color} text-xs px-2 py-0.5 border`}>
+                    {category.code}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground font-medium">{jobTitle}</p>
+              </div>
             </div>
             
-            <div className="space-y-1 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                <Mail className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">{applicantEmail}</span>
               </div>
-              <div className="font-medium text-gray-300">{jobTitle}</div>
-              {clientName && <div className="text-gray-500">Client: {clientName}</div>}
               {application.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                  <Phone className="w-4 h-4 flex-shrink-0" />
                   <span>{formatPhoneForDisplay(application.phone)}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-gray-500">
-                <MapPin className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span>{formatLocation()}</span>
               </div>
-              <div className="text-xs text-gray-500">
-                Applied: {new Date(application.applied_at).toLocaleString()}
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calendar className="w-4 h-4 flex-shrink-0" />
+                <span className="text-xs">{new Date(application.applied_at).toLocaleDateString()}</span>
               </div>
             </div>
+            
+            {clientName && (
+              <div className="text-sm px-3 py-1.5 rounded-md bg-accent/50 text-accent-foreground inline-block">
+                Client: {clientName}
+              </div>
+            )}
           </div>
 
-          <div className={`flex ${isMobile ? 'w-full' : 'flex-col'} gap-2`}>
+          <div className={`flex ${isMobile ? 'w-full flex-row' : 'flex-col'} gap-3`}>
             {/* Status Badge and Dropdown */}
             <Select
               value={application.status}
               onValueChange={(value) => onStatusChange(application.id, value)}
             >
-              <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-32'} h-8`}>
-                <Badge className={statusColors[application.status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}>
+              <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-40'} h-10 border-2`}>
+                <Badge variant="outline" className={`${statusColors[application.status as keyof typeof statusColors]} font-medium`}>
                   {application.status}
                 </Badge>
               </SelectTrigger>
@@ -130,7 +145,7 @@ const ApplicationCard = ({
               value={application.recruiter_id || 'unassigned'}
               onValueChange={(value) => onRecruiterAssignment(application.id, value === 'unassigned' ? null : value)}
             >
-              <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-40'} h-8 text-xs`}>
+              <SelectTrigger className={`${isMobile ? 'flex-1' : 'w-40'} h-10 text-sm`}>
                 <SelectValue placeholder="Assign recruiter">
                   {application.recruiters 
                     ? `${application.recruiters.first_name} ${application.recruiters.last_name}`
@@ -149,42 +164,45 @@ const ApplicationCard = ({
             </Select>
 
             {/* Action Buttons */}
-            <div className={`flex ${isMobile ? 'justify-end' : 'gap-1'}`}>
+            <div className={`flex ${isMobile ? 'w-full justify-end' : 'gap-2'}`}>
               {!isMobile ? (
-                <>
+                <div className="flex gap-2">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
+                    className="hover-scale"
                     onClick={() => onDetailsView(application)}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
                   {application.phone && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
+                      className="hover-scale"
                       onClick={() => onSmsOpen(application)}
                     >
                       <MessageCircle className="w-4 h-4" />
                     </Button>
                   )}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
+                    className="hover-scale"
                     onClick={() => onTenstreetUpdate(application)}
                     title="Post to Tenstreet"
                   >
                     <Upload className="w-4 h-4" />
                   </Button>
-                </>
+                </div>
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="outline" size="sm">
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => onDetailsView(application)}>
                       <Eye className="w-4 h-4 mr-2" />
                       View Details

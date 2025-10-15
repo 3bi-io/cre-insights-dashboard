@@ -129,17 +129,37 @@ const ApplicationsPage = () => {
   if (loading) {
     return (
       <PageLayout title="Applications" description="Track and manage job applications">
-        <div className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 bg-muted rounded-lg"></div>
-              ))}
-            </div>
+        <div className="p-6 max-w-7xl mx-auto">
+          <div className="space-y-6 animate-fade-in">
+            <Card>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gradient-to-r from-primary/20 to-primary/5 rounded animate-pulse"></div>
+                      <div className="h-8 bg-gradient-to-r from-primary/10 to-transparent rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
             <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-20 bg-muted rounded-lg"></div>
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full"></div>
+                      <div className="flex-1 space-y-3">
+                        <div className="h-4 bg-gradient-to-r from-primary/20 to-transparent rounded w-1/3"></div>
+                        <div className="h-3 bg-gradient-to-r from-primary/10 to-transparent rounded w-1/2"></div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="h-3 bg-gradient-to-r from-primary/10 to-transparent rounded"></div>
+                          <div className="h-3 bg-gradient-to-r from-primary/10 to-transparent rounded"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
@@ -156,7 +176,7 @@ const ApplicationsPage = () => {
     >
       <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
         <div className="space-y-6">
-          <Card>
+          <Card className="border-border/40 bg-card/50 backdrop-blur-sm animate-fade-in">
             <CardContent className="p-6">
               <ApplicationsOverview 
                 statusCounts={statusCounts} 
@@ -165,42 +185,55 @@ const ApplicationsPage = () => {
             </CardContent>
           </Card>
           
-          <ApplicationsSearch
-            searchTerm={searchTerm}
-            categoryFilter={categoryFilter}
-            sourceFilter={sourceFilter}
-            organizationFilter={organizationFilter}
-            onSearchChange={setSearchTerm}
-            onCategoryChange={setCategoryFilter}
-            onSourceChange={setSourceFilter}
-            onOrganizationChange={setOrganizationFilter}
-            showOrganizationFilter={isSuperAdmin}
-            organizations={organizations}
-          />
+          <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <ApplicationsSearch
+              searchTerm={searchTerm}
+              categoryFilter={categoryFilter}
+              sourceFilter={sourceFilter}
+              organizationFilter={organizationFilter}
+              onSearchChange={setSearchTerm}
+              onCategoryChange={setCategoryFilter}
+              onSourceChange={setSourceFilter}
+              onOrganizationChange={setOrganizationFilter}
+              showOrganizationFilter={isSuperAdmin}
+              organizations={organizations}
+            />
+          </div>
 
           <div className="space-y-4">
             {filteredApplications.length > 0 ? (
               filteredApplications.map((application, index) => (
-                <ApplicationCard
+                <div 
                   key={application.id || index}
-                  application={application}
-                  onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
-                  onRecruiterAssignment={(applicationId, recruiterId) => {
-                    logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
-                  }}
-                  onDetailsView={() => handleDetailsView(application)}
-                  onSmsOpen={() => handleSmsOpen(application)}
-                  onTenstreetUpdate={() => {
-                    setSelectedApplication(application);
-                    setTenstreetModalOpen(true);
-                  }}
-                />
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${(index % 10) * 50}ms` }}
+                >
+                  <ApplicationCard
+                    application={application}
+                    onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
+                    onRecruiterAssignment={(applicationId, recruiterId) => {
+                      logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
+                    }}
+                    onDetailsView={() => handleDetailsView(application)}
+                    onSmsOpen={() => handleSmsOpen(application)}
+                    onTenstreetUpdate={() => {
+                      setSelectedApplication(application);
+                      setTenstreetModalOpen(true);
+                    }}
+                  />
+                </div>
               ))
             ) : (
-              <Card>
-                <CardContent className="p-12 text-center">
+              <Card className="border-border/40 bg-card/50 backdrop-blur-sm animate-fade-in">
+                <CardContent className="p-16 text-center">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-10 h-10 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </div>
+                  <p className="text-lg font-medium text-foreground mb-2">No applications found</p>
                   <p className="text-muted-foreground">
-                    {loading ? "Loading applications..." : "No applications found"}
+                    {loading ? "Loading applications..." : "Try adjusting your filters or check back later"}
                   </p>
                 </CardContent>
               </Card>

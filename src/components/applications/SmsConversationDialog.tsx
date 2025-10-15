@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageCircle } from 'lucide-react';
+import { Send, MessageCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SmsConversationDialogProps {
@@ -159,63 +159,97 @@ const SmsConversationDialog: React.FC<SmsConversationDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col" aria-describedby="sms-conversation-description">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            SMS Conversation with {applicantName}
-          </DialogTitle>
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-gradient-to-b from-background to-background/95" aria-describedby="sms-conversation-description">
+        <DialogHeader className="px-6 py-4 border-b bg-card/50 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <DialogTitle className="text-lg font-semibold">
+                {applicantName}
+              </DialogTitle>
+              {application?.phone && (
+                <p className="text-sm text-muted-foreground">
+                  {application.phone}
+                </p>
+              )}
+            </div>
+            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
+              SMS
+            </Badge>
+          </div>
           <div id="sms-conversation-description" className="sr-only">
             Send and receive SMS messages with the job applicant. View conversation history and compose new messages.
           </div>
-          {application?.phone && (
-            <p className="text-sm text-muted-foreground">
-              Phone: {application.phone}
-            </p>
-          )}
         </DialogHeader>
 
         {!canSendMessage ? (
-          <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
-            <div>
-              {!application?.phone && <p>No phone number available for this applicant.</p>}
-              {!currentRecruiterId && <p>Please assign a recruiter to start messaging.</p>}
+          <div className="flex-1 flex items-center justify-center text-center p-8">
+            <div className="space-y-4 max-w-sm">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                <MessageCircle className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                {!application?.phone && (
+                  <p className="text-muted-foreground">No phone number available for this applicant.</p>
+                )}
+                {!currentRecruiterId && (
+                  <p className="text-muted-foreground">Please assign a recruiter to start messaging.</p>
+                )}
+              </div>
             </div>
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 min-h-[300px] max-h-[400px] border rounded-lg p-4">
-              <div className="space-y-3">
+            <ScrollArea className="flex-1 px-6 py-4 bg-muted/20">
+              <div className="space-y-4">
                 {messages?.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>No messages yet. Start the conversation!</p>
+                  <div className="text-center py-16 space-y-4 animate-fade-in">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                      <MessageCircle className="w-10 h-10 text-primary/50" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">No messages yet</p>
+                      <p className="text-sm text-muted-foreground">Start the conversation with {applicantName}</p>
+                    </div>
                   </div>
                 ) : (
-                  messages?.map((msg) => (
+                  messages?.map((msg, index) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                      style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div
-                        className={`max-w-[70%] p-3 rounded-lg ${
-                          msg.direction === 'outbound'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
+                        className={`max-w-[75%] group hover:scale-[1.02] transition-all duration-200 ${
+                          msg.direction === 'outbound' 
+                            ? 'animate-slide-in-right' 
+                            : 'animate-fade-in'
                         }`}
                       >
-                        <p className="text-sm">{msg.message}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs opacity-70">
-                            {new Date(msg.created_at).toLocaleTimeString()}
+                        <div
+                          className={`p-4 rounded-2xl shadow-sm ${
+                            msg.direction === 'outbound'
+                              ? 'bg-primary text-primary-foreground rounded-br-sm'
+                              : 'bg-card border border-border rounded-bl-sm'
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.message}</p>
+                        </div>
+                        <div className={`flex items-center gap-2 mt-1.5 px-2 ${
+                          msg.direction === 'outbound' ? 'justify-end' : 'justify-start'
+                        }`}>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           {msg.direction === 'outbound' && (
                             <Badge 
                               variant="outline" 
-                              className={`text-xs ${
-                                msg.status === 'sent' ? 'bg-green-100 text-green-800' :
-                                msg.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
+                              className={`text-xs px-1.5 py-0 ${
+                                msg.status === 'delivered' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
+                                msg.status === 'failed' ? 'bg-red-500/10 text-red-600 border-red-500/20' :
+                                'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
                               }`}
                             >
                               {msg.status}
@@ -229,30 +263,38 @@ const SmsConversationDialog: React.FC<SmsConversationDialogProps> = ({
               </div>
             </ScrollArea>
 
-            <div className="flex gap-2">
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message..."
-                className="min-h-[80px]"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey) {
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!message.trim() || sendMessageMutation.isPending}
-                size="icon"
-                className="h-[80px]"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+            <div className="px-6 py-4 bg-card/50 backdrop-blur-sm border-t">
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="min-h-[100px] resize-none pr-12 border-2 focus:border-primary/50 transition-colors"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.ctrlKey) {
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                  <p className="absolute bottom-3 right-3 text-xs text-muted-foreground">
+                    Ctrl+Enter
+                  </p>
+                </div>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!message.trim() || sendMessageMutation.isPending}
+                  size="lg"
+                  className="h-[100px] px-6 hover-scale"
+                >
+                  {sendMessageMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Press Ctrl+Enter to send
-            </p>
           </>
         )}
       </DialogContent>
