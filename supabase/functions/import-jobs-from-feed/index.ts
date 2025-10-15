@@ -235,7 +235,7 @@ serve(async (req) => {
           salary_max: job.salary_max || null,
           salary_type: job.salary_type || 'yearly',
           experience_level: job.experience || null,
-          remote_type: 'onsite', // Default for trucking jobs
+          remote_type: 'on-site', // Default for trucking jobs (must match DB constraint)
           job_type: job.jobtype === 'Full-time' ? 'full-time' : 'full-time',
           status: 'active',
           user_id: superAdminId,
