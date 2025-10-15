@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload, MapPin, Loader2 } from 'lucide-react';
+import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload, MapPin, Loader2, FileCheck } from 'lucide-react';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,6 +18,7 @@ interface ApplicationCardProps {
   onSmsOpen: (application: Application) => void;
   onDetailsView: (application: Application) => void;
   onTenstreetUpdate: (application: Application) => void;
+  onScreeningOpen: (application: Application) => void;
 }
 
 const ApplicationCard = ({
@@ -28,6 +29,7 @@ const ApplicationCard = ({
   onSmsOpen,
   onDetailsView,
   onTenstreetUpdate,
+  onScreeningOpen,
 }: ApplicationCardProps) => {
   const isMobile = useIsMobile();
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
@@ -189,6 +191,15 @@ const ApplicationCard = ({
                     variant="outline"
                     size="sm"
                     className="hover-scale"
+                    onClick={() => onScreeningOpen(application)}
+                    title="Screening Requests"
+                  >
+                    <FileCheck className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hover-scale"
                     onClick={() => onTenstreetUpdate(application)}
                     title="Post to Tenstreet"
                   >
@@ -213,6 +224,10 @@ const ApplicationCard = ({
                         SMS
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => onScreeningOpen(application)}>
+                      <FileCheck className="w-4 h-4 mr-2" />
+                      Screening Requests
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onTenstreetUpdate(application)}>
                       <Upload className="w-4 h-4 mr-2" />
                       Post to Tenstreet

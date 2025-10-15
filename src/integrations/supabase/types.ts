@@ -209,6 +209,66 @@ export type Database = {
           },
         ]
       }
+      application_documents: {
+        Row: {
+          application_id: string
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          metadata: Json | null
+          mime_type: string | null
+          screening_request_id: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          screening_request_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          screening_request_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_documents_screening_request_id_fkey"
+            columns: ["screening_request_id"]
+            isOneToOne: false
+            referencedRelation: "screening_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           accident_history: string | null
@@ -2411,6 +2471,65 @@ export type Database = {
           },
         ]
       }
+      screening_requests: {
+        Row: {
+          application_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          provider_name: string | null
+          provider_reference_id: string | null
+          request_data: Json | null
+          request_type: Database["public"]["Enums"]["screening_request_type"]
+          sent_at: string | null
+          status: Database["public"]["Enums"]["screening_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          provider_name?: string | null
+          provider_reference_id?: string | null
+          request_data?: Json | null
+          request_type: Database["public"]["Enums"]["screening_request_type"]
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["screening_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          provider_name?: string | null
+          provider_reference_id?: string | null
+          request_data?: Json | null
+          request_type?: Database["public"]["Enums"]["screening_request_type"]
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["screening_request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screening_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simplyhired_analytics: {
         Row: {
           applications: number | null
@@ -3068,6 +3187,16 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "super_admin"
+      screening_request_status:
+        | "pending"
+        | "sent"
+        | "completed"
+        | "failed"
+        | "expired"
+      screening_request_type:
+        | "background_check"
+        | "employment_application"
+        | "drug_screening"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3196,6 +3325,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user", "super_admin"],
+      screening_request_status: [
+        "pending",
+        "sent",
+        "completed",
+        "failed",
+        "expired",
+      ],
+      screening_request_type: [
+        "background_check",
+        "employment_application",
+        "drug_screening",
+      ],
     },
   },
 } as const

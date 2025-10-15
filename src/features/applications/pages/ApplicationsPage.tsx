@@ -22,6 +22,7 @@ import {
   ApplicationsSearch,
   ApplicationCard
 } from '../components';
+import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
 
 const ApplicationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,6 +34,7 @@ const ApplicationsPage = () => {
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [tenstreetModalOpen, setTenstreetModalOpen] = useState(false);
+  const [screeningDialogOpen, setScreeningDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { userRole } = useAuth();
@@ -81,6 +83,11 @@ const ApplicationsPage = () => {
   const handleDetailsView = (application: any) => {
     setSelectedApplication(application);
     setDetailsDialogOpen(true);
+  };
+
+  const handleScreeningOpen = (application: any) => {
+    setSelectedApplication(application);
+    setScreeningDialogOpen(true);
   };
 
   const downloadApplicationsPDF = async () => {
@@ -216,6 +223,7 @@ const ApplicationsPage = () => {
                     }}
                     onDetailsView={() => handleDetailsView(application)}
                     onSmsOpen={() => handleSmsOpen(application)}
+                    onScreeningOpen={() => handleScreeningOpen(application)}
                     onTenstreetUpdate={() => {
                       setSelectedApplication(application);
                       setTenstreetModalOpen(true);
@@ -254,6 +262,12 @@ const ApplicationsPage = () => {
               application={selectedApplication}
               isOpen={detailsDialogOpen}
               onClose={() => setDetailsDialogOpen(false)}
+            />
+            
+            <ScreeningRequestsDialog
+              application={selectedApplication}
+              open={screeningDialogOpen}
+              onOpenChange={setScreeningDialogOpen}
             />
             
             <TenstreetUpdateModal
