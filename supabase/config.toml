@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.inbound-applications]
 verify_jwt = false
+
+[functions.generate-hayes-applications]
+verify_jwt = false

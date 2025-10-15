@@ -152,6 +152,11 @@ const AppSidebar = () => {
         label: 'Feed Management',
         icon: Rss
       }] : []),
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/hayes-data',
+        label: 'Hayes Data Population',
+        icon: Users
+      }] : []),
       ...(userRole === 'super_admin' || userRole === 'admin' ? [{
         path: '/admin/webhook-management',
         label: 'Webhook Management',

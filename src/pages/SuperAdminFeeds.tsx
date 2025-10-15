@@ -32,6 +32,8 @@ const SuperAdminFeeds = () => {
   const [userParam, setUserParam] = useState('danny_herman_trucking');
   const [boardParam, setBoardParam] = useState('AIRecruiter');
   const [importing, setImporting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [appCount, setAppCount] = useState(50);
 
   // Available user options for the dropdown
   const availableUsers = [
@@ -138,6 +140,43 @@ const SuperAdminFeeds = () => {
     }
   };
 
+  const generateApplications = async () => {
+    setGenerating(true);
+    try {
+      console.log('Generating applications for Hayes...');
+      
+      const { data, error: functionError } = await supabase.functions.invoke('generate-hayes-applications', {
+        body: { 
+          count: appCount,
+          organization_id: '84214b48-7b51-45bc-ad7f-723bcf50466c'
+        }
+      });
+      
+      if (functionError) {
+        throw new Error(`Function error: ${functionError.message}`);
+      }
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate applications');
+      }
+      
+      toast({
+        title: "Applications Generated",
+        description: data.message,
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate applications';
+      console.error('Error generating applications:', err);
+      toast({
+        title: "Error generating applications",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   useEffect(() => {
     if (userRole === 'super_admin') {
       fetchFeeds();
@@ -231,6 +270,42 @@ const SuperAdminFeeds = () => {
                 Current target: Hayes Recruiting Solutions feed (danny_herman_trucking + AIRecruiter)
               </AlertDescription>
             </Alert>
+            
+            {/* Generate Applications Section */}
+            <div className="mt-6 p-4 border rounded-lg bg-muted/50">
+              <h4 className="font-semibold mb-3">Generate Sample Applications</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create realistic CDL applicant data for Hayes organization (from Adzuna, Indeed, etc.)
+              </p>
+              <div className="flex gap-4 items-end">
+                <div className="flex-1 max-w-xs">
+                  <Label htmlFor="appCount">Number of Applications</Label>
+                  <Input
+                    id="appCount"
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={appCount}
+                    onChange={(e) => setAppCount(parseInt(e.target.value) || 50)}
+                    className="mt-1"
+                  />
+                </div>
+                <Button 
+                  onClick={generateApplications}
+                  disabled={generating || !appCount}
+                  variant="default"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    `Generate ${appCount} Applications`
+                  )}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
         {error && (
