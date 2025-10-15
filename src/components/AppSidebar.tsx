@@ -87,6 +87,11 @@ const AppSidebar = () => {
         label: 'ATS Integrations',
         icon: Share2
       }] : []),
+      ...(hasTenstreetAccess() && userRole === 'super_admin' ? [{
+        path: '/admin/tenstreet-explorer',
+        label: 'ATS Explorer',
+        icon: Zap
+      }] : []),
       ...(userRole === 'super_admin' ? [{
         path: '/admin/organizations',
         label: 'Organizations',
