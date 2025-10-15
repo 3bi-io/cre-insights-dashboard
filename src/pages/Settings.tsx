@@ -8,7 +8,6 @@ import ProfileSettingsTab from '@/components/settings/ProfileSettingsTab';
 import NotificationsSettingsTab from '@/components/settings/NotificationsSettingsTab';
 import PrivacySettingsTab from '@/components/settings/PrivacySettingsTab';
 import AdministratorsSettingsTab from '@/components/settings/AdministratorsSettingsTab';
-import ZapierSettingsTab from '@/components/settings/ZapierSettingsTab';
 
 const Settings = () => {
   const { userRole } = useAuth();
@@ -21,10 +20,9 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="zapier">Zapier</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="documentation">API Docs</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -38,10 +36,6 @@ const Settings = () => {
 
         <TabsContent value="integrations" className="space-y-6">
           <IntegrationsTab />
-        </TabsContent>
-
-        <TabsContent value="zapier" className="space-y-6">
-          <ZapierSettingsTab />
         </TabsContent>
 
         <TabsContent value="webhooks" className="space-y-6">

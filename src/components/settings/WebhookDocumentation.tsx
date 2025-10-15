@@ -23,7 +23,7 @@ import jsPDF from 'jspdf';
 const WebhookDocumentation = () => {
   const { toast } = useToast();
   
-  const webhookUrl = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/zapier-webhook`;
+  const webhookUrl = `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/inbound-applications`;
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -73,8 +73,8 @@ const WebhookDocumentation = () => {
     yPos += 15;
     
     doc.text('Step 1: Create Webhook Integration', 20, yPos);
-    doc.text('• Log into your webhook provider (Zapier, Make.com, etc.)', 25, yPos + 10);
-    doc.text('• Create a new "Zap" or automation workflow', 25, yPos + 20);
+    doc.text('• Log into your webhook provider (Make.com, n8n, etc.)', 25, yPos + 10);
+    doc.text('• Create a new automation workflow', 25, yPos + 20);
     doc.text('• Set your trigger (form submission, email, etc.)', 25, yPos + 30);
     yPos += 50;
     
@@ -182,7 +182,7 @@ const WebhookDocumentation = () => {
           <p className="text-muted-foreground mb-4">
             This guide explains how to configure webhooks to automatically send applicant data 
             to your application management system. Follow these instructions to integrate with 
-            third-party services like Zapier, Make.com, or custom applications.
+            third-party services like Make.com, n8n, or custom applications.
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start gap-2">
@@ -191,7 +191,7 @@ const WebhookDocumentation = () => {
                 <h4 className="font-medium text-blue-900 mb-1">Prerequisites</h4>
                 <p className="text-sm text-blue-800">
                   Ensure you have administrative access to your webhook provider 
-                  (Zapier, Make.com, etc.) and understand basic webhook concepts.
+                  (Make.com, n8n, etc.) and understand basic webhook concepts.
                 </p>
               </div>
             </div>
@@ -253,10 +253,10 @@ const WebhookDocumentation = () => {
               </h4>
               <div className="ml-8 space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  • Log into your webhook provider (Zapier, Make.com, etc.)
+                  • Log into your webhook provider (Make.com, n8n, etc.)
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  • Create a new "Zap" or automation workflow
+                  • Create a new automation workflow
                 </p>
                 <p className="text-sm text-muted-foreground">
                   • Set your trigger (form submission, email, database update, etc.)
@@ -389,7 +389,7 @@ const WebhookDocumentation = () => {
                 </div>
                 <div>
                   <span className="font-medium">Source</span>: Any descriptive text 
-                  (e.g., "Company Website", "Indeed", "Zapier")
+                  (e.g., "Company Website", "Indeed", "LinkedIn")
                 </div>
               </div>
             </div>

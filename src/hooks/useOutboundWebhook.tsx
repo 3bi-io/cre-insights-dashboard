@@ -33,7 +33,7 @@ export const useOutboundWebhook = ({ webhookUrl, enabled = false }: UseOutboundW
         console.error('Outbound webhook error:', error);
         toast({
           title: "Webhook Failed",
-          description: `Failed to send ${eventType} notification to Zapier`,
+          description: `Failed to send ${eventType} notification`,
           variant: "destructive",
         });
         return false;

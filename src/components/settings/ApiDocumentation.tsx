@@ -22,8 +22,7 @@ const ApiDocumentation = () => {
 
   const endpoints = {
     jobFeed: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml?user_id=YOUR_USER_ID',
-    applicationSubmit: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application',
-    zapierWebhook: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/zapier-webhook'
+    applicationSubmit: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application'
   };
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -437,33 +436,6 @@ const ApiDocumentation = () => {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Submit job applications via XML or JSON format with automatic validation
-                </p>
-              </div>
-
-              {/* Zapier Webhook Endpoint */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">Zapier Webhook Endpoint</h3>
-                  <Badge>POST</Badge>
-                </div>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 bg-muted px-3 py-2 rounded text-xs overflow-x-auto">
-                    {endpoints.zapierWebhook}
-                  </code>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(endpoints.zapierWebhook, 'Zapier Webhook')}
-                  >
-                    {copiedEndpoint === 'Zapier Webhook' ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Alternative endpoint for Zapier integrations and flexible data formats
                 </p>
               </div>
 
