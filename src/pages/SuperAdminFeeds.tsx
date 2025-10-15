@@ -7,19 +7,28 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, Download } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { JobSelectionList } from '@/components/feeds/JobSelectionList';
 
 interface Feed {
   id?: string;
   name?: string;
+  title?: string;
   url?: string;
   status?: string;
   type?: string;
   description?: string;
   last_updated?: string;
+  category?: string;
+  division?: string;
+  company?: string;
+  location?: string;
+  source?: string;
   [key: string]: any;
 }
 
@@ -34,6 +43,10 @@ const SuperAdminFeeds = () => {
   const [importing, setImporting] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [appCount, setAppCount] = useState(50);
+  const [feedSource, setFeedSource] = useState<'cdl_jobcast' | 'crengland'>('cdl_jobcast');
+  const [crEnglandDivision, setCrEnglandDivision] = useState<string>('');
+  const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
+  const [selectiveImport, setSelectiveImport] = useState(false);
 
   // Available user options for the dropdown (CDL Job Cast partners)
   const availableUsers = [
@@ -169,13 +182,28 @@ const SuperAdminFeeds = () => {
   const fetchFeeds = async () => {
     setLoading(true);
     setError(null);
+    setSelectedJobs(new Set());
     
     try {
-      console.log('Fetching feeds for user:', userParam);
+      console.log('Fetching feeds from:', feedSource);
       
-      const { data, error: functionError } = await supabase.functions.invoke('fetch-feeds', {
-        body: { user: userParam, board: boardParam }
-      });
+      let data, functionError;
+      
+      if (feedSource === 'cdl_jobcast') {
+        console.log('Fetching CDL Job Cast for user:', userParam);
+        const response = await supabase.functions.invoke('fetch-feeds', {
+          body: { user: userParam, board: boardParam }
+        });
+        data = response.data;
+        functionError = response.error;
+      } else if (feedSource === 'crengland') {
+        console.log('Fetching CR England jobs, division:', crEnglandDivision);
+        const response = await supabase.functions.invoke('fetch-crengland-jobs', {
+          body: { division: crEnglandDivision || null }
+        });
+        data = response.data;
+        functionError = response.error;
+      }
       
       if (functionError) {
         throw new Error(`Function error: ${functionError.message}`);
@@ -188,7 +216,6 @@ const SuperAdminFeeds = () => {
       const apiData = data.data;
       let processedFeeds: Feed[] = [];
       
-      // Handle different possible response structures
       if (Array.isArray(apiData)) {
         processedFeeds = apiData;
       } else if (apiData.feeds && Array.isArray(apiData.feeds)) {
@@ -196,27 +223,21 @@ const SuperAdminFeeds = () => {
       } else if (apiData.data && Array.isArray(apiData.data)) {
         processedFeeds = apiData.data;
       } else if (typeof apiData === 'object' && apiData !== null) {
-        // If it's an object, convert to array
         processedFeeds = [apiData];
       }
       
-      // Filter out individual job listings - we only want feed metadata
-      // Job listings have type='job_listing' and should be imported, not displayed as feeds
-      const actualFeeds = processedFeeds.filter(feed => feed.type !== 'job_listing');
       const jobListings = processedFeeds.filter(feed => feed.type === 'job_listing');
       
-      setFeeds(actualFeeds);
+      setFeeds(jobListings);
       
       toast({
         title: "Feed data loaded",
-        description: `Found ${jobListings.length} job listings from ${userParam}. Importing now...`,
+        description: `Found ${jobListings.length} job listings from ${feedSource === 'cdl_jobcast' ? userParam : 'CR England'}`,
       });
 
-      // Automatically import the fetched jobs
-      if (jobListings.length > 0) {
+      if (!selectiveImport && jobListings.length > 0 && feedSource === 'cdl_jobcast') {
         setImporting(true);
         try {
-          // Construct the feed URL for import
           let feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(userParam)}`;
           if (boardParam) {
             feedUrl += `&board=${encodeURIComponent(boardParam)}`;
@@ -225,7 +246,7 @@ const SuperAdminFeeds = () => {
           const { data: importData, error: importError } = await supabase.functions.invoke('import-jobs-from-feed', {
             body: { 
               feedUrl: feedUrl,
-              organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c' // Hayes Recruiting Solutions
+              organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c'
             }
           });
           
@@ -267,20 +288,55 @@ const SuperAdminFeeds = () => {
     }
   };
 
-  const importJobsFromFeed = async (feedUrl: string) => {
+  const handleToggleJob = (jobId: string) => {
+    setSelectedJobs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(jobId)) {
+        newSet.delete(jobId);
+      } else {
+        newSet.add(jobId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedJobs(new Set(feeds.map(job => job.id!)));
+    } else {
+      setSelectedJobs(new Set());
+    }
+  };
+
+  const importSelectedJobs = async () => {
+    if (selectedJobs.size === 0) {
+      toast({
+        title: "No jobs selected",
+        description: "Please select at least one job to import",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setImporting(true);
     try {
-      console.log('Importing jobs from feed:', feedUrl);
+      const jobsToImport = feeds.filter(job => selectedJobs.has(job.id!));
+      console.log('Importing selected jobs:', jobsToImport.length);
       
-      const { data, error: functionError } = await supabase.functions.invoke('import-jobs-from-feed', {
+      const organizationId = feedSource === 'crengland' 
+        ? 'b8d5e7f9-4c2a-4e8d-9a1b-3f5c8d9e2a7b'
+        : '84214b48-7b51-45bc-ad7f-723bcf50466c';
+
+      const { data, error: importError } = await supabase.functions.invoke('import-selected-jobs', {
         body: { 
-          feedUrl: feedUrl,
-          organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c' // Hayes Recruiting Solutions
+          jobs: jobsToImport,
+          organizationId: organizationId,
+          source: feedSource
         }
       });
       
-      if (functionError) {
-        throw new Error(`Function error: ${functionError.message}`);
+      if (importError) {
+        throw new Error(`Import error: ${importError.message}`);
       }
       
       if (!data.success) {
@@ -288,12 +344,14 @@ const SuperAdminFeeds = () => {
       }
       
       toast({
-        title: "Jobs imported successfully",
-        description: data.message,
+        title: "Selected jobs imported",
+        description: `Successfully imported ${data.imported} of ${selectedJobs.size} selected jobs`,
       });
+      
+      setSelectedJobs(new Set());
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to import jobs';
-      console.error('Error importing jobs:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to import selected jobs';
+      console.error('Error importing selected jobs:', err);
       toast({
         title: "Error importing jobs",
         description: errorMessage,
@@ -347,7 +405,6 @@ const SuperAdminFeeds = () => {
     }
   }, [userRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Restrict access to super admins only
   if (userRole !== 'super_admin') {
     return (
       <PageLayout title="Access Denied" description="Super admin privileges required">
@@ -365,8 +422,8 @@ const SuperAdminFeeds = () => {
 
   return (
     <PageLayout 
-      title="Super Admin Feeds" 
-      description="Manage and monitor all available feeds from CDL Job Cast"
+      title="Super Admin Feeds Management" 
+      description="Import jobs from multiple sources with selective import capabilities"
       actions={
         <Button onClick={fetchFeeds} disabled={loading}>
           {loading ? (
@@ -379,99 +436,152 @@ const SuperAdminFeeds = () => {
       }
     >
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* User Parameter Input */}
+        {/* Feed Source Selector */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Feed Configuration</CardTitle>
+            <CardTitle className="text-lg">Feed Source Configuration</CardTitle>
             <CardDescription>
-              Configure the user parameter to fetch specific feeds
+              Select feed source and configure parameters
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <Label htmlFor="userParam">User Parameter</Label>
-                <Select value={userParam} onValueChange={setUserParam}>
-                  <SelectTrigger className="mt-1 bg-background">
-                    <SelectValue placeholder="Select a user" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-md z-50">
-                    {availableUsers.map((user) => (
-                      <SelectItem key={user.value} value={user.value} className="hover:bg-muted">
-                        {user.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="boardParam">Board Parameter</Label>
+            <Tabs value={feedSource} onValueChange={(value) => setFeedSource(value as 'cdl_jobcast' | 'crengland')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="cdl_jobcast">CDL Job Cast</TabsTrigger>
+                <TabsTrigger value="crengland">CR England</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="cdl_jobcast" className="space-y-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="userParam">User Parameter</Label>
+                    <Select value={userParam} onValueChange={setUserParam}>
+                      <SelectTrigger className="mt-1 bg-background">
+                        <SelectValue placeholder="Select a user" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md max-h-[300px] z-50">
+                        {availableUsers.map((user) => (
+                          <SelectItem key={user.value} value={user.value} className="hover:bg-muted">
+                            {user.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="boardParam">Board Parameter</Label>
+                    <Input
+                      id="boardParam"
+                      value={boardParam}
+                      onChange={(e) => setBoardParam(e.target.value)}
+                      placeholder="Enter board parameter"
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  URL: https://cdljobcast.com/client/recruiting/getfeeds?user={userParam}{boardParam ? `&board=${boardParam}` : ''}
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="crengland" className="space-y-4 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="crEnglandDivision">Division (Optional)</Label>
+                    <Select value={crEnglandDivision} onValueChange={setCrEnglandDivision}>
+                      <SelectTrigger className="mt-1 bg-background">
+                        <SelectValue placeholder="All Divisions" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border shadow-md z-50">
+                        <SelectItem value="">All Divisions</SelectItem>
+                        <SelectItem value="DEDICT">Dedicated</SelectItem>
+                        <SelectItem value="OVER_THE_ROAD">Over the Road</SelectItem>
+                        <SelectItem value="INTMDL">Intermodal</SelectItem>
+                        <SelectItem value="REGIONAL">Regional</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Fetching jobs from CR England job board (crengland.com/jobboard/)
+                  </AlertDescription>
+                </Alert>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                id="selective-import"
+                checked={selectiveImport}
+                onCheckedChange={(checked) => setSelectiveImport(checked as boolean)}
+                className="data-[state=checked]:bg-primary"
+              />
+              <label
+                htmlFor="selective-import"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Enable Selective Import (Choose specific jobs to import)
+              </label>
+            </div>
+
+            <Button onClick={fetchFeeds} disabled={loading || (feedSource === 'cdl_jobcast' && !userParam.trim())} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Fetch Jobs from {feedSource === 'cdl_jobcast' ? 'CDL Job Cast' : 'CR England'}
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Generate Applications Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Generate Sample Applications</CardTitle>
+            <CardDescription>
+              Create realistic CDL applicant data for Hayes organization
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-4 items-end">
+              <div className="flex-1 max-w-xs">
+                <Label htmlFor="appCount">Number of Applications</Label>
                 <Input
-                  id="boardParam"
-                  value={boardParam}
-                  onChange={(e) => setBoardParam(e.target.value)}
-                  placeholder="Enter board parameter"
+                  id="appCount"
+                  type="number"
+                  min="1"
+                  max="500"
+                  value={appCount}
+                  onChange={(e) => setAppCount(parseInt(e.target.value) || 50)}
                   className="mt-1"
                 />
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={fetchFeeds} disabled={loading || !userParam.trim()}>
-                {loading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Button 
+                onClick={generateApplications}
+                disabled={generating || !appCount}
+                variant="default"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
                 ) : (
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  `Generate ${appCount} Applications`
                 )}
-                Fetch Feeds
               </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              URL: https://cdljobcast.com/client/recruiting/getfeeds?user={userParam}{boardParam ? `&board=${boardParam}` : ''}
-            </p>
-            <Alert className="mt-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Current target: Hayes Recruiting Solutions feed (danny_herman_trucking + AIRecruiter)
-              </AlertDescription>
-            </Alert>
-            
-            {/* Generate Applications Section */}
-            <div className="mt-6 p-4 border rounded-lg bg-muted/50">
-              <h4 className="font-semibold mb-3">Generate Sample Applications</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create realistic CDL applicant data for Hayes organization (from Adzuna, Indeed, etc.)
-              </p>
-              <div className="flex gap-4 items-end">
-                <div className="flex-1 max-w-xs">
-                  <Label htmlFor="appCount">Number of Applications</Label>
-                  <Input
-                    id="appCount"
-                    type="number"
-                    min="1"
-                    max="500"
-                    value={appCount}
-                    onChange={(e) => setAppCount(parseInt(e.target.value) || 50)}
-                    className="mt-1"
-                  />
-                </div>
-                <Button 
-                  onClick={generateApplications}
-                  disabled={generating || !appCount}
-                  variant="default"
-                >
-                  {generating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    `Generate ${appCount} Applications`
-                  )}
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>
+
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -486,149 +596,102 @@ const SuperAdminFeeds = () => {
           </div>
         )}
 
+        {!loading && feeds.length > 0 && (
+          <>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Job Listings ({feeds.length})</CardTitle>
+                    <CardDescription>
+                      {selectiveImport ? 'Select jobs to import' : 'All jobs fetched from feed'}
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline">
+                    Source: {feedSource === 'cdl_jobcast' ? 'CDL Job Cast' : 'CR England'}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {selectiveImport ? (
+                  <div className="space-y-4">
+                    <JobSelectionList
+                      jobs={feeds}
+                      selectedJobs={selectedJobs}
+                      onToggleJob={handleToggleJob}
+                      onToggleAll={handleToggleAll}
+                    />
+                    <Button
+                      onClick={importSelectedJobs}
+                      disabled={importing || selectedJobs.size === 0}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {importing ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Importing...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          Import {selectedJobs.size} Selected Job{selectedJobs.size !== 1 ? 's' : ''}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {feeds.map((job, index) => (
+                      <Card key={job.id || index} className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <p className="font-semibold text-sm">{job.title || job.name}</p>
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              {job.company && <Badge variant="secondary">{job.company}</Badge>}
+                              {job.location && <Badge variant="outline">📍 {job.location}</Badge>}
+                              {job.category && <Badge variant="outline">{job.category}</Badge>}
+                              {job.division && <Badge variant="outline">{job.division}</Badge>}
+                            </div>
+                            {job.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                {job.description}
+                              </p>
+                            )}
+                          </div>
+                          {job.url && (
+                            <a
+                              href={job.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
         {!loading && feeds.length === 0 && !error && (
           <Card>
             <CardContent className="py-12 text-center">
               <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-              <p className="font-semibold mb-2">Job listings ready for import</p>
+              <p className="font-semibold mb-2">Ready to fetch jobs</p>
               <p className="text-muted-foreground mb-4">
-                The CDL Job Cast feed contains job listings that can be imported directly.
-                Click the "Import Jobs to Hayes Recruiting" button above to import them.
+                Configure your feed source above and click "Fetch Jobs" to begin.
               </p>
-              <Button onClick={fetchFeeds} variant="outline" className="mt-4">
-                Refresh Feed
+              <Button onClick={fetchFeeds} variant="outline">
+                Fetch Jobs Now
               </Button>
             </CardContent>
           </Card>
-        )}
-
-        {/* Import Jobs Section - Always visible */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Import Jobs from CDL Job Cast</CardTitle>
-            <CardDescription>
-              Import job listings from the selected user's feed into Hayes Recruiting Solutions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => {
-                const feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${userParam}${boardParam ? `&board=${boardParam}` : ''}`;
-                importJobsFromFeed(feedUrl);
-              }}
-              disabled={importing || !userParam.trim()}
-              className="w-full"
-              size="lg"
-            >
-              {importing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Importing Jobs...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Import Jobs to Hayes Recruiting
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {!loading && feeds.length > 0 && (
-          <>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Feed Metadata ({feeds.length})
-              </h2>
-              <Badge variant="outline" className="text-sm">
-                Source: cdljobcast.com
-              </Badge>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {feeds.map((feed, index) => (
-                <Card key={feed.id || index} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <CardTitle className="text-base">
-                        {feed.name || feed.title || `Feed ${index + 1}`}
-                      </CardTitle>
-                      {feed.status && (
-                        <Badge 
-                          variant={feed.status === 'active' || feed.status === 'online' ? 'default' : 'secondary'}
-                          className="ml-2"
-                        >
-                          {feed.status === 'active' || feed.status === 'online' ? (
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                          ) : (
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                          )}
-                          {feed.status}
-                        </Badge>
-                      )}
-                    </div>
-                    {feed.description && (
-                      <CardDescription className="text-sm">
-                        {feed.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-3">
-                    {feed.type && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Type:</span>
-                        <Badge variant="outline">{feed.type}</Badge>
-                      </div>
-                    )}
-                    
-                    {feed.url && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">URL:</span>
-                        <a 
-                          href={feed.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline flex items-center"
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View
-                        </a>
-                      </div>
-                    )}
-                    
-                    {feed.last_updated && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Updated:</span>
-                        <span>{new Date(feed.last_updated).toLocaleDateString()}</span>
-                      </div>
-                    )}
-
-                     {/* Display any additional fields */}
-                     {Object.entries(feed).map(([key, value]) => {
-                       if (['id', 'name', 'title', 'url', 'status', 'type', 'description', 'last_updated'].includes(key)) {
-                         return null;
-                       }
-                       if (typeof value === 'string' || typeof value === 'number') {
-                         return (
-                           <div key={key} className="flex justify-between text-sm">
-                             <span className="text-muted-foreground capitalize">
-                               {key.replace(/_/g, ' ')}:
-                             </span>
-                             <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                               {String(value)}
-                             </span>
-                           </div>
-                         );
-                       }
-                       return null;
-                     })}
-                   </CardContent>
-                </Card>
-              ))}
-            </div>
-          </>
         )}
       </div>
     </PageLayout>
