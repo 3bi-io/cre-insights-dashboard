@@ -1989,6 +1989,77 @@ export type Database = {
           },
         ]
       }
+      rate_limit_config: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          max_requests: number
+          organization_id: string | null
+          updated_at: string
+          user_role: string | null
+          window_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          max_requests?: number
+          organization_id?: string | null
+          updated_at?: string
+          user_role?: string | null
+          window_minutes?: number
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          max_requests?: number
+          organization_id?: string | null
+          updated_at?: string
+          user_role?: string | null
+          window_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limit_config_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          identifier: string
+          request_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          identifier: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          identifier?: string
+          request_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       recruiters: {
         Row: {
           created_at: string
@@ -2330,11 +2401,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          _endpoint: string
+          _identifier: string
+          _max_requests?: number
+          _window_minutes?: number
+        }
+        Returns: Json
+      }
       cleanup_expired_cache: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       cleanup_expired_sms_links: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
