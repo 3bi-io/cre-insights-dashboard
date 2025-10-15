@@ -2785,48 +2785,63 @@ export type Database = {
       tenstreet_credentials: {
         Row: {
           account_name: string
+          app_referrer: string | null
           apply_base_url: string | null
           client_id: string
           company_ids: string[] | null
+          company_name: string | null
           created_at: string | null
           id: string
           job_store_client_id: string | null
           job_store_password_encrypted: string | null
+          mode: string | null
           organization_id: string | null
           password_encrypted: string
           referral_code: string | null
+          service: string | null
+          source: string | null
           status: string | null
           updated_at: string | null
           xml_feed_url: string | null
         }
         Insert: {
           account_name: string
+          app_referrer?: string | null
           apply_base_url?: string | null
           client_id: string
           company_ids?: string[] | null
+          company_name?: string | null
           created_at?: string | null
           id?: string
           job_store_client_id?: string | null
           job_store_password_encrypted?: string | null
+          mode?: string | null
           organization_id?: string | null
           password_encrypted: string
           referral_code?: string | null
+          service?: string | null
+          source?: string | null
           status?: string | null
           updated_at?: string | null
           xml_feed_url?: string | null
         }
         Update: {
           account_name?: string
+          app_referrer?: string | null
           apply_base_url?: string | null
           client_id?: string
           company_ids?: string[] | null
+          company_name?: string | null
           created_at?: string | null
           id?: string
           job_store_client_id?: string | null
           job_store_password_encrypted?: string | null
+          mode?: string | null
           organization_id?: string | null
           password_encrypted?: string
           referral_code?: string | null
+          service?: string | null
+          source?: string | null
           status?: string | null
           updated_at?: string | null
           xml_feed_url?: string | null
