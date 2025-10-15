@@ -36,6 +36,7 @@ import ApplicationCard from '@/components/applications/ApplicationCard';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import SmsConversationDialog from '@/components/applications/SmsConversationDialog';
 import TenstreetUpdateModal from '@/components/applications/TenstreetUpdateModal';
+import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -84,6 +85,20 @@ export default function AdminApplicationsPage() {
     closeDetailsDialog,
     closeTenstreetModal,
   } = useApplicationDialogs();
+
+  // Screening dialog state
+  const [screeningDialogOpen, setScreeningDialogOpen] = useState(false);
+  const [screeningApplication, setScreeningApplication] = useState<Application | null>(null);
+
+  const handleScreeningOpen = (application: Application) => {
+    setScreeningApplication(application);
+    setScreeningDialogOpen(true);
+  };
+
+  const closeScreeningDialog = () => {
+    setScreeningDialogOpen(false);
+    setScreeningApplication(null);
+  };
 
   // Applications data with RLS-based filtering
   const {
@@ -438,7 +453,7 @@ export default function AdminApplicationsPage() {
                       onSmsOpen={() => handleSmsOpen(application)}
                       onDetailsView={() => handleDetailsView(application)}
                       onTenstreetUpdate={() => handleTenstreetUpdate(application)}
-                      onScreeningOpen={() => {}}
+                      onScreeningOpen={() => handleScreeningOpen(application)}
                     />
                   </div>
                 ))}
@@ -478,6 +493,15 @@ export default function AdminApplicationsPage() {
             onClose={closeTenstreetModal}
           />
         </>
+      )}
+
+      {/* Screening Requests Dialog */}
+      {screeningApplication && (
+        <ScreeningRequestsDialog
+          application={screeningApplication}
+          open={screeningDialogOpen}
+          onOpenChange={(open) => !open && closeScreeningDialog()}
+        />
       )}
     </PageLayout>
   );
