@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface FeatureGuardProps {
-  feature: 'tenstreet_access' | 'openai_access' | 'anthropic_access' | 'meta_integration' | 'voice_agent' | 'advanced_analytics' | 'elevenlabs_access';
+  feature: 'tenstreet_access' | 'openai_access' | 'anthropic_access' | 'grok_access' | 'meta_integration' | 'voice_agent' | 'advanced_analytics' | 'elevenlabs_access';
   children: React.ReactNode;
   fallback?: React.ReactNode;
   showUpgrade?: boolean;
@@ -22,6 +22,7 @@ const FEATURE_NAMES = {
   tenstreet_access: 'Tenstreet Integration',
   openai_access: 'OpenAI API',
   anthropic_access: 'Anthropic API',
+  grok_access: 'xAI Grok API',
   meta_integration: 'Meta Advertising',
   voice_agent: 'Voice Agent',
   advanced_analytics: 'Advanced Analytics',
@@ -113,6 +114,7 @@ export const useFeatureGuard = () => {
     canAccessTenstreet: () => hasFeature('tenstreet_access'),
     canAccessOpenAI: () => hasFeature('openai_access'),
     canAccessAnthropic: () => hasFeature('anthropic_access'),
+    canAccessGrok: () => hasFeature('grok_access'),
     canAccessMetaAds: () => hasFeature('meta_integration'),
     canAccessVoiceAgent: () => hasFeature('voice_agent'),
     canAccessAdvancedAnalytics: () => hasFeature('advanced_analytics'),

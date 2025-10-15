@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type AIProvider = 'openai' | 'anthropic' | 'elevenlabs';
+export type AIProvider = 'openai' | 'anthropic' | 'elevenlabs' | 'grok';
 
 export interface AIConnectionStatus {
   provider: AIProvider;
@@ -41,6 +41,12 @@ class AIConnectionManager {
       model: 'eleven_multilingual_v2', // Latest ElevenLabs model
       testMessage: 'Test agent connection',
       timeout: 15000
+    },
+    grok: {
+      provider: 'grok',
+      model: 'grok-2-1212', // Latest Grok model
+      testMessage: 'Test connection - respond with "OK"',
+      timeout: 10000
     }
   };
 
@@ -75,6 +81,15 @@ class AIConnectionManager {
             body: {
               agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65',
               action: 'test'
+            }
+          });
+          break;
+          
+        case 'grok':
+          response = await supabase.functions.invoke('grok-chat', {
+            body: {
+              message: config.testMessage,
+              model: config.model
             }
           });
           break;
@@ -116,7 +131,7 @@ class AIConnectionManager {
   async checkAllConnections(): Promise<AIConnectionStatus[]> {
     console.log('Checking all AI provider connections...');
     
-    const providers: AIProvider[] = ['openai', 'anthropic', 'elevenlabs'];
+    const providers: AIProvider[] = ['openai', 'anthropic', 'elevenlabs', 'grok'];
     const results = await Promise.allSettled(
       providers.map(provider => this.checkConnection(provider))
     );

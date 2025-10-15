@@ -51,7 +51,7 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [showSessionHistory, setShowSessionHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<'openai' | 'anthropic'>('openai');
+  const [selectedModel, setSelectedModel] = useState<'openai' | 'anthropic' | 'grok'>('openai');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -633,7 +633,7 @@ Your role:
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">AI Provider</label>
-                  <Select value={selectedModel} onValueChange={(value: 'openai' | 'anthropic') => setSelectedModel(value)}>
+                  <Select value={selectedModel} onValueChange={(value: 'openai' | 'anthropic' | 'grok') => setSelectedModel(value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select AI model" />
                     </SelectTrigger>
@@ -656,12 +656,23 @@ Your role:
                           </div>
                         </div>
                       </SelectItem>
+                      <SelectItem value="grok">
+                        <div className="flex items-center gap-2">
+                          <span>⚡</span>
+                          <div>
+                            <div>xAI Grok</div>
+                            <div className="text-xs text-muted-foreground">Real-time knowledge</div>
+                          </div>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   
                   <div className="text-xs text-muted-foreground">
                     {selectedModel === 'openai' 
                       ? 'OpenAI GPT-4 provides fast, accurate responses with broad knowledge.'
+                      : selectedModel === 'grok'
+                      ? 'xAI Grok combines real-time knowledge with conversational reasoning.'
                       : 'Anthropic Claude excels at reasoning, analysis, and detailed explanations.'
                     }
                   </div>

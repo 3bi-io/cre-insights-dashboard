@@ -131,7 +131,7 @@ const DashboardContent = () => {
   const [metaAnalyticsData, setMetaAnalyticsData] = useState<MetaAnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [metaLoading, setMetaLoading] = useState(false);
-  const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic'>('basic');
+  const [aiProvider, setAiProvider] = useState<'basic' | 'openai' | 'anthropic' | 'grok'>('basic');
   const [totalApplications, setTotalApplications] = useState<number>(0);
   const [dateRange, setDateRange] = useState('last_30d');
   const { toast } = useToast();
@@ -200,7 +200,7 @@ const DashboardContent = () => {
       setAnalyticsData(enrichedResult);
       toast({
         title: "Analytics Generated",
-        description: `AI analysis completed for ${applications?.length || 0} applications using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : 'Anthropic'} insights`
+        description: `AI analysis completed for ${applications?.length || 0} applications using ${aiProvider === 'basic' ? 'Basic' : aiProvider === 'openai' ? 'OpenAI' : aiProvider === 'grok' ? 'Grok' : 'Anthropic'} insights`
       });
     } catch (error) {
       logError('Error generating analytics', error, 'Dashboard');

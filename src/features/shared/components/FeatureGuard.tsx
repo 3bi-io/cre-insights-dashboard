@@ -13,6 +13,7 @@ interface OrganizationFeatures {
   tenstreet_access?: boolean;
   openai_access?: boolean;
   anthropic_access?: boolean;
+  grok_access?: boolean;
   meta_integration?: boolean;
   voice_agent?: boolean;
   advanced_analytics?: boolean;

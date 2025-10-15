@@ -7,6 +7,7 @@ interface OrganizationFeatures {
   tenstreet_access?: boolean;
   openai_access?: boolean;
   anthropic_access?: boolean;
+  grok_access?: boolean;
   meta_integration?: boolean;
   voice_agent?: boolean;
   advanced_analytics?: boolean;
@@ -55,13 +56,14 @@ export const useOrganizationFeatures = () => {
   const hasTenstreetAccess = () => hasFeature('tenstreet_access');
   const hasOpenAIAccess = () => hasFeature('openai_access');
   const hasAnthropicAccess = () => hasFeature('anthropic_access');
+  const hasGrokAccess = () => hasFeature('grok_access');
   const hasMetaIntegration = () => hasFeature('meta_integration');
   const hasVoiceAgent = () => hasFeature('voice_agent');
   const hasAdvancedAnalytics = () => hasFeature('advanced_analytics');
   const hasElevenLabsAccess = () => hasFeature('elevenlabs_access');
 
-  // AI access (either OpenAI or Anthropic)
-  const hasAIAccess = () => hasOpenAIAccess() || hasAnthropicAccess();
+  // AI access (OpenAI, Anthropic, or Grok)
+  const hasAIAccess = () => hasOpenAIAccess() || hasAnthropicAccess() || hasGrokAccess();
 
   return {
     features: features || {},
@@ -70,6 +72,7 @@ export const useOrganizationFeatures = () => {
     hasTenstreetAccess,
     hasOpenAIAccess,
     hasAnthropicAccess,
+    hasGrokAccess,
     hasMetaIntegration,
     hasVoiceAgent,
     hasAdvancedAnalytics,

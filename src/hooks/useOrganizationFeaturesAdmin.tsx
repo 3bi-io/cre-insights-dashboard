@@ -87,6 +87,12 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
       category: 'AI',
     },
     {
+      name: 'grok_access',
+      label: 'xAI Grok Access',
+      description: 'Access to xAI Grok models with real-time knowledge',
+      category: 'AI',
+    },
+    {
       name: 'tenstreet_access',
       label: 'Tenstreet Integration',
       description: 'Integration with Tenstreet ATS for application management',

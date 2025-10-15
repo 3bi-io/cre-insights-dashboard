@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Badge } from '@/components/ui/badge';
 
 interface AIProviderSettingsProps {
-  aiProvider: 'basic' | 'openai' | 'anthropic';
-  setAiProvider: (provider: 'basic' | 'openai' | 'anthropic') => void;
+  aiProvider: 'basic' | 'openai' | 'anthropic' | 'grok';
+  setAiProvider: (provider: 'basic' | 'openai' | 'anthropic' | 'grok') => void;
   loading: boolean;
   analyticsProvider?: string;
 }
@@ -67,6 +67,15 @@ const AIProviderSettings: React.FC<AIProviderSettingsProps> = ({
                       </div>
                     </div>
                   </SelectItem>
+                  <SelectItem value="grok">
+                    <div className="flex items-center gap-2">
+                      <Brain className="w-4 h-4" />
+                      <div>
+                        <div>xAI Grok</div>
+                        <div className="text-xs text-muted-foreground">Real-time knowledge & conversational AI</div>
+                      </div>
+                    </div>
+                  </SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
@@ -77,6 +86,7 @@ const AIProviderSettings: React.FC<AIProviderSettingsProps> = ({
               {aiProvider === 'basic' && <><SquareCode className="w-3 h-3" /> Basic</>}
               {aiProvider === 'openai' && <><Brain className="w-3 h-3" /> OpenAI</>}
               {aiProvider === 'anthropic' && <><Brain className="w-3 h-3" /> Claude</>}
+              {aiProvider === 'grok' && <><Brain className="w-3 h-3" /> Grok</>}
             </Badge>
             {analyticsProvider && analyticsProvider !== aiProvider && (
               <Badge variant="secondary" className="text-xs">
@@ -88,8 +98,9 @@ const AIProviderSettings: React.FC<AIProviderSettingsProps> = ({
         
         <div className="mt-4 text-sm text-muted-foreground">
           {aiProvider === 'basic' && "Basic analytics use rule-based analysis to categorize and summarize your application data."}
-          {aiProvider === 'openai' && "OpenAI GPT-4 provides advanced pattern recognition and strategic insights for your recruitment data."}
+          {aiProvider === 'openai' && "OpenAI GPT-5 provides advanced pattern recognition and strategic insights for your recruitment data."}
           {aiProvider === 'anthropic' && "Anthropic Claude excels at deep reasoning and provides detailed strategic recommendations."}
+          {aiProvider === 'grok' && "xAI Grok combines real-time knowledge with conversational reasoning for comprehensive analysis."}
         </div>
       </CardContent>
     </Card>

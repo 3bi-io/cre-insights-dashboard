@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { cacheService } from './cacheService';
 import { truthContractService, type TruthContractRequest, type TruthContractValidation } from './truthContract';
 
-export type AIProvider = 'openai' | 'anthropic' | 'basic';
+export type AIProvider = 'openai' | 'anthropic' | 'grok' | 'basic';
 export type DataSensitivity = 'public' | 'internal' | 'sensitive' | 'restricted';
 
 export interface AIRequest {
@@ -35,7 +35,7 @@ export interface AIResponse {
 }
 
 class AIService {
-  private preferredProviders: AIProvider[] = ['anthropic', 'openai', 'basic'];
+  private preferredProviders: AIProvider[] = ['anthropic', 'grok', 'openai', 'basic'];
   private maxRetries = 3;
   private timeoutMs = 30000;
 
@@ -179,6 +179,8 @@ class AIService {
         return this.callAnthropic(request.prompt, sanitizedData, request.parameters);
       case 'openai':
         return this.callOpenAI(request.prompt, sanitizedData, request.parameters);
+      case 'grok':
+        return this.callGrok(request.prompt, sanitizedData, request.parameters);
       case 'basic':
         return this.processWithRules(request, Date.now());
       default:
@@ -221,6 +223,25 @@ class AIService {
       processingType: 'ai',
       confidence: 0.85,
       explanation: 'Generated using OpenAI GPT-5 with advanced reasoning and enhanced performance'
+    };
+  }
+
+  private async callGrok(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+    const response = await supabase.functions.invoke('grok-chat', {
+      body: {
+        message: this.buildPrompt(prompt, data, parameters),
+        systemPrompt: this.buildSystemPrompt(parameters),
+        model: 'grok-2-1212' // Latest Grok model
+      }
+    });
+
+    if (response.error) throw new Error(response.error.message);
+
+    return {
+      content: response.data.generatedText,
+      processingType: 'ai',
+      confidence: 0.88,
+      explanation: 'Generated using xAI Grok with real-time knowledge and conversational reasoning'
     };
   }
 
@@ -395,6 +416,8 @@ Provide only the corrected content that maintains the original intent while fixi
         return 'gpt-5-2025-08-07';
       case 'anthropic':
         return 'claude-3-5-sonnet-20241022';
+      case 'grok':
+        return 'grok-2-1212';
       default:
         return 'rule-based';
     }
@@ -405,11 +428,12 @@ Provide only the corrected content that maintains the original intent while fixi
     const health: Record<AIProvider, boolean> = {
       openai: false,
       anthropic: false,
+      grok: false,
       basic: true // Always available
     };
 
     // Test each provider with a simple request
-    for (const provider of ['openai', 'anthropic'] as AIProvider[]) {
+    for (const provider of ['openai', 'anthropic', 'grok'] as AIProvider[]) {
       try {
         await this.tryProvider(provider, {
           prompt: 'Test connectivity',
