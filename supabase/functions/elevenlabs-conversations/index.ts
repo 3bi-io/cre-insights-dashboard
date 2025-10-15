@@ -64,8 +64,9 @@ serve(async (req) => {
         }
 
         // Store conversations in database
+        let syncedCount = 0;
         for (const conv of conversations.conversations || []) {
-          await supabase
+          const { error: upsertError } = await supabase
             .from('elevenlabs_conversations')
             .upsert({
               conversation_id: conv.conversation_id,
@@ -80,10 +81,20 @@ serve(async (req) => {
             }, {
               onConflict: 'conversation_id'
             });
+          
+          if (!upsertError) {
+            syncedCount++;
+          }
         }
 
+        console.log(`Synced ${syncedCount} conversations for agent ${agentId}`);
+
         return new Response(
-          JSON.stringify({ success: true, conversations }),
+          JSON.stringify({ 
+            success: true, 
+            conversations,
+            message: `Successfully synced ${syncedCount} conversation(s)` 
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

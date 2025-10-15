@@ -12,8 +12,11 @@ const HistoryImportButton = () => {
     setIsImporting(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('import-elevenlabs-history', {
-        body: { agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65' }
+      const { data, error } = await supabase.functions.invoke('elevenlabs-conversations', {
+        body: { 
+          action: 'list_conversations', 
+          agentId: 'cr_england_voice_agent_001' 
+        }
       });
 
       if (error) {
@@ -23,7 +26,7 @@ const HistoryImportButton = () => {
       if (data.success) {
         toast({
           title: "Import Successful",
-          description: data.message,
+          description: data.message || "Successfully synced historic conversations",
         });
       } else {
         throw new Error(data.error || 'Import failed');

@@ -41,3 +41,9 @@ verify_jwt = true
 
 [functions.tenstreet-webhook]
 verify_jwt = false
+
+[functions.elevenlabs-conversations]
+verify_jwt = true
+
+[functions.elevenlabs-agent]
+verify_jwt = true
