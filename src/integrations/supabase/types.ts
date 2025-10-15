@@ -2808,6 +2808,7 @@ export type Database = {
           llm_model: string | null
           organization_id: string
           updated_at: string
+          voice_id: string | null
         }
         Insert: {
           agent_id: string
@@ -2821,6 +2822,7 @@ export type Database = {
           llm_model?: string | null
           organization_id: string
           updated_at?: string
+          voice_id?: string | null
         }
         Update: {
           agent_id?: string
@@ -2834,6 +2836,7 @@ export type Database = {
           llm_model?: string | null
           organization_id?: string
           updated_at?: string
+          voice_id?: string | null
         }
         Relationships: [
           {

@@ -11,6 +11,7 @@ export interface VoiceAgent {
   agent_name: string;
   agent_id: string;
   elevenlabs_agent_id: string;
+  voice_id?: string;
   description: string | null;
   is_active: boolean;
   llm_model?: string;
@@ -31,6 +32,7 @@ export interface CreateVoiceAgentData {
   agent_name: string;
   agent_id: string;
   elevenlabs_agent_id: string;
+  voice_id?: string;
   description?: string;
   is_active?: boolean;
   llm_model?: string;

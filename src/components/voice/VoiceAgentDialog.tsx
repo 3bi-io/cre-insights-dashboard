@@ -28,6 +28,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
     organization_id: '',
     agent_name: '',
     elevenlabs_agent_id: '',
+    voice_id: '9BWtsMINqrJLrRacOk9x', // Default to Aria
     description: '',
     llm_model: 'gpt-4o-mini',
     is_active: true
@@ -41,6 +42,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         organization_id: agent.organization_id || '',
         agent_name: agent.agent_name || '',
         elevenlabs_agent_id: agent.elevenlabs_agent_id || '',
+        voice_id: agent.voice_id || '9BWtsMINqrJLrRacOk9x',
         description: agent.description || '',
         llm_model: agent.llm_model || 'gpt-4o-mini',
         is_active: agent.is_active ?? true
@@ -50,6 +52,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         organization_id: '',
         agent_name: '',
         elevenlabs_agent_id: '',
+        voice_id: '9BWtsMINqrJLrRacOk9x',
         description: '',
         llm_model: 'gpt-4o-mini',
         is_active: true
@@ -135,6 +138,33 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
             />
             <p className="text-xs text-muted-foreground">
               Find this in your ElevenLabs dashboard under Conversational AI
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="voice_id">Agent Voice</Label>
+            <Select
+              value={formData.voice_id}
+              onValueChange={(value) => setFormData({ ...formData, voice_id: value })}
+            >
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder="Select a voice" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="9BWtsMINqrJLrRacOk9x">Aria - Warm, friendly female</SelectItem>
+                <SelectItem value="CwhRBWXzGAHq8TQ4Fs17">Roger - Professional male</SelectItem>
+                <SelectItem value="EXAVITQu4vr4xnSDxMaL">Sarah - Clear, articulate female</SelectItem>
+                <SelectItem value="FGY2WhTYpPnrIDTdsKH5">Laura - Energetic female</SelectItem>
+                <SelectItem value="IKne3meq5aSn9XLyUdCD">Charlie - Confident male</SelectItem>
+                <SelectItem value="JBFqnCBsd6RMkjVDRZzb">George - Authoritative male</SelectItem>
+                <SelectItem value="N2lVS1w4EtoT3dr4eOWO">Callum - Smooth male</SelectItem>
+                <SelectItem value="SAz9YHcvj6GT2YYXdXww">River - Calm, soothing neutral</SelectItem>
+                <SelectItem value="TX3LPaxmHKxFdv7VOQHJ">Liam - Casual male</SelectItem>
+                <SelectItem value="XB0fDUnXU5powFXDhCwa">Charlotte - Elegant female</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose a voice that best fits your agent's personality
             </p>
           </div>
 
