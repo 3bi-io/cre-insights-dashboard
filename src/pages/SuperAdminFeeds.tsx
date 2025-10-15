@@ -35,9 +35,9 @@ const SuperAdminFeeds = () => {
   const [generating, setGenerating] = useState(false);
   const [appCount, setAppCount] = useState(50);
 
-  // Available user options for the dropdown
+  // Available user options for the dropdown (CDL Job Cast partners)
   const availableUsers = [
-    { value: 'danny_herman_trucking', label: 'Danny Herman Trucking' },
+    { value: 'danny_herman_trucking', label: 'Danny Herman Trucking (Hayes)' },
     { value: 'prime_inc', label: 'Prime Inc' },
     { value: 'schneider', label: 'Schneider' },
     { value: 'swift_transportation', label: 'Swift Transportation' },
@@ -46,7 +46,17 @@ const SuperAdminFeeds = () => {
     { value: 'crete_carrier', label: 'Crete Carrier' },
     { value: 'maverick', label: 'Maverick Transportation' },
     { value: 'covenant', label: 'Covenant Transport' },
-    { value: 'roehl', label: 'Roehl Transport' }
+    { value: 'roehl', label: 'Roehl Transport' },
+    { value: 'usa_truck', label: 'USA Truck' },
+    { value: 'pam_transport', label: 'PAM Transport' },
+    { value: 'england_logistics', label: 'C.R. England' },
+    { value: 'heartland_express', label: 'Heartland Express' },
+    { value: 'knight_transportation', label: 'Knight Transportation' },
+    { value: 'landstar', label: 'Landstar System' },
+    { value: 'old_dominion', label: 'Old Dominion Freight Line' },
+    { value: 'estes_express', label: 'Estes Express Lines' },
+    { value: 'saia_motor', label: 'Saia Motor Freight' },
+    { value: 'xpo_logistics', label: 'XPO Logistics' }
   ];
 
   const fetchFeeds = async () => {
@@ -83,11 +93,16 @@ const SuperAdminFeeds = () => {
         processedFeeds = [apiData];
       }
       
-      setFeeds(processedFeeds);
+      // Filter out individual job listings - we only want feed metadata
+      // Job listings have type='job_listing' and should be imported, not displayed as feeds
+      const actualFeeds = processedFeeds.filter(feed => feed.type !== 'job_listing');
+      const jobListings = processedFeeds.filter(feed => feed.type === 'job_listing');
+      
+      setFeeds(actualFeeds);
       
       toast({
-        title: "Feeds loaded successfully",
-        description: `Found ${processedFeeds.length} feeds for user: ${userParam}`,
+        title: "Feed data loaded",
+        description: `Found ${jobListings.length} job listings available for import from ${userParam}`,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch feeds';
@@ -325,20 +340,57 @@ const SuperAdminFeeds = () => {
         {!loading && feeds.length === 0 && !error && (
           <Card>
             <CardContent className="py-12 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No feeds found</p>
-              <Button onClick={fetchFeeds} className="mt-4">
-                Try Again
+              <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
+              <p className="font-semibold mb-2">Job listings ready for import</p>
+              <p className="text-muted-foreground mb-4">
+                The CDL Job Cast feed contains job listings that can be imported directly.
+                Click the "Import Jobs to Hayes Recruiting" button above to import them.
+              </p>
+              <Button onClick={fetchFeeds} variant="outline" className="mt-4">
+                Refresh Feed
               </Button>
             </CardContent>
           </Card>
         )}
 
+        {/* Import Jobs Section - Always visible */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Import Jobs from CDL Job Cast</CardTitle>
+            <CardDescription>
+              Import job listings from the selected user's feed into Hayes Recruiting Solutions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => {
+                const feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${userParam}${boardParam ? `&board=${boardParam}` : ''}`;
+                importJobsFromFeed(feedUrl);
+              }}
+              disabled={importing || !userParam.trim()}
+              className="w-full"
+              size="lg"
+            >
+              {importing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Importing Jobs...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Import Jobs to Hayes Recruiting
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
         {!loading && feeds.length > 0 && (
           <>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                Available Feeds ({feeds.length})
+                Feed Metadata ({feeds.length})
               </h2>
               <Badge variant="outline" className="text-sm">
                 Source: cdljobcast.com
@@ -404,7 +456,7 @@ const SuperAdminFeeds = () => {
                       </div>
                     )}
 
-                    {/* Display any additional fields */}
+                     {/* Display any additional fields */}
                      {Object.entries(feed).map(([key, value]) => {
                        if (['id', 'name', 'title', 'url', 'status', 'type', 'description', 'last_updated'].includes(key)) {
                          return null;
@@ -423,26 +475,6 @@ const SuperAdminFeeds = () => {
                        }
                        return null;
                      })}
-                     
-                     {/* Import Jobs Button */}
-                     <div className="pt-3 border-t">
-                       <Button 
-                         onClick={() => {
-                           const feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${userParam}${boardParam ? `&board=${boardParam}` : ''}`;
-                           importJobsFromFeed(feedUrl);
-                         }}
-                         disabled={importing}
-                         className="w-full"
-                         variant="outline"
-                       >
-                         {importing ? (
-                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                         ) : (
-                           <Download className="h-4 w-4 mr-2" />
-                         )}
-                         Import Jobs to Hayes Recruiting
-                       </Button>
-                     </div>
                    </CardContent>
                 </Card>
               ))}
