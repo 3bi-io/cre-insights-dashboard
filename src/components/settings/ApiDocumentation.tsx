@@ -21,7 +21,7 @@ const ApiDocumentation = () => {
   const [copiedEndpoint, setCopiedEndpoint] = useState<string | null>(null);
 
   const endpoints = {
-    jobFeed: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml',
+    jobFeed: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml?user_id=YOUR_USER_ID',
     applicationSubmit: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application',
     zapierWebhook: 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/zapier-webhook'
   };
