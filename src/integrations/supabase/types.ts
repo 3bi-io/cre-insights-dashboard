@@ -287,6 +287,9 @@ export type Database = {
           state: string | null
           status: string | null
           suffix: string | null
+          tenstreet_applied_via: string | null
+          tenstreet_last_sync: string | null
+          tenstreet_sync_status: string | null
           twic_card: string | null
           updated_at: string | null
           veteran: string | null
@@ -372,6 +375,9 @@ export type Database = {
           state?: string | null
           status?: string | null
           suffix?: string | null
+          tenstreet_applied_via?: string | null
+          tenstreet_last_sync?: string | null
+          tenstreet_sync_status?: string | null
           twic_card?: string | null
           updated_at?: string | null
           veteran?: string | null
@@ -457,6 +463,9 @@ export type Database = {
           state?: string | null
           status?: string | null
           suffix?: string | null
+          tenstreet_applied_via?: string | null
+          tenstreet_last_sync?: string | null
+          tenstreet_sync_status?: string | null
           twic_card?: string | null
           updated_at?: string | null
           veteran?: string | null
@@ -1601,6 +1610,7 @@ export type Database = {
           job_summary: string | null
           job_title: string | null
           job_type: string | null
+          last_tenstreet_sync: string | null
           location: string | null
           organization_id: string | null
           radius: number | null
@@ -1610,6 +1620,10 @@ export type Database = {
           salary_type: string | null
           state: string | null
           status: string | null
+          tenstreet_apply_url: string | null
+          tenstreet_company_id: string | null
+          tenstreet_job_id: string | null
+          tenstreet_source: string | null
           title: string
           updated_at: string
           url: string | null
@@ -1631,6 +1645,7 @@ export type Database = {
           job_summary?: string | null
           job_title?: string | null
           job_type?: string | null
+          last_tenstreet_sync?: string | null
           location?: string | null
           organization_id?: string | null
           radius?: number | null
@@ -1640,6 +1655,10 @@ export type Database = {
           salary_type?: string | null
           state?: string | null
           status?: string | null
+          tenstreet_apply_url?: string | null
+          tenstreet_company_id?: string | null
+          tenstreet_job_id?: string | null
+          tenstreet_source?: string | null
           title: string
           updated_at?: string
           url?: string | null
@@ -1661,6 +1680,7 @@ export type Database = {
           job_summary?: string | null
           job_title?: string | null
           job_type?: string | null
+          last_tenstreet_sync?: string | null
           location?: string | null
           organization_id?: string | null
           radius?: number | null
@@ -1670,6 +1690,10 @@ export type Database = {
           salary_type?: string | null
           state?: string | null
           status?: string | null
+          tenstreet_apply_url?: string | null
+          tenstreet_company_id?: string | null
+          tenstreet_job_id?: string | null
+          tenstreet_source?: string | null
           title?: string
           updated_at?: string
           url?: string | null
@@ -2632,6 +2656,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "talroo_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenstreet_credentials: {
+        Row: {
+          account_name: string
+          apply_base_url: string | null
+          client_id: string
+          company_ids: string[] | null
+          created_at: string | null
+          id: string
+          job_store_client_id: string | null
+          job_store_password_encrypted: string | null
+          organization_id: string | null
+          password_encrypted: string
+          referral_code: string | null
+          status: string | null
+          updated_at: string | null
+          xml_feed_url: string | null
+        }
+        Insert: {
+          account_name: string
+          apply_base_url?: string | null
+          client_id: string
+          company_ids?: string[] | null
+          created_at?: string | null
+          id?: string
+          job_store_client_id?: string | null
+          job_store_password_encrypted?: string | null
+          organization_id?: string | null
+          password_encrypted: string
+          referral_code?: string | null
+          status?: string | null
+          updated_at?: string | null
+          xml_feed_url?: string | null
+        }
+        Update: {
+          account_name?: string
+          apply_base_url?: string | null
+          client_id?: string
+          company_ids?: string[] | null
+          created_at?: string | null
+          id?: string
+          job_store_client_id?: string | null
+          job_store_password_encrypted?: string | null
+          organization_id?: string | null
+          password_encrypted?: string
+          referral_code?: string | null
+          status?: string | null
+          updated_at?: string | null
+          xml_feed_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenstreet_credentials_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
