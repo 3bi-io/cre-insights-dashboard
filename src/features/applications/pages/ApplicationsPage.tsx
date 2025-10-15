@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download } from 'lucide-react';
 
 import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
+import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
+import { useOrganizationData } from '../hooks/useOrganizationData';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/services/loggerService';
 
 import {
@@ -29,18 +30,30 @@ const ApplicationsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [organizationFilter, setOrganizationFilter] = useState('all');
-  const [organizations, setOrganizations] = useState<Array<{ id: string; name: string; }>>([]);
-  const [selectedApplication, setSelectedApplication] = useState<any>(null);
-  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [tenstreetModalOpen, setTenstreetModalOpen] = useState(false);
-  const [screeningDialogOpen, setScreeningDialogOpen] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { userRole } = useAuth();
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const isSuperAdmin = userRole === 'super_admin';
+
+  // Use refactored hooks
+  const { organizations } = useOrganizationData(isSuperAdmin);
+  const {
+    selectedApplication,
+    smsDialogOpen,
+    detailsDialogOpen,
+    tenstreetModalOpen,
+    screeningDialogOpen,
+    handleSmsOpen,
+    handleDetailsView,
+    handleTenstreetUpdate,
+    handleScreeningOpen,
+    closeSmsDialog,
+    closeDetailsDialog,
+    closeTenstreetModal,
+    closeScreeningDialog,
+  } = useApplicationDialogs();
 
   const {
     applications,
@@ -53,42 +66,9 @@ const ApplicationsPage = () => {
   } = useApplications({
     enabled: true,
     filters: {
-      // Remove organization filter to see all applications the user has access to
       search: searchTerm,
     }
   });
-
-  // Fetch organizations for super admin
-  useEffect(() => {
-    if (isSuperAdmin) {
-      const fetchOrganizations = async () => {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('id, name')
-          .order('name');
-        
-        if (!error && data) {
-          setOrganizations(data);
-        }
-      };
-      fetchOrganizations();
-    }
-  }, [isSuperAdmin]);
-
-  const handleSmsOpen = (application: any) => {
-    setSelectedApplication(application);
-    setSmsDialogOpen(true);
-  };
-
-  const handleDetailsView = (application: any) => {
-    setSelectedApplication(application);
-    setDetailsDialogOpen(true);
-  };
-
-  const handleScreeningOpen = (application: any) => {
-    setSelectedApplication(application);
-    setScreeningDialogOpen(true);
-  };
 
   const downloadApplicationsPDF = async () => {
     try {
@@ -224,10 +204,7 @@ const ApplicationsPage = () => {
                     onDetailsView={() => handleDetailsView(application)}
                     onSmsOpen={() => handleSmsOpen(application)}
                     onScreeningOpen={() => handleScreeningOpen(application)}
-                    onTenstreetUpdate={() => {
-                      setSelectedApplication(application);
-                      setTenstreetModalOpen(true);
-                    }}
+                    onTenstreetUpdate={() => handleTenstreetUpdate(application)}
                   />
                 </div>
               ))
@@ -255,25 +232,25 @@ const ApplicationsPage = () => {
             <SmsConversationDialog
               application={selectedApplication}
               open={smsDialogOpen}
-              onOpenChange={setSmsDialogOpen}
+              onOpenChange={closeSmsDialog}
             />
             
             <ApplicationDetailsDialog
               application={selectedApplication}
               isOpen={detailsDialogOpen}
-              onClose={() => setDetailsDialogOpen(false)}
+              onClose={closeDetailsDialog}
             />
             
             <ScreeningRequestsDialog
               application={selectedApplication}
               open={screeningDialogOpen}
-              onOpenChange={setScreeningDialogOpen}
+              onOpenChange={closeScreeningDialog}
             />
             
             <TenstreetUpdateModal
               application={selectedApplication}
               isOpen={tenstreetModalOpen}
-              onClose={() => setTenstreetModalOpen(false)}
+              onClose={closeTenstreetModal}
             />
           </>
         )}

@@ -1,4 +1,5 @@
 // Applications components
+// Legacy components from /components/applications
 export { default as ApplicationCard } from '@/components/applications/ApplicationCard';
 export { default as ApplicationDetailsDialog } from '@/components/applications/ApplicationDetailsDialog';
 export { default as ApplicationsOverview } from '@/components/applications/ApplicationsOverview';
@@ -12,3 +13,8 @@ export { default as MetaBackfillButton } from '@/components/applications/MetaBac
 export { default as QuickFixGuide } from '@/components/applications/QuickFixGuide';
 export { default as RecentMetaLeadsButton } from '@/components/applications/RecentMetaLeadsButton';
 export { default as WebhookTestSection } from '@/components/applications/WebhookTestSection';
+
+// Refactored feature components
+export { ApplicationActions } from './ApplicationActions';
+export { ApplicationHeader } from './ApplicationHeader';
+export { ApplicationInfo } from './ApplicationInfo';
