@@ -2,6 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import DashboardCategoryTiles from './DashboardCategoryTiles';
 import { DashboardMetrics } from '@/features/dashboard/components/DashboardMetrics';
+import { EnhancedMetricsCard } from './EnhancedMetricsCard';
+import { JobPerformanceChart } from './JobPerformanceChart';
+import { ApplicantFunnel } from './ApplicantFunnel';
+import { TeamActivityTimeline } from './TeamActivityTimeline';
+import { BudgetSpendChart } from './BudgetSpendChart';
 import { useAuth } from '@/hooks/useAuth';
 import { getActualAccountId } from '@/utils/metaAccountAlias';
 import { logInfo, logError, logDebug } from '@/utils/loggerUtils';
@@ -280,9 +285,23 @@ const DashboardContent = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">
-            Comprehensive analytics and insights for your business
+            Comprehensive analytics and insights for your organization
           </p>
         </div>
+      </div>
+
+      {/* Enhanced Metrics */}
+      <DashboardMetrics />
+
+      {/* Performance Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <JobPerformanceChart />
+        <ApplicantFunnel />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BudgetSpendChart />
+        <TeamActivityTimeline />
       </div>
 
       {/* Categories Section */}

@@ -15,6 +15,10 @@ import {
   UserCheck
 } from 'lucide-react';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
+import { SystemHealthMonitor } from '@/components/admin/SystemHealthMonitor';
+import { OrganizationGrowthChart } from '@/components/admin/OrganizationGrowthChart';
+import { RecentActivityFeed } from '@/components/admin/RecentActivityFeed';
+import { QuickActionsPanel } from '@/components/admin/QuickActionsPanel';
 
 const AdminMetricsCard = ({ title, value, description, icon: Icon, trend }: {
   title: string;
@@ -185,7 +189,21 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <SystemOverviewPanel />
+        <div className="space-y-6">
+          <SystemOverviewPanel />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <OrganizationGrowthChart />
+            </div>
+            <QuickActionsPanel />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SystemHealthMonitor />
+            <RecentActivityFeed />
+          </div>
+        </div>
       </div>
     </div>
   );
