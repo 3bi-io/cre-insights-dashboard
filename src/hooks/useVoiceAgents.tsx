@@ -8,8 +8,10 @@ interface VoiceAgent {
   organization_id: string;
   agent_name: string;
   agent_id: string;
+  elevenlabs_agent_id: string;
   description: string | null;
   is_active: boolean;
+  llm_model?: string;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -24,8 +26,10 @@ interface CreateVoiceAgentData {
   organization_id: string;
   agent_name: string;
   agent_id: string;
+  elevenlabs_agent_id: string;
   description?: string;
   is_active?: boolean;
+  llm_model?: string;
 }
 
 interface UpdateVoiceAgentData extends Partial<CreateVoiceAgentData> {

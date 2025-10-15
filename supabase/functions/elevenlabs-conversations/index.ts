@@ -52,6 +52,17 @@ serve(async (req) => {
 
         const conversations = await response.json();
 
+        // Get the voice_agent record to find organization_id and voice_agent_id
+        const { data: voiceAgent } = await supabase
+          .from('voice_agents')
+          .select('id, organization_id')
+          .eq('elevenlabs_agent_id', agentId)
+          .single();
+
+        if (!voiceAgent) {
+          throw new Error(`Voice agent not found for agent ID: ${agentId}`);
+        }
+
         // Store conversations in database
         for (const conv of conversations.conversations || []) {
           await supabase
@@ -59,6 +70,8 @@ serve(async (req) => {
             .upsert({
               conversation_id: conv.conversation_id,
               agent_id: agentId,
+              voice_agent_id: voiceAgent.id,
+              organization_id: voiceAgent.organization_id,
               status: conv.status || 'completed',
               started_at: conv.start_time,
               ended_at: conv.end_time,

@@ -40,13 +40,13 @@ interface Audio {
   format: string;
 }
 
-export const useElevenLabsConversations = (organizationId?: string) => {
+export const useElevenLabsConversations = (voiceAgentId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch conversations
   const { data: conversations, isLoading: loadingConversations } = useQuery({
-    queryKey: ['elevenlabs-conversations', organizationId],
+    queryKey: ['elevenlabs-conversations', voiceAgentId],
     queryFn: async () => {
       let query = supabase
         .from('elevenlabs_conversations')
@@ -61,8 +61,8 @@ export const useElevenLabsConversations = (organizationId?: string) => {
         `)
         .order('started_at', { ascending: false });
 
-      if (organizationId) {
-        query = query.eq('organization_id', organizationId);
+      if (voiceAgentId) {
+        query = query.eq('voice_agent_id', voiceAgentId);
       }
 
       const { data, error } = await query;

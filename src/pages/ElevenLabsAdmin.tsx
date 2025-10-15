@@ -116,12 +116,12 @@ const ElevenLabsAdmin = () => {
   const handleSyncConversations = () => {
     if (selectedAgent === 'all') {
       voiceAgents?.forEach(agent => {
-        syncConversations(agent.agent_id);
+        syncConversations(agent.elevenlabs_agent_id);
       });
     } else {
-      const agent = voiceAgents?.find(a => a.organization_id === selectedAgent);
+      const agent = voiceAgents?.find(a => a.id === selectedAgent);
       if (agent) {
-        syncConversations(agent.agent_id);
+        syncConversations(agent.elevenlabs_agent_id);
       }
     }
   };
@@ -199,7 +199,7 @@ const ElevenLabsAdmin = () => {
                   <SelectContent>
                     <SelectItem value="all">All Agents</SelectItem>
                     {voiceAgents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.organization_id}>
+                      <SelectItem key={agent.id} value={agent.id}>
                         {agent.agent_name}
                       </SelectItem>
                     ))}
