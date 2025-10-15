@@ -24,24 +24,14 @@ const AppSidebar = () => {
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
   // Main standalone items
   const mainItems = [
-    // Analytics group items
     ...(userRole === 'super_admin' || userRole === 'admin' ? [{
       path: '/dashboard',
-      label: 'Admin Dashboard',
-      icon: Settings
+      label: 'Dashboard',
+      icon: LayoutDashboard
     }] : [])
   ];
 
   const navigationItems = [{
-    group: "Campaigns",
-    items: [
-      {
-        path: '/admin/job-groups',
-        label: 'Job Groups',
-        icon: BriefcaseIcon
-      }
-    ]
-  }, {
     group: "Recruitment", 
     items: [
       {
@@ -76,18 +66,17 @@ const AppSidebar = () => {
       }] : [])
     ]
   }, {
+    group: "Campaigns",
+    items: [
+      {
+        path: '/admin/job-groups',
+        label: 'Job Groups',
+        icon: BriefcaseIcon
+      }
+    ]
+  }, {
     group: "Management",
     items: [
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/media',
-        label: 'Media',
-        icon: FileImage
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/organizations',
-        label: 'Organizations',
-        icon: Building
-       }] : []),
       {
         path: '/admin/publishers',
         label: 'Publishers',
@@ -98,11 +87,20 @@ const AppSidebar = () => {
         label: 'ATS Integrations',
         icon: Share2
       }] : []),
-      {
-        path: '/dashboard?tab=features',
-        label: 'Features',
-        icon: Zap
-      },
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/organizations',
+        label: 'Organizations',
+        icon: Building
+       }] : []),
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/media',
+        label: 'Media',
+        icon: FileImage
+      }] : [])
+    ]
+  }, {
+    group: "AI & Analytics",
+    items: [
       {
         path: '/admin/ai-tools',
         label: 'AI Tools',
@@ -114,38 +112,33 @@ const AppSidebar = () => {
         icon: BarChart3
       },
       {
-        path: '/admin/ai-settings',
-        label: 'AI Settings',
-        icon: Settings
-      },
+        path: '/admin/ai-impact',
+        label: 'AI Impact',
+        icon: Zap
+      }
     ]
-      }, {
+  }, {
     group: "Settings",
     items: [
       {
-        path: '/dashboard?tab=branding',
-        label: 'Branding',
-        icon: Palette
-      },
-      {
-        path: '/dashboard?tab=users',
-        label: 'Users',
-        icon: UserCog
+        path: '/admin/ai-settings',
+        label: 'AI Settings',
+        icon: Settings
       },
       {
         path: '/admin/privacy-controls',
         label: 'Privacy Controls',
         icon: Shield
       },
-      {
-        path: '/admin/settings',
-        label: 'Settings',
-        icon: Settings
-      },
+      ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+        path: '/admin/webhook-management',
+        label: 'Webhooks',
+        icon: Share2
+      }] : []),
       ...(userRole === 'super_admin' ? [{
         path: '/admin/user-management',
         label: 'User Management',
-        icon: Users
+        icon: UserCog
       }] : []),
       ...(userRole === 'super_admin' ? [{
         path: '/admin/super-admin-feeds',
@@ -154,13 +147,8 @@ const AppSidebar = () => {
       }] : []),
       ...(userRole === 'super_admin' ? [{
         path: '/admin/hayes-data',
-        label: 'Hayes Data Population',
+        label: 'Hayes Data',
         icon: Users
-      }] : []),
-      ...(userRole === 'super_admin' || userRole === 'admin' ? [{
-        path: '/admin/webhook-management',
-        label: 'Webhook Management',
-        icon: Share2
       }] : [])
     ]
   }];
@@ -194,7 +182,12 @@ const AppSidebar = () => {
     return user.email.charAt(0).toUpperCase();
   };
   const regularGroups = navigationItems.filter(group => group.group === "Recruitment");
-  const accordionGroups = navigationItems.filter(group => group.group === "Campaigns" || group.group === "Management" || group.group === "Settings");
+  const accordionGroups = navigationItems.filter(group => 
+    group.group === "Campaigns" || 
+    group.group === "Management" || 
+    group.group === "AI & Analytics" || 
+    group.group === "Settings"
+  );
   
   // Auto-expand all accordion groups on /dashboard for desktop and tablet devices
   const shouldExpandAll = location.pathname === '/dashboard' && !isMobile;
