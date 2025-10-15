@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit } from 'lucide-react';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import { LLMModelSelect } from '@/features/elevenlabs';
 
 interface VoiceAgentDialogProps {
   agent?: any;
@@ -26,7 +27,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
   const [formData, setFormData] = useState({
     organization_id: '',
     agent_name: '',
-    agent_id: '',
+    elevenlabs_agent_id: '',
     description: '',
     llm_model: 'gpt-4o-mini',
     is_active: true
@@ -39,7 +40,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
       setFormData({
         organization_id: agent.organization_id || '',
         agent_name: agent.agent_name || '',
-        agent_id: agent.agent_id || '',
+        elevenlabs_agent_id: agent.elevenlabs_agent_id || '',
         description: agent.description || '',
         llm_model: agent.llm_model || 'gpt-4o-mini',
         is_active: agent.is_active ?? true
@@ -48,7 +49,7 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
       setFormData({
         organization_id: '',
         agent_name: '',
-        agent_id: '',
+        elevenlabs_agent_id: '',
         description: '',
         llm_model: 'gpt-4o-mini',
         is_active: true
@@ -124,12 +125,12 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="agent_id">ElevenLabs Agent ID</Label>
+            <Label htmlFor="elevenlabs_agent_id">ElevenLabs Agent ID</Label>
             <Input
-              id="agent_id"
+              id="elevenlabs_agent_id"
               placeholder="agent_xxxxxxxxxxxxxxxxxxxxxxxxx"
-              value={formData.agent_id}
-              onChange={(e) => setFormData({ ...formData, agent_id: e.target.value })}
+              value={formData.elevenlabs_agent_id}
+              onChange={(e) => setFormData({ ...formData, elevenlabs_agent_id: e.target.value })}
               required
             />
             <p className="text-xs text-muted-foreground">
@@ -148,35 +149,10 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="llm_model">LLM Model</Label>
-            <Select
-              value={formData.llm_model}
-              onValueChange={(value) => setFormData({ ...formData, llm_model: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select LLM model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-5-2025-08-07">GPT-5 (Latest Flagship)</SelectItem>
-                <SelectItem value="gpt-5-mini-2025-08-07">GPT-5 Mini (Fast & Efficient)</SelectItem>
-                <SelectItem value="gpt-5-nano-2025-08-07">GPT-5 Nano (Fastest)</SelectItem>
-                <SelectItem value="gpt-4.1-2025-04-14">GPT-4.1 (Reliable)</SelectItem>
-                <SelectItem value="o3-2025-04-16">O3 (Reasoning)</SelectItem>
-                <SelectItem value="o4-mini-2025-04-16">O4 Mini (Fast Reasoning)</SelectItem>
-                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Legacy)</SelectItem>
-                <SelectItem value="gpt-4o">GPT-4o (Legacy Vision)</SelectItem>
-                <SelectItem value="claude-sonnet-4-5">Claude Sonnet 4.5</SelectItem>
-                <SelectItem value="claude-opus-4-1-20250805">Claude Opus 4.1</SelectItem>
-                <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4</SelectItem>
-                <SelectItem value="grok-beta">Grok (Beta)</SelectItem>
-                <SelectItem value="grok-2-latest">Grok 2 (Latest)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Choose the AI model powering your voice agent's responses
-            </p>
-          </div>
+          <LLMModelSelect
+            value={formData.llm_model}
+            onValueChange={(value) => setFormData({ ...formData, llm_model: value })}
+          />
 
           <div className="flex items-center space-x-2">
             <Switch

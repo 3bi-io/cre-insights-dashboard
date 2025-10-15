@@ -2,39 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-interface VoiceAgent {
-  id: string;
-  organization_id: string;
-  agent_name: string;
-  agent_id: string;
-  elevenlabs_agent_id: string;
-  description: string | null;
-  is_active: boolean;
-  llm_model?: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-  organizations?: {
-    name: string;
-    slug: string;
-    logo_url?: string;
-  };
-}
-
-interface CreateVoiceAgentData {
-  organization_id: string;
-  agent_name: string;
-  agent_id: string;
-  elevenlabs_agent_id: string;
-  description?: string;
-  is_active?: boolean;
-  llm_model?: string;
-}
-
-interface UpdateVoiceAgentData extends Partial<CreateVoiceAgentData> {
-  id: string;
-}
+import { VoiceAgent, CreateVoiceAgentData, UpdateVoiceAgentData } from '@/features/elevenlabs';
 
 export const useVoiceAgents = () => {
   const { toast } = useToast();

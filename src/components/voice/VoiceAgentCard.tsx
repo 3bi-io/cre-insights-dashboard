@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useConversation } from '@11labs/react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,22 +7,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { 
   Phone, 
   PhoneOff, 
-  Mic, 
-  Volume2, 
   MoreVertical, 
   Edit, 
   Trash2, 
-  Building,
-  Play,
-  Pause
+  Building
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import VoiceAgentDialog from './VoiceAgentDialog';
-import { logger } from '@/services/loggerService';
+import { useVoiceAgentConnection, VoiceConnectionStatus, VoiceAgent } from '@/features/elevenlabs';
 
 interface VoiceAgentCardProps {
-  agent: any;
+  agent: VoiceAgent;
   onUpdate: (data: any) => void;
   onDelete: (id: string) => void;
   isUpdating?: boolean;
@@ -37,32 +31,22 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
   isUpdating = false,
   isDeleting = false
 }) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const conversation = useConversation({
+  const { isConnected, isConnecting, isSpeaking, connect, disconnect } = useVoiceAgentConnection({
     onConnect: () => {
-      logger.info('Connected to voice agent', { agentName: agent.agent_name }, 'VoiceAgent');
-      setIsConnected(true);
       toast({
         title: "Connected",
         description: `Connected to ${agent.agent_name}!`
       });
     },
     onDisconnect: () => {
-      logger.info('Disconnected from voice agent', { agentName: agent.agent_name }, 'VoiceAgent');
-      setIsConnected(false);
       toast({
         title: "Disconnected",
         description: `Disconnected from ${agent.agent_name}.`
       });
     },
-    onMessage: message => {
-      logger.debug('Voice agent message received', { agentName: agent.agent_name }, 'VoiceAgent');
-    },
-    onError: error => {
-      logger.error('Voice agent error', { agentName: agent.agent_name, error }, 'VoiceAgent');
+    onError: () => {
       toast({
         title: "Error",
         description: `${agent.agent_name} encountered an error. Please try again.`,
@@ -73,61 +57,17 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
 
   const handleStartConversation = async () => {
     try {
-      // Request microphone access first
-      logger.debug('Requesting microphone access', undefined, 'VoiceAgent');
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      logger.debug('Microphone access granted', undefined, 'VoiceAgent');
-
-      // Get signed URL from our edge function
-      logger.debug('Requesting signed URL', { agentId: agent.agent_id }, 'VoiceAgent');
-      const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: { agentId: agent.agent_id }
-      });
-
-      if (error) {
-        logger.error('Supabase function error', error, 'VoiceAgent');
-        throw new Error(error.message || `Supabase function error: ${JSON.stringify(error)}`);
-      }
-
-      if (!data?.success || !data?.signedUrl) {
-        throw new Error(data?.error || 'No signed URL received from edge function');
-      }
-
-      // Store the signed URL and start conversation
-      setSignedUrl(data.signedUrl);
-      logger.info('Starting conversation', undefined, 'VoiceAgent');
-
-      const conversationId = await conversation.startSession({
-        signedUrl: data.signedUrl
-      });
-      logger.info('Conversation started', { conversationId }, 'VoiceAgent');
+      await connect(agent.elevenlabs_agent_id);
     } catch (error) {
-      logger.error('Failed to start conversation', error, 'VoiceAgent');
-      
-      let errorMessage = "Failed to connect to voice agent.";
-      const errorString = error?.message || error?.toString() || 'Unknown error';
-      
-      if (errorString.includes('Agent ID')) {
-        errorMessage = "Invalid Agent ID. Please check the ElevenLabs Agent ID.";
-      } else if (errorString.includes('API key')) {
-        errorMessage = "ElevenLabs API key not configured properly.";
-      } else if (errorString.includes('getUserMedia')) {
-        errorMessage = "Microphone access is required. Please allow microphone permissions.";
-      }
-      
-      toast({
-        title: "Connection Failed",
-        description: `${errorMessage} Error: ${errorString}`,
-        variant: "destructive"
-      });
+      // Error already handled by hook
     }
   };
 
   const handleEndConversation = async () => {
     try {
-      await conversation.endSession();
+      await disconnect();
     } catch (error) {
-      logger.error('Failed to end conversation', error, 'VoiceAgent');
+      // Error already handled
     }
   };
 
@@ -201,7 +141,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
 
         <div className="space-y-1 text-xs text-muted-foreground">
           <div>
-            Agent ID: <code className="bg-muted px-1 rounded">{agent.agent_id}</code>
+            Agent ID: <code className="bg-muted px-1 rounded text-xs">{agent.elevenlabs_agent_id}</code>
           </div>
           {agent.llm_model && (
             <div>
@@ -211,12 +151,10 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
         </div>
 
         {/* Connection Status */}
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
-          <span className="text-sm">
-            {isConnected ? 'Connected' : 'Not connected'}
-          </span>
-        </div>
+        <VoiceConnectionStatus 
+          isConnected={isConnected} 
+          isSpeaking={isSpeaking}
+        />
 
         {/* Controls */}
         <div className="flex gap-2">
@@ -224,10 +162,10 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
             <Button 
               onClick={handleStartConversation} 
               className="flex-1"
-              disabled={!agent.is_active}
+              disabled={!agent.is_active || isConnecting}
             >
               <Phone className="w-4 h-4 mr-2" />
-              Connect
+              {isConnecting ? 'Connecting...' : 'Connect'}
             </Button>
           ) : (
             <Button 
@@ -240,25 +178,6 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
             </Button>
           )}
         </div>
-
-        {/* Voice Status when connected */}
-        {isConnected && (
-          <Alert>
-            <div className="flex items-center gap-2">
-              {conversation.isSpeaking ? (
-                <>
-                  <Volume2 className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm text-blue-500">Agent is speaking...</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-green-500">Listening...</span>
-                </>
-              )}
-            </div>
-          </Alert>
-        )}
 
         {!agent.is_active && (
           <Alert>
