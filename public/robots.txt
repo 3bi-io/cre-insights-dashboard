@@ -1,8 +1,38 @@
+# robots.txt for ATS.me
+# https://ats.me/robots.txt
+
+User-agent: *
+Allow: /
+Allow: /auth
+Allow: /dashboard
+Allow: /jobs
+Allow: /applications
+Allow: /platforms
+Allow: /ai-tools
+
+# Disallow admin and private areas
+Disallow: /admin
+Disallow: /api/
+Disallow: /settings
+
+# Sitemap
+Sitemap: https://ats.me/sitemap.xml
+
+# Crawl-delay for all bots
+Crawl-delay: 1
+
+# Specific bot rules
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
@@ -10,5 +40,12 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
