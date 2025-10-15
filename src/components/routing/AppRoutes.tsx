@@ -32,6 +32,7 @@ const AIAnalytics = React.lazy(() => import("@/features/ai-analytics/pages/AIAna
 const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
 const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ default: m.AIToolsPage })));
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
+const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
@@ -125,6 +126,7 @@ const AppRoutes: React.FC = () => {
         <Route path="ai-tools" element={<ProtectedRouteWrapper><AITools /></ProtectedRouteWrapper>} />
         <Route path="privacy-controls" element={<ProtectedRouteWrapper><PrivacyControls /></ProtectedRouteWrapper>} />
         <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
+        <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="ai-settings" element={<ProtectedRouteWrapper><AIPlatformSettings /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />

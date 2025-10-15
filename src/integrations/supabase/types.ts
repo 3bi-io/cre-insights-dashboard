@@ -1072,6 +1072,151 @@ export type Database = {
           },
         ]
       }
+      elevenlabs_audio: {
+        Row: {
+          audio_url: string
+          conversation_id: string
+          created_at: string | null
+          duration_seconds: number | null
+          file_size_bytes: number | null
+          format: string | null
+          id: string
+          storage_path: string | null
+        }
+        Insert: {
+          audio_url: string
+          conversation_id: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          format?: string | null
+          id?: string
+          storage_path?: string | null
+        }
+        Update: {
+          audio_url?: string
+          conversation_id?: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
+          format?: string | null
+          id?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elevenlabs_audio_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "elevenlabs_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elevenlabs_conversations: {
+        Row: {
+          agent_id: string
+          conversation_id: string
+          created_at: string | null
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+          voice_agent_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          conversation_id: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          voice_agent_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          conversation_id?: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          voice_agent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elevenlabs_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "elevenlabs_conversations_voice_agent_id_fkey"
+            columns: ["voice_agent_id"]
+            isOneToOne: false
+            referencedRelation: "voice_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      elevenlabs_transcripts: {
+        Row: {
+          confidence_score: number | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          sequence_number: number
+          speaker: string
+          timestamp: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          sequence_number: number
+          speaker: string
+          timestamp?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          sequence_number?: number
+          speaker?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elevenlabs_transcripts_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "elevenlabs_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_categories: {
         Row: {
           created_at: string

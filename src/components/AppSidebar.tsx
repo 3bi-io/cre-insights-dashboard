@@ -68,6 +68,11 @@ const AppSidebar = () => {
         path: '/admin/voice-agent',
         label: 'Voice Agent',
         icon: Phone
+      }] : []),
+      ...(hasVoiceAgent() && (userRole === 'super_admin' || userRole === 'admin') ? [{
+        path: '/admin/elevenlabs-admin',
+        label: 'ElevenLabs Admin',
+        icon: MessageSquare
       }] : [])
     ]
   }, {
