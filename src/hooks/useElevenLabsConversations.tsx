@@ -59,7 +59,6 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
             )
           )
         `)
-        .eq('status', 'completed')
         .order('started_at', { ascending: false });
 
       if (voiceAgentId) {
