@@ -3,9 +3,6 @@ project_id = "auwhcdpppldjlcaxzsme"
 [functions.fetch-feeds]
 verify_jwt = true
 
-[functions.import-applications-from-feed]
-verify_jwt = true
-
 [functions.job-feed-xml]
 verify_jwt = false
 

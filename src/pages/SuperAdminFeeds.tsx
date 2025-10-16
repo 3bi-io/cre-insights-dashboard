@@ -226,79 +226,47 @@ const SuperAdminFeeds = () => {
         processedFeeds = [apiData];
       }
       
-      // Handle both job listings and applications
       const jobListings = processedFeeds.filter(feed => feed.type === 'job_listing');
-      const applications = processedFeeds.filter(feed => feed.type === 'application');
       
-      const feedItems = jobListings.length > 0 ? jobListings : applications;
-      const feedType = jobListings.length > 0 ? 'job listings' : 'applications';
-      
-      setFeeds(feedItems);
+      setFeeds(jobListings);
       
       toast({
         title: "Feed data loaded",
-        description: `Found ${feedItems.length} ${feedType} from ${feedSource === 'cdl_jobcast' ? userParam : 'CR England'}`,
+        description: `Found ${jobListings.length} job listings from ${feedSource === 'cdl_jobcast' ? userParam : 'CR England'}`,
       });
 
-      // Auto-import if not selective
-      if (!selectiveImport && feedItems.length > 0 && feedSource === 'cdl_jobcast') {
+      if (!selectiveImport && jobListings.length > 0 && feedSource === 'cdl_jobcast') {
         setImporting(true);
         try {
-          const hayesOrgId = '84214b48-7b51-45bc-ad7f-723bcf50466c';
-          
-          if (applications.length > 0) {
-            // Import applications
-            const { data: importData, error: importError } = await supabase.functions.invoke('import-applications-from-feed', {
-              body: { 
-                applications: applications,
-                organizationId: hayesOrgId
-              }
-            });
-            
-            if (importError) {
-              throw new Error(`Import error: ${importError.message}`);
-            }
-            
-            if (!importData.success) {
-              throw new Error(importData.error || 'Failed to import applications');
-            }
-            
-            toast({
-              title: "Applications imported successfully",
-              description: `${importData.message}. Total: ${importData.total}, Imported: ${importData.imported}`,
-            });
-          } else if (jobListings.length > 0) {
-            // Import job listings
-            let feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(userParam)}`;
-            if (boardParam) {
-              feedUrl += `&board=${encodeURIComponent(boardParam)}`;
-            }
-
-            const { data: importData, error: importError } = await supabase.functions.invoke('import-jobs-from-feed', {
-              body: { 
-                feedUrl: feedUrl,
-                organizationId: hayesOrgId
-              }
-            });
-            
-            if (importError) {
-              throw new Error(`Import error: ${importError.message}`);
-            }
-            
-            if (!importData.success) {
-              throw new Error(importData.error || 'Failed to import jobs');
-            }
-            
-            toast({
-              title: "Jobs imported successfully",
-              description: `${importData.message}. Total: ${importData.total}, Imported: ${importData.imported}`,
-            });
+          let feedUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(userParam)}`;
+          if (boardParam) {
+            feedUrl += `&board=${encodeURIComponent(boardParam)}`;
           }
-        } catch (importErr) {
-          const errorMessage = importErr instanceof Error ? importErr.message : 'Failed to import';
-          console.error('Error importing:', importErr);
+
+          const { data: importData, error: importError } = await supabase.functions.invoke('import-jobs-from-feed', {
+            body: { 
+              feedUrl: feedUrl,
+              organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c'
+            }
+          });
+          
+          if (importError) {
+            throw new Error(`Import error: ${importError.message}`);
+          }
+          
+          if (!importData.success) {
+            throw new Error(importData.error || 'Failed to import jobs');
+          }
+          
           toast({
-            title: "Error importing",
+            title: "Jobs imported successfully",
+            description: `${importData.message}. Total: ${importData.total}, Imported: ${importData.imported}`,
+          });
+        } catch (importErr) {
+          const errorMessage = importErr instanceof Error ? importErr.message : 'Failed to import jobs';
+          console.error('Error importing jobs:', importErr);
+          toast({
+            title: "Error importing jobs",
             description: errorMessage,
             variant: "destructive",
           });
