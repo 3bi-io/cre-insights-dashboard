@@ -473,16 +473,16 @@ const Support = () => {
   return (
     <PageLayout 
       title="Support & Documentation" 
-      description="Comprehensive guide to using the ATS.me platform"
+      description="Comprehensive guide to using the ATS Intel platform"
       className="bg-background"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
         {/* Welcome Section */}
         <Card className="mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
           <CardHeader>
-            <CardTitle className="text-2xl">Welcome to ATS.me Support</CardTitle>
+            <CardTitle className="text-2xl">Welcome to ATS Intel Support</CardTitle>
             <CardDescription className="text-base">
-              This comprehensive guide covers all features and capabilities of the ATS.me platform. 
+              This comprehensive guide covers all features and capabilities of the ATS Intel platform. 
               Use the sections below to learn about each feature in detail.
             </CardDescription>
           </CardHeader>

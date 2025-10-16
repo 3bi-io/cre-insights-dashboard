@@ -46,7 +46,7 @@ const PrivacyPolicyPage = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Usage Information</h3>
                   <p className="text-muted-foreground">
-                    We automatically collect information about how you use ATS.me, including your 
+                    We automatically collect information about how you use ATS Intel, including your 
                     interactions with the platform, features used, and performance metrics to improve 
                     our services.
                   </p>
@@ -195,7 +195,7 @@ const PrivacyPolicyPage = () => {
                 </p>
                 <div className="space-y-2">
                   <p className="text-foreground font-medium">Email: privacy@ats.me</p>
-                  <p className="text-foreground font-medium">Address: ATS.me Privacy Office</p>
+                  <p className="text-foreground font-medium">Address: ATS Intel Privacy Office</p>
                 </div>
               </CardContent>
             </Card>

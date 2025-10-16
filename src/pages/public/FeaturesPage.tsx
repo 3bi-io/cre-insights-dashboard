@@ -167,7 +167,7 @@ const FeaturesPage = () => {
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Modern Recruiting</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Discover all the tools and capabilities that make ATS.me the most comprehensive 
+            Discover all the tools and capabilities that make ATS Intel the most comprehensive 
             applicant tracking system for forward-thinking organizations.
           </p>
           <Link to="/auth">
@@ -291,7 +291,7 @@ const FeaturesPage = () => {
             Experience All Features Risk-Free
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Get started and see how ATS.me can transform your hiring process.
+            Get started and see how ATS Intel can transform your hiring process.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">

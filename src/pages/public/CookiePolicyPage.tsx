@@ -36,7 +36,7 @@ const CookiePolicyPage = () => {
             <Alert>
               <Cookie className="h-4 w-4" />
               <AlertDescription>
-                This Cookie Policy explains how ATS.me uses cookies and similar technologies 
+                This Cookie Policy explains how ATS Intel uses cookies and similar technologies 
                 to recognize you when you visit our platform.
               </AlertDescription>
             </Alert>

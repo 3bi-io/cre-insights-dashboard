@@ -31,7 +31,7 @@ export const Brand: React.FC<BrandProps> = ({
         className
       )}
     >
-      ATS.me
+      ATS Intel
     </span>
   );
 

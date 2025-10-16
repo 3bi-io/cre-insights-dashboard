@@ -1,4 +1,4 @@
-# robots.txt for ATS.me
+# robots.txt for ATS Intel
 # https://ats.me/robots.txt
 
 User-agent: *
