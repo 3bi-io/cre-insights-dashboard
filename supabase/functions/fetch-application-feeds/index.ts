@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('Fetch feeds function called:', req.method, req.url);
+  console.log('Fetch application feeds function called:', req.method, req.url);
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    let user: string = '*'; // Default to '*'
+    let user: string = '*';
     let board: string | null = null;
     
     // Handle both GET and POST requests
@@ -37,7 +37,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('Fetching feeds for user:', user, 'board:', board);
+    console.log('Fetching application feeds for user:', user, 'board:', board);
 
     // Fetch feeds from the external API
     let feedsUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(user)}`;
@@ -67,7 +67,7 @@ serve(async (req) => {
           details: errorText
         }), 
         { 
-          status: 200, // Return 200 so frontend can handle the error
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -83,12 +83,11 @@ serve(async (req) => {
       const text = await response.text();
       console.log('Non-JSON response received:', text.substring(0, 500) + '...');
       
-      // Parse XML response for job listings
+      // Parse XML response for applications
       if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
         try {
-          // Extract jobs from XML
           const jobMatches = text.matchAll(/<job>(.*?)<\/job>/gs);
-          const feeds = [];
+          const applications = [];
           
           for (const match of jobMatches) {
             const jobXml = match[1];
@@ -104,34 +103,42 @@ serve(async (req) => {
               return simpleMatch ? simpleMatch[1].trim() : '';
             };
             
-            // Parse as job listing
-            const job = {
-              id: extractField('referencenumber') || extractField('id') || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              title: extractField('title') || extractField('job_title') || '',
-              description: extractField('description') || extractField('notes') || '',
-              company: extractField('company') || '',
-              location: extractField('city') ? `${extractField('city')}, ${extractField('state')}` : extractField('location') || '',
+            // Parse as application data
+            const application = {
+              id: extractField('referencenumber') || extractField('id') || `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              first_name: extractField('firstname') || extractField('first_name') || '',
+              last_name: extractField('lastname') || extractField('last_name') || '',
+              applicant_email: extractField('email') || extractField('applicant_email') || '',
+              phone: extractField('phone') || extractField('phone_number') || '',
               city: extractField('city') || '',
               state: extractField('state') || '',
-              url: extractField('url') || extractField('link') || '',
+              zip: extractField('zip') || extractField('zipcode') || '',
+              cdl: extractField('cdl') || extractField('cdl_class') || '',
+              exp: extractField('experience') || extractField('exp') || '',
+              age: extractField('age') || '',
+              education_level: extractField('education') || extractField('education_level') || '',
+              work_authorization: extractField('work_authorization') || '',
               source: extractField('source') || 'CDL Job Cast',
+              job_title: extractField('title') || extractField('job_title') || '',
+              company: extractField('company') || '',
               referencenumber: extractField('referencenumber') || extractField('id') || '',
-              date: extractField('date') || '',
-              status: 'active',
-              type: 'job_listing',
+              date: extractField('date') || extractField('applied_date') || '',
+              status: extractField('status') || 'pending',
+              notes: extractField('notes') || extractField('description') || '',
+              type: 'application',
               last_updated: new Date().toISOString()
             };
             
-            feeds.push(job);
+            applications.push(application);
           }
           
-          console.log(`Parsed ${feeds.length} job listings from XML feed`);
+          console.log(`Parsed ${applications.length} applications from XML feed`);
           data = { 
-            feeds, 
-            message: `Found ${feeds.length} job listings`,
+            feeds: applications, 
+            message: `Found ${applications.length} applications`,
             source: 'XML',
             parsed_at: new Date().toISOString(),
-            type: 'job_listings'
+            type: 'applications'
           };
           
         } catch (error) {
@@ -139,7 +146,6 @@ serve(async (req) => {
           data = { feeds: [], message: 'Failed to parse XML feed', error: error.message };
         }
       } else {
-        // Try to parse as JSON anyway
         try {
           data = JSON.parse(text);
         } catch {
@@ -148,7 +154,7 @@ serve(async (req) => {
       }
     }
     
-    console.log('Successfully fetched feeds:', JSON.stringify(data).substring(0, 500) + '...');
+    console.log('Successfully fetched application feeds:', JSON.stringify(data).substring(0, 500) + '...');
     
     return new Response(
       JSON.stringify({ success: true, data }), 
@@ -158,7 +164,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error('Error in fetch-feeds function:', error);
+    console.error('Error in fetch-application-feeds function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     return new Response(
@@ -168,7 +174,7 @@ serve(async (req) => {
         details: error instanceof Error ? error.stack : 'No stack trace available'
       }), 
       { 
-        status: 200, // Return 200 so frontend can handle the error
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
