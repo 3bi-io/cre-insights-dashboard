@@ -115,7 +115,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Dashboard Routes */}
       <Route path="/dashboard" element={<LayoutWrapper />}>
-        <Route index element={<ProtectedRouteWrapper><Dashboard /></ProtectedRouteWrapper>} />
+        <Route index element={<RouteWrapper><Dashboard /></RouteWrapper>} />
       </Route>
 
       {/* Admin Routes */}
