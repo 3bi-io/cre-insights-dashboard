@@ -137,7 +137,10 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
                       src={platform.logo} 
                       alt={`${platform.name} logo`}
                       className="w-8 h-8 rounded-full object-cover"
+                      width={32}
+                      height={32}
                       skeleton={false}
+                      priority={index < 3}
                     />
                     <div className="flex flex-col">
                       <span className="font-medium text-foreground">{platform.name}</span>
