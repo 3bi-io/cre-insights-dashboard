@@ -3,17 +3,32 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Play, Star, Search } from 'lucide-react';
+import { LazyImage } from '@/components/optimized/LazyImage';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero Image Background - Responsive for all devices */}
+      <div className="absolute inset-0 w-full h-full">
+        <LazyImage
+          src="/placeholder.svg"
+          alt="Hero background showcasing modern recruitment platform"
+          priority
+          className="w-full h-full object-cover object-center"
+          style={{ width: '100%', height: '100%' }}
+        />
+        {/* Overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/85"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
+      </div>
+
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+      <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)] z-[1]"></div>
       
       {/* Floating Elements */}
-      <div className="absolute top-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute top-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse z-[1]"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000 z-[1]"></div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
