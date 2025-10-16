@@ -73,87 +73,142 @@ serve(async (req) => {
     // Parse HTML to extract job listings
     const jobs = [];
     
-    // Extract job cards from the HTML
-    // Looking for patterns like job titles, locations, descriptions
-    const jobMatches = html.matchAll(/<div[^>]*class="[^"]*job-card[^"]*"[^>]*>(.*?)<\/div>/gis);
+    // Try to find JSON-LD structured data first (most reliable)
+    const jsonLdMatch = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (jsonLdMatch) {
+      try {
+        const jsonData = JSON.parse(jsonLdMatch[1]);
+        console.log('Found JSON-LD data:', jsonData);
+        
+        // Handle JobPosting schema
+        const jobPostings = Array.isArray(jsonData) ? jsonData : [jsonData];
+        for (const posting of jobPostings) {
+          if (posting['@type'] === 'JobPosting') {
+            jobs.push({
+              id: `crengland_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              title: posting.title || posting.name || 'CDL Truck Driver',
+              location: typeof posting.jobLocation === 'string' 
+                ? posting.jobLocation 
+                : posting.jobLocation?.address?.addressLocality || 'Multiple Locations',
+              description: posting.description?.substring(0, 500) || '',
+              company: 'C.R. England',
+              division: division || posting.hiringOrganization?.name || 'General',
+              type: 'job_listing',
+              source: 'crengland',
+              status: 'active',
+              category: 'Transportation',
+              salary: posting.baseSalary?.value || null,
+              url: posting.url || jobsUrl,
+              last_updated: new Date().toISOString()
+            });
+          }
+        }
+      } catch (e) {
+        console.log('Failed to parse JSON-LD:', e);
+      }
+    }
     
-    for (const match of jobMatches) {
-      const jobHtml = match[1];
+    // Try to extract from common job board patterns
+    if (jobs.length === 0) {
+      // Look for job listings in various common formats
+      const patterns = [
+        // Pattern 1: Job cards with data attributes
+        /<(?:div|article)[^>]*(?:data-job-id|data-job|job-card)[^>]*>([\s\S]*?)<\/(?:div|article)>/gi,
+        // Pattern 2: List items with job class
+        /<li[^>]*class="[^"]*job[^"]*"[^>]*>([\s\S]*?)<\/li>/gi,
+        // Pattern 3: Links to job details
+        /<a[^>]*href="[^"]*\/job[^"]*"[^>]*>([\s\S]*?)<\/a>/gi
+      ];
       
-      // Extract title
-      const titleMatch = jobHtml.match(/<h[23][^>]*>([^<]+)<\/h[23]>/i);
-      const title = titleMatch ? titleMatch[1].trim() : '';
-      
-      // Extract location
-      const locationMatch = jobHtml.match(/(?:location|city|state)[^>]*>([^<]+)<\//i);
-      const location = locationMatch ? locationMatch[1].trim() : '';
-      
-      // Extract description
-      const descMatch = jobHtml.match(/<p[^>]*>([^<]+)<\/p>/i);
-      const description = descMatch ? descMatch[1].trim() : '';
-      
-      if (title) {
+      for (const pattern of patterns) {
+        const matches = Array.from(html.matchAll(pattern));
+        console.log(`Pattern found ${matches.length} matches`);
+        
+        for (const match of matches) {
+          const jobHtml = match[1] || match[0];
+          
+          // Extract title - look for headings or strong emphasis
+          const titleMatch = jobHtml.match(/<(?:h[1-6]|strong|b)[^>]*>([^<]+)<\/(?:h[1-6]|strong|b)>/i) ||
+                           jobHtml.match(/title["\s:>]+([^<"]+)/i);
+          const title = titleMatch ? titleMatch[1].trim() : null;
+          
+          // Extract location
+          const locationMatch = jobHtml.match(/(?:location|city|address)["\s:>]*([^<"]+)/i) ||
+                              jobHtml.match(/(?:,\s*([A-Z]{2})|([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2}))/);
+          const location = locationMatch ? (locationMatch[1] || locationMatch[2] || locationMatch[0]).trim() : 'Various Locations';
+          
+          // Extract description
+          const descMatch = jobHtml.match(/<p[^>]*>([^<]+)<\/p>/i) ||
+                          jobHtml.match(/description["\s:>]+([^<"]{20,})/i);
+          const description = descMatch ? descMatch[1].trim().substring(0, 500) : '';
+          
+          if (title && title.length > 3 && !title.match(/^(Home|About|Contact|Apply)/i)) {
+            jobs.push({
+              id: `crengland_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              title: title.replace(/\s+/g, ' ').trim(),
+              location: location.replace(/\s+/g, ' ').trim(),
+              description: description.replace(/\s+/g, ' ').trim(),
+              company: 'C.R. England',
+              division: division || 'General',
+              type: 'job_listing',
+              source: 'crengland',
+              status: 'active',
+              category: 'Transportation',
+              url: jobsUrl,
+              last_updated: new Date().toISOString()
+            });
+          }
+        }
+        
+        if (jobs.length > 0) break; // Stop if we found jobs
+      }
+    }
+    
+    // Try to extract division-specific information
+    if (jobs.length === 0 && division) {
+      const divisionMatch = html.match(new RegExp(`${division}[^<]*<[^>]*>([^<]+)`, 'i'));
+      if (divisionMatch) {
         jobs.push({
-          id: `crengland_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          title,
-          location,
-          description,
+          id: `crengland_${division.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
+          title: `${division} Truck Driver`,
+          description: divisionMatch[1].trim().substring(0, 500),
           company: 'C.R. England',
-          division: division || 'General',
+          location: 'Multiple Locations Available',
+          division: division,
           type: 'job_listing',
           source: 'crengland',
           status: 'active',
-          category: division || 'Transportation',
+          category: 'Transportation',
           url: jobsUrl,
           last_updated: new Date().toISOString()
         });
       }
     }
     
-    // Fallback: Extract featured jobs from structured sections
+    // Fallback: Create sample jobs based on known divisions
     if (jobs.length === 0) {
-      const featuredMatches = html.matchAll(/Featured Jobs[\s\S]*?<h[23][^>]*>([^<]+)<\/h[23]>[\s\S]*?<div[^>]*>([^<]*(?:<[^>]+>[^<]*)*?)<\/div>/gi);
+      console.log('No jobs parsed from HTML, using fallback divisions');
+      const divisions = [
+        { name: 'Dedicated', desc: 'Consistent routes with the same customer, home weekly' },
+        { name: 'Over the Road', desc: 'Long-haul opportunities across all 48 states' },
+        { name: 'Intermodal', desc: 'Container hauling with rail integration' },
+        { name: 'Regional', desc: 'Regional routes with frequent home time' }
+      ];
       
-      for (const match of featuredMatches) {
-        const title = match[1]?.trim();
-        const contentBlock = match[2];
-        
-        if (title && title.length > 3) {
-          jobs.push({
-            id: `crengland_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            title,
-            description: contentBlock?.replace(/<[^>]+>/g, '').trim().substring(0, 500) || '',
-            company: 'C.R. England',
-            location: 'Various Locations',
-            division: division || 'General',
-            type: 'job_listing',
-            source: 'crengland',
-            status: 'active',
-            category: division || 'Transportation',
-            url: jobsUrl,
-            last_updated: new Date().toISOString()
-          });
-        }
-      }
-    }
-    
-    // Add sample divisions if no specific jobs found
-    if (jobs.length === 0) {
-      const divisions = ['Dedicated', 'Over the Road', 'Intermodal', 'Regional'];
-      divisions.forEach((div, index) => {
+      divisions.forEach((div) => {
         jobs.push({
-          id: `crengland_${div.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
-          title: `${div} Truck Driver`,
-          description: `Join our ${div} division with competitive pay and excellent benefits.`,
+          id: `crengland_${div.name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
+          title: `${div.name} Truck Driver`,
+          description: `${div.desc}. Competitive pay and excellent benefits package.`,
           company: 'C.R. England',
           location: 'Multiple Locations Available',
-          division: div,
+          division: div.name,
           type: 'job_listing',
           source: 'crengland',
           status: 'active',
           category: 'Transportation',
           jobtype: 'Full-time',
-          url: `https://crengland.com/jobboard/jobs?division=${div.toUpperCase().replace(/\s+/g, '_')}`,
+          url: `https://crengland.com/jobboard/jobs?division=${div.name.toUpperCase().replace(/\s+/g, '_')}`,
           last_updated: new Date().toISOString()
         });
       });
