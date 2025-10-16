@@ -1172,7 +1172,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
-          organization_id: string
+          organization_id: string | null
           phone: string | null
           state: string | null
           status: string
@@ -1188,7 +1188,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
-          organization_id?: string
+          organization_id?: string | null
           phone?: string | null
           state?: string | null
           status?: string
@@ -1204,7 +1204,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
-          organization_id?: string
+          organization_id?: string | null
           phone?: string | null
           state?: string | null
           status?: string
