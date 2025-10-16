@@ -7,38 +7,43 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, AlertCircle, Users, Download, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SuperAdminFeedImport } from '@/components/SuperAdminFeedImport';
+import { useOrganizations } from '@/features/admin/hooks/useOrganizationData';
 
 const HayesDataPopulation = () => {
   const { userRole } = useAuth();
   const { toast } = useToast();
+  const { organizations, isLoading: loadingOrgs } = useOrganizations();
   const [generatingApps, setGeneratingApps] = useState(false);
   const [importingJobs, setImportingJobs] = useState(false);
   const [appCount, setAppCount] = useState(100);
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('84214b48-7b51-45bc-ad7f-723bcf50466c');
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
-  const hayesOrgId = '84214b48-7b51-45bc-ad7f-723bcf50466c';
   const feedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter';
 
   const loadStats = async () => {
+    if (!selectedOrgId) return;
+    
     setLoadingStats(true);
     try {
       // Get job count
       const { count: jobCount } = await supabase
         .from('job_listings')
         .select('*', { count: 'exact', head: true })
-        .eq('organization_id', hayesOrgId)
+        .eq('organization_id', selectedOrgId)
         .eq('status', 'active');
 
       // Get applications with job listings joined
       const { data: applications, count: appCount } = await supabase
         .from('applications')
         .select('id, status, job_listing_id, job_listings!inner(organization_id)', { count: 'exact' })
-        .eq('job_listings.organization_id', hayesOrgId);
+        .eq('job_listings.organization_id', selectedOrgId);
 
       const statusBreakdown = applications?.reduce((acc: any, app: any) => {
         acc[app.status] = (acc[app.status] || 0) + 1;
@@ -58,10 +63,10 @@ const HayesDataPopulation = () => {
   };
 
   React.useEffect(() => {
-    if (userRole === 'super_admin') {
+    if (userRole === 'super_admin' && selectedOrgId) {
       loadStats();
     }
-  }, [userRole]);
+  }, [userRole, selectedOrgId]);
 
   const importJobs = async () => {
     setImportingJobs(true);
@@ -69,7 +74,7 @@ const HayesDataPopulation = () => {
       const { data, error } = await supabase.functions.invoke('import-jobs-from-feed', {
         body: {
           feedUrl,
-          organizationId: hayesOrgId
+          organizationId: selectedOrgId
         }
       });
 
@@ -99,7 +104,7 @@ const HayesDataPopulation = () => {
       const { data, error } = await supabase.functions.invoke('generate-hayes-applications', {
         body: {
           count: appCount,
-          organization_id: hayesOrgId
+          organization_id: selectedOrgId
         }
       });
 
@@ -259,19 +264,41 @@ const HayesDataPopulation = () => {
               </AlertDescription>
             </Alert>
 
-            <div className="space-y-2">
-              <Label htmlFor="appCount">Number of Applications to Generate</Label>
-              <Input
-                id="appCount"
-                type="number"
-                min="1"
-                max="500"
-                value={appCount}
-                onChange={(e) => setAppCount(parseInt(e.target.value) || 100)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Recommended: 50-200 applications for realistic data
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="orgSelect">Select Organization</Label>
+                <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                  <SelectTrigger id="orgSelect">
+                    <SelectValue placeholder="Select an organization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loadingOrgs ? (
+                      <SelectItem value="loading" disabled>Loading organizations...</SelectItem>
+                    ) : (
+                      organizations?.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="appCount">Number of Applications to Generate</Label>
+                <Input
+                  id="appCount"
+                  type="number"
+                  min="1"
+                  max="500"
+                  value={appCount}
+                  onChange={(e) => setAppCount(parseInt(e.target.value) || 100)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Recommended: 50-200 applications for realistic data
+                </p>
+              </div>
             </div>
 
             <Button 
