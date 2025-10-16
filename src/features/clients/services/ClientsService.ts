@@ -37,22 +37,10 @@ export class ClientsService {
 
   async getClients(filters?: ClientFilters): Promise<{ data: Client[]; error: string | null }> {
     try {
-      // Get demo organization ID to exclude
-      const { data: demoOrg } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('slug', 'acme')
-        .single();
-
       let query = supabase
         .from('clients')
         .select('*')
         .order('name');
-
-      // Exclude demo organization clients
-      if (demoOrg?.id) {
-        query = query.neq('organization_id', demoOrg.id);
-      }
 
       // Apply search filter
       if (filters?.search) {
