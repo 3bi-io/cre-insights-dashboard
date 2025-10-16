@@ -93,7 +93,7 @@ serve(async (req) => {
           for (const match of jobMatches) {
             const jobXml = match[1];
             
-            // Extract fields from each job XML
+            // Extract fields from each application/candidate XML
             const extractField = (field: string) => {
               const regex = new RegExp(`<${field}><!\\[CDATA\\[(.*?)\\]\\]><\/${field}>`, 'i');
               const cdataMatch = jobXml.match(regex);
@@ -105,39 +105,42 @@ serve(async (req) => {
               return simpleMatch ? simpleMatch[1].trim() : '';
             };
             
-            const job = {
-              id: extractField('referencenumber') || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              name: extractField('title') || 'Untitled Job',
-              title: extractField('title') || 'Untitled Job', 
-              description: extractField('description') || '',
+            // Parse as application data (candidates/applicants)
+            const application = {
+              id: extractField('referencenumber') || extractField('id') || `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              first_name: extractField('firstname') || extractField('first_name') || '',
+              last_name: extractField('lastname') || extractField('last_name') || '',
+              applicant_email: extractField('email') || extractField('applicant_email') || '',
+              phone: extractField('phone') || extractField('phone_number') || '',
+              city: extractField('city') || '',
+              state: extractField('state') || '',
+              zip: extractField('zip') || extractField('zipcode') || '',
+              cdl: extractField('cdl') || extractField('cdl_class') || '',
+              exp: extractField('experience') || extractField('exp') || '',
+              age: extractField('age') || '',
+              education_level: extractField('education') || extractField('education_level') || '',
+              work_authorization: extractField('work_authorization') || '',
+              source: extractField('source') || 'CDL Job Cast',
+              job_title: extractField('title') || extractField('job_title') || '',
               company: extractField('company') || '',
-              location: `${extractField('city')}, ${extractField('state')}`.replace(/^,\s*|,\s*$/g, '') || 'Location not specified',
-              city: extractField('city'),
-              state: extractField('state'),
-              country: extractField('country'),
-              salary: extractField('salary'),
-              jobtype: extractField('jobtype'),
-              category: extractField('category'),
-              url: extractField('url'),
-              phone: extractField('phone'),
-              experience: extractField('experience'),
-              education: extractField('education'),
-              date: extractField('date'),
-              referencenumber: extractField('referencenumber'),
-              status: 'active',
-              type: 'job_listing',
+              referencenumber: extractField('referencenumber') || extractField('id') || '',
+              date: extractField('date') || extractField('applied_date') || '',
+              status: extractField('status') || 'pending',
+              notes: extractField('notes') || extractField('description') || '',
+              type: 'application',
               last_updated: new Date().toISOString()
             };
             
-            feeds.push(job);
+            feeds.push(application);
           }
           
-          console.log(`Parsed ${feeds.length} jobs from XML feed`);
+          console.log(`Parsed ${feeds.length} applications from XML feed`);
           data = { 
             feeds, 
-            message: `Found ${feeds.length} job listings`,
+            message: `Found ${feeds.length} applications`,
             source: 'XML',
-            parsed_at: new Date().toISOString()
+            parsed_at: new Date().toISOString(),
+            type: 'applications'
           };
           
         } catch (error) {
