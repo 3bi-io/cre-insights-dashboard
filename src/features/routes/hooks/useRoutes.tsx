@@ -26,6 +26,13 @@ export const useRoutes = () => {
     queryFn: async (): Promise<Route[]> => {
       logger.debug('Fetching routes', { organizationId: organization?.id, userRole }, 'Routes');
       
+      // Get demo organization ID to exclude
+      const { data: demoOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', 'acme')
+        .single();
+      
       let query = supabase
         .from('job_listings')
         .select('city, state, dest_city, dest_state, organization_id')
@@ -33,6 +40,11 @@ export const useRoutes = () => {
         .not('state', 'is', null)
         .not('dest_city', 'is', null)
         .not('dest_state', 'is', null);
+
+      // Exclude demo organization routes
+      if (demoOrg?.id) {
+        query = query.neq('organization_id', demoOrg.id);
+      }
 
       // Apply organization filter for non-super-admins
       if (userRole !== 'super_admin' && organization?.id) {
