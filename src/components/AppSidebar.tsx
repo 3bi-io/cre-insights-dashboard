@@ -44,11 +44,11 @@ const AppSidebar = () => {
         label: 'Job Listings',
         icon: BriefcaseIcon
       },
-      {
+      ...(organization?.slug !== 'acme' ? [{
         path: '/admin/clients',
         label: 'Clients',
         icon: UserCheck
-      },
+      }] : []),
       {
         path: '/admin/routes',
         label: 'Routes',
