@@ -49,6 +49,7 @@ const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
 const HayesDataPopulation = React.lazy(() => import("@/pages/HayesDataPopulation"));
 const PrivacyControls = React.lazy(() => import("@/pages/PrivacyControls"));
+const Support = React.lazy(() => import("@/pages/Support"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 
 // Loading fallback component
@@ -146,6 +147,7 @@ const AppRoutes: React.FC = () => {
         <Route path="hayes-data" element={<ProtectedRouteWrapper><HayesDataPopulation /></ProtectedRouteWrapper>} />
         <Route path="meta-adset-report" element={<ProtectedRouteWrapper><MetaAdSetReportPage /></ProtectedRouteWrapper>} />
         <Route path="meta-spend-analytics" element={<ProtectedRouteWrapper><MetaSpendAnalytics /></ProtectedRouteWrapper>} />
+        <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
       </Route>
 
       {/* 404 Route */}
