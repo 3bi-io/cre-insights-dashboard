@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Play, Star, Search } from 'lucide-react';
+import heroPlatform from '@/assets/hero-platform.jpg';
 
 const HeroSection = () => {
   return (
@@ -77,6 +78,16 @@ const HeroSection = () => {
             <div className="text-sm">
               Trusted by Fortune 500 companies worldwide
             </div>
+          </div>
+
+          {/* Platform Preview Image */}
+          <div className="mt-16 relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent rounded-2xl blur-2xl"></div>
+            <img 
+              src={heroPlatform} 
+              alt="ATS.me Platform Dashboard showcasing AI-powered analytics and recruitment tools" 
+              className="relative rounded-2xl shadow-2xl w-full max-w-5xl mx-auto border border-border/50"
+            />
           </div>
         </div>
       </div>
