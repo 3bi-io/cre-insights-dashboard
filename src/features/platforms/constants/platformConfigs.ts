@@ -1,11 +1,9 @@
 import { PlatformConfig } from '../types';
-import googleJobsLogo from '@/assets/google-jobs-logo.png';
-import indeedLogo from '@/assets/indeed-logo.png';
 
 export const PLATFORM_CONFIGS: PlatformConfig[] = [
   {
     name: 'Google Jobs',
-    logo: googleJobsLogo,
+    logo: '/logos/google-jobs-logo.png',
     status: 'XML Feed Ready',
     description: 'Google Jobs XML Feed Integration',
     created: '7/29/2025',
@@ -13,7 +11,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   },
   {
     name: 'Indeed',
-    logo: indeedLogo,
+    logo: '/logos/indeed-logo.png',
     status: 'Indeed Ready',
     description: 'Indeed Reporting API',
     created: '6/12/2025',

@@ -3,8 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, ExternalLink } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import googleJobsLogo from '@/assets/google-jobs-logo.png';
-import indeedLogo from '@/assets/indeed-logo.png';
+import { LazyImage } from '@/components/optimized/LazyImage';
 
 interface Platform {
   id: string;
@@ -24,14 +23,14 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
   const availablePlatforms = [
     {
       name: 'Google Jobs',
-      logo: googleJobsLogo,
+      logo: '/logos/google-jobs-logo.png',
       status: 'XML Feed Ready',
       description: 'Google Jobs XML Feed Integration',
       created: '7/29/2025'
     },
     {
       name: 'Indeed',
-      logo: indeedLogo,
+      logo: '/logos/indeed-logo.png',
       status: 'Indeed Ready',
       description: 'Indeed Reporting API',
       created: '6/12/2025'
@@ -134,10 +133,11 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
               <tr key={index} className="border-b border-border hover:bg-muted/50 transition-colors">
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
-                    <img 
+                    <LazyImage 
                       src={platform.logo} 
-                      alt={platform.name} 
+                      alt={`${platform.name} logo`}
                       className="w-8 h-8 rounded-full object-cover"
+                      skeleton={false}
                     />
                     <div className="flex flex-col">
                       <span className="font-medium text-foreground">{platform.name}</span>
