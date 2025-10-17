@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useVoiceAgentConnection } from '@/features/elevenlabs';
 import { Mic, MicOff, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const DemoPage = () => {
   const { toast } = useToast();
+  const { organization } = useAuth();
   const [isTestRunning, setIsTestRunning] = useState(false);
+  const [agentId, setAgentId] = useState<string | null>(null);
+  const [isLoadingAgent, setIsLoadingAgent] = useState(true);
 
   const { 
     isConnected, 
@@ -43,14 +48,64 @@ const DemoPage = () => {
     }
   });
 
+  useEffect(() => {
+    const fetchVoiceAgent = async () => {
+      if (!organization?.id) {
+        setIsLoadingAgent(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('voice_agents')
+          .select('elevenlabs_agent_id')
+          .eq('organization_id', organization.id)
+          .eq('is_active', true)
+          .single();
+
+        if (error) {
+          console.error('[Demo] Error fetching voice agent:', error);
+          toast({
+            title: "Configuration Error",
+            description: "Could not load voice agent configuration.",
+            variant: "destructive",
+          });
+        } else if (data?.elevenlabs_agent_id) {
+          console.log('[Demo] Voice agent loaded:', data.elevenlabs_agent_id);
+          setAgentId(data.elevenlabs_agent_id);
+        } else {
+          toast({
+            title: "No Voice Agent",
+            description: "No active voice agent configured for this organization.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('[Demo] Failed to fetch voice agent:', error);
+      } finally {
+        setIsLoadingAgent(false);
+      }
+    };
+
+    fetchVoiceAgent();
+  }, [organization?.id, toast]);
+
   const handleStartTest = async () => {
+    if (!agentId) {
+      toast({
+        title: "No Agent Available",
+        description: "Voice agent configuration not loaded.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsTestRunning(true);
     try {
-      // Using the demo agent ID
-      const agentId = 'agent_1501k4dpkf2hfevs6eh5e7947a65';
+      console.log('[Demo] Starting voice test with agent:', agentId);
       await connect(agentId);
     } catch (error) {
-      console.error('Failed to start test:', error);
+      console.error('[Demo] Failed to start test:', error);
       setIsTestRunning(false);
     }
   };
@@ -110,11 +165,11 @@ const DemoPage = () => {
                 <Button
                   size="lg"
                   onClick={handleStartTest}
-                  disabled={isConnecting || isTestRunning}
+                  disabled={isConnecting || isTestRunning || isLoadingAgent || !agentId}
                   className="px-8 py-6 text-lg"
                 >
                   <Mic className="mr-2 h-5 w-5" />
-                  {isConnecting || isTestRunning ? 'Starting...' : 'Start Voice Test'}
+                  {isLoadingAgent ? 'Loading...' : isConnecting || isTestRunning ? 'Starting...' : 'Start Voice Test'}
                 </Button>
               ) : (
                 <Button
@@ -147,7 +202,7 @@ const DemoPage = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-muted-foreground">Agent ID:</span>
-                  <span className="ml-2 font-mono">agent_1501k4d...</span>
+                  <span className="ml-2 font-mono">{agentId ? agentId.substring(0, 15) + '...' : 'Loading...'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Status:</span>
