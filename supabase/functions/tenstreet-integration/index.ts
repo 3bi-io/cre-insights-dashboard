@@ -105,6 +105,9 @@ async function handleTestConnection(data: any) {
 
     // Build enhanced test XML with all supported fields
     const testXML = buildTestXML(config)
+    
+    console.log('Sending test XML to Tenstreet:')
+    console.log(testXML)
 
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
       method: 'POST',
@@ -115,6 +118,9 @@ async function handleTestConnection(data: any) {
     })
 
     const responseText = await response.text()
+    
+    console.log('Tenstreet response status:', response.status)
+    console.log('Tenstreet response:', responseText)
 
     return new Response(
       JSON.stringify({ 
