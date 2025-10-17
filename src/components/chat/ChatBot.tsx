@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useChatBotPreferences } from '@/hooks/useChatBotPreferences';
 
 interface Message {
   id: string;
@@ -27,6 +28,7 @@ interface ChatBotProps {
 }
 
 const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
+  const { preferences, isLoading: prefsLoading, savePreferences } = useChatBotPreferences();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
@@ -39,6 +41,15 @@ const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Load saved preferences
+  useEffect(() => {
+    if (!prefsLoading) {
+      setPosition(preferences.position);
+      setIsPinned(preferences.isPinned);
+      setIsMinimized(preferences.isMinimized);
+    }
+  }, [prefsLoading, preferences]);
 
   // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -64,13 +75,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
     const maxX = window.innerWidth - 384; // chat width
     const maxY = window.innerHeight - (isMinimized ? 64 : 600); // chat height
     
-    setPosition({
+    const newPosition = {
       x: Math.max(0, Math.min(newX, maxX)),
       y: Math.max(0, Math.min(newY, maxY))
-    });
+    };
+    
+    setPosition(newPosition);
   };
 
   const handleMouseUp = () => {
+    if (isDragging) {
+      // Save position when dragging ends
+      savePreferences({ position });
+    }
     setIsDragging(false);
   };
 
@@ -87,11 +104,21 @@ const ChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
   }, [isDragging, dragOffset]);
 
   const togglePin = () => {
-    setIsPinned(!isPinned);
-    if (!isPinned) {
+    const newPinned = !isPinned;
+    setIsPinned(newPinned);
+    if (newPinned) {
       // When pinning, ensure it's not minimized
       setIsMinimized(false);
+      savePreferences({ isPinned: newPinned, isMinimized: false });
+    } else {
+      savePreferences({ isPinned: newPinned });
     }
+  };
+
+  const toggleMinimize = () => {
+    const newMinimized = !isMinimized;
+    setIsMinimized(newMinimized);
+    savePreferences({ isMinimized: newMinimized });
   };
 
   const scrollToBottom = () => {
@@ -365,7 +392,7 @@ When analyzing data:
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsMinimized(!isMinimized)}
+            onClick={toggleMinimize}
             className="text-primary-foreground hover:bg-primary-foreground/20"
           >
             {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}

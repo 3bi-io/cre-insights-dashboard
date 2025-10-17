@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useChatBotPreferences } from '@/hooks/useChatBotPreferences';
 
 interface Message {
   id: string;
@@ -38,6 +39,7 @@ interface ChatBotProps {
 }
 
 const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) => {
+  const { preferences, isLoading: prefsLoading, savePreferences } = useChatBotPreferences();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
@@ -57,6 +59,15 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Load saved preferences
+  useEffect(() => {
+    if (!prefsLoading) {
+      setPosition(preferences.position);
+      setIsPinned(preferences.isPinned);
+      setIsMinimized(preferences.isMinimized);
+    }
+  }, [prefsLoading, preferences]);
 
   // Mobile-optimized dimensions
   const chatWidth = isMobile ? 'calc(100vw - 32px)' : '384px';
@@ -87,13 +98,19 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
     const maxX = window.innerWidth - (isMobile ? window.innerWidth - 32 : 384);
     const maxY = window.innerHeight - (isMinimized ? 64 : (isMobile ? window.innerHeight - 32 : 600));
     
-    setPosition({
+    const newPosition = {
       x: Math.max(16, Math.min(newX, maxX)),
       y: Math.max(16, Math.min(newY, maxY))
-    });
+    };
+    
+    setPosition(newPosition);
   };
 
   const handleMouseUp = () => {
+    if (isDragging) {
+      // Save position when dragging ends
+      savePreferences({ position });
+    }
     setIsDragging(false);
   };
 
@@ -123,13 +140,19 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
     const maxX = window.innerWidth - (isMobile ? window.innerWidth - 32 : 384);
     const maxY = window.innerHeight - (isMinimized ? 64 : (isMobile ? window.innerHeight - 32 : 600));
     
-    setPosition({
+    const newPosition = {
       x: Math.max(16, Math.min(newX, maxX)),
       y: Math.max(16, Math.min(newY, maxY))
-    });
+    };
+    
+    setPosition(newPosition);
   };
 
   const handleTouchEnd = () => {
+    if (isDragging) {
+      // Save position when dragging ends
+      savePreferences({ position });
+    }
     setIsDragging(false);
   };
 
