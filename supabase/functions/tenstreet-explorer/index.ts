@@ -2,12 +2,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+  'https://auwhcdpppldjlcaxzsme.supabase.co',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+function escapeXML(unsafe: string): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -99,8 +122,6 @@ serve(async (req) => {
     }
 
     console.log('Using credentials for organization:', profile.organization_id)
-    console.log('ClientId:', credentials.client_id)
-    console.log('CompanyId:', credentials.company_id)
     console.log('Mode:', credentials.mode)
 
     const { action, ...params } = await req.json()
@@ -261,13 +282,13 @@ async function getApplicantData(credentials: any, driverId: string) {
   const retrieveXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${credentials.client_id}</ClientId>
-        <Password>${credentials.password}</Password>
+        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
+        <Password>${escapeXML(credentials.password)}</Password>
         <Service>subject_retrieve</Service>
     </Authentication>
-    <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
-    <DriverId>${driverId}</DriverId>
+    <Mode>${escapeXML(credentials.mode)}</Mode>
+    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <DriverId>${escapeXML(driverId)}</DriverId>
 </TenstreetData>`
 
   return await makeRequest(retrieveXML, 'Get Applicant Data')
@@ -279,17 +300,17 @@ async function searchApplicants(credentials: any, criteria: any) {
   const searchXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${credentials.client_id}</ClientId>
-        <Password>${credentials.password}</Password>
+        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
+        <Password>${escapeXML(credentials.password)}</Password>
         <Service>subject_search</Service>
     </Authentication>
-    <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
+    <Mode>${escapeXML(credentials.mode)}</Mode>
+    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
     <SearchCriteria>
-        ${email ? `<Email>${email}</Email>` : ''}
-        ${phone ? `<Phone>${phone}</Phone>` : ''}
-        ${lastName ? `<LastName>${lastName}</LastName>` : ''}
-        ${dateRange ? `<DateRange>${dateRange}</DateRange>` : ''}
+        ${email ? `<Email>${escapeXML(email)}</Email>` : ''}
+        ${phone ? `<Phone>${escapeXML(phone)}</Phone>` : ''}
+        ${lastName ? `<LastName>${escapeXML(lastName)}</LastName>` : ''}
+        ${dateRange ? `<DateRange>${escapeXML(dateRange)}</DateRange>` : ''}
     </SearchCriteria>
 </TenstreetData>`
 
@@ -316,14 +337,14 @@ async function updateApplicantStatus(credentials: any, driverId: string, status:
   const updateXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${credentials.client_id}</ClientId>
-        <Password>${credentials.password}</Password>
+        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
+        <Password>${escapeXML(credentials.password)}</Password>
         <Service>status_update</Service>
     </Authentication>
-    <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
-    <DriverId>${driverId}</DriverId>
-    <Status>${status}</Status>
+    <Mode>${escapeXML(credentials.mode)}</Mode>
+    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <DriverId>${escapeXML(driverId)}</DriverId>
+    <Status>${escapeXML(status)}</Status>
 </TenstreetData>`
 
   return await makeRequest(updateXML, 'Update Applicant Status')
@@ -350,15 +371,15 @@ async function exportApplicants(credentials: any, dateRange: any) {
   const exportXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${credentials.client_id}</ClientId>
-        <Password>${credentials.password}</Password>
+        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
+        <Password>${escapeXML(credentials.password)}</Password>
         <Service>export_data</Service>
     </Authentication>
-    <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
+    <Mode>${escapeXML(credentials.mode)}</Mode>
+    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
     <ExportCriteria>
-        <StartDate>${startDate}</StartDate>
-        <EndDate>${endDate}</EndDate>
+        <StartDate>${escapeXML(startDate)}</StartDate>
+        <EndDate>${escapeXML(endDate)}</EndDate>
     </ExportCriteria>
 </TenstreetData>`
 

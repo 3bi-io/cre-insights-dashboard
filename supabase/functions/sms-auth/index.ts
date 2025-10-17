@@ -2,10 +2,52 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  'https://auwhcdpppldjlcaxzsme.supabase.co',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+function escapeXML(unsafe: string): string {
+  if (!unsafe) return '';
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function validatePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/[^\d]/g, '');
+  
+  // Must be 10 or 11 digits
+  if (digitsOnly.length < 10 || digitsOnly.length > 11) {
+    return { valid: false, error: 'Phone number must be 10 or 11 digits' };
+  }
+  
+  // If 11 digits, must start with 1
+  if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
+    return { valid: false, error: 'Invalid phone number format' };
+  }
+  
+  // Normalize to E.164 format
+  const normalized = digitsOnly.length === 10 
+    ? `+1${digitsOnly}` 
+    : `+${digitsOnly}`;
+  
+  return { valid: true, normalized };
+}
 
 interface SmsAuthRequest {
   action: 'send_magic_link' | 'verify_token' | 'make_call';
@@ -15,6 +57,9 @@ interface SmsAuthRequest {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -54,6 +99,14 @@ serve(async (req) => {
 });
 
 async function sendMagicLink(phoneNumber: string, supabase: any) {
+  // Validate phone number
+  const validation = validatePhoneNumber(phoneNumber);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid phone number');
+  }
+  
+  const normalizedPhone = validation.normalized!;
+  
   // Generate a 6-digit token
   const token = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
@@ -62,7 +115,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
   const { error: dbError } = await supabase
     .from('sms_magic_links')
     .insert({
-      phone_number: phoneNumber,
+      phone_number: normalizedPhone,
       token: token,
       expires_at: expiresAt.toISOString(),
       used: false,
@@ -95,7 +148,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
     },
     body: new URLSearchParams({
       From: twilioPhoneNumber,
-      To: phoneNumber,
+      To: normalizedPhone,
       Body: message,
     }),
   });
@@ -171,6 +224,14 @@ async function verifyToken(phoneNumber: string, token: string, supabase: any) {
 }
 
 async function makeCall(phoneNumber: string, message: string) {
+  // Validate phone number
+  const validation = validatePhoneNumber(phoneNumber);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Invalid phone number');
+  }
+  
+  const normalizedPhone = validation.normalized!;
+  
   const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
@@ -179,10 +240,13 @@ async function makeCall(phoneNumber: string, message: string) {
     throw new Error('Twilio credentials not configured');
   }
 
+  // Escape message to prevent TwiML injection
+  const safeMessage = escapeXML(message);
+  
   // Create TwiML for the call
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
-      <Say voice="alice">${message}</Say>
+      <Say voice="alice">${safeMessage}</Say>
     </Response>`;
 
   const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`;
@@ -196,7 +260,7 @@ async function makeCall(phoneNumber: string, message: string) {
     },
     body: new URLSearchParams({
       From: twilioPhoneNumber,
-      To: phoneNumber,
+      To: normalizedPhone,
       Twiml: twiml,
     }),
   });
