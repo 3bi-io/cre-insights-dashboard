@@ -239,19 +239,32 @@ function formatSSN(ssn: string): string {
   return ssn
 }
 
+// Helper function to escape XML special characters
+function escapeXML(str: string): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
 // Build comprehensive test XML
 function buildTestXML(config: any): string {
+  console.log('Building test XML with config:', JSON.stringify(config))
+  
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${config.clientId}</ClientId>
-        <Password>${config.password}</Password>
-        <Service>${config.service || 'subject_upload'}</Service>
+        <ClientId>${escapeXML(config.clientId)}</ClientId>
+        <Password><![CDATA[${config.password}]]></Password>
+        <Service>${escapeXML(config.service || 'subject_upload')}</Service>
     </Authentication>
-    <Mode>${config.mode || 'PROD'}</Mode>
-    <Source>${config.source}</Source>
-    <CompanyId>${config.companyId}</CompanyId>
-    <CompanyName>${config.companyName}</CompanyName>
+    <Mode>${escapeXML(config.mode || 'PROD')}</Mode>
+    <Source>${escapeXML(config.source)}</Source>
+    <CompanyId>${escapeXML(config.companyId)}</CompanyId>
+    <CompanyName>${escapeXML(config.companyName)}</CompanyName>
     <DriverId>TEST123456</DriverId>
     <PersonalData>
         <PersonName>
@@ -378,14 +391,14 @@ function buildTenstreetXML(applicationData: any, mappings: any, config: any): st
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${config.clientId}</ClientId>
-        <Password>${config.password}</Password>
-        <Service>${config.service || 'subject_upload'}</Service>
+        <ClientId>${escapeXML(config.clientId)}</ClientId>
+        <Password><![CDATA[${config.password}]]></Password>
+        <Service>${escapeXML(config.service || 'subject_upload')}</Service>
     </Authentication>
-    <Mode>${config.mode || 'PROD'}</Mode>
-    <Source>${config.source}</Source>
-    <CompanyId>${config.companyId}</CompanyId>
-    <CompanyName>${config.companyName}</CompanyName>${driverIdXML}${jobXML}${tagsXML}
+    <Mode>${escapeXML(config.mode || 'PROD')}</Mode>
+    <Source>${escapeXML(config.source)}</Source>
+    <CompanyId>${escapeXML(config.companyId)}</CompanyId>
+    <CompanyName>${escapeXML(config.companyName)}</CompanyName>${driverIdXML}${jobXML}${tagsXML}
     <PersonalData>${personNameXML}${postalAddressXML}${governmentIdXML}${dateOfBirthXML}${contactDataXML}
     </PersonalData>
     <ApplicationData>
