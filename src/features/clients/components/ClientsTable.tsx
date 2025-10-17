@@ -88,7 +88,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
   const handleViewJobs = (clientName: string) => {
     // Navigate to jobs page with client filter
-    navigate(`/dashboard/jobs?client=${encodeURIComponent(clientName)}`);
+    navigate(`/admin/jobs?client=${encodeURIComponent(clientName)}`);
   };
 
   const handleEditClient = (clientName: string) => {
