@@ -14,14 +14,6 @@ export type ApplicationStatus =
   | 'hired' 
   | 'rejected';
 
-export interface ApplicationFilters {
-  searchTerm: string;
-  categoryFilter: string;
-  sourceFilter: string;
-  organizationFilter?: string;
-  statusFilter?: ApplicationStatus | 'all';
-}
-
 export interface ApplicationStats {
   total: number;
   byStatus: Record<string, number>;

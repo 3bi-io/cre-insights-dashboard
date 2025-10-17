@@ -37,6 +37,9 @@ export type UpdateApplicationData = Partial<Omit<CreateApplicationData, 'organiz
   reviewed_at?: string;
 }>;
 
+// Re-export the service instance as default
+export { applicationsService as default };
+
 class ApplicationsService extends BaseFeatureService {
   private validation = createCrudValidation(
     applicationSchema,

@@ -1,12 +1,25 @@
-import { Application, ApplicationFilters } from '../types';
+import { Application } from '../types';
 import { getApplicantName, getApplicantEmail, getJobTitle, getApplicantCategory } from './applicationFormatters';
 
 /**
- * Filters applications based on multiple criteria
+ * Client-side filters interface (for legacy UI filtering)
+ * @deprecated Server-side filtering is preferred
+ */
+export interface ClientApplicationFilters {
+  searchTerm: string;
+  categoryFilter: string;
+  sourceFilter: string;
+  organizationFilter?: string;
+  statusFilter?: string;
+}
+
+/**
+ * Filters applications based on multiple criteria (client-side)
+ * @deprecated Use server-side filtering via ApplicationFilters from hooks instead
  */
 export const filterApplications = (
   applications: Application[], 
-  filters: ApplicationFilters
+  filters: ClientApplicationFilters
 ): Application[] => {
   const {
     searchTerm,

@@ -7,7 +7,7 @@ import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useOrganizationData } from '../hooks/useOrganizationData';
-import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
+import { getStatusCounts, getCategoryCounts, getApplicantCategory } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -57,7 +57,7 @@ const ApplicationsPage = () => {
   } = useApplicationDialogs();
 
   const {
-    applications,
+    applications: serverFilteredApplications,
     loading,
     error,
     totalCount,
@@ -80,10 +80,30 @@ const ApplicationsPage = () => {
     }
   });
 
+  // Client-side filtering for category and source (not database fields)
+  const applications = React.useMemo(() => {
+    if (!serverFilteredApplications) return [];
+    
+    return serverFilteredApplications.filter(app => {
+      // Category filter
+      if (categoryFilter !== 'all') {
+        const category = getApplicantCategory(app);
+        if (category.code !== categoryFilter) return false;
+      }
+      
+      // Source filter
+      if (sourceFilter !== 'all') {
+        const source = app.source || 'Other';
+        if (source !== sourceFilter) return false;
+      }
+      
+      return true;
+    });
+  }, [serverFilteredApplications, categoryFilter, sourceFilter]);
+
   const downloadApplicationsPDF = async () => {
     try {
-      const filteredApps = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
-      await generateApplicationsPDF(filteredApps);
+      await generateApplicationsPDF(applications || []);
       toast({
         title: "PDF Downloaded",
         description: "Applications report has been downloaded successfully",
@@ -98,14 +118,13 @@ const ApplicationsPage = () => {
     }
   };
 
-  const filteredApplications = filterApplications(applications || [], searchTerm, categoryFilter, sourceFilter);
+  // Calculate counts from applications (server-side filtered)
   const statusCounts = getStatusCounts(applications || []);
   const categoryCounts = getCategoryCounts(applications || []);
 
   // Debug logging
   logger.debug('Applications page state', {
     applicationsCount: applications?.length || 0,
-    filteredCount: filteredApplications?.length || 0,
     userRole,
     isAdmin,
     isOrgAdmin,
@@ -205,8 +224,8 @@ const ApplicationsPage = () => {
           </div>
 
           <div className="space-y-4">
-            {filteredApplications.length > 0 ? (
-              filteredApplications.map((application, index) => (
+            {applications && applications.length > 0 ? (
+              applications.map((application, index) => (
                 <div 
                   key={application.id || index}
                   className="animate-fade-in"
@@ -242,7 +261,7 @@ const ApplicationsPage = () => {
             )}
           </div>
 
-          {hasMore && !loading && filteredApplications.length > 0 && (
+          {hasMore && !loading && applications && applications.length > 0 && (
             <div className="flex justify-center py-6 animate-fade-in">
               <Button 
                 onClick={loadMore}
