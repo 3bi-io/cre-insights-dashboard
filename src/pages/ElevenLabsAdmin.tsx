@@ -43,6 +43,7 @@ const ElevenLabsAdmin = () => {
   const {
     conversations: allConversations,
     loadingConversations,
+    conversationsError,
     syncConversations,
     isSyncing,
     downloadAudio,
@@ -277,6 +278,20 @@ const ElevenLabsAdmin = () => {
                 {loadingConversations ? (
                   <div className="text-center py-8 text-muted-foreground">
                     Loading conversations...
+                  </div>
+                ) : conversationsError ? (
+                  <div className="text-center py-8">
+                    <Alert variant="destructive">
+                      <AlertDescription>
+                        Failed to load conversations. Please check your permissions and try again.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                ) : filteredConversations.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No conversations found</p>
+                    <p className="text-sm mt-2">Try syncing conversations or adjusting your filters</p>
                   </div>
                 ) : (
                   <ConversationHistoryTable

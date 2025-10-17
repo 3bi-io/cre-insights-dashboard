@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Conversation {
   id: string;
@@ -44,11 +45,14 @@ interface Audio {
 export const useElevenLabsConversations = (voiceAgentId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { session, userRole } = useAuth();
 
   // Fetch conversations with transcript counts
-  const { data: conversations, isLoading: loadingConversations } = useQuery({
+  const { data: conversations, isLoading: loadingConversations, error: conversationsError } = useQuery({
     queryKey: ['elevenlabs-conversations', voiceAgentId],
+    enabled: !!session && (userRole === 'super_admin' || userRole === 'admin'),
     queryFn: async () => {
+      console.log('Fetching ElevenLabs conversations for agent:', voiceAgentId || 'all');
       let query = supabase
         .from('elevenlabs_conversations')
         .select(`
@@ -68,7 +72,12 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
 
       const { data: conversationsData, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        throw error;
+      }
+      
+      console.log('Fetched conversations:', conversationsData?.length || 0);
       
       // Fetch transcript counts for each conversation
       if (conversationsData && conversationsData.length > 0) {
@@ -208,6 +217,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
   return {
     conversations,
     loadingConversations,
+    conversationsError,
     syncConversations: syncConversationsMutation.mutate,
     isSyncing: syncConversationsMutation.isPending,
     fetchTranscript,
