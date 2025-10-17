@@ -54,6 +54,11 @@ const AppSidebar = () => {
         label: 'Routes',
         icon: MapPin
       },
+      ...(organization?.slug === 'acme' ? [{
+        path: '/demo',
+        label: 'Voice Agent',
+        icon: Phone
+      }] : []),
       ...(hasVoiceAgent() ? [{
         path: '/admin/voice-agent',
         label: 'Voice Agent',
