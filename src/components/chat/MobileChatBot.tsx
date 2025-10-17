@@ -554,10 +554,21 @@ Your role:
       });
       return;
     }
-    setIsPinned(!isPinned);
-    if (!isPinned) {
+    const newPinned = !isPinned;
+    setIsPinned(newPinned);
+    if (newPinned) {
+      // When pinning, ensure it's not minimized
       setIsMinimized(false);
+      savePreferences({ isPinned: newPinned, isMinimized: false });
+    } else {
+      savePreferences({ isPinned: newPinned });
     }
+  };
+
+  const toggleMinimize = () => {
+    const newMinimized = !isMinimized;
+    setIsMinimized(newMinimized);
+    savePreferences({ isMinimized: newMinimized });
   };
 
   // Mobile-specific positioning
@@ -573,6 +584,17 @@ Your role:
     width: chatWidth,
     height: chatHeight
   };
+
+  // Side panel styling when pinned
+  const sidePanelStyle = isPinned ? {
+    position: 'fixed' as const,
+    right: 0,
+    top: 0,
+    height: '100vh',
+    width: isMinimized ? '64px' : (isMobile ? '85vw' : '400px'),
+    borderRadius: 0,
+    borderRight: 'none',
+  } : {};
 
   if (!isOpen) {
     return (
@@ -590,32 +612,33 @@ Your role:
     <Card 
       ref={chatRef}
       className={`bg-background border shadow-xl z-50 transition-all duration-300 ${
-        isPinned && !isMobile
-          ? `${isDragging ? 'cursor-move' : ''}`
-          : `fixed ${isMobile ? 'bottom-4 right-4 left-4' : 'bottom-6 right-6'}`
+        isPinned
+          ? `h-screen rounded-none border-r-0 ${isMinimized ? 'w-16' : (isMobile ? 'w-[85vw]' : 'w-[400px]')}` 
+          : `fixed ${isMobile ? 'bottom-4 right-4 left-4' : 'bottom-6 right-6 w-96'} ${isMinimized ? 'h-16' : (isMobile ? 'h-[85vh]' : 'h-[600px]')} rounded-lg`
       }`}
-      style={chatStyle}
+      style={sidePanelStyle}
     >
       {/* Header */}
       <div 
         className={`flex items-center justify-between p-4 border-b bg-primary text-primary-foreground ${
-          isPinned && !isMobile ? 'cursor-move' : ''
+          isPinned && !isMobile ? '' : 'cursor-move'
         }`}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onMouseDown={!isPinned ? handleMouseDown : undefined}
+        onTouchStart={!isPinned ? handleTouchStart : undefined}
       >
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0" />
-          <span className={`font-medium truncate ${isMobile ? 'text-sm' : ''}`}>
-            ƷBI Assistant
-          </span>
-          {page !== 'general' && (
-            <Badge variant="secondary" className="text-xs flex-shrink-0">
-              {page}
-            </Badge>
-          )}
-          {isPinned && !isMobile && (
-            <Move className="w-3 h-3 opacity-60 flex-shrink-0" />
+          {!isMinimized && (
+            <>
+              <span className={`font-medium truncate ${isMobile ? 'text-sm' : ''}`}>
+                ƷBI Assistant
+              </span>
+              {page !== 'general' && (
+                <Badge variant="secondary" className="text-xs flex-shrink-0">
+                  {page}
+                </Badge>
+              )}
+            </>
           )}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -637,7 +660,7 @@ Your role:
               size="sm"
               onClick={togglePin}
               className="text-primary-foreground hover:bg-primary-foreground/20"
-              title={isPinned ? 'Unpin chat' : 'Pin chat'}
+              title={isPinned ? 'Unpin to floating mode' : 'Pin as side panel'}
             >
               {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
             </Button>
@@ -645,7 +668,7 @@ Your role:
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsMinimized(!isMinimized)}
+            onClick={toggleMinimize}
             className="text-primary-foreground hover:bg-primary-foreground/20"
           >
             {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
@@ -771,7 +794,7 @@ Your role:
             </div>
           ) : (
             // Messages UI
-            <ScrollArea className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]'}`}>
+            <ScrollArea className={`flex-1 p-4 ${isPinned ? 'h-[calc(100vh-140px)]' : (isMobile ? 'h-[calc(100vh-180px)]' : 'h-[460px]')}`}>
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div

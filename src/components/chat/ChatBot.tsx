@@ -342,41 +342,45 @@ When analyzing data:
     );
   }
 
-  const chatStyle = isPinned ? {
+  // Side panel styling when pinned
+  const sidePanelStyle = isPinned ? {
     position: 'fixed' as const,
-    left: `${position.x}px`,
-    top: `${position.y}px`,
-    bottom: 'auto',
-    right: 'auto'
+    right: 0,
+    top: 0,
+    height: '100vh',
+    width: isMinimized ? '64px' : '400px',
+    borderRadius: 0,
+    borderRight: 'none',
   } : {};
 
   return (
     <Card 
       ref={chatRef}
-      className={`w-96 bg-background border shadow-xl z-50 transition-all duration-300 ${
+      className={`bg-background border shadow-xl z-50 transition-all duration-300 ${
         isPinned 
-          ? `${isDragging ? 'cursor-move' : ''} ${isMinimized ? 'h-16' : 'h-[600px]'}` 
-          : `fixed bottom-6 right-6 ${isMinimized ? 'h-16' : 'h-[600px]'}`
+          ? `h-screen rounded-none border-r-0 ${isMinimized ? 'w-16' : 'w-[400px]'}` 
+          : `fixed bottom-6 right-6 w-96 ${isMinimized ? 'h-16' : 'h-[600px]'} rounded-lg`
       }`}
-      style={chatStyle}
+      style={sidePanelStyle}
     >
       {/* Header */}
       <div 
         className={`flex items-center justify-between p-4 border-b bg-primary text-primary-foreground ${
-          isPinned ? 'cursor-move' : ''
+          isPinned ? '' : 'cursor-move'
         }`}
-        onMouseDown={handleMouseDown}
+        onMouseDown={!isPinned ? handleMouseDown : undefined}
       >
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <span className="font-medium">ƷBI Analytics Assistant</span>
-          {page !== 'general' && (
-            <Badge variant="secondary" className="text-xs">
-              {page}
-            </Badge>
-          )}
-          {isPinned && (
-            <Move className="w-3 h-3 opacity-60" />
+          {!isMinimized && (
+            <>
+              <span className="font-medium">ƷBI Analytics Assistant</span>
+              {page !== 'general' && (
+                <Badge variant="secondary" className="text-xs">
+                  {page}
+                </Badge>
+              )}
+            </>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -385,7 +389,7 @@ When analyzing data:
             size="sm"
             onClick={togglePin}
             className="text-primary-foreground hover:bg-primary-foreground/20"
-            title={isPinned ? 'Unpin chat' : 'Pin chat'}
+            title={isPinned ? 'Unpin to floating mode' : 'Pin as side panel'}
           >
             {isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
           </Button>
@@ -415,7 +419,7 @@ When analyzing data:
       {!isMinimized && (
         <>
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4 h-[460px]">
+          <ScrollArea className={`flex-1 p-4 ${isPinned ? 'h-[calc(100vh-140px)]' : 'h-[460px]'}`}>
             <div className="space-y-4">
               {messages.map((message) => (
                 <div
