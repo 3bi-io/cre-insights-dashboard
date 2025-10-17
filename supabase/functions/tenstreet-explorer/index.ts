@@ -1,19 +1,10 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// CR England credentials
-const TENSTREET_CONFIG = {
-  clientId: '123', // Replace with actual client ID
-  password: 'lS%!r3pjy@0SzMs!8Ln',
-  service: 'subject_upload',
-  mode: 'PROD',
-  companyId: '1300',
-  companyName: 'C.R. England'
 }
 
 serve(async (req) => {
@@ -22,34 +13,93 @@ serve(async (req) => {
   }
 
   try {
+    // Get auth token from request
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+
+    // Initialize Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    if (userError || !user) {
+      throw new Error('Unauthorized')
+    }
+
+    // Get user's organization
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.organization_id) {
+      throw new Error('No organization found for user')
+    }
+
+    // Fetch Tenstreet credentials for the organization
+    const { data: credentials, error: credError } = await supabaseClient
+      .from('tenstreet_credentials')
+      .select('*')
+      .eq('organization_id', profile.organization_id)
+      .maybeSingle()
+
+    if (credError) {
+      console.error('Error fetching credentials:', credError)
+      throw new Error('Failed to fetch Tenstreet credentials')
+    }
+
+    if (!credentials) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'No Tenstreet credentials configured for your organization. Please contact your administrator.' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    console.log('Using credentials for organization:', profile.organization_id)
+    console.log('ClientId:', credentials.client_id)
+    console.log('CompanyId:', credentials.company_id)
+    console.log('Mode:', credentials.mode)
+
     const { action, ...params } = await req.json()
     
     console.log(`Tenstreet Explorer: ${action}`)
 
     switch (action) {
       case 'explore_services':
-        return await exploreAvailableServices()
+        return await exploreAvailableServices(credentials)
       
       case 'test_service':
-        return await testService(params.service, params.payload)
+        return await testService(credentials, params.service, params.payload)
       
       case 'get_applicant_data':
-        return await getApplicantData(params.driverId)
+        return await getApplicantData(credentials, params.driverId)
       
       case 'search_applicants':
-        return await searchApplicants(params.criteria)
+        return await searchApplicants(credentials, params.criteria)
       
       case 'get_application_status':
-        return await getApplicationStatus(params.driverId)
+        return await getApplicationStatus(credentials, params.driverId)
       
       case 'update_applicant_status':
-        return await updateApplicantStatus(params.driverId, params.status)
+        return await updateApplicantStatus(credentials, params.driverId, params.status)
       
       case 'get_available_jobs':
-        return await getAvailableJobs()
+        return await getAvailableJobs(credentials)
       
       case 'export_applicants':
-        return await exportApplicants(params.dateRange)
+        return await exportApplicants(credentials, params.dateRange)
         
       default:
         throw new Error(`Unknown action: ${action}`)
@@ -67,7 +117,7 @@ serve(async (req) => {
   }
 })
 
-async function exploreAvailableServices() {
+async function exploreAvailableServices(credentials: any) {
   // Known Tenstreet services based on documentation
   const services = [
     {
@@ -126,14 +176,17 @@ async function exploreAvailableServices() {
       services,
       endpoint: 'https://dashboard.tenstreet.com/post/',
       authentication: 'XML-based with ClientId and Password',
-      note: 'Tenstreet uses SOAP/XML-based API. Contact Tenstreet support for complete API documentation.'
+      note: 'Tenstreet uses SOAP/XML-based API. Contact Tenstreet support for complete API documentation.',
+      organization: credentials.account_name,
+      mode: credentials.mode,
+      companyId: credentials.company_id
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 }
 
-async function testService(serviceName: string, customPayload?: any) {
-  const testXML = buildServiceTestXML(serviceName, customPayload)
+async function testService(credentials: any, serviceName: string, customPayload?: any) {
+  const testXML = buildServiceTestXML(credentials, serviceName, customPayload)
   
   console.log(`Testing service: ${serviceName}`)
   console.log('XML Payload:', testXML)
@@ -173,34 +226,34 @@ async function testService(serviceName: string, customPayload?: any) {
   }
 }
 
-async function getApplicantData(driverId: string) {
+async function getApplicantData(credentials: any, driverId: string) {
   const retrieveXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>subject_retrieve</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
     <DriverId>${driverId}</DriverId>
 </TenstreetData>`
 
   return await makeRequest(retrieveXML, 'Get Applicant Data')
 }
 
-async function searchApplicants(criteria: any) {
+async function searchApplicants(credentials: any, criteria: any) {
   const { email, phone, lastName, dateRange } = criteria
   
   const searchXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>subject_search</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
     <SearchCriteria>
         ${email ? `<Email>${email}</Email>` : ''}
         ${phone ? `<Phone>${phone}</Phone>` : ''}
@@ -212,32 +265,32 @@ async function searchApplicants(criteria: any) {
   return await makeRequest(searchXML, 'Search Applicants')
 }
 
-async function getApplicationStatus(driverId: string) {
+async function getApplicationStatus(credentials: any, driverId: string) {
   const statusXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>status_retrieve</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
     <DriverId>${driverId}</DriverId>
 </TenstreetData>`
 
   return await makeRequest(statusXML, 'Get Application Status')
 }
 
-async function updateApplicantStatus(driverId: string, status: string) {
+async function updateApplicantStatus(credentials: any, driverId: string, status: string) {
   const updateXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>status_update</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
     <DriverId>${driverId}</DriverId>
     <Status>${status}</Status>
 </TenstreetData>`
@@ -245,33 +298,33 @@ async function updateApplicantStatus(driverId: string, status: string) {
   return await makeRequest(updateXML, 'Update Applicant Status')
 }
 
-async function getAvailableJobs() {
+async function getAvailableJobs(credentials: any) {
   const jobsXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>job_listing</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
 </TenstreetData>`
 
   return await makeRequest(jobsXML, 'Get Available Jobs')
 }
 
-async function exportApplicants(dateRange: any) {
+async function exportApplicants(credentials: any, dateRange: any) {
   const { startDate, endDate } = dateRange
   
   const exportXML = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>export_data</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
     <ExportCriteria>
         <StartDate>${startDate}</StartDate>
         <EndDate>${endDate}</EndDate>
@@ -319,16 +372,16 @@ async function makeRequest(xmlPayload: string, actionName: string) {
   }
 }
 
-function buildServiceTestXML(serviceName: string, customPayload?: any) {
+function buildServiceTestXML(credentials: any, serviceName: string, customPayload?: any) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${TENSTREET_CONFIG.clientId}</ClientId>
-        <Password>${TENSTREET_CONFIG.password}</Password>
+        <ClientId>${credentials.client_id}</ClientId>
+        <Password>${credentials.password}</Password>
         <Service>${serviceName}</Service>
     </Authentication>
-    <Mode>${TENSTREET_CONFIG.mode}</Mode>
-    <CompanyId>${TENSTREET_CONFIG.companyId}</CompanyId>
+    <Mode>${credentials.mode}</Mode>
+    <CompanyId>${credentials.company_id}</CompanyId>
     ${customPayload || ''}
 </TenstreetData>`
 }
