@@ -2,9 +2,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+  'https://auwhcdpppldjlcaxzsme.supabase.co',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+function validateUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 interface IndexingRequest {
@@ -21,6 +40,9 @@ interface IndexingResult {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -31,6 +53,30 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('Authorization header required')
+    }
+    
+    // Create Supabase client to verify authentication
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+    
+    // Verify user is authenticated and is admin or super admin
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      throw new Error('Unauthorized: Authentication required')
+    }
+    
+    // Check if user is admin or super admin
+    const { data: hasAccess } = await supabaseClient.rpc('is_super_admin', { _user_id: user.id })
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', { 
+      _user_id: user.id, 
+      _role: 'admin'
+    })
+    
+    if (!hasAccess && !isAdmin) {
+      throw new Error('Unauthorized: Admin privileges required for Google Indexing')
     }
 
     const { action, urls, feed_url }: IndexingRequest = await req.json()
@@ -47,8 +93,8 @@ serve(async (req) => {
 
     const serviceAccount = JSON.parse(serviceAccountJson)
     
-    // Create Supabase client with service role
-    const supabaseClient = createClient(
+    // Create Supabase client with service role for querying jobs
+    const supabaseServiceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
@@ -57,7 +103,7 @@ serve(async (req) => {
 
     if (action === 'publish_all') {
       // Fetch all active job URLs
-      const { data: jobs, error } = await supabaseClient
+      const { data: jobs, error } = await supabaseServiceClient
         .from('job_listings')
         .select('url, apply_url')
         .eq('status', 'active')
@@ -93,6 +139,17 @@ serve(async (req) => {
         throw new Error('URLs parameter required for this action')
       }
       urlsToProcess = urls
+    }
+    
+    // Validate all URLs before processing
+    const invalidUrls = urlsToProcess.filter(url => !validateUrl(url));
+    if (invalidUrls.length > 0) {
+      throw new Error(`Invalid URLs detected: ${invalidUrls.slice(0, 5).join(', ')}${invalidUrls.length > 5 ? '...' : ''}`);
+    }
+    
+    // Limit batch size to prevent abuse
+    if (urlsToProcess.length > 1000) {
+      throw new Error('Maximum 1000 URLs per request. Please batch your requests.');
     }
 
     // Get OAuth2 access token
