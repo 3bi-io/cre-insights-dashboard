@@ -68,8 +68,13 @@ const TenstreetExplorer = () => {
   const exploreServices = async () => {
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
-        body: { action: 'explore_services' }
+        body: { action: 'explore_services' },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -94,10 +99,15 @@ const TenstreetExplorer = () => {
     setIsLoading(true);
     setSelectedService(serviceName);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'test_service',
           service: serviceName
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
@@ -123,10 +133,15 @@ const TenstreetExplorer = () => {
   const searchApplicants = async () => {
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'search_applicants',
           criteria: searchParams
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
@@ -160,10 +175,15 @@ const TenstreetExplorer = () => {
 
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'get_applicant_data',
           driverId: searchParams.driverId
+        },
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
