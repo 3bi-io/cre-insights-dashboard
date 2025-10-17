@@ -53,3 +53,6 @@ verify_jwt = true
 
 [functions.import-applications]
 verify_jwt = true
+
+[functions.grok-chat]
+verify_jwt = true
