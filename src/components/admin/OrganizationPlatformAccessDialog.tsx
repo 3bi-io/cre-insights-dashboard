@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePlatformAccess } from '@/hooks/usePlatformAccess';
-import { Truck, Globe, FileText, DollarSign, Building2, Info } from 'lucide-react';
+import { Truck, Globe, FileText, DollarSign, Building2, Info, Zap } from 'lucide-react';
 
 interface Organization {
   id: string;
@@ -83,6 +83,13 @@ const AVAILABLE_PLATFORMS = [
     icon: Truck,
     category: 'Trucking',
     description: 'Free trucking community and jobs'
+  },
+  {
+    name: 'ATS Explorer',
+    key: 'ats_explorer',
+    icon: Zap,
+    category: 'Admin Tools',
+    description: 'Advanced ATS API exploration and testing tool for Tenstreet integration'
   }
 ];
 

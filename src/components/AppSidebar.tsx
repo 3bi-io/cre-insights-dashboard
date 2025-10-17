@@ -4,6 +4,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
+import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -22,6 +23,7 @@ const AppSidebar = () => {
     signOut
   } = useAuth();
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
+  const { hasATSExplorerAccess } = useATSExplorerAccess();
   // Main standalone items
   const mainItems = [
     ...(userRole === 'super_admin' || userRole === 'admin' ? [{
@@ -92,7 +94,7 @@ const AppSidebar = () => {
         label: 'ATS Integrations',
         icon: Share2
       }] : []),
-      ...(hasTenstreetAccess() && userRole === 'super_admin' ? [{
+      ...(hasATSExplorerAccess ? [{
         path: '/admin/tenstreet-explorer',
         label: 'ATS Explorer',
         icon: Zap

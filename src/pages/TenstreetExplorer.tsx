@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Search, Database, RefreshCw, Users, FileText, X, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
+import { Loader2, Search, Database, RefreshCw, Users, FileText, X, AlertCircle, CheckCircle2, Sparkles, Shield } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
 
 const TenstreetExplorer = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +24,46 @@ const TenstreetExplorer = () => {
     lastName: ''
   });
   const { toast } = useToast();
+  const { hasATSExplorerAccess, isLoading: isCheckingAccess } = useATSExplorerAccess();
+
+  // Access control check
+  if (isCheckingAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">Checking access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasATSExplorerAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-6">
+        <Card className="max-w-md border-destructive/50">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-destructive">
+              <Shield className="h-6 w-6" />
+              <CardTitle>Access Denied</CardTitle>
+            </div>
+            <CardDescription>
+              You don't have permission to access the ATS Explorer
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert className="border-muted">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                ATS Explorer access must be enabled for your organization by a super administrator.
+                Please contact your system administrator to request access.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const exploreServices = async () => {
     setIsLoading(true);
