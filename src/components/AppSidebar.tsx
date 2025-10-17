@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Upload } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
 const AppSidebar = () => {
@@ -41,6 +41,11 @@ const AppSidebar = () => {
         label: 'Applications',
         icon: Users
       },
+      ...(userRole === 'admin' || userRole === 'super_admin' ? [{
+        path: '/admin/applications/import',
+        label: 'Import Applications',
+        icon: Upload
+      }] : []),
       {
         path: '/admin/jobs',
         label: 'Job Listings',
