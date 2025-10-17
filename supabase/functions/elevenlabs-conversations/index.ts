@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    // Client for auth verification
+    const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
@@ -22,10 +23,16 @@ serve(async (req) => {
       }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseAuth.auth.getUser();
     if (!user) {
       throw new Error('Unauthorized');
     }
+
+    // Client with service role for database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
 
     const { action, agentId, conversationId } = await req.json();
 
@@ -82,7 +89,9 @@ serve(async (req) => {
               onConflict: 'conversation_id'
             });
           
-          if (!upsertError) {
+          if (upsertError) {
+            console.error(`Failed to upsert conversation ${conv.conversation_id}:`, upsertError);
+          } else {
             syncedCount++;
           }
         }
