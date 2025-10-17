@@ -1,5 +1,4 @@
 import { ApplicationFormData } from '@/features/applications/types';
-import { ORPHANED_JOB_ID } from '@/features/applications/utils/applicationFormatters';
 
 /**
  * Maps Excel columns from CR England Facebook Lead Gen export
@@ -31,10 +30,10 @@ export interface ExcelRow {
  * Job matching rules by state for CR England
  */
 const JOB_MATCHING_RULES: Record<string, string> = {
-  'IL': '65a6cf0c-97ee-4e32-9b16-5a7f5dee9ab9', // Joliet, IL
-  'MO': '07363b73-cfe3-42a8-8a16-8eade56de5e3', // Warrensburg, MO  
+  'IL': '65a6cf0c-97ee-4e32-9b16-5a7f5dee9ab9', // Joliet, IL - Dollar Tree Account
+  'MO': '07363b73-cfe3-42a8-8a16-8eade56de5e3', // Warrensburg, MO - Dollar Tree Account
   'OR': 'b7b4874a-95d4-4051-86c3-086e4432f2a2', // Ridgefield, OR
-  'default': ORPHANED_JOB_ID // Orphaned marker for unmatched states
+  'default': '65a6cf0c-97ee-4e32-9b16-5a7f5dee9ab9' // Default to Dollar Tree Account for unmatched states
 };
 
 /**

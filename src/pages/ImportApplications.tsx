@@ -11,6 +11,7 @@ import { Upload, Download, AlertCircle, CheckCircle2, FileText } from 'lucide-re
 import { useAuth } from '@/hooks/useAuth';
 import { Progress } from '@/components/ui/progress';
 import { useImportApplicationsAccess } from '@/hooks/useImportApplicationsAccess';
+import BulkApplicationImporter from '@/components/csv/BulkApplicationImporter';
 
 interface ImportResult {
   success: boolean;
@@ -140,6 +141,9 @@ example-job-id,Jane,,Smith,jane@example.com,555-0101,,Los Angeles,CA,90001,456 O
       </div>
 
       <div className="grid gap-6">
+        {/* Facebook Leads Importer */}
+        <BulkApplicationImporter />
+
         {/* Instructions Card */}
         <Card>
           <CardHeader>
