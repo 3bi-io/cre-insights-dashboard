@@ -24,7 +24,8 @@ import {
   Shield,
   Megaphone,
   FolderKanban,
-  Building2
+  Building2,
+  Bot
 } from 'lucide-react';
 
 interface SupportSection {
@@ -151,6 +152,10 @@ const supportSections: SupportSection[] = [
         content: 'Move candidates through customizable pipeline stages: New, Reviewing, Interviewed, Offer, Hired, or Rejected. Track progress and maintain organized workflow.'
       },
       {
+        title: 'CSV Import',
+        content: 'Bulk import applications via CSV file upload. Download the template with required fields, prepare your data, and import multiple applications at once. The system validates all data and provides detailed error reporting for any issues. Admin-only feature for organization administrators.'
+      },
+      {
         title: 'Communication Tools',
         content: 'Contact candidates directly from the platform via email. Use templates for consistent communication and track all interactions.'
       },
@@ -171,6 +176,10 @@ const supportSections: SupportSection[] = [
     badge: 'AI-Powered',
     description: 'Leverage artificial intelligence for data-driven recruiting insights.',
     features: [
+      {
+        title: 'AI Analytics Assistant',
+        content: 'Interactive AI chatbot available to organization administrators. Get instant insights, ask questions about your data, analyze trends, and receive AI-powered recommendations. The assistant understands your organization context and provides personalized analysis. Access via the chatbot icon in the bottom right corner.'
+      },
       {
         title: 'Predictive Analytics',
         content: 'AI-powered predictions for candidate success, time-to-hire, and conversion likelihood. Use data to prioritize high-potential candidates.'
@@ -260,6 +269,10 @@ const supportSections: SupportSection[] = [
       {
         title: 'Tenstreet Integration',
         content: 'Sync applications and candidate data with Tenstreet ATS. Configure field mapping and automated sync schedules. Monitor sync status and resolve conflicts.'
+      },
+      {
+        title: 'ATS Explorer',
+        content: 'Advanced Tenstreet integration tool for organization administrators. Discover available Tenstreet API endpoints, test API calls, retrieve specific data, and explore the full capabilities of the Tenstreet integration. Essential for configuring and troubleshooting Tenstreet connections.'
       },
       {
         title: 'Platform Connections',
@@ -480,11 +493,28 @@ const Support = () => {
         {/* Welcome Section */}
         <Card className="mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
           <CardHeader>
-            <CardTitle className="text-2xl">Welcome to ATS Intel Support</CardTitle>
-            <CardDescription className="text-base">
-              This comprehensive guide covers all features and capabilities of the ATS Intel platform. 
-              Use the sections below to learn about each feature in detail.
-            </CardDescription>
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Bot className="h-8 w-8 text-primary" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-2xl mb-2">Welcome to ATS Intel Support</CardTitle>
+                <CardDescription className="text-base">
+                  This comprehensive guide covers all features and capabilities of the ATS Intel platform. 
+                  Use the sections below to learn about each feature in detail.
+                </CardDescription>
+                <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-primary" />
+                    Need Quick Help?
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Organization administrators can use the AI Analytics Assistant (chatbot icon in bottom right) 
+                    to ask questions and get instant insights about your data.
+                  </p>
+                </div>
+              </div>
+            </div>
           </CardHeader>
         </Card>
 
