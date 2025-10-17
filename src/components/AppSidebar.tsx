@@ -43,7 +43,7 @@ const AppSidebar = () => {
         label: 'Applications',
         icon: Users
       },
-      ...(hasImportApplicationsAccess ? [{
+      ...(hasImportApplicationsAccess && userRole === 'super_admin' ? [{
         path: '/admin/applications/import',
         label: 'Import Applications',
         icon: Upload
