@@ -1,3 +1,4 @@
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { applicationsService, Application, CreateApplicationData, UpdateApplicationData } from '../services/ApplicationsService';
@@ -20,6 +21,8 @@ export function useApplications(options?: {
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [page, setPage] = React.useState(1);
+  const [allApplications, setAllApplications] = React.useState<any[]>([]);
 
   // Query for fetching applications with filters
   const {
@@ -28,9 +31,12 @@ export function useApplications(options?: {
     error: queryError,
     refetch
   } = useQuery({
-    queryKey: [`applications`, options?.filters],
+    queryKey: [`applications`, options?.filters, page],
     queryFn: async () => {
-      const response = await applicationsService.getApplications(options?.filters);
+      const response = await applicationsService.getApplications({
+        ...options?.filters,
+        page
+      });
       if (response.error) {
         throw response.error;
       }
@@ -40,7 +46,18 @@ export function useApplications(options?: {
     staleTime: 2 * 60 * 1000 // 2 minutes
   });
 
-  const applications = queryData?.data || [];
+  // Accumulate applications as pages load
+  React.useEffect(() => {
+    if (queryData?.data) {
+      if (page === 1) {
+        setAllApplications(queryData.data);
+      } else {
+        setAllApplications(prev => [...prev, ...queryData.data]);
+      }
+    }
+  }, [queryData, page]);
+
+  const applications = allApplications;
   const totalCount = queryData?.totalCount || 0;
   const hasMore = queryData?.hasMore || false;
   const error = queryError as any;
@@ -134,7 +151,15 @@ export function useApplications(options?: {
     deleteMutation.mutate(id);
   };
 
+  const loadMore = () => {
+    if (hasMore && !loading) {
+      setPage(prev => prev + 1);
+    }
+  };
+
   const refresh = async () => {
+    setPage(1);
+    setAllApplications([]);
     await refetch();
   };
 
@@ -143,6 +168,8 @@ export function useApplications(options?: {
   };
 
   const reset = () => {
+    setPage(1);
+    setAllApplications([]);
     queryClient.removeQueries({ queryKey: [`applications`] });
   };
 
@@ -166,6 +193,7 @@ export function useApplications(options?: {
     loading,
     error,
     initialized,
+    currentPage: page,
 
     // Actions
     createApplication,
@@ -173,6 +201,7 @@ export function useApplications(options?: {
     deleteApplication,
     reviewApplication,
     getApplicationStats,
+    loadMore,
     refresh,
     clearError,
     reset,

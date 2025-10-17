@@ -60,6 +60,9 @@ const ApplicationsPage = () => {
     applications,
     loading,
     error,
+    totalCount,
+    hasMore,
+    loadMore,
     createApplication,
     updateApplication,
     deleteApplication,
@@ -167,9 +170,11 @@ const ApplicationsPage = () => {
     <PageLayout 
       title="Applications" 
       description={
-        isOrgAdmin 
-          ? "Manage job applications for your organization"
-          : "Track and manage job applications"
+        totalCount 
+          ? `${isOrgAdmin ? 'Manage job applications for your organization' : 'Track and manage job applications'} (${applications.length} of ${totalCount})`
+          : isOrgAdmin 
+            ? "Manage job applications for your organization"
+            : "Track and manage job applications"
       }
       actions={pageActions}
     >
@@ -236,6 +241,19 @@ const ApplicationsPage = () => {
               </Card>
             )}
           </div>
+
+          {hasMore && !loading && filteredApplications.length > 0 && (
+            <div className="flex justify-center py-6 animate-fade-in">
+              <Button 
+                onClick={loadMore}
+                variant="outline"
+                size="lg"
+                className="min-w-[200px]"
+              >
+                Load More Applications
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Enhanced Dialogs */}
