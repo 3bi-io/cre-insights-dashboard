@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,15 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Save, Settings, MapPin, User, FileText, Plus, X, TestTube, Users, UserCheck, CreditCard, Phone } from 'lucide-react';
 import { AVAILABLE_FIELD_TYPES } from '@/types/tenstreet';
+import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 
 const TenstreetIntegration = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { credentials, fieldMappings, isLoading: configLoading, saveCredentials, saveFieldMappings, isSaving } = useTenstreetConfiguration();
   
   // Tenstreet Configuration
   const [config, setConfig] = useState({
@@ -111,16 +112,48 @@ const TenstreetIntegration = () => {
     }
   ]);
 
-  const handleSaveConfig = () => {
-    setIsLoading(true);
-    // Save configuration logic here
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Configuration Saved",
-        description: "Tenstreet integration settings have been saved successfully.",
+  // Load existing configuration
+  useEffect(() => {
+    if (credentials) {
+      setConfig({
+        clientId: credentials.client_id || '',
+        password: credentials.password_encrypted || '',
+        service: credentials.service || 'subject_upload',
+        mode: credentials.mode || 'PROD',
+        source: credentials.source || '3BI',
+        companyId: credentials.company_ids?.[0] || '',
+        companyName: credentials.company_name || '',
+        driverId: '',
+        jobId: '',
+        statusTag: 'Status=New Applicant',
+        appReferrer: credentials.app_referrer || '3BI',
       });
-    }, 1000);
+    }
+  }, [credentials]);
+
+  useEffect(() => {
+    if (fieldMappings?.field_mappings) {
+      const mappings = fieldMappings.field_mappings as any;
+      if (mappings.personalData) {
+        setPersonalDataMappings(mappings.personalData);
+      }
+      if (mappings.customQuestions) {
+        setCustomQuestions(mappings.customQuestions);
+      }
+      if (mappings.displayFields) {
+        setDisplayFields(mappings.displayFields);
+      }
+    }
+  }, [fieldMappings]);
+
+  const handleSaveConfig = () => {
+    // Save both credentials and field mappings
+    saveCredentials(config);
+    saveFieldMappings({
+      personalData: personalDataMappings,
+      customQuestions,
+      displayFields,
+    });
   };
 
   const handleTestConnection = async () => {
@@ -211,13 +244,13 @@ const TenstreetIntegration = () => {
           <p className="text-muted-foreground mt-1">Configure comprehensive field mapping for Tenstreet driver applications</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleTestConnection} variant="outline" disabled={isLoading}>
+          <Button onClick={handleTestConnection} variant="outline" disabled={isLoading || configLoading}>
             <TestTube className="w-4 h-4 mr-2" />
             Test Connection
           </Button>
-          <Button onClick={handleSaveConfig} disabled={isLoading}>
+          <Button onClick={handleSaveConfig} disabled={isSaving || configLoading}>
             <Save className="w-4 h-4 mr-2" />
-            Save Configuration
+            {isSaving ? 'Saving...' : 'Save Configuration'}
           </Button>
         </div>
       </div>
