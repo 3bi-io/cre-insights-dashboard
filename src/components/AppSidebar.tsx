@@ -44,11 +44,11 @@ const AppSidebar = () => {
         label: 'Job Listings',
         icon: BriefcaseIcon
       },
-      {
+      ...(organization?.slug !== 'acme' ? [{
         path: '/admin/clients',
         label: 'Clients',
         icon: UserCheck
-      },
+      }] : []),
       {
         path: '/admin/routes',
         label: 'Routes',
@@ -58,11 +58,6 @@ const AppSidebar = () => {
         path: '/admin/voice-agent',
         label: 'Voice Agent',
         icon: Phone
-      }] : []),
-      ...(organization?.slug === 'acme' ? [{
-        path: '/demo',
-        label: 'Demo Voice Agent',
-        icon: MessageSquare
       }] : []),
       ...(hasVoiceAgent() && (userRole === 'super_admin' || userRole === 'admin') ? [{
         path: '/admin/elevenlabs-admin',
