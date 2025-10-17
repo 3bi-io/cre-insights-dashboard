@@ -103,7 +103,6 @@ const AppRoutes: React.FC = () => {
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
         <Route path="pricing" element={<RouteWrapper><PricingPage /></RouteWrapper>} />
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
-        <Route path="demo" element={<RouteWrapper><DemoPage /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />
@@ -132,6 +131,7 @@ const AppRoutes: React.FC = () => {
         <Route path="ai-tools" element={<ProtectedRouteWrapper><AITools /></ProtectedRouteWrapper>} />
         <Route path="privacy-controls" element={<ProtectedRouteWrapper><PrivacyControls /></ProtectedRouteWrapper>} />
         <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
+        <Route path="demo" element={<ProtectedRouteWrapper><DemoPage /></ProtectedRouteWrapper>} />
         <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="tenstreet-explorer" element={<ProtectedRouteWrapper><TenstreetExplorer /></ProtectedRouteWrapper>} />

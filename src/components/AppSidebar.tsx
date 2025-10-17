@@ -55,7 +55,7 @@ const AppSidebar = () => {
         icon: MapPin
       },
       ...(organization?.slug === 'acme' ? [{
-        path: '/demo',
+        path: '/admin/demo',
         label: 'Voice Agent',
         icon: Phone
       }] : []),
