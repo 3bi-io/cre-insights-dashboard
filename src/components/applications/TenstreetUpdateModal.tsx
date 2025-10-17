@@ -7,11 +7,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { CalendarIcon, Upload, Save, Settings } from 'lucide-react';
+import { CalendarIcon, Upload, Save, Settings, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface TenstreetUpdateModalProps {
   isOpen: boolean;
@@ -32,6 +34,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
   const [savedMappings, setSavedMappings] = useState<any[]>([]);
   const [selectedMapping, setSelectedMapping] = useState<string>('');
   const { toast } = useToast();
+  const { credentials, fieldMappings: defaultMappings, isLoading: configLoading } = useTenstreetConfiguration();
 
   // Available Tenstreet fields for mapping
   const tenstreetFields = [
@@ -120,22 +123,52 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!credentials) {
+      toast({
+        title: "Configuration Required",
+        description: "Please configure Tenstreet credentials in settings first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
+      const applicationData = {
+        id: application.id,
+        first_name: firstName,
+        last_name: lastName,
+        applicant_email: email,
+        phone: phone,
+        date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : application?.date_of_birth,
+        ...application
+      };
+
+      const config = {
+        clientId: credentials.client_id,
+        password: credentials.password_encrypted,
+        service: credentials.service,
+        mode: credentials.mode,
+        source: credentials.source,
+        companyId: credentials.company_ids?.[0] || '',
+        companyName: credentials.company_name,
+        appReferrer: credentials.app_referrer || '3BI'
+      };
+
+      const mappings = fieldMappings || defaultMappings?.field_mappings || {
+        personalData: {},
+        customQuestions: [],
+        displayFields: []
+      };
+
       const { data, error } = await supabase.functions.invoke('tenstreet-integration', {
         body: {
           action: 'send_application',
-          applicationData: {
-            id: application.id,
-            first_name: firstName,
-            last_name: lastName,
-            applicant_email: email,
-            phone: phone,
-            date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : application?.date_of_birth,
-            // Include other existing application data
-            ...application
-          }
+          applicationData,
+          config,
+          mappings
         }
       });
 
@@ -200,6 +233,15 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
             Configure and send applicant data to Tenstreet. Map application fields to Tenstreet format and review before sending.
           </div>
         </DialogHeader>
+
+        {!credentials && !configLoading && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Tenstreet credentials not configured. Please configure in Settings → Integrations → Tenstreet first.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -371,7 +413,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !credentials || configLoading}>
               {isLoading ? "Posting..." : "Post to Tenstreet"}
             </Button>
           </div>

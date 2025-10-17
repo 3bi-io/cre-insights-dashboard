@@ -1,12 +1,25 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+  'https://auwhcdpppldjlcaxzsme.supabase.co',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -22,11 +35,11 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'send_application':
-        return await handleSendApplication(data)
+        return await handleSendApplication(data, corsHeaders)
       case 'test_connection':
-        return await handleTestConnection(data)
+        return await handleTestConnection(data, corsHeaders)
       case 'sync_applicant':
-        return await handleSyncApplicant(data)
+        return await handleSyncApplicant(data, corsHeaders)
       default:
         return new Response(
           JSON.stringify({ error: 'Invalid action' }),
@@ -48,14 +61,14 @@ Deno.serve(async (req) => {
   }
 })
 
-async function handleSendApplication(data: any) {
+async function handleSendApplication(data: any, corsHeaders: Record<string, string>) {
   try {
     const { applicationData, mappings, config } = data
 
     // Build Tenstreet XML payload
     const xmlPayload = buildTenstreetXML(applicationData, mappings, config)
 
-    console.log('Sending XML to Tenstreet:', xmlPayload)
+    console.log('Sending application to Tenstreet for:', applicationData.applicant_email)
 
     // Send to Tenstreet API
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
@@ -67,7 +80,7 @@ async function handleSendApplication(data: any) {
     })
 
     const responseText = await response.text()
-    console.log('Tenstreet response:', responseText)
+    console.log('Tenstreet response status:', response.status)
 
     if (!response.ok) {
       throw new Error(`Tenstreet API error: ${response.status} - ${responseText}`)
@@ -99,15 +112,14 @@ async function handleSendApplication(data: any) {
   }
 }
 
-async function handleTestConnection(data: any) {
+async function handleTestConnection(data: any, corsHeaders: Record<string, string>) {
   try {
     const { config } = data
 
     // Build enhanced test XML with all supported fields
     const testXML = buildTestXML(config)
     
-    console.log('Sending test XML to Tenstreet:')
-    console.log(testXML)
+    console.log('Testing Tenstreet connection')
 
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
       method: 'POST',
@@ -119,8 +131,7 @@ async function handleTestConnection(data: any) {
 
     const responseText = await response.text()
     
-    console.log('Tenstreet response status:', response.status)
-    console.log('Tenstreet response:', responseText)
+    console.log('Tenstreet test response status:', response.status)
 
     return new Response(
       JSON.stringify({ 
@@ -148,7 +159,7 @@ async function handleTestConnection(data: any) {
   }
 }
 
-async function handleSyncApplicant(data: any) {
+async function handleSyncApplicant(data: any, corsHeaders: Record<string, string>) {
   try {
     const { phone } = data
 
