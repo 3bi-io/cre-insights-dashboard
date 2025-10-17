@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Play, Star, Search } from 'lucide-react';
 import { LazyImage } from '@/components/optimized/LazyImage';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import heroImage from '@/assets/hero-luxury-home.png';
 
 const HeroSection = () => {
   return (
@@ -13,7 +12,7 @@ const HeroSection = () => {
       {/* Hero Image Background - Responsive for all devices */}
       <div className="absolute inset-0 w-full h-full">
         <LazyImage
-          src={heroImage}
+          src="/placeholder.svg"
           alt="Hero background showcasing modern recruitment platform"
           priority
           className="w-full h-full object-cover object-center"
