@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Upload, Download, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Progress } from '@/components/ui/progress';
+import { useImportApplicationsAccess } from '@/hooks/useImportApplicationsAccess';
 
 interface ImportResult {
   success: boolean;
@@ -25,15 +26,16 @@ const ImportApplications = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { userRole, organization } = useAuth();
+  const { hasImportApplicationsAccess } = useImportApplicationsAccess();
 
-  // Only admins and super admins can access this page
-  if (userRole !== 'admin' && userRole !== 'super_admin') {
+  // Check if user has access to Import Applications feature
+  if (!hasImportApplicationsAccess) {
     return (
       <div className="container mx-auto p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            You don't have permission to access this page. Only administrators can import applications.
+            You don't have permission to access this feature. Import Applications must be enabled for your organization by a super administrator.
           </AlertDescription>
         </Alert>
       </div>

@@ -90,6 +90,13 @@ const AVAILABLE_PLATFORMS = [
     icon: Zap,
     category: 'Admin Tools',
     description: 'Advanced ATS API exploration and testing tool for Tenstreet integration'
+  },
+  {
+    name: 'Import Applications',
+    key: 'import_applications',
+    icon: FileText,
+    category: 'Admin Tools',
+    description: 'Bulk import applications via CSV upload for administrators'
   }
 ];
 

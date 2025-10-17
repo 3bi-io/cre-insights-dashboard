@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
+import { useImportApplicationsAccess } from '@/hooks/useImportApplicationsAccess';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -24,6 +25,7 @@ const AppSidebar = () => {
   } = useAuth();
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
   const { hasATSExplorerAccess } = useATSExplorerAccess();
+  const { hasImportApplicationsAccess } = useImportApplicationsAccess();
   // Main standalone items
   const mainItems = [
     ...(userRole === 'super_admin' || userRole === 'admin' ? [{
@@ -41,7 +43,7 @@ const AppSidebar = () => {
         label: 'Applications',
         icon: Users
       },
-      ...(userRole === 'admin' || userRole === 'super_admin' ? [{
+      ...(hasImportApplicationsAccess ? [{
         path: '/admin/applications/import',
         label: 'Import Applications',
         icon: Upload
