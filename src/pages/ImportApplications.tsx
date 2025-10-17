@@ -57,9 +57,9 @@ const ImportApplications = () => {
   };
 
   const downloadTemplate = () => {
-    const template = `job_listing_id,first_name,last_name,applicant_email,phone,city,state,zip,cdl,exp,status
-example-job-id,John,Doe,john@example.com,555-0100,Phoenix,AZ,85001,Yes,5+ years,pending
-example-job-id,Jane,Smith,jane@example.com,555-0101,Los Angeles,CA,90001,No,1-2 years,pending`;
+    const template = `job_listing_id,first_name,middle_name,last_name,applicant_email,phone,secondary_phone,city,state,zip,address_1,address_2,country,date_of_birth,ssn,cdl,cdl_class,cdl_state,cdl_expiration_date,cdl_endorsements,exp,driving_experience_years,education_level,work_authorization,military_service,military_branch,military_start_date,military_end_date,veteran,hazmat_endorsement,passport_card,twic_card,medical_card_expiration,dot_physical_date,age,status,source,notes,salary_expectations,preferred_start_date,willing_to_relocate,can_work_nights,can_work_weekends,convicted_felony,felony_details,accident_history,violation_history,can_pass_drug_test,can_pass_physical,over_21,emergency_contact_name,emergency_contact_phone,emergency_contact_relationship,preferred_contact_method,consent,background_check_consent,consent_to_email,consent_to_sms,agree_privacy_policy,how_did_you_hear,referral_source
+example-job-id,John,M,Doe,john@example.com,555-0100,555-0200,Phoenix,AZ,85001,123 Main St,Apt 4,US,1990-01-15,123-45-6789,Yes,A,AZ,2025-12-31,H;N,5+ years,5,High School,Yes,Army,US Army,2010-01-01,2014-12-31,Yes,Yes,Yes,Yes,2025-06-30,2024-01-15,34,pending,CSV Import,"Excellent candidate",60000,2024-02-01,Yes,Yes,Yes,No,,No crashes,No violations,Yes,Yes,Yes,Jane Doe,555-0300,Spouse,Phone,Yes,Yes,Yes,Yes,Yes,Job Board,Friend
+example-job-id,Jane,,Smith,jane@example.com,555-0101,,Los Angeles,CA,90001,456 Oak Ave,,US,1992-05-20,,No,,,,,1-2 years,2,Bachelor,US Citizen,No,,,,No,No,No,No,,,28,pending,CSV Import,,45000,2024-03-01,No,Yes,No,No,,No,No,Yes,Yes,Yes,Bob Smith,555-0400,Sibling,Email,Yes,Yes,Yes,Yes,Yes,LinkedIn,Company Website`;
 
     const blob = new Blob([template], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -176,10 +176,41 @@ example-job-id,Jane,Smith,jane@example.com,555-0101,Los Angeles,CA,90001,No,1-2 
 
             <div className="space-y-2">
               <h4 className="font-medium">Step 3: Optional fields</h4>
-              <p className="text-sm text-muted-foreground">
-                You can include additional fields like: city, state, zip, cdl, exp, status, address_1, 
-                address_2, cdl_class, education_level, work_authorization, and more.
+              <p className="text-sm text-muted-foreground mb-2">
+                You can include many additional fields. Key optional fields include:
               </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <div>
+                  <strong>Personal:</strong> middle_name, date_of_birth, ssn, age, country
+                </div>
+                <div>
+                  <strong>Address:</strong> address_1, address_2, city, state, zip
+                </div>
+                <div>
+                  <strong>Contact:</strong> secondary_phone, emergency_contact_*
+                </div>
+                <div>
+                  <strong>CDL:</strong> cdl_class, cdl_state, cdl_expiration_date, cdl_endorsements
+                </div>
+                <div>
+                  <strong>Experience:</strong> exp, driving_experience_years, accident_history
+                </div>
+                <div>
+                  <strong>Military:</strong> military_service, military_branch, veteran
+                </div>
+                <div>
+                  <strong>Documents:</strong> hazmat_endorsement, passport_card, twic_card
+                </div>
+                <div>
+                  <strong>Medical:</strong> medical_card_expiration, dot_physical_date
+                </div>
+                <div>
+                  <strong>Compliance:</strong> consent, background_check_consent, agree_privacy_policy
+                </div>
+                <div>
+                  <strong>Other:</strong> education_level, work_authorization, salary_expectations
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
