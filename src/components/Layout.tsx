@@ -144,8 +144,18 @@ const LayoutContent = () => {
           <Outlet />
         </main>
         
-        {/* Global ChatBot */}
-        <ChatBot page={getCurrentPage()} />
+        {/* Global ChatBot - Only for Admin and Super Admin */}
+        {(userRole === 'admin' || userRole === 'super_admin') && organization && (
+          <ChatBot 
+            page={getCurrentPage()} 
+            context={{
+              organizationId: organization.id,
+              organizationName: organization.name,
+              organizationSlug: organization.slug,
+              userRole: userRole,
+            }}
+          />
+        )}
       </div>
     </div>
   );

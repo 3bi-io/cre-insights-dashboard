@@ -16,6 +16,8 @@ const supabase = createClient(
 interface AnalyticsQuery {
   query: string;
   context?: string;
+  organizationId?: string;
+  organizationName?: string;
 }
 
 const analyzeQuery = (query: string): { tables: string[], intent: string, queryType: string } => {
@@ -72,12 +74,19 @@ const analyzeQuery = (query: string): { tables: string[], intent: string, queryT
   return { tables, intent, queryType };
 };
 
-const getApplicationsAnalytics = async () => {
+const getApplicationsAnalytics = async (organizationId?: string) => {
   try {
-    const { data, error } = await supabase.from('applications').select(`
+    let query = supabase.from('applications').select(`
       *,
-      job_listings(title, platform_id, platforms(name))
+      job_listings!inner(title, platform_id, organization_id, platforms(name))
     `);
+
+    // Filter by organization if provided
+    if (organizationId) {
+      query = query.eq('job_listings.organization_id', organizationId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -112,14 +121,21 @@ const getApplicationsAnalytics = async () => {
   }
 };
 
-const getJobsAnalytics = async () => {
+const getJobsAnalytics = async (organizationId?: string) => {
   try {
-    const { data, error } = await supabase.from('job_listings').select(`
+    let query = supabase.from('job_listings').select(`
       *,
       platforms(name),
       job_categories(name),
       daily_spend(amount, date)
     `);
+
+    // Filter by organization if provided
+    if (organizationId) {
+      query = query.eq('organization_id', organizationId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -150,12 +166,19 @@ const getJobsAnalytics = async () => {
   }
 };
 
-const getSpendAnalytics = async () => {
+const getSpendAnalytics = async (organizationId?: string) => {
   try {
-    const { data, error } = await supabase.from('daily_spend').select(`
+    let query = supabase.from('daily_spend').select(`
       *,
-      job_listings(title, platforms(name))
+      job_listings!inner(title, organization_id, platforms(name))
     `);
+
+    // Filter by organization if provided
+    if (organizationId) {
+      query = query.eq('job_listings.organization_id', organizationId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -281,36 +304,36 @@ serve(async (req) => {
   }
 
   try {
-    const { query, context }: AnalyticsQuery = await req.json();
+    const { query, context, organizationId, organizationName }: AnalyticsQuery = await req.json();
 
-    console.log('Received analytics query:', query);
+    console.log('Received analytics query:', query, 'for organization:', organizationName || 'all');
 
     // Analyze the query to determine what data to fetch
     const { tables } = analyzeQuery(query);
 
-    // Fetch relevant analytics data
+    // Fetch relevant analytics data with organization filter
     const analytics: any = {};
 
     if (tables.includes('applications') || tables.length === 0) {
-      analytics.applications = await getApplicationsAnalytics();
+      analytics.applications = await getApplicationsAnalytics(organizationId);
     }
 
     if (tables.includes('job_listings') || tables.length === 0) {
-      analytics.jobs = await getJobsAnalytics();
+      analytics.jobs = await getJobsAnalytics(organizationId);
     }
 
     if (tables.includes('daily_spend') || tables.length === 0) {
-      analytics.spend = await getSpendAnalytics();
+      analytics.spend = await getSpendAnalytics(organizationId);
     }
 
     if (tables.includes('clients') || tables.length === 0) {
-      analytics.clients = await getClientsAnalytics();
+      analytics.clients = await getClientsAnalytics(organizationId);
     }
 
     // Generate analytical response
     const response = await generateAnalyticalResponse(query, analytics);
 
-    console.log('Generated analytics response');
+    console.log('Generated analytics response for organization:', organizationName || 'all');
 
     return new Response(JSON.stringify({ 
       response,

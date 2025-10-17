@@ -346,28 +346,34 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
   }, [isOpen]);
 
   const getWelcomeMessage = (currentPage: string): string => {
+    const orgName = context?.organizationName || 'your organization';
+    
     const pageMessages: Record<string, string> = {
-      'dashboard': '👋 Hi! I can help you understand your dashboard metrics and provide insights. What would you like to know?',
-      'applications': '📋 Welcome! I can analyze your application data and help optimize your recruitment funnel. How can I assist?',
-      'jobs': '💼 Hello! I can help you analyze job performance and optimize your job postings. What insights do you need?',
-      'clients': '👥 Hi there! I can provide client analytics and relationship insights. What would you like to explore?',
-      'publishers': '🚀 Welcome! I can analyze publisher performance and help optimize your strategy. How can I help?',
-      'general': '🤖 Hi! I\'m your ƷBI Analytics Assistant. Ask me anything about your recruitment data!'
+      'dashboard': `👋 Hi! I can help you understand ${orgName}'s dashboard metrics and provide insights. What would you like to know?`,
+      'applications': `📋 Welcome! I can analyze ${orgName}'s application data and help optimize your recruitment funnel. How can I assist?`,
+      'jobs': `💼 Hello! I can help you analyze ${orgName}'s job performance and optimize your job postings. What insights do you need?`,
+      'clients': `👥 Hi there! I can provide ${orgName}'s client analytics and relationship insights. What would you like to explore?`,
+      'publishers': `🚀 Welcome! I can analyze ${orgName}'s publisher performance and help optimize your strategy. How can I help?`,
+      'general': `🤖 Hi! I'm your ƷBI Analytics Assistant for ${orgName}. Ask me anything about your recruitment data!`
     };
 
     return pageMessages[currentPage] || pageMessages['general'];
   };
 
   const getPageContext = (currentPage: string): string => {
+    const orgContext = context?.organizationName 
+      ? ` for ${context.organizationName} organization` 
+      : '';
+    
     const contexts: Record<string, string> = {
-      'dashboard': 'The user is viewing dashboard metrics on mobile.',
-      'applications': 'The user is reviewing applications on mobile.',
-      'jobs': 'The user is managing jobs on mobile.',
-      'clients': 'The user is managing clients on mobile.',
-      'publishers': 'The user is reviewing publishers on mobile.',
+      'dashboard': `The user is viewing dashboard metrics${orgContext} on mobile.`,
+      'applications': `The user is reviewing applications${orgContext} on mobile.`,
+      'jobs': `The user is managing jobs${orgContext} on mobile.`,
+      'clients': `The user is managing clients${orgContext} on mobile.`,
+      'publishers': `The user is reviewing publishers${orgContext} on mobile.`,
     };
 
-    return contexts[currentPage] || 'The user is on mobile.';
+    return contexts[currentPage] || `The user is on mobile${orgContext}.`;
   };
 
   const detectQueryType = (message: string): 'analytics' | 'analysis' | 'general' => {
@@ -408,17 +414,26 @@ const MobileChatBot: React.FC<ChatBotProps> = ({ page = 'general', context }) =>
 
     try {
       const queryType = detectQueryType(currentMessage);
+      const orgInfo = context?.organizationName 
+        ? `\n\nIMPORTANT: You are assisting ${context.organizationName} (Organization ID: ${context.organizationId}).
+All data queries and responses should be filtered and scoped to this organization ONLY.
+Do not provide information about other organizations.
+User Role: ${context.userRole || 'admin'}`
+        : '';
+
       const systemPrompt = `You are ƷBI's mobile-optimized analytics assistant.
 
 Current Context: ${getPageContext(page)}
 Device: Mobile
-${context ? `Additional Context: ${JSON.stringify(context)}` : ''}
+${orgInfo}
 
 Your role:
 - Provide concise, mobile-friendly responses
 - Use bullet points and short paragraphs
-- Focus on key insights and actionable items
-- Adapt to touch interface and smaller screens`;
+- Focus on key insights and actionable items for THIS organization
+- Adapt to touch interface and smaller screens
+- ALWAYS filter data by organization_id: ${context?.organizationId || 'N/A'}
+- Only discuss data and metrics belonging to ${context?.organizationName || 'this organization'}`;
 
       let response;
       
@@ -429,14 +444,18 @@ Your role:
             analysisType: 'insights',
             timeframe: 'last30days',
             includeRecommendations: true,
-            dataPoints: [page, 'mobile']
+            dataPoints: [page, 'mobile'],
+            organizationId: context?.organizationId,
+            organizationName: context?.organizationName
           }
         });
       } else if (queryType === 'analytics') {
         response = await supabase.functions.invoke('chatbot-analytics', {
           body: { 
             query: currentMessage,
-            context: getPageContext(page)
+            context: getPageContext(page),
+            organizationId: context?.organizationId,
+            organizationName: context?.organizationName
           }
         });
       } else {

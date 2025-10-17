@@ -20,33 +20,48 @@ interface DataAnalysisRequest {
   timeframe?: string;
   includeRecommendations?: boolean;
   dataPoints?: string[];
+  organizationId?: string;
+  organizationName?: string;
 }
 
-const fetchCompleteDataset = async () => {
+const fetchCompleteDataset = async (organizationId?: string) => {
   try {
-    console.log('Fetching complete dataset for analysis...');
+    console.log('Fetching complete dataset for analysis...', organizationId ? `Organization: ${organizationId}` : 'All organizations');
+
+    // Build queries with organization filter
+    const applicationsQuery = supabase.from('applications').select(`
+      *,
+      job_listings!inner(title, platform_id, job_type, organization_id, created_at, platforms(name))
+    `).order('applied_at', { ascending: false });
+
+    const jobsQuery = supabase.from('job_listings').select(`
+      *,
+      platforms(name),
+      job_categories(name),
+      daily_spend(amount, date, clicks, views)
+    `).order('created_at', { ascending: false });
+
+    const spendQuery = supabase.from('daily_spend').select(`
+      *,
+      job_listings!inner(title, platform_id, organization_id, platforms(name))
+    `).order('date', { ascending: false });
+
+    const clientsQuery = supabase.from('clients').select('*').order('created_at', { ascending: false });
+
+    // Apply organization filter if provided
+    if (organizationId) {
+      applicationsQuery.eq('job_listings.organization_id', organizationId);
+      jobsQuery.eq('organization_id', organizationId);
+      spendQuery.eq('job_listings.organization_id', organizationId);
+      clientsQuery.eq('organization_id', organizationId);
+    }
 
     // Fetch all relevant data in parallel
     const [applicationsResult, jobsResult, spendResult, clientsResult, platformsResult] = await Promise.all([
-      supabase.from('applications').select(`
-        *,
-        job_listings(title, platform_id, job_type, created_at, platforms(name))
-      `).order('applied_at', { ascending: false }),
-      
-      supabase.from('job_listings').select(`
-        *,
-        platforms(name),
-        job_categories(name),
-        daily_spend(amount, date, clicks, views)
-      `).order('created_at', { ascending: false }),
-      
-      supabase.from('daily_spend').select(`
-        *,
-        job_listings(title, platform_id, platforms(name))
-      `).order('date', { ascending: false }),
-      
-      supabase.from('clients').select('*').order('created_at', { ascending: false }),
-      
+      applicationsQuery,
+      jobsQuery,
+      spendQuery,
+      clientsQuery,
       supabase.from('platforms').select('*')
     ]);
 
@@ -189,14 +204,16 @@ serve(async (req) => {
       analysisType = 'insights',
       timeframe = 'last30days',
       includeRecommendations = true,
-      dataPoints = []
+      dataPoints = [],
+      organizationId,
+      organizationName
     }: DataAnalysisRequest = await req.json();
 
-    console.log('Data analysis request:', { query, analysisType, timeframe });
+    console.log('Data analysis request:', { query, analysisType, timeframe, organizationName });
 
-    // Fetch complete dataset
-    const dataset = await fetchCompleteDataset();
-    console.log('Dataset fetched:', dataset.metadata);
+    // Fetch complete dataset with organization filter
+    const dataset = await fetchCompleteDataset(organizationId);
+    console.log('Dataset fetched:', dataset.metadata, organizationName ? `for ${organizationName}` : 'all organizations');
 
     // Generate data summary
     const summary = generateDataSummary(dataset);
