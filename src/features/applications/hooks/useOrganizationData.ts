@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-export interface Organization {
-  id: string;
-  name: string;
-}
+import type { Organization } from '@/types/common.types';
 
 export const useOrganizationData = (isSuperAdmin: boolean) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -18,11 +14,11 @@ export const useOrganizationData = (isSuperAdmin: boolean) => {
       try {
         const { data, error } = await supabase
           .from('organizations')
-          .select('id, name')
+          .select('id, name, slug, created_at, updated_at')
           .order('name');
         
         if (!error && data) {
-          setOrganizations(data);
+          setOrganizations(data as Organization[]);
         }
       } catch (err) {
         console.error('Error fetching organizations:', err);
