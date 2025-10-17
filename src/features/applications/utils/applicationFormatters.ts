@@ -1,6 +1,18 @@
 import { Application, ApplicationCategory } from '../types';
 
 /**
+ * Special UUID marker for applications whose job listings have been deleted
+ */
+export const ORPHANED_JOB_ID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * Checks if an application's job listing has been deleted
+ */
+export const isOrphanedApplication = (jobListingId?: string | null): boolean => {
+  return !jobListingId || jobListingId === ORPHANED_JOB_ID;
+};
+
+/**
  * Gets the full name of an applicant with fallback logic
  */
 export const getApplicantName = (app: Application): string => {
@@ -44,6 +56,9 @@ export const getApplicantLocation = (app: Application): string => {
  * Gets the client name from job listing relationship
  */
 export const getClientName = (app: Application): string | null => {
+  if (isOrphanedApplication(app.job_listing_id)) {
+    return null;
+  }
   const jobListing = app.job_listings as any;
   return jobListing?.clients?.name || jobListing?.client || null;
 };
@@ -52,6 +67,9 @@ export const getClientName = (app: Application): string | null => {
  * Gets the job title from application
  */
 export const getJobTitle = (app: Application): string => {
+  if (isOrphanedApplication(app.job_listing_id)) {
+    return 'Job Removed';
+  }
   return app.job_listings?.title || app.job_listings?.job_title || 'Unknown Position';
 };
 
