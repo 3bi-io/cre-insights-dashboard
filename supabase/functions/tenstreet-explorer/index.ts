@@ -28,9 +28,18 @@ serve(async (req) => {
 
     // Get current user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) {
-      throw new Error('Unauthorized')
+    
+    if (userError) {
+      console.error('Auth error:', userError)
+      throw new Error(`Authentication failed: ${userError.message}`)
     }
+    
+    if (!user) {
+      console.error('No user found in session')
+      throw new Error('No authenticated user found')
+    }
+    
+    console.log('Authenticated user:', user.id, user.email)
 
     // Get user's organization
     const { data: profile } = await supabaseClient
