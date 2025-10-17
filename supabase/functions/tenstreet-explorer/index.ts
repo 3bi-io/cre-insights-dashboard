@@ -43,6 +43,28 @@ serve(async (req) => {
       throw new Error('No organization found for user')
     }
 
+    // Check if organization has ATS Explorer access
+    const { data: hasAccess, error: accessError } = await supabaseClient.rpc('get_user_platform_access', {
+      _platform_name: 'ats_explorer'
+    })
+
+    if (accessError) {
+      console.error('Error checking platform access:', accessError)
+      throw new Error('Failed to verify platform access')
+    }
+
+    if (!hasAccess) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'ATS Explorer access is not enabled for your organization. Please contact your administrator.' 
+        }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     // Fetch Tenstreet credentials for the organization
     const { data: credentials, error: credError } = await supabaseClient
       .from('tenstreet_credentials')
