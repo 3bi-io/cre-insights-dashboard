@@ -13,6 +13,7 @@ interface Conversation {
   ended_at: string | null;
   duration_seconds: number | null;
   metadata: any;
+  message_count?: number;
   voice_agents?: {
     agent_name: string;
     organizations?: {
@@ -44,7 +45,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch conversations
+  // Fetch conversations with transcript counts
   const { data: conversations, isLoading: loadingConversations } = useQuery({
     queryKey: ['elevenlabs-conversations', voiceAgentId],
     queryFn: async () => {
@@ -65,10 +66,39 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
         query = query.eq('voice_agent_id', voiceAgentId);
       }
 
-      const { data, error } = await query;
+      const { data: conversationsData, error } = await query;
 
       if (error) throw error;
-      return data as Conversation[];
+      
+      // Fetch transcript counts for each conversation
+      if (conversationsData && conversationsData.length > 0) {
+        const conversationIds = conversationsData.map(c => c.id);
+        
+        const { data: transcriptCounts, error: countError } = await supabase
+          .from('elevenlabs_transcripts')
+          .select('conversation_id')
+          .in('conversation_id', conversationIds);
+
+        if (countError) {
+          console.error('Error fetching transcript counts:', countError);
+        }
+
+        // Count messages per conversation
+        const messageCounts = transcriptCounts?.reduce((acc, t) => {
+          acc[t.conversation_id] = (acc[t.conversation_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+
+        // Filter conversations with at least 3 messages and add count
+        return conversationsData
+          .map(conv => ({
+            ...conv,
+            message_count: messageCounts[conv.id] || 0
+          }))
+          .filter(conv => conv.message_count >= 3) as Conversation[];
+      }
+
+      return [];
     },
   });
 
