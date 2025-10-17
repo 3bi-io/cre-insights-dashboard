@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
@@ -11,7 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut } from 'lucide-react';
+import { LogOut, Bot } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,31 @@ const LayoutContent = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
   const { user, userRole, organization, signOut } = useAuth();
+  const { toast } = useToast();
+  const hasShownWelcome = useRef(false);
+  
+  // Show welcome balloon for admins
+  useEffect(() => {
+    if (user && (userRole === 'admin' || userRole === 'super_admin') && !hasShownWelcome.current) {
+      hasShownWelcome.current = true;
+      
+      // Small delay to ensure page is loaded
+      setTimeout(() => {
+        toast({
+          description: (
+            <div className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-primary" />
+              <div>
+                <div className="font-medium">ƷBI Analytics Assistant</div>
+                <div className="text-sm">Get AI Insights</div>
+              </div>
+            </div>
+          ),
+          duration: 5000,
+        });
+      }, 1000);
+    }
+  }, [user, userRole, toast]);
   
   // Extract page name from current route
   const getCurrentPage = () => {
