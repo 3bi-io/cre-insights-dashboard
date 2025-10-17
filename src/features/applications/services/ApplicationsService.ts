@@ -114,7 +114,7 @@ class ApplicationsService extends BaseFeatureService {
 
       // Apply pagination
       const page = filters?.page || 1;
-      const pageSize = filters?.pageSize || 50;
+      const pageSize = filters?.pageSize || 200;
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
       
