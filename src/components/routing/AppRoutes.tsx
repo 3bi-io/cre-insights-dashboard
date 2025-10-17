@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import PublicLayout from "@/components/public/PublicLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -103,6 +103,7 @@ const AppRoutes: React.FC = () => {
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
         <Route path="pricing" element={<RouteWrapper><PricingPage /></RouteWrapper>} />
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
+        <Route path="demo" element={<RouteWrapper><Navigate to="/admin/demo" replace /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />

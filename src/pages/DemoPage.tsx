@@ -17,6 +17,7 @@ const DemoPage = () => {
     disconnect 
   } = useVoiceAgentConnection({
     onConnect: () => {
+      console.log('[Demo] Voice agent connected successfully');
       toast({
         title: "Voice Agent Connected",
         description: "Successfully connected to ElevenLabs voice agent. Try speaking!",
@@ -24,6 +25,7 @@ const DemoPage = () => {
       setIsTestRunning(false);
     },
     onDisconnect: () => {
+      console.log('[Demo] Voice agent disconnected');
       toast({
         title: "Voice Agent Disconnected",
         description: "Voice session has ended.",
@@ -31,7 +33,7 @@ const DemoPage = () => {
       setIsTestRunning(false);
     },
     onError: (error) => {
-      console.error('Voice agent error:', error);
+      console.error('[Demo] Voice agent error:', error);
       setIsTestRunning(false);
       toast({
         title: "Connection Error",
