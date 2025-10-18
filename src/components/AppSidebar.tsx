@@ -129,7 +129,12 @@ const AppSidebar = () => {
         path: '/admin/ai-impact',
         label: 'AI Impact',
         icon: Zap
-      }
+      },
+      ...(userRole === 'super_admin' ? [{
+        path: '/admin/visitor-analytics',
+        label: 'Visitor Analytics',
+        icon: BarChart3
+      }] : [])
     ]
   }, {
     group: "Settings",
