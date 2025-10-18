@@ -22,6 +22,7 @@ const Auth = () => {
   const [resetMode, setResetMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [updatePasswordMode, setUpdatePasswordMode] = useState(false);
+  const [signUpMode, setSignUpMode] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -117,6 +118,48 @@ const handleUpdatePassword = async (e: React.FormEvent) => {
   setLoading(false);
 };
 
+const handleSignUp = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+
+  if (password.length < 6) {
+    setError('Password must be at least 6 characters');
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    });
+    
+    if (error) throw error;
+    
+    toast({
+      title: "Account created successfully",
+      description: "Please check your email to verify your account.",
+    });
+    
+    setEmail('');
+    setPassword('');
+    setSignUpMode(false);
+  } catch (error: any) {
+    if (error.message?.includes('already registered')) {
+      setError('This email is already registered. Please sign in instead.');
+    } else {
+      setError(error.message);
+    }
+  }
+  setLoading(false);
+};
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -132,14 +175,22 @@ const handleUpdatePassword = async (e: React.FormEvent) => {
         <Card>
           <CardHeader>
             <CardTitle>
-              {updatePasswordMode ? 'Update Password' : resetMode ? 'Reset Password' : 'Welcome Back'}
+              {updatePasswordMode 
+                ? 'Update Password' 
+                : resetMode 
+                  ? 'Reset Password' 
+                  : signUpMode 
+                    ? 'Create Account' 
+                    : 'Welcome Back'}
             </CardTitle>
             <CardDescription>
               {updatePasswordMode
                 ? 'Enter your new password below'
                 : resetMode 
                   ? 'Enter your email to receive password reset instructions'
-                  : 'Sign in to your account to access the dashboard'
+                  : signUpMode
+                    ? 'Sign up to create your account and get started'
+                    : 'Sign in to your account to access the dashboard'
               }
             </CardDescription>
           </CardHeader>
@@ -221,6 +272,42 @@ const handleUpdatePassword = async (e: React.FormEvent) => {
                       Back to Sign In
                     </Button>
                   </form>
+                ) : signUpMode ? (
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={email} 
+                        onChange={e => setEmail(e.target.value)} 
+                        required 
+                        placeholder="Enter your email" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)} 
+                        required 
+                        placeholder="Create a password (min 6 characters)" 
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? 'Creating account...' : 'Sign Up'}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      className="w-full" 
+                      onClick={() => setSignUpMode(false)}
+                    >
+                      Already have an account? Sign in
+                    </Button>
+                  </form>
                 ) : (
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
@@ -248,14 +335,24 @@ const handleUpdatePassword = async (e: React.FormEvent) => {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? 'Signing in...' : 'Sign In'}
                     </Button>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      className="w-full" 
-                      onClick={() => setResetMode(true)}
-                    >
-                      Forgot your password?
-                    </Button>
+                    <div className="flex items-center justify-between gap-2">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="flex-1" 
+                        onClick={() => setResetMode(true)}
+                      >
+                        Forgot password?
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="flex-1" 
+                        onClick={() => setSignUpMode(true)}
+                      >
+                        Sign up
+                      </Button>
+                    </div>
                   </form>
                 )}
               </>
