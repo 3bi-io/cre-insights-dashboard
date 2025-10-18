@@ -12,6 +12,7 @@ import { DevToolsPanel, DevToolsToggle } from "@/components/debug/DevToolsPanel"
 import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/services/loggerService";
 import AppRoutes from "@/components/routing/AppRoutes";
+import CountryBlockWrapper from "@/components/CountryBlockWrapper";
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -55,7 +56,9 @@ const App = React.memo(() => {
                     <Toaster />
                     <Sonner />
                     
-                    <AppRoutes />
+                    <CountryBlockWrapper>
+                      <AppRoutes />
+                    </CountryBlockWrapper>
                     
                     {/* Development Tools */}
                     <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />

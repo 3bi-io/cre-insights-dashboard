@@ -51,6 +51,7 @@ const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
 const HayesDataPopulation = React.lazy(() => import("@/pages/HayesDataPopulation"));
 const PrivacyControls = React.lazy(() => import("@/pages/PrivacyControls"));
 const Support = React.lazy(() => import("@/pages/Support"));
+const AccessDenied = React.lazy(() => import("@/pages/AccessDenied"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 
 // Loading fallback component
@@ -151,6 +152,9 @@ const AppRoutes: React.FC = () => {
         <Route path="meta-spend-analytics" element={<ProtectedRouteWrapper><MetaSpendAnalytics /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
       </Route>
+
+      {/* Access Denied Route */}
+      <Route path="/access-denied" element={<RouteWrapper><AccessDenied /></RouteWrapper>} />
 
       {/* 404 Route */}
       <Route path="*" element={<RouteWrapper><NotFound /></RouteWrapper>} />
