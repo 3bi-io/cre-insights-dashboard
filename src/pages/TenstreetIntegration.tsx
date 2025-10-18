@@ -20,32 +20,32 @@ const TenstreetIntegration = () => {
   // Tenstreet Configuration
   const [config, setConfig] = useState({
     clientId: '',
-    password: 'lS%!r3pjy@0SzMs!8Ln',
-    service: 'subject_upload',
-    mode: 'PROD',
-    source: '3BI',
-    companyId: '1300',
-    companyName: 'C.R. England',
+    password: '',
+    service: '',
+    mode: '',
+    source: '',
+    companyId: '',
+    companyName: '',
     driverId: '',
     jobId: '',
-    statusTag: 'Status=New Applicant',
-    appReferrer: '3BI'
+    statusTag: '',
+    appReferrer: ''
   });
 
   // Enhanced Personal Data Field Mappings
   const [personalDataMappings, setPersonalDataMappings] = useState({
     // PersonName fields
     prefix: '',
-    givenName: 'first_name',
+    givenName: '',
     middleName: '',
-    familyName: 'last_name',
+    familyName: '',
     affix: '',
     
     // PostalAddress fields
     countryCode: '',
-    municipality: 'city',
-    region: 'state',
-    postalCode: 'zip_code',
+    municipality: '',
+    region: '',
+    postalCode: '',
     address1: '',
     address2: '',
     
@@ -57,60 +57,15 @@ const TenstreetIntegration = () => {
     
     // Contact and personal data
     dateOfBirth: '',
-    internetEmailAddress: 'email',
-    primaryPhone: 'phone',
+    internetEmailAddress: '',
+    primaryPhone: '',
     secondaryPhone: '',
     preferredMethod: ''
   });
 
-  const [customQuestions, setCustomQuestions] = useState([
-    {
-      questionId: 'Class_A_CDL',
-      question: 'Do you have a Class A CDL?',
-      mapping: ''
-    },
-    {
-      questionId: 'Veteran_Status',
-      question: 'Are you a veteran?',
-      mapping: ''
-    },
-    {
-      questionId: 'Class_A_CDL_experience',
-      question: 'How many months of Class A CDL experience do you have?',
-      mapping: ''
-    },
-    {
-      questionId: 'agree_privacy_policy',
-      question: 'I agree to C.R. England\'s Privacy Policy.',
-      mapping: ''
-    },
-    {
-      questionId: 'consentToSMS',
-      question: 'Do you consent to (SMS) messages from or on behalf of C.R. England?',
-      mapping: ''
-    },
-    {
-      questionId: 'over_21',
-      question: 'Are you 21 or older?',
-      mapping: ''
-    },
-    {
-      questionId: 'can_pass_drug',
-      question: 'Can you pass a DOT drug test?',
-      mapping: ''
-    }
-  ]);
+  const [customQuestions, setCustomQuestions] = useState([]);
 
-  const [displayFields, setDisplayFields] = useState([
-    {
-      displayPrompt: 'Experience (months):',
-      mapping: ''
-    },
-    {
-      displayPrompt: 'Job Code:',
-      mapping: ''
-    }
-  ]);
+  const [displayFields, setDisplayFields] = useState([]);
 
   // Load existing configuration
   useEffect(() => {
