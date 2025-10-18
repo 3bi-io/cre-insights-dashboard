@@ -11,7 +11,6 @@ const JobsPage = React.lazy(() => import("@/pages/public/JobsPage"));
 const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
 const PricingPage = React.lazy(() => import("@/pages/public/PricingPage"));
 const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
-const DemoPage = React.lazy(() => import("@/pages/DemoPage"));
 const PrivacyPolicyPage = React.lazy(() => import("@/pages/public/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("@/pages/public/TermsOfServicePage"));
 const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPage"));
@@ -104,7 +103,6 @@ const AppRoutes: React.FC = () => {
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
         <Route path="pricing" element={<RouteWrapper><PricingPage /></RouteWrapper>} />
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
-        <Route path="demo" element={<RouteWrapper><Navigate to="/admin/demo" replace /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />
@@ -134,7 +132,6 @@ const AppRoutes: React.FC = () => {
         <Route path="ai-tools" element={<ProtectedRouteWrapper><AITools /></ProtectedRouteWrapper>} />
         <Route path="privacy-controls" element={<ProtectedRouteWrapper><PrivacyControls /></ProtectedRouteWrapper>} />
         <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
-        <Route path="demo" element={<ProtectedRouteWrapper><DemoPage /></ProtectedRouteWrapper>} />
         <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="tenstreet-explorer" element={<ProtectedRouteWrapper><TenstreetExplorer /></ProtectedRouteWrapper>} />
