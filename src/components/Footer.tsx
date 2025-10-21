@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="flex items-center gap-2">
           <Brand size="sm" showAsLink={false} />
             <span className="text-sm text-muted-foreground">
-              © 2024 ATS Platform. All rights reserved.
+              © 2024 ATS.me. All rights reserved.
             </span>
           </div>
           
