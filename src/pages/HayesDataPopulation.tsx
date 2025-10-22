@@ -25,7 +25,8 @@ const HayesDataPopulation = () => {
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
-  const feedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter';
+  const dannyHermanFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter';
+  const pembertonFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=pemberton_truck_lines&board=AIRecruiter';
 
   const loadStats = async () => {
     if (!selectedOrgId) return;
@@ -68,7 +69,7 @@ const HayesDataPopulation = () => {
     }
   }, [userRole, selectedOrgId]);
 
-  const importJobs = async () => {
+  const importJobs = async (feedUrl: string, feedName: string) => {
     setImportingJobs(true);
     try {
       const { data, error } = await supabase.functions.invoke('import-jobs-from-feed', {
@@ -83,7 +84,7 @@ const HayesDataPopulation = () => {
 
       toast({
         title: "Jobs Imported",
-        description: data.message,
+        description: `${data.message} from ${feedName}`,
       });
       
       await loadStats();
@@ -204,37 +205,70 @@ const HayesDataPopulation = () => {
               Step 1: Import Jobs from CDL Job Cast
             </CardTitle>
             <CardDescription>
-              Import job listings from danny_herman_trucking feed (via Adzuna)
+              Import job listings from CDL Job Cast feeds
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Feed URL:</strong> {feedUrl}
-                <br />
-                <strong>Organization:</strong> Hayes Recruiting Solutions
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-4">
+              <div>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Feed:</strong> Pemberton Truck Lines Inc
+                    <br />
+                    <strong>URL:</strong> {pembertonFeedUrl}
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  onClick={() => importJobs(pembertonFeedUrl, 'Pemberton Truck Lines')}
+                  disabled={importingJobs}
+                  size="lg"
+                  className="w-full mt-2"
+                >
+                  {importingJobs ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Importing Jobs...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Import Pemberton Jobs
+                    </>
+                  )}
+                </Button>
+              </div>
 
-            <Button 
-              onClick={importJobs}
-              disabled={importingJobs}
-              size="lg"
-              className="w-full"
-            >
-              {importingJobs ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Importing Jobs...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Import Jobs from Feed
-                </>
-              )}
-            </Button>
+              <div>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Feed:</strong> Danny Herman Trucking
+                    <br />
+                    <strong>URL:</strong> {dannyHermanFeedUrl}
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  onClick={() => importJobs(dannyHermanFeedUrl, 'Danny Herman Trucking')}
+                  disabled={importingJobs}
+                  size="lg"
+                  variant="outline"
+                  className="w-full mt-2"
+                >
+                  {importingJobs ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Importing Jobs...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4 mr-2" />
+                      Import Danny Herman Jobs
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
