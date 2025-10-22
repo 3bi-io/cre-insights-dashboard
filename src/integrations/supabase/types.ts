@@ -609,7 +609,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           organization_id: string | null
           record_id: string | null
           sensitive_fields: string[] | null
@@ -621,7 +621,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string | null
           record_id?: string | null
           sensitive_fields?: string[] | null
@@ -633,7 +633,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string | null
           record_id?: string | null
           sensitive_fields?: string[] | null
@@ -3058,18 +3058,9 @@ export type Database = {
         }
         Returns: Json
       }
-      cleanup_expired_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_sms_links: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_rate_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_cache: { Args: never; Returns: undefined }
+      cleanup_expired_sms_links: { Args: never; Returns: undefined }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       create_organization: {
         Args: { _admin_email?: string; _name: string; _slug: string }
         Returns: string
@@ -3138,17 +3129,11 @@ export type Database = {
         }[]
       }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
-      get_dashboard_metrics: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_org_id_by_slug: {
-        Args: { _slug: string }
-        Returns: string
-      }
+      get_dashboard_metrics: { Args: never; Returns: Json }
+      get_org_id_by_slug: { Args: { _slug: string }; Returns: string }
       get_organization_applications: {
         Args: { _limit?: number; _offset?: number; _org_id: string }
         Returns: {
@@ -3172,26 +3157,15 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_organization_with_stats: {
-        Args: { _org_id: string }
-        Returns: Json
-      }
-      get_platform_breakdown_data: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_spend_chart_data: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_user_organization_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_organization_with_stats: { Args: { _org_id: string }; Returns: Json }
+      get_platform_breakdown_data: { Args: never; Returns: Json }
+      get_spend_chart_data: { Args: never; Returns: Json }
+      get_user_organization_id: { Args: never; Returns: string }
       get_user_platform_access: {
         Args: { _platform_name: string }
         Returns: boolean
       }
+      has_active_subscription: { Args: { org_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3199,14 +3173,8 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_super_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      normalize_phone_number: {
-        Args: { phone_input: string }
-        Returns: string
-      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      normalize_phone_number: { Args: { phone_input: string }; Returns: string }
       organization_has_platform_access: {
         Args: { _org_id: string; _platform_name: string }
         Returns: boolean

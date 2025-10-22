@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Brand } from '@/components/common';
 
 const Auth = () => {
-  const { signIn, user, userRole } = useAuth();
+  const { signIn, user, userRole, organization } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,16 +27,18 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   React.useEffect(() => {
-    if (user) {
+    if (user && organization) {
       if (userRole === 'super_admin') {
         window.location.href = '/admin';
+      } else if (organization.subscription_status === 'inactive') {
+        window.location.href = '/onboarding';
       } else if (userRole === 'admin') {
         window.location.href = '/dashboard';
       } else {
         window.location.href = '/dashboard';
       }
     }
-  }, [user, userRole]);
+  }, [user, userRole, organization]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);

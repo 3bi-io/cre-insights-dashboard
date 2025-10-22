@@ -15,6 +15,7 @@ interface AuthContextType {
     slug: string;
     logo_url?: string;
     settings?: Record<string, unknown>;
+    subscription_status?: string;
   } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -35,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     slug: string;
     logo_url?: string;
     settings?: Record<string, unknown>;
+    subscription_status?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -66,7 +68,8 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
           name,
           slug,
           logo_url,
-          settings
+          settings,
+          subscription_status
         )
       `)
       .eq('id', _userId)

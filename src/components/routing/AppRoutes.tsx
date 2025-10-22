@@ -17,6 +17,7 @@ const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPag
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
+const Onboarding = React.lazy(() => import("@/pages/Onboarding"));
 const Apply = React.lazy(() => import("@/pages/Apply"));
 const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
@@ -115,6 +116,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/apply/detailed" element={<RouteWrapper><DetailedApply /></RouteWrapper>} />
       <Route path="/thank-you" element={<RouteWrapper><ThankYou /></RouteWrapper>} />
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
+      <Route path="/onboarding" element={<ProtectedRouteWrapper><Onboarding /></ProtectedRouteWrapper>} />
 
       {/* Dashboard Routes */}
       <Route path="/dashboard" element={<LayoutWrapper />}>
