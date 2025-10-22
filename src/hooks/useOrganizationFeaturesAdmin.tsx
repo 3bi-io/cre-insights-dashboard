@@ -123,7 +123,7 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
     availableFeatures,
     isLoading: featuresQuery.isLoading,
     error: featuresQuery.error,
-    updateFeatures: updateFeaturesMutation.mutate,
+    updateFeatures: updateFeaturesMutation.mutateAsync,
     isUpdating: updateFeaturesMutation.isPending,
   };
 };

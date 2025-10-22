@@ -71,18 +71,21 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
     setFeatureStates(prev => ({ ...prev, [featureName]: enabled }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const featureUpdates = Object.entries(featureStates).reduce((acc, [featureName, enabled]) => {
       acc[featureName] = { enabled };
       return acc;
     }, {} as Record<string, { enabled: boolean }>);
 
-    updateFeatures({
-      orgId: organization.id,
-      features: featureUpdates,
-    });
-
-    setOpen(false);
+    try {
+      await updateFeatures({
+        orgId: organization.id,
+        features: featureUpdates,
+      });
+      setOpen(false);
+    } catch (error) {
+      console.error('Failed to update features:', error);
+    }
   };
 
   const hasChanges = () => {
