@@ -32,11 +32,11 @@ const Auth = () => {
         window.location.href = '/admin';
       } else if (organization.subscription_status === 'inactive') {
         window.location.href = '/onboarding';
-      } else if (userRole === 'admin') {
-        window.location.href = '/dashboard';
-      } else {
+      } else if (organization.subscription_status === 'active' || organization.subscription_status === 'trialing') {
+        // Only redirect to dashboard if subscription is active or trialing
         window.location.href = '/dashboard';
       }
+      // If subscription is neither inactive nor active (e.g., null/undefined), stay on auth page
     }
   }, [user, userRole, organization]);
 
