@@ -30,6 +30,8 @@ const PricingPage = () => {
       description: "Perfect for small teams getting started",
       monthlyPrice: 175,
       annualPrice: 149,
+      stripeMonthlyUrl: "https://buy.stripe.com/14AbIUf660At4ZkdfYaAw07",
+      stripeYearlyUrl: "https://buy.stripe.com/5kQ3co8HI1Ex9fA4JsaAw08",
       icon: Users,
       color: "border-muted",
       buttonVariant: "outline" as const,
@@ -54,6 +56,8 @@ const PricingPage = () => {
       description: "Everything growing teams need to scale",
       monthlyPrice: 475,
       annualPrice: 399,
+      stripeMonthlyUrl: "https://buy.stripe.com/aFabIUe22erj63o4JsaAw05",
+      stripeYearlyUrl: "https://buy.stripe.com/eVq4gs9LM2IBbnIcbUaAw06",
       icon: Zap,
       color: "border-primary",
       buttonVariant: "default" as const,
@@ -77,8 +81,7 @@ const PricingPage = () => {
     {
       name: "Enterprise",
       description: "Advanced features for large organizations",
-      monthlyPrice: 875,
-      annualPrice: 749,
+      isEnterprise: true,
       icon: Crown,
       color: "border-accent",
       buttonVariant: "outline" as const,
@@ -204,21 +207,34 @@ const PricingPage = () => {
                   <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
                   <p className="text-muted-foreground">{plan.description}</p>
                   
-                  <div className="mt-6">
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold text-foreground">
-                        ${getPrice(plan)}
-                      </span>
-                      <span className="text-muted-foreground ml-1">
-                        /user/month
-                      </span>
+                  {!plan.isEnterprise ? (
+                    <div className="mt-6">
+                      <div className="flex items-baseline justify-center">
+                        <span className="text-4xl font-bold text-foreground">
+                          ${getPrice(plan)}
+                        </span>
+                        <span className="text-muted-foreground ml-1">
+                          /user/month
+                        </span>
+                      </div>
+                      {isAnnual && getSavings(plan) && (
+                        <p className="text-sm text-green-600 mt-2">
+                          Save {getSavings(plan)}% annually
+                        </p>
+                      )}
                     </div>
-                    {isAnnual && getSavings(plan) && (
-                      <p className="text-sm text-green-600 mt-2">
-                        Save {getSavings(plan)}% annually
+                  ) : (
+                    <div className="mt-6">
+                      <div className="flex items-baseline justify-center">
+                        <span className="text-2xl font-bold text-foreground">
+                          Custom Pricing
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Contact us for a tailored solution
                       </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </CardHeader>
                 
                 <CardContent className="space-y-6">
@@ -237,19 +253,42 @@ const PricingPage = () => {
                     ))}
                   </div>
                   
-                  <Link to="/auth" className="block">
-                    <Button 
-                      variant={plan.buttonVariant} 
-                      className="w-full"
-                      size="lg"
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
-                  
-                  <p className="text-xs text-muted-foreground text-center">
-                    Start your subscription today
-                  </p>
+                  {plan.isEnterprise ? (
+                    <>
+                      <Link to="/contact" className="block">
+                        <Button 
+                          variant={plan.buttonVariant} 
+                          className="w-full"
+                          size="lg"
+                        >
+                          Contact Sales
+                        </Button>
+                      </Link>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Let's discuss your needs
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <a 
+                        href={isAnnual ? plan.stripeYearlyUrl : plan.stripeMonthlyUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="block"
+                      >
+                        <Button 
+                          variant={plan.buttonVariant} 
+                          className="w-full"
+                          size="lg"
+                        >
+                          Get Started
+                        </Button>
+                      </a>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Start your subscription today
+                      </p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             ))}
