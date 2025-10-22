@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionStatus {
   hasActiveSubscription: boolean;
@@ -10,7 +9,7 @@ interface SubscriptionStatus {
 }
 
 export const useSubscription = (): SubscriptionStatus => {
-  const { organization, user } = useAuth();
+  const { organization, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>({
     hasActiveSubscription: false,
     subscriptionStatus: null,
@@ -19,49 +18,35 @@ export const useSubscription = (): SubscriptionStatus => {
   });
 
   useEffect(() => {
-    const checkSubscription = async () => {
-      if (!organization?.id) {
-        setStatus({
-          hasActiveSubscription: false,
-          subscriptionStatus: null,
-          isTrialing: false,
-          loading: false,
-        });
-        return;
-      }
+    // Wait for auth to finish loading
+    if (authLoading) {
+      setStatus(prev => ({ ...prev, loading: true }));
+      return;
+    }
 
-      try {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('subscription_status')
-          .eq('id', organization.id)
-          .single();
+    // If no organization, user has no subscription
+    if (!organization) {
+      setStatus({
+        hasActiveSubscription: false,
+        subscriptionStatus: null,
+        isTrialing: false,
+        loading: false,
+      });
+      return;
+    }
 
-        if (error) throw error;
+    // Use the subscription_status from the organization object (already loaded by useAuth)
+    const subscriptionStatus = organization.subscription_status || 'inactive';
+    const hasActiveSubscription = ['active', 'trialing'].includes(subscriptionStatus);
+    const isTrialing = subscriptionStatus === 'trialing';
 
-        const subscriptionStatus = data?.subscription_status || 'inactive';
-        const hasActiveSubscription = ['active', 'trialing'].includes(subscriptionStatus);
-        const isTrialing = subscriptionStatus === 'trialing';
-
-        setStatus({
-          hasActiveSubscription,
-          subscriptionStatus,
-          isTrialing,
-          loading: false,
-        });
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-        setStatus({
-          hasActiveSubscription: false,
-          subscriptionStatus: 'inactive',
-          isTrialing: false,
-          loading: false,
-        });
-      }
-    };
-
-    checkSubscription();
-  }, [organization?.id, user]);
+    setStatus({
+      hasActiveSubscription,
+      subscriptionStatus,
+      isTrialing,
+      loading: false,
+    });
+  }, [organization, authLoading]);
 
   return status;
 };
