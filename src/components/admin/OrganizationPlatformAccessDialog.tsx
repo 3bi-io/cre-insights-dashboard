@@ -112,12 +112,12 @@ const OrganizationPlatformAccessDialog: React.FC<OrganizationPlatformAccessDialo
           </div>
         ) : (
           <div className="space-y-6">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Toggle platforms on/off to control what {organization.name} can access.
-              </AlertDescription>
-            </Alert>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Toggle platforms on/off to control what {organization.name} can access. Click "Save Changes" to apply your changes.
+            </AlertDescription>
+          </Alert>
 
             {Object.entries(platformsByCategory).map(([category, categoryPlatforms]) => (
               <div key={category} className="space-y-3">

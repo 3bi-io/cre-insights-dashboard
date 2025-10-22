@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOrganizationFeaturesAdmin } from '@/hooks/useOrganizationFeaturesAdmin';
+import { Settings } from 'lucide-react';
 import {
   getFeatureIcon,
   getCategoryColor,
@@ -83,7 +85,14 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Manage Features - {organization.name}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5" />
+            Manage Features - {organization.name}
+          </DialogTitle>
+          <DialogDescription>
+            Control which features are available to this organization.
+            Disabled features will not be accessible to users.
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -100,6 +109,13 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
           </div>
         ) : (
           <div className="space-y-6">
+            <Alert>
+              <Settings className="h-4 w-4" />
+              <AlertDescription>
+                Toggle features on/off to control what {organization.name} can access. Click "Save Changes" to apply your changes.
+              </AlertDescription>
+            </Alert>
+
             {Object.entries(featuresByCategory).map(([category, categoryFeatures]) => (
               <div key={category} className="space-y-3">
                 <div className="flex items-center gap-2">
