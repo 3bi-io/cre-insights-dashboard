@@ -23,11 +23,13 @@ serve(async (req) => {
 
     let feedUrl: string;
     let organizationId: string;
+    let clientId: string | null = null;
     
     if (req.method === 'POST') {
       const body = await req.json();
       feedUrl = body.feedUrl;
       organizationId = body.organizationId;
+      clientId = body.clientId || null;
     } else {
       return new Response(
         JSON.stringify({ success: false, error: 'POST method required' }), 
@@ -244,7 +246,8 @@ serve(async (req) => {
           url: job.url || null,
           apply_url: job.url || null,
           job_id: job.referencenumber || null,
-          client: job.company || 'Hayes Recruiting Solutions'
+          client_id: clientId,
+          client: clientId ? null : (job.company || 'Hayes Recruiting Solutions')
         };
 
         // Check if job already exists by reference number or title + location

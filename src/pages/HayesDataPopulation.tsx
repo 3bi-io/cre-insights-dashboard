@@ -27,6 +27,9 @@ const HayesDataPopulation = () => {
 
   const dannyHermanFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter';
   const pembertonFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=pemberton_truck_lines&board=AIRecruiter';
+  
+  // Client IDs for proper job association
+  const pembertonClientId = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03';
 
   const loadStats = async () => {
     if (!selectedOrgId) return;
@@ -69,13 +72,14 @@ const HayesDataPopulation = () => {
     }
   }, [userRole, selectedOrgId]);
 
-  const importJobs = async (feedUrl: string, feedName: string) => {
+  const importJobs = async (feedUrl: string, feedName: string, clientId?: string) => {
     setImportingJobs(true);
     try {
       const { data, error } = await supabase.functions.invoke('import-jobs-from-feed', {
-        body: {
+        body: { 
           feedUrl,
-          organizationId: selectedOrgId
+          organizationId: selectedOrgId,
+          clientId: clientId || null
         }
       });
 
@@ -220,7 +224,7 @@ const HayesDataPopulation = () => {
                   </AlertDescription>
                 </Alert>
                 <Button 
-                  onClick={() => importJobs(pembertonFeedUrl, 'Pemberton Truck Lines')}
+                  onClick={() => importJobs(pembertonFeedUrl, 'Pemberton Truck Lines', pembertonClientId)}
                   disabled={importingJobs}
                   size="lg"
                   className="w-full mt-2"
