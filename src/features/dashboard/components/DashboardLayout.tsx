@@ -65,7 +65,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <PageLayout 
-      title={hideHeader ? undefined : "Dashboard"} 
+      title={hideHeader ? undefined : `${displayName} Dashboard`} 
       description={hideHeader ? undefined : "Organization management and analytics"}
       actions={pageActions}
     >
