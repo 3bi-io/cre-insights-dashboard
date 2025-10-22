@@ -38,13 +38,15 @@ const OrganizationPlatformAccessDialog: React.FC<OrganizationPlatformAccessDialo
 
   useEffect(() => {
     // Initialize all available platforms with their current state from DB or default to true (enabled)
-    const states = availablePlatforms.reduce((acc, platform) => {
-      const existingPlatform = platforms.find(p => p.platform_name === platform.key);
-      acc[platform.key] = existingPlatform ? existingPlatform.enabled : true;
-      return acc;
-    }, {} as Record<string, boolean>);
-    setPlatformStates(states);
-  }, [platforms, availablePlatforms]);
+    if (availablePlatforms.length > 0) {
+      const states = availablePlatforms.reduce((acc, platform) => {
+        const existingPlatform = platforms.find(p => p.platform_name === platform.key);
+        acc[platform.key] = existingPlatform ? existingPlatform.enabled : true;
+        return acc;
+      }, {} as Record<string, boolean>);
+      setPlatformStates(states);
+    }
+  }, [platforms, availablePlatforms, open]);
 
   const handlePlatformToggle = (platformName: string, enabled: boolean) => {
     setPlatformStates(prev => ({ ...prev, [platformName]: enabled }));
@@ -159,6 +161,7 @@ const OrganizationPlatformAccessDialog: React.FC<OrganizationPlatformAccessDialo
                           id={platform.key}
                           checked={isEnabled}
                           onCheckedChange={(checked) => handlePlatformToggle(platform.key, checked)}
+                          disabled={isUpdating}
                         />
                       </div>
                     );

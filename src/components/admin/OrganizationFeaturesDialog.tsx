@@ -32,13 +32,15 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
 
   useEffect(() => {
     // Initialize all available features with their current state from DB or default to false
-    const states = availableFeatures.reduce((acc, feature) => {
-      const existingFeature = features.find(f => f.feature_name === feature.key);
-      acc[feature.key] = existingFeature ? existingFeature.enabled : false;
-      return acc;
-    }, {} as Record<string, boolean>);
-    setFeatureStates(states);
-  }, [features, availableFeatures]);
+    if (availableFeatures.length > 0) {
+      const states = availableFeatures.reduce((acc, feature) => {
+        const existingFeature = features.find(f => f.feature_name === feature.key);
+        acc[feature.key] = existingFeature ? existingFeature.enabled : false;
+        return acc;
+      }, {} as Record<string, boolean>);
+      setFeatureStates(states);
+    }
+  }, [features, availableFeatures, open]);
 
   const handleFeatureToggle = (featureName: string, enabled: boolean) => {
     setFeatureStates(prev => ({ ...prev, [featureName]: enabled }));
@@ -156,6 +158,7 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
                           id={feature.key}
                           checked={isEnabled}
                           onCheckedChange={(checked) => handleFeatureToggle(feature.key, checked)}
+                          disabled={isUpdating}
                         />
                       </div>
                     );
