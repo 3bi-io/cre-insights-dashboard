@@ -1,102 +1,107 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { OrganizationPlatformsService } from '@/features/organizations/services/organizationPlatformsService';
+import {
+  OrganizationPlatformAccess,
+  PlatformUpdatePayload,
+} from '@/features/organizations/types/platforms.types';
+import { getAllPlatforms } from '@/features/organizations/config/organizationPlatforms.config';
 
+/**
+ * Hook for managing organization platform access (admin only)
+ * Provides CRUD operations for platform management
+ */
 export const usePlatformAccess = (organizationId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check if current user has access to a specific platform
-  const { data: userPlatformAccess, isLoading: isCheckingAccess } = useQuery({
-    queryKey: ['user-platform-access'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_user_platform_access', {
-        _platform_name: 'all'
-      });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !organizationId, // Only check user access when not viewing specific org
-  });
-
-  // Get platform access for a specific organization (Super Admin only)
-  const { data: organizationPlatformAccess, isLoading: isLoadingOrgAccess } = useQuery({
+  // Fetch organization platforms
+  const platformsQuery = useQuery({
     queryKey: ['organization-platform-access', organizationId],
-    queryFn: async () => {
+    queryFn: async (): Promise<OrganizationPlatformAccess[]> => {
       if (!organizationId) return [];
-      
-      const { data, error } = await supabase.rpc('get_organization_platform_access', {
-        _org_id: organizationId
-      });
-      
-      if (error) throw error;
-      return data;
+
+      try {
+        return await OrganizationPlatformsService.fetchOrganizationPlatforms(
+          organizationId
+        );
+      } catch (error: any) {
+        console.error('Failed to fetch organization platforms:', error);
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to load platforms',
+          variant: 'destructive',
+        });
+        throw error;
+      }
     },
     enabled: !!organizationId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Set platform access for an organization (Super Admin only)
-  const setPlatformAccessMutation = useMutation({
-    mutationFn: async ({ 
-      orgId, 
-      platformName, 
-      enabled 
-    }: { 
-      orgId: string; 
-      platformName: string; 
-      enabled: boolean; 
+  // Update platforms mutation
+  const updatePlatformsMutation = useMutation({
+    mutationFn: async ({
+      orgId,
+      platforms,
+    }: {
+      orgId: string;
+      platforms: PlatformUpdatePayload;
     }) => {
-      const { error } = await supabase.rpc('set_organization_platform_access', {
-        _org_id: orgId,
-        _platform_name: platformName,
-        _enabled: enabled
-      });
-      
-      if (error) throw error;
+      await OrganizationPlatformsService.updateOrganizationPlatforms(
+        orgId,
+        platforms
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization-platform-access'] });
+      // Invalidate all platform-related queries
+      queryClient.invalidateQueries({
+        queryKey: ['organization-platform-access'],
+      });
+      queryClient.invalidateQueries({ queryKey: ['organization'] });
+      
       toast({
-        title: "Platform Access Updated",
-        description: "Successfully updated platform access for organization",
+        title: 'Success',
+        description: 'Organization platforms have been successfully updated.',
       });
     },
     onError: (error: any) => {
+      console.error('Failed to update platforms:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update platform access",
-        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to update platforms',
+        variant: 'destructive',
       });
     },
   });
 
-  // Check if user has access to specific platform
-  const checkPlatformAccess = async (platformName: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.rpc('get_user_platform_access', {
-        _platform_name: platformName
-      });
-      
-      if (error) throw error;
-      return data || false;
-    } catch (error) {
-      console.error('Error checking platform access:', error);
-      return false;
-    }
-  };
+  // Get available platforms from centralized config
+  const availablePlatforms = getAllPlatforms();
 
-  const setPlatformAccess = (orgId: string, platformName: string, enabled: boolean) => {
-    setPlatformAccessMutation.mutate({ orgId, platformName, enabled });
+  // Check if a platform is enabled (utility function)
+  const checkPlatformAccess = async (platformName: string): Promise<boolean> => {
+    if (!organizationId) return false;
+    
+    const platformsMap = await OrganizationPlatformsService.fetchOrganizationPlatformsMap(organizationId);
+    return platformsMap[platformName as any] ?? true; // Default to true if not found
   };
 
   return {
-    userPlatformAccess,
-    organizationPlatformAccess,
-    isCheckingAccess,
-    isLoadingOrgAccess,
+    // Data
+    platforms: platformsQuery.data || [],
+    availablePlatforms,
+    
+    // State
+    isLoading: platformsQuery.isLoading,
+    isError: platformsQuery.isError,
+    error: platformsQuery.error,
+    
+    // Mutations
+    updatePlatforms: updatePlatformsMutation.mutateAsync,
+    isUpdating: updatePlatformsMutation.isPending,
+    
+    // Utilities
     checkPlatformAccess,
-    setPlatformAccess,
-    isUpdating: setPlatformAccessMutation.isPending,
+    refetch: platformsQuery.refetch,
   };
 };
