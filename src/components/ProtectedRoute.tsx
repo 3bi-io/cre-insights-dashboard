@@ -15,11 +15,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, loading: authLoading, userRole, organization } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
-  const location = useLocation();
-
-  // Routes that don't require subscription
-  const publicRoutes = ['/pricing', '/profile', '/settings', '/onboarding'];
-  const isPublicRoute = publicRoutes.some(route => location.pathname.startsWith(route));
 
   if (authLoading || subLoading) {
     return (
@@ -33,19 +28,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
-  // Super admins bypass subscription checks
+  // Super admins bypass all checks
   if (userRole === 'super_admin') {
     return <>{children}</>;
   }
 
-  // Check if organization needs onboarding
-  if (organization && organization.subscription_status === 'inactive' && !isPublicRoute) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
-  // Require subscription for protected routes
-  if (requireSubscription && !hasActiveSubscription && !isPublicRoute) {
-    return <Navigate to="/pricing" replace />;
+  // If organization has active subscription, grant full access
+  if (hasActiveSubscription) {
+    return <>{children}</>;
   }
 
   return <>{children}</>;
