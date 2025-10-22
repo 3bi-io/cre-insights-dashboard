@@ -5,8 +5,12 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Bot, Megaphone, Share2, BarChart3, Mic } from 'lucide-react';
 import { useOrganizationFeaturesAdmin } from '@/hooks/useOrganizationFeaturesAdmin';
+import {
+  getFeatureIcon,
+  getCategoryColor,
+  getFeaturesByCategory,
+} from '@/features/organizations/config/organizationFeatures.config';
 
 interface Organization {
   id: string;
@@ -18,39 +22,6 @@ interface OrganizationFeaturesDialogProps {
   trigger?: React.ReactNode;
 }
 
-const getFeatureIcon = (featureName: string) => {
-  switch (featureName) {
-    case 'openai_access':
-    case 'anthropic_access':
-      return Bot;
-    case 'meta_integration':
-      return Megaphone;
-    case 'tenstreet_access':
-      return Share2;
-    case 'advanced_analytics':
-      return BarChart3;
-    case 'voice_agent':
-      return Mic;
-    default:
-      return Settings;
-  }
-};
-
-const getCategoryColor = (category: string) => {
-  switch (category) {
-    case 'AI':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'Advertising':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'Integration':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'Analytics':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
 export const OrganizationFeaturesDialog = ({ organization, trigger }: OrganizationFeaturesDialogProps) => {
   const [open, setOpen] = useState(false);
   const [featureStates, setFeatureStates] = useState<Record<string, boolean>>({});
@@ -60,8 +31,8 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
   useEffect(() => {
     // Initialize all available features with their current state from DB or default to false
     const states = availableFeatures.reduce((acc, feature) => {
-      const existingFeature = features.find(f => f.feature_name === feature.name);
-      acc[feature.name] = existingFeature ? existingFeature.enabled : false;
+      const existingFeature = features.find(f => f.feature_name === feature.key);
+      acc[feature.key] = existingFeature ? existingFeature.enabled : false;
       return acc;
     }, {} as Record<string, boolean>);
     setFeatureStates(states);
@@ -74,7 +45,7 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
   const handleSave = async () => {
     // Send all available features with their current states
     const featureUpdates = availableFeatures.reduce((acc, feature) => {
-      acc[feature.name] = { enabled: featureStates[feature.name] ?? false };
+      acc[feature.key] = { enabled: featureStates[feature.key] ?? false };
       return acc;
     }, {} as Record<string, { enabled: boolean }>);
 
@@ -92,27 +63,21 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
   const hasChanges = () => {
     // Check if any feature state differs from its database state
     return availableFeatures.some(feature => {
-      const existingFeature = features.find(f => f.feature_name === feature.name);
-      const currentState = featureStates[feature.name] ?? false;
+      const existingFeature = features.find(f => f.feature_name === feature.key);
+      const currentState = featureStates[feature.key] ?? false;
       const originalState = existingFeature ? existingFeature.enabled : false;
       return currentState !== originalState;
     });
   };
 
-  const featuresByCategory = availableFeatures.reduce((acc: Record<string, any[]>, feature) => {
-    if (!acc[feature.category]) {
-      acc[feature.category] = [];
-    }
-    acc[feature.category].push(feature);
-    return acc;
-  }, {});
+  const featuresByCategory = getFeaturesByCategory();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="ghost" size="sm">
-            <Settings className="w-4 h-4" />
+            Manage Features
           </Button>
         )}
       </DialogTrigger>
@@ -148,16 +113,16 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
                 
                 <div className="space-y-2">
                   {categoryFeatures.map((feature) => {
-                    const Icon = getFeatureIcon(feature.name);
-                    const isEnabled = featureStates[feature.name] ?? false;
+                    const Icon = getFeatureIcon(feature.key);
+                    const isEnabled = featureStates[feature.key] ?? false;
                     
                     return (
-                      <div key={feature.name} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div key={feature.key} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                         <div className="flex items-start gap-3 flex-1">
                           <Icon className="w-5 h-5 mt-0.5 text-muted-foreground" />
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <Label htmlFor={feature.name} className="font-medium cursor-pointer">
+                              <Label htmlFor={feature.key} className="font-medium cursor-pointer">
                                 {feature.label}
                               </Label>
                               {isEnabled && (
@@ -172,9 +137,9 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
                           </div>
                         </div>
                         <Switch
-                          id={feature.name}
+                          id={feature.key}
                           checked={isEnabled}
-                          onCheckedChange={(checked) => handleFeatureToggle(feature.name, checked)}
+                          onCheckedChange={(checked) => handleFeatureToggle(feature.key, checked)}
                         />
                       </div>
                     );

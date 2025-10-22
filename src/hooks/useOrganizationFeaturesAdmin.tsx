@@ -1,63 +1,73 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { OrganizationFeaturesService } from '@/features/organizations/services/organizationFeaturesService';
+import {
+  OrganizationFeature,
+  FeatureUpdatePayload,
+} from '@/features/organizations/types/features.types';
+import { getAllFeatures } from '@/features/organizations/config/organizationFeatures.config';
 
-interface OrganizationFeature {
-  id: string;
-  organization_id: string;
-  feature_name: string;
-  enabled: boolean;
-  settings: any;
-  created_at: string;
-  updated_at: string;
-}
-
-interface FeatureUpdate {
-  [featureName: string]: {
-    enabled: boolean;
-    settings?: any;
-  };
-}
-
+/**
+ * Hook for managing organization features (admin only)
+ * Provides CRUD operations for feature management
+ */
 export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch organization features
   const featuresQuery = useQuery({
     queryKey: ['organization-features-admin', organizationId],
     queryFn: async (): Promise<OrganizationFeature[]> => {
       if (!organizationId) return [];
 
-      const { data, error } = await supabase
-        .from('organization_features')
-        .select('*')
-        .eq('organization_id', organizationId)
-        .order('feature_name');
-
-      if (error) throw error;
-      return data || [];
+      try {
+        return await OrganizationFeaturesService.fetchOrganizationFeatures(
+          organizationId
+        );
+      } catch (error: any) {
+        console.error('Failed to fetch organization features:', error);
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to load features',
+          variant: 'destructive',
+        });
+        throw error;
+      }
     },
     enabled: !!organizationId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
+  // Update features mutation
   const updateFeaturesMutation = useMutation({
-    mutationFn: async ({ orgId, features }: { orgId: string; features: FeatureUpdate }) => {
-      const { error } = await supabase.rpc('update_organization_features', {
-        _org_id: orgId,
-        _features: features,
-      });
-
-      if (error) throw error;
+    mutationFn: async ({
+      orgId,
+      features,
+    }: {
+      orgId: string;
+      features: FeatureUpdatePayload;
+    }) => {
+      await OrganizationFeaturesService.updateOrganizationFeatures(
+        orgId,
+        features
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization-features-admin'] });
+      // Invalidate all feature-related queries
+      queryClient.invalidateQueries({
+        queryKey: ['organization-features-admin'],
+      });
       queryClient.invalidateQueries({ queryKey: ['organization-features'] });
+      queryClient.invalidateQueries({ queryKey: ['organization'] });
+      
       toast({
-        title: 'Features Updated',
+        title: 'Success',
         description: 'Organization features have been successfully updated.',
       });
     },
     onError: (error: any) => {
+      console.error('Failed to update features:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to update features',
@@ -66,64 +76,24 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
     },
   });
 
-  // Available features with descriptions
-  const availableFeatures = [
-    {
-      name: 'meta_integration',
-      label: 'Meta Integration',
-      description: 'Enable Meta/Facebook advertising integration for job postings',
-      category: 'Advertising',
-    },
-    {
-      name: 'openai_access',
-      label: 'OpenAI Access',
-      description: 'Access to OpenAI GPT models for AI-powered features',
-      category: 'AI',
-    },
-    {
-      name: 'anthropic_access',
-      label: 'Anthropic Access',
-      description: 'Access to Anthropic Claude models for AI-powered features',
-      category: 'AI',
-    },
-    {
-      name: 'grok_access',
-      label: 'xAI Grok Access',
-      description: 'Access to xAI Grok models with real-time knowledge',
-      category: 'AI',
-    },
-    {
-      name: 'tenstreet_access',
-      label: 'Tenstreet Integration',
-      description: 'Integration with Tenstreet ATS for application management',
-      category: 'Integration',
-    },
-    {
-      name: 'voice_agent',
-      label: 'Voice Agent',
-      description: 'AI voice agent for applicant screening and communication',
-      category: 'AI',
-    },
-    {
-      name: 'elevenlabs_access',
-      label: 'ElevenLabs Voice AI',
-      description: 'Access to ElevenLabs voice synthesis and conversational AI',
-      category: 'AI',
-    },
-    {
-      name: 'advanced_analytics',
-      label: 'Advanced Analytics',
-      description: 'Advanced reporting and analytics features',
-      category: 'Analytics',
-    },
-  ];
+  // Get available features from centralized config
+  const availableFeatures = getAllFeatures();
 
   return {
+    // Data
     features: featuresQuery.data || [],
     availableFeatures,
+    
+    // State
     isLoading: featuresQuery.isLoading,
+    isError: featuresQuery.isError,
     error: featuresQuery.error,
+    
+    // Mutations
     updateFeatures: updateFeaturesMutation.mutateAsync,
     isUpdating: updateFeaturesMutation.isPending,
+    
+    // Utilities
+    refetch: featuresQuery.refetch,
   };
 };

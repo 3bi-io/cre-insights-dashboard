@@ -1,58 +1,54 @@
 import { useAuth } from './useAuth';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
+import { OrganizationFeaturesService } from '@/features/organizations/services/organizationFeaturesService';
+import {
+  FeatureKey,
+  OrganizationFeaturesMap,
+} from '@/features/organizations/types/features.types';
 
-interface OrganizationFeatures {
-  tenstreet_access?: boolean;
-  openai_access?: boolean;
-  anthropic_access?: boolean;
-  grok_access?: boolean;
-  meta_integration?: boolean;
-  voice_agent?: boolean;
-  advanced_analytics?: boolean;
-  elevenlabs_access?: boolean;
-}
-
+/**
+ * Hook for checking organization feature access
+ * Used by regular users and components to verify feature availability
+ */
 export const useOrganizationFeatures = () => {
   const { organization, userRole } = useAuth();
 
   // Fetch features from organization_features table
   const featuresQuery = useQuery({
     queryKey: ['organization-features', organization?.id],
-    queryFn: async (): Promise<OrganizationFeatures> => {
+    queryFn: async (): Promise<OrganizationFeaturesMap> => {
       if (!organization?.id) return {};
 
-      const { data, error } = await supabase
-        .from('organization_features')
-        .select('feature_name, enabled')
-        .eq('organization_id', organization.id);
-
-      if (error) throw error;
-
-      // Convert array to object
-      const featuresObj = (data || []).reduce((acc, feature) => {
-        acc[feature.feature_name as keyof OrganizationFeatures] = feature.enabled;
-        return acc;
-      }, {} as OrganizationFeatures);
-
-      return featuresObj;
+      try {
+        return await OrganizationFeaturesService.fetchOrganizationFeaturesMap(
+          organization.id
+        );
+      } catch (error) {
+        console.error('Failed to fetch organization features:', error);
+        return {};
+      }
     },
     enabled: !!organization?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
   });
 
   // Get features from query or fallback to empty object
   const features = useMemo(() => {
-    return featuresQuery.data || {} as OrganizationFeatures;
+    return featuresQuery.data || ({} as OrganizationFeaturesMap);
   }, [featuresQuery.data]);
 
-  // Super admins have access to all features
-  const hasFeature = (featureKey: keyof OrganizationFeatures): boolean => {
+  /**
+   * Check if user has access to a specific feature
+   * Super admins have access to all features
+   */
+  const hasFeature = (featureKey: FeatureKey): boolean => {
     if (userRole === 'super_admin') return true;
     return features?.[featureKey] || false;
   };
 
-  // Feature check functions
+  // Feature check functions for backward compatibility
   const hasTenstreetAccess = () => hasFeature('tenstreet_access');
   const hasOpenAIAccess = () => hasFeature('openai_access');
   const hasAnthropicAccess = () => hasFeature('anthropic_access');
@@ -63,12 +59,22 @@ export const useOrganizationFeatures = () => {
   const hasElevenLabsAccess = () => hasFeature('elevenlabs_access');
 
   // AI access (OpenAI, Anthropic, or Grok)
-  const hasAIAccess = () => hasOpenAIAccess() || hasAnthropicAccess() || hasGrokAccess();
+  const hasAIAccess = () =>
+    hasOpenAIAccess() || hasAnthropicAccess() || hasGrokAccess();
 
   return {
-    features: features || {},
+    // Data
+    features,
+    
+    // State
     isLoading: featuresQuery.isLoading,
+    isError: featuresQuery.isError,
+    error: featuresQuery.error,
+    
+    // Generic feature check
     hasFeature,
+    
+    // Specific feature checks (backward compatibility)
     hasTenstreetAccess,
     hasOpenAIAccess,
     hasAnthropicAccess,
