@@ -58,22 +58,23 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
   const { features, availableFeatures, isLoading, updateFeatures, isUpdating } = useOrganizationFeaturesAdmin(organization.id);
 
   useEffect(() => {
-    if (features.length > 0) {
-      const states = features.reduce((acc, feature) => {
-        acc[feature.feature_name] = feature.enabled;
-        return acc;
-      }, {} as Record<string, boolean>);
-      setFeatureStates(states);
-    }
-  }, [features]);
+    // Initialize all available features with their current state from DB or default to false
+    const states = availableFeatures.reduce((acc, feature) => {
+      const existingFeature = features.find(f => f.feature_name === feature.name);
+      acc[feature.name] = existingFeature ? existingFeature.enabled : false;
+      return acc;
+    }, {} as Record<string, boolean>);
+    setFeatureStates(states);
+  }, [features, availableFeatures]);
 
   const handleFeatureToggle = (featureName: string, enabled: boolean) => {
     setFeatureStates(prev => ({ ...prev, [featureName]: enabled }));
   };
 
   const handleSave = async () => {
-    const featureUpdates = Object.entries(featureStates).reduce((acc, [featureName, enabled]) => {
-      acc[featureName] = { enabled };
+    // Send all available features with their current states
+    const featureUpdates = availableFeatures.reduce((acc, feature) => {
+      acc[feature.name] = { enabled: featureStates[feature.name] ?? false };
       return acc;
     }, {} as Record<string, { enabled: boolean }>);
 
@@ -89,9 +90,13 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
   };
 
   const hasChanges = () => {
-    return features.some(feature => 
-      featureStates[feature.feature_name] !== feature.enabled
-    );
+    // Check if any feature state differs from its database state
+    return availableFeatures.some(feature => {
+      const existingFeature = features.find(f => f.feature_name === feature.name);
+      const currentState = featureStates[feature.name] ?? false;
+      const originalState = existingFeature ? existingFeature.enabled : false;
+      return currentState !== originalState;
+    });
   };
 
   const featuresByCategory = availableFeatures.reduce((acc: Record<string, any[]>, feature) => {
