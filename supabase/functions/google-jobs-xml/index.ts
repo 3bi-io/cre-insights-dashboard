@@ -11,6 +11,10 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -67,20 +71,30 @@ Deno.serve(async (req) => {
     // Generate XML feed
     const xmlContent = generateGoogleJobsXML(jobListings || [], userId);
 
-    // Log the feed generation
-    const { error: logError } = await supabase
-      .from('background_tasks')
-      .insert({
-        user_id: userId,
-        task_type: 'google_jobs_xml_generation',
-        status: 'completed',
-        parameters: { job_count: jobListings?.length || 0 },
-        results: { xml_length: xmlContent.length }
-      });
+    const responseTime = Date.now() - startTime;
 
-    if (logError) {
-      console.error('Error logging feed generation:', logError);
+    // Get organization_id for the user
+    let organizationId = null;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', userId)
+        .single();
+      organizationId = profile?.organization_id;
     }
+
+    // Log feed access (non-blocking)
+    supabase.from('feed_access_logs').insert({
+      organization_id: organizationId,
+      user_id: userId,
+      feed_type: 'google-jobs-xml',
+      platform: 'google',
+      request_ip: requestIp,
+      user_agent: userAgent,
+      job_count: jobListings?.length || 0,
+      response_time_ms: responseTime
+    }).catch(err => console.error('Failed to log feed access:', err));
 
     return new Response(xmlContent, {
       headers: {

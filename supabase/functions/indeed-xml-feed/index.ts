@@ -13,6 +13,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const startTime = Date.now();
+  const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+
   try {
     // Create Supabase client with service role to bypass RLS
     const supabaseClient = createClient(
@@ -38,6 +42,18 @@ serve(async (req) => {
     // Generate Indeed XML
     const xmlHeader = '<?xml version="1.0" encoding="utf-8"?>'
     const xmlContent = generateIndeedXML(jobListings || [])
+
+    const responseTime = Date.now() - startTime;
+
+    // Log feed access (non-blocking)
+    supabaseClient.from('feed_access_logs').insert({
+      feed_type: 'indeed-xml-feed',
+      platform: 'indeed',
+      request_ip: requestIp,
+      user_agent: userAgent,
+      job_count: jobListings?.length || 0,
+      response_time_ms: responseTime
+    }).catch(err => console.error('Failed to log feed access:', err));
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {

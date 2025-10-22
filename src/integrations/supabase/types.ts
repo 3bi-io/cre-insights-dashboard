@@ -1451,6 +1451,63 @@ export type Database = {
           },
         ]
       }
+      feed_access_logs: {
+        Row: {
+          created_at: string | null
+          feed_type: string
+          id: string
+          job_count: number | null
+          job_group_id: string | null
+          organization_id: string | null
+          platform: string | null
+          request_ip: string | null
+          response_time_ms: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          feed_type: string
+          id?: string
+          job_count?: number | null
+          job_group_id?: string | null
+          organization_id?: string | null
+          platform?: string | null
+          request_ip?: string | null
+          response_time_ms?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          feed_type?: string
+          id?: string
+          job_count?: number | null
+          job_group_id?: string | null
+          organization_id?: string | null
+          platform?: string | null
+          request_ip?: string | null
+          response_time_ms?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_access_logs_job_group_id_fkey"
+            columns: ["job_group_id"]
+            isOneToOne: false
+            referencedRelation: "job_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_access_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glassdoor_analytics: {
         Row: {
           applications: number | null
@@ -3060,6 +3117,7 @@ export type Database = {
       }
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_sms_links: { Args: never; Returns: undefined }
+      cleanup_old_feed_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       create_organization: {
         Args: { _admin_email?: string; _name: string; _slug: string }

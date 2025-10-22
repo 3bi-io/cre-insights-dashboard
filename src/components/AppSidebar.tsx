@@ -87,6 +87,11 @@ const AppSidebar = () => {
     group: "Management",
     items: [
       {
+        path: '/admin/feeds',
+        label: 'XML Feeds',
+        icon: Rss
+      },
+      {
         path: '/admin/publishers',
         label: 'Publishers',
         icon: Share2

@@ -15,6 +15,10 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const startTime = Date.now();
+  const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+
   try {
     // Get query parameters
     const url = new URL(req.url)
@@ -93,6 +97,31 @@ serve(async (req) => {
       default:
         xmlContent = generateJobFeedXML(jobListings || [])
     }
+
+    const responseTime = Date.now() - startTime;
+
+    // Get organization_id for the user
+    let organizationId = null;
+    if (user_id) {
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user_id)
+        .single();
+      organizationId = profile?.organization_id;
+    }
+
+    // Log feed access (non-blocking)
+    supabaseClient.from('feed_access_logs').insert({
+      organization_id: organizationId,
+      user_id: user_id,
+      feed_type: 'job-feed-xml',
+      platform: platform,
+      request_ip: requestIp,
+      user_agent: userAgent,
+      job_count: jobListings?.length || 0,
+      response_time_ms: responseTime
+    }).catch(err => console.error('Failed to log feed access:', err));
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {
