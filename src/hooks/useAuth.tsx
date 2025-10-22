@@ -43,13 +43,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const fetchUserRoleAndOrganization = async (_userId: string) => {
   try {
-  // Fetch user role
-  const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
-  if (roleError) {
-    logError('Error fetching user role', roleError, 'Auth');
-    setUserRole('user');
-  } else {
-    logDebug('User role fetched', { role: roleData }, 'Auth');
+    logInfo(`Fetching role and organization for user: ${_userId}`, 'Auth');
+    
+    // Fetch user role
+    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+    if (roleError) {
+      logError('Error fetching user role', roleError, 'Auth');
+      setUserRole('user');
+    } else {
+      logDebug('User role fetched', { role: roleData }, 'Auth');
       // Check if user is super admin by email or role
       if (roleData === 'super_admin') {
         setUserRole('super_admin');
@@ -79,10 +81,13 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       logError('Error fetching user profile', profileError, 'Auth');
       setOrganization(null);
     } else if (profileData?.organizations) {
-      logDebug('User organization fetched', { organization: profileData.organizations }, 'Auth');
+      logInfo('User organization loaded', { 
+        orgName: profileData.organizations.name,
+        orgId: profileData.organizations.id 
+      }, 'Auth');
       setOrganization(profileData.organizations as any);
     } else {
-      // Super admins don't need an organization
+      logDebug('No organization found for user (may be super admin)', {}, 'Auth');
       setOrganization(null);
     }
   } catch (error: unknown) {
@@ -130,24 +135,32 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
-    if (!error) {
+    if (!error && data.session?.user) {
       try {
+        logInfo('Sign in successful, fetching user data...', 'Auth');
+        
+        // Wait for role and organization to be fetched
+        await fetchUserRoleAndOrganization(data.session.user.id);
+        
+        // Get role to determine navigation
         const { data: roleData } = await supabase.rpc('get_current_user_role');
         const role = (roleData as string) || 'user';
+        
+        logInfo('Navigation decision', { role }, 'Auth');
+        
         if (role === 'super_admin') {
           navigate('/admin');
-        } else if (role === 'admin') {
-          navigate('/dashboard');
         } else {
           navigate('/dashboard');
         }
-      } catch {
-        navigate('/');
+      } catch (err) {
+        logError('Error during sign in navigation', err, 'Auth');
+        navigate('/dashboard'); // Fallback to dashboard
       }
     }
     
