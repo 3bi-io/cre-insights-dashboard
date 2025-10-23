@@ -27,6 +27,29 @@ const JobsPage = () => {
     endVoiceApplication,
   } = useElevenLabsVoice();
 
+  // Fetch all organizations that have job listings
+  const { data: allOrganizations } = useQuery({
+    queryKey: ['public-organizations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, slug')
+        .order('name');
+      
+      if (error) throw error;
+      
+      // Filter to only organizations that have at least one job listing
+      const orgIds = data?.map(org => org.id) || [];
+      const { data: jobCounts } = await supabase
+        .from('job_listings')
+        .select('organization_id')
+        .in('organization_id', orgIds);
+      
+      const orgsWithJobs = new Set(jobCounts?.map(j => j.organization_id));
+      return data?.filter(org => orgsWithJobs.has(org.id)) || [];
+    },
+  });
+
   // Fetch all public job listings with voice agents
   const { data: jobs, isLoading } = useQuery({
     queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter, organizationFilter],
@@ -95,17 +118,10 @@ const JobsPage = () => {
     return Array.from(locationSet).sort();
   }, [jobs]);
 
-  // Get unique organizations for filter
+  // Use the separate organizations query for the dropdown
   const organizations = React.useMemo(() => {
-    if (!jobs) return [];
-    const orgMap = new Map();
-    jobs.forEach(job => {
-      if (job.organizations?.id && job.organizations?.name) {
-        orgMap.set(job.organizations.id, job.organizations.name);
-      }
-    });
-    return Array.from(orgMap.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [jobs]);
+    return allOrganizations || [];
+  }, [allOrganizations]);
 
   const filteredJobs = React.useMemo(() => {
     if (!jobs) return [];
