@@ -24,12 +24,29 @@ const HayesDataPopulation = () => {
   const [selectedOrgId, setSelectedOrgId] = useState<string>('84214b48-7b51-45bc-ad7f-723bcf50466c');
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [selectedFeed, setSelectedFeed] = useState<string>('');
 
-  const dannyHermanFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter';
-  const pembertonFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=Pemberton-Truck-Lines-1749741664&board=ATSme';
-  
-  // Client IDs for proper job association
-  const pembertonClientId = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03';
+  // Client feed configurations
+  const clientFeeds = [
+    {
+      id: 'pemberton',
+      name: 'Pemberton Truck Lines Inc',
+      feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Pemberton-Truck-Lines-1749741664&board=ATSme',
+      clientId: '67cadf11-8cce-41c6-8e19-7d2bb0be3b03'
+    },
+    {
+      id: 'danny-herman',
+      name: 'Danny Herman Trucking',
+      feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter',
+      clientId: null
+    },
+    {
+      id: 'novco',
+      name: 'Novco Inc',
+      feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Novco%2C-Inc.-1760547390&board=ATSme',
+      clientId: null
+    }
+  ];
 
   const loadStats = async () => {
     if (!selectedOrgId) return;
@@ -72,14 +89,26 @@ const HayesDataPopulation = () => {
     }
   }, [userRole, selectedOrgId]);
 
-  const importJobs = async (feedUrl: string, feedName: string, clientId?: string) => {
+  const importJobs = async () => {
+    if (!selectedFeed) {
+      toast({
+        title: "No Feed Selected",
+        description: "Please select a client feed to import from",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const feed = clientFeeds.find(f => f.id === selectedFeed);
+    if (!feed) return;
+
     setImportingJobs(true);
     try {
       const { data, error } = await supabase.functions.invoke('import-jobs-from-feed', {
         body: { 
-          feedUrl,
+          feedUrl: feed.feedUrl,
           organizationId: selectedOrgId,
-          clientId: clientId || null
+          clientId: feed.clientId || null
         }
       });
 
@@ -88,7 +117,7 @@ const HayesDataPopulation = () => {
 
       toast({
         title: "Jobs Imported",
-        description: `${data.message} from ${feedName}`,
+        description: `${data.message} from ${feed.name}`,
       });
       
       await loadStats();
@@ -209,69 +238,55 @@ const HayesDataPopulation = () => {
               Step 1: Import Jobs from CDL Job Cast
             </CardTitle>
             <CardDescription>
-              Import job listings from CDL Job Cast feeds
+              Select a client feed and import job listings
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
-              <div>
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Feed:</strong> Pemberton Truck Lines Inc
-                    <br />
-                    <strong>URL:</strong> {pembertonFeedUrl}
-                  </AlertDescription>
-                </Alert>
-                <Button 
-                  onClick={() => importJobs(pembertonFeedUrl, 'Pemberton Truck Lines', pembertonClientId)}
-                  disabled={importingJobs}
-                  size="lg"
-                  className="w-full mt-2"
-                >
-                  {importingJobs ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Importing Jobs...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Import Pemberton Jobs
-                    </>
-                  )}
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="feedSelect">Select Client Feed</Label>
+                <Select value={selectedFeed} onValueChange={setSelectedFeed}>
+                  <SelectTrigger id="feedSelect" className="bg-popover">
+                    <SelectValue placeholder="Choose a client feed..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    {clientFeeds.map((feed) => (
+                      <SelectItem key={feed.id} value={feed.id}>
+                        {feed.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedFeed && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Feed:</strong> {clientFeeds.find(f => f.id === selectedFeed)?.name}
+                      <br />
+                      <strong>URL:</strong> <span className="text-xs break-all">{clientFeeds.find(f => f.id === selectedFeed)?.feedUrl}</span>
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
 
-              <div>
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Feed:</strong> Danny Herman Trucking
-                    <br />
-                    <strong>URL:</strong> {dannyHermanFeedUrl}
-                  </AlertDescription>
-                </Alert>
-                <Button 
-                  onClick={() => importJobs(dannyHermanFeedUrl, 'Danny Herman Trucking')}
-                  disabled={importingJobs}
-                  size="lg"
-                  variant="outline"
-                  className="w-full mt-2"
-                >
-                  {importingJobs ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Importing Jobs...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Import Danny Herman Jobs
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button 
+                onClick={importJobs}
+                disabled={importingJobs || !selectedFeed}
+                size="lg"
+                className="w-full"
+              >
+                {importingJobs ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Importing Jobs...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Import Jobs from Selected Feed
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -381,8 +396,16 @@ const HayesDataPopulation = () => {
             <div>
               <strong>Data Sources:</strong>
               <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
-                <li>Jobs: CDL Job Cast XML feed (danny_herman_trucking via Adzuna)</li>
+                <li>Jobs: CDL Job Cast XML feeds from multiple clients</li>
                 <li>Applications: Generated with realistic CDL driver profiles</li>
+              </ul>
+            </div>
+            <div>
+              <strong>Available Client Feeds:</strong>
+              <ul className="list-disc list-inside ml-4 mt-1 space-y-1">
+                {clientFeeds.map(feed => (
+                  <li key={feed.id}>{feed.name}</li>
+                ))}
               </ul>
             </div>
             <div>
