@@ -6,6 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ChatBot from '@/components/chat/MobileChatBot';
 import MobileHeader from './MobileHeader';
+import MobileBottomNav from './MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -165,9 +166,12 @@ const LayoutContent = () => {
           </header>
         </div>
         
-        <main className="flex-1 overflow-auto flex flex-col">
+        <main className="flex-1 overflow-auto flex flex-col pb-16 md:pb-0">
           <Outlet />
         </main>
+        
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav />
         
         {/* Global ChatBot - Only for Admin and Super Admin */}
         {(userRole === 'admin' || userRole === 'super_admin') && organization && (
