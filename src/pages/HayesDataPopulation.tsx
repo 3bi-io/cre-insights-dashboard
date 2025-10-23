@@ -26,7 +26,7 @@ const HayesDataPopulation = () => {
   const [loadingStats, setLoadingStats] = useState(false);
 
   const dannyHermanFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=danny_herman_trucking&board=AIRecruiter';
-  const pembertonFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=pemberton_truck_lines&board=AIRecruiter';
+  const pembertonFeedUrl = 'https://cdljobcast.com/client/recruiting/getfeeds?user=Pemberton-Truck-Lines-1749741664&board=ATSme';
   
   // Client IDs for proper job association
   const pembertonClientId = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03';
