@@ -16,6 +16,8 @@ const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [organizationFilter, setOrganizationFilter] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'title' | 'salary-high' | 'salary-low'>('recent');
   
   const {
     isConnected,
@@ -27,7 +29,7 @@ const JobsPage = () => {
 
   // Fetch all public job listings with voice agents
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter],
+    queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter, organizationFilter],
     queryFn: async () => {
       let query = supabase
         .from('job_listings')
@@ -52,6 +54,11 @@ const JobsPage = () => {
       // Apply location filter
       if (locationFilter && locationFilter !== '__ALL__') {
         query = query.or(`city.ilike.%${locationFilter}%,state.ilike.%${locationFilter}%,location.ilike.%${locationFilter}%`);
+      }
+
+      // Apply organization filter
+      if (organizationFilter && organizationFilter !== '__ALL__') {
+        query = query.eq('organization_id', organizationFilter);
       }
 
       const { data, error } = await query;
@@ -88,13 +95,52 @@ const JobsPage = () => {
     return Array.from(locationSet).sort();
   }, [jobs]);
 
+  // Get unique organizations for filter
+  const organizations = React.useMemo(() => {
+    if (!jobs) return [];
+    const orgMap = new Map();
+    jobs.forEach(job => {
+      if (job.organizations?.id && job.organizations?.name) {
+        orgMap.set(job.organizations.id, job.organizations.name);
+      }
+    });
+    return Array.from(orgMap.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [jobs]);
+
   const filteredJobs = React.useMemo(() => {
     if (!jobs) return [];
-    return jobs.filter(job => {
+    let filtered = jobs.filter(job => {
       if (categoryFilter && job.job_categories?.name !== categoryFilter) return false;
       return true;
     });
-  }, [jobs, categoryFilter]);
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'title':
+        filtered.sort((a, b) => (a.title || a.job_title || '').localeCompare(b.title || b.job_title || ''));
+        break;
+      case 'salary-high':
+        filtered.sort((a, b) => {
+          const aMax = (a as any).max_salary || (a as any).salary_max || 0;
+          const bMax = (b as any).max_salary || (b as any).salary_max || 0;
+          return bMax - aMax;
+        });
+        break;
+      case 'salary-low':
+        filtered.sort((a, b) => {
+          const aMin = (a as any).min_salary || (a as any).salary_min || 0;
+          const bMin = (b as any).min_salary || (b as any).salary_min || 0;
+          return aMin - bMin;
+        });
+        break;
+      case 'recent':
+      default:
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+    }
+
+    return filtered;
+  }, [jobs, categoryFilter, sortBy]);
 
   if (isLoading) {
     return (
@@ -137,30 +183,60 @@ const JobsPage = () => {
           </p>
           
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search jobs by title, company, or keywords..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Search jobs by title, company, or keywords..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
+                <SelectTrigger className="w-full sm:w-56">
+                  <SelectValue placeholder="All Companies" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__ALL__">All Companies</SelectItem>
+                  {organizations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            
-            <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All Locations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__ALL__">All Locations</SelectItem>
-                {locations.map((location) => (
-                  <SelectItem key={location} value={location}>
-                    {location}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="All Locations" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__ALL__">All Locations</SelectItem>
+                  {locations.map((location) => (
+                    <SelectItem key={location} value={location}>
+                      {location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectItem value="title">Title (A-Z)</SelectItem>
+                  <SelectItem value="salary-high">Salary (High to Low)</SelectItem>
+                  <SelectItem value="salary-low">Salary (Low to High)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Results Count */}
