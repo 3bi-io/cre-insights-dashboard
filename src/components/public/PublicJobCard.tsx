@@ -3,17 +3,25 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, DollarSign, Building2, Clock, ExternalLink } from 'lucide-react';
+import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic } from 'lucide-react';
+import { JobContext } from '@/features/elevenlabs';
 
 interface PublicJobCardProps {
   job: any;
+  onVoiceApply?: (jobContext: JobContext & { voiceAgentId?: string }) => void;
+  isVoiceConnected?: boolean;
 }
 
-export const PublicJobCard: React.FC<PublicJobCardProps> = ({ job }) => {
+export const PublicJobCard: React.FC<PublicJobCardProps> = ({ 
+  job, 
+  onVoiceApply, 
+  isVoiceConnected = false 
+}) => {
   const displayTitle = job.title || job.job_title || 'Untitled Job';
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
   const displayDescription = job.job_summary || job.description;
   const companyName = job.organizations?.name || job.clients?.name || job.client || 'Company';
+  const hasVoiceAgent = !!job.voiceAgent;
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
     if (!min && !max) return null;
@@ -34,6 +42,22 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({ job }) => {
 
   // Create apply URL with job information
   const applyUrl = `/apply?job_id=${job.id}&org_slug=${job.organizations?.slug || 'default'}`;
+  
+  const handleVoiceApply = () => {
+    if (!onVoiceApply || !hasVoiceAgent) return;
+    
+    const jobContext = {
+      jobId: job.id,
+      jobTitle: displayTitle,
+      jobDescription: displayDescription || `This is a ${displayTitle} position`,
+      company: companyName,
+      location: displayLocation || 'Various locations',
+      salary: salary || 'Competitive salary',
+      voiceAgentId: job.voiceAgent?.agent_id
+    };
+    
+    onVoiceApply(jobContext);
+  };
 
   return (
     <Card className="hover:shadow-lg transition-all duration-200 border-border/50 hover:border-border">
@@ -93,13 +117,26 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({ job }) => {
           </div>
         )}
 
-        <div className="pt-4 border-t">
+        <div className="pt-4 border-t space-y-2">
           <Link to={applyUrl} className="block">
             <Button className="w-full" size="lg">
               Apply Now
               <ExternalLink className="w-4 h-4 ml-2" />
             </Button>
           </Link>
+          
+          {hasVoiceAgent && onVoiceApply && (
+            <Button 
+              className="w-full" 
+              size="lg" 
+              variant={isVoiceConnected ? "secondary" : "outline"}
+              onClick={handleVoiceApply}
+              disabled={isVoiceConnected}
+            >
+              <Mic className="w-4 h-4 mr-2" />
+              {isVoiceConnected ? 'Voice Application Active' : 'Apply with Voice'}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

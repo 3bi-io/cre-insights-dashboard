@@ -7,15 +7,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, DollarSign, Building2, Clock } from 'lucide-react';
+import { Search, MapPin, DollarSign, Building2, Clock, Mic, MicOff } from 'lucide-react';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
+import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import { VoiceConnectionStatus } from '@/features/elevenlabs';
 
 const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  
+  const {
+    isConnected,
+    selectedJob,
+    isSpeaking,
+    startVoiceApplication,
+    endVoiceApplication,
+  } = useElevenLabsVoice();
 
-  // Fetch all public job listings
+  // Fetch all public job listings with voice agents
   const { data: jobs, isLoading } = useQuery({
     queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter],
     queryFn: async () => {
@@ -23,7 +33,11 @@ const JobsPage = () => {
         .from('job_listings')
         .select(`
           *,
-          organizations!inner(name, slug),
+          organizations!inner(
+            name, 
+            slug,
+            id
+          ),
           job_categories(name),
           clients(name)
         `)
@@ -42,6 +56,23 @@ const JobsPage = () => {
 
       const { data, error } = await query;
       if (error) throw error;
+      
+      // Fetch voice agents for organizations
+      if (data && data.length > 0) {
+        const orgIds = [...new Set(data.map(job => job.organizations?.id).filter(Boolean))];
+        const { data: voiceAgents } = await supabase
+          .from('voice_agents')
+          .select('*')
+          .in('organization_id', orgIds)
+          .eq('is_active', true);
+        
+        // Attach voice agents to jobs
+        return data.map(job => ({
+          ...job,
+          voiceAgent: voiceAgents?.find(va => va.organization_id === job.organizations?.id)
+        }));
+      }
+      
       return data;
     },
   });
@@ -154,9 +185,44 @@ const JobsPage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJobs.map((job) => (
-              <PublicJobCard key={job.id} job={job} />
+              <PublicJobCard 
+                key={job.id} 
+                job={job}
+                onVoiceApply={startVoiceApplication}
+                isVoiceConnected={isConnected && selectedJob?.jobId === job.id}
+              />
             ))}
           </div>
+        )}
+        
+        {/* Voice Application Status */}
+        {isConnected && selectedJob && (
+          <Card className="fixed bottom-8 right-8 w-80 shadow-xl border-2">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Voice Application</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={endVoiceApplication}
+                >
+                  <MicOff className="w-4 h-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium">{selectedJob.jobTitle}</div>
+                  <div className="text-xs text-muted-foreground">{selectedJob.company}</div>
+                </div>
+                <VoiceConnectionStatus 
+                  isConnected={isConnected}
+                  isSpeaking={isSpeaking}
+                />
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

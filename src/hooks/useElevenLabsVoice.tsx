@@ -38,9 +38,16 @@ export const useElevenLabsVoice = () => {
     },
   });
 
-  const startVoiceApplication = async (job: JobContext) => {
+  const startVoiceApplication = async (job: JobContext & { voiceAgentId?: string }) => {
     try {
-      const agentId = 'agent_1501k4dpkf2hfevs6eh5e7947a65';
+      if (!job.voiceAgentId) {
+        toast({
+          title: "Voice Agent Not Available",
+          description: "This organization hasn't configured a voice agent yet.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       const jobContext = {
         jobId: job.jobId,
@@ -55,7 +62,7 @@ export const useElevenLabsVoice = () => {
       
       // Delay to ensure overrides are applied
       setTimeout(() => {
-        connect(agentId, { jobContext });
+        connect(job.voiceAgentId!, { jobContext });
       }, 0);
       
     } catch (error: any) {
