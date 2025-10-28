@@ -55,7 +55,7 @@ export const useJobs = () => {
             )
           ),
           job_categories:category_id(name),
-          clients!client_id(name),
+          clients!fk_job_listings_client_id(name),
           organizations:organization_id(name, slug)
         `);
 
