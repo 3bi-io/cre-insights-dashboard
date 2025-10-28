@@ -18,22 +18,26 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { Application } from '@/types/common.types';
 
 export default function AdminApplicationsPage() {
-  const { user, userRole } = useAuth();
-  const { checkPlatformAccess } = usePlatformAccess();
+  const { user, userRole, organization } = useAuth();
+  const { checkPlatformAccess } = usePlatformAccess(organization?.id);
   const [hasAccess, setHasAccess] = useState(false);
   
   // Role detection
   const isSuperAdmin = userRole === 'super_admin';
   const isOrgAdmin = userRole === 'admin';
 
-  // Check platform access
+  // Check platform access (super admins always have access)
   useEffect(() => {
     const checkAccess = async () => {
+      if (isSuperAdmin) {
+        setHasAccess(true);
+        return;
+      }
       const access = await checkPlatformAccess('applications');
       setHasAccess(access);
     };
     checkAccess();
-  }, [checkPlatformAccess]);
+  }, [checkPlatformAccess, isSuperAdmin]);
 
   // Organization data for super admins
   const { organizations } = useOrganizationData(isSuperAdmin);
