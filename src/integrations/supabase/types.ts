@@ -1818,6 +1818,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_job_listings_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "job_listings_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false

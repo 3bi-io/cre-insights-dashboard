@@ -227,6 +227,45 @@ serve(async (req) => {
         const location = job.city && job.state ? `${job.city}, ${job.state}` : 
                         job.city || job.state || null;
         
+        // Handle client_id: if not provided, find or create client based on company name
+        let finalClientId = clientId;
+        if (!finalClientId && job.company) {
+          const companyName = job.company.trim();
+          
+          // Try to find existing client
+          const { data: existingClients } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('organization_id', organizationId)
+            .ilike('name', companyName)
+            .limit(1);
+          
+          if (existingClients && existingClients.length > 0) {
+            finalClientId = existingClients[0].id;
+            console.log(`Found existing client: ${companyName}`);
+          } else {
+            // Create new client
+            const { data: newClient, error: clientError } = await supabase
+              .from('clients')
+              .insert({
+                name: companyName,
+                status: 'active',
+                organization_id: organizationId,
+                notes: 'Auto-created from job feed import'
+              })
+              .select('id')
+              .single();
+            
+            if (clientError) {
+              console.error('Error creating client:', clientError);
+            } else if (newClient) {
+              finalClientId = newClient.id;
+              console.log(`Created new client: ${companyName}`);
+            }
+          }
+        }
+        
+        // If still no client_id, use "Unassigned" (will be handled by trigger)
         const jobData = {
           title: job.title || 'Untitled Position',
           job_summary: job.description || null,
@@ -246,8 +285,9 @@ serve(async (req) => {
           url: job.url || null,
           apply_url: job.url || null,
           job_id: job.referencenumber || null,
-          client_id: clientId,
-          client: clientId ? null : (job.company || 'Hayes Recruiting Solutions')
+          client_id: finalClientId || null,
+          // Keep client text field for backward compatibility
+          client: job.company || null
         };
 
         // Check if job already exists by reference number or title + location

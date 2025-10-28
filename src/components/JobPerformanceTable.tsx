@@ -27,7 +27,7 @@ const JobPerformanceTable = () => {
           job_platform_associations(
             platforms(name)
           ),
-          clients(name),
+          clients!client_id(name),
           daily_spend(amount, date),
           applications(id, created_at)
         `)
