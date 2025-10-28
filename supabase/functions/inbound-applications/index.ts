@@ -329,6 +329,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Find or create job listing
     let jobListingId = applicationData.job_listing_id;
     
+    // CRITICAL: For all organizations, try to match by job_id first
     if (!jobListingId && applicationData.job_id) {
       const { data: jobListing } = await supabase
         .from('job_listings')
@@ -337,7 +338,10 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('organization_id', organizationId)
         .maybeSingle();
       
-      jobListingId = jobListing?.id;
+      if (jobListing) {
+        jobListingId = jobListing.id;
+        console.log('Found existing job listing by job_id:', jobListingId);
+      }
     }
 
     // If still no job listing and we have a title, create a placeholder
@@ -355,7 +359,7 @@ const handler = async (req: Request): Promise<Response> => {
           .from('job_listings')
           .insert({
             title: applicationData.job_title,
-            job_id: applicationData.job_id,
+            job_id: applicationData.job_id, // CRITICAL: Always store external job_id
             organization_id: organizationId,
             category_id: categoryId,
             status: 'active',
@@ -371,7 +375,9 @@ const handler = async (req: Request): Promise<Response> => {
         
         if (!jobError && newJob) {
           jobListingId = newJob.id;
-          console.log('Created placeholder job listing:', jobListingId);
+          console.log('Created placeholder job listing with job_id:', applicationData.job_id, 'internal id:', jobListingId);
+        } else {
+          console.error('Failed to create job listing:', jobError);
         }
       }
     }
