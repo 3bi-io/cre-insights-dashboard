@@ -45,6 +45,12 @@ const HayesDataPopulation = () => {
       name: 'Novco Inc',
       feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Novco%2C-Inc.-1760547390&board=ATSme',
       clientId: null
+    },
+    {
+      id: 'day-and-ross',
+      name: 'Day-and-Ross',
+      feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Day-and-Ross-1745523293&board=ATSme',
+      clientId: null
     }
   ];
 
