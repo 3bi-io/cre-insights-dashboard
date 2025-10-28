@@ -2331,6 +2331,56 @@ export type Database = {
         }
         Relationships: []
       }
+      page_views: {
+        Row: {
+          country: string | null
+          created_at: string | null
+          device_type: string | null
+          id: string
+          organization_id: string | null
+          page_path: string
+          page_title: string | null
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+          visitor_id: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          organization_id?: string | null
+          page_path: string
+          page_title?: string | null
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+          visitor_id: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          organization_id?: string | null
+          page_path?: string
+          page_title?: string | null
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platforms: {
         Row: {
           api_endpoint: string | null
@@ -3010,6 +3060,59 @@ export type Database = {
           },
         ]
       }
+      visitor_sessions: {
+        Row: {
+          bounced: boolean | null
+          country: string | null
+          device_type: string | null
+          duration_seconds: number | null
+          ended_at: string | null
+          id: string
+          organization_id: string | null
+          page_count: number | null
+          session_id: string
+          source: string | null
+          started_at: string | null
+          visitor_id: string
+        }
+        Insert: {
+          bounced?: boolean | null
+          country?: string | null
+          device_type?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          organization_id?: string | null
+          page_count?: number | null
+          session_id: string
+          source?: string | null
+          started_at?: string | null
+          visitor_id: string
+        }
+        Update: {
+          bounced?: boolean | null
+          country?: string | null
+          device_type?: string | null
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          organization_id?: string | null
+          page_count?: number | null
+          session_id?: string
+          source?: string | null
+          started_at?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voice_agents: {
         Row: {
           agent_id: string
@@ -3115,6 +3218,7 @@ export type Database = {
         }
         Returns: Json
       }
+      classify_traffic_source: { Args: { referrer: string }; Returns: string }
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_sms_links: { Args: never; Returns: undefined }
       cleanup_old_feed_logs: { Args: never; Returns: undefined }

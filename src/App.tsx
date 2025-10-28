@@ -13,6 +13,7 @@ import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/services/loggerService";
 import AppRoutes from "@/components/routing/AppRoutes";
 import CountryBlockWrapper from "@/components/CountryBlockWrapper";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -37,6 +38,17 @@ const queryClient = new QueryClient({
   },
 });
 
+const AppContent = () => {
+  // Initialize page tracking
+  usePageTracking();
+  
+  return (
+    <CountryBlockWrapper>
+      <AppRoutes />
+    </CountryBlockWrapper>
+  );
+};
+
 const App = React.memo(() => {
   const [showDevTools, setShowDevTools] = useState(false);
   
@@ -56,9 +68,7 @@ const App = React.memo(() => {
                     <Toaster />
                     <Sonner />
                     
-                    <CountryBlockWrapper>
-                      <AppRoutes />
-                    </CountryBlockWrapper>
+                    <AppContent />
                     
                     {/* Development Tools */}
                     <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
