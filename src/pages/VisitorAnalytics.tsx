@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -38,12 +39,16 @@ const VisitorAnalytics = () => {
           break;
       }
 
-      const response = await fetch(
-        `/api/analytics?startdate=${startDate.toISOString()}&enddate=${endDate.toISOString()}&granularity=daily`
-      );
+      const { data, error } = await supabase.functions.invoke('visitor-analytics', {
+        body: {
+          startdate: startDate.toISOString(),
+          enddate: endDate.toISOString(),
+          granularity: 'daily'
+        }
+      });
       
-      if (!response.ok) throw new Error('Failed to fetch analytics');
-      return response.json();
+      if (error) throw error;
+      return data;
     },
     retry: 1,
   });
