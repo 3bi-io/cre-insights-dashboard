@@ -326,10 +326,9 @@ const handler = async (req: Request): Promise<Response> => {
       organizationId = '84214b48-7b51-45bc-ad7f-723bcf50466c';
     }
 
-    // Find or create job listing
+    // Find or create job listing - CRITICAL: Match by job_id first
     let jobListingId = applicationData.job_listing_id;
     
-    // CRITICAL: For all organizations, try to match by job_id first
     if (!jobListingId && applicationData.job_id) {
       const { data: jobListing } = await supabase
         .from('job_listings')
@@ -340,28 +339,25 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (jobListing) {
         jobListingId = jobListing.id;
-        console.log('Found existing job listing by job_id:', jobListingId);
+        console.log('Matched job_id:', applicationData.job_id, 'to listing:', jobListingId);
       }
     }
 
-    // If still no job listing and we have a title, create a placeholder
+    // Create job if we have title but no match
     if (!jobListingId && applicationData.job_title) {
-      // Get default category
       const { data: categories } = await supabase
         .from('job_categories')
         .select('id')
         .limit(1);
       
-      const categoryId = categories?.[0]?.id;
-      
-      if (categoryId) {
-        const { data: newJob, error: jobError } = await supabase
+      if (categories?.[0]?.id) {
+        const { data: newJob } = await supabase
           .from('job_listings')
           .insert({
             title: applicationData.job_title,
-            job_id: applicationData.job_id, // CRITICAL: Always store external job_id
+            job_id: applicationData.job_id,
             organization_id: organizationId,
-            category_id: categoryId,
+            category_id: categories[0].id,
             status: 'active',
             job_summary: `Position from ${applicationData.source}`,
             location: applicationData.city && applicationData.state 
@@ -373,19 +369,15 @@ const handler = async (req: Request): Promise<Response> => {
           .select('id')
           .single();
         
-        if (!jobError && newJob) {
+        if (newJob) {
           jobListingId = newJob.id;
-          console.log('Created placeholder job listing with job_id:', applicationData.job_id, 'internal id:', jobListingId);
-        } else {
-          console.error('Failed to create job listing:', jobError);
+          console.log('Created job:', jobListingId, 'for job_id:', applicationData.job_id);
         }
       }
     }
 
-    // FALLBACK: If still no job listing, use or create a "General Application" job for the org
+    // Fallback to General Application
     if (!jobListingId) {
-      console.log('No job listing found, searching for General Application fallback...');
-      
       const { data: fallbackJob } = await supabase
         .from('job_listings')
         .select('id')
@@ -395,49 +387,34 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (fallbackJob) {
         jobListingId = fallbackJob.id;
-        console.log('Using existing General Application job:', jobListingId);
       } else {
-        // Create a General Application job as final fallback
         const { data: categories } = await supabase
           .from('job_categories')
           .select('id')
           .limit(1);
         
-        const categoryId = categories?.[0]?.id;
-        
-        if (categoryId) {
-          const { data: newFallbackJob } = await supabase
+        if (categories?.[0]?.id) {
+          const { data: newFallback } = await supabase
             .from('job_listings')
             .insert({
               title: 'General Application',
               organization_id: organizationId,
-              category_id: categoryId,
+              category_id: categories[0].id,
               status: 'active',
-              job_summary: 'General application submissions without specific job match',
+              job_summary: 'General applications',
             })
             .select('id')
             .single();
           
-          if (newFallbackJob) {
-            jobListingId = newFallbackJob.id;
-            console.log('Created General Application fallback job:', jobListingId);
-          }
+          if (newFallback) jobListingId = newFallback.id;
         }
       }
     }
 
-    // Ensure we have a valid job listing
     if (!jobListingId) {
-      console.error('Failed to determine or create job listing');
       return new Response(
-        JSON.stringify({ 
-          error: 'Unable to process application: no valid job listing',
-          organization_id: organizationId
-        }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
+        JSON.stringify({ error: 'Unable to create job listing' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders }}
       );
     }
 
