@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,13 +12,15 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
 import { useAuth } from '@/hooks/useAuth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const TenstreetExplorer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState<any>(null);
   const [testResult, setTestResult] = useState<any>(null);
   const [selectedService, setSelectedService] = useState('');
-  const [organizationSlug, setOrganizationSlug] = useState('cr-england');
+  const [availableCompanies, setAvailableCompanies] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [searchParams, setSearchParams] = useState({
     driverId: '',
     email: '',
@@ -27,7 +29,54 @@ const TenstreetExplorer = () => {
   });
   const { toast } = useToast();
   const { hasATSExplorerAccess, isLoading: isCheckingAccess } = useATSExplorerAccess();
-  const { userRole } = useAuth();
+  const { userRole, organization } = useAuth();
+
+  const isSuperAdmin = userRole === 'super_admin';
+
+  // Fetch available companies
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const query = supabase
+          .from('tenstreet_credentials')
+          .select('company_ids, company_name, organization_id')
+          .eq('status', 'active');
+
+        // Super admins see all companies, others see only their org
+        if (!isSuperAdmin && organization?.id) {
+          query.eq('organization_id', organization.id);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const companies = data.flatMap(cred => 
+            (cred.company_ids || []).map((id: string) => ({
+              id,
+              name: `${cred.company_name} (${id})`
+            }))
+          );
+          setAvailableCompanies(companies);
+          if (companies.length > 0 && !selectedCompanyId) {
+            setSelectedCompanyId(companies[0].id);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error fetching companies:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load companies',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (hasATSExplorerAccess) {
+      fetchCompanies();
+    }
+  }, [hasATSExplorerAccess, isSuperAdmin, organization?.id, selectedCompanyId, toast]);
 
   // Access control check
   if (isCheckingAccess) {
@@ -69,6 +118,15 @@ const TenstreetExplorer = () => {
   }
 
   const exploreServices = async () => {
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -76,7 +134,7 @@ const TenstreetExplorer = () => {
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: { 
           action: 'explore_services',
-          organization_slug: organizationSlug
+          company_id: selectedCompanyId
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -102,6 +160,15 @@ const TenstreetExplorer = () => {
   };
 
   const testService = async (serviceName: string) => {
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     setSelectedService(serviceName);
     try {
@@ -111,7 +178,7 @@ const TenstreetExplorer = () => {
         body: {
           action: 'test_service',
           service: serviceName,
-          organization_slug: organizationSlug
+          company_id: selectedCompanyId
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -138,6 +205,15 @@ const TenstreetExplorer = () => {
   };
 
   const searchApplicants = async () => {
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -146,7 +222,7 @@ const TenstreetExplorer = () => {
         body: {
           action: 'search_applicants',
           criteria: searchParams,
-          organization_slug: organizationSlug
+          company_id: selectedCompanyId
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -181,6 +257,15 @@ const TenstreetExplorer = () => {
       return;
     }
 
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -189,7 +274,7 @@ const TenstreetExplorer = () => {
         body: {
           action: 'get_applicant_data',
           driverId: searchParams.driverId,
-          organization_slug: organizationSlug
+          company_id: selectedCompanyId
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -243,28 +328,38 @@ const TenstreetExplorer = () => {
           )}
         </div>
 
-        {/* Super Admin Organization Selector */}
-        {userRole === 'super_admin' && (
-          <Alert className="border-primary/30 bg-primary/5">
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              <div className="flex items-center gap-4">
-                <span className="font-semibold">Super Admin Mode:</span>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="org-select" className="text-sm">Organization:</Label>
-                  <Input
-                    id="org-select"
-                    value={organizationSlug}
-                    onChange={(e) => setOrganizationSlug(e.target.value)}
-                    placeholder="e.g., cr-england"
-                    className="w-48 h-8"
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground">Currently using: {organizationSlug}</span>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Company Selector */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tenstreet Company</CardTitle>
+            <CardDescription>
+              Select the Tenstreet company ID to query
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Label htmlFor="company-select">Company ID:</Label>
+              <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
+                <SelectTrigger id="company-select" className="w-[300px]">
+                  <SelectValue placeholder="Select a company..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCompanies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isSuperAdmin && (
+                <Badge variant="secondary" className="gap-1">
+                  <Shield className="h-3 w-3" />
+                  Super Admin
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="services" className="w-full">
           <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">

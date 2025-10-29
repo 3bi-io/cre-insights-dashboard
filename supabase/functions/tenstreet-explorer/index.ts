@@ -78,32 +78,21 @@ serve(async (req) => {
 
     let targetOrgId = profile?.organization_id
 
-    // Super admins can access ATS Explorer without an org and can specify which org's credentials to use
+    // Parse request body
+    const requestBody = await req.json()
+    const { company_id, action, ...params } = requestBody
+    
+    // Require company_id parameter
+    if (!company_id) {
+      return new Response(
+        JSON.stringify({ error: 'company_id is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Super admins can access any company's credentials
     if (isSuperAdmin) {
-      console.log('Super admin access - allowing without organization check')
-      
-      // Parse request body to check for organization override
-      const requestBody = await req.json()
-      const organizationSlug = requestBody.organization_slug || 'cr-england' // Default to CR England
-      
-      // Get organization ID from slug
-      const { data: orgData } = await supabaseClient
-        .from('organizations')
-        .select('id')
-        .eq('slug', organizationSlug)
-        .single()
-      
-      if (orgData) {
-        targetOrgId = orgData.id
-        console.log(`Super admin using credentials for organization: ${organizationSlug} (${targetOrgId})`)
-      }
-      
-      // Restore the request body for later use
-      req = new Request(req.url, {
-        method: req.method,
-        headers: req.headers,
-        body: JSON.stringify(requestBody)
-      })
+      console.log('Super admin access - querying by company_id:', company_id)
     } else {
       // Non-super-admins need an organization
       if (!targetOrgId) {
@@ -133,23 +122,30 @@ serve(async (req) => {
       }
     }
 
-    // Fetch Tenstreet credentials for the target organization
-    const { data: credentials, error: credError } = await supabaseClient
+    // Fetch Tenstreet credentials by company_id
+    const { data: credentialsList, error: credError } = await supabaseClient
       .from('tenstreet_credentials')
       .select('*')
-      .eq('organization_id', targetOrgId)
-      .maybeSingle()
+      .contains('company_ids', [company_id])
+      .eq('status', 'active')
 
     if (credError) {
       console.error('Error fetching credentials:', credError)
       throw new Error('Failed to fetch Tenstreet credentials')
     }
 
+    // For non-super-admins, verify the credentials belong to their organization
+    let credentials = null
+    if (!isSuperAdmin) {
+      credentials = credentialsList?.find(cred => cred.organization_id === targetOrgId)
+    } else {
+      credentials = credentialsList?.[0]
+    }
+
     if (!credentials) {
-      const orgMsg = isSuperAdmin ? 'the specified organization' : 'your organization'
       return new Response(
         JSON.stringify({ 
-          error: `No Tenstreet credentials configured for ${orgMsg}. Please contact your administrator.` 
+          error: `No Tenstreet credentials found for company ID: ${company_id}` 
         }),
         { 
           status: 400, 
@@ -158,10 +154,8 @@ serve(async (req) => {
       )
     }
 
-    console.log('Using credentials for organization:', targetOrgId)
+    console.log('Using credentials for company_id:', company_id)
     console.log('Mode:', credentials.mode)
-
-    const { action, ...params } = await req.json()
     
     console.log(`Tenstreet Explorer: ${action}`)
 
