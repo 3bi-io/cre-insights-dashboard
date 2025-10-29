@@ -9,14 +9,8 @@ import { useAuth } from './useAuth';
  */
 export const useATSExplorerAccess = () => {
   const { userRole, organization } = useAuth();
-
-  // Super admins always have access - no need to check database
-  if (userRole === 'super_admin') {
-    return {
-      hasATSExplorerAccess: true,
-      isLoading: false,
-    };
-  }
+  
+  const isSuperAdmin = userRole === 'super_admin';
 
   const { data: hasAccess, isLoading } = useQuery({
     queryKey: ['ats-explorer-access', organization?.id],
@@ -42,11 +36,13 @@ export const useATSExplorerAccess = () => {
         return false;
       }
     },
-    enabled: !!organization?.id,
+    // Don't run query for super admins
+    enabled: !isSuperAdmin && !!organization?.id,
   });
 
   return {
-    hasATSExplorerAccess: hasAccess ?? false,
-    isLoading,
+    // Super admins always have access, otherwise check the query result
+    hasATSExplorerAccess: isSuperAdmin || (hasAccess ?? false),
+    isLoading: isSuperAdmin ? false : isLoading,
   };
 };
