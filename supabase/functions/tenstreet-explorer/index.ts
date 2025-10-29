@@ -64,6 +64,11 @@ serve(async (req) => {
     
     console.log('Authenticated user:', user.id, user.email)
 
+    // Check if user is super admin
+    const { data: isSuperAdmin } = await supabaseClient.rpc('is_super_admin', {
+      _user_id: user.id
+    })
+
     // Get user's organization
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -71,37 +76,68 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    if (!profile?.organization_id) {
-      throw new Error('No organization found for user')
+    let targetOrgId = profile?.organization_id
+
+    // Super admins can access ATS Explorer without an org and can specify which org's credentials to use
+    if (isSuperAdmin) {
+      console.log('Super admin access - allowing without organization check')
+      
+      // Parse request body to check for organization override
+      const requestBody = await req.json()
+      const organizationSlug = requestBody.organization_slug || 'cr-england' // Default to CR England
+      
+      // Get organization ID from slug
+      const { data: orgData } = await supabaseClient
+        .from('organizations')
+        .select('id')
+        .eq('slug', organizationSlug)
+        .single()
+      
+      if (orgData) {
+        targetOrgId = orgData.id
+        console.log(`Super admin using credentials for organization: ${organizationSlug} (${targetOrgId})`)
+      }
+      
+      // Restore the request body for later use
+      req = new Request(req.url, {
+        method: req.method,
+        headers: req.headers,
+        body: JSON.stringify(requestBody)
+      })
+    } else {
+      // Non-super-admins need an organization
+      if (!targetOrgId) {
+        throw new Error('No organization found for user')
+      }
+
+      // Check if organization has ATS Explorer access
+      const { data: hasAccess, error: accessError } = await supabaseClient.rpc('get_user_platform_access', {
+        _platform_name: 'ats_explorer'
+      })
+
+      if (accessError) {
+        console.error('Error checking platform access:', accessError)
+        throw new Error('Failed to verify platform access')
+      }
+
+      if (!hasAccess) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'ATS Explorer access is not enabled for your organization. Please contact your administrator.' 
+          }),
+          { 
+            status: 403, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
     }
 
-    // Check if organization has ATS Explorer access
-    const { data: hasAccess, error: accessError } = await supabaseClient.rpc('get_user_platform_access', {
-      _platform_name: 'ats_explorer'
-    })
-
-    if (accessError) {
-      console.error('Error checking platform access:', accessError)
-      throw new Error('Failed to verify platform access')
-    }
-
-    if (!hasAccess) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'ATS Explorer access is not enabled for your organization. Please contact your administrator.' 
-        }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Fetch Tenstreet credentials for the organization
+    // Fetch Tenstreet credentials for the target organization
     const { data: credentials, error: credError } = await supabaseClient
       .from('tenstreet_credentials')
       .select('*')
-      .eq('organization_id', profile.organization_id)
+      .eq('organization_id', targetOrgId)
       .maybeSingle()
 
     if (credError) {
@@ -110,9 +146,10 @@ serve(async (req) => {
     }
 
     if (!credentials) {
+      const orgMsg = isSuperAdmin ? 'the specified organization' : 'your organization'
       return new Response(
         JSON.stringify({ 
-          error: 'No Tenstreet credentials configured for your organization. Please contact your administrator.' 
+          error: `No Tenstreet credentials configured for ${orgMsg}. Please contact your administrator.` 
         }),
         { 
           status: 400, 
@@ -121,7 +158,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('Using credentials for organization:', profile.organization_id)
+    console.log('Using credentials for organization:', targetOrgId)
     console.log('Mode:', credentials.mode)
 
     const { action, ...params } = await req.json()

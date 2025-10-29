@@ -11,12 +11,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
+import { useAuth } from '@/hooks/useAuth';
 
 const TenstreetExplorer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [services, setServices] = useState<any>(null);
   const [testResult, setTestResult] = useState<any>(null);
   const [selectedService, setSelectedService] = useState('');
+  const [organizationSlug, setOrganizationSlug] = useState('cr-england');
   const [searchParams, setSearchParams] = useState({
     driverId: '',
     email: '',
@@ -25,6 +27,7 @@ const TenstreetExplorer = () => {
   });
   const { toast } = useToast();
   const { hasATSExplorerAccess, isLoading: isCheckingAccess } = useATSExplorerAccess();
+  const { userRole } = useAuth();
 
   // Access control check
   if (isCheckingAccess) {
@@ -71,7 +74,10 @@ const TenstreetExplorer = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
-        body: { action: 'explore_services' },
+        body: { 
+          action: 'explore_services',
+          organization_slug: organizationSlug
+        },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
         }
@@ -104,7 +110,8 @@ const TenstreetExplorer = () => {
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'test_service',
-          service: serviceName
+          service: serviceName,
+          organization_slug: organizationSlug
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -138,7 +145,8 @@ const TenstreetExplorer = () => {
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'search_applicants',
-          criteria: searchParams
+          criteria: searchParams,
+          organization_slug: organizationSlug
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -180,7 +188,8 @@ const TenstreetExplorer = () => {
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'get_applicant_data',
-          driverId: searchParams.driverId
+          driverId: searchParams.driverId,
+          organization_slug: organizationSlug
         },
         headers: {
           Authorization: `Bearer ${session?.access_token}`
@@ -233,6 +242,29 @@ const TenstreetExplorer = () => {
             </Button>
           )}
         </div>
+
+        {/* Super Admin Organization Selector */}
+        {userRole === 'super_admin' && (
+          <Alert className="border-primary/30 bg-primary/5">
+            <Shield className="h-4 w-4" />
+            <AlertDescription>
+              <div className="flex items-center gap-4">
+                <span className="font-semibold">Super Admin Mode:</span>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="org-select" className="text-sm">Organization:</Label>
+                  <Input
+                    id="org-select"
+                    value={organizationSlug}
+                    onChange={(e) => setOrganizationSlug(e.target.value)}
+                    placeholder="e.g., cr-england"
+                    className="w-48 h-8"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">Currently using: {organizationSlug}</span>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="services" className="w-full">
           <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
