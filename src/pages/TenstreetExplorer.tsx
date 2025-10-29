@@ -147,10 +147,20 @@ const TenstreetExplorer = () => {
 
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session obtained:', !!session);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      console.log('Invoking tenstreet-explorer with:', {
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
+      
+      if (!session) {
+        console.error('No active session');
+        throw new Error('No active session. Please log in again.');
+      }
+      
+      console.log('Session obtained, calling edge function...');
+      console.log('Request payload:', {
         action: 'explore_services',
         company_id: selectedCompanyId
       });
@@ -159,15 +169,15 @@ const TenstreetExplorer = () => {
         body: { 
           action: 'explore_services',
           company_id: selectedCompanyId
-        },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
       console.log('Edge function response:', { data, error });
-
-      if (error) throw error;
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
 
       setServices(data);
       toast({
@@ -198,16 +208,11 @@ const TenstreetExplorer = () => {
     setIsLoading(true);
     setSelectedService(serviceName);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'test_service',
           service: serviceName,
           company_id: selectedCompanyId
-        },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
@@ -242,16 +247,11 @@ const TenstreetExplorer = () => {
 
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'search_applicants',
           criteria: searchParams,
           company_id: selectedCompanyId
-        },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
@@ -294,16 +294,11 @@ const TenstreetExplorer = () => {
 
     setIsLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: {
           action: 'get_applicant_data',
           driverId: searchParams.driverId,
           company_id: selectedCompanyId
-        },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`
         }
       });
 
