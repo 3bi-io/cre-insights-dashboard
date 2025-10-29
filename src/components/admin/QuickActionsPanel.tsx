@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, UserPlus, Settings, Download, RefreshCw, Shield } from 'lucide-react';
+import { Building, UserPlus, Settings, Download, RefreshCw, Shield, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const QuickActionsPanel = () => {
@@ -29,6 +29,12 @@ export const QuickActionsPanel = () => {
       icon: Shield,
       href: '/admin/security',
       color: 'bg-red-50 hover:bg-red-100 text-red-700',
+    },
+    {
+      label: 'ATS Explorer',
+      icon: Zap,
+      href: '/admin/tenstreet-explorer',
+      color: 'bg-amber-50 hover:bg-amber-100 text-amber-700',
     },
   ];
 
