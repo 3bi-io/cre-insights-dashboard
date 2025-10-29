@@ -147,24 +147,9 @@ const TenstreetExplorer = () => {
 
     setIsLoading(true);
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('[TenstreetExplorer] Starting explore services request');
+      console.log('[TenstreetExplorer] Selected company ID:', selectedCompanyId);
       
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        throw new Error(`Session error: ${sessionError.message}`);
-      }
-      
-      if (!session) {
-        console.error('No active session');
-        throw new Error('No active session. Please log in again.');
-      }
-      
-      console.log('Session obtained, calling edge function...');
-      console.log('Request payload:', {
-        action: 'explore_services',
-        company_id: selectedCompanyId
-      });
-
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: { 
           action: 'explore_services',
@@ -172,11 +157,11 @@ const TenstreetExplorer = () => {
         }
       });
 
-      console.log('Edge function response:', { data, error });
+      console.log('[TenstreetExplorer] Edge function response:', { data, error });
       
       if (error) {
-        console.error('Edge function error:', error);
-        throw error;
+        console.error('[TenstreetExplorer] Edge function error:', error);
+        throw new Error(error.message || 'Unknown edge function error');
       }
 
       setServices(data);
