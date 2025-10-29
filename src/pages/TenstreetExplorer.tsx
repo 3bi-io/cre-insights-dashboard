@@ -37,6 +37,7 @@ const TenstreetExplorer = () => {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
+        console.log('Fetching companies for ATS Explorer...');
         const query = supabase
           .from('tenstreet_credentials')
           .select('company_ids, company_name, organization_id')
@@ -49,7 +50,12 @@ const TenstreetExplorer = () => {
 
         const { data, error } = await query;
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching credentials:', error);
+          throw error;
+        }
+
+        console.log('Credentials data:', data);
 
         if (data && data.length > 0) {
           const companies = data.flatMap(cred => 
@@ -58,16 +64,25 @@ const TenstreetExplorer = () => {
               name: `${cred.company_name} (${id})`
             }))
           );
+          console.log('Available companies:', companies);
           setAvailableCompanies(companies);
-          if (companies.length > 0 && !selectedCompanyId) {
+          if (companies.length > 0) {
             setSelectedCompanyId(companies[0].id);
+            console.log('Selected company ID:', companies[0].id);
           }
+        } else {
+          console.log('No credentials found');
+          toast({
+            title: 'No Companies Found',
+            description: 'No Tenstreet credentials configured. Please contact your administrator.',
+            variant: 'destructive',
+          });
         }
       } catch (error: any) {
         console.error('Error fetching companies:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load companies',
+          description: 'Failed to load companies: ' + error.message,
           variant: 'destructive',
         });
       }
@@ -76,7 +91,7 @@ const TenstreetExplorer = () => {
     if (hasATSExplorerAccess) {
       fetchCompanies();
     }
-  }, [hasATSExplorerAccess, isSuperAdmin, organization?.id, selectedCompanyId, toast]);
+  }, [hasATSExplorerAccess, isSuperAdmin, organization?.id, toast]);
 
   // Access control check
   if (isCheckingAccess) {
@@ -118,7 +133,10 @@ const TenstreetExplorer = () => {
   }
 
   const exploreServices = async () => {
+    console.log('exploreServices called with company_id:', selectedCompanyId);
+    
     if (!selectedCompanyId) {
+      console.error('No company ID selected');
       toast({
         title: 'Error',
         description: 'Please select a company',
@@ -130,7 +148,13 @@ const TenstreetExplorer = () => {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session obtained:', !!session);
       
+      console.log('Invoking tenstreet-explorer with:', {
+        action: 'explore_services',
+        company_id: selectedCompanyId
+      });
+
       const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
         body: { 
           action: 'explore_services',
@@ -140,6 +164,8 @@ const TenstreetExplorer = () => {
           Authorization: `Bearer ${session?.access_token}`
         }
       });
+
+      console.log('Edge function response:', { data, error });
 
       if (error) throw error;
 
