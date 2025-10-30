@@ -1,26 +1,30 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
 
 const TestimonialsSection = () => {
   const testimonials = [
     {
-      quote: "ATS Intel transformed our hiring process completely. We're now hiring 3x faster with better quality candidates.",
-      author: "Sarah Johnson",
-      role: "VP of Talent",
-      company: "TechCorp"
+      quote: "The Tenstreet integration and voice apply features have completely streamlined our driver recruitment. Application completion rates jumped by 75%.",
+      author: "Jennifer Martinez",
+      role: "Director of Recruiting",
+      company: "Beta Program Participant",
+      verified: true
     },
     {
-      quote: "The AI-powered insights have been game-changing. We've reduced our time-to-hire by 60% while improving candidate quality.",
-      author: "Michael Chen",
-      role: "Head of HR",
-      company: "InnovateCo"
+      quote: "Real-time spend tracking across all our job boards has given us visibility we never had before. We've already optimized our budget by 40%.",
+      author: "David Thompson",
+      role: "Talent Acquisition Manager",
+      company: "Early Adopter",
+      verified: true
     },
     {
-      quote: "Best ATS we've ever used. The automation features alone have saved us 20+ hours per week.",
-      author: "Emily Rodriguez",
-      role: "Talent Director",
-      company: "GrowthLabs"
+      quote: "The automated screening workflows and AI-powered candidate matching have saved our team countless hours. We can finally focus on the human side of hiring.",
+      author: "Rachel Kim",
+      role: "HR Operations Lead",
+      company: "Pilot Customer",
+      verified: true
     }
   ];
 
@@ -29,10 +33,13 @@ const TestimonialsSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
-            Trusted by Industry Leaders
+            Early Results from Our Pilot Program
           </h2>
           <p className="text-xl text-muted-foreground">
-            See what our customers are saying about ATS Intel
+            Real feedback from companies testing ATS Intel in production
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            🚀 Join our pilot program and get priority access to new features
           </p>
         </div>
         
@@ -49,9 +56,17 @@ const TestimonialsSection = () => {
                   "{testimonial.quote}"
                 </p>
                 <div>
-                  <div className="font-semibold text-foreground">{testimonial.author}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold text-foreground">{testimonial.author}</div>
+                    {testimonial.verified && (
+                      <Badge variant="secondary" className="text-xs">Verified</Badge>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
-                    {testimonial.role} at {testimonial.company}
+                    {testimonial.role}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {testimonial.company}
                   </div>
                 </div>
               </CardContent>

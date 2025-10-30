@@ -67,14 +67,14 @@ const HeroSection = () => {
                 Browse Jobs
               </Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/demo">
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="px-8 py-3 text-lg border-primary text-primary hover:bg-primary/10"
               >
                 <Play className="mr-2 h-5 w-5" />
-                Launch Demo
+                Watch Demo
               </Button>
             </Link>
           </div>
@@ -87,10 +87,13 @@ const HeroSection = () => {
                   <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
-              <span className="text-sm">Rated 4.9/5</span>
+              <span className="text-sm">4.8/5 from beta users</span>
             </div>
             <div className="text-sm">
-              Trusted by Fortune 500 companies worldwide
+              50+ companies in our pilot program
+            </div>
+            <div className="text-sm">
+              🚀 Early adopter pricing available
             </div>
           </div>
         </div>

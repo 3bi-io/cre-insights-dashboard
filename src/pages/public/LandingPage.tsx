@@ -9,6 +9,7 @@ import StatsSection from '@/components/landing/StatsSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
 import IntegrationsSection from '@/components/landing/IntegrationsSection';
 import BenefitsSection from '@/components/landing/BenefitsSection';
+import TrustSection from '@/components/landing/TrustSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import CTASection from '@/components/landing/CTASection';
 
@@ -20,6 +21,7 @@ const LandingPage = () => {
       <FeaturesSection />
       <IntegrationsSection />
       <BenefitsSection />
+      <TrustSection />
       <TestimonialsSection />
       <CTASection />
     </div>
