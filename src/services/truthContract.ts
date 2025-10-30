@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { loggerService } from './loggerService';
+import { logger } from '@/lib/logger';
 
 export interface TruthContractRequest {
   content: string;

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 export interface DevToolsConfig {
   enabled: boolean;

@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { devTools } from '@/utils/devTools';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 interface DevModeState {
   isDevMode: boolean;

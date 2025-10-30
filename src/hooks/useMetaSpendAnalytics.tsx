@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useOpenAI } from '@/hooks/useOpenAI';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 import { getActualAccountId } from '@/utils/metaAccountAlias';
 
 interface MetaSpendMetrics {

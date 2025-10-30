@@ -12,7 +12,7 @@ import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 import {
   ApplicationDetailsDialog,

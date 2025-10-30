@@ -7,7 +7,7 @@ import { useState, useCallback } from 'react';
 import { useConversation } from '@11labs/react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 import { parseVoiceAgentError, getErrorTitle, getUserFriendlyErrorMessage } from '../utils/errorHandling';
 import { SignedUrlResponse } from '../types';
 

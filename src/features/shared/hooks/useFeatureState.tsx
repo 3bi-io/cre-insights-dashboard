@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FeatureState, FeatureError, FeatureHookReturn } from '../types/feature.types';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 export interface UseFeatureStateOptions {
   featureName: string;

@@ -22,7 +22,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { devTools } from '@/utils/devTools';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;

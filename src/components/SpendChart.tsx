@@ -3,7 +3,7 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 const SpendChart = () => {
   const { data: spendData = [], isLoading, refetch } = useQuery({
