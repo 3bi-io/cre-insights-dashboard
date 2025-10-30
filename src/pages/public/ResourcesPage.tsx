@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -128,6 +129,12 @@ const ResourcesPage = () => {
 
   return (
     <div className="min-h-screen py-20">
+      <SEO
+        title="Resources & Documentation | Guides & Tutorials"
+        description="Comprehensive knowledge base for ATS.me. Quick start guides, video tutorials, API documentation, implementation checklists, and best practices for recruitment teams."
+        keywords="ATS documentation, recruitment guides, implementation tutorial, API docs, ATS.me resources"
+        canonical="https://ats.me/resources"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,6 +8,13 @@ import { Cookie } from 'lucide-react';
 const CookiePolicyPage = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Cookie Policy | How We Use Cookies"
+        description="Learn how ATS.me uses cookies to enhance your experience. Cookie types, purposes, and how to manage cookie preferences."
+        keywords="cookie policy, cookies, website tracking, privacy preferences"
+        canonical="https://ats.me/cookie-policy"
+        noindex={true}
+      />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}

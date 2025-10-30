@@ -1,10 +1,18 @@
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 const PrivacyPolicyPage = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Privacy Policy | Data Protection & GDPR Compliance"
+        description="ATS.me's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform with enterprise-grade data protection."
+        keywords="privacy policy, data protection, GDPR compliance, recruitment data security"
+        canonical="https://ats.me/privacy-policy"
+        noindex={true}
+      />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}

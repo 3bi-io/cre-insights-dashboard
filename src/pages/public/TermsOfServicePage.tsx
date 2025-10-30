@@ -1,4 +1,5 @@
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
@@ -6,6 +7,13 @@ import { Info } from 'lucide-react';
 const TermsOfServicePage = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Terms of Service | User Agreement"
+        description="Terms and conditions for using ATS.me's recruitment platform. Service agreement, usage rights, and responsibilities for users and organizations."
+        keywords="terms of service, user agreement, ATS terms"
+        canonical="https://ats.me/terms-of-service"
+        noindex={true}
+      />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}

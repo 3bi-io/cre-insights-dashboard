@@ -57,10 +57,10 @@ const AuthPage = () => {
         <div className="text-center mb-8">
           <img 
             src="/logo.png" 
-            alt="ATS Intel" 
+            alt="ATS.me" 
             className="h-12 w-auto mx-auto mb-4"
           />
-          <h1 className="text-2xl font-bold">Welcome to ATS Intel</h1>
+          <h1 className="text-2xl font-bold">Welcome to ATS.me</h1>
           <p className="text-muted-foreground">Sign in to your account or create a new one</p>
         </div>
 

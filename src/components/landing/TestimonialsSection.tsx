@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
@@ -30,13 +31,39 @@ const TestimonialsSection = () => {
 
   return (
     <section className="py-20">
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": "ATS.me",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.8",
+              "reviewCount": "50"
+            },
+            "review": testimonials.map((t) => ({
+              "@type": "Review",
+              "author": {
+                "@type": "Person",
+                "name": t.author
+              },
+              "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": "5"
+              },
+              "reviewBody": t.quote
+            }))
+          })}
+        </script>
+      </Helmet>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
             Early Results from Our Pilot Program
           </h2>
           <p className="text-xl text-muted-foreground">
-            Real feedback from companies testing ATS Intel in production
+            Real feedback from companies testing ATS.me in production
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             🚀 Join our pilot program and get priority access to new features

@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,6 +89,12 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen py-16 px-4">
+      <SEO
+        title="Pricing & Plans | Early Adopter Discounts Available"
+        description="Simple, transparent pricing starting at $299/month. Join our pilot program for 50% off first 6 months + lifetime grandfathered pricing. Starter, Professional & Enterprise plans."
+        keywords="ATS pricing, recruitment software cost, early adopter pricing, pilot program discount, ATS.me plans"
+        canonical="https://ats.me/pricing"
+      />
       <div className="container mx-auto max-w-7xl">
         {/* Hero Section */}
         <div className="text-center mb-16">

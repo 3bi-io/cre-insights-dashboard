@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,6 +60,12 @@ const DemoPage = () => {
 
   return (
     <div className="min-h-screen py-20">
+      <SEO
+        title="Request a Demo | See Our Platform in Action"
+        description="Experience ATS.me's AI-powered recruitment platform. 15-minute personalized walkthrough covering Voice Apply, analytics, Tenstreet integration, and automated workflows."
+        keywords="ATS demo, recruitment software demo, platform walkthrough, product tour, ATS.me demo"
+        canonical="https://ats.me/demo"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-16">

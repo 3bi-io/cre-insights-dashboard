@@ -120,7 +120,7 @@ const PublicLayout = () => {
                 </a>
               </div>
               <p className="text-sm text-muted-foreground">
-                © 2024 ATS Intel. All rights reserved.
+                © 2024 ATS.me. All rights reserved.
               </p>
             </div>
           </div>

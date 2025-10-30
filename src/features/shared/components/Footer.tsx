@@ -9,11 +9,11 @@ const Footer = () => {
           <div className="flex items-center gap-2">
             <img 
               src="/logo.png" 
-              alt="ATS Intel" 
+              alt="ATS.me" 
               className="h-6 w-auto"
             />
             <span className="text-sm text-muted-foreground">
-              © 2024 ATS Intel. All rights reserved.
+              © 2024 ATS.me. All rights reserved.
             </span>
           </div>
           

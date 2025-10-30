@@ -1,19 +1,28 @@
-# robots.txt for ATS Intel
+# robots.txt for ATS.me
 # https://ats.me/robots.txt
 
 User-agent: *
 Allow: /
 Allow: /auth
-Allow: /dashboard
-Allow: /jobs
-Allow: /applications
-Allow: /platforms
-Allow: /ai-tools
+Allow: /pricing
+Allow: /demo
+Allow: /features
+Allow: /resources
+Allow: /contact
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /cookie-policy
 
 # Disallow admin and private areas
-Disallow: /admin
+Disallow: /admin/
 Disallow: /api/
+Disallow: /dashboard
 Disallow: /settings
+Disallow: /jobs
+Disallow: /applications
+Disallow: /platforms
+Disallow: /ai-tools
+Disallow: /organizations
 
 # Sitemap
 Sitemap: https://ats.me/sitemap.xml

@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -148,6 +149,12 @@ const FeaturesPage = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Features | AI Screening, Voice Apply & Integrations"
+        description="Explore ATS.me's powerful features: Voice Apply (80% faster applications), Tenstreet sync, AI-powered screening, 100+ job board distribution, predictive analytics, automated workflows."
+        keywords="ATS features, Voice Apply technology, AI screening, job board integration, Tenstreet integration, recruitment automation"
+        canonical="https://ats.me/features"
+      />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}
