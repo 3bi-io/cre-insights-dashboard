@@ -12,6 +12,7 @@ const DemoPage = React.lazy(() => import("@/pages/public/DemoPage"));
 const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
 const PricingPage = React.lazy(() => import("@/pages/public/PricingPage"));
 const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
+const ResourcesPage = React.lazy(() => import("@/pages/public/ResourcesPage"));
 const PrivacyPolicyPage = React.lazy(() => import("@/pages/public/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("@/pages/public/TermsOfServicePage"));
 const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPage"));
@@ -109,6 +110,7 @@ const AppRoutes: React.FC = () => {
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
         <Route path="pricing" element={<RouteWrapper><PricingPage /></RouteWrapper>} />
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
+        <Route path="resources" element={<RouteWrapper><ResourcesPage /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />
