@@ -7,37 +7,37 @@ const FeaturesSection = () => {
     {
       icon: Mic,
       title: "Voice Apply Technology",
-      description: "Revolutionary voice-powered application process that allows candidates to apply using natural speech, making recruitment more accessible and engaging."
+      description: "Revolutionary voice-powered application process that allows candidates to apply using natural speech, reducing application time by 80% and improving accessibility."
     },
     {
       icon: Brain,
       title: "AI-Powered Analytics",
-      description: "Advanced machine learning algorithms analyze candidate data to predict hiring success and optimize your recruitment process."
+      description: "Track cost-per-hire by source, predict time-to-hire trends, identify candidate drop-off points, and compare publisher ROI with real-time ML predictions."
     },
     {
       icon: Zap,
-      title: "Automated Workflows",
-      description: "Streamline your hiring process with intelligent automation that handles repetitive tasks and accelerates decision-making."
+      title: "Automated Screening & Workflows",
+      description: "Intelligent screening requests, automated background checks, and interview scheduling that reduce manual work by 95% while maintaining quality."
     },
     {
       icon: Shield,
       title: "Compliance & Security",
-      description: "Enterprise-grade security with full GDPR compliance, ensuring your candidate data is always protected."
+      description: "Enterprise-grade security with full GDPR and EEO compliance, automated audit trails, and role-based access controls for data protection."
     },
     {
       icon: BarChart3,
-      title: "Advanced Reporting",
-      description: "Comprehensive analytics dashboard with real-time insights into your recruitment metrics and team performance."
+      title: "Advanced Reporting & Insights",
+      description: "Real-time dashboards showing spend trends, platform performance, category breakdowns, and predictive analytics for hiring success rates."
     },
     {
       icon: Users,
-      title: "Team Collaboration",
-      description: "Seamless collaboration tools that keep your entire hiring team aligned and efficient throughout the process."
+      title: "Full Lifecycle Management",
+      description: "Complete ATS covering job posting, applicant tracking, interview scheduling, offer management, and onboarding with seamless team collaboration."
     },
     {
       icon: Globe,
-      title: "Global Integration",
-      description: "Connect with 100+ job boards and platforms worldwide to expand your reach and find the best talent."
+      title: "Multi-Channel Distribution",
+      description: "Integrate with Tenstreet, Indeed, Glassdoor, Adzuna, Talroo, and 100+ job boards. Automatic posting and real-time application syncing."
     }
   ];
 
