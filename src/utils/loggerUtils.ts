@@ -1,22 +1,22 @@
 // Utility functions for cleaning up console.log statements in production
 
-import { logger } from '@/services/loggerService';
+import { logger } from '@/lib/logger';
 
 // Replace console.log with proper logging
-export const logInfo = (message: string, data?: unknown, context?: string) => {
-  logger.info(message, data, context);
+export const logInfo = (message: string, context?: Record<string, any>) => {
+  logger.info(message, context);
 };
 
-export const logError = (message: string, error?: unknown, context?: string) => {
+export const logError = (message: string, error?: unknown, context?: Record<string, any>) => {
   logger.error(message, error, context);
 };
 
-export const logWarn = (message: string, data?: unknown, context?: string) => {
-  logger.warn(message, data, context);
+export const logWarn = (message: string, context?: Record<string, any>) => {
+  logger.warn(message, context);
 };
 
-export const logDebug = (message: string, data?: unknown, context?: string) => {
-  logger.debug(message, data, context);
+export const logDebug = (message: string, context?: Record<string, any>) => {
+  logger.debug(message, context);
 };
 
 // Performance logging utilities

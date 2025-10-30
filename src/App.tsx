@@ -10,7 +10,7 @@ import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
 import { ErrorBoundaryEnhanced } from "@/components/debug/ErrorBoundaryEnhanced";
 import { DevToolsPanel, DevToolsToggle } from "@/components/debug/DevToolsPanel";
 import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
-import { logger } from "@/services/loggerService";
+import { logger } from "@/lib/logger";
 import AppRoutes from "@/components/routing/AppRoutes";
 import CountryBlockWrapper from "@/components/CountryBlockWrapper";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -51,12 +51,13 @@ const AppContent = () => {
 
 const App = React.memo(() => {
   const [showDevTools, setShowDevTools] = useState(false);
+  const isDevelopment = import.meta.env.MODE === 'development';
   
   return (
-    <ErrorBoundaryEnhanced showDetailedError={true}>
+    <ErrorBoundaryEnhanced showDetailedError={isDevelopment}>
       <GlobalErrorBoundary
         onError={(error, errorInfo) => {
-          logger.error('App-level error caught', { error, errorInfo }, 'App');
+          logger.error('App-level error caught', error, { errorInfo, component: 'App' });
         }}
       >
         <QueryClientProvider client={queryClient}>
@@ -70,12 +71,16 @@ const App = React.memo(() => {
                     
                     <AppContent />
                     
-                    {/* Development Tools */}
-                    <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
-                    <DevToolsPanel 
-                      isVisible={showDevTools} 
-                      onToggle={() => setShowDevTools(!showDevTools)} 
-                    />
+                    {/* Development Tools - Only in Development */}
+                    {isDevelopment && (
+                      <>
+                        <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
+                        <DevToolsPanel 
+                          isVisible={showDevTools} 
+                          onToggle={() => setShowDevTools(!showDevTools)} 
+                        />
+                      </>
+                    )}
                   </TooltipProvider>
                 </FeatureProvider>
               </AuthProvider>
