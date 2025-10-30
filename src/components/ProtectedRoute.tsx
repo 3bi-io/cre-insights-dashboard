@@ -33,11 +33,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <>{children}</>;
   }
 
-  // If organization has active subscription, grant full access
-  if (hasActiveSubscription) {
-    return <>{children}</>;
+  // If subscription required and user lacks active subscription, redirect to pricing
+  if (requireSubscription && !hasActiveSubscription) {
+    return <Navigate to="/pricing" state={{ from: useLocation().pathname }} replace />;
   }
 
+  // Grant access
   return <>{children}</>;
 };
 

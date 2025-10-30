@@ -1,5 +1,8 @@
 project_id = "auwhcdpppldjlcaxzsme"
 
+[functions.admin-check]
+verify_jwt = true
+
 [functions.fetch-feeds]
 verify_jwt = true
 
