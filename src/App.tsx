@@ -15,6 +15,7 @@ import AppRoutes from "@/components/routing/AppRoutes";
 import CountryBlockWrapper from "@/components/CountryBlockWrapper";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
+import { AIChatbot } from "@/components/ai/AIChatbot";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useEffect } from "react";
 
@@ -74,6 +75,7 @@ const AppContent = () => {
       <AppRoutes />
       <PWAInstallPrompt />
       <PWAUpdater />
+      <AIChatbot />
     </CountryBlockWrapper>
   );
 };

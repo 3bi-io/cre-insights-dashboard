@@ -1,73 +1,265 @@
-# Welcome to your Lovable project
+# ATS.me - AI-Powered Recruitment Platform
 
-## Project info
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5.4.2-purple.svg)](https://vitejs.dev/)
 
-**URL**: https://lovable.dev/projects/cf22d483-762d-45c7-a42c-85b40ce9290a
+Transform your recruitment process with AI-powered analytics, automated workflows, and intelligent candidate ranking. ATS.me is a modern, production-ready Applicant Tracking System built with cutting-edge technologies.
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+### 🎯 Core Functionality
+- **Smart Candidate Ranking** - AI-powered scoring and ranking system
+- **Application Management** - Comprehensive applicant tracking
+- **Job Posting Management** - Create and manage job listings
+- **Interview Scheduling** - Automated scheduling with calendar integration
+- **Document Management** - Resume parsing and document storage
+- **Team Collaboration** - Multi-user access with role-based permissions
 
-**Use Lovable**
+### 🤖 AI Integration
+- **AI-Powered Scoring** - Automated candidate evaluation
+- **AI Chatbot Assistant** - Real-time recruitment guidance
+- **Resume Analysis** - Intelligent resume parsing and matching
+- **Bias Detection** - Identify and mitigate hiring bias
+- **Predictive Analytics** - Forecast hiring success
+- **Natural Language Processing** - Semantic job description matching
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/cf22d483-762d-45c7-a42c-85b40ce9290a) and start prompting.
+### 📊 Analytics & Reporting
+- **Performance Metrics** - Track recruitment KPIs
+- **Custom Reports** - Generate detailed analytics
+- **Data Visualization** - Interactive charts and graphs
+- **Export Capabilities** - Export data in multiple formats
+- **Real-time Dashboards** - Live recruitment metrics
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🔒 Security & Compliance
+- **Row-Level Security** - Supabase RLS policies
+- **Data Encryption** - End-to-end encryption
+- **GDPR Compliance** - Privacy-first design
+- **Audit Logging** - Complete activity tracking
+- **Role-Based Access** - Granular permissions
 
-**Use your preferred IDE**
+### 📱 Progressive Web App
+- **Offline Support** - Work without internet connection
+- **Install Prompt** - Install as native app
+- **Background Sync** - Automatic data synchronization
+- **Push Notifications** - Real-time updates
+- **Responsive Design** - Works on all devices
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🌍 Internationalization
+- **Multi-Language Support** - English, Spanish, French, German
+- **Automatic Detection** - Browser language detection
+- **Persistent Preferences** - Saved language settings
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Quick Start
 
-Follow these steps:
+### Prerequisites
+- Node.js 18+ or Bun
+- Supabase account
+- Modern web browser
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+### Installation
+
+1. **Clone the repository**
+```bash
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+cd ats-me
 ```
 
-**Edit a file directly in GitHub**
+2. **Install dependencies**
+```bash
+npm install
+# or
+bun install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. **Set up Supabase**
+- Create a new Supabase project at https://supabase.com
+- Update the Supabase configuration in `src/integrations/supabase/client.ts`
+- Run database migrations (see DEPLOYMENT.md)
 
-**Use GitHub Codespaces**
+4. **Configure environment variables**
+```bash
+# Optional: Add monitoring tools
+VITE_SENTRY_DSN=your-sentry-dsn
+VITE_GA_MEASUREMENT_ID=your-ga-id
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+5. **Start development server**
+```bash
+npm run dev
+# or
+bun run dev
+```
 
-## What technologies are used for this project?
+6. **Open your browser**
+Navigate to `http://localhost:8080`
 
-This project is built with:
+## 📚 Documentation
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment instructions
+- **[API Documentation](./API_DOCUMENTATION.md)** - Edge functions and API reference
+- **[User Guide](./USER_GUIDE.md)** - End-user documentation
+- **[Admin Guide](./ADMIN_GUIDE.md)** - Administrator documentation
+- **[Contributing](./CONTRIBUTING.md)** - Development guidelines
+- **[Troubleshooting](./TROUBLESHOOTING.md)** - Common issues and solutions
 
-## How can I deploy this project?
+## 🛠️ Tech Stack
 
-Simply open [Lovable](https://lovable.dev/projects/cf22d483-762d-45c7-a42c-85b40ce9290a) and click on Share -> Publish.
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Utility-first CSS
+- **Radix UI** - Accessible components
+- **React Query** - Data fetching and caching
+- **React Router** - Client-side routing
+- **i18next** - Internationalization
 
-## Can I connect a custom domain to my Lovable project?
+### Backend
+- **Supabase** - Backend-as-a-Service
+  - PostgreSQL database
+  - Authentication
+  - Storage
+  - Edge Functions
+  - Real-time subscriptions
 
-Yes, you can!
+### AI & Analytics
+- **Lovable AI Gateway** - AI model integration (Gemini 2.5 Flash)
+- **Recharts** - Data visualization
+- **Custom ML Models** - Candidate scoring algorithms
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Performance & Monitoring
+- **Vite PWA** - Progressive Web App support
+- **Sentry** - Error tracking
+- **Google Analytics** - User analytics
+- **Workbox** - Service worker caching
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Testing
+- **Vitest** - Unit and component testing
+- **Testing Library** - React testing utilities
+- **Playwright** - End-to-end testing
+
+## 🏗️ Project Structure
+
+```
+ats-me/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/             # Base UI components (shadcn)
+│   │   ├── scoring/        # Candidate scoring components
+│   │   ├── pwa/            # PWA-specific components
+│   │   └── ai/             # AI chatbot components
+│   ├── features/           # Feature-based modules
+│   │   ├── ai-analytics/   # AI analytics feature
+│   │   ├── applications/   # Application management
+│   │   └── jobs/           # Job posting management
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Utility libraries
+│   ├── pages/              # Page components
+│   ├── utils/              # Utility functions
+│   ├── i18n/               # Internationalization
+│   └── tests/              # Test files
+├── supabase/
+│   ├── functions/          # Edge functions
+│   └── migrations/         # Database migrations
+├── e2e/                    # End-to-end tests
+└── public/                 # Static assets
+```
+
+## 🧪 Testing
+
+### Unit & Component Tests
+```bash
+npm run test
+# or with UI
+npm run test:ui
+```
+
+### E2E Tests
+```bash
+npm run test:e2e
+# or headed mode
+npm run test:e2e:headed
+```
+
+### Test Coverage
+```bash
+npm run test:coverage
+```
+
+## 📦 Building for Production
+
+```bash
+npm run build
+```
+
+The optimized build will be in the `dist/` directory.
+
+### Build Analysis
+```bash
+npm run build
+# View bundle analysis in dist/stats.html
+```
+
+## 🔧 Configuration
+
+### Tailwind Design System
+All colors and design tokens are defined in:
+- `src/index.css` - CSS variables and design tokens
+- `tailwind.config.ts` - Tailwind configuration
+
+### Performance Optimization
+- **Code Splitting** - Automatic route-based splitting
+- **Image Optimization** - Automatic image compression
+- **Tree Shaking** - Unused code elimination
+- **Minification** - Terser optimization
+- **Caching** - Service worker caching strategies
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+### Development Workflow
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Lovable](https://lovable.dev)
+- UI components from [shadcn/ui](https://ui.shadcn.com)
+- Icons from [Lucide](https://lucide.dev)
+- Backend powered by [Supabase](https://supabase.com)
+
+## 📞 Support
+
+- **Documentation**: [docs.lovable.dev](https://docs.lovable.dev)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/ats-me/issues)
+- **Discord**: [Lovable Community](https://discord.gg/lovable)
+
+## 🗺️ Roadmap
+
+### Completed ✓
+- ✅ Phase 1-10: Core Platform Development
+- ✅ Phase 11: Post-Launch & Scaling (Email, i18n, Mobile, Performance)
+- ✅ Phase 12: Advanced AI Features (Chatbot, Streaming)
+
+### Coming Soon
+- 📧 Enhanced email templates with Resend
+- 📅 Advanced calendar features
+- 🌐 Additional language support
+- 📱 Native mobile apps (iOS & Android)
+- 🎥 Video interview integration
+
+---
+
+Made with ❤️ by the ATS.me Team
+
+**Lovable Project URL**: https://lovable.dev/projects/cf22d483-762d-45c7-a42c-85b40ce9290a
