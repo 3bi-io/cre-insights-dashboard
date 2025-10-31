@@ -3,19 +3,34 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Play, Star, Search } from 'lucide-react';
-import heroImage from '@/assets/hero-recruitment-platform.jpg';
+import heroImage2400 from '@/assets/hero-recruitment-2400.webp';
+import heroImage1200 from '@/assets/hero-recruitment-1200.webp';
+import heroImage600 from '@/assets/hero-recruitment-600.webp';
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Hero Image Background - Responsive for all devices */}
+      {/* Hero Image Background - Responsive with WebP optimization */}
       <div className="absolute inset-0 w-full h-full">
-        <img
-          src={heroImage}
-          alt="Modern recruitment platform with AI-powered analytics"
-          className="w-full h-full object-cover object-center"
-          loading="eager"
-        />
+        <picture>
+          <source 
+            media="(min-width: 1024px)" 
+            srcSet={heroImage2400}
+            type="image/webp" 
+          />
+          <source 
+            media="(min-width: 640px)" 
+            srcSet={heroImage1200}
+            type="image/webp" 
+          />
+          <img
+            src={heroImage600}
+            alt="Modern recruitment platform with AI-powered analytics dashboard"
+            className="w-full h-full object-cover object-center"
+            loading="eager"
+            fetchPriority="high"
+          />
+        </picture>
         {/* Overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/85"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
