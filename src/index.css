@@ -225,6 +225,38 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
+  /* === MOBILE OPTIMIZATIONS === */
+  @media (max-width: 767px) {
+    /* Prevent text inflation on mobile */
+    body {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    /* Optimize tap targets */
+    button, a, input, select, textarea {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* === PERFORMANCE OPTIMIZATIONS === */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   /* === SCROLLBAR STYLES === */
   ::-webkit-scrollbar {
     @apply w-2 h-2;
@@ -373,5 +405,67 @@
 
   .focus-ring {
     @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+
+  /* Mobile-first touch target utilities */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+
+  .touch-target-lg {
+    @apply min-h-[48px] min-w-[48px] touch-manipulation;
+  }
+
+  /* Responsive typography */
+  .heading-1 {
+    @apply text-3xl sm:text-4xl font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    @apply text-2xl sm:text-3xl font-semibold tracking-tight;
+  }
+
+  .heading-3 {
+    @apply text-xl sm:text-2xl font-semibold;
+  }
+
+  .heading-4 {
+    @apply text-lg sm:text-xl font-semibold;
+  }
+
+  .body-lg {
+    @apply text-base sm:text-lg leading-normal;
+  }
+
+  .body-base {
+    @apply text-sm sm:text-base leading-normal;
+  }
+
+  /* Mobile-optimized container */
+  .container-mobile-safe {
+    @apply px-4 sm:px-6 lg:px-8 
+           pt-[env(safe-area-inset-top)] 
+           pb-[env(safe-area-inset-bottom)]
+           pl-[max(1rem,env(safe-area-inset-left))]
+           pr-[max(1rem,env(safe-area-inset-right))];
+  }
+
+  /* Performance optimizations */
+  .gpu-accelerated {
+    @apply transform translate-z-0 will-change-transform;
+  }
+
+  .optimized-scroll {
+    @apply overflow-auto overscroll-contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Image optimization */
+  .img-responsive {
+    @apply w-full h-auto object-cover;
+  }
+
+  .img-lazy {
+    @apply bg-muted animate-pulse;
   }
 }
