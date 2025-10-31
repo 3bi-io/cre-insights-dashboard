@@ -4,6 +4,7 @@ import path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
 import { ViteImageOptimizer } from "vite-plugin-image-optimizer";
 import { VitePWA } from "vite-plugin-pwa";
+import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,6 +14,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mode === 'development' && componentTagger(),
     // Production-only visualizer for bundle analysis
     mode === 'production' && visualizer({
       open: false,
