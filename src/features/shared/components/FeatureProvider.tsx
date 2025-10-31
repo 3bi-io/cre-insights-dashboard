@@ -1,6 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { BaseFeatureConfig, FeatureError } from '../types/feature.types';
-import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
+import { useAuth } from '@/hooks/useAuth';
 
 interface FeatureContextValue {
   hasFeatureAccess: (featureName: string) => boolean;
@@ -15,19 +15,15 @@ export interface FeatureProviderProps {
 }
 
 export const FeatureProvider: React.FC<FeatureProviderProps> = ({ children }) => {
-  const organizationFeatures = useOrganizationFeatures();
+  const { userRole } = useAuth();
 
   const hasFeatureAccess = (featureName: string): boolean => {
-    try {
-      const accessMethod = organizationFeatures[`has${featureName}Access` as keyof typeof organizationFeatures];
-      if (typeof accessMethod === 'function') {
-        return (accessMethod as () => boolean)();
-      }
-      return false;
-    } catch (error) {
-      console.warn(`Feature access check failed for ${featureName}:`, error);
-      return false;
-    }
+    // Super admins have access to all features
+    if (userRole === 'super_admin') return true;
+    
+    // For now, return false for non-super-admins
+    // This can be enhanced later with proper feature flags
+    return false;
   };
 
   const reportFeatureError = (error: FeatureError): void => {
