@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { trackPageView as gaTrackPageView } from '@/utils/analytics';
 
 // Generate or retrieve visitor ID from localStorage
 const getVisitorId = (): string => {
@@ -139,6 +140,9 @@ export const usePageTracking = () => {
       // Track the page view
       const pageTitle = document.title;
       trackPageView(currentPath, pageTitle, organization?.id);
+      
+      // Also track in Google Analytics
+      gaTrackPageView(currentPath, pageTitle);
     }
   }, [location.pathname, organization?.id]);
 

@@ -3,6 +3,12 @@ import { HelmetProvider } from 'react-helmet-async'
 import App from './App.tsx'
 import './index.css'
 import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
+import { initSentry } from '@/utils/sentry'
+import { initAnalytics } from '@/utils/analytics'
+
+// Initialize monitoring services
+initSentry();
+initAnalytics();
 
 // Start performance monitoring in development
 if (import.meta.env.MODE === 'development') {

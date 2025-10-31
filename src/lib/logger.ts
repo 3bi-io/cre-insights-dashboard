@@ -34,7 +34,17 @@ function formatError(error: unknown): string {
 function sendToMonitoring(level: 'error' | 'warn', message: string, context?: LogContext) {
   if (isDevelopment || isTest) return;
   
-  // TODO: Integrate with error monitoring service (Sentry, LogRocket, etc.)
+  // Lazy import Sentry to avoid loading in development
+  import('@/utils/sentry').then(({ captureMessage, captureException }) => {
+    if (level === 'error') {
+      captureException(new Error(message), context);
+    } else {
+      captureMessage(message, 'warning' as any, context);
+    }
+  }).catch((error) => {
+    // Silently fail if Sentry is not configured
+    console.warn('Failed to load Sentry', error);
+  });
 }
 
 export const logger = {
