@@ -35,7 +35,7 @@ export const DevToolsPanel: React.FC<DevToolsPanelProps> = ({
   onToggle
 }) => {
   const [config, setConfig] = useState(devTools.getConfig());
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [performanceMetrics, setPerformanceMetrics] = useState({
     memoryUsage: null as any,
     bundleAnalysis: null as any,

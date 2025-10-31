@@ -3,20 +3,18 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Play, Star, Search } from 'lucide-react';
-import { LazyImage } from '@/components/optimized/LazyImage';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import heroImage from '@/assets/hero-recruitment-platform.jpg';
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Hero Image Background - Responsive for all devices */}
       <div className="absolute inset-0 w-full h-full">
-        <LazyImage
-          src="/placeholder.svg"
-          alt="Hero background showcasing modern recruitment platform"
-          priority
+        <img
+          src={heroImage}
+          alt="Modern recruitment platform with AI-powered analytics"
           className="w-full h-full object-cover object-center"
-          style={{ width: '100%', height: '100%' }}
+          loading="eager"
         />
         {/* Overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/85"></div>

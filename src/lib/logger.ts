@@ -35,64 +35,85 @@ function sendToMonitoring(level: 'error' | 'warn', message: string, context?: Lo
   if (isDevelopment || isTest) return;
   
   // TODO: Integrate with error monitoring service (Sentry, LogRocket, etc.)
-  // Example:
-  // Sentry.captureException(new Error(message), { 
-  //   level, 
-  //   extra: context 
-  // });
 }
 
 export const logger = {
   /**
    * Log debug information (development only)
+   * Supports both 2-arg and legacy 3-arg signatures
    */
-  log: (message: string, context?: LogContext) => {
+  log: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
     if (isDevelopment) {
-      console.log(`[LOG] ${message}`, context || '');
+      const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
+      console.log(`[LOG] ${message}`, ctx || '');
     }
   },
 
   /**
    * Log informational messages (development only)
+   * Supports both 2-arg and legacy 3-arg signatures
    */
-  info: (message: string, context?: LogContext) => {
+  info: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
     if (isDevelopment) {
-      console.info(`[INFO] ${message}`, context || '');
+      const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
+      console.info(`[INFO] ${message}`, ctx || '');
     }
   },
 
   /**
    * Log debug messages (development only)
+   * Supports both 2-arg and legacy 3-arg signatures
    */
-  debug: (message: string, context?: LogContext) => {
+  debug: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
     if (isDevelopment) {
-      console.debug(`[DEBUG] ${message}`, context || '');
+      const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
+      console.debug(`[DEBUG] ${message}`, ctx || '');
     }
   },
 
   /**
    * Log warnings (always logged, sent to monitoring in production)
+   * Supports both 2-arg and legacy 3-arg signatures
    */
-  warn: (message: string, context?: LogContext) => {
+  warn: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
+    const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
     if (isDevelopment) {
-      console.warn(`[WARN] ${message}`, context || '');
+      console.warn(`[WARN] ${message}`, ctx || '');
     } else {
-      console.warn(message); // Minimal logging in production
-      sendToMonitoring('warn', message, context);
+      console.warn(message);
+      sendToMonitoring('warn', message, ctx);
     }
   },
 
   /**
    * Log errors (always logged, sent to monitoring in production)
+   * Supports both 2-arg and legacy 3-arg signatures
    * CRITICAL: Always log errors for debugging, but minimize sensitive data
    */
-  error: (message: string, error?: unknown, context?: LogContext) => {
+  error: (message: string, errorOrContext?: unknown, contextOrLegacy?: LogContext | string) => {
+    let error: unknown;
+    let context: LogContext | undefined;
+
+    // Handle different signatures
+    if (typeof contextOrLegacy === 'string') {
+      // 3-arg legacy: (message, error, 'Context')
+      error = errorOrContext;
+      context = { context: contextOrLegacy };
+    } else if (contextOrLegacy && typeof contextOrLegacy === 'object') {
+      // 3-arg new: (message, error, { context })
+      error = errorOrContext;
+      context = contextOrLegacy;
+    } else {
+      // 2-arg: (message, error)
+      error = errorOrContext;
+      context = undefined;
+    }
+
     const formattedError = error ? formatError(error) : '';
     
     if (isDevelopment) {
       console.error(`[ERROR] ${message}`, formattedError, context || '');
     } else {
-      // Production: log minimal info, send to monitoring
       console.error(message, formattedError);
       sendToMonitoring('error', `${message}: ${formattedError}`, context);
     }

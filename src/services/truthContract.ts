@@ -104,7 +104,7 @@ Validate this content according to the Truth Contract principles.
 
   async validateResponse(request: TruthContractRequest): Promise<TruthContractValidation> {
     try {
-      loggerService.info('Truth Contract validation started', {
+      logger.info('Truth Contract validation started', {
         provider: request.provider,
         model: request.model,
         userId: request.userId,
@@ -123,7 +123,7 @@ Validate this content according to the Truth Contract principles.
       const combinedValidation = this.combineValidations(validation, biasCheck, completenessCheck, factualityCheck);
 
       // Log validation results
-      loggerService.info('Truth Contract validation completed', {
+      logger.info('Truth Contract validation completed', {
         score: combinedValidation.score,
         violationCount: combinedValidation.violations.length,
         isValid: combinedValidation.isValid
@@ -135,7 +135,7 @@ Validate this content according to the Truth Contract principles.
       return combinedValidation;
 
     } catch (error) {
-      loggerService.error('Truth Contract validation failed', { error: error.message });
+      logger.error('Truth Contract validation failed', error);
       
       // Return safe fallback validation
       return {
@@ -219,7 +219,7 @@ Respond with JSON: {"biases": [{"type": "string", "severity": "low|medium|high",
         }))
       };
     } catch (error) {
-      loggerService.warn('Bias detection failed', { error: error.message });
+      logger.warn('Bias detection failed', { error });
       return { violations: [] };
     }
   }
@@ -268,7 +268,7 @@ Respond with JSON: {"isComplete": boolean, "missingElements": ["string"], "score
 
       return { violations: [] };
     } catch (error) {
-      loggerService.warn('Completeness validation failed', { error: error.message });
+      logger.warn('Completeness validation failed', { error });
       return { violations: [] };
     }
   }
@@ -317,7 +317,7 @@ Respond with JSON: {"claims": [{"claim": "string", "verification": "verified|dis
         violations
       };
     } catch (error) {
-      loggerService.warn('Fact checking failed', { error: error.message });
+      logger.warn('Fact checking failed', { error });
       return { factChecks: [] };
     }
   }
@@ -366,7 +366,7 @@ Respond with JSON: {"claims": [{"claim": "string", "verification": "verified|dis
   private async storeValidationRecord(request: TruthContractRequest, validation: TruthContractValidation): Promise<void> {
     try {
       // Log validation for auditing (using console for now since table doesn't exist)
-      loggerService.info('Truth Contract Validation Record', {
+      logger.info('Truth Contract Validation Record', {
         provider: request.provider,
         model: request.model,
         prompt_hash: this.hashString(request.prompt),
@@ -383,7 +383,7 @@ Respond with JSON: {"claims": [{"claim": "string", "verification": "verified|dis
       // TODO: Store in database when truth_contract_validations table is created
       // await supabase.from('truth_contract_validations').insert({...});
     } catch (error) {
-      loggerService.warn('Failed to store validation record', { error: error.message });
+      logger.warn('Failed to store validation record', { error });
     }
   }
 
@@ -400,7 +400,7 @@ Respond with JSON: {"claims": [{"claim": "string", "verification": "verified|dis
   // Configuration methods
   updateConfig(newConfig: Partial<TruthContractConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    loggerService.info('Truth Contract configuration updated', newConfig);
+    logger.info('Truth Contract configuration updated', newConfig);
   }
 
   getConfig(): TruthContractConfig {
