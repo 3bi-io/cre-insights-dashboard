@@ -58,6 +58,8 @@ const Support = React.lazy(() => import("@/pages/Support"));
 const VisitorAnalytics = React.lazy(() => import("@/pages/VisitorAnalytics"));
 const AccessDenied = React.lazy(() => import("@/pages/AccessDenied"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
+const Install = React.lazy(() => import("@/pages/Install"));
+const Offline = React.lazy(() => import("@/pages/Offline"));
 
 // Loading fallback component
 const PageSkeleton = React.memo(() => (
@@ -165,6 +167,10 @@ const AppRoutes: React.FC = () => {
 
       {/* Access Denied Route */}
       <Route path="/access-denied" element={<RouteWrapper><AccessDenied /></RouteWrapper>} />
+
+      {/* PWA Routes */}
+      <Route path="/install" element={<RouteWrapper><Install /></RouteWrapper>} />
+      <Route path="/offline" element={<RouteWrapper><Offline /></RouteWrapper>} />
 
       {/* 404 Route */}
       <Route path="*" element={<RouteWrapper><NotFound /></RouteWrapper>} />

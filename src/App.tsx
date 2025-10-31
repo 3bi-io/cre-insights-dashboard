@@ -14,6 +14,33 @@ import { logger } from "@/lib/logger";
 import AppRoutes from "@/components/routing/AppRoutes";
 import CountryBlockWrapper from "@/components/CountryBlockWrapper";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
+import { useRegisterSW } from "virtual:pwa-register/react";
+import { useEffect } from "react";
+
+// Service Worker Registration
+function PWAUpdater() {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(r) {
+      logger.debug('Service Worker registered', { scope: r?.scope });
+    },
+    onRegisterError(error) {
+      logger.error('Service Worker registration failed', error);
+    },
+  });
+
+  useEffect(() => {
+    if (needRefresh) {
+      // Automatically update service worker when new version is available
+      updateServiceWorker(true);
+    }
+  }, [needRefresh, updateServiceWorker]);
+
+  return null;
+}
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -45,6 +72,8 @@ const AppContent = () => {
   return (
     <CountryBlockWrapper>
       <AppRoutes />
+      <PWAInstallPrompt />
+      <PWAUpdater />
     </CountryBlockWrapper>
   );
 };
