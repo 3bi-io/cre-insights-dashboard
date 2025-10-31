@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOrganizationFeaturesAdmin } from '@/hooks/useOrganizationFeaturesAdmin';
 import { Settings } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import {
   getFeatureIcon,
   getCategoryColor,
@@ -60,7 +61,7 @@ export const OrganizationFeaturesDialog = ({ organization, trigger }: Organizati
       });
       setOpen(false);
     } catch (error) {
-      console.error('Failed to update features:', error);
+      logger.error('Failed to update features', error);
     }
   };
 

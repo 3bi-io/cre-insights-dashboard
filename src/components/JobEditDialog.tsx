@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface JobEditDialogProps {
   job: {
@@ -61,7 +62,7 @@ const JobEditDialog: React.FC<JobEditDialogProps> = ({ job, open, onOpenChange, 
 
       onSuccess();
     } catch (error) {
-      console.error('Error updating job:', error);
+      logger.error('Error updating job', error);
       toast({
         title: "Error",
         description: "Failed to update job listing. Please try again.",

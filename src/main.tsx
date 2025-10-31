@@ -5,7 +5,7 @@ import './index.css'
 import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
 
 // Start performance monitoring in development
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.MODE === 'development') {
   startPerformanceMonitoring();
 }
 

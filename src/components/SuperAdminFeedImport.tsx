@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface SuperAdminFeedImportProps {
   feedUrl: string;
@@ -47,7 +48,7 @@ export const SuperAdminFeedImport = ({ feedUrl, organizationId, organizationName
         });
       }
     } catch (err) {
-      console.error('Import error:', err);
+      logger.error('Import error', err);
       toast({
         title: "Import Failed",
         description: "Failed to import jobs from feed",

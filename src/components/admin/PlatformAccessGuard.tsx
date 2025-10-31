@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { usePlatformAccess } from '@/hooks/usePlatformAccess';
 import { Lock, AlertTriangle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface PlatformAccessGuardProps {
   platformName: string;
@@ -25,7 +26,7 @@ const PlatformAccessGuard: React.FC<PlatformAccessGuardProps> = ({
         const access = await checkPlatformAccess(platformName);
         setHasAccess(access);
       } catch (error) {
-        console.error('Error checking platform access:', error);
+        logger.error('Error checking platform access', error);
         setHasAccess(false);
       } finally {
         setIsLoading(false);

@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePlatformAccess } from '@/hooks/usePlatformAccess';
 import { Building2, Info } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import {
   getPlatformIcon,
   getCategoryColor,
@@ -68,7 +69,7 @@ const OrganizationPlatformAccessDialog: React.FC<OrganizationPlatformAccessDialo
       });
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to update platforms:', error);
+      logger.error('Failed to update platforms', error);
     }
   };
 
