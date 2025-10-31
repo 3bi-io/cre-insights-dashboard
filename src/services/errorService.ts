@@ -20,8 +20,8 @@ class ErrorService {
 
   constructor() {
     this.config = {
-      environment: (import.meta.env.MODE as any) || 'development',
-      enableConsoleLogging: true,
+      environment: (import.meta.env.MODE as any) || 'production',
+      enableConsoleLogging: import.meta.env.MODE !== 'production',
       enableRemoteLogging: import.meta.env.MODE === 'production',
       maxErrorsPerSession: 50,
       rateLimitMs: 5000 // 5 seconds between same errors

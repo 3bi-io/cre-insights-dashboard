@@ -20,7 +20,7 @@ export const initAnalytics = () => {
   }
 
   if (!isProduction) {
-    logger.debug('Google Analytics disabled in development mode');
+    logger.info('Google Analytics requires production mode');
     return;
   }
 

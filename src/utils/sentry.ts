@@ -8,20 +8,19 @@ import { logger } from '@/lib/logger';
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 const isProduction = import.meta.env.MODE === 'production';
-const isDevelopment = import.meta.env.MODE === 'development';
 
 /**
  * Initialize Sentry error tracking
- * Only runs in production if DSN is configured
+ * Production-only error monitoring and performance tracking
  */
 export const initSentry = () => {
   if (!SENTRY_DSN) {
-    logger.debug('Sentry not configured (missing VITE_SENTRY_DSN)');
+    logger.info('Sentry not configured (missing VITE_SENTRY_DSN)');
     return;
   }
 
   if (!isProduction) {
-    logger.debug('Sentry disabled in development mode');
+    logger.info('Sentry requires production mode');
     return;
   }
 
