@@ -55,7 +55,7 @@ export const AdminPasswordResetSection: React.FC = () => {
       setEmail('');
       setPassword('');
     } catch (err: any) {
-      console.error('Password update failed:', err);
+      // Never log password-related errors to console in production
       toast({ title: 'Error', description: err.message || 'Failed to update password', variant: 'destructive' });
     } finally {
       setLoading(false);

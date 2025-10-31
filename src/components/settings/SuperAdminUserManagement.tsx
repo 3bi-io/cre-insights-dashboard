@@ -64,7 +64,7 @@ const PasswordUpdateDialog: React.FC<PasswordUpdateDialogProps> = ({ user, isOpe
       setNewPassword('');
       onClose();
     } catch (err: any) {
-      console.error('Password update failed:', err);
+      // Never log password-related errors to console in production
       toast({
         title: "Update failed",
         description: err.message || 'Failed to update password',

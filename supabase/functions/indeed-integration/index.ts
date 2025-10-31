@@ -13,25 +13,54 @@ serve(async (req) => {
   }
 
   try {
-    const { action, employerId, startDate, endDate } = await req.json()
-    
-    console.log(`Indeed integration: ${action} for employer ${employerId}`)
+    // Server-side authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Missing authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
+        global: { headers: { Authorization: authHeader } }
       }
     )
 
-    // Get current user
-    const { data: { user } } = await supabaseClient.auth.getUser()
-    if (!user) {
-      throw new Error('Unauthorized')
+    // Get current user and verify authentication
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    // Check user role - require admin or super_admin
+    const { data: roleData } = await supabaseClient.rpc('get_current_user_role');
+    const userRole = roleData as string;
+
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      // Log unauthorized access attempt
+      await supabaseClient.from('audit_logs').insert({
+        user_id: user.id,
+        table_name: 'indeed_integration',
+        action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+        sensitive_fields: ['admin_only']
+      }).catch(err => console.error('[AUDIT] Log failed:', err));
+
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { action, employerId, startDate, endDate } = await req.json()
+    
+    console.log(`[INDEED] ${action} for employer ${employerId} by user ${user.id}`)
 
     switch (action) {
       case 'sync_analytics':

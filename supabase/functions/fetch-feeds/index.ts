@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,12 +8,54 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('Fetch feeds function called:', req.method, req.url);
+  console.log('[FETCH_FEEDS] Request:', req.method, req.url);
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  try {
+    // Server-side authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Missing authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: { headers: { Authorization: authHeader } }
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[FETCH_FEEDS] Authenticated user:', user.id);
+
+    // Check user role - require admin or super_admin
+    const { data: roleData } = await supabase.rpc('get_current_user_role');
+    const userRole = roleData as string;
+
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[FETCH_FEEDS] Authorized role:', userRole);
 
   try {
     let user: string = '*'; // Default to '*'
@@ -158,19 +201,25 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error('Error in fetch-feeds function:', error);
+    console.error('[FETCH_FEEDS] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : 'No stack trace available'
+        error: errorMessage
       }), 
       { 
-        status: 200, // Return 200 so frontend can handle the error
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
+    );
+  }
+  } catch (outerError) {
+    console.error('[FETCH_FEEDS] Outer error:', outerError);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 })
