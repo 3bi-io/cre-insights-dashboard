@@ -2,6 +2,8 @@
 
 ## 🚀 **Production Deployment Checklist**
 
+> **UPDATE - October 31, 2024:** Geographic location restrictions have been removed. Super admin access is now available from any location worldwide. All other security controls remain in place.
+
 This guide ensures your ATS.me application is properly configured for production deployment.
 
 ---

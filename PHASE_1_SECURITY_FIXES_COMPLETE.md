@@ -2,6 +2,8 @@
 
 ## Date Implemented: October 31, 2024
 
+> **IMPORTANT UPDATE - October 31, 2024:** Geographic location restrictions for super admin access have been removed per business requirements. The `check-admin-location` edge function has been deleted, and super admins can now access the system from any location worldwide. All other security controls remain active.
+
 ---
 
 ## 🔒 **COMPLETED SECURITY FIXES**

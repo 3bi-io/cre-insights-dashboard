@@ -153,33 +153,8 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
         
         logger.info('Navigation decision', { role });
         
-        // Check location restrictions for super admins
+        // Navigate based on role
         if (role === 'super_admin') {
-          logger.info('Super admin login detected, checking location restrictions');
-          
-          const { data: locationCheck, error: locationError } = await supabase.functions.invoke(
-            'check-admin-location'
-          );
-          
-          if (locationError || !locationCheck?.allowed) {
-            logger.error('Super admin location check failed', { 
-              error: locationError, 
-              locationCheck 
-            });
-            
-            // Sign out the user immediately
-            await supabase.auth.signOut();
-            
-            return { 
-              error: new Error(
-                locationCheck?.error || 
-                'Super administrator access is restricted to specific geographic locations only. ' +
-                'Access is only allowed from Texas, Louisiana, Alabama, Mississippi, or Detroit.'
-              ) 
-            };
-          }
-          
-          logger.info('Location check passed', { location: locationCheck.location });
           navigate('/admin');
         } else {
           navigate('/dashboard');
