@@ -71,6 +71,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "adzuna_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ai_analysis_cache: {
@@ -148,6 +155,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ai_settings: {
@@ -207,6 +221,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ai_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       application_documents: {
@@ -258,6 +279,27 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
             referencedColumns: ["id"]
           },
           {
@@ -602,6 +644,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assessment_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       audit_logs: {
@@ -649,6 +698,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       background_tasks: {
@@ -694,6 +750,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -752,6 +815,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_allocations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -831,6 +901,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       candidate_assessments: {
@@ -882,6 +959,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "candidate_assessments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_assessments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_assessments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "candidate_assessments_assessment_template_id_fkey"
             columns: ["assessment_template_id"]
             isOneToOne: false
@@ -893,6 +991,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_assessments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -943,6 +1048,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "candidate_rankings_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_rankings_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_rankings_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "candidate_rankings_job_listing_id_fkey"
             columns: ["job_listing_id"]
             isOneToOne: false
@@ -954,6 +1080,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_rankings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1019,10 +1152,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "candidate_scores_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_scores_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_scores_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "candidate_scores_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_scores_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1082,6 +1243,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cdl_jobcast_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1160,6 +1328,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chat_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       clients: {
@@ -1219,6 +1394,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       craigslist_analytics: {
@@ -1264,6 +1446,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "craigslist_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1399,6 +1588,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "elevenlabs_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "elevenlabs_conversations_voice_agent_id_fkey"
             columns: ["voice_agent_id"]
             isOneToOne: false
@@ -1506,6 +1702,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "feed_access_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       glassdoor_analytics: {
@@ -1560,6 +1763,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "glassdoor_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1619,6 +1829,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indeed_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -1838,6 +2055,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "job_listings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       job_platform_associations: {
@@ -1916,6 +2140,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_ad_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2016,6 +2247,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meta_ad_sets_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       meta_ads: {
@@ -2078,6 +2316,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meta_ads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       meta_campaigns: {
@@ -2129,6 +2374,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2205,6 +2457,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meta_daily_spend_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organization_features: {
@@ -2243,6 +2502,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organization_features_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       organization_platform_access: {
@@ -2276,6 +2542,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_platform_access_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2379,6 +2652,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "page_views_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       platforms: {
@@ -2415,6 +2695,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platforms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2458,6 +2745,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rate_limit_config: {
@@ -2497,6 +2791,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rate_limit_config_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -2576,6 +2877,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "recruiters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       screening_requests: {
@@ -2635,6 +2943,27 @@ export type Database = {
             referencedRelation: "applications"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "screening_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "screening_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
         ]
       }
       simplyhired_analytics: {
@@ -2691,6 +3020,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "simplyhired_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sms_conversations: {
@@ -2730,10 +3066,38 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sms_conversations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sms_conversations_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
           {
@@ -2782,6 +3146,27 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_magic_links_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_magic_links_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_magic_links_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
             referencedColumns: ["id"]
           },
         ]
@@ -2887,6 +3272,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "talroo_analytics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tenstreet_credentials: {
@@ -2961,6 +3353,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tenstreet_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tenstreet_field_mappings: {
@@ -3000,6 +3399,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_field_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -3058,6 +3464,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_roles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       visitor_sessions: {
@@ -3109,6 +3522,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitor_sessions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
@@ -3164,6 +3584,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "voice_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
       webhook_configurations: {
@@ -3202,11 +3629,268 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "webhook_configurations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      applications_basic: {
+        Row: {
+          applicant_email: string | null
+          applied_at: string | null
+          cdl: string | null
+          cdl_class: string | null
+          cdl_state: string | null
+          created_at: string | null
+          education_level: string | null
+          exp: string | null
+          first_name: string | null
+          id: string | null
+          job_listing_id: string | null
+          last_name: string | null
+          notes: string | null
+          recruiter_id: string | null
+          source: string | null
+          status: string | null
+          updated_at: string | null
+          work_authorization: string | null
+        }
+        Insert: {
+          applicant_email?: string | null
+          applied_at?: string | null
+          cdl?: string | null
+          cdl_class?: string | null
+          cdl_state?: string | null
+          created_at?: string | null
+          education_level?: string | null
+          exp?: string | null
+          first_name?: string | null
+          id?: string | null
+          job_listing_id?: string | null
+          last_name?: string | null
+          notes?: string | null
+          recruiter_id?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          work_authorization?: string | null
+        }
+        Update: {
+          applicant_email?: string | null
+          applied_at?: string | null
+          cdl?: string | null
+          cdl_class?: string | null
+          cdl_state?: string | null
+          created_at?: string | null
+          education_level?: string | null
+          exp?: string | null
+          first_name?: string | null
+          id?: string | null
+          job_listing_id?: string | null
+          last_name?: string | null
+          notes?: string | null
+          recruiter_id?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string | null
+          work_authorization?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "recruiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applications_contact: {
+        Row: {
+          address_1: string | null
+          address_2: string | null
+          applicant_email: string | null
+          applied_at: string | null
+          cdl: string | null
+          city: string | null
+          created_at: string | null
+          education_level: string | null
+          exp: string | null
+          first_name: string | null
+          id: string | null
+          job_listing_id: string | null
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          recruiter_id: string | null
+          secondary_phone: string | null
+          source: string | null
+          state: string | null
+          status: string | null
+          updated_at: string | null
+          work_authorization: string | null
+          zip: string | null
+        }
+        Insert: {
+          address_1?: string | null
+          address_2?: string | null
+          applicant_email?: string | null
+          applied_at?: string | null
+          cdl?: string | null
+          city?: string | null
+          created_at?: string | null
+          education_level?: string | null
+          exp?: string | null
+          first_name?: string | null
+          id?: string | null
+          job_listing_id?: string | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          recruiter_id?: string | null
+          secondary_phone?: string | null
+          source?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string | null
+          work_authorization?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address_1?: string | null
+          address_2?: string | null
+          applicant_email?: string | null
+          applied_at?: string | null
+          cdl?: string | null
+          city?: string | null
+          created_at?: string | null
+          education_level?: string | null
+          exp?: string | null
+          first_name?: string | null
+          id?: string | null
+          job_listing_id?: string | null
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          recruiter_id?: string | null
+          secondary_phone?: string | null
+          source?: string | null
+          state?: string | null
+          status?: string | null
+          updated_at?: string | null
+          work_authorization?: string | null
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_recruiter_id_fkey"
+            columns: ["recruiter_id"]
+            isOneToOne: false
+            referencedRelation: "recruiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applications_sensitive: {
+        Row: {
+          accident_history: string | null
+          applicant_email: string | null
+          convicted_felony: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          felony_details: string | null
+          first_name: string | null
+          government_id: string | null
+          government_id_type: string | null
+          id: string | null
+          job_listing_id: string | null
+          last_name: string | null
+          ssn: string | null
+          violation_history: string | null
+        }
+        Insert: {
+          accident_history?: string | null
+          applicant_email?: string | null
+          convicted_felony?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          felony_details?: string | null
+          first_name?: string | null
+          government_id?: string | null
+          government_id_type?: string | null
+          id?: string | null
+          job_listing_id?: string | null
+          last_name?: string | null
+          ssn?: string | null
+          violation_history?: string | null
+        }
+        Update: {
+          accident_history?: string | null
+          applicant_email?: string | null
+          convicted_felony?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          felony_details?: string | null
+          first_name?: string | null
+          government_id?: string | null
+          government_id_type?: string | null
+          id?: string | null
+          job_listing_id?: string | null
+          last_name?: string | null
+          ssn?: string | null
+          violation_history?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_organization_info: {
+        Row: {
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+        }
+        Insert: {
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+        }
+        Update: {
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_rate_limit: {
