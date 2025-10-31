@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.send-application-email]
 verify_jwt = true
+
+[functions.check-admin-location]
+verify_jwt = false
