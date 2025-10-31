@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "ATS.me",
+    "tagline": "Plateforme de Recrutement IA"
+  },
+  "navigation": {
+    "dashboard": "Tableau de bord",
+    "jobs": "Emplois",
+    "applications": "Candidatures",
+    "candidates": "Candidats",
+    "interviews": "Entretiens",
+    "analytics": "Analytique",
+    "settings": "Paramètres"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bon retour",
+    "activeJobs": "Emplois Actifs",
+    "totalApplications": "Total des Candidatures",
+    "pendingReviews": "Examens en Attente",
+    "scheduledInterviews": "Entretiens Programmés"
+  },
+  "jobs": {
+    "title": "Emplois",
+    "create": "Créer un Emploi",
+    "edit": "Modifier l'Emploi",
+    "delete": "Supprimer l'Emploi",
+    "publish": "Publier",
+    "draft": "Brouillon",
+    "closed": "Fermé",
+    "jobTitle": "Titre du Poste",
+    "description": "Description",
+    "requirements": "Exigences",
+    "location": "Lieu",
+    "salary": "Fourchette Salariale",
+    "employmentType": "Type d'Emploi",
+    "fullTime": "Temps Plein",
+    "partTime": "Temps Partiel",
+    "contract": "Contrat",
+    "internship": "Stage"
+  },
+  "applications": {
+    "title": "Candidatures",
+    "view": "Voir la Candidature",
+    "status": "Statut",
+    "pending": "En Attente",
+    "reviewing": "En Révision",
+    "interviewed": "Interviewé",
+    "offered": "Offre Envoyée",
+    "rejected": "Rejeté",
+    "hired": "Embauché",
+    "candidateName": "Nom du Candidat",
+    "appliedDate": "Date de Candidature",
+    "score": "Score"
+  },
+  "ai": {
+    "analysis": "Analyse IA",
+    "score": "Score IA",
+    "confidence": "Confiance",
+    "strengths": "Forces",
+    "concerns": "Préoccupations",
+    "recommendations": "Recommandations",
+    "reanalyze": "Réanalyser",
+    "analyzing": "Analyse en cours..."
+  },
+  "interviews": {
+    "title": "Entretiens",
+    "schedule": "Planifier un Entretien",
+    "reschedule": "Reporter",
+    "cancel": "Annuler",
+    "type": "Type d'Entretien",
+    "phone": "Téléphone",
+    "video": "Vidéo",
+    "onsite": "Sur Place",
+    "technical": "Technique",
+    "panel": "Panel"
+  },
+  "analytics": {
+    "title": "Analytique",
+    "performance": "Performance",
+    "predictions": "Prédictions",
+    "comparison": "Comparaison",
+    "bias": "Analyse des Biais",
+    "insights": "Aperçus du Modèle",
+    "export": "Exporter"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "profile": "Profil",
+    "organization": "Organisation",
+    "team": "Équipe",
+    "notifications": "Notifications",
+    "integrations": "Intégrations",
+    "security": "Sécurité",
+    "billing": "Facturation"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "import": "Importer",
+    "success": "Succès",
+    "error": "Erreur",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ceci?",
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "auth": {
+    "signIn": "Se Connecter",
+    "signUp": "S'Inscrire",
+    "signOut": "Se Déconnecter",
+    "email": "Email",
+    "password": "Mot de Passe",
+    "forgotPassword": "Mot de Passe Oublié?",
+    "resetPassword": "Réinitialiser le Mot de Passe",
+    "createAccount": "Créer un Compte",
+    "alreadyHaveAccount": "Vous avez déjà un compte?",
+    "dontHaveAccount": "Vous n'avez pas de compte?"
+  },
+  "notifications": {
+    "newApplication": "Nouvelle candidature reçue",
+    "statusChanged": "Statut de candidature modifié",
+    "interviewScheduled": "Entretien programmé",
+    "interviewReminder": "Rappel d'entretien",
+    "offerSent": "Offre envoyée"
+  },
+  "email": {
+    "subject": {
+      "applicationReceived": "Candidature Reçue",
+      "statusUpdate": "Mise à Jour du Statut",
+      "interviewInvitation": "Invitation à un Entretien",
+      "offerLetter": "Offre d'Emploi",
+      "rejection": "Mise à Jour de Candidature"
+    }
+  }
+}

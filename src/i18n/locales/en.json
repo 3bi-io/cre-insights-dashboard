@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "ATS.me",
+    "tagline": "AI-Powered Recruitment Platform"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "jobs": "Jobs",
+    "applications": "Applications",
+    "candidates": "Candidates",
+    "interviews": "Interviews",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "activeJobs": "Active Jobs",
+    "totalApplications": "Total Applications",
+    "pendingReviews": "Pending Reviews",
+    "scheduledInterviews": "Scheduled Interviews"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "create": "Create Job",
+    "edit": "Edit Job",
+    "delete": "Delete Job",
+    "publish": "Publish",
+    "draft": "Draft",
+    "closed": "Closed",
+    "jobTitle": "Job Title",
+    "description": "Description",
+    "requirements": "Requirements",
+    "location": "Location",
+    "salary": "Salary Range",
+    "employmentType": "Employment Type",
+    "fullTime": "Full Time",
+    "partTime": "Part Time",
+    "contract": "Contract",
+    "internship": "Internship"
+  },
+  "applications": {
+    "title": "Applications",
+    "view": "View Application",
+    "status": "Status",
+    "pending": "Pending",
+    "reviewing": "Reviewing",
+    "interviewed": "Interviewed",
+    "offered": "Offered",
+    "rejected": "Rejected",
+    "hired": "Hired",
+    "candidateName": "Candidate Name",
+    "appliedDate": "Applied Date",
+    "score": "Score"
+  },
+  "ai": {
+    "analysis": "AI Analysis",
+    "score": "AI Score",
+    "confidence": "Confidence",
+    "strengths": "Strengths",
+    "concerns": "Concerns",
+    "recommendations": "Recommendations",
+    "reanalyze": "Reanalyze",
+    "analyzing": "Analyzing..."
+  },
+  "interviews": {
+    "title": "Interviews",
+    "schedule": "Schedule Interview",
+    "reschedule": "Reschedule",
+    "cancel": "Cancel",
+    "type": "Interview Type",
+    "phone": "Phone",
+    "video": "Video",
+    "onsite": "On-site",
+    "technical": "Technical",
+    "panel": "Panel"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "performance": "Performance",
+    "predictions": "Predictions",
+    "comparison": "Comparison",
+    "bias": "Bias Analysis",
+    "insights": "Model Insights",
+    "export": "Export"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "organization": "Organization",
+    "team": "Team",
+    "notifications": "Notifications",
+    "integrations": "Integrations",
+    "security": "Security",
+    "billing": "Billing"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "loading": "Loading...",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "success": "Success",
+    "error": "Error",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "notifications": {
+    "newApplication": "New application received",
+    "statusChanged": "Application status changed",
+    "interviewScheduled": "Interview scheduled",
+    "interviewReminder": "Interview reminder",
+    "offerSent": "Offer sent"
+  },
+  "email": {
+    "subject": {
+      "applicationReceived": "Application Received",
+      "statusUpdate": "Application Status Update",
+      "interviewInvitation": "Interview Invitation",
+      "offerLetter": "Job Offer",
+      "rejection": "Application Update"
+    }
+  }
+}

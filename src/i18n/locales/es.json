@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "ATS.me",
+    "tagline": "Plataforma de Reclutamiento con IA"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "jobs": "Empleos",
+    "applications": "Solicitudes",
+    "candidates": "Candidatos",
+    "interviews": "Entrevistas",
+    "analytics": "Analíticas",
+    "settings": "Configuración"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "welcome": "Bienvenido de nuevo",
+    "activeJobs": "Empleos Activos",
+    "totalApplications": "Total de Solicitudes",
+    "pendingReviews": "Revisiones Pendientes",
+    "scheduledInterviews": "Entrevistas Programadas"
+  },
+  "jobs": {
+    "title": "Empleos",
+    "create": "Crear Empleo",
+    "edit": "Editar Empleo",
+    "delete": "Eliminar Empleo",
+    "publish": "Publicar",
+    "draft": "Borrador",
+    "closed": "Cerrado",
+    "jobTitle": "Título del Empleo",
+    "description": "Descripción",
+    "requirements": "Requisitos",
+    "location": "Ubicación",
+    "salary": "Rango Salarial",
+    "employmentType": "Tipo de Empleo",
+    "fullTime": "Tiempo Completo",
+    "partTime": "Tiempo Parcial",
+    "contract": "Contrato",
+    "internship": "Pasantía"
+  },
+  "applications": {
+    "title": "Solicitudes",
+    "view": "Ver Solicitud",
+    "status": "Estado",
+    "pending": "Pendiente",
+    "reviewing": "En Revisión",
+    "interviewed": "Entrevistado",
+    "offered": "Oferta Enviada",
+    "rejected": "Rechazado",
+    "hired": "Contratado",
+    "candidateName": "Nombre del Candidato",
+    "appliedDate": "Fecha de Solicitud",
+    "score": "Puntuación"
+  },
+  "ai": {
+    "analysis": "Análisis IA",
+    "score": "Puntuación IA",
+    "confidence": "Confianza",
+    "strengths": "Fortalezas",
+    "concerns": "Preocupaciones",
+    "recommendations": "Recomendaciones",
+    "reanalyze": "Reanalizar",
+    "analyzing": "Analizando..."
+  },
+  "interviews": {
+    "title": "Entrevistas",
+    "schedule": "Programar Entrevista",
+    "reschedule": "Reprogramar",
+    "cancel": "Cancelar",
+    "type": "Tipo de Entrevista",
+    "phone": "Teléfono",
+    "video": "Video",
+    "onsite": "Presencial",
+    "technical": "Técnica",
+    "panel": "Panel"
+  },
+  "analytics": {
+    "title": "Analíticas",
+    "performance": "Rendimiento",
+    "predictions": "Predicciones",
+    "comparison": "Comparación",
+    "bias": "Análisis de Sesgo",
+    "insights": "Perspectivas del Modelo",
+    "export": "Exportar"
+  },
+  "settings": {
+    "title": "Configuración",
+    "profile": "Perfil",
+    "organization": "Organización",
+    "team": "Equipo",
+    "notifications": "Notificaciones",
+    "integrations": "Integraciones",
+    "security": "Seguridad",
+    "billing": "Facturación"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "success": "Éxito",
+    "error": "Error",
+    "confirmDelete": "¿Está seguro de que desea eliminar esto?",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidó su Contraseña?",
+    "resetPassword": "Restablecer Contraseña",
+    "createAccount": "Crear Cuenta",
+    "alreadyHaveAccount": "¿Ya tiene una cuenta?",
+    "dontHaveAccount": "¿No tiene una cuenta?"
+  },
+  "notifications": {
+    "newApplication": "Nueva solicitud recibida",
+    "statusChanged": "Estado de solicitud cambiado",
+    "interviewScheduled": "Entrevista programada",
+    "interviewReminder": "Recordatorio de entrevista",
+    "offerSent": "Oferta enviada"
+  },
+  "email": {
+    "subject": {
+      "applicationReceived": "Solicitud Recibida",
+      "statusUpdate": "Actualización de Estado",
+      "interviewInvitation": "Invitación a Entrevista",
+      "offerLetter": "Oferta de Trabajo",
+      "rejection": "Actualización de Solicitud"
+    }
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "app": {
+    "name": "ATS.me",
+    "tagline": "KI-gestützte Rekrutierungsplattform"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "jobs": "Stellen",
+    "applications": "Bewerbungen",
+    "candidates": "Kandidaten",
+    "interviews": "Interviews",
+    "analytics": "Analytik",
+    "settings": "Einstellungen"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Willkommen zurück",
+    "activeJobs": "Aktive Stellen",
+    "totalApplications": "Gesamte Bewerbungen",
+    "pendingReviews": "Ausstehende Prüfungen",
+    "scheduledInterviews": "Geplante Interviews"
+  },
+  "jobs": {
+    "title": "Stellen",
+    "create": "Stelle Erstellen",
+    "edit": "Stelle Bearbeiten",
+    "delete": "Stelle Löschen",
+    "publish": "Veröffentlichen",
+    "draft": "Entwurf",
+    "closed": "Geschlossen",
+    "jobTitle": "Stellentitel",
+    "description": "Beschreibung",
+    "requirements": "Anforderungen",
+    "location": "Standort",
+    "salary": "Gehaltsbereich",
+    "employmentType": "Beschäftigungsart",
+    "fullTime": "Vollzeit",
+    "partTime": "Teilzeit",
+    "contract": "Vertrag",
+    "internship": "Praktikum"
+  },
+  "applications": {
+    "title": "Bewerbungen",
+    "view": "Bewerbung Ansehen",
+    "status": "Status",
+    "pending": "Ausstehend",
+    "reviewing": "In Prüfung",
+    "interviewed": "Interviewt",
+    "offered": "Angebot Gemacht",
+    "rejected": "Abgelehnt",
+    "hired": "Eingestellt",
+    "candidateName": "Kandidatenname",
+    "appliedDate": "Bewerbungsdatum",
+    "score": "Bewertung"
+  },
+  "ai": {
+    "analysis": "KI-Analyse",
+    "score": "KI-Bewertung",
+    "confidence": "Vertrauen",
+    "strengths": "Stärken",
+    "concerns": "Bedenken",
+    "recommendations": "Empfehlungen",
+    "reanalyze": "Neu Analysieren",
+    "analyzing": "Analysiere..."
+  },
+  "interviews": {
+    "title": "Interviews",
+    "schedule": "Interview Planen",
+    "reschedule": "Neu Planen",
+    "cancel": "Stornieren",
+    "type": "Interview-Typ",
+    "phone": "Telefon",
+    "video": "Video",
+    "onsite": "Vor Ort",
+    "technical": "Technisch",
+    "panel": "Panel"
+  },
+  "analytics": {
+    "title": "Analytik",
+    "performance": "Leistung",
+    "predictions": "Vorhersagen",
+    "comparison": "Vergleich",
+    "bias": "Bias-Analyse",
+    "insights": "Modell-Einblicke",
+    "export": "Exportieren"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "profile": "Profil",
+    "organization": "Organisation",
+    "team": "Team",
+    "notifications": "Benachrichtigungen",
+    "integrations": "Integrationen",
+    "security": "Sicherheit",
+    "billing": "Abrechnung"
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "loading": "Laden...",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "success": "Erfolg",
+    "error": "Fehler",
+    "confirmDelete": "Sind Sie sicher, dass Sie dies löschen möchten?",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "signOut": "Abmelden",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "forgotPassword": "Passwort Vergessen?",
+    "resetPassword": "Passwort Zurücksetzen",
+    "createAccount": "Konto Erstellen",
+    "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+    "dontHaveAccount": "Sie haben noch kein Konto?"
+  },
+  "notifications": {
+    "newApplication": "Neue Bewerbung erhalten",
+    "statusChanged": "Bewerbungsstatus geändert",
+    "interviewScheduled": "Interview geplant",
+    "interviewReminder": "Interview-Erinnerung",
+    "offerSent": "Angebot gesendet"
+  },
+  "email": {
+    "subject": {
+      "applicationReceived": "Bewerbung Erhalten",
+      "statusUpdate": "Status-Update",
+      "interviewInvitation": "Interview-Einladung",
+      "offerLetter": "Stellenangebot",
+      "rejection": "Bewerbungs-Update"
+    }
+  }
+}
