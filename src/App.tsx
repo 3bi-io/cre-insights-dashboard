@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,8 +7,6 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
-import { ErrorBoundaryEnhanced } from "@/components/debug/ErrorBoundaryEnhanced";
-import { DevToolsPanel, DevToolsToggle } from "@/components/debug/DevToolsPanel";
 import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/lib/logger";
 import AppRoutes from "@/components/routing/AppRoutes";
@@ -81,45 +79,28 @@ const AppContent = () => {
 };
 
 const App = React.memo(() => {
-  const [showDevTools, setShowDevTools] = useState(false);
-  const isDevelopment = import.meta.env.MODE === 'development';
-  
   return (
-    <ErrorBoundaryEnhanced showDetailedError={isDevelopment}>
-      <GlobalErrorBoundary
-        onError={(error, errorInfo) => {
-          logger.error('App-level error caught', error, { errorInfo, component: 'App' });
-        }}
-      >
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-            <BrowserRouter>
-              <AuthProvider>
-                <FeatureProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    
-                    <AppContent />
-                    
-                    {/* Development Tools - Only in Development */}
-                    {isDevelopment && (
-                      <>
-                        <DevToolsToggle onToggle={() => setShowDevTools(!showDevTools)} />
-                        <DevToolsPanel 
-                          isVisible={showDevTools} 
-                          onToggle={() => setShowDevTools(!showDevTools)} 
-                        />
-                      </>
-                    )}
-                  </TooltipProvider>
-                </FeatureProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </GlobalErrorBoundary>
-    </ErrorBoundaryEnhanced>
+    <GlobalErrorBoundary
+      onError={(error, errorInfo) => {
+        logger.error('App-level error caught', error, { errorInfo, component: 'App' });
+      }}
+    >
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="system" storageKey="ui-theme">
+          <BrowserRouter>
+            <AuthProvider>
+              <FeatureProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <AppContent />
+                </TooltipProvider>
+              </FeatureProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GlobalErrorBoundary>
   );
 });
 

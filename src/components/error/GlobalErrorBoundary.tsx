@@ -70,33 +70,6 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {import.meta.env.DEV && this.state.error && (
-                <details className="bg-muted p-3 rounded-md text-sm">
-                  <summary className="cursor-pointer font-medium mb-2">
-                    Error Details (Dev Mode)
-                  </summary>
-                  <div className="space-y-2">
-                    <div>
-                      <strong>Error:</strong> {this.state.error.message}
-                    </div>
-                    <div>
-                      <strong>Stack:</strong>
-                      <pre className="whitespace-pre-wrap text-xs mt-1 overflow-auto">
-                        {this.state.error.stack}
-                      </pre>
-                    </div>
-                    {this.state.errorInfo && (
-                      <div>
-                        <strong>Component Stack:</strong>
-                        <pre className="whitespace-pre-wrap text-xs mt-1 overflow-auto">
-                          {this.state.errorInfo.componentStack}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </details>
-              )}
-              
               <div className="flex flex-col gap-2">
                 <Button onClick={this.handleReset} className="w-full">
                   <RefreshCw className="h-4 w-4 mr-2" />

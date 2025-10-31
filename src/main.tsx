@@ -7,14 +7,10 @@ import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
 import { initSentry } from '@/utils/sentry'
 import { initAnalytics } from '@/utils/analytics'
 
-// Initialize monitoring services
+// Initialize monitoring services (production)
 initSentry();
 initAnalytics();
-
-// Start performance monitoring in development
-if (import.meta.env.MODE === 'development') {
-  startPerformanceMonitoring();
-}
+startPerformanceMonitoring();
 
 // Suppress noisy third‑party RUM/recorder errors blocked by ad blockers
 // e.g. "Failed to fetch (ingesteer.services-prod.nsvcs.net)"

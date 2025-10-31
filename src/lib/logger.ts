@@ -1,18 +1,10 @@
 /**
- * Environment-Aware Logger
+ * Production Logger
  * 
- * SECURITY: Prevents sensitive data exposure in production by only
- * logging detailed information in development mode.
- * 
- * Usage:
- *   import { logger } from '@/lib/logger';
- *   logger.log('Debug info', data);
- *   logger.error('Error occurred', error);
- *   logger.warn('Warning message');
+ * Optimized for production use with Sentry integration.
+ * All detailed logging is disabled for performance.
+ * Only errors and warnings are sent to monitoring.
  */
-
-const isDevelopment = import.meta.env.MODE === 'development';
-const isTest = import.meta.env.MODE === 'test';
 
 interface LogContext {
   [key: string]: any;
@@ -23,138 +15,96 @@ interface LogContext {
  */
 function formatError(error: unknown): string {
   if (error instanceof Error) {
-    return isDevelopment ? error.stack || error.message : error.message;
+    return error.message;
   }
   return String(error);
 }
 
 /**
- * Send error to monitoring service (production only)
+ * Send error to monitoring service
  */
 function sendToMonitoring(level: 'error' | 'warn', message: string, context?: LogContext) {
-  if (isDevelopment || isTest) return;
-  
-  // Lazy import Sentry to avoid loading in development
   import('@/utils/sentry').then(({ captureMessage, captureException }) => {
     if (level === 'error') {
       captureException(new Error(message), context);
     } else {
       captureMessage(message, 'warning' as any, context);
     }
-  }).catch((error) => {
+  }).catch(() => {
     // Silently fail if Sentry is not configured
-    console.warn('Failed to load Sentry', error);
   });
 }
 
 export const logger = {
   /**
-   * Log debug information (development only)
-   * Supports both 2-arg and legacy 3-arg signatures
+   * No-op for production (previously debug logs)
    */
-  log: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
-    if (isDevelopment) {
-      const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
-      console.log(`[LOG] ${message}`, ctx || '');
-    }
+  log: (_message: string, _contextOrData?: LogContext | any, _legacyContext?: string) => {
+    // Production: no logging
   },
 
   /**
-   * Log informational messages (development only)
-   * Supports both 2-arg and legacy 3-arg signatures
+   * No-op for production (previously info logs)
    */
-  info: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
-    if (isDevelopment) {
-      const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
-      console.info(`[INFO] ${message}`, ctx || '');
-    }
+  info: (_message: string, _contextOrData?: LogContext | any, _legacyContext?: string) => {
+    // Production: no logging
   },
 
   /**
-   * Log debug messages (development only)
-   * Supports both 2-arg and legacy 3-arg signatures
+   * No-op for production (previously debug logs)
    */
-  debug: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
-    if (isDevelopment) {
-      const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
-      console.debug(`[DEBUG] ${message}`, ctx || '');
-    }
+  debug: (_message: string, _contextOrData?: LogContext | any, _legacyContext?: string) => {
+    // Production: no logging
   },
 
   /**
-   * Log warnings (always logged, sent to monitoring in production)
-   * Supports both 2-arg and legacy 3-arg signatures
+   * Log warnings and send to monitoring
    */
   warn: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
     const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
-    if (isDevelopment) {
-      console.warn(`[WARN] ${message}`, ctx || '');
-    } else {
-      console.warn(message);
-      sendToMonitoring('warn', message, ctx);
-    }
+    console.warn(message);
+    sendToMonitoring('warn', message, ctx);
   },
 
   /**
-   * Log errors (always logged, sent to monitoring in production)
-   * Supports both 2-arg and legacy 3-arg signatures
-   * CRITICAL: Always log errors for debugging, but minimize sensitive data
+   * Log errors and send to monitoring
    */
   error: (message: string, errorOrContext?: unknown, contextOrLegacy?: LogContext | string) => {
     let error: unknown;
     let context: LogContext | undefined;
 
-    // Handle different signatures
     if (typeof contextOrLegacy === 'string') {
-      // 3-arg legacy: (message, error, 'Context')
       error = errorOrContext;
       context = { context: contextOrLegacy };
     } else if (contextOrLegacy && typeof contextOrLegacy === 'object') {
-      // 3-arg new: (message, error, { context })
       error = errorOrContext;
       context = contextOrLegacy;
     } else {
-      // 2-arg: (message, error)
       error = errorOrContext;
       context = undefined;
     }
 
     const formattedError = error ? formatError(error) : '';
-    
-    if (isDevelopment) {
-      console.error(`[ERROR] ${message}`, formattedError, context || '');
-    } else {
-      console.error(message, formattedError);
-      sendToMonitoring('error', `${message}: ${formattedError}`, context);
-    }
+    console.error(message, formattedError);
+    sendToMonitoring('error', `${message}: ${formattedError}`, context);
   },
 
   /**
-   * Group related logs (development only)
+   * Execute function without grouping in production
    */
-  group: (label: string, fn: () => void) => {
-    if (isDevelopment) {
-      console.group(label);
-      fn();
-      console.groupEnd();
-    } else {
-      fn();
-    }
+  group: (_label: string, fn: () => void) => {
+    fn();
   },
 
   /**
-   * Time execution (development only)
+   * No-op timing in production
    */
-  time: (label: string) => {
-    if (isDevelopment) {
-      console.time(label);
-    }
+  time: (_label: string) => {
+    // Production: no timing
   },
 
-  timeEnd: (label: string) => {
-    if (isDevelopment) {
-      console.timeEnd(label);
-    }
+  timeEnd: (_label: string) => {
+    // Production: no timing
   },
 };
 
