@@ -28,7 +28,6 @@ const HeroSection = () => {
             alt="Modern recruitment platform with AI-powered analytics dashboard"
             className="w-full h-full object-cover object-center"
             loading="eager"
-            fetchPriority="high"
           />
         </picture>
         {/* Overlay for text readability */}

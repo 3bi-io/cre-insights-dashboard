@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -139,10 +140,10 @@ const IntegrationsTab = () => {
                   Configure your X publisher in the Publishers section to enable API features.
                 </p>
                 <Button variant="outline" size="sm" asChild className="mt-2">
-                  <a href="/dashboard/platforms">
+                  <Link to="/dashboard/platforms">
                     <Settings className="w-3 h-3 mr-1" />
                     Go to Platforms
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>
