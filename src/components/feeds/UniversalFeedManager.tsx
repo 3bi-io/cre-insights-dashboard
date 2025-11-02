@@ -19,7 +19,7 @@ export const UniversalFeedManager = () => {
   const [feedUrl, setFeedUrl] = useState('');
 
   // Fetch organizations
-  const { data: organizations } = useQuery({
+  const { data: organizations, isLoading: isLoadingOrgs, error: orgsError } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -33,7 +33,7 @@ export const UniversalFeedManager = () => {
   });
 
   // Fetch user's organization
-  const { data: userProfile } = useQuery({
+  const { data: userProfile, isLoading: isLoadingProfile, error: profileError } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -58,7 +58,7 @@ export const UniversalFeedManager = () => {
   }, [userProfile, selectedOrg]);
 
   // Fetch clients for selected organization
-  const { data: clients, refetch: refetchClients } = useQuery({
+  const { data: clients, isLoading: isLoadingClients, error: clientsError, refetch: refetchClients } = useQuery({
     queryKey: ['clients', selectedOrg],
     queryFn: async () => {
       if (!selectedOrg) return [];
@@ -129,6 +129,47 @@ export const UniversalFeedManager = () => {
     window.open(feedUrl, '_blank');
   };
 
+  if (isLoadingOrgs || isLoadingProfile) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+            <CardDescription>Please wait while we load your data</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (orgsError || profileError) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription className="text-destructive">
+              {orgsError?.message || profileError?.message || 'Failed to load data'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!organizations || organizations.length === 0) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>No Organizations</CardTitle>
+            <CardDescription>No organizations found. Please contact your administrator.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -158,9 +199,9 @@ export const UniversalFeedManager = () => {
 
             <div className="space-y-2">
               <Label htmlFor="client">Client</Label>
-              <Select value={selectedClient} onValueChange={setSelectedClient}>
+              <Select value={selectedClient} onValueChange={setSelectedClient} disabled={isLoadingClients}>
                 <SelectTrigger id="client">
-                  <SelectValue placeholder="Select client" />
+                  <SelectValue placeholder={isLoadingClients ? "Loading..." : "Select client"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Clients</SelectItem>

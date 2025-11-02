@@ -41,6 +41,7 @@ const MobileHeader = () => {
       '/admin/privacy-controls': 'Privacy Controls',
       '/admin/settings': 'Settings',
       '/admin/user-management': 'User Management',
+      '/admin/universal-feeds': 'Universal Feeds',
     };
     return routes[path] || 'Dashboard';
   };
