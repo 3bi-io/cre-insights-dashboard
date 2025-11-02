@@ -92,6 +92,11 @@ const AppSidebar = () => {
         icon: Rss
       },
       {
+        path: '/admin/universal-feeds',
+        label: 'Universal Feeds',
+        icon: Share2
+      },
+      {
         path: '/admin/publishers',
         label: 'Publishers',
         icon: Share2

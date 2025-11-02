@@ -56,6 +56,7 @@ const HayesDataPopulation = React.lazy(() => import("@/pages/HayesDataPopulation
 const PrivacyControls = React.lazy(() => import("@/pages/PrivacyControls"));
 const Support = React.lazy(() => import("@/pages/Support"));
 const VisitorAnalytics = React.lazy(() => import("@/pages/VisitorAnalytics"));
+const UniversalFeeds = React.lazy(() => import("@/pages/UniversalFeeds"));
 const AccessDenied = React.lazy(() => import("@/pages/AccessDenied"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const Install = React.lazy(() => import("@/pages/Install"));
@@ -151,6 +152,7 @@ const AppRoutes: React.FC = () => {
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
         <Route path="publishers" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
         <Route path="feeds" element={<ProtectedRouteWrapper><FeedsManagement /></ProtectedRouteWrapper>} />
+        <Route path="universal-feeds" element={<ProtectedRouteWrapper><UniversalFeeds /></ProtectedRouteWrapper>} />
         <Route path="clients" element={<ProtectedRouteWrapper><ClientsPage /></ProtectedRouteWrapper>} />
         <Route path="organizations" element={<ProtectedRouteWrapper><Organizations /></ProtectedRouteWrapper>} />
         <Route path="settings" element={<ProtectedRouteWrapper><Settings /></ProtectedRouteWrapper>} />

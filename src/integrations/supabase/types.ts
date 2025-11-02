@@ -1649,8 +1649,10 @@ export type Database = {
       }
       feed_access_logs: {
         Row: {
+          client_id: string | null
           created_at: string | null
           feed_type: string
+          format: string | null
           id: string
           job_count: number | null
           job_group_id: string | null
@@ -1662,8 +1664,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          client_id?: string | null
           created_at?: string | null
           feed_type: string
+          format?: string | null
           id?: string
           job_count?: number | null
           job_group_id?: string | null
@@ -1675,8 +1679,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          client_id?: string | null
           created_at?: string | null
           feed_type?: string
+          format?: string | null
           id?: string
           job_count?: number | null
           job_group_id?: string | null
@@ -1688,6 +1694,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "feed_access_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "feed_access_logs_job_group_id_fkey"
             columns: ["job_group_id"]
@@ -3403,6 +3416,70 @@ export type Database = {
           },
           {
             foreignKeyName: "tenstreet_field_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      universal_feed_configs: {
+        Row: {
+          access_count: number | null
+          client_id: string | null
+          created_at: string | null
+          created_by: string | null
+          feed_format: string
+          feed_name: string
+          id: string
+          is_active: boolean | null
+          last_accessed_at: string | null
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_count?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          feed_format?: string
+          feed_name: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_count?: number | null
+          client_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          feed_format?: string
+          feed_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "universal_feed_configs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "universal_feed_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "universal_feed_configs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
