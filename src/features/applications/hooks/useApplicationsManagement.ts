@@ -10,6 +10,7 @@ export interface ApplicationsManagementFilters {
   categoryFilter: string;
   sourceFilter: string;
   organizationFilter: string;
+  clientFilter: string;
 }
 
 export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolean) => {
@@ -19,6 +20,7 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [organizationFilter, setOrganizationFilter] = useState<string>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
 
   // Applications data with RLS-based filtering
@@ -43,14 +45,23 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
 
   // Filtered applications
   const filteredApplications = useMemo(() => {
-    return filterApplications(
+    let filtered = filterApplications(
       applications,
       searchTerm,
       categoryFilter,
       sourceFilter,
       organizationFilter
     );
-  }, [applications, searchTerm, categoryFilter, sourceFilter, organizationFilter]);
+    
+    // Additional client filtering
+    if (clientFilter !== 'all') {
+      filtered = filtered.filter(app => 
+        app.job_listings?.client_id === clientFilter
+      );
+    }
+    
+    return filtered;
+  }, [applications, searchTerm, categoryFilter, sourceFilter, organizationFilter, clientFilter]);
 
   // Statistics
   const statusCounts = useMemo(() => getStatusCounts(filteredApplications), [filteredApplications]);
@@ -130,6 +141,8 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     setSourceFilter,
     organizationFilter,
     setOrganizationFilter,
+    clientFilter,
+    setClientFilter,
     
     // Selection
     selectedApplications,

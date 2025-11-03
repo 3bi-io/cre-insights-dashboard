@@ -17,6 +17,10 @@ interface ApplicationsFiltersProps {
   onOrganizationChange?: (value: string) => void;
   organizations?: Organization[];
   showOrganizationFilter?: boolean;
+  clientFilter?: string;
+  onClientChange?: (value: string) => void;
+  clients?: Array<{ id: string; name: string; company?: string | null }>;
+  showClientFilter?: boolean;
 }
 
 export const ApplicationsFilters = ({
@@ -32,6 +36,10 @@ export const ApplicationsFilters = ({
   onOrganizationChange,
   organizations = [],
   showOrganizationFilter = false,
+  clientFilter,
+  onClientChange,
+  clients = [],
+  showClientFilter = false,
 }: ApplicationsFiltersProps) => {
   return (
     <Card className="p-4">
@@ -100,6 +108,24 @@ export const ApplicationsFilters = ({
               {organizations.map((org) => (
                 <SelectItem key={org.id} value={org.id}>
                   {org.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {showClientFilter && clientFilter && onClientChange && (
+        <div className="mt-4">
+          <Select value={clientFilter} onValueChange={onClientChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by Client" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Clients</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.company || client.name}
                 </SelectItem>
               ))}
             </SelectContent>

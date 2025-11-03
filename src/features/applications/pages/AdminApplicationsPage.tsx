@@ -5,6 +5,7 @@ import PageLayout from '@/features/shared/components/PageLayout';
 import { useApplicationsManagement } from '../hooks/useApplicationsManagement';
 import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
+import { useClientsService } from '@/features/clients/hooks';
 import { Card } from '@/components/ui/card';
 import { ApplicationsStats } from '../components/ApplicationsStats';
 import { ApplicationsFilters } from '../components/ApplicationsFilters';
@@ -42,6 +43,11 @@ export default function AdminApplicationsPage() {
   // Organization data for super admins
   const { organizations } = useOrganizationData(isSuperAdmin);
 
+  // Fetch clients for org admins
+  const { clients } = useClientsService({
+    enabled: isOrgAdmin && !!organization
+  });
+
   // Applications management
   const {
     applications,
@@ -57,6 +63,8 @@ export default function AdminApplicationsPage() {
     setSourceFilter,
     organizationFilter,
     setOrganizationFilter,
+    clientFilter,
+    setClientFilter,
     selectedApplications,
     handleSelectAll,
     handleSelectApplication,
@@ -167,6 +175,10 @@ export default function AdminApplicationsPage() {
           onOrganizationChange={setOrganizationFilter}
           organizations={organizations}
           showOrganizationFilter={isSuperAdmin}
+          clientFilter={clientFilter}
+          onClientChange={setClientFilter}
+          clients={clients}
+          showClientFilter={isOrgAdmin}
         />
 
         {/* Applications Grid */}
