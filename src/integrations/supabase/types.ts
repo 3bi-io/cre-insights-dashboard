@@ -3308,6 +3308,7 @@ export type Database = {
           job_store_password_encrypted: string | null
           mode: string | null
           organization_id: string | null
+          password: string | null
           password_encrypted: string
           referral_code: string | null
           service: string | null
@@ -3329,6 +3330,7 @@ export type Database = {
           job_store_password_encrypted?: string | null
           mode?: string | null
           organization_id?: string | null
+          password?: string | null
           password_encrypted: string
           referral_code?: string | null
           service?: string | null
@@ -3350,6 +3352,7 @@ export type Database = {
           job_store_password_encrypted?: string | null
           mode?: string | null
           organization_id?: string | null
+          password?: string | null
           password_encrypted?: string
           referral_code?: string | null
           service?: string | null

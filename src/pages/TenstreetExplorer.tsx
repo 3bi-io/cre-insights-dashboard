@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Search, Database, RefreshCw, Users, FileText, X, AlertCircle, CheckCircle2, Sparkles, Shield } from 'lucide-react';
+import { Loader2, Search, Database, RefreshCw, Users, FileText, X, AlertCircle, CheckCircle2, Sparkles, Shield, Download, Briefcase, Edit, UserPlus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -26,6 +26,20 @@ const TenstreetExplorer = () => {
     email: '',
     phone: '',
     lastName: ''
+  });
+  const [updateParams, setUpdateParams] = useState({
+    driverId: '',
+    status: ''
+  });
+  const [exportParams, setExportParams] = useState({
+    startDate: '',
+    endDate: ''
+  });
+  const [createParams, setCreateParams] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
   });
   const { toast } = useToast();
   const { hasATSExplorerAccess, isLoading: isCheckingAccess } = useATSExplorerAccess();
@@ -305,6 +319,187 @@ const TenstreetExplorer = () => {
     }
   };
 
+  const updateApplicantStatus = async () => {
+    if (!updateParams.driverId || !updateParams.status) {
+      toast({
+        title: "Missing Fields",
+        description: "Please enter both Driver ID and Status",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
+        body: {
+          action: 'update_applicant_status',
+          driverId: updateParams.driverId,
+          status: updateParams.status,
+          company_id: selectedCompanyId
+        }
+      });
+
+      if (error) throw error;
+
+      setTestResult(data);
+      toast({
+        title: "Status Updated",
+        description: `Driver ${updateParams.driverId} status set to ${updateParams.status}`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const exportApplicants = async () => {
+    if (!exportParams.startDate || !exportParams.endDate) {
+      toast({
+        title: "Missing Dates",
+        description: "Please select both start and end dates",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
+        body: {
+          action: 'export_applicants',
+          dateRange: exportParams,
+          company_id: selectedCompanyId
+        }
+      });
+
+      if (error) throw error;
+
+      setTestResult(data);
+      toast({
+        title: "Export Complete",
+        description: `Exported applicants from ${exportParams.startDate} to ${exportParams.endDate}`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getAvailableJobs = async () => {
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
+        body: {
+          action: 'get_available_jobs',
+          company_id: selectedCompanyId
+        }
+      });
+
+      if (error) throw error;
+
+      setTestResult(data);
+      toast({
+        title: "Jobs Retrieved",
+        description: "Available job listings loaded"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to Load Jobs",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createApplicant = async () => {
+    if (!createParams.firstName || !createParams.lastName || !createParams.email || !createParams.phone) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a company',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('tenstreet-explorer', {
+        body: {
+          action: 'subject_upload',
+          applicantData: createParams,
+          company_id: selectedCompanyId
+        }
+      });
+
+      if (error) throw error;
+
+      setTestResult(data);
+      toast({
+        title: "Applicant Created",
+        description: `${createParams.firstName} ${createParams.lastName} has been uploaded to Tenstreet`
+      });
+      // Clear form
+      setCreateParams({ firstName: '', lastName: '', email: '', phone: '' });
+    } catch (error: any) {
+      toast({
+        title: "Creation Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -368,7 +563,7 @@ const TenstreetExplorer = () => {
         </Card>
 
         <Tabs defaultValue="services" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-8 h-auto p-1 bg-muted/50">
             <TabsTrigger value="services" className="gap-2 data-[state=active]:bg-background">
               <Database className="h-4 w-4" />
               <span className="hidden sm:inline">Services</span>
@@ -380,6 +575,22 @@ const TenstreetExplorer = () => {
             <TabsTrigger value="retrieve" className="gap-2 data-[state=active]:bg-background">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Retrieve</span>
+            </TabsTrigger>
+            <TabsTrigger value="update" className="gap-2 data-[state=active]:bg-background">
+              <Edit className="h-4 w-4" />
+              <span className="hidden sm:inline">Update</span>
+            </TabsTrigger>
+            <TabsTrigger value="export" className="gap-2 data-[state=active]:bg-background">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export</span>
+            </TabsTrigger>
+            <TabsTrigger value="jobs" className="gap-2 data-[state=active]:bg-background">
+              <Briefcase className="h-4 w-4" />
+              <span className="hidden sm:inline">Jobs</span>
+            </TabsTrigger>
+            <TabsTrigger value="create" className="gap-2 data-[state=active]:bg-background">
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create</span>
             </TabsTrigger>
             <TabsTrigger value="results" className="gap-2 data-[state=active]:bg-background">
               <FileText className="h-4 w-4" />
@@ -623,6 +834,281 @@ const TenstreetExplorer = () => {
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-sm">
                     This will fetch complete driver profile including personal information, work history, and qualifications
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="update" className="space-y-4 mt-6">
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Edit className="h-5 w-5 text-primary" />
+                  Update Applicant Status
+                </CardTitle>
+                <CardDescription>Change the status of an existing applicant</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="update-driverId" className="text-sm font-medium">Driver ID</Label>
+                    <Input
+                      id="update-driverId"
+                      value={updateParams.driverId}
+                      onChange={(e) => setUpdateParams({ ...updateParams, driverId: e.target.value })}
+                      placeholder="Enter driver ID"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="text-sm font-medium">New Status</Label>
+                    <Select value={updateParams.status} onValueChange={(value) => setUpdateParams({ ...updateParams, status: value })}>
+                      <SelectTrigger id="status" className="h-10">
+                        <SelectValue placeholder="Select status..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="In Review">In Review</SelectItem>
+                        <SelectItem value="Interview Scheduled">Interview Scheduled</SelectItem>
+                        <SelectItem value="Hired">Hired</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                        <SelectItem value="Withdrawn">Withdrawn</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={updateApplicantStatus} 
+                    disabled={isLoading || !updateParams.driverId || !updateParams.status}
+                    size="lg"
+                    className="gap-2 flex-1 sm:flex-initial"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Update Status
+                  </Button>
+
+                  {(updateParams.driverId || updateParams.status) && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setUpdateParams({ driverId: '', status: '' })}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                <Alert className="border-muted">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    This will update the applicant's status in the Tenstreet system
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="export" className="space-y-4 mt-6">
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Download className="h-5 w-5 text-primary" />
+                  Export Applicants
+                </CardTitle>
+                <CardDescription>Export applicant data for a date range</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate" className="text-sm font-medium">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={exportParams.startDate}
+                      onChange={(e) => setExportParams({ ...exportParams, startDate: e.target.value })}
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endDate" className="text-sm font-medium">End Date</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={exportParams.endDate}
+                      onChange={(e) => setExportParams({ ...exportParams, endDate: e.target.value })}
+                      className="h-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={exportApplicants} 
+                    disabled={isLoading || !exportParams.startDate || !exportParams.endDate}
+                    size="lg"
+                    className="gap-2 flex-1 sm:flex-initial"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    Export Data
+                  </Button>
+
+                  {(exportParams.startDate || exportParams.endDate) && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setExportParams({ startDate: '', endDate: '' })}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                <Alert className="border-muted">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Export applicant records that were created or modified within the selected date range
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="jobs" className="space-y-4 mt-6">
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Briefcase className="h-5 w-5 text-primary" />
+                  Available Jobs
+                </CardTitle>
+                <CardDescription>View job listings from Tenstreet</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Button 
+                  onClick={getAvailableJobs} 
+                  disabled={isLoading}
+                  size="lg"
+                  className="w-full sm:w-auto gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Briefcase className="h-4 w-4" />
+                  )}
+                  Get Available Jobs
+                </Button>
+
+                <Alert className="border-muted">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    This will retrieve all active job listings configured in your Tenstreet account
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="create" className="space-y-4 mt-6">
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                  Create Applicant
+                </CardTitle>
+                <CardDescription>Upload a new applicant to Tenstreet</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-sm font-medium">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      value={createParams.firstName}
+                      onChange={(e) => setCreateParams({ ...createParams, firstName: e.target.value })}
+                      placeholder="John"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-sm font-medium">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      value={createParams.lastName}
+                      onChange={(e) => setCreateParams({ ...createParams, lastName: e.target.value })}
+                      placeholder="Doe"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-email" className="text-sm font-medium">Email *</Label>
+                    <Input
+                      id="create-email"
+                      type="email"
+                      value={createParams.email}
+                      onChange={(e) => setCreateParams({ ...createParams, email: e.target.value })}
+                      placeholder="john.doe@example.com"
+                      className="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-phone" className="text-sm font-medium">Phone (10 digits) *</Label>
+                    <Input
+                      id="create-phone"
+                      value={createParams.phone}
+                      onChange={(e) => setCreateParams({ ...createParams, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                      placeholder="5551234567"
+                      className="h-10"
+                      maxLength={10}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    onClick={createApplicant} 
+                    disabled={isLoading || !createParams.firstName || !createParams.lastName || !createParams.email || !createParams.phone}
+                    size="lg"
+                    className="gap-2 flex-1 sm:flex-initial"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="h-4 w-4" />
+                    )}
+                    Create Applicant
+                  </Button>
+
+                  {(createParams.firstName || createParams.lastName || createParams.email || createParams.phone) && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setCreateParams({ firstName: '', lastName: '', email: '', phone: '' })}
+                      size="lg"
+                      className="gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
+
+                <Alert className="border-muted">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    This will create a new applicant record in Tenstreet. All fields marked with * are required.
                   </AlertDescription>
                 </Alert>
               </CardContent>
