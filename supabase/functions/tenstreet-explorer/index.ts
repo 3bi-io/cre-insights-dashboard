@@ -28,6 +28,25 @@ function escapeXML(unsafe: string): string {
     .replace(/'/g, '&apos;');
 }
 
+/**
+ * Extract company_id from credentials object
+ * Handles both array format (company_ids) and singular format (company_id)
+ */
+function getCompanyId(credentials: any): string {
+  // Primary: Extract first company_id from array
+  if (credentials.company_ids && Array.isArray(credentials.company_ids) && credentials.company_ids.length > 0) {
+    return credentials.company_ids[0].toString();
+  }
+  
+  // Fallback: Use singular field if it exists
+  if (credentials.company_id) {
+    return credentials.company_id.toString();
+  }
+  
+  // Error: No company_id found
+  throw new Error('No company_id found in credentials. Please configure Tenstreet credentials with at least one company ID.');
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -316,7 +335,7 @@ async function exploreAvailableServices(credentials: any) {
       note: 'Tenstreet uses SOAP/XML-based API. Contact Tenstreet support for complete API documentation.',
       organization: credentials.account_name,
       mode: credentials.mode,
-      companyId: credentials.company_id
+      companyId: getCompanyId(credentials)
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
@@ -372,7 +391,7 @@ async function getApplicantData(credentials: any, driverId: string) {
         <Service>subject_retrieve</Service>
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <DriverId>${escapeXML(driverId)}</DriverId>
 </TenstreetData>`
 
@@ -390,7 +409,7 @@ async function searchApplicants(credentials: any, criteria: any) {
         <Service>subject_search</Service>
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <SearchCriteria>
         ${email ? `<Email>${escapeXML(email)}</Email>` : ''}
         ${phone ? `<Phone>${escapeXML(phone)}</Phone>` : ''}
@@ -411,7 +430,7 @@ async function getApplicationStatus(credentials: any, driverId: string) {
         <Service>status_retrieve</Service>
     </Authentication>
     <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
+    <CompanyId>${getCompanyId(credentials)}</CompanyId>
     <DriverId>${driverId}</DriverId>
 </TenstreetData>`
 
@@ -427,7 +446,7 @@ async function updateApplicantStatus(credentials: any, driverId: string, status:
         <Service>status_update</Service>
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <DriverId>${escapeXML(driverId)}</DriverId>
     <Status>${escapeXML(status)}</Status>
 </TenstreetData>`
@@ -444,7 +463,7 @@ async function getAvailableJobs(credentials: any) {
         <Service>job_listing</Service>
     </Authentication>
     <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
+    <CompanyId>${getCompanyId(credentials)}</CompanyId>
 </TenstreetData>`
 
   return await makeRequest(jobsXML, 'Get Available Jobs')
@@ -461,7 +480,7 @@ async function exportApplicants(credentials: any, dateRange: any) {
         <Service>export_data</Service>
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <ExportCriteria>
         <StartDate>${escapeXML(startDate)}</StartDate>
         <EndDate>${escapeXML(endDate)}</EndDate>
@@ -537,7 +556,7 @@ function buildServiceTestXML(credentials: any, serviceName: string, customPayloa
         <Service>${serviceName}</Service>
     </Authentication>
     <Mode>${credentials.mode}</Mode>
-    <CompanyId>${credentials.company_id}</CompanyId>
+    <CompanyId>${getCompanyId(credentials)}</CompanyId>
     ${customPayload || ''}
 </TenstreetData>`
 }
@@ -623,7 +642,7 @@ async function createApplicant(credentials: any, applicantData: any) {
         <Service>subject_upload</Service>
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <PersonalData>
         <FirstName>${escapeXML(applicantData.firstName)}</FirstName>
         <LastName>${escapeXML(applicantData.lastName)}</LastName>
@@ -652,7 +671,7 @@ async function updateApplicant(credentials: any, driverId: string, updates: any)
         <Service>subject_update</Service>
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(credentials.company_id)}</CompanyId>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <DriverId>${escapeXML(driverId)}</DriverId>
     <Updates>
         ${updateFields}
