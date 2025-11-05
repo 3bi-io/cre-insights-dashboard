@@ -162,11 +162,12 @@ Deno.serve(async (req) => {
     }
 
     // Map form data to applications table schema
+    // Support both camelCase and snake_case field names
     const applicationData = {
       job_listing_id: jobListingId,
-      first_name: formData.firstName,
-      last_name: formData.lastName,
-      applicant_email: formData.email,
+      first_name: formData.firstName || formData.first_name,
+      last_name: formData.lastName || formData.last_name,
+      applicant_email: formData.email || formData.applicant_email,
       phone: normalizePhoneNumber(formData.phone),
       city: city,
       state: state,
