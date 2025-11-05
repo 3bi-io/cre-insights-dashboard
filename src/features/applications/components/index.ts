@@ -16,9 +16,9 @@ export { ApplicationActions } from './ApplicationActions';
 export { ApplicationHeader } from './ApplicationHeader';
 export { ApplicationInfo } from './ApplicationInfo';
 export { ApplicationsTableView } from './ApplicationsTableView';
+export { ApplicationsActions } from './ApplicationsActions';
 
 // Admin page components
 export { ApplicationsStats } from './ApplicationsStats';
 export { ApplicationsFilters } from './ApplicationsFilters';
-export { ApplicationsActions } from './ApplicationsActions';
 export { ApplicationsGrid } from './ApplicationsGrid';

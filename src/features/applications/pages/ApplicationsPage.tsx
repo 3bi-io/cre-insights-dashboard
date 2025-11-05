@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Download, LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import * as XLSX from 'xlsx';
 
 import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useOrganizationData } from '../hooks/useOrganizationData';
-import { getStatusCounts, getCategoryCounts, getApplicantCategory } from '@/utils/applicationHelpers';
+import { getStatusCounts, getCategoryCounts, getApplicantCategory, getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -23,8 +24,10 @@ import {
   ApplicationsOverview,
   ApplicationsSearch,
   ApplicationCard,
-  ApplicationsTableView
+  ApplicationsTableView,
+  ApplicationsActions
 } from '../components';
+import { TableColumnVisibility, ColumnVisibility } from '../components/TableColumnVisibility';
 import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
 
 const ApplicationsPage = () => {
@@ -33,6 +36,17 @@ const ApplicationsPage = () => {
   const [sourceFilter, setSourceFilter] = useState('all');
   const [organizationFilter, setOrganizationFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    applicant: true,
+    job: true,
+    contact: true,
+    location: true,
+    date: true,
+    status: true,
+    recruiter: true,
+    actions: true,
+  });
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { userRole } = useAuth();
@@ -121,6 +135,140 @@ const ApplicationsPage = () => {
     }
   };
 
+  const downloadApplicationsCSV = () => {
+    try {
+      const exportData = applications.map(app => ({
+        'Applicant Name': getApplicantName(app),
+        'Email': getApplicantEmail(app),
+        'Phone': app.phone || '',
+        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
+        'Status': app.status,
+        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
+        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
+        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+      XLSX.writeFile(wb, `applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "CSV Downloaded",
+        description: "Applications data has been exported successfully",
+      });
+    } catch (error) {
+      logger.error('CSV export error', error, 'Applications');
+      toast({
+        title: "Export Failed",
+        description: "Failed to export CSV data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectApplication = useCallback((applicationId: string, checked: boolean) => {
+    setSelectedApplications(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(applicationId);
+      } else {
+        newSet.delete(applicationId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedApplications(new Set(applications.map(app => app.id)));
+    } else {
+      setSelectedApplications(new Set());
+    }
+  }, [applications]);
+
+  const handleBulkStatusChange = useCallback(async (status: 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected') => {
+    const selectedIds = Array.from(selectedApplications);
+    try {
+      await Promise.all(
+        selectedIds.map(id => updateApplication(id, { status }))
+      );
+      toast({
+        title: "Status Updated",
+        description: `${selectedIds.length} application(s) updated to ${status}`,
+      });
+      setSelectedApplications(new Set());
+    } catch (error) {
+      logger.error('Bulk status change error', error, 'Applications');
+      toast({
+        title: "Update Failed",
+        description: "Failed to update application statuses",
+        variant: "destructive",
+      });
+    }
+  }, [selectedApplications, updateApplication, toast]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const selectedIds = Array.from(selectedApplications);
+    try {
+      await Promise.all(
+        selectedIds.map(id => deleteApplication(id))
+      );
+      toast({
+        title: "Applications Deleted",
+        description: `${selectedIds.length} application(s) deleted successfully`,
+      });
+      setSelectedApplications(new Set());
+    } catch (error) {
+      logger.error('Bulk delete error', error, 'Applications');
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete applications",
+        variant: "destructive",
+      });
+    }
+  }, [selectedApplications, deleteApplication, toast]);
+
+  const handleBulkExportSelected = useCallback(() => {
+    try {
+      const selectedApps = applications.filter(app => selectedApplications.has(app.id));
+      const exportData = selectedApps.map(app => ({
+        'Applicant Name': getApplicantName(app),
+        'Email': getApplicantEmail(app),
+        'Phone': app.phone || '',
+        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
+        'Status': app.status,
+        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
+        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
+        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Selected Applications');
+      XLSX.writeFile(wb, `selected-applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "Export Complete",
+        description: `${selectedApps.length} application(s) exported successfully`,
+      });
+    } catch (error) {
+      logger.error('Bulk export error', error, 'Applications');
+      toast({
+        title: "Export Failed",
+        description: "Failed to export selected applications",
+        variant: "destructive",
+      });
+    }
+  }, [applications, selectedApplications, toast]);
+
+  const handleColumnVisibilityChange = useCallback((column: keyof ColumnVisibility) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [column]: !prev[column],
+    }));
+  }, []);
+
   // Calculate counts from applications (server-side filtered)
   const statusCounts = getStatusCounts(applications || []);
   const categoryCounts = getCategoryCounts(applications || []);
@@ -135,7 +283,7 @@ const ApplicationsPage = () => {
   }, 'Applications');
 
   const pageActions = (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <ToggleGroup 
         type="single" 
         value={viewMode} 
@@ -149,15 +297,23 @@ const ApplicationsPage = () => {
           <TableIcon className="w-4 h-4" />
         </ToggleGroupItem>
       </ToggleGroup>
-      <Button
-        onClick={downloadApplicationsPDF}
-        className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
-        variant="outline"
-        size={isMobile ? 'lg' : 'default'}
-      >
-        <Download className="w-4 h-4" />
-        Export PDF
-      </Button>
+      
+      {viewMode === 'table' && (
+        <TableColumnVisibility
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={handleColumnVisibilityChange}
+        />
+      )}
+      
+      <ApplicationsActions
+        selectedCount={selectedApplications.size}
+        onExportPDF={downloadApplicationsPDF}
+        onExportCSV={downloadApplicationsCSV}
+        onBulkStatusChange={handleBulkStatusChange}
+        onBulkDelete={handleBulkDelete}
+        onBulkExportSelected={handleBulkExportSelected}
+        onClearSelection={() => setSelectedApplications(new Set())}
+      />
     </div>
   );
 
@@ -266,6 +422,8 @@ const ApplicationsPage = () => {
               ) : (
                 <ApplicationsTableView
                   applications={applications}
+                  selectedApplications={selectedApplications}
+                  columnVisibility={columnVisibility}
                   onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
                   onRecruiterAssignment={(applicationId, recruiterId) => {
                     logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
@@ -274,6 +432,8 @@ const ApplicationsPage = () => {
                   onSmsOpen={handleSmsOpen}
                   onScreeningOpen={handleScreeningOpen}
                   onTenstreetUpdate={handleTenstreetUpdate}
+                  onSelectApplication={handleSelectApplication}
+                  onSelectAll={handleSelectAll}
                 />
               )
             ) : (

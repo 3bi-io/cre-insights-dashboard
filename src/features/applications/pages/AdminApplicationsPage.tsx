@@ -6,6 +6,7 @@ import { useApplicationsManagement } from '../hooks/useApplicationsManagement';
 import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useClientsService } from '@/features/clients/hooks';
+import { useApplications } from '../hooks/useApplications';
 import { Card } from '@/components/ui/card';
 import { ApplicationsStats } from '../components/ApplicationsStats';
 import { ApplicationsFilters } from '../components/ApplicationsFilters';
@@ -17,11 +18,16 @@ import TenstreetUpdateModal from '@/components/applications/TenstreetUpdateModal
 import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Application } from '@/types/common.types';
+import { logger } from '@/lib/logger';
+import { useToast } from '@/hooks/use-toast';
+import { getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
+import * as XLSX from 'xlsx';
 
 export default function AdminApplicationsPage() {
   const { user, userRole, organization } = useAuth();
   const { checkPlatformAccess } = usePlatformAccess(organization?.id);
   const [hasAccess, setHasAccess] = useState(false);
+  const { toast } = useToast();
   
   // Role detection
   const isSuperAdmin = userRole === 'super_admin';
@@ -75,6 +81,9 @@ export default function AdminApplicationsPage() {
     handleExportCSV,
   } = useApplicationsManagement(hasAccess, isOrgAdmin);
 
+  // Get deleteApplication from useApplications hook
+  const { deleteApplication } = useApplications({ enabled: hasAccess });
+
   // Dialog state management
   const {
     selectedApplication,
@@ -101,6 +110,61 @@ export default function AdminApplicationsPage() {
   const closeScreeningDialog = () => {
     setScreeningDialogOpen(false);
     setScreeningApplication(null);
+  };
+
+  // Bulk actions handlers
+  const handleBulkDelete = async () => {
+    const selectedIds = Array.from(selectedApplications);
+    try {
+      await Promise.all(
+        selectedIds.map(id => deleteApplication(id))
+      );
+      toast({
+        title: "Applications Deleted",
+        description: `${selectedIds.length} application(s) deleted successfully`,
+      });
+      clearSelection();
+    } catch (error) {
+      logger.error('Bulk delete error', error, 'Applications');
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete applications",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkExportSelected = () => {
+    try {
+      const selectedApps = applications.filter(app => selectedApplications.has(app.id));
+      const exportData = selectedApps.map(app => ({
+        'Applicant Name': getApplicantName(app),
+        'Email': getApplicantEmail(app),
+        'Phone': app.phone || '',
+        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
+        'Status': app.status,
+        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
+        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
+        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Selected Applications');
+      XLSX.writeFile(wb, `selected-applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "Export Complete",
+        description: `${selectedApps.length} application(s) exported successfully`,
+      });
+    } catch (error) {
+      logger.error('Bulk export error', error, 'Applications');
+      toast({
+        title: "Export Failed",
+        description: "Failed to export selected applications",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!hasAccess) {
@@ -148,6 +212,8 @@ export default function AdminApplicationsPage() {
           onExportPDF={handleExportPDF}
           onExportCSV={handleExportCSV}
           onBulkStatusChange={handleBulkStatusChange}
+          onBulkDelete={handleBulkDelete}
+          onBulkExportSelected={handleBulkExportSelected}
           onClearSelection={clearSelection}
         />
       }
