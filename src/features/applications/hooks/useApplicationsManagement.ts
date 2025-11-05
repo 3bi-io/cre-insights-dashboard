@@ -13,6 +13,8 @@ export interface ApplicationsManagementFilters {
   clientFilter: string;
 }
 
+export type ViewMode = 'grid' | 'table';
+
 export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolean) => {
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,6 +24,7 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
   const [organizationFilter, setOrganizationFilter] = useState<string>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Applications data with RLS-based filtering
   const {
@@ -143,6 +146,10 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     setOrganizationFilter,
     clientFilter,
     setClientFilter,
+    
+    // View mode
+    viewMode,
+    setViewMode,
     
     // Selection
     selectedApplications,

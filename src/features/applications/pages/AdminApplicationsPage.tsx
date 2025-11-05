@@ -12,6 +12,8 @@ import { ApplicationsStats } from '../components/ApplicationsStats';
 import { ApplicationsFilters } from '../components/ApplicationsFilters';
 import { ApplicationsActions } from '../components/ApplicationsActions';
 import { ApplicationsGrid } from '../components/ApplicationsGrid';
+import { ApplicationsTable } from '../components/ApplicationsTable';
+import { ApplicationsViewSwitcher } from '../components/ApplicationsViewSwitcher';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import SmsConversationDialog from '@/components/applications/SmsConversationDialog';
 import TenstreetUpdateModal from '@/components/applications/TenstreetUpdateModal';
@@ -71,6 +73,8 @@ export default function AdminApplicationsPage() {
     setOrganizationFilter,
     clientFilter,
     setClientFilter,
+    viewMode,
+    setViewMode,
     selectedApplications,
     handleSelectAll,
     handleSelectApplication,
@@ -207,15 +211,21 @@ export default function AdminApplicationsPage() {
       title="Applications Management"
       description={isOrgAdmin ? "Manage job applications for your organization" : "Track and manage all job applications"}
       actions={
-        <ApplicationsActions
-          selectedCount={selectedApplications.size}
-          onExportPDF={handleExportPDF}
-          onExportCSV={handleExportCSV}
-          onBulkStatusChange={handleBulkStatusChange}
-          onBulkDelete={handleBulkDelete}
-          onBulkExportSelected={handleBulkExportSelected}
-          onClearSelection={clearSelection}
-        />
+        <div className="flex items-center gap-3">
+          <ApplicationsViewSwitcher 
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+          <ApplicationsActions
+            selectedCount={selectedApplications.size}
+            onExportPDF={handleExportPDF}
+            onExportCSV={handleExportCSV}
+            onBulkStatusChange={handleBulkStatusChange}
+            onBulkDelete={handleBulkDelete}
+            onBulkExportSelected={handleBulkExportSelected}
+            onClearSelection={clearSelection}
+          />
+        </div>
       }
     >
       <div className="space-y-6">
@@ -247,21 +257,38 @@ export default function AdminApplicationsPage() {
           showClientFilter={isOrgAdmin}
         />
 
-        {/* Applications Grid */}
-        <ApplicationsGrid
-          applications={applications}
-          statusCounts={statusCounts}
-          selectedApplications={selectedApplications}
-          onSelectAll={handleSelectAll}
-          onSelectApplication={handleSelectApplication}
-          onStatusChange={(id, status) => 
-            updateApplication(id, { status: status as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })
-          }
-          onSmsOpen={handleSmsOpen}
-          onDetailsView={handleDetailsView}
-          onTenstreetUpdate={handleTenstreetUpdate}
-          onScreeningOpen={handleScreeningOpen}
-        />
+        {/* Applications View - Grid or Table */}
+        {viewMode === 'grid' ? (
+          <ApplicationsGrid
+            applications={applications}
+            statusCounts={statusCounts}
+            selectedApplications={selectedApplications}
+            onSelectAll={handleSelectAll}
+            onSelectApplication={handleSelectApplication}
+            onStatusChange={(id, status) => 
+              updateApplication(id, { status: status as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })
+            }
+            onSmsOpen={handleSmsOpen}
+            onDetailsView={handleDetailsView}
+            onTenstreetUpdate={handleTenstreetUpdate}
+            onScreeningOpen={handleScreeningOpen}
+          />
+        ) : (
+          <ApplicationsTable
+            applications={applications}
+            statusCounts={statusCounts}
+            selectedApplications={selectedApplications}
+            onSelectAll={handleSelectAll}
+            onSelectApplication={handleSelectApplication}
+            onStatusChange={(id, status) => 
+              updateApplication(id, { status: status as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })
+            }
+            onSmsOpen={handleSmsOpen}
+            onDetailsView={handleDetailsView}
+            onTenstreetUpdate={handleTenstreetUpdate}
+            onScreeningOpen={handleScreeningOpen}
+          />
+        )}
       </div>
 
       {/* Dialogs */}
