@@ -115,6 +115,9 @@ const PublicLayout = () => {
                 <a href="/cookie-policy" className="hover:text-primary transition-colors">
                   Cookie Policy
                 </a>
+                <a href="/sitemap" className="hover:text-primary transition-colors">
+                  Sitemap
+                </a>
                 <a href="mailto:support@ats.me" className="hover:text-primary transition-colors">
                   Support
                 </a>
