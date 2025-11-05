@@ -372,6 +372,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Find or create job listing - CRITICAL: Match by job_id first
     let jobListingId = applicationData.job_listing_id;
     
+    // Step 1: Try to match by job_id text field
     if (!jobListingId && applicationData.job_id) {
       const query = supabase
         .from('job_listings')
@@ -392,7 +393,29 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Create job if we have title but no match
+    // Step 2: If no match, try to find ANY active job for this organization
+    if (!jobListingId) {
+      const query = supabase
+        .from('job_listings')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('status', 'active')
+        .limit(1);
+      
+      // Prefer jobs for this client if provided
+      if (clientId) {
+        query.eq('client_id', clientId);
+      }
+      
+      const { data: activeJob } = await query.maybeSingle();
+      
+      if (activeJob) {
+        jobListingId = activeJob.id;
+        console.log('Using active job listing:', jobListingId);
+      }
+    }
+
+    // Step 3: Create job if we have title but still no match
     if (!jobListingId && applicationData.job_title) {
       const { data: categories } = await supabase
         .from('job_categories')
