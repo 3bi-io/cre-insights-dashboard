@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, UserPlus, Settings, Download, RefreshCw, Shield, Zap } from 'lucide-react';
+import { Building, UserPlus, Settings, Download, RefreshCw, Shield, Zap, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const QuickActionsPanel = () => {
@@ -36,6 +36,12 @@ export const QuickActionsPanel = () => {
       href: '/admin/tenstreet-explorer',
       color: 'bg-amber-50 hover:bg-amber-100 text-amber-700',
     },
+    {
+      label: 'Edge Functions Test',
+      icon: Activity,
+      href: '/admin/edge-functions-test',
+      color: 'bg-cyan-50 hover:bg-cyan-100 text-cyan-700',
+    },
   ];
 
   return (
@@ -52,7 +58,7 @@ export const QuickActionsPanel = () => {
                 className={`w-full h-auto flex-col gap-2 p-4 ${action.color}`}
               >
                 <action.icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{action.label}</span>
+                <span className="text-xs font-medium text-center">{action.label}</span>
               </Button>
             </Link>
           ))}
