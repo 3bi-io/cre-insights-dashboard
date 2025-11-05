@@ -16,6 +16,7 @@ const ResourcesPage = React.lazy(() => import("@/pages/public/ResourcesPage"));
 const PrivacyPolicyPage = React.lazy(() => import("@/pages/public/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("@/pages/public/TermsOfServicePage"));
 const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPage"));
+const SitemapPage = React.lazy(() => import("@/pages/public/SitemapPage"));
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
@@ -117,6 +118,7 @@ const AppRoutes: React.FC = () => {
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
         <Route path="terms-of-service" element={<RouteWrapper><TermsOfServicePage /></RouteWrapper>} />
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />
+        <Route path="sitemap" element={<RouteWrapper><SitemapPage /></RouteWrapper>} />
       </Route>
 
       {/* Application Routes (no auth required) */}

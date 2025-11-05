@@ -79,4 +79,12 @@
     <priority>0.3</priority>
   </url>
   
+  <!-- Sitemap -->
+  <url>
+    <loc>https://ats.me/sitemap</loc>
+    <lastmod>2025-11-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
 </urlset>
