@@ -15,7 +15,7 @@ export interface AuthContext {
   email: string;
 }
 
-export interface AuthResult {
+export type AuthResult = {
   success: true;
   context: AuthContext;
 } | {
