@@ -1,6 +1,9 @@
 /**
  * Shared validation utilities for edge functions
  * Prevents injection attacks and ensures data integrity
+ * 
+ * IMPORTANT: For comprehensive validation, use securitySchemas.ts with Zod
+ * This file provides basic regex-based validation for legacy compatibility
  */
 
 // IP Address validation
