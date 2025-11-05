@@ -222,6 +222,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Parsed webhook data:', JSON.stringify(body, null, 2));
 
+    // DETAILED PAYLOAD LOGGING for debugging field mapping
+    console.log('=== PAYLOAD STRUCTURE DEBUG ===');
+    console.log('All payload keys:', Object.keys(body));
+    console.log('Payload key-value pairs (first 1000 chars):', JSON.stringify(body, null, 2).substring(0, 1000));
+    console.log('Sample values for common fields:', {
+      possible_first_name: body.first_name || body.firstName || body.fname || body.Firstname || body.FirstName,
+      possible_last_name: body.last_name || body.lastName || body.lname || body.Lastname || body.LastName,
+      possible_email: body.applicant_email || body.email || body.emailAddress || body.Email,
+      possible_phone: body.phone || body.phone_number || body.phoneNumber || body.Phone,
+    });
+    console.log('=== END PAYLOAD DEBUG ===');
+
     // Optional: Verify webhook signature if provided
     const signature = req.headers.get('x-webhook-signature');
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
