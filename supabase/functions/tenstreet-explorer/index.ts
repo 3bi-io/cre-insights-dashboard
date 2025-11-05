@@ -8,21 +8,7 @@ import {
   textSchema 
 } from '../_shared/securitySchemas.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
-
-const ALLOWED_ORIGINS = [
-  'https://auwhcdpppldjlcaxzsme.supabase.co',
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
-
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
+import { getCorsHeaders } from '../_shared/cors-config.ts'
 
 function escapeXML(unsafe: string): string {
   if (!unsafe) return '';

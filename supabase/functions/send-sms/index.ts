@@ -1,20 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const ALLOWED_ORIGINS = [
-  'https://auwhcdpppldjlcaxzsme.supabase.co',
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
-
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
+import { getCorsHeaders } from '../_shared/cors-config.ts'
 
 function validatePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
   const digitsOnly = phone.replace(/[^\d]/g, '');
