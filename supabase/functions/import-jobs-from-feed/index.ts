@@ -1,224 +1,110 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+import { corsHeaders, handleCorsPrelight } from '../_shared/cors.ts'
+import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts'
+import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
+import { getServiceClient } from '../_shared/supabase-client.ts'
+import { parseXMLFeed } from '../_shared/xml-parser.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const importSchema = z.object({
+  feedUrl: z.string().url(),
+  organizationId: z.string().uuid(),
+  clientId: z.string().uuid().nullable().optional()
+})
 
-serve(async (req) => {
-  console.log('Import jobs from feed function called:', req.method, req.url);
+const handler = wrapHandler(async (req: Request) => {
+  // Handle CORS preflight
+  const corsResponse = handleCorsPrelight(req);
+  if (corsResponse) return corsResponse;
 
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method !== 'POST') {
+    throw new ValidationError('POST method required');
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  const supabase = getServiceClient();
+
+  // Validate request body
+  const body = await req.json();
+  const { feedUrl, organizationId, clientId = null } = importSchema.parse(body);
+
+  console.log('Fetching jobs from feed:', feedUrl);
+  console.log('Organization ID:', organizationId);
+
+  // Fetch jobs from the feed
+  const feedResponse = await fetch(feedUrl, {
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Supabase-Edge-Function/1.0',
+      'Accept': 'application/json, text/plain, */*',
+    },
+  });
+
+  if (!feedResponse.ok) {
+    const errorText = await feedResponse.text();
+    console.error('Feed API error:', feedResponse.status, feedResponse.statusText, errorText);
+    throw new Error(`Feed API error: ${feedResponse.status} ${feedResponse.statusText}`);
+  }
+
+  const contentType = feedResponse.headers.get('content-type');
+  let jobs = [];
+  
+  const text = await feedResponse.text();
+  console.log('Feed response received:', text.substring(0, 500) + '...');
+  
+  if (contentType?.includes('application/json')) {
+    const feedData = JSON.parse(text);
+    if (Array.isArray(feedData)) {
+      jobs = feedData;
+    } else if (feedData.jobs && Array.isArray(feedData.jobs)) {
+      jobs = feedData.jobs;
+    } else if (feedData.data && Array.isArray(feedData.data)) {
+      jobs = feedData.data;
+    } else if (typeof feedData === 'object' && feedData !== null) {
+      jobs = [feedData];
+    }
+  } else if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
+    // Parse XML feed using shared utility
+    jobs = parseXMLFeed(text);
+    console.log(`Parsed ${jobs.length} jobs from XML feed`);
+  } else {
+    throw new ValidationError('Unsupported content type. Expected JSON or XML.');
+  }
+
+  console.log(`Found ${jobs.length} jobs to import`);
+
+  if (jobs.length === 0) {
+    return successResponse(
+      { imported: 0, total: 0 },
+      'No jobs found in feed'
     );
+  }
 
-    let feedUrl: string;
-    let organizationId: string;
-    let clientId: string | null = null;
-    
-    if (req.method === 'POST') {
-      const body = await req.json();
-      feedUrl = body.feedUrl;
-      organizationId = body.organizationId;
-      clientId = body.clientId || null;
-    } else {
-      return new Response(
-        JSON.stringify({ success: false, error: 'POST method required' }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  // Get default category for jobs
+  const { data: categories, error: categoryError } = await supabase
+    .from('job_categories')
+    .select('id')
+    .limit(1);
 
-    if (!feedUrl || !organizationId) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'feedUrl and organizationId are required' }), 
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  if (categoryError || !categories || categories.length === 0) {
+    throw new Error('No job categories found');
+  }
 
-    console.log('Fetching jobs from feed:', feedUrl);
-    console.log('Organization ID:', organizationId);
+  const defaultCategoryId = categories[0].id;
 
-    // Fetch jobs from the feed
-    const feedResponse = await fetch(feedUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'Supabase-Edge-Function/1.0',
-        'Accept': 'application/json, text/plain, */*',
-      },
-    });
+  // Get super admin user ID for creating jobs
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', 'c@3bi.io')
+    .limit(1);
 
-    if (!feedResponse.ok) {
-      const errorText = await feedResponse.text();
-      console.error('Feed API error:', feedResponse.status, feedResponse.statusText, errorText);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: `Feed API error: ${feedResponse.status} ${feedResponse.statusText}`,
-        }), 
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+  if (profileError || !profiles || profiles.length === 0) {
+    throw new Error('Super admin profile not found');
+  }
 
-    const contentType = feedResponse.headers.get('content-type');
-    let jobs = [];
-    
-    const text = await feedResponse.text();
-    console.log('Feed response received:', text.substring(0, 500) + '...');
-    
-    if (contentType?.includes('application/json')) {
-      try {
-        const feedData = JSON.parse(text);
-        if (Array.isArray(feedData)) {
-          jobs = feedData;
-        } else if (feedData.jobs && Array.isArray(feedData.jobs)) {
-          jobs = feedData.jobs;
-        } else if (feedData.data && Array.isArray(feedData.data)) {
-          jobs = feedData.data;
-        } else if (typeof feedData === 'object' && feedData !== null) {
-          jobs = [feedData];
-        }
-      } catch (error) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Invalid JSON response from feed' }), 
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
-      // Parse XML feed
-      try {
-        // Extract job elements from XML using regex
-        const jobMatches = text.matchAll(/<job>(.*?)<\/job>/gs);
-        
-        for (const match of jobMatches) {
-          const jobXml = match[1];
-          
-          // Extract fields from each job XML
-          const extractField = (field: string) => {
-            const regex = new RegExp(`<${field}><!\\[CDATA\\[(.*?)\\]\\]><\/${field}>`, 'i');
-            const match = jobXml.match(regex);
-            if (match) return match[1].trim();
-            
-            // Fallback for non-CDATA fields
-            const simpleRegex = new RegExp(`<${field}>(.*?)<\/${field}>`, 'i');
-            const simpleMatch = jobXml.match(simpleRegex);
-            return simpleMatch ? simpleMatch[1].trim() : null;
-          };
-          
-          // Parse salary from format like "$65000 - $80000 per year"
-          const parseSalaryRange = (salaryText: string) => {
-            if (!salaryText) return { min: null, max: null, type: 'yearly' };
-            
-            const match = salaryText.match(/\$(\d+)(?:,(\d+))?\s*-\s*\$(\d+)(?:,(\d+))?\s+per\s+(\w+)/i);
-            if (match) {
-              const minSalary = parseInt(match[1] + (match[2] || ''));
-              const maxSalary = parseInt(match[3] + (match[4] || ''));
-              const period = match[5].toLowerCase();
-              
-              return {
-                min: minSalary,
-                max: maxSalary,
-                type: period === 'year' ? 'yearly' : period === 'hour' ? 'hourly' : 'yearly'
-              };
-            }
-            
-            return { min: null, max: null, type: 'yearly' };
-          };
-          
-          const salary = parseSalaryRange(extractField('salary'));
-          
-          jobs.push({
-            title: extractField('title'),
-            description: extractField('description'),
-            company: extractField('company'),
-            city: extractField('city'),
-            state: extractField('state'),
-            url: extractField('url'),
-            phone: extractField('phone'),
-            salary: extractField('salary'),
-            salary_min: salary.min,
-            salary_max: salary.max,
-            salary_type: salary.type,
-            jobtype: extractField('jobtype'),
-            category: extractField('category'),
-            referencenumber: extractField('referencenumber'),
-            experience: extractField('experience'),
-            education: extractField('education'),
-            country: extractField('country'),
-            postalcode: extractField('postalcode')
-          });
-        }
-        
-        console.log(`Parsed ${jobs.length} jobs from XML feed`);
-        
-      } catch (error) {
-        console.error('Error parsing XML:', error);
-        return new Response(
-          JSON.stringify({ success: false, error: 'Failed to parse XML feed' }), 
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } else {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unsupported content type. Expected JSON or XML.' }), 
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`Found ${jobs.length} jobs to import`);
-
-    if (jobs.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'No jobs found in feed',
-          imported: 0
-        }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get default category for jobs
-    const { data: categories, error: categoryError } = await supabase
-      .from('job_categories')
-      .select('id')
-      .limit(1);
-
-    if (categoryError || !categories || categories.length === 0) {
-      console.error('Error getting job category:', categoryError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'No job categories found' }), 
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const defaultCategoryId = categories[0].id;
-
-    // Get super admin user ID for creating jobs
-    const { data: profiles, error: profileError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', 'c@3bi.io')
-      .limit(1);
-
-    if (profileError || !profiles || profiles.length === 0) {
-      console.error('Error getting super admin profile:', profileError);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Super admin profile not found' }), 
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const superAdminId = profiles[0].id;
-    let importedCount = 0;
+  const superAdminId = profiles[0].id;
+  let importedCount = 0;
 
     // Import each job
     for (const job of jobs) {
@@ -333,28 +219,12 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Successfully imported ${importedCount} jobs`);
+  console.log(`Successfully imported ${importedCount} jobs`);
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Successfully imported ${importedCount} jobs`,
-        imported: importedCount,
-        total: jobs.length
-      }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-    
-  } catch (error) {
-    console.error('Error in import-jobs-from-feed function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: errorMessage,
-      }), 
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-})
+  return successResponse(
+    { imported: importedCount, total: jobs.length },
+    `Successfully imported ${importedCount} jobs`
+  );
+}, { context: 'ImportJobsFromFeed', logRequests: true });
+
+serve(handler)

@@ -1,46 +1,20 @@
-
 // @ts-nocheck
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+import { corsHeaders, handleCorsPrelight } from '../_shared/cors.ts'
+import { successResponse, errorResponse } from '../_shared/response.ts'
+import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
+import { getServiceClient, verifyUser } from '../_shared/supabase-client.ts'
+import { normalizePhone } from '../_shared/application-processor.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Phone number normalization utility
-function normalizePhoneNumber(phone: string | null | undefined): string | null {
-  if (!phone || typeof phone !== 'string') {
-    return null;
-  }
-
-  // Remove all non-digit characters
-  const digitsOnly = phone.replace(/\D/g, '');
-  
-  // Handle empty or invalid inputs
-  if (!digitsOnly || digitsOnly.length < 10) {
-    return null;
-  }
-
-  // Handle US numbers
-  if (digitsOnly.length === 10) {
-    // 10 digits - add +1 country code
-    return `+1${digitsOnly}`;
-  } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-    // 11 digits starting with 1 - already has country code
-    return `+${digitsOnly}`;
-  } else if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
-    // 11 digits not starting with 1 - assume it's a 10-digit number with extra digit
-    return `+1${digitsOnly.slice(-10)}`;
-  } else if (digitsOnly.length > 11) {
-    // More than 11 digits - take last 10 and add +1
-    return `+1${digitsOnly.slice(-10)}`;
-  }
-
-  // Fallback for edge cases
-  return null;
-}
+const actionSchema = z.object({
+  action: z.enum(['sync_accounts', 'sync_campaigns', 'sync_adsets', 'sync_ads', 'sync_insights', 'sync_leads']),
+  accountId: z.string().optional(),
+  campaignId: z.string().optional(),
+  datePreset: z.string().default('last_30d'),
+  sinceDays: z.number().optional()
+})
 
 interface MetaAdAccount {
   id: string;
@@ -103,90 +77,54 @@ interface MetaInsight {
   ad_id?: string;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+const handler = wrapHandler(async (req: Request) => {
+  // Handle CORS preflight
+  const corsResponse = handleCorsPrelight(req);
+  if (corsResponse) return corsResponse;
+
+  // Parse and validate request
+  const body = await req.json();
+  const { action, accountId, campaignId, datePreset, sinceDays } = actionSchema.parse(body);
+  
+  const metaAccessToken = Deno.env.get('META_ACCESS_TOKEN')!;
+  if (!metaAccessToken) {
+    throw new Error('META_ACCESS_TOKEN is required');
   }
 
-  try {
-    const { action, accountId, campaignId, datePreset = 'last_30d', sinceDays } = await req.json();
+  const supabase = getServiceClient();
+  const { userId } = await verifyUser(req);
+
+  console.log(`Processing Meta action: ${action} for user: ${userId}`);
+
+  // Route to appropriate handler
+  switch (action) {
+    case 'sync_accounts':
+      return await syncAdAccounts(userId, metaAccessToken, supabase);
     
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const metaAccessToken = Deno.env.get('META_ACCESS_TOKEN')!;
+    case 'sync_campaigns':
+      if (!accountId) throw new ValidationError('Account ID is required for syncing campaigns');
+      return await syncCampaigns(userId, accountId, metaAccessToken, supabase);
     
-    if (!metaAccessToken) {
-      throw new Error('META_ACCESS_TOKEN is required');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get user ID from the request
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header is required');
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      throw new Error('Invalid authentication');
-    }
-
-    console.log(`Processing Meta action: ${action} for user: ${user.id}`);
-
-    switch (action) {
-      case 'sync_accounts':
-        return await syncAdAccounts(user.id, metaAccessToken, supabase);
-      
-      case 'sync_campaigns':
-        if (!accountId) {
-          throw new Error('Account ID is required for syncing campaigns');
-        }
-        return await syncCampaigns(user.id, accountId, metaAccessToken, supabase);
-      
-      case 'sync_adsets':
-        if (!accountId) {
-          throw new Error('Account ID is required for syncing ad sets');
-        }
-        return await syncAdSets(user.id, accountId, campaignId, metaAccessToken, supabase);
-      
-      case 'sync_ads':
-        if (!accountId) {
-          throw new Error('Account ID is required for syncing ads');
-        }
-        return await syncAds(user.id, accountId, campaignId, metaAccessToken, supabase);
-      
-      case 'sync_insights':
-        if (!accountId) {
-          throw new Error('Account ID is required for syncing insights');
-        }
-        return await syncInsights(user.id, accountId, campaignId, datePreset, metaAccessToken, supabase);
-      
-      case 'sync_leads':
-        if (!accountId) {
-          throw new Error('Account ID is required for syncing leads');
-        }
-        return await syncLeads(user.id, accountId, sinceDays ?? 30, metaAccessToken, supabase);
-      
-      default:
-        throw new Error(`Unknown action: ${action}`);
-    }
-
-  } catch (error) {
-    console.error('Error in Meta integration:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    case 'sync_adsets':
+      if (!accountId) throw new ValidationError('Account ID is required for syncing ad sets');
+      return await syncAdSets(userId, accountId, campaignId, metaAccessToken, supabase);
+    
+    case 'sync_ads':
+      if (!accountId) throw new ValidationError('Account ID is required for syncing ads');
+      return await syncAds(userId, accountId, campaignId, metaAccessToken, supabase);
+    
+    case 'sync_insights':
+      if (!accountId) throw new ValidationError('Account ID is required for syncing insights');
+      return await syncInsights(userId, accountId, campaignId, datePreset, metaAccessToken, supabase);
+    
+    case 'sync_leads':
+      if (!accountId) throw new ValidationError('Account ID is required for syncing leads');
+      return await syncLeads(userId, accountId, sinceDays ?? 30, metaAccessToken, supabase);
+    
+    default:
+      throw new ValidationError(`Unknown action: ${action}`);
   }
-});
+}, { context: 'MetaIntegration', logRequests: true });
 
 async function syncAdAccounts(userId: string, accessToken: string, supabase: any) {
   console.log('Syncing Meta ad accounts...');
@@ -230,13 +168,9 @@ async function syncAdAccounts(userId: string, accessToken: string, supabase: any
     }
   }
 
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: `Synced ${syncResults.length} ad accounts`,
-      accounts: syncResults 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { accounts: syncResults },
+    `Synced ${syncResults.length} ad accounts`
   );
 }
 
@@ -285,13 +219,9 @@ async function syncCampaigns(userId: string, accountId: string, accessToken: str
     }
   }
 
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: `Synced ${syncResults.length} campaigns`,
-      campaigns: syncResults 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { campaigns: syncResults },
+    `Synced ${syncResults.length} campaigns`
   );
 }
 
@@ -365,13 +295,9 @@ async function syncInsights(userId: string, accountId: string, campaignId: strin
     }
   }
 
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: `Synced ${syncResults.length} insight records`,
-      insights: syncResults 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { insights: syncResults },
+    `Synced ${syncResults.length} insight records`
   );
 }
 
@@ -479,13 +405,9 @@ async function syncAdSets(userId: string, accountId: string, campaignId: string 
     }
   }
 
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: `Synced ${syncResults.length} ad sets with metrics`,
-      adsets: syncResults 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { adsets: syncResults },
+    `Synced ${syncResults.length} ad sets with metrics`
   );
 }
 
@@ -541,13 +463,9 @@ async function syncAds(userId: string, accountId: string, campaignId: string | u
     }
   }
 
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      message: `Synced ${syncResults.length} ads`,
-      ads: syncResults 
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { ads: syncResults },
+    `Synced ${syncResults.length} ads`
   );
 }
 
@@ -600,7 +518,7 @@ async function syncLeads(userId: string, accountId: string, sinceDays: number, a
       return await processLeadgenForms(forms, accessToken, supabase, sinceDate, cleanAccountId, existingEmailSet);
     } catch (e2: any) {
       console.error('Both campaigns and leadgen_forms approaches failed:', e2);
-      return new Response(JSON.stringify({ success: false, message: `No lead generation data available: ${e2.message}` }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return errorResponse(`No lead generation data available: ${e2.message}`, 400);
     }
   }
 
@@ -641,15 +559,9 @@ async function processLeadgenForms(forms: Array<{id: string; name?: string; crea
     }
   }
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: `Leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`,
-      inserted,
-      skipped,
-      errors,
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { inserted, skipped, errors },
+    `Leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`
   );
 }
 
@@ -697,15 +609,9 @@ async function processCampaignLeads(campaigns: Array<{id: string; name?: string}
     }
   }
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: `Campaign leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`,
-      inserted,
-      skipped,
-      errors,
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  return successResponse(
+    { inserted, skipped, errors },
+    `Campaign leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`
   );
 }
 
@@ -792,7 +698,7 @@ async function processLeads(leads: any[], supabase: any, sinceDate: Date, existi
       first_name: firstName || null,
       last_name: lastName || null,
       applicant_email: email,
-      phone: normalizePhoneNumber(phone),
+      phone: normalizePhone(phone),
       city: city,
       state: state,
       zip: fieldsObj.zip,
@@ -819,3 +725,5 @@ async function processLeads(leads: any[], supabase: any, sinceDate: Date, existi
 
   return { inserted, skipped, errors };
 }
+
+serve(handler)
