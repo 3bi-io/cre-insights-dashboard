@@ -107,15 +107,17 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
   useEffect(() => {
     // Set up auth state listener
 const { data: { subscription } } = supabase.auth.onAuthStateChange(
-  async (event, session) => {
+  (event, session) => {
     logger.debug('Auth state changed', { event, hasSession: !!session });
     console.log('[AUTH] Auth state changed:', { event, hasSession: !!session });
     setSession(session);
     setUser(session?.user ?? null);
     
     if (session?.user) {
-      // Await the fetch to ensure data is loaded before setting loading to false
-      await fetchUserRoleAndOrganization(session.user.id);
+      // Defer Supabase calls to prevent deadlock
+      setTimeout(() => {
+        fetchUserRoleAndOrganization(session.user.id);
+      }, 0);
     } else {
       setUserRole(null);
       setOrganization(null);
@@ -127,13 +129,16 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
 );
 
     // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('[AUTH] Initial session check:', { hasSession: !!session });
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserRoleAndOrganization(session.user.id);
+        // Defer Supabase calls to prevent deadlock
+        setTimeout(() => {
+          fetchUserRoleAndOrganization(session.user.id);
+        }, 0);
       }
       
       setLoading(false);

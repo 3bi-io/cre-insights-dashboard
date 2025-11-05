@@ -13,6 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireSubscription = true 
 }) => {
+  const location = useLocation();
   const { user, loading: authLoading, userRole, organization } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
 
@@ -47,7 +48,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // If subscription required and user lacks active subscription, redirect to pricing
   if (requireSubscription && !hasActiveSubscription) {
     console.log('[PROTECTED] Redirecting to pricing - no active subscription');
-    return <Navigate to="/pricing" state={{ from: useLocation().pathname }} replace />;
+    return <Navigate to="/pricing" state={{ from: location.pathname }} replace />;
   }
 
   // Grant access
