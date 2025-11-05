@@ -59,6 +59,11 @@ interface InboundApplicationData {
   organization_id?: string;
   organization_slug?: string;
   
+  // Client routing
+  client_name?: string;
+  client_slug?: string;
+  client_company?: string;
+  
   // Additional fields
   notes?: string;
   status?: string;
@@ -278,6 +283,10 @@ const handler = async (req: Request): Promise<Response> => {
       organization_id: extractValue(body, ['organization_id', 'organizationId', 'org_id']),
       organization_slug: extractValue(body, ['organization_slug', 'organizationSlug', 'org_slug']),
       
+      client_name: extractValue(body, ['client_name', 'clientName', 'client', 'company_name']),
+      client_slug: extractValue(body, ['client_slug', 'clientSlug']),
+      client_company: extractValue(body, ['client_company', 'company']),
+      
       notes: extractValue(body, ['notes', 'comments', 'message']),
       status: extractValue(body, ['status']) || 'pending',
     };
@@ -326,16 +335,44 @@ const handler = async (req: Request): Promise<Response> => {
       organizationId = '84214b48-7b51-45bc-ad7f-723bcf50466c';
     }
 
+    // Look up client by name or slug
+    let clientId = null;
+    const clientIdentifier = applicationData.client_name || 
+                             applicationData.client_slug || 
+                             applicationData.client_company;
+
+    if (clientIdentifier) {
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id, name')
+        .eq('organization_id', organizationId)
+        .or(`name.ilike.%${clientIdentifier}%,company.ilike.%${clientIdentifier}%`)
+        .maybeSingle();
+      
+      if (client) {
+        clientId = client.id;
+        console.log('Matched client:', client.name, 'ID:', clientId);
+      } else {
+        console.warn('Client not found for identifier:', clientIdentifier);
+      }
+    }
+
     // Find or create job listing - CRITICAL: Match by job_id first
     let jobListingId = applicationData.job_listing_id;
     
     if (!jobListingId && applicationData.job_id) {
-      const { data: jobListing } = await supabase
+      const query = supabase
         .from('job_listings')
         .select('id')
         .eq('job_id', applicationData.job_id)
-        .eq('organization_id', organizationId)
-        .maybeSingle();
+        .eq('organization_id', organizationId);
+      
+      // Filter by client if provided
+      if (clientId) {
+        query.eq('client_id', clientId);
+      }
+      
+      const { data: jobListing } = await query.maybeSingle();
       
       if (jobListing) {
         jobListingId = jobListing.id;
@@ -357,6 +394,7 @@ const handler = async (req: Request): Promise<Response> => {
             title: applicationData.job_title,
             job_id: applicationData.job_id,
             organization_id: organizationId,
+            client_id: clientId,
             category_id: categories[0].id,
             status: 'active',
             job_summary: `Position from ${applicationData.source}`,
