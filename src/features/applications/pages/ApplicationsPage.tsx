@@ -140,11 +140,12 @@ const ApplicationsPage = () => {
         type="single" 
         value={viewMode} 
         onValueChange={(value) => value && setViewMode(value as 'card' | 'table')}
+        className="border border-input rounded-md p-1 bg-background"
       >
-        <ToggleGroupItem value="card" aria-label="Card view" size="sm">
+        <ToggleGroupItem value="card" aria-label="Card view" variant="outline">
           <LayoutGrid className="w-4 h-4" />
         </ToggleGroupItem>
-        <ToggleGroupItem value="table" aria-label="Table view" size="sm">
+        <ToggleGroupItem value="table" aria-label="Table view" variant="outline">
           <TableIcon className="w-4 h-4" />
         </ToggleGroupItem>
       </ToggleGroup>
