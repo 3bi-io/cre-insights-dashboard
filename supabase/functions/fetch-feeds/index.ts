@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { enforceAuth, logSecurityEvent, getClientInfo } from '../_shared/serverAuth.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,71 +16,40 @@ serve(async (req) => {
   }
 
   try {
-    // Server-side authentication check
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Missing authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // SECURITY: Server-side JWT verification with role check
+    const authContext = await enforceAuth(req, ['admin', 'super_admin'])
+    if (authContext instanceof Response) return authContext
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        global: { headers: { Authorization: authHeader } }
-      }
-    );
+    const { userId, organizationId } = authContext
+    const { ipAddress, userAgent } = getClientInfo(req)
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('[FETCH_FEEDS] Authenticated user:', user.id);
-
-    // Check user role - require admin or super_admin
-    const { data: roleData } = await supabase.rpc('get_current_user_role');
-    const userRole = roleData as string;
-
-    if (userRole !== 'admin' && userRole !== 'super_admin') {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden - Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('[FETCH_FEEDS] Authorized role:', userRole);
+    console.log('[FETCH_FEEDS] Authenticated user:', userId)
 
   try {
-    let user: string = '*'; // Default to '*'
-    let board: string | null = null;
-    
-    // Handle both GET and POST requests
+    // VALIDATION: Parse and validate request parameters
+    const requestSchema = z.object({
+      user: z.string().default('*'),
+      board: z.string().nullable().optional()
+    })
+
+    let validatedParams
     if (req.method === 'GET') {
-      const url = new URL(req.url);
-      user = url.searchParams.get('user') || '*';
-      board = url.searchParams.get('board');
-      console.log('GET request, user from query:', user, 'board:', board);
-    } else if (req.method === 'POST') {
+      const url = new URL(req.url)
+      validatedParams = requestSchema.parse({
+        user: url.searchParams.get('user') || '*',
+        board: url.searchParams.get('board')
+      })
+    } else {
       try {
-        const body = await req.json();
-        user = body.user || '*';
-        board = body.board || null;
-        console.log('POST request, user from body:', user, 'board:', board);
-      } catch (e) {
-        console.log('Failed to parse JSON body, using defaults');
-        user = '*';
-        board = null;
+        const body = await req.json()
+        validatedParams = requestSchema.parse(body)
+      } catch {
+        validatedParams = { user: '*', board: null }
       }
     }
 
-    console.log('Fetching feeds for user:', user, 'board:', board);
+    const { user, board } = validatedParams
+    console.log('Fetching feeds for user:', user, 'board:', board)
 
     // Fetch feeds from the external API
     let feedsUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(user)}`;

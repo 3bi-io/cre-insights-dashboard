@@ -1,6 +1,12 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { enforceAuth, logSecurityEvent, getClientInfo, createAuthenticatedClient } from '../_shared/serverAuth.ts'
+import { 
+  validateRequest, 
+  validationErrorResponse,
+  uuidSchema,
+  emailSchema,
+  textSchema 
+} from '../_shared/securitySchemas.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const ALLOWED_ORIGINS = [
@@ -24,7 +30,7 @@ function escapeXML(unsafe: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/\"/g, '&quot;')
     .replace(/'/g, '&apos;');
 }
 
@@ -56,93 +62,34 @@ serve(async (req) => {
   }
 
   try {
-    // Get auth token from request
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
+    // SECURITY: Server-side JWT verification with role check
+    const authContext = await enforceAuth(req, ['admin', 'super_admin'])
+    if (authContext instanceof Response) return authContext
+
+    const { userId, userRole, organizationId } = authContext
+    const { ipAddress, userAgent } = getClientInfo(req)
+
+    // VALIDATION: Parse and validate request body
+    const requestSchema = z.object({
+      company_id: z.string().min(1, 'company_id is required'),
+      action: z.enum([
+        'explore_services', 'test_service', 'get_applicant_data',
+        'search_applicants', 'get_application_status', 'update_applicant_status',
+        'get_available_jobs', 'export_applicants', 'subject_upload', 'subject_update'
+      ]),
+    }).passthrough()
+
+    const validationResult = requestSchema.safeParse(await req.json())
+    if (!validationResult.success) {
+      return validationErrorResponse(validationResult.error)
     }
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    )
+    const { company_id, action, ...params } = validationResult.data
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    
-    if (userError) {
-      console.error('Auth error:', userError)
-      throw new Error(`Authentication failed: ${userError.message}`)
-    }
-    
-    if (!user) {
-      console.error('No user found in session')
-      throw new Error('No authenticated user found')
-    }
-    
-    console.log('Authenticated user:', user.id, user.email)
+    // Create authenticated Supabase client for this user
+    const supabaseClient = createAuthenticatedClient(req)
 
-    // Check if user is super admin
-    const { data: isSuperAdmin } = await supabaseClient.rpc('is_super_admin', {
-      _user_id: user.id
-    })
-
-    // Get user's organization
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('organization_id')
-      .eq('id', user.id)
-      .single()
-
-    let targetOrgId = profile?.organization_id
-
-    // Parse request body
-    const requestBody = await req.json()
-    const { company_id, action, ...params } = requestBody
-    
-    // Require company_id parameter
-    if (!company_id) {
-      return new Response(
-        JSON.stringify({ error: 'company_id is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Super admins can access any company's credentials
-    if (isSuperAdmin) {
-      console.log('Super admin access - querying by company_id:', company_id)
-    } else {
-      // Non-super-admins need an organization
-      if (!targetOrgId) {
-        throw new Error('No organization found for user')
-      }
-
-      // Check if organization has ATS Explorer access
-      const { data: hasAccess, error: accessError } = await supabaseClient.rpc('get_user_platform_access', {
-        _platform_name: 'ats_explorer'
-      })
-
-      if (accessError) {
-        console.error('Error checking platform access:', accessError)
-        throw new Error('Failed to verify platform access')
-      }
-
-      if (!hasAccess) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'ATS Explorer access is not enabled for your organization. Please contact your administrator.' 
-          }),
-          { 
-            status: 403, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        )
-      }
-    }
-
-    // Fetch Tenstreet credentials by company_id
+    // AUTHORIZATION: Verify credentials access
     const { data: credentialsList, error: credError } = await supabaseClient
       .from('tenstreet_credentials')
       .select('*')
@@ -150,112 +97,87 @@ serve(async (req) => {
       .eq('status', 'active')
 
     if (credError) {
-      console.error('Error fetching credentials:', credError)
       throw new Error('Failed to fetch Tenstreet credentials')
     }
 
-    // For non-super-admins, verify the credentials belong to their organization
-    let credentials = null
-    if (!isSuperAdmin) {
-      credentials = credentialsList?.find(cred => cred.organization_id === targetOrgId)
-    } else {
-      credentials = credentialsList?.[0]
-    }
+    // Super admins can access any credentials, others must match organization
+    const credentials = userRole === 'super_admin' 
+      ? credentialsList?.[0]
+      : credentialsList?.find(cred => cred.organization_id === organizationId)
 
     if (!credentials) {
       return new Response(
         JSON.stringify({ 
           error: `No Tenstreet credentials found for company ID: ${company_id}` 
         }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log('Using credentials for company_id:', company_id)
-    console.log('Mode:', credentials.mode)
-    
-    console.log(`Tenstreet Explorer: ${action}`)
-
-    // Rate limiting check
+    // RATE LIMITING: Check request limits
     const rateCheck = await supabaseClient.rpc('check_rate_limit', {
-      _identifier: user.id,
+      _identifier: userId,
       _endpoint: `tenstreet-explorer-${action}`,
       _max_requests: 100,
       _window_minutes: 60
-    });
+    })
 
     if (rateCheck.data && !rateCheck.data.allowed) {
       return new Response(
         JSON.stringify({ 
-          error: 'Rate limit exceeded. Please try again later.',
+          error: 'Rate limit exceeded',
           retry_after: rateCheck.data.retry_after
         }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      )
     }
 
-    // Audit logging for all actions
-    const auditPayload = {
-      user_id: user.id,
-      organization_id: targetOrgId,
-      table_name: 'tenstreet_api',
-      record_id: params.driverId || params.email || params.criteria?.email || 'batch_operation',
-      action: `TENSTREET_${action.toUpperCase()}`,
-      sensitive_fields: ['applicant_data', 'personal_information'],
-      metadata: {
-        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
-        user_agent: req.headers.get('user-agent'),
-        company_id: company_id,
-        action_params: Object.keys(params)
-      }
-    };
-
-    await supabaseClient.from('audit_logs').insert(auditPayload).then(
-      ({ error: auditError }) => {
-        if (auditError) console.error('Audit log error:', auditError);
-      }
-    );
+    // AUDIT LOGGING: Log all sensitive data access
+    await logSecurityEvent(supabaseClient, authContext, `TENSTREET_${action.toUpperCase()}`, {
+      table: 'tenstreet_api',
+      recordId: params.driverId || params.email || params.criteria?.email || 'batch_operation',
+      sensitiveFields: ['applicant_data', 'personal_information'],
+      ipAddress,
+      userAgent
+    })
 
     switch (action) {
       case 'explore_services':
-        return await exploreAvailableServices(credentials)
+        return await exploreAvailableServices(credentials, corsHeaders)
       
       case 'test_service':
-        return await testService(credentials, params.service, params.payload)
+        return await testService(credentials, params.service, params.payload, corsHeaders)
       
       case 'get_applicant_data':
         validateGetApplicantRequest(params);
-        return await getApplicantData(credentials, params.driverId)
+        return await getApplicantData(credentials, params.driverId, corsHeaders)
       
       case 'search_applicants':
         validateSearchRequest(params);
-        return await searchApplicants(credentials, params.criteria)
+        return await searchApplicants(credentials, params.criteria, corsHeaders)
       
       case 'get_application_status':
         validateGetApplicantRequest(params);
-        return await getApplicationStatus(credentials, params.driverId)
+        return await getApplicationStatus(credentials, params.driverId, corsHeaders)
       
       case 'update_applicant_status':
         validateUpdateStatusRequest(params);
-        return await updateApplicantStatus(credentials, params.driverId, params.status)
+        return await updateApplicantStatus(credentials, params.driverId, params.status, corsHeaders)
       
       case 'get_available_jobs':
-        return await getAvailableJobs(credentials)
+        return await getAvailableJobs(credentials, corsHeaders)
       
       case 'export_applicants':
         validateExportRequest(params);
-        return await exportApplicants(credentials, params.dateRange)
+        return await exportApplicants(credentials, params.dateRange, corsHeaders)
       
       case 'subject_upload':
         validateSubjectUploadRequest(params);
-        return await createApplicant(credentials, params.applicantData)
+        return await createApplicant(credentials, params.applicantData, corsHeaders)
       
       case 'subject_update':
         validateSubjectUpdateRequest(params);
-        return await updateApplicant(credentials, params.driverId, params.updates)
+        return await updateApplicant(credentials, params.driverId, params.updates, corsHeaders)
         
       default:
         throw new Error(`Unknown action: ${action}`)
@@ -273,8 +195,9 @@ serve(async (req) => {
   }
 })
 
-async function exploreAvailableServices(credentials: any) {
-  // Known Tenstreet services based on documentation
+async function exploreAvailableServices(credentials: any, corsHeaders: Record<string, string>) {
+  
+  
   const services = [
     {
       name: 'subject_upload',
@@ -341,7 +264,7 @@ async function exploreAvailableServices(credentials: any) {
   )
 }
 
-async function testService(credentials: any, serviceName: string, customPayload?: any) {
+async function testService(credentials: any, serviceName: string, customPayload?: any, corsHeaders?: Record<string, string>) {
   const testXML = buildServiceTestXML(credentials, serviceName, customPayload)
   
   console.log(`Testing service: ${serviceName}`)
@@ -382,8 +305,8 @@ async function testService(credentials: any, serviceName: string, customPayload?
   }
 }
 
-async function getApplicantData(credentials: any, driverId: string) {
-  const retrieveXML = `<?xml version="1.0" encoding="UTF-8"?>
+async function getApplicantData(credentials: any, driverId: string, corsHeaders?: Record<string, string>) {
+  const retrieveXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${escapeXML(credentials.client_id)}</ClientId>
@@ -395,13 +318,13 @@ async function getApplicantData(credentials: any, driverId: string) {
     <DriverId>${escapeXML(driverId)}</DriverId>
 </TenstreetData>`
 
-  return await makeRequest(retrieveXML, 'Get Applicant Data')
+  return await makeRequest(retrieveXML, 'Get Applicant Data', corsHeaders)
 }
 
-async function searchApplicants(credentials: any, criteria: any) {
+async function searchApplicants(credentials: any, criteria: any, corsHeaders?: Record<string, string>) {
   const { email, phone, lastName, dateRange } = criteria
   
-  const searchXML = `<?xml version="1.0" encoding="UTF-8"?>
+  const searchXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${escapeXML(credentials.client_id)}</ClientId>
@@ -418,11 +341,11 @@ async function searchApplicants(credentials: any, criteria: any) {
     </SearchCriteria>
 </TenstreetData>`
 
-  return await makeRequest(searchXML, 'Search Applicants')
+  return await makeRequest(searchXML, 'Search Applicants', corsHeaders)
 }
 
-async function getApplicationStatus(credentials: any, driverId: string) {
-  const statusXML = `<?xml version="1.0" encoding="UTF-8"?>
+async function getApplicationStatus(credentials: any, driverId: string, corsHeaders?: Record<string, string>) {
+  const statusXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${credentials.client_id}</ClientId>
@@ -434,11 +357,11 @@ async function getApplicationStatus(credentials: any, driverId: string) {
     <DriverId>${driverId}</DriverId>
 </TenstreetData>`
 
-  return await makeRequest(statusXML, 'Get Application Status')
+  return await makeRequest(statusXML, 'Get Application Status', corsHeaders)
 }
 
-async function updateApplicantStatus(credentials: any, driverId: string, status: string) {
-  const updateXML = `<?xml version="1.0" encoding="UTF-8"?>
+async function updateApplicantStatus(credentials: any, driverId: string, status: string, corsHeaders?: Record<string, string>) {
+  const updateXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${escapeXML(credentials.client_id)}</ClientId>
@@ -451,11 +374,11 @@ async function updateApplicantStatus(credentials: any, driverId: string, status:
     <Status>${escapeXML(status)}</Status>
 </TenstreetData>`
 
-  return await makeRequest(updateXML, 'Update Applicant Status')
+  return await makeRequest(updateXML, 'Update Applicant Status', corsHeaders)
 }
 
-async function getAvailableJobs(credentials: any) {
-  const jobsXML = `<?xml version="1.0" encoding="UTF-8"?>
+async function getAvailableJobs(credentials: any, corsHeaders?: Record<string, string>) {
+  const jobsXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${credentials.client_id}</ClientId>
@@ -466,13 +389,13 @@ async function getAvailableJobs(credentials: any) {
     <CompanyId>${getCompanyId(credentials)}</CompanyId>
 </TenstreetData>`
 
-  return await makeRequest(jobsXML, 'Get Available Jobs')
+  return await makeRequest(jobsXML, 'Get Available Jobs', corsHeaders)
 }
 
-async function exportApplicants(credentials: any, dateRange: any) {
+async function exportApplicants(credentials: any, dateRange: any, corsHeaders?: Record<string, string>) {
   const { startDate, endDate } = dateRange
   
-  const exportXML = `<?xml version="1.0" encoding="UTF-8"?>
+  const exportXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${escapeXML(credentials.client_id)}</ClientId>
@@ -487,10 +410,10 @@ async function exportApplicants(credentials: any, dateRange: any) {
     </ExportCriteria>
 </TenstreetData>`
 
-  return await makeRequest(exportXML, 'Export Applicants')
+  return await makeRequest(exportXML, 'Export Applicants', corsHeaders)
 }
 
-async function makeRequest(xmlPayload: string, actionName: string, maxRetries = 3) {
+async function makeRequest(xmlPayload: string, actionName: string, corsHeaders?: Record<string, string>, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`${actionName} - Attempt ${attempt}/${maxRetries} - XML Request:`, xmlPayload)
@@ -510,131 +433,135 @@ async function makeRequest(xmlPayload: string, actionName: string, maxRetries = 
 
       clearTimeout(timeoutId);
 
-      const responseText = await response.text()
-      console.log(`${actionName} - Response:`, responseText)
+      const responseText = await response.text();
+      console.log(`${actionName} - Response (${response.status}):`, responseText);
 
       return new Response(
         JSON.stringify({
           success: response.ok,
           status: response.status,
-          action: actionName,
-          request: xmlPayload,
           response: responseText,
           parsed: parseXMLResponse(responseText),
+          action: actionName,
           attempt
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
+
     } catch (error) {
-      console.error(`${actionName} - Attempt ${attempt} failed:`, error.message);
+      console.error(`${actionName} - Attempt ${attempt} failed:`, error);
       
-      // If this is the last attempt or it's an abort error, throw
-      if (attempt === maxRetries || error.name === 'AbortError') {
+      if (attempt === maxRetries) {
         return new Response(
           JSON.stringify({
             success: false,
-            error: error.name === 'AbortError' ? 'Request timeout (30s exceeded)' : error.message,
+            error: error.message,
             action: actionName,
-            attempts: attempt
+            attempts: maxRetries
           }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
-      // Exponential backoff before retry
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      // Exponential backoff: 1s, 2s, 4s
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
     }
   }
 }
 
-function buildServiceTestXML(credentials: any, serviceName: string, customPayload?: any) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<TenstreetData>
-    <Authentication>
-        <ClientId>${credentials.client_id}</ClientId>
-        <Password>${credentials.password}</Password>
-        <Service>${serviceName}</Service>
-    </Authentication>
-    <Mode>${credentials.mode}</Mode>
-    <CompanyId>${getCompanyId(credentials)}</CompanyId>
-    ${customPayload || ''}
-</TenstreetData>`
-}
-
-// Validation Schemas
-const GetApplicantSchema = z.object({
-  driverId: z.string().min(1, 'Driver ID is required').max(100, 'Driver ID too long')
-});
-
-const SearchSchema = z.object({
-  criteria: z.object({
-    email: z.string().email('Invalid email format').optional(),
-    phone: z.string().regex(/^\d{10}$/, 'Phone must be 10 digits').optional(),
-    lastName: z.string().min(1).max(100).optional(),
-    dateRange: z.string().optional()
-  }).refine(data => data.email || data.phone || data.lastName, {
-    message: 'At least one search criterion (email, phone, or lastName) is required'
-  })
-});
-
-const UpdateStatusSchema = z.object({
-  driverId: z.string().min(1, 'Driver ID is required'),
-  status: z.string().min(1, 'Status is required').max(50, 'Status too long')
-});
-
-const ExportSchema = z.object({
-  dateRange: z.object({
-    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Start date must be YYYY-MM-DD'),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'End date must be YYYY-MM-DD')
-  })
-});
-
-const SubjectUploadSchema = z.object({
-  applicantData: z.object({
-    firstName: z.string().min(1).max(100),
-    lastName: z.string().min(1).max(100),
-    email: z.string().email(),
-    phone: z.string().regex(/^\d{10}$/),
-    address: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().length(2).optional(),
-    zip: z.string().optional()
-  })
-});
-
-const SubjectUpdateSchema = z.object({
-  driverId: z.string().min(1, 'Driver ID is required'),
-  updates: z.record(z.any())
-});
-
 // Validation functions
 function validateGetApplicantRequest(params: any) {
-  GetApplicantSchema.parse(params);
+  if (!params.driverId || typeof params.driverId !== 'string') {
+    throw new Error('driverId is required and must be a string');
+  }
 }
 
 function validateSearchRequest(params: any) {
-  SearchSchema.parse(params);
+  if (!params.criteria || typeof params.criteria !== 'object') {
+    throw new Error('criteria is required and must be an object');
+  }
 }
 
 function validateUpdateStatusRequest(params: any) {
-  UpdateStatusSchema.parse(params);
+  if (!params.driverId || !params.status) {
+    throw new Error('driverId and status are required');
+  }
 }
 
 function validateExportRequest(params: any) {
-  ExportSchema.parse(params);
+  if (!params.dateRange || !params.dateRange.startDate || !params.dateRange.endDate) {
+    throw new Error('dateRange with startDate and endDate is required');
+  }
 }
 
 function validateSubjectUploadRequest(params: any) {
-  SubjectUploadSchema.parse(params);
+  if (!params.applicantData || typeof params.applicantData !== 'object') {
+    throw new Error('applicantData is required and must be an object');
+  }
 }
 
 function validateSubjectUpdateRequest(params: any) {
-  SubjectUpdateSchema.parse(params);
+  if (!params.driverId || !params.updates) {
+    throw new Error('driverId and updates are required');
+  }
 }
 
-// New action functions
-async function createApplicant(credentials: any, applicantData: any) {
-  const uploadXML = `<?xml version="1.0" encoding="UTF-8"?>
+function parseXMLResponse(xml: string): any {
+  try {
+    // Basic XML parsing - extract key information
+    const errors = xml.match(/<Error>(.*?)<\/Error>/gi);
+    const success = xml.match(/<Success>(.*?)<\/Success>/i);
+    const driverIds = xml.match(/<DriverId>(.*?)<\/DriverId>/gi);
+    
+    return {
+      hasErrors: !!errors,
+      errors: errors?.map(e => e.replace(/<\/?Error>/gi, '')) || [],
+      success: success?.[1] || null,
+      driverIds: driverIds?.map(d => d.replace(/<\/?DriverId>/gi, '')) || [],
+      rawXml: xml
+    };
+  } catch (error) {
+    return { parseError: error.message, rawXml: xml };
+  }
+}
+
+function buildServiceTestXML(credentials: any, serviceName: string, customPayload?: any): string {
+  const baseXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<TenstreetData>
+    <Authentication>
+        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
+        <Password>${escapeXML(credentials.password)}</Password>
+        <Service>${escapeXML(serviceName)}</Service>
+    </Authentication>
+    <Mode>${escapeXML(credentials.mode)}</Mode>
+    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
+    ${customPayload ? buildCustomPayload(customPayload) : ''}
+</TenstreetData>`;
+
+  return baseXML;
+}
+
+function buildCustomPayload(payload: any): string {
+  if (typeof payload === 'string') return payload;
+  
+  // Convert object to XML
+  return Object.entries(payload)
+    .map(([key, value]) => `<${key}>${escapeXML(String(value))}</${key}>`)
+    .join('\n    ');
+}
+
+async function createApplicant(credentials: any, applicantData: any, corsHeaders?: Record<string, string>) {
+  const uploadXML = buildSubjectUploadXML(credentials, applicantData);
+  return await makeRequest(uploadXML, 'Create Applicant', corsHeaders);
+}
+
+async function updateApplicant(credentials: any, driverId: string, updates: any, corsHeaders?: Record<string, string>) {
+  const updateXML = buildSubjectUpdateXML(credentials, driverId, updates);
+  return await makeRequest(updateXML, 'Update Applicant', corsHeaders);
+}
+
+function buildSubjectUploadXML(credentials: any, data: any): string {
+  return `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${escapeXML(credentials.client_id)}</ClientId>
@@ -643,27 +570,17 @@ async function createApplicant(credentials: any, applicantData: any) {
     </Authentication>
     <Mode>${escapeXML(credentials.mode)}</Mode>
     <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
-    <PersonalData>
-        <FirstName>${escapeXML(applicantData.firstName)}</FirstName>
-        <LastName>${escapeXML(applicantData.lastName)}</LastName>
-        <Email>${escapeXML(applicantData.email)}</Email>
-        <Phone>${escapeXML(applicantData.phone)}</Phone>
-        ${applicantData.address ? `<Address>${escapeXML(applicantData.address)}</Address>` : ''}
-        ${applicantData.city ? `<City>${escapeXML(applicantData.city)}</City>` : ''}
-        ${applicantData.state ? `<State>${escapeXML(applicantData.state)}</State>` : ''}
-        ${applicantData.zip ? `<Zip>${escapeXML(applicantData.zip)}</Zip>` : ''}
-    </PersonalData>
+    <ApplicantData>
+        ${data.firstName ? `<FirstName>${escapeXML(data.firstName)}</FirstName>` : ''}
+        ${data.lastName ? `<LastName>${escapeXML(data.lastName)}</LastName>` : ''}
+        ${data.email ? `<Email>${escapeXML(data.email)}</Email>` : ''}
+        ${data.phone ? `<Phone>${escapeXML(data.phone)}</Phone>` : ''}
+    </ApplicantData>
 </TenstreetData>`;
-
-  return await makeRequest(uploadXML, 'Create Applicant');
 }
 
-async function updateApplicant(credentials: any, driverId: string, updates: any) {
-  const updateFields = Object.entries(updates)
-    .map(([key, value]) => `<${key}>${escapeXML(String(value))}</${key}>`)
-    .join('\n        ');
-
-  const updateXML = `<?xml version="1.0" encoding="UTF-8"?>
+function buildSubjectUpdateXML(credentials: any, driverId: string, updates: any): string {
+  return `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <TenstreetData>
     <Authentication>
         <ClientId>${escapeXML(credentials.client_id)}</ClientId>
@@ -674,33 +591,9 @@ async function updateApplicant(credentials: any, driverId: string, updates: any)
     <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
     <DriverId>${escapeXML(driverId)}</DriverId>
     <Updates>
-        ${updateFields}
+        ${Object.entries(updates).map(([key, value]) => 
+          `<${key}>${escapeXML(String(value))}</${key}>`
+        ).join('\n        ')}
     </Updates>
 </TenstreetData>`;
-
-  return await makeRequest(updateXML, 'Update Applicant');
-}
-
-function parseXMLResponse(xmlText: string) {
-  try {
-    // Basic XML parsing to extract key information
-    const errors = xmlText.match(/<error>(.*?)<\/error>/gi)
-    const success = xmlText.match(/<success>(.*?)<\/success>/gi)
-    const driverId = xmlText.match(/<DriverId>(.*?)<\/DriverId>/i)?.[1]
-    const status = xmlText.match(/<Status>(.*?)<\/Status>/i)?.[1]
-    
-    return {
-      hasErrors: !!errors,
-      errors: errors?.map(e => e.replace(/<\/?error>/gi, '')),
-      success: success?.map(s => s.replace(/<\/?success>/gi, '')),
-      driverId,
-      status,
-      rawResponse: xmlText
-    }
-  } catch (error) {
-    return {
-      parseError: error.message,
-      rawResponse: xmlText
-    }
-  }
 }

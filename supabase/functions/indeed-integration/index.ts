@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { enforceAuth, logSecurityEvent, getClientInfo, createAuthenticatedClient } from '../_shared/serverAuth.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,61 +13,42 @@ serve(async (req) => {
   }
 
   try {
-    // Server-side authentication check
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Missing authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // SECURITY: Server-side JWT verification with role check
+    const authContext = await enforceAuth(req, ['admin', 'super_admin'])
+    if (authContext instanceof Response) return authContext
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: { headers: { Authorization: authHeader } }
-      }
-    )
+    const { userId, organizationId } = authContext
+    const { ipAddress, userAgent } = getClientInfo(req)
 
-    // Get current user and verify authentication
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // VALIDATION: Parse and validate request body
+    const requestSchema = z.object({
+      action: z.enum(['sync_analytics', 'get_stats']),
+      employerId: z.string().min(1),
+      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+    })
 
-    // Check user role - require admin or super_admin
-    const { data: roleData } = await supabaseClient.rpc('get_current_user_role');
-    const userRole = roleData as string;
-
-    if (userRole !== 'admin' && userRole !== 'super_admin') {
-      // Log unauthorized access attempt
-      await supabaseClient.from('audit_logs').insert({
-        user_id: user.id,
-        table_name: 'indeed_integration',
-        action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
-        sensitive_fields: ['admin_only']
-      }).catch(err => console.error('[AUDIT] Log failed:', err));
-
-      return new Response(
-        JSON.stringify({ error: 'Forbidden - Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { action, employerId, startDate, endDate } = await req.json()
+    const { action, employerId, startDate, endDate } = requestSchema.parse(await req.json())
     
-    console.log(`[INDEED] ${action} for employer ${employerId} by user ${user.id}`)
+    console.log(`[INDEED] ${action} for employer ${employerId} by user ${userId}`)
+
+    // Create authenticated Supabase client
+    const supabaseClient = createAuthenticatedClient(req)
+
+    // AUDIT LOGGING
+    await logSecurityEvent(supabaseClient, authContext, `INDEED_${action.toUpperCase()}`, {
+      table: 'indeed_integration',
+      recordId: employerId,
+      ipAddress,
+      userAgent
+    })
 
     switch (action) {
       case 'sync_analytics':
-        return await syncIndeedAnalytics(employerId, startDate, endDate, user.id, supabaseClient)
+        return await syncIndeedAnalytics(employerId, startDate!, endDate!, userId, supabaseClient)
       
       case 'get_stats':
-        return await getIndeedStats(employerId, user.id, supabaseClient)
+        return await getIndeedStats(employerId, userId, supabaseClient)
       
       default:
         throw new Error(`Unknown action: ${action}`)
