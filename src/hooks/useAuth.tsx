@@ -43,14 +43,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const fetchUserRoleAndOrganization = async (_userId: string) => {
   try {
+    console.log('[AUTH] Fetching role and organization for user:', _userId);
     logger.info(`Fetching role and organization for user`, { userId: _userId });
     
     // Fetch user role
     const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
     if (roleError) {
       logger.error('Error fetching user role', roleError);
+      console.log('[AUTH] Error fetching role:', roleError);
       setUserRole('user');
     } else {
+      console.log('[AUTH] Role loaded:', roleData);
       logger.debug('User role fetched', { role: roleData });
       // Check if user is super admin by email or role
       if (roleData === 'super_admin') {
@@ -79,19 +82,23 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
 
     if (profileError) {
       logger.error('Error fetching user profile', profileError);
+      console.log('[AUTH] Error fetching organization:', profileError);
       setOrganization(null);
     } else if (profileData?.organizations) {
+      console.log('[AUTH] Organization loaded:', profileData.organizations.name);
       logger.info('User organization loaded', { 
         orgName: profileData.organizations.name,
         orgId: profileData.organizations.id 
       });
       setOrganization(profileData.organizations as any);
     } else {
+      console.log('[AUTH] No organization found (may be super admin)');
       logger.debug('No organization found for user (may be super admin)');
       setOrganization(null);
     }
   } catch (error: unknown) {
     logger.error('Error fetching user data', error);
+    console.log('[AUTH] Exception fetching user data:', error);
     setUserRole('user');
     setOrganization(null);
   }
@@ -100,27 +107,28 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
   useEffect(() => {
     // Set up auth state listener
 const { data: { subscription } } = supabase.auth.onAuthStateChange(
-  (event, session) => {
+  async (event, session) => {
     logger.debug('Auth state changed', { event, hasSession: !!session });
+    console.log('[AUTH] Auth state changed:', { event, hasSession: !!session });
     setSession(session);
     setUser(session?.user ?? null);
     
     if (session?.user) {
-      // Use setTimeout to prevent potential deadlocks
-      setTimeout(() => {
-        fetchUserRoleAndOrganization(session.user.id);
-      }, 0);
+      // Await the fetch to ensure data is loaded before setting loading to false
+      await fetchUserRoleAndOrganization(session.user.id);
     } else {
       setUserRole(null);
       setOrganization(null);
     }
     
     setLoading(false);
+    console.log('[AUTH] Loading complete');
   }
 );
 
     // Check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('[AUTH] Initial session check:', { hasSession: !!session });
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -129,6 +137,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       }
       
       setLoading(false);
+      console.log('[AUTH] Initial load complete');
     });
 
     return () => subscription.unsubscribe();
