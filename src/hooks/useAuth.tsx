@@ -140,7 +140,21 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       console.log('[AUTH] Initial load complete');
     });
 
-    return () => subscription.unsubscribe();
+    // Session heartbeat - refresh every 7 hours (before 8-hour expiry)
+    const refreshInterval = setInterval(async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (session && !error) {
+        console.log('[AUTH] Refreshing session (7-hour heartbeat)');
+        logger.info('Automatic session refresh triggered');
+        await supabase.auth.refreshSession();
+        console.log('[AUTH] Session refreshed successfully');
+      }
+    }, 7 * 60 * 60 * 1000); // 7 hours in milliseconds
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
