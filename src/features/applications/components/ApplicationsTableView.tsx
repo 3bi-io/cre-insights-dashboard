@@ -1,0 +1,270 @@
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Eye, 
+  MessageCircle, 
+  Upload, 
+  FileCheck,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Loader2
+} from 'lucide-react';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
+import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
+import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
+import type { Application, Recruiter } from '@/types/common.types';
+
+interface ApplicationsTableViewProps {
+  applications: Application[];
+  recruiters?: Recruiter[];
+  onStatusChange: (applicationId: string, newStatus: string) => void;
+  onRecruiterAssignment: (applicationId: string, recruiterId: string | null) => void;
+  onSmsOpen: (application: Application) => void;
+  onDetailsView: (application: Application) => void;
+  onTenstreetUpdate: (application: Application) => void;
+  onScreeningOpen: (application: Application) => void;
+}
+
+const LocationCell = ({ application }: { application: Application }) => {
+  const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
+  
+  const displayCity = application.city || lookupCity;
+  const displayState = application.state || lookupState;
+  
+  if (isLookingUp && application.zip) {
+    return (
+      <div className="flex items-center gap-1 text-muted-foreground">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span className="text-xs">Loading...</span>
+      </div>
+    );
+  }
+  
+  if (displayCity && displayState) {
+    return <span className="text-sm">{displayCity}, {displayState}</span>;
+  } else if (displayCity) {
+    return <span className="text-sm">{displayCity}</span>;
+  } else if (displayState) {
+    return <span className="text-sm">{displayState}</span>;
+  }
+  
+  return <span className="text-xs text-muted-foreground">No location</span>;
+};
+
+export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
+  applications,
+  recruiters = [],
+  onStatusChange,
+  onRecruiterAssignment,
+  onSmsOpen,
+  onDetailsView,
+  onTenstreetUpdate,
+  onScreeningOpen,
+}) => {
+  const statusColors = {
+    pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    reviewed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    interviewed: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    hired: 'bg-green-500/20 text-green-400 border-green-500/30',
+    rejected: 'bg-red-500/20 text-red-400 border-red-500/30',
+  };
+
+  return (
+    <div className="border rounded-lg bg-card/50 backdrop-blur-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-border/40">
+              <TableHead className="w-[200px]">Applicant</TableHead>
+              <TableHead className="w-[180px]">Job</TableHead>
+              <TableHead className="w-[140px]">Contact</TableHead>
+              <TableHead className="w-[120px]">Location</TableHead>
+              <TableHead className="w-[100px]">Date</TableHead>
+              <TableHead className="w-[140px]">Status</TableHead>
+              <TableHead className="w-[160px]">Recruiter</TableHead>
+              <TableHead className="w-[200px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {applications.map((application) => {
+              const applicantName = getApplicantName(application);
+              const applicantEmail = getApplicantEmail(application);
+              const clientName = getClientName(application);
+              const category = getApplicantCategory(application);
+              const jobTitle = application.job_listings?.title || application.job_listings?.job_title || 'Unknown Position';
+
+              return (
+                <TableRow 
+                  key={application.id}
+                  className="hover:bg-muted/50 border-border/40"
+                >
+                  {/* Applicant */}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary">
+                          {applicantName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm truncate">{applicantName}</div>
+                        <Badge variant="outline" className={`${category.color} text-xs px-1 py-0 border mt-0.5`}>
+                          {category.code}
+                        </Badge>
+                      </div>
+                    </div>
+                  </TableCell>
+
+                  {/* Job */}
+                  <TableCell>
+                    <div className="text-sm font-medium truncate">{jobTitle}</div>
+                    {clientName && (
+                      <div className="text-xs text-muted-foreground truncate">{clientName}</div>
+                    )}
+                  </TableCell>
+
+                  {/* Contact */}
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Mail className="w-3 h-3 flex-shrink-0" />
+                        <span className="truncate max-w-[120px]" title={applicantEmail}>{applicantEmail}</span>
+                      </div>
+                      {application.phone && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Phone className="w-3 h-3 flex-shrink-0" />
+                          <span>{formatPhoneForDisplay(application.phone)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  {/* Location */}
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <LocationCell application={application} />
+                    </div>
+                  </TableCell>
+
+                  {/* Date */}
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="w-3 h-3 flex-shrink-0" />
+                      <span>{new Date(application.applied_at).toLocaleDateString()}</span>
+                    </div>
+                  </TableCell>
+
+                  {/* Status */}
+                  <TableCell>
+                    <Select
+                      value={application.status}
+                      onValueChange={(value) => onStatusChange(application.id, value)}
+                    >
+                      <SelectTrigger className="h-8 border-2 w-full">
+                        <Badge 
+                          variant="outline" 
+                          className={`${statusColors[application.status as keyof typeof statusColors]} text-xs font-medium`}
+                        >
+                          {application.status}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                        <SelectItem value="interviewed">Interviewed</SelectItem>
+                        <SelectItem value="hired">Hired</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+
+                  {/* Recruiter */}
+                  <TableCell>
+                    <Select
+                      value={application.recruiter_id || 'unassigned'}
+                      onValueChange={(value) => onRecruiterAssignment(application.id, value === 'unassigned' ? null : value)}
+                    >
+                      <SelectTrigger className="h-8 text-xs w-full">
+                        <SelectValue placeholder="Unassigned">
+                          {application.recruiters 
+                            ? `${application.recruiters.first_name} ${application.recruiters.last_name}`
+                            : 'Unassigned'
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                        {recruiters.map((recruiter) => (
+                          <SelectItem key={recruiter.id} value={recruiter.id}>
+                            {recruiter.first_name} {recruiter.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => onDetailsView(application)}
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {application.phone && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => onSmsOpen(application)}
+                          title="SMS"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => onScreeningOpen(application)}
+                        title="Screening Requests"
+                      >
+                        <FileCheck className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => onTenstreetUpdate(application)}
+                        title="Post to Tenstreet"
+                      >
+                        <Upload className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};

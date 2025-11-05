@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download } from 'lucide-react';
+import { Download, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
@@ -21,7 +22,8 @@ import {
   SmsConversationDialog,
   ApplicationsOverview,
   ApplicationsSearch,
-  ApplicationCard
+  ApplicationCard,
+  ApplicationsTableView
 } from '../components';
 import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
 
@@ -30,6 +32,7 @@ const ApplicationsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [organizationFilter, setOrganizationFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { userRole } = useAuth();
@@ -132,15 +135,29 @@ const ApplicationsPage = () => {
   }, 'Applications');
 
   const pageActions = (
-    <Button
-      onClick={downloadApplicationsPDF}
-      className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
-      variant="outline"
-      size={isMobile ? 'lg' : 'default'}
-    >
-      <Download className="w-4 h-4" />
-      Export PDF
-    </Button>
+    <div className="flex items-center gap-2">
+      <ToggleGroup 
+        type="single" 
+        value={viewMode} 
+        onValueChange={(value) => value && setViewMode(value as 'card' | 'table')}
+      >
+        <ToggleGroupItem value="card" aria-label="Card view" size="sm">
+          <LayoutGrid className="w-4 h-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="table" aria-label="Table view" size="sm">
+          <TableIcon className="w-4 h-4" />
+        </ToggleGroupItem>
+      </ToggleGroup>
+      <Button
+        onClick={downloadApplicationsPDF}
+        className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}
+        variant="outline"
+        size={isMobile ? 'lg' : 'default'}
+      >
+        <Download className="w-4 h-4" />
+        Export PDF
+      </Button>
+    </div>
   );
 
   if (loading) {
@@ -225,25 +242,39 @@ const ApplicationsPage = () => {
 
           <div className="space-y-4">
             {applications && applications.length > 0 ? (
-              applications.map((application, index) => (
-                <div 
-                  key={application.id || index}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${(index % 10) * 50}ms` }}
-                >
-                  <ApplicationCard
-                    application={application}
-                    onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
-                    onRecruiterAssignment={(applicationId, recruiterId) => {
-                      logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
-                    }}
-                    onDetailsView={() => handleDetailsView(application)}
-                    onSmsOpen={() => handleSmsOpen(application)}
-                    onScreeningOpen={() => handleScreeningOpen(application)}
-                    onTenstreetUpdate={() => handleTenstreetUpdate(application)}
-                  />
-                </div>
-              ))
+              viewMode === 'card' ? (
+                applications.map((application, index) => (
+                  <div 
+                    key={application.id || index}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${(index % 10) * 50}ms` }}
+                  >
+                    <ApplicationCard
+                      application={application}
+                      onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
+                      onRecruiterAssignment={(applicationId, recruiterId) => {
+                        logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
+                      }}
+                      onDetailsView={() => handleDetailsView(application)}
+                      onSmsOpen={() => handleSmsOpen(application)}
+                      onScreeningOpen={() => handleScreeningOpen(application)}
+                      onTenstreetUpdate={() => handleTenstreetUpdate(application)}
+                    />
+                  </div>
+                ))
+              ) : (
+                <ApplicationsTableView
+                  applications={applications}
+                  onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
+                  onRecruiterAssignment={(applicationId, recruiterId) => {
+                    logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
+                  }}
+                  onDetailsView={handleDetailsView}
+                  onSmsOpen={handleSmsOpen}
+                  onScreeningOpen={handleScreeningOpen}
+                  onTenstreetUpdate={handleTenstreetUpdate}
+                />
+              )
             ) : (
               <Card className="border-border/40 bg-card/50 backdrop-blur-sm animate-fade-in">
                 <CardContent className="p-16 text-center">

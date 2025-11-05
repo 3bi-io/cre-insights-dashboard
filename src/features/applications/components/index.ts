@@ -15,6 +15,7 @@ export { default as RecentMetaLeadsButton } from '@/components/applications/Rece
 export { ApplicationActions } from './ApplicationActions';
 export { ApplicationHeader } from './ApplicationHeader';
 export { ApplicationInfo } from './ApplicationInfo';
+export { ApplicationsTableView } from './ApplicationsTableView';
 
 // Admin page components
 export { ApplicationsStats } from './ApplicationsStats';
