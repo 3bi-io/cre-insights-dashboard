@@ -158,37 +158,60 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (!error && data.session?.user) {
-      try {
-        logger.info('Sign in successful, fetching user data');
-        
-        // Wait for role and organization to be fetched
-        await fetchUserRoleAndOrganization(data.session.user.id);
-        
-        // Get role to determine navigation
-        const { data: roleData } = await supabase.rpc('get_current_user_role');
-        const role = (roleData as string) || 'user';
-        
-        logger.info('Navigation decision', { role });
-        
-        // Navigate based on role
-        if (role === 'super_admin') {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
-      } catch (err) {
-        logger.error('Error during sign in navigation', err);
-        navigate('/dashboard'); // Fallback to dashboard
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        logger.error('Sign in error', error);
+        console.error('[AUTH] Sign in error:', error);
+        return { error };
       }
+      
+      if (!data.session?.user) {
+        const noSessionError = new Error('No session created');
+        logger.error('Sign in failed - no session', {});
+        console.error('[AUTH] No session created');
+        return { error: noSessionError };
+      }
+      
+      logger.info('Sign in successful, fetching user data');
+      console.log('[AUTH] Sign in successful, fetching user data');
+      
+      // Wait for role and organization to be fetched
+      await fetchUserRoleAndOrganization(data.session.user.id);
+      
+      // Get role to determine navigation
+      const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+      
+      if (roleError) {
+        logger.error('Error fetching role for navigation', roleError);
+        console.error('[AUTH] Error fetching role:', roleError);
+        // Default to dashboard if role fetch fails
+        navigate('/dashboard');
+        return { error: null };
+      }
+      
+      const role = (roleData as string) || 'user';
+      logger.info('Navigation decision', { role });
+      console.log('[AUTH] Navigating based on role:', role);
+      
+      // Navigate based on role
+      if (role === 'super_admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+      
+      return { error: null };
+    } catch (err) {
+      logger.error('Unexpected error during sign in', err);
+      console.error('[AUTH] Unexpected error during sign in:', err);
+      const errorObj = err instanceof Error ? err : new Error('An unexpected error occurred during sign in');
+      return { error: errorObj };
     }
-    
-    return { error };
   };
 
   const signUp = async (email: string, password: string) => {
