@@ -130,7 +130,11 @@ const AppRoutes: React.FC = () => {
       <Route path="/onboarding" element={<ProtectedRouteWrapper><Onboarding /></ProtectedRouteWrapper>} />
 
       {/* Dashboard Routes */}
-      <Route path="/dashboard" element={<LayoutWrapper />}>
+      <Route path="/dashboard" element={
+        <ProtectedRoute requireSubscription={false}>
+          <Layout />
+        </ProtectedRoute>
+      }>
         <Route index element={<RouteWrapper><Dashboard /></RouteWrapper>} />
       </Route>
 

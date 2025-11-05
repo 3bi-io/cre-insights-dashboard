@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Brand } from '@/components/common';
 
 const Auth = () => {
-  const { signIn, user, userRole, organization } = useAuth();
+  const navigate = useNavigate();
+  const { signIn, user, userRole, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,14 +29,15 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   React.useEffect(() => {
-    if (user && organization) {
+    // Only redirect once auth is fully loaded and user is authenticated
+    if (!authLoading && user) {
       if (userRole === 'super_admin') {
-        window.location.href = '/admin';
-      } else if (organization.subscription_status === 'active' || organization.subscription_status === 'trialing') {
-        window.location.href = '/dashboard';
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
       }
     }
-  }, [user, userRole, organization]);
+  }, [user, userRole, authLoading, navigate]);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -49,7 +52,15 @@ const handleSignIn = async (e: React.FormEvent) => {
   setError('');
   const { error } = await signIn(email, password);
   if (error) {
-    setError(error.message);
+    // Map common Supabase errors to user-friendly messages
+    const errorMessage = error.message.toLowerCase();
+    if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid email or password')) {
+      setError('Incorrect email or password.');
+    } else if (errorMessage.includes('email not confirmed')) {
+      setError('Please verify your email before signing in. Check your inbox for the verification link.');
+    } else {
+      setError(error.message);
+    }
   }
   setLoading(false);
 };
