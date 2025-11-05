@@ -34,6 +34,12 @@ const Footer = () => {
             >
               Cookie Policy
             </Link>
+            <Link 
+              to="/sitemap" 
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Sitemap
+            </Link>
             <a 
               href="mailto:support@ats.me" 
               className="text-muted-foreground hover:text-foreground transition-colors"
