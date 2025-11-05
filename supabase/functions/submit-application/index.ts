@@ -1,44 +1,15 @@
-
 // @ts-nocheck
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  normalizePhone, 
+  findOrCreateJobListing, 
+  insertApplication 
+} from "../_shared/application-processor.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// Phone number normalization utility
-function normalizePhoneNumber(phone: string | null | undefined): string | null {
-  if (!phone || typeof phone !== 'string') {
-    return null;
-  }
-
-  // Remove all non-digit characters
-  const digitsOnly = phone.replace(/\D/g, '');
-  
-  // Handle empty or invalid inputs
-  if (!digitsOnly || digitsOnly.length < 10) {
-    return null;
-  }
-
-  // Handle US numbers
-  if (digitsOnly.length === 10) {
-    // 10 digits - add +1 country code
-    return `+1${digitsOnly}`;
-  } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
-    // 11 digits starting with 1 - already has country code
-    return `+${digitsOnly}`;
-  } else if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
-    // 11 digits not starting with 1 - assume it's a 10-digit number with extra digit
-    return `+1${digitsOnly.slice(-10)}`;
-  } else if (digitsOnly.length > 11) {
-    // More than 11 digits - take last 10 and add +1
-    return `+1${digitsOnly.slice(-10)}`;
-  }
-
-  // Fallback for edge cases
-  return null;
 }
 
 Deno.serve(async (req) => {
@@ -65,6 +36,13 @@ Deno.serve(async (req) => {
 
     const formData = await req.json();
     console.log('Received form data:', formData);
+
+    // Get the CR England organization ID
+    const { data: crEnglandOrg } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('slug', 'cr-england')
+      .single();
 
     // Determine experience level based on months
     const getExperienceLevel = (months: string) => {
@@ -117,49 +95,17 @@ Deno.serve(async (req) => {
 
     const { city, state } = await lookupCityState(formData.zip);
 
-    // Get or create a job listing for the application
-    let jobListingId = formData.job_listing_id;
-    
-    if (!jobListingId) {
-      // Get the CR England organization ID
-      const { data: crEnglandOrg } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('slug', 'cr-england')
-        .single();
-        
-      if (crEnglandOrg) {
-        // Find an active job listing for CR England
-        const { data: activeJob } = await supabase
-          .from('job_listings')
-          .select('id')
-          .eq('organization_id', crEnglandOrg.id)
-          .eq('status', 'active')
-          .limit(1)
-          .single();
-          
-        if (activeJob) {
-          jobListingId = activeJob.id;
-        } else {
-          // Create a default job listing if none exists
-          const { data: defaultJob, error: jobError } = await supabase
-            .from('job_listings')
-            .insert({
-              title: 'General Application',
-              organization_id: crEnglandOrg.id,
-              user_id: crEnglandOrg.id, // Temporary user_id, should be updated by admin
-              category_id: (await supabase.from('job_categories').select('id').limit(1).single())?.data?.id,
-              status: 'active'
-            })
-            .select('id')
-            .single();
-            
-          if (!jobError && defaultJob) {
-            jobListingId = defaultJob.id;
-          }
-        }
-      }
-    }
+    // Get or create a job listing for the application using shared processor
+    const jobListingId = await findOrCreateJobListing(supabase, {
+      jobListingId: formData.job_listing_id,
+      jobId: formData.job_id,
+      jobTitle: 'General Application',
+      organizationId: crEnglandOrg?.id || '',
+      clientId: null,
+      city,
+      state,
+      source: 'Direct Application',
+    });
 
     // Map form data to applications table schema
     // Support both camelCase and snake_case field names
@@ -168,7 +114,7 @@ Deno.serve(async (req) => {
       first_name: formData.firstName || formData.first_name,
       last_name: formData.lastName || formData.last_name,
       applicant_email: formData.email || formData.applicant_email,
-      phone: normalizePhoneNumber(formData.phone),
+      phone: normalizePhone(formData.phone),
       city: city,
       state: state,
       zip: formData.zip,
@@ -188,12 +134,8 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString()
     };
 
-    // Insert into applications table
-    const { data, error } = await supabase
-      .from('applications')
-      .insert([applicationData])
-      .select()
-      .single();
+    // Insert into applications table using shared processor
+    const { data, error } = await insertApplication(supabase, applicationData);
 
     if (error) {
       console.error('Error inserting application:', error);

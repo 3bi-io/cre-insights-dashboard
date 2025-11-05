@@ -1,6 +1,12 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  normalizePhone, 
+  findOrCreateJobListing, 
+  findClientByIdentifier,
+  insertApplication 
+} from "../_shared/application-processor.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -153,20 +159,6 @@ const validateApplicationData = (data: InboundApplicationData): { valid: boolean
   };
 };
 
-/**
- * Normalize phone number to E.164 format
- */
-const normalizePhone = (phone: string | undefined): string | null => {
-  if (!phone) return null;
-  
-  const digits = phone.replace(/\D/g, '');
-  
-  if (digits.length < 10) return null;
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits[0] === '1') return `+${digits}`;
-  
-  return `+1${digits.slice(-10)}`;
-};
 
 const handler = async (req: Request): Promise<Response> => {
   console.log('=== INBOUND APPLICATION WEBHOOK ===', {
@@ -348,141 +340,22 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Look up client by name or slug
-    let clientId = null;
     const clientIdentifier = applicationData.client_name || 
                              applicationData.client_slug || 
                              applicationData.client_company;
+    const clientId = await findClientByIdentifier(supabase, organizationId, clientIdentifier);
 
-    if (clientIdentifier) {
-      const { data: client } = await supabase
-        .from('clients')
-        .select('id, name')
-        .eq('organization_id', organizationId)
-        .or(`name.ilike.%${clientIdentifier}%,company.ilike.%${clientIdentifier}%`)
-        .maybeSingle();
-      
-      if (client) {
-        clientId = client.id;
-        console.log('Matched client:', client.name, 'ID:', clientId);
-      } else {
-        console.warn('Client not found for identifier:', clientIdentifier);
-      }
-    }
-
-    // Find or create job listing - CRITICAL: Match by job_id first
-    let jobListingId = applicationData.job_listing_id;
-    
-    // Step 1: Try to match by job_id text field
-    if (!jobListingId && applicationData.job_id) {
-      const query = supabase
-        .from('job_listings')
-        .select('id')
-        .eq('job_id', applicationData.job_id)
-        .eq('organization_id', organizationId);
-      
-      // Filter by client if provided
-      if (clientId) {
-        query.eq('client_id', clientId);
-      }
-      
-      const { data: jobListing } = await query.maybeSingle();
-      
-      if (jobListing) {
-        jobListingId = jobListing.id;
-        console.log('Matched job_id:', applicationData.job_id, 'to listing:', jobListingId);
-      }
-    }
-
-    // Step 2: If no match, try to find ANY active job for this organization
-    if (!jobListingId) {
-      const query = supabase
-        .from('job_listings')
-        .select('id')
-        .eq('organization_id', organizationId)
-        .eq('status', 'active')
-        .limit(1);
-      
-      // Prefer jobs for this client if provided
-      if (clientId) {
-        query.eq('client_id', clientId);
-      }
-      
-      const { data: activeJob } = await query.maybeSingle();
-      
-      if (activeJob) {
-        jobListingId = activeJob.id;
-        console.log('Using active job listing:', jobListingId);
-      }
-    }
-
-    // Step 3: Create job if we have title but still no match
-    if (!jobListingId && applicationData.job_title) {
-      const { data: categories } = await supabase
-        .from('job_categories')
-        .select('id')
-        .limit(1);
-      
-      if (categories?.[0]?.id) {
-        const { data: newJob } = await supabase
-          .from('job_listings')
-          .insert({
-            title: applicationData.job_title,
-            job_id: applicationData.job_id,
-            organization_id: organizationId,
-            client_id: clientId,
-            category_id: categories[0].id,
-            status: 'active',
-            job_summary: `Position from ${applicationData.source}`,
-            location: applicationData.city && applicationData.state 
-              ? `${applicationData.city}, ${applicationData.state}` 
-              : null,
-            city: applicationData.city,
-            state: applicationData.state,
-          })
-          .select('id')
-          .single();
-        
-        if (newJob) {
-          jobListingId = newJob.id;
-          console.log('Created job:', jobListingId, 'for job_id:', applicationData.job_id);
-        }
-      }
-    }
-
-    // Fallback to General Application
-    if (!jobListingId) {
-      const { data: fallbackJob } = await supabase
-        .from('job_listings')
-        .select('id')
-        .eq('organization_id', organizationId)
-        .eq('title', 'General Application')
-        .maybeSingle();
-      
-      if (fallbackJob) {
-        jobListingId = fallbackJob.id;
-      } else {
-        const { data: categories } = await supabase
-          .from('job_categories')
-          .select('id')
-          .limit(1);
-        
-        if (categories?.[0]?.id) {
-          const { data: newFallback } = await supabase
-            .from('job_listings')
-            .insert({
-              title: 'General Application',
-              organization_id: organizationId,
-              category_id: categories[0].id,
-              status: 'active',
-              job_summary: 'General applications',
-            })
-            .select('id')
-            .single();
-          
-          if (newFallback) jobListingId = newFallback.id;
-        }
-      }
-    }
+    // Find or create job listing using shared processor
+    const jobListingId = await findOrCreateJobListing(supabase, {
+      jobListingId: applicationData.job_listing_id,
+      jobId: applicationData.job_id,
+      jobTitle: applicationData.job_title,
+      organizationId,
+      clientId,
+      city: applicationData.city,
+      state: applicationData.state,
+      source: applicationData.source,
+    });
 
     if (!jobListingId) {
       return new Response(
@@ -535,12 +408,8 @@ const handler = async (req: Request): Promise<Response> => {
       applied_at: new Date().toISOString(),
     };
 
-    // Insert application
-    const { data: application, error: insertError } = await supabase
-      .from('applications')
-      .insert(applicationRecord)
-      .select()
-      .single();
+    // Insert application using shared processor
+    const { data: application, error: insertError } = await insertApplication(supabase, applicationRecord);
 
     if (insertError) {
       console.error('Error inserting application:', insertError);
