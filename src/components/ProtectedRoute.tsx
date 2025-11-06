@@ -17,9 +17,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading: authLoading, userRole, organization } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
 
-  // Wait for ALL auth data to load - including userRole
-  if (authLoading || subLoading || (user && userRole === null)) {
-    console.log('[PROTECTED] Still loading:', { authLoading, subLoading, user: !!user, userRole });
+  // Wait for auth data to load - only wait for subscription if it's required
+  const isLoading = authLoading || (user && userRole === null) || (requireSubscription && subLoading);
+  
+  if (isLoading) {
+    console.log('[PROTECTED] Still loading:', { authLoading, subLoading, user: !!user, userRole, requireSubscription });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
