@@ -3439,6 +3439,78 @@ export type Database = {
           },
         ]
       }
+      tenstreet_bulk_operations: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_log: Json | null
+          failed_records: number | null
+          file_url: string | null
+          id: string
+          metadata: Json | null
+          operation_type: string
+          organization_id: string | null
+          processed_records: number | null
+          started_at: string | null
+          status: string
+          success_records: number | null
+          total_records: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_log?: Json | null
+          failed_records?: number | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          operation_type: string
+          organization_id?: string | null
+          processed_records?: number | null
+          started_at?: string | null
+          status?: string
+          success_records?: number | null
+          total_records?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_log?: Json | null
+          failed_records?: number | null
+          file_url?: string | null
+          id?: string
+          metadata?: Json | null
+          operation_type?: string
+          organization_id?: string | null
+          processed_records?: number | null
+          started_at?: string | null
+          status?: string
+          success_records?: number | null
+          total_records?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenstreet_bulk_operations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_bulk_operations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenstreet_credentials: {
         Row: {
           account_name: string

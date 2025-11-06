@@ -208,17 +208,64 @@ const IntegrationsTab = () => {
 
       <Separator className="my-8" />
 
-      {/* Tenstreet Xchange */}
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Tenstreet Xchange</h2>
-        <p className="text-muted-foreground mb-6">
-          Manage background checks, MVR requests, drug tests, and employment verifications through Tenstreet
-        </p>
-        <Link to="/admin/tenstreet/xchange">
-          <Button>
-            Open Xchange Manager
-          </Button>
-        </Link>
+      {/* Tenstreet Integration */}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Tenstreet Integration</h2>
+          <p className="text-muted-foreground mb-4">
+            Full suite of Tenstreet tools for managing applicants, analytics, and bulk operations
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Xchange Manager</CardTitle>
+              <CardDescription>
+                Background checks, MVR, drug tests, and verifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" size="sm" asChild className="w-full">
+                <Link to="/admin/tenstreet/xchange">
+                  Open Xchange
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Focus Analytics</CardTitle>
+              <CardDescription>
+                Application metrics, trends, and source performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" size="sm" asChild className="w-full">
+                <Link to="/admin/tenstreet/focus">
+                  View Analytics
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Bulk Operations</CardTitle>
+              <CardDescription>
+                Import, export, and sync applicant data in bulk
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" size="sm" asChild className="w-full">
+                <Link to="/admin/tenstreet/bulk">
+                  Manage Data
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

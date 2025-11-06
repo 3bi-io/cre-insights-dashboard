@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import PublicLayout from "@/components/public/PublicLayout";
@@ -41,6 +41,8 @@ const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const TenstreetExplorer = React.lazy(() => import("@/pages/TenstreetExplorer"));
 const TenstreetXchange = React.lazy(() => import("@/pages/TenstreetXchange"));
+const TenstreetFocus = React.lazy(() => import("@/pages/TenstreetFocus"));
+const TenstreetBulk = React.lazy(() => import("@/pages/TenstreetBulk"));
 const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
@@ -156,6 +158,8 @@ const AppRoutes: React.FC = () => {
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="tenstreet-explorer" element={<ProtectedRouteWrapper><TenstreetExplorer /></ProtectedRouteWrapper>} />
         <Route path="tenstreet/xchange" element={<ProtectedRouteWrapper><TenstreetXchange /></ProtectedRouteWrapper>} />
+        <Route path="tenstreet/focus" element={<ProtectedRouteWrapper><TenstreetFocus /></ProtectedRouteWrapper>} />
+        <Route path="tenstreet/bulk" element={<ProtectedRouteWrapper><TenstreetBulk /></ProtectedRouteWrapper>} />
         <Route path="ai-settings" element={<ProtectedRouteWrapper><AIPlatformSettings /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
