@@ -3514,6 +3514,7 @@ export type Database = {
       tenstreet_credentials: {
         Row: {
           account_name: string
+          api_endpoint: string | null
           app_referrer: string | null
           apply_base_url: string | null
           client_id: string
@@ -3536,6 +3537,7 @@ export type Database = {
         }
         Insert: {
           account_name: string
+          api_endpoint?: string | null
           app_referrer?: string | null
           apply_base_url?: string | null
           client_id: string
@@ -3558,6 +3560,7 @@ export type Database = {
         }
         Update: {
           account_name?: string
+          api_endpoint?: string | null
           app_referrer?: string | null
           apply_base_url?: string | null
           client_id?: string

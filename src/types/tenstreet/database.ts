@@ -55,6 +55,7 @@ export interface TenstreetCredentialsDB {
   company_ids: string[];
   company_id?: string;
   status: 'active' | 'inactive';
+  api_endpoint?: string;
   created_by: string;
   created_at: string;
   updated_at: string;

@@ -8,6 +8,7 @@ export interface OrganizationCredentialStatus {
   credential_id: string | null;
   credential_status: 'active' | 'inactive' | null;
   mode: 'DEV' | 'TEST' | 'PROD' | null;
+  api_endpoint: string | null;
   credentials_updated: string | null;
   total_applications: number;
   last_sync_time: string | null;
@@ -39,7 +40,7 @@ export class TenstreetCredentialsService {
     // Then get credentials for each organization
     const { data: credentials, error: credError } = await supabase
       .from('tenstreet_credentials')
-      .select('id, organization_id, status, mode, updated_at');
+      .select('id, organization_id, status, mode, api_endpoint, updated_at');
 
     if (credError) throw credError;
 
@@ -104,6 +105,7 @@ export class TenstreetCredentialsService {
         credential_id: cred?.id || null,
         credential_status: (cred?.status as 'active' | 'inactive') || null,
         mode: (cred?.mode as 'DEV' | 'TEST' | 'PROD') || null,
+        api_endpoint: cred?.api_endpoint || null,
         credentials_updated: cred?.updated_at || null,
         total_applications: syncData.total,
         last_sync_time: syncData.lastSync,
@@ -149,6 +151,7 @@ export class TenstreetCredentialsService {
       'Configuration Status',
       'Connection Health',
       'Environment',
+      'API Endpoint',
       'Last Sync Time',
       'Total Applications',
       'Synced Count'
@@ -160,6 +163,7 @@ export class TenstreetCredentialsService {
       org.credential_id ? 'Configured' : 'Not Configured',
       org.connection_health,
       org.mode || 'N/A',
+      org.api_endpoint || 'N/A',
       org.last_sync_time || 'Never',
       org.total_applications.toString(),
       org.synced_count.toString()

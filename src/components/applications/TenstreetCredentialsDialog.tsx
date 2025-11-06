@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Shield, Save, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { TENSTREET_API_ENDPOINTS } from '@/types/tenstreet/api-contracts';
 
 interface TenstreetCredentialsDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
     password_encrypted: '',
     service: 'subject_upload',
     mode: 'PROD',
+    api_endpoint: '/api/auth/login',
     source: '',
     company_name: '',
     app_referrer: '3BI'
@@ -90,6 +92,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
         password_encrypted: credentials.password_encrypted || '',
         service: credentials.service || 'subject_upload',
         mode: credentials.mode || 'PROD',
+        api_endpoint: credentials.api_endpoint || '/api/auth/login',
         source: credentials.source || '',
         company_name: credentials.company_name || '',
         app_referrer: credentials.app_referrer || '3BI'
@@ -110,7 +113,16 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
 
       const credData = {
         organization_id: effectiveOrgId,
-        ...config
+        account_name: config.account_name,
+        client_id: config.client_id,
+        password_encrypted: config.password_encrypted,
+        service: config.service,
+        mode: config.mode,
+        api_endpoint: config.api_endpoint,
+        source: config.source,
+        company_name: config.company_name,
+        app_referrer: config.app_referrer,
+        status: 'active'
       };
 
       if (credentials) {
@@ -164,6 +176,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
     if (!config.account_name?.trim()) missingFields.push('Account Name');
     if (!config.client_id?.trim()) missingFields.push('Client ID');
     if (!config.password_encrypted?.trim()) missingFields.push('Password');
+    if (!config.api_endpoint?.trim()) missingFields.push('API Endpoint');
     
     if (missingFields.length > 0) {
       toast({
@@ -372,7 +385,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="mode">Environment Mode</Label>
+                <Label htmlFor="mode">Environment Mode *</Label>
                 <Select value={config.mode} onValueChange={(value) => setConfig({ ...config, mode: value })}>
                   <SelectTrigger id="mode">
                     <SelectValue />
@@ -393,6 +406,31 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
                   onChange={(e) => setConfig({ ...config, app_referrer: e.target.value })}
                   placeholder="3BI"
                 />
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="api_endpoint">API Endpoint *</Label>
+                <Select
+                  value={config.api_endpoint}
+                  onValueChange={(value) => setConfig({ ...config, api_endpoint: value })}
+                >
+                  <SelectTrigger id="api_endpoint">
+                    <SelectValue placeholder="Select Tenstreet API endpoint" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TENSTREET_API_ENDPOINTS.map((endpoint) => (
+                      <SelectItem key={endpoint.value} value={endpoint.value}>
+                        <div className="flex flex-col py-1">
+                          <span className="font-medium text-sm">{endpoint.label}</span>
+                          <span className="text-xs text-muted-foreground">{endpoint.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {TENSTREET_API_ENDPOINTS.find(e => e.value === config.api_endpoint)?.description}
+                </p>
               </div>
             </div>
 

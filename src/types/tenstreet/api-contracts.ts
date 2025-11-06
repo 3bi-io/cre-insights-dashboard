@@ -193,3 +193,20 @@ export interface AnalyticsResponse {
   cached: boolean;
   timestamp: string;
 }
+
+// ============= Tenstreet API Endpoints =============
+
+export const TENSTREET_API_ENDPOINTS = [
+  { value: '/api/auth/login', label: 'Authentication Login', description: 'User authentication for dashboard access' },
+  { value: '/api/dashboard/overview', label: 'Dashboard Overview', description: 'Main dashboard metrics and summaries' },
+  { value: '/api/jobs/list', label: 'Jobs List', description: 'Job postings and recruitment campaigns' },
+  { value: '/api/applicants/search', label: 'Applicants Search', description: 'Search and filter applicant data' },
+  { value: '/api/carriers/manage', label: 'Carriers Management', description: 'Manage carrier profiles and relationships' },
+  { value: '/api/reports/export', label: 'Reports Export', description: 'Generate and export performance reports' },
+  { value: '/api/notifications/feed', label: 'Notifications Feed', description: 'User notifications and alerts' },
+  { value: '/api/settings/profile', label: 'Settings Profile', description: 'User and company profile settings' },
+  { value: '/api/integrations/connect', label: 'Integrations Connect', description: 'Third-party integrations (e.g., ATS systems)' },
+  { value: '/api/analytics/trends', label: 'Analytics Trends', description: 'Recruitment analytics and trends data' },
+] as const;
+
+export type TenstreetAPIEndpoint = typeof TENSTREET_API_ENDPOINTS[number]['value'];

@@ -8,6 +8,8 @@ import { ConnectionHealthBadge } from './ConnectionHealthBadge';
 import { OrganizationCredentialStatus } from '@/services/tenstreetCredentialsService';
 import { MoreVertical, Search, Settings, CheckCircle, XCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { TENSTREET_API_ENDPOINTS } from '@/types/tenstreet/api-contracts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CredentialsManagementTableProps {
   organizations: OrganizationCredentialStatus[];
@@ -96,15 +98,16 @@ export function CredentialsManagementTable({
               <TableHead>Status</TableHead>
               <TableHead>Connection</TableHead>
               <TableHead>Environment</TableHead>
+              <TableHead>API Endpoint</TableHead>
               <TableHead>Last Sync</TableHead>
               <TableHead className="text-right">Applications</TableHead>
               <TableHead className="w-[80px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrgs.length === 0 ? (
+          {filteredOrgs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No organizations found
                 </TableCell>
               </TableRow>
@@ -141,6 +144,29 @@ export function CredentialsManagementTable({
                       <Badge variant="outline" className={getModeColor(org.mode)}>
                         {org.mode}
                       </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {org.api_endpoint ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="cursor-help">
+                              {TENSTREET_API_ENDPOINTS.find(e => e.value === org.api_endpoint)?.label || org.api_endpoint}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="space-y-1">
+                              <p className="font-medium">{org.api_endpoint}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {TENSTREET_API_ENDPOINTS.find(e => e.value === org.api_endpoint)?.description}
+                              </p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     ) : (
                       <span className="text-muted-foreground text-sm">-</span>
                     )}
