@@ -2,12 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, Users, UserCheck, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, Users, UserCheck, Calendar, Download } from 'lucide-react';
 import ApplicationTrendsChart from '@/components/charts/ApplicationTrendsChart';
 import SourcePerformanceChart from '@/components/charts/SourcePerformanceChart';
 import ConversionFunnelChart from '@/components/charts/ConversionFunnelChart';
+import { ExportDataDialog } from '@/components/tenstreet/ExportDataDialog';
+import { useState } from 'react';
 
 export default function TenstreetFocus() {
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportData, setExportData] = useState<any[]>([]);
+  
   // Fetch key metrics
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ['tenstreet-metrics'],
@@ -47,11 +53,26 @@ export default function TenstreetFocus() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Tenstreet Focus Analytics</h1>
-        <p className="text-muted-foreground">
-          Real-time insights into your applicant pipeline and recruiting performance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Tenstreet Focus Analytics</h1>
+          <p className="text-muted-foreground">
+            Real-time insights into your applicant pipeline and recruiting performance
+          </p>
+        </div>
+        <Button 
+          variant="outline"
+          onClick={() => {
+            // Prepare data for export
+            const dataToExport = sources || [];
+            setExportData(dataToExport);
+            setShowExportDialog(true);
+          }}
+          disabled={!sources || sources.length === 0}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export Data
+        </Button>
       </div>
 
       {/* Key Metrics */}
@@ -143,6 +164,16 @@ export default function TenstreetFocus() {
           <ConversionFunnelChart />
         </TabsContent>
       </Tabs>
+
+      {/* Export Dialog */}
+      <ExportDataDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        data={exportData}
+        availableFields={exportData.length > 0 ? Object.keys(exportData[0]) : []}
+        filename="tenstreet-analytics"
+        title="Tenstreet Analytics Report"
+      />
     </div>
   );
 }

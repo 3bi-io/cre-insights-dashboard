@@ -3,9 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
+import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
 import { useImportApplicationsAccess } from '@/hooks/useImportApplicationsAccess';
+import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -26,6 +28,7 @@ const AppSidebar = () => {
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
   const { hasATSExplorerAccess } = useATSExplorerAccess();
   const { hasImportApplicationsAccess } = useImportApplicationsAccess();
+  const { counts: tenstreetCounts } = useTenstreetNotifications();
   // Main standalone items
   const mainItems = [
     ...(userRole === 'super_admin' || userRole === 'admin' ? [{
@@ -104,7 +107,8 @@ const AppSidebar = () => {
       ...(hasTenstreetAccess() ? [{
         path: '/admin/tenstreet',
         label: 'ATS Integrations',
-        icon: Share2
+        icon: Share2,
+        badge: tenstreetCounts.totalNotifications > 0 ? tenstreetCounts.totalNotifications : undefined
       }] : []),
       ...(hasATSExplorerAccess ? [{
         path: '/admin/tenstreet-explorer',
@@ -288,12 +292,18 @@ const AppSidebar = () => {
               <SidebarMenu>
                 {group.items.map(item => {
                   const Icon = item.icon;
+                  const itemBadge = (item as any).badge;
                   return (
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton asChild isActive={isActive(item.path)}>
                         <Link to={item.path} className="flex items-center gap-3">
                           <Icon className="w-4 h-4" />
-                          <span>{item.label}</span>
+                          <span className="flex-1">{item.label}</span>
+                          {itemBadge && (
+                            <Badge variant="destructive" className="ml-auto">
+                              {itemBadge}
+                            </Badge>
+                          )}
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

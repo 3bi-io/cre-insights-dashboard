@@ -1,16 +1,48 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, CheckCircle2, XCircle, Clock, AlertCircle, Download } from 'lucide-react';
 import { useXchangeStatusPolling } from '@/hooks/useXchangeStatusPolling';
 import { formatDistanceToNow } from 'date-fns';
+import { exportScreeningReportToPDF } from '@/utils/exportData';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface RealTimeStatusMonitorProps {
   applicationId: string;
 }
 
 export function RealTimeStatusMonitor({ applicationId }: RealTimeStatusMonitorProps) {
+  const { toast } = useToast();
   const { requests, isLoading, pendingCount, completedCount, failedCount, hasActiveRequests } = 
     useXchangeStatusPolling({ applicationId });
+
+  const handleExportReport = (request: any) => {
+    try {
+      exportScreeningReportToPDF({
+        applicantName: `${request.application_id}`, // Would get from application data
+        applicantEmail: 'applicant@example.com', // Would get from application data
+        requestType: request.request_type,
+        status: request.status,
+        requestDate: request.request_date,
+        completionDate: request.completion_date,
+        cost: request.cost_cents,
+        provider: request.provider,
+        results: request.result_data
+      });
+
+      toast({
+        title: 'Report exported',
+        description: 'PDF report has been downloaded'
+      });
+    } catch (error) {
+      toast({
+        title: 'Export failed',
+        description: 'Failed to generate PDF report',
+        variant: 'destructive'
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -123,6 +155,15 @@ export function RealTimeStatusMonitor({ applicationId }: RealTimeStatusMonitorPr
                   <div className="text-right text-sm">
                     ${(request.cost_cents / 100).toFixed(2)}
                   </div>
+                  {request.status === 'completed' && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleExportReport(request)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  )}
                   {getStatusBadge(request.status)}
                 </div>
               </div>
