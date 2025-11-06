@@ -1,4 +1,9 @@
-// Tenstreet API data types and interfaces
+/**
+ * Tenstreet API Data Types and Interfaces
+ * 
+ * NOTE: For API contracts, see src/types/tenstreet/api-contracts.ts
+ * NOTE: For database types, see src/types/tenstreet/database.ts
+ */
 
 export interface TenstreetAuthentication {
   clientId: string;

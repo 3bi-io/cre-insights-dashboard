@@ -9,35 +9,22 @@ import {
 } from '../_shared/securitySchemas.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts'
+import { 
+  escapeXML,
+  getCompanyId,
+  buildTenstreetXML,
+  parseXMLResponse,
+  parseApplicantFromXML,
+  buildPersonalDataXML
+} from '../_shared/tenstreet-xml-utils.ts'
+import { 
+  fetchTenstreetCredentials,
+  validateCredentials
+} from '../_shared/tenstreet-credentials.ts'
+import { sanitizeForLogging } from '../_shared/tenstreet-pii-utils.ts'
 
-function escapeXML(unsafe: string): string {
-  if (!unsafe) return '';
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-/**
- * Extract company_id from credentials object
- * Handles both array format (company_ids) and singular format (company_id)
- */
-function getCompanyId(credentials: any): string {
-  // Primary: Extract first company_id from array
-  if (credentials.company_ids && Array.isArray(credentials.company_ids) && credentials.company_ids.length > 0) {
-    return credentials.company_ids[0].toString();
-  }
-  
-  // Fallback: Use singular field if it exists
-  if (credentials.company_id) {
-    return credentials.company_id.toString();
-  }
-  
-  // Error: No company_id found
-  throw new Error('No company_id found in credentials. Please configure Tenstreet credentials with at least one company ID.');
-}
+// Helper removed - now using shared utilities
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -75,26 +62,18 @@ serve(async (req) => {
     // Create authenticated Supabase client for this user
     const supabaseClient = createAuthenticatedClient(req)
 
-    // AUTHORIZATION: Verify credentials access
-    const { data: credentialsList, error: credError } = await supabaseClient
-      .from('tenstreet_credentials')
-      .select('*')
-      .contains('company_ids', [company_id])
-      .eq('status', 'active')
+    // AUTHORIZATION: Fetch credentials using shared utility
+    const credentials = await fetchTenstreetCredentials(supabaseClient, {
+      organizationId,
+      companyId: company_id,
+      userId,
+      userRole
+    });
 
-    if (credError) {
-      throw new Error('Failed to fetch Tenstreet credentials')
-    }
-
-    // Super admins can access any credentials, others must match organization
-    const credentials = userRole === 'super_admin' 
-      ? credentialsList?.[0]
-      : credentialsList?.find(cred => cred.organization_id === organizationId)
-
-    if (!credentials) {
+    if (!credentials || !validateCredentials(credentials)) {
       return new Response(
         JSON.stringify({ 
-          error: `No Tenstreet credentials found for company ID: ${company_id}` 
+          error: `No valid Tenstreet credentials found for company ID: ${company_id}` 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -118,13 +97,14 @@ serve(async (req) => {
       )
     }
 
-    // AUDIT LOGGING: Log all sensitive data access
+    // AUDIT LOGGING: Log all sensitive data access (with PII redaction)
     await logSecurityEvent(supabaseClient, authContext, `TENSTREET_${action.toUpperCase()}`, {
       table: 'tenstreet_api',
-      recordId: params.driverId || params.email || params.criteria?.email || 'batch_operation',
+      recordId: params.driverId || 'batch_operation',
       sensitiveFields: ['applicant_data', 'personal_information'],
       ipAddress,
-      userAgent
+      userAgent,
+      details: sanitizeForLogging(params)
     })
 
     switch (action) {
@@ -292,42 +272,36 @@ async function testService(credentials: any, serviceName: string, customPayload?
 }
 
 async function getApplicantData(credentials: any, driverId: string, corsHeaders?: Record<string, string>) {
-  const retrieveXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<TenstreetData>
-    <Authentication>
-        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
-        <Password>${escapeXML(credentials.password)}</Password>
-        <Service>subject_retrieve</Service>
-    </Authentication>
-    <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
-    <DriverId>${escapeXML(driverId)}</DriverId>
-</TenstreetData>`
+  const apiClient = getTenstreetAPIClient();
+  const response = await apiClient.getApplicant(credentials, driverId);
 
-  return await makeRequest(retrieveXML, 'Get Applicant Data', corsHeaders)
+  return new Response(
+    JSON.stringify({
+      success: response.success,
+      status: response.status,
+      response: response.responseXml,
+      parsed: response.data,
+      action: 'Get Applicant Data',
+      applicant: sanitizeForLogging(parseApplicantFromXML(response.responseXml))
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
 async function searchApplicants(credentials: any, criteria: any, corsHeaders?: Record<string, string>) {
-  const { email, phone, lastName, dateRange } = criteria
-  
-  const searchXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<TenstreetData>
-    <Authentication>
-        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
-        <Password>${escapeXML(credentials.password)}</Password>
-        <Service>subject_search</Service>
-    </Authentication>
-    <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
-    <SearchCriteria>
-        ${email ? `<Email>${escapeXML(email)}</Email>` : ''}
-        ${phone ? `<Phone>${escapeXML(phone)}</Phone>` : ''}
-        ${lastName ? `<LastName>${escapeXML(lastName)}</LastName>` : ''}
-        ${dateRange ? `<DateRange>${escapeXML(dateRange)}</DateRange>` : ''}
-    </SearchCriteria>
-</TenstreetData>`
+  const apiClient = getTenstreetAPIClient();
+  const response = await apiClient.searchApplicants(credentials, criteria);
 
-  return await makeRequest(searchXML, 'Search Applicants', corsHeaders)
+  return new Response(
+    JSON.stringify({
+      success: response.success,
+      status: response.status,
+      response: response.responseXml,
+      parsed: response.data,
+      action: 'Search Applicants'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
 async function getApplicationStatus(credentials: any, driverId: string, corsHeaders?: Record<string, string>) {
@@ -347,20 +321,19 @@ async function getApplicationStatus(credentials: any, driverId: string, corsHead
 }
 
 async function updateApplicantStatus(credentials: any, driverId: string, status: string, corsHeaders?: Record<string, string>) {
-  const updateXML = `<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<TenstreetData>
-    <Authentication>
-        <ClientId>${escapeXML(credentials.client_id)}</ClientId>
-        <Password>${escapeXML(credentials.password)}</Password>
-        <Service>status_update</Service>
-    </Authentication>
-    <Mode>${escapeXML(credentials.mode)}</Mode>
-    <CompanyId>${escapeXML(getCompanyId(credentials))}</CompanyId>
-    <DriverId>${escapeXML(driverId)}</DriverId>
-    <Status>${escapeXML(status)}</Status>
-</TenstreetData>`
+  const apiClient = getTenstreetAPIClient();
+  const response = await apiClient.updateStatus(credentials, driverId, status);
 
-  return await makeRequest(updateXML, 'Update Applicant Status', corsHeaders)
+  return new Response(
+    JSON.stringify({
+      success: response.success,
+      status: response.status,
+      response: response.responseXml,
+      parsed: response.data,
+      action: 'Update Applicant Status'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }
 
 async function getAvailableJobs(credentials: any, corsHeaders?: Record<string, string>) {
