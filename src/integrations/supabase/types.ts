@@ -3571,6 +3571,106 @@ export type Database = {
           },
         ]
       }
+      tenstreet_xchange_requests: {
+        Row: {
+          application_id: string
+          completion_date: string | null
+          cost_cents: number | null
+          created_at: string | null
+          created_by: string | null
+          driver_id: string
+          id: string
+          notes: string | null
+          organization_id: string
+          provider: string | null
+          reference_number: string | null
+          request_date: string
+          request_type: string
+          result_data: Json | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_id: string
+          completion_date?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_id: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          provider?: string | null
+          reference_number?: string | null
+          request_date?: string
+          request_type: string
+          result_data?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string
+          completion_date?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          driver_id?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          provider?: string | null
+          reference_number?: string | null
+          request_date?: string
+          request_type?: string
+          result_data?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenstreet_xchange_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_xchange_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_xchange_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_xchange_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_xchange_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_xchange_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       universal_feed_configs: {
         Row: {
           access_count: number | null
@@ -4197,6 +4297,16 @@ export type Database = {
           job_title: string
           location: string
           status: string
+        }[]
+      }
+      get_application_xchange_summary: {
+        Args: { app_id: string }
+        Returns: {
+          completed_requests: number
+          latest_request_date: string
+          pending_requests: number
+          total_cost_cents: number
+          total_requests: number
         }[]
       }
       get_current_user_role: {

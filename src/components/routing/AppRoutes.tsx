@@ -40,6 +40,7 @@ const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
 const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const TenstreetExplorer = React.lazy(() => import("@/pages/TenstreetExplorer"));
+const TenstreetXchange = React.lazy(() => import("@/pages/TenstreetXchange"));
 const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
@@ -154,6 +155,7 @@ const AppRoutes: React.FC = () => {
         <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
         <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="tenstreet-explorer" element={<ProtectedRouteWrapper><TenstreetExplorer /></ProtectedRouteWrapper>} />
+        <Route path="tenstreet/xchange" element={<ProtectedRouteWrapper><TenstreetXchange /></ProtectedRouteWrapper>} />
         <Route path="ai-settings" element={<ProtectedRouteWrapper><AIPlatformSettings /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />

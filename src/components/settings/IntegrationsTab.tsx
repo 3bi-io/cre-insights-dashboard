@@ -205,6 +205,21 @@ const IntegrationsTab = () => {
         </p>
         <ClientWebhookManager />
       </div>
+
+      <Separator className="my-8" />
+
+      {/* Tenstreet Xchange */}
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Tenstreet Xchange</h2>
+        <p className="text-muted-foreground mb-6">
+          Manage background checks, MVR requests, drug tests, and employment verifications through Tenstreet
+        </p>
+        <Link to="/admin/tenstreet/xchange">
+          <Button>
+            Open Xchange Manager
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };
