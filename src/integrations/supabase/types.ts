@@ -3643,14 +3643,73 @@ export type Database = {
           },
         ]
       }
+      tenstreet_webhook_logs: {
+        Row: {
+          created_at: string | null
+          driver_id: string | null
+          duplicate: boolean | null
+          error: string | null
+          id: string
+          organization_id: string | null
+          packet_id: string
+          parsed_data: Json | null
+          processed: boolean | null
+          received_at: string | null
+          soap_payload: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id?: string | null
+          duplicate?: boolean | null
+          error?: string | null
+          id?: string
+          organization_id?: string | null
+          packet_id: string
+          parsed_data?: Json | null
+          processed?: boolean | null
+          received_at?: string | null
+          soap_payload: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string | null
+          duplicate?: boolean | null
+          error?: string | null
+          id?: string
+          organization_id?: string | null
+          packet_id?: string
+          parsed_data?: Json | null
+          processed?: boolean | null
+          received_at?: string | null
+          soap_payload?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenstreet_webhook_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenstreet_webhook_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenstreet_xchange_requests: {
         Row: {
+          api_type: string | null
           application_id: string
           completion_date: string | null
           cost_cents: number | null
           created_at: string | null
           created_by: string | null
           driver_id: string
+          extract_url: string | null
           id: string
           notes: string | null
           organization_id: string
@@ -3660,15 +3719,18 @@ export type Database = {
           request_type: string
           result_data: Json | null
           status: string
+          tenstreet_request_id: string | null
           updated_at: string | null
         }
         Insert: {
+          api_type?: string | null
           application_id: string
           completion_date?: string | null
           cost_cents?: number | null
           created_at?: string | null
           created_by?: string | null
           driver_id: string
+          extract_url?: string | null
           id?: string
           notes?: string | null
           organization_id: string
@@ -3678,15 +3740,18 @@ export type Database = {
           request_type: string
           result_data?: Json | null
           status?: string
+          tenstreet_request_id?: string | null
           updated_at?: string | null
         }
         Update: {
+          api_type?: string | null
           application_id?: string
           completion_date?: string | null
           cost_cents?: number | null
           created_at?: string | null
           created_by?: string | null
           driver_id?: string
+          extract_url?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
@@ -3696,6 +3761,7 @@ export type Database = {
           request_type?: string
           result_data?: Json | null
           status?: string
+          tenstreet_request_id?: string | null
           updated_at?: string | null
         }
         Relationships: [

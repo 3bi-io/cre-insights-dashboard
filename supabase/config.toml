@@ -3,6 +3,9 @@ project_id = "auwhcdpppldjlcaxzsme"
 [functions.tenstreet-xchange]
 verify_jwt = true
 
+[functions.tenstreet-extractcomplete]
+verify_jwt = false
+
 [functions.tenstreet-analytics]
 verify_jwt = true
 
