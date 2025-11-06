@@ -19,6 +19,7 @@ import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { BulkOperationProgress } from '@/components/tenstreet/BulkOperationProgress';
+import { RealTimeStatusMonitor } from '@/components/tenstreet/RealTimeStatusMonitor';
 import ApplicationTrendsChart from '@/components/charts/ApplicationTrendsChart';
 import SourcePerformanceChart from '@/components/charts/SourcePerformanceChart';
 import ConversionFunnelChart from '@/components/charts/ConversionFunnelChart';
@@ -206,6 +207,19 @@ export default function TenstreetDashboard() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
+          {/* Real-Time Monitoring Section */}
+          {applicationsData && applicationsData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Live Screening Monitor</CardTitle>
+                <CardDescription>Real-time status updates for active background checks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RealTimeStatusMonitor applicationId={applicationsData[0].id} />
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -230,8 +244,15 @@ export default function TenstreetDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Recent Screening Activity</CardTitle>
-              <CardDescription>Latest background checks and verifications</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Recent Screening Activity</CardTitle>
+                  <CardDescription>Latest background checks and verifications</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin/tenstreet/xchange')}>
+                  View All
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {xchangeActivity && xchangeActivity.length > 0 ? (
@@ -239,7 +260,8 @@ export default function TenstreetDashboard() {
                   {xchangeActivity.map((activity) => (
                     <div
                       key={activity.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={() => navigate('/admin/tenstreet/xchange')}
                     >
                       <div>
                         <div className="font-medium capitalize">
@@ -260,9 +282,18 @@ export default function TenstreetDashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-4">
-                  No recent screening activity
-                </p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No recent screening activity</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-4"
+                    onClick={() => navigate('/admin/tenstreet/xchange')}
+                  >
+                    Start Screening
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -6,6 +6,7 @@ import PlatformsHeader from '@/components/platforms/PlatformsHeader';
 import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
 import GoogleJobsPlatformActions from '@/components/platforms/GoogleJobsPlatformActions';
+import { TenstreetNavigationCard } from '@/components/admin/TenstreetNavigationCard';
 
 import CraigslistPlatformActions from '@/components/platforms/CraigslistPlatformActions';
 import SimplyHiredPlatformActions from '@/components/platforms/SimplyHiredPlatformActions';
@@ -98,6 +99,9 @@ const Platforms = () => {
         </TabsList>
 
         <TabsContent value="platforms" className="space-y-6 mt-6">
+          {/* Tenstreet Integration Card */}
+          <TenstreetNavigationCard />
+          
           <PlatformsTable
             platforms={platforms}
             onRefresh={refetch}

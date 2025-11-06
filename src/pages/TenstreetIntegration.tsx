@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Settings, MapPin, User, FileText, Plus, X, TestTube, Users, UserCheck, CreditCard, Phone } from 'lucide-react';
+import { Save, Settings, MapPin, User, FileText, Plus, X, TestTube, Users, UserCheck, CreditCard, Phone, LayoutDashboard, ArrowRight } from 'lucide-react';
 import { AVAILABLE_FIELD_TYPES } from '@/types/tenstreet';
 import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
+import { TenstreetQuickActions } from '@/components/tenstreet/TenstreetQuickActions';
 
 const TenstreetIntegration = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { credentials, fieldMappings, isLoading: configLoading, saveCredentials, saveFieldMappings, isSaving } = useTenstreetConfiguration();
