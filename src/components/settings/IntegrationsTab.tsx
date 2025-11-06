@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
   Key, 
   AlertCircle, 
@@ -14,6 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatforms } from '@/hooks/usePlatforms';
+import ClientWebhookManager from '@/components/integrations/ClientWebhookManager';
 
 const IntegrationsTab = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -192,6 +194,17 @@ const IntegrationsTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Separator className="my-8" />
+
+      {/* Client Webhooks */}
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Client Webhooks</h2>
+        <p className="text-muted-foreground mb-6">
+          Configure outbound webhooks to automatically send application data to your clients' systems
+        </p>
+        <ClientWebhookManager />
+      </div>
     </div>
   );
 };
