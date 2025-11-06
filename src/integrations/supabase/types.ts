@@ -1337,6 +1337,151 @@ export type Database = {
           },
         ]
       }
+      client_webhook_logs: {
+        Row: {
+          application_id: string
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          event_type: string
+          id: string
+          request_payload: Json
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          request_payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          request_payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_webhook_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_webhook_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_webhook_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_webhook_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "client_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_webhooks: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          enabled: boolean
+          event_types: string[] | null
+          id: string
+          last_error: string | null
+          last_success_at: string | null
+          last_triggered_at: string | null
+          organization_id: string
+          secret_key: string | null
+          updated_at: string | null
+          user_id: string
+          webhook_url: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          enabled?: boolean
+          event_types?: string[] | null
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_triggered_at?: string | null
+          organization_id: string
+          secret_key?: string | null
+          updated_at?: string | null
+          user_id: string
+          webhook_url: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          enabled?: boolean
+          event_types?: string[] | null
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_triggered_at?: string | null
+          organization_id?: string
+          secret_key?: string | null
+          updated_at?: string | null
+          user_id?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_webhooks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null

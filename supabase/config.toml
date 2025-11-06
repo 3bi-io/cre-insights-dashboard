@@ -1,5 +1,8 @@
 project_id = "auwhcdpppldjlcaxzsme"
 
+[functions.client-webhook]
+verify_jwt = false
+
 [functions.universal-xml-feed]
 verify_jwt = false
 
