@@ -131,14 +131,25 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       }
     },
     onSuccess: () => {
+      // Invalidate all Tenstreet-related queries to refresh all dashboards
       queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials'] });
+      queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials-management'] });
+      queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials-summary'] });
+      
       toast({
-        title: 'Credentials Saved',
+        title: 'Credentials Saved ✓',
         description: 'Tenstreet credentials have been saved successfully.',
       });
       onOpenChange(false);
     },
     onError: (error: any) => {
+      console.error('Failed to save credentials:', {
+        error,
+        effectiveOrgId,
+        config: { ...config, password_encrypted: '***' }, // Don't log password
+        userRole
+      });
+      
       toast({
         title: 'Error',
         description: error.message || 'Failed to save credentials.',
@@ -148,14 +159,21 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   });
 
   const handleSave = () => {
-    if (!config.client_id || !config.password_encrypted) {
+    // Validate all required fields
+    const missingFields = [];
+    if (!config.account_name?.trim()) missingFields.push('Account Name');
+    if (!config.client_id?.trim()) missingFields.push('Client ID');
+    if (!config.password_encrypted?.trim()) missingFields.push('Password');
+    
+    if (missingFields.length > 0) {
       toast({
-        title: 'Missing Fields',
-        description: 'Client ID and Password are required.',
+        title: 'Missing Required Fields',
+        description: `Please fill in: ${missingFields.join(', ')}`,
         variant: 'destructive',
       });
       return;
     }
+    
     saveCredentialsMutation.mutate();
   };
 
@@ -180,11 +198,35 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.success) {
+        // Update status to 'active' if we have saved credentials
+        if (credentials?.id && effectiveOrgId) {
+          try {
+            const { error } = await supabase
+              .from('tenstreet_credentials')
+              .update({ 
+                status: 'active', 
+                updated_at: new Date().toISOString() 
+              })
+              .eq('id', credentials.id);
+            
+            if (error) {
+              console.error('Failed to update credential status:', error);
+            } else {
+              // Invalidate queries to refresh the UI
+              queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials'] });
+              queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials-management'] });
+              queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials-summary'] });
+            }
+          } catch (err) {
+            console.error('Error updating credential status:', err);
+          }
+        }
+        
         toast({
-          title: 'Connection Successful',
-          description: 'Successfully connected to Tenstreet API.',
+          title: 'Connection Successful ✓',
+          description: 'Successfully connected to Tenstreet API. Status updated to Active.',
         });
       } else {
         toast({
@@ -195,6 +237,11 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       }
     },
     onError: (error: any) => {
+      console.error('Connection test failed:', {
+        error,
+        config: { ...config, password_encrypted: '***' } // Don't log password
+      });
+      
       toast({
         title: 'Connection Test Failed',
         description: error.message || 'Failed to test connection.',
