@@ -21,6 +21,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   onOpenChange,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
   const [config, setConfig] = useState({
     account_name: '',
     client_id: '',
@@ -33,24 +34,42 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { organization } = useAuth();
+  const { organization, userRole } = useAuth();
+
+  // Determine effective organization ID
+  const effectiveOrgId = userRole === 'super_admin' ? selectedOrganizationId : organization?.id;
+
+  // Fetch organizations list (only for super admins)
+  const { data: organizations } = useQuery({
+    queryKey: ['organizations-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id, name, slug')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: userRole === 'super_admin' && open,
+  });
 
   // Fetch existing credentials
   const { data: credentials, isLoading } = useQuery({
-    queryKey: ['tenstreet-credentials', organization?.id],
+    queryKey: ['tenstreet-credentials', effectiveOrgId],
     queryFn: async () => {
-      if (!organization?.id) return null;
+      if (!effectiveOrgId) return null;
       
       const { data, error } = await supabase
         .from('tenstreet_credentials')
         .select('*')
-        .eq('organization_id', organization.id)
+        .eq('organization_id', effectiveOrgId)
         .maybeSingle();
       
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    enabled: !!organization?.id && open,
+    enabled: !!effectiveOrgId && open,
   });
 
   // Load credentials into form when fetched
@@ -72,10 +91,16 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   // Save credentials mutation
   const saveCredentialsMutation = useMutation({
     mutationFn: async () => {
-      if (!organization?.id) throw new Error('No organization ID');
+      if (!effectiveOrgId) {
+        throw new Error(
+          userRole === 'super_admin' 
+            ? 'Please select an organization to configure' 
+            : 'No organization ID'
+        );
+      }
 
       const credData = {
-        organization_id: organization.id,
+        organization_id: effectiveOrgId,
         ...config
       };
 
@@ -191,6 +216,32 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
 
         <Card className="border-border/40">
           <CardContent className="p-6 space-y-4">
+            {userRole === 'super_admin' && (
+              <div className="mb-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <Label htmlFor="organization_select" className="text-base font-semibold mb-2">
+                  Select Organization *
+                </Label>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Choose which organization to configure Tenstreet credentials for
+                </p>
+                <Select 
+                  value={selectedOrganizationId || ''} 
+                  onValueChange={setSelectedOrganizationId}
+                >
+                  <SelectTrigger id="organization_select" className="bg-background">
+                    <SelectValue placeholder="Choose organization to configure..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizations?.map(org => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name} ({org.slug})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="account_name">Account Name *</Label>
