@@ -75,7 +75,7 @@ const TenstreetIntegration = () => {
     if (credentials) {
       setConfig({
         clientId: credentials.client_id || '',
-        password: credentials.password_encrypted || '',
+        password: credentials.password || '', // Changed from password_encrypted
         service: credentials.service || 'subject_upload',
         mode: credentials.mode || 'PROD',
         source: credentials.source || '3BI',

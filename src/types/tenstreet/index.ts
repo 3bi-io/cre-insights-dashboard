@@ -40,5 +40,11 @@ export type {
 
 export type { BulkOperationType as DBBulkOperationType } from './database';
 
+// Service types
+export type {
+  OrganizationCredentialStatus,
+  CredentialsSummary
+} from './service-types';
+
 // Legacy types (for backward compatibility)
 export * from '../tenstreet';

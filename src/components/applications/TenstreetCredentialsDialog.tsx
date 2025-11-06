@@ -28,7 +28,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   const [config, setConfig] = useState({
     account_name: '',
     client_id: '',
-    password_encrypted: '',
+    password: '', // Changed from password_encrypted
     service: 'subject_upload',
     mode: 'PROD',
     api_endpoint: '/api/auth/login',
@@ -89,7 +89,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       setConfig({
         account_name: credentials.account_name || '',
         client_id: credentials.client_id || '',
-        password_encrypted: credentials.password_encrypted || '',
+        password: credentials.password || '', // Changed from password_encrypted
         service: credentials.service || 'subject_upload',
         mode: credentials.mode || 'PROD',
         api_endpoint: credentials.api_endpoint || '/api/auth/login',
@@ -115,7 +115,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
         organization_id: effectiveOrgId,
         account_name: config.account_name,
         client_id: config.client_id,
-        password_encrypted: config.password_encrypted,
+        password: config.password, // Changed from password_encrypted
         service: config.service,
         mode: config.mode,
         api_endpoint: config.api_endpoint,
@@ -158,7 +158,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       console.error('Failed to save credentials:', {
         error,
         effectiveOrgId,
-        config: { ...config, password_encrypted: '***' }, // Don't log password
+        config: { ...config, password: '***' }, // Don't log password
         userRole
       });
       
@@ -175,7 +175,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
     const missingFields = [];
     if (!config.account_name?.trim()) missingFields.push('Account Name');
     if (!config.client_id?.trim()) missingFields.push('Client ID');
-    if (!config.password_encrypted?.trim()) missingFields.push('Password');
+    if (!config.password?.trim()) missingFields.push('Password'); // Changed from password_encrypted
     if (!config.api_endpoint?.trim()) missingFields.push('API Endpoint');
     
     if (missingFields.length > 0) {
@@ -198,7 +198,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
           action: 'test_connection',
           config: {
             clientId: config.client_id,
-            password: config.password_encrypted,
+            password: config.password, // Changed from password_encrypted
             service: config.service,
             mode: config.mode,
             source: config.source,
@@ -252,7 +252,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
     onError: (error: any) => {
       console.error('Connection test failed:', {
         error,
-        config: { ...config, password_encrypted: '***' } // Don't log password
+        config: { ...config, password: '***' } // Don't log password
       });
       
       toast({
@@ -338,8 +338,8 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    value={config.password_encrypted}
-                    onChange={(e) => setConfig({ ...config, password_encrypted: e.target.value })}
+                    value={config.password}
+                    onChange={(e) => setConfig({ ...config, password: e.target.value })}
                     placeholder="Enter API password"
                   />
                   <Button
@@ -437,7 +437,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
             <div className="flex gap-2 pt-4">
               <Button
                 onClick={() => testConnectionMutation.mutate()}
-                disabled={testConnectionMutation.isPending || !config.client_id || !config.password_encrypted}
+                disabled={testConnectionMutation.isPending || !config.client_id || !config.password}
                 variant="outline"
                 className="flex-1"
               >

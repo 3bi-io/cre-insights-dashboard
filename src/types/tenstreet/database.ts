@@ -50,13 +50,16 @@ export interface TenstreetCredentialsDB {
   organization_id: string;
   account_name: string;
   client_id: string;
-  password: string; // Encrypted
+  password: string; // Single field, encrypted at rest by Supabase
+  service?: string;
   mode: 'DEV' | 'TEST' | 'PROD';
-  company_ids: string[];
-  company_id?: string;
+  api_endpoint: string;
+  source?: string;
+  company_name?: string;
+  app_referrer?: string;
+  referral_code?: string;
+  company_ids?: string[];
   status: 'active' | 'inactive';
-  api_endpoint?: string;
-  created_by: string;
   created_at: string;
   updated_at: string;
 }

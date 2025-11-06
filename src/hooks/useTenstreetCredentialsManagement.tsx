@@ -10,7 +10,10 @@ export function useTenstreetCredentialsManagement() {
   } = useQuery({
     queryKey: ['tenstreet-credentials-management'],
     queryFn: () => TenstreetCredentialsService.fetchOrganizationsWithCredentials(),
-    refetchInterval: 60000, // Refresh every minute
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchInterval: false, // Remove auto-refetch
   });
 
   const {
@@ -19,7 +22,10 @@ export function useTenstreetCredentialsManagement() {
   } = useQuery({
     queryKey: ['tenstreet-credentials-summary'],
     queryFn: () => TenstreetCredentialsService.getSummaryStats(),
-    refetchInterval: 60000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   return {

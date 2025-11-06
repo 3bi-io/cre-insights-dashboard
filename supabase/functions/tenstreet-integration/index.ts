@@ -101,46 +101,60 @@ async function handleSendApplication(data: any, corsHeaders: Record<string, stri
 async function handleTestConnection(data: any, corsHeaders: Record<string, string>) {
   try {
     const { config } = data
+    const TIMEOUT_MS = 10000; // 10 second timeout
 
-    // Build enhanced test XML with all supported fields
+    // Validate config
+    if (!config.clientId || !config.password || !config.mode) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required configuration: clientId, password, or mode' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const testXML = buildTestXML(config)
-    
-    console.log('Testing Tenstreet connection')
+    console.log('[Tenstreet] Testing connection for client:', config.clientId)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/xml',
-      },
-      body: testXML
+      headers: { 'Content-Type': 'application/xml' },
+      body: testXML,
+      signal: controller.signal
     })
 
+    clearTimeout(timeoutId)
     const responseText = await response.text()
     
-    console.log('Tenstreet test response status:', response.status)
+    console.log('[Tenstreet] Test response:', { status: response.status, success: response.ok })
 
     return new Response(
       JSON.stringify({ 
         success: response.ok, 
         status: response.status,
+        message: response.ok ? 'Connection successful' : 'Connection failed',
         response: responseText 
       }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('Error testing connection:', error)
+    console.error('[Tenstreet] Connection test failed:', {
+      error: error.message,
+      isTimeout: error.name === 'AbortError'
+    })
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.name === 'AbortError' 
+          ? 'Connection timeout - Tenstreet API did not respond within 10 seconds'
+          : error.message 
       }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 }

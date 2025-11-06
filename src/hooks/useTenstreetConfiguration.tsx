@@ -75,7 +75,7 @@ export const useTenstreetConfiguration = () => {
         organization_id: organization.id,
         account_name: config.companyName,
         client_id: config.clientId,
-        password_encrypted: config.password,
+        password: config.password, // Changed from password_encrypted
         service: config.service,
         mode: config.mode,
         source: config.source,

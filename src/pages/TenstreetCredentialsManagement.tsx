@@ -95,7 +95,7 @@ export default function TenstreetCredentialsManagement() {
           <CredentialsStatsCards
             totalOrganizations={summary?.totalOrganizations || 0}
             configuredOrganizations={summary?.configuredOrganizations || 0}
-            pendingConfiguration={summary?.pendingConfiguration || 0}
+            pendingConfiguration={summary?.pendingOrganizations || 0}
             recentSyncActivity={summary?.recentSyncActivity || 0}
             isLoading={isLoading}
           />

@@ -148,7 +148,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
 
       const config = {
         clientId: credentials.client_id,
-        password: credentials.password_encrypted,
+        password: credentials.password, // Changed from password_encrypted
         service: credentials.service,
         mode: credentials.mode,
         source: credentials.source,

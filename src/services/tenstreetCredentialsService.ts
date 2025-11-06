@@ -1,120 +1,42 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { OrganizationCredentialStatus, CredentialsSummary } from '@/types/tenstreet/service-types';
 
-export interface OrganizationCredentialStatus {
-  id: string;
-  name: string;
-  slug: string;
-  created_at: string;
-  credential_id: string | null;
-  credential_status: 'active' | 'inactive' | null;
-  mode: 'DEV' | 'TEST' | 'PROD' | null;
-  api_endpoint: string | null;
-  credentials_updated: string | null;
-  total_applications: number;
-  last_sync_time: string | null;
-  synced_count: number;
-  connection_health: 'active' | 'inactive' | 'error' | 'unknown';
-}
-
-export interface CredentialsSummary {
-  totalOrganizations: number;
-  configuredOrganizations: number;
-  pendingConfiguration: number;
-  recentSyncActivity: number;
-}
+export type { OrganizationCredentialStatus, CredentialsSummary };
 
 export class TenstreetCredentialsService {
   /**
-   * Fetch all organizations with their Tenstreet configuration status
+   * Fetch all organizations with their Tenstreet credentials and sync status
+   * Now uses optimized single RPC call instead of 5 separate queries
    */
   static async fetchOrganizationsWithCredentials(): Promise<OrganizationCredentialStatus[]> {
-    // First, get all organizations
-    const { data: organizations, error: orgError } = await supabase
-      .from('organizations')
-      .select('id, name, slug, created_at')
-      .order('name');
+    try {
+      const { data, error } = await supabase.rpc('get_organizations_credentials_summary');
 
-    if (orgError) throw orgError;
-    if (!organizations) return [];
-
-    // Then get credentials for each organization
-    const { data: credentials, error: credError } = await supabase
-      .from('tenstreet_credentials')
-      .select('id, organization_id, status, mode, api_endpoint, updated_at');
-
-    if (credError) throw credError;
-
-    // Get application sync statistics
-    const { data: syncStats, error: syncError } = await supabase
-      .from('applications')
-      .select('job_listing_id, tenstreet_last_sync, tenstreet_sync_status');
-
-    if (syncError) throw syncError;
-
-    // Get job listings to map applications to organizations
-    const { data: jobListings, error: jobError } = await supabase
-      .from('job_listings')
-      .select('id, organization_id');
-
-    if (jobError) throw jobError;
-
-    // Build a map of organization sync data
-    const orgSyncMap = new Map<string, { total: number; synced: number; lastSync: string | null }>();
-
-    syncStats?.forEach(app => {
-      const job = jobListings?.find(jl => jl.id === app.job_listing_id);
-      if (!job) return;
-
-      const orgId = job.organization_id;
-      const existing = orgSyncMap.get(orgId) || { total: 0, synced: 0, lastSync: null };
-      
-      existing.total++;
-      if (app.tenstreet_sync_status === 'synced') existing.synced++;
-      if (app.tenstreet_last_sync && (!existing.lastSync || app.tenstreet_last_sync > existing.lastSync)) {
-        existing.lastSync = app.tenstreet_last_sync;
+      if (error) {
+        console.error('Error fetching organizations credentials summary:', error);
+        throw error;
       }
 
-      orgSyncMap.set(orgId, existing);
-    });
-
-    // Combine all data
-    const results: OrganizationCredentialStatus[] = organizations.map(org => {
-      const cred = credentials?.find(c => c.organization_id === org.id);
-      const syncData = orgSyncMap.get(org.id) || { total: 0, synced: 0, lastSync: null };
-
-      // Determine connection health
-      let connectionHealth: OrganizationCredentialStatus['connection_health'] = 'unknown';
-      if (cred) {
-        if (cred.status === 'inactive') {
-          connectionHealth = 'error';
-        } else if (syncData.lastSync) {
-          const daysSinceSync = Math.floor(
-            (Date.now() - new Date(syncData.lastSync).getTime()) / (1000 * 60 * 60 * 24)
-          );
-          connectionHealth = daysSinceSync <= 7 ? 'active' : 'inactive';
-        } else {
-          connectionHealth = 'inactive';
-        }
-      }
-
-      return {
-        id: org.id,
-        name: org.name,
-        slug: org.slug,
-        created_at: org.created_at,
-        credential_id: cred?.id || null,
-        credential_status: (cred?.status as 'active' | 'inactive') || null,
-        mode: (cred?.mode as 'DEV' | 'TEST' | 'PROD') || null,
-        api_endpoint: cred?.api_endpoint || null,
-        credentials_updated: cred?.updated_at || null,
-        total_applications: syncData.total,
-        last_sync_time: syncData.lastSync,
-        synced_count: syncData.synced,
-        connection_health: connectionHealth,
-      };
-    });
-
-    return results;
+      // Transform database results to match interface
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        created_at: row.created_at,
+        credential_id: row.credential_id,
+        credential_status: row.credential_status as 'active' | 'inactive' | null,
+        mode: row.mode as 'DEV' | 'TEST' | 'PROD' | null,
+        api_endpoint: row.api_endpoint,
+        credentials_updated: row.credentials_updated,
+        total_applications: Number(row.total_applications),
+        last_sync_time: row.last_sync_time,
+        synced_count: Number(row.synced_count),
+        connection_health: row.connection_health as 'active' | 'inactive' | 'error' | 'unknown',
+      }));
+    } catch (error) {
+      console.error('Failed to fetch organization credentials:', error);
+      throw error;
+    }
   }
 
   /**
@@ -125,7 +47,7 @@ export class TenstreetCredentialsService {
 
     const totalOrganizations = orgs.length;
     const configuredOrganizations = orgs.filter(o => o.credential_id).length;
-    const pendingConfiguration = totalOrganizations - configuredOrganizations;
+    const pendingOrganizations = totalOrganizations - configuredOrganizations;
 
     // Recent sync activity (last 24 hours)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -136,7 +58,7 @@ export class TenstreetCredentialsService {
     return {
       totalOrganizations,
       configuredOrganizations,
-      pendingConfiguration,
+      pendingOrganizations,
       recentSyncActivity,
     };
   }

@@ -3527,7 +3527,6 @@ export type Database = {
           mode: string | null
           organization_id: string | null
           password: string | null
-          password_encrypted: string
           referral_code: string | null
           service: string | null
           source: string | null
@@ -3550,7 +3549,6 @@ export type Database = {
           mode?: string | null
           organization_id?: string | null
           password?: string | null
-          password_encrypted: string
           referral_code?: string | null
           service?: string | null
           source?: string | null
@@ -3573,7 +3571,6 @@ export type Database = {
           mode?: string | null
           organization_id?: string | null
           password?: string | null
-          password_encrypted?: string
           referral_code?: string | null
           service?: string | null
           source?: string | null
@@ -4480,6 +4477,24 @@ export type Database = {
         }[]
       }
       get_organization_with_stats: { Args: { _org_id: string }; Returns: Json }
+      get_organizations_credentials_summary: {
+        Args: never
+        Returns: {
+          api_endpoint: string
+          connection_health: string
+          created_at: string
+          credential_id: string
+          credential_status: string
+          credentials_updated: string
+          id: string
+          last_sync_time: string
+          mode: string
+          name: string
+          slug: string
+          synced_count: number
+          total_applications: number
+        }[]
+      }
       get_platform_breakdown_data: { Args: never; Returns: Json }
       get_spend_chart_data: { Args: never; Returns: Json }
       get_user_organization_id: { Args: never; Returns: string }
