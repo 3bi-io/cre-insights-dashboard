@@ -1,5 +1,14 @@
 project_id = "auwhcdpppldjlcaxzsme"
 
+[functions.tenstreet-xchange]
+verify_jwt = true
+
+[functions.tenstreet-analytics]
+verify_jwt = true
+
+[functions.tenstreet-bulk-operations]
+verify_jwt = true
+
 [functions.client-webhook]
 verify_jwt = false
 
