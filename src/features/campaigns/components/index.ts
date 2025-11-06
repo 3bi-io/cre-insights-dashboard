@@ -1,1 +1,2 @@
-// Campaigns components - to be organized
+export { CreateCampaignDialog } from './CreateCampaignDialog';
+export { CampaignCard } from './CampaignCard';

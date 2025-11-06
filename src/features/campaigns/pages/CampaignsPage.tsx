@@ -1,111 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Plus, 
   Search, 
-  Filter, 
-  MoreHorizontal, 
-  Play, 
-  Pause, 
-  Eye, 
-  Edit,
-  Trash2,
+  Target,
   TrendingUp,
   DollarSign,
   Users,
-  Clock
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { PageLayout } from '@/features/shared';
-import { useToast } from '@/hooks/use-toast';
+import { useCampaigns } from '../hooks/useCampaigns';
+import { CreateCampaignDialog } from '../components/CreateCampaignDialog';
+import { CampaignCard } from '../components/CampaignCard';
+import { Database } from '@/integrations/supabase/types';
+
+type Campaign = Database['public']['Tables']['campaigns']['Row'];
 
 const CampaignsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { toast } = useToast();
+  
+  const {
+    campaigns,
+    stats,
+    isLoading,
+    isError,
+    createCampaign,
+    updateCampaign,
+    deleteCampaign,
+    isCreating,
+  } = useCampaigns();
 
-  // Mock data - replace with actual data fetching
-  const campaigns = [
-    {
-      id: 1,
-      name: 'CDL Driver Recruitment Q1',
-      status: 'active',
-      budget: 5000,
-      spent: 3200,
-      applications: 45,
-      startDate: '2024-01-01',
-      endDate: '2024-03-31'
-    },
-    // Add more mock campaigns as needed
-  ];
-
-  const handleCreateCampaign = () => {
-    setShowCreateDialog(false);
-    toast({
-      title: "Campaign Created",
-      description: "Your new campaign has been created successfully",
+  const handleCreateCampaign = (campaignData: {
+    name: string;
+    description?: string;
+    status: string;
+  }) => {
+    createCampaign(campaignData, {
+      onSuccess: () => {
+        setShowCreateDialog(false);
+      },
     });
   };
 
+  const handleToggleStatus = (campaign: Campaign) => {
+    const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+    updateCampaign({
+      id: campaign.id,
+      updates: { status: newStatus },
+    });
+  };
+
+  const handleDeleteCampaign = (campaign: Campaign) => {
+    if (confirm(`Are you sure you want to delete "${campaign.name}"?`)) {
+      deleteCampaign(campaign.id);
+    }
+  };
+
+  // Filter campaigns based on search term
+  const filteredCampaigns = useMemo(() => {
+    if (!searchTerm.trim()) return campaigns;
+    
+    const search = searchTerm.toLowerCase();
+    return campaigns.filter(
+      (campaign) =>
+        campaign.name.toLowerCase().includes(search) ||
+        campaign.description?.toLowerCase().includes(search)
+    );
+  }, [campaigns, searchTerm]);
+
   const pageActions = (
-    <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Create Campaign
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Create New Campaign</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="campaign-name">Campaign Name</Label>
-            <Input id="campaign-name" placeholder="Enter campaign name" />
-          </div>
-          <div>
-            <Label htmlFor="campaign-description">Description</Label>
-            <Textarea id="campaign-description" placeholder="Campaign description" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="budget">Budget</Label>
-              <Input id="budget" type="number" placeholder="0" />
-            </div>
-            <div>
-              <Label htmlFor="platform">Platform</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select platform" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="meta">Meta</SelectItem>
-                  <SelectItem value="indeed">Indeed</SelectItem>
-                  <SelectItem value="google">Google Jobs</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCampaign}>
-              Create Campaign
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Button
+      className="flex items-center gap-2"
+      onClick={() => setShowCreateDialog(true)}
+    >
+      <Plus className="w-4 h-4" />
+      Create Campaign
+    </Button>
   );
 
   return (
@@ -119,61 +96,87 @@ const CampaignsPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.totalCampaigns || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    All time campaigns
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-              <Play className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">
-                +2 from last month
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.activeCampaigns || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Currently running
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">$15,432</div>
-              <p className="text-xs text-muted-foreground">
-                +12% from last month
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Applications</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">847</div>
-              <p className="text-xs text-muted-foreground">
-                +18% from last month
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{stats?.totalApplications || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    From all campaigns
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Avg. Cost per Lead</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$18.23</div>
-              <p className="text-xs text-muted-foreground">
-                -5% from last month
-              </p>
+              {isLoading ? (
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">
+                    ${stats?.avgCostPerLead ? stats.avgCostPerLead.toFixed(2) : '0.00'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Average across campaigns
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search campaigns..."
               value={searchTerm}
@@ -181,57 +184,68 @@ const CampaignsPage = () => {
               className="pl-10"
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Filter className="w-4 h-4" />
-            Filter
-          </Button>
         </div>
 
+        {/* Error State */}
+        {isError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load campaigns. Please try again later.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
         {/* Campaigns List */}
-        <div className="space-y-4">
-          {campaigns.map((campaign) => (
-            <Card key={campaign.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold">{campaign.name}</h3>
-                      <Badge variant={campaign.status === 'active' ? 'default' : 'secondary'}>
-                        {campaign.status}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                      <div>
-                        <span className="font-medium">Budget:</span> ${campaign.budget.toLocaleString()}
-                      </div>
-                      <div>
-                        <span className="font-medium">Spent:</span> ${campaign.spent.toLocaleString()}
-                      </div>
-                      <div>
-                        <span className="font-medium">Applications:</span> {campaign.applications}
-                      </div>
-                      <div>
-                        <span className="font-medium">Duration:</span> {campaign.startDate} - {campaign.endDate}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
+        {!isLoading && !isError && (
+          <div className="space-y-4">
+            {filteredCampaigns.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {searchTerm ? 'No campaigns found' : 'No campaigns yet'}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm
+                      ? 'Try adjusting your search terms'
+                      : 'Create your first campaign to get started'}
+                  </p>
+                  {!searchTerm && (
+                    <Button onClick={() => setShowCreateDialog(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Campaign
                     </Button>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              filteredCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={handleDeleteCampaign}
+                />
+              ))
+            )}
+          </div>
+        )}
       </div>
+
+      <CreateCampaignDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSubmit={handleCreateCampaign}
+        isCreating={isCreating}
+      />
     </PageLayout>
   );
 };
