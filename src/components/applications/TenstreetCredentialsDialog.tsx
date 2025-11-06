@@ -14,14 +14,16 @@ import { useAuth } from '@/hooks/useAuth';
 interface TenstreetCredentialsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialOrganizationId?: string | null;
 }
 
 const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   open,
   onOpenChange,
+  initialOrganizationId,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(initialOrganizationId || null);
   const [config, setConfig] = useState({
     account_name: '',
     client_id: '',
@@ -35,6 +37,13 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { organization, userRole } = useAuth();
+
+  // Update selectedOrganizationId when initialOrganizationId changes
+  React.useEffect(() => {
+    if (initialOrganizationId) {
+      setSelectedOrganizationId(initialOrganizationId);
+    }
+  }, [initialOrganizationId]);
 
   // Determine effective organization ID
   const effectiveOrgId = userRole === 'super_admin' ? selectedOrganizationId : organization?.id;

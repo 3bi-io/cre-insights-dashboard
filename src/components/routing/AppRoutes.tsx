@@ -44,6 +44,7 @@ const TenstreetExplorer = React.lazy(() => import("@/pages/TenstreetExplorer"));
 const TenstreetXchange = React.lazy(() => import("@/pages/TenstreetXchange"));
 const TenstreetFocus = React.lazy(() => import("@/pages/TenstreetFocus"));
 const TenstreetBulk = React.lazy(() => import("@/pages/TenstreetBulk"));
+const TenstreetCredentialsManagement = React.lazy(() => import("@/pages/TenstreetCredentialsManagement"));
 const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
@@ -162,6 +163,7 @@ const AppRoutes: React.FC = () => {
         <Route path="tenstreet/xchange" element={<ProtectedRouteWrapper><TenstreetXchange /></ProtectedRouteWrapper>} />
         <Route path="tenstreet/focus" element={<ProtectedRouteWrapper><TenstreetFocus /></ProtectedRouteWrapper>} />
         <Route path="tenstreet/bulk" element={<ProtectedRouteWrapper><TenstreetBulk /></ProtectedRouteWrapper>} />
+        <Route path="tenstreet-credentials" element={<ProtectedRouteWrapper><TenstreetCredentialsManagement /></ProtectedRouteWrapper>} />
         <Route path="ai-settings" element={<ProtectedRouteWrapper><AIPlatformSettings /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />

@@ -121,6 +121,11 @@ const AppSidebar = () => {
         icon: Zap
       }] : []),
       ...(userRole === 'super_admin' ? [{
+        path: '/admin/tenstreet-credentials',
+        label: 'ATS Credentials',
+        icon: Settings
+      }] : []),
+      ...(userRole === 'super_admin' ? [{
         path: '/admin/organizations',
         label: 'Organizations',
         icon: Building
