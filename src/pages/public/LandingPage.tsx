@@ -3,18 +3,20 @@
  * Main public homepage with hero section and key features
  */
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { SEO } from '@/components/SEO';
-import HeroSection from '@/components/landing/HeroSection';
-import StatsSection from '@/components/landing/StatsSection';
-import FeaturesSection from '@/components/landing/FeaturesSection';
-import IntegrationsSection from '@/components/landing/IntegrationsSection';
-import BenefitsSection from '@/components/landing/BenefitsSection';
-import OnboardingSection from '@/components/landing/OnboardingSection';
-import SupportSection from '@/components/landing/SupportSection';
-import TrustSection from '@/components/landing/TrustSection';
-import FAQSection from '@/components/landing/FAQSection';
-import CTASection from '@/components/landing/CTASection';
+import HeroSection from '@/features/landing/components/sections/HeroSection';
+import StatsSection from '@/features/landing/components/sections/StatsSection';
+
+// Lazy load sections below the fold for better performance
+const FeaturesSection = lazy(() => import('@/features/landing/components/sections/FeaturesSection'));
+const IntegrationsSection = lazy(() => import('@/features/landing/components/sections/IntegrationsSection'));
+const BenefitsSection = lazy(() => import('@/features/landing/components/sections/BenefitsSection'));
+const OnboardingSection = lazy(() => import('@/features/landing/components/sections/OnboardingSection'));
+const SupportSection = lazy(() => import('@/features/landing/components/sections/SupportSection'));
+const TrustSection = lazy(() => import('@/features/landing/components/sections/TrustSection'));
+const FAQSection = lazy(() => import('@/features/landing/components/sections/FAQSection'));
+const CTASection = lazy(() => import('@/features/landing/components/sections/CTASection'));
 
 const LandingPage = () => {
   return (
@@ -27,14 +29,18 @@ const LandingPage = () => {
       />
       <HeroSection />
       <StatsSection />
-      <FeaturesSection />
-      <IntegrationsSection />
-      <BenefitsSection />
-      <OnboardingSection />
-      <SupportSection />
-      <TrustSection />
-      <FAQSection />
-      <CTASection />
+      
+      {/* Lazy load sections below the fold */}
+      <Suspense fallback={<div className="py-20 text-center">Loading...</div>}>
+        <FeaturesSection />
+        <IntegrationsSection />
+        <BenefitsSection />
+        <OnboardingSection />
+        <SupportSection />
+        <TrustSection />
+        <FAQSection />
+        <CTASection />
+      </Suspense>
     </div>
   );
 };
