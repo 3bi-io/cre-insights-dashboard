@@ -29,6 +29,12 @@ const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const AdminDashboard = React.lazy(() => import("@/pages/AdminDashboard"));
 const CandidateDashboard = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateDashboard })));
+const CandidateLayout = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateLayout })));
+const MyApplicationsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MyApplicationsPage })));
+const JobSearchPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.JobSearchPage })));
+const SavedJobsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.SavedJobsPage })));
+const MessagesPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MessagesPage })));
+const ProfilePage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.ProfilePage })));
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
 const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
@@ -147,9 +153,16 @@ const AppRoutes: React.FC = () => {
       {/* Candidate Routes */}
       <Route path="/my-jobs" element={
         <ProtectedRoute requireSubscription={false}>
-          <RouteWrapper><CandidateDashboard /></RouteWrapper>
+          <RouteWrapper><CandidateLayout /></RouteWrapper>
         </ProtectedRoute>
-      } />
+      }>
+        <Route index element={<RouteWrapper><CandidateDashboard /></RouteWrapper>} />
+        <Route path="applications" element={<RouteWrapper><MyApplicationsPage /></RouteWrapper>} />
+        <Route path="search" element={<RouteWrapper><JobSearchPage /></RouteWrapper>} />
+        <Route path="saved" element={<RouteWrapper><SavedJobsPage /></RouteWrapper>} />
+        <Route path="messages" element={<RouteWrapper><MessagesPage /></RouteWrapper>} />
+        <Route path="profile" element={<RouteWrapper><ProfilePage /></RouteWrapper>} />
+      </Route>
 
       {/* Admin Routes */}
       <Route path="/admin" element={<LayoutWrapper />}>

@@ -3,33 +3,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Briefcase, FileText, Search, Bell, User, CheckCircle2 } from 'lucide-react';
+import { Briefcase, FileText, Search, Bell, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCandidateApplications, useSavedJobs } from '../hooks';
 
 const CandidateDashboard = () => {
-  const { user, candidateProfile } = useAuth();
+  const { candidateProfile } = useAuth();
+  const { applications } = useCandidateApplications();
+  const { savedJobs } = useSavedJobs();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="ATS.me" 
-              className="h-8 w-auto"
-            />
-            <h1 className="text-xl font-bold">My Jobs</h1>
-          </div>
-          <Link to="/settings">
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-2">
             Welcome back{candidateProfile?.first_name ? `, ${candidateProfile.first_name}` : ''}!
@@ -70,56 +54,64 @@ const CandidateDashboard = () => {
               </div>
             </div>
             <Button className="w-full mt-4" asChild>
-              <Link to="/my-profile">Complete Profile</Link>
+              <Link to="/my-jobs/profile">Complete Profile</Link>
             </Button>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">My Applications</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Active applications</p>
-            </CardContent>
-          </Card>
+          <Link to="/my-jobs/applications">
+            <Card className="cursor-pointer hover:bg-accent transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">My Applications</CardTitle>
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{applications?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">Active applications</p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saved Jobs</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Jobs saved</p>
-            </CardContent>
-          </Card>
+          <Link to="/my-jobs/saved">
+            <Card className="cursor-pointer hover:bg-accent transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Saved Jobs</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{savedJobs?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">Jobs saved</p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Job Matches</CardTitle>
-              <Search className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">New matches</p>
-            </CardContent>
-          </Card>
+          <Link to="/my-jobs/search">
+            <Card className="cursor-pointer hover:bg-accent transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Job Search</CardTitle>
+                <Search className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">Find</div>
+                <p className="text-xs text-muted-foreground">Browse opportunities</p>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="cursor-pointer hover:bg-accent transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Notifications</CardTitle>
-              <Bell className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Unread</p>
-            </CardContent>
-          </Card>
+          <Link to="/my-jobs/messages">
+            <Card className="cursor-pointer hover:bg-accent transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Messages</CardTitle>
+                <Bell className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">0</div>
+                <p className="text-xs text-muted-foreground">Unread</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Empty States */}
@@ -137,7 +129,7 @@ const CandidateDashboard = () => {
                   Start applying to jobs to see them here
                 </p>
                 <Button asChild>
-                  <Link to="/jobs">Browse Jobs</Link>
+                  <Link to="/my-jobs/search">Browse Jobs</Link>
                 </Button>
               </div>
             </CardContent>
@@ -156,14 +148,13 @@ const CandidateDashboard = () => {
                   Add more details to get personalized job recommendations
                 </p>
                 <Button variant="outline" asChild>
-                  <Link to="/my-profile">Update Profile</Link>
+                  <Link to="/my-jobs/profile">Update Profile</Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
   );
 };
 
