@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
-import { corsHeaders, handleCorsPrelight } from '../_shared/cors.ts'
+import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts'
 import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
 import { getServiceClient } from '../_shared/supabase-client.ts'
@@ -14,9 +14,12 @@ const importSchema = z.object({
 })
 
 const handler = wrapHandler(async (req: Request) => {
+  const origin = req.headers.get('origin');
+  
   // Handle CORS preflight
-  const corsResponse = handleCorsPrelight(req);
-  if (corsResponse) return corsResponse;
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: getCorsHeaders(origin) });
+  }
 
   if (req.method !== 'POST') {
     throw new ValidationError('POST method required');

@@ -3,7 +3,7 @@
  * Handles bulk imports, exports, status updates, and sync operations
  */
 
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
@@ -18,8 +18,10 @@ interface BulkOperationRequest {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   try {

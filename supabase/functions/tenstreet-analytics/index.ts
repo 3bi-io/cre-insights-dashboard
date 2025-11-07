@@ -3,7 +3,7 @@
  * Fetches and caches analytics data from Tenstreet API
  */
 
-import { corsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { successResponse, errorResponse } from '../_shared/response.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
@@ -16,8 +16,10 @@ interface AnalyticsRequest {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   try {
