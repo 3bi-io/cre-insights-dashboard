@@ -35,6 +35,7 @@ const JobSearchPage = React.lazy(() => import("@/features/candidate").then(m => 
 const SavedJobsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.SavedJobsPage })));
 const MessagesPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MessagesPage })));
 const ProfilePage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.ProfilePage })));
+const GrokChatPage = React.lazy(() => import("@/features/ai-chat").then(m => ({ default: m.GrokChatPage })));
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
 const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
@@ -204,6 +205,7 @@ const AppRoutes: React.FC = () => {
         <Route path="visitor-analytics" element={<ProtectedRouteWrapper><VisitorAnalytics /></ProtectedRouteWrapper>} />
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
+        <Route path="grok" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
       </Route>
 
       {/* Access Denied Route */}
