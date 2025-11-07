@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ClientLogoUpload } from './ClientLogoUpload';
 import {
   Form,
   FormControl,
@@ -54,6 +55,8 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
   client,
   isLoading = false,
 }) => {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
@@ -85,6 +88,7 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
         notes: client.notes || '',
         status: client.status as 'active' | 'inactive' | 'pending',
       });
+      setLogoUrl(client.logo_url || null);
     }
   }, [client, form]);
 
@@ -113,6 +117,15 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {client && (
+              <ClientLogoUpload
+                clientId={client.id}
+                clientName={client.name}
+                currentLogoUrl={logoUrl}
+                onLogoChange={setLogoUrl}
+              />
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

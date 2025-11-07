@@ -13,6 +13,7 @@ export interface Client {
   created_at: string;
   updated_at: string;
   organization_id: string | null;
+  logo_url: string | null;
 }
 
 export interface CreateClientData {

@@ -64,7 +64,7 @@ const JobsPage = () => {
             id
           ),
           job_categories(name),
-          clients(name)
+          clients(name, logo_url)
         `)
         .eq('status', 'active')
         .order('created_at', { ascending: false });

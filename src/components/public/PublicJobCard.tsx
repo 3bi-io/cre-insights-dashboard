@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { JobContext } from '@/features/elevenlabs';
 
 interface PublicJobCardProps {
@@ -67,8 +68,20 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
             <CardTitle className="text-lg leading-tight mb-2 line-clamp-2">
               {displayTitle}
             </CardTitle>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <Building2 className="w-4 h-4 flex-shrink-0" />
+            <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
+              <Avatar className="h-10 w-10 border">
+                {job.clients?.logo_url ? (
+                  <AvatarImage 
+                    src={job.clients.logo_url} 
+                    alt={`${companyName} logo`}
+                    className="object-contain p-1 bg-background"
+                    loading="lazy"
+                  />
+                ) : null}
+                <AvatarFallback className="bg-muted">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                </AvatarFallback>
+              </Avatar>
               <span className="font-medium text-foreground">{companyName}</span>
             </div>
             {job.job_categories?.name && (
