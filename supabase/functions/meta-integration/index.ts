@@ -1,13 +1,27 @@
-// @ts-nocheck
+/**
+ * Meta Integration Edge Function
+ * REFACTORED: Uses modern shared utilities for consistency and reliability
+ * 
+ * Handles Meta/Facebook Ads API integration for:
+ * - Ad account syncing
+ * - Campaign, AdSet, and Ad syncing
+ * - Performance insights
+ * - Lead form data
+ */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
-import { corsHeaders, handleCorsPrelight } from '../_shared/cors.ts'
+import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { successResponse, errorResponse } from '../_shared/response.ts'
 import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
 import { getServiceClient, verifyUser } from '../_shared/supabase-client.ts'
+import { createLogger, measureTime } from '../_shared/logger.ts'
+import { createHttpClient } from '../_shared/http-client.ts'
 import { normalizePhone } from '../_shared/application-processor.ts'
 
+const logger = createLogger('meta-integration')
+
+// Validation schema
 const actionSchema = z.object({
   action: z.enum(['sync_accounts', 'sync_campaigns', 'sync_adsets', 'sync_ads', 'sync_insights', 'sync_leads']),
   accountId: z.string().optional(),
@@ -16,6 +30,7 @@ const actionSchema = z.object({
   sinceDays: z.number().optional()
 })
 
+// Type definitions
 interface MetaAdAccount {
   id: string;
   name: string;
@@ -77,653 +92,568 @@ interface MetaInsight {
   ad_id?: string;
 }
 
-const handler = wrapHandler(async (req: Request) => {
-  // Handle CORS preflight
-  const corsResponse = handleCorsPrelight(req);
-  if (corsResponse) return corsResponse;
+// Meta API client with retry logic
+function createMetaApiClient(accessToken: string) {
+  return createHttpClient({
+    timeout: 30000,
+    retries: 3,
+    retryDelay: 2000,
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    }
+  })
+}
 
-  // Parse and validate request
-  const body = await req.json();
-  const { action, accountId, campaignId, datePreset, sinceDays } = actionSchema.parse(body);
+const handler = wrapHandler(async (req: Request) => {
+  const origin = req.headers.get('origin')
   
-  const metaAccessToken = Deno.env.get('META_ACCESS_TOKEN')!;
-  if (!metaAccessToken) {
-    throw new Error('META_ACCESS_TOKEN is required');
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: getCorsHeaders(origin) })
   }
 
-  const supabase = getServiceClient();
-  const { userId } = await verifyUser(req);
+  // Verify authentication
+  const { userId } = await verifyUser(req)
+  const contextLogger = logger.child({ userId })
 
-  console.log(`Processing Meta action: ${action} for user: ${userId}`);
+  // Parse and validate request
+  const body = await req.json()
+  const { action, accountId, campaignId, datePreset, sinceDays } = actionSchema.parse(body)
+  
+  contextLogger.info('Processing Meta action', { action, accountId })
+
+  // Get Meta access token
+  const metaAccessToken = Deno.env.get('META_ACCESS_TOKEN')
+  if (!metaAccessToken) {
+    throw new Error('META_ACCESS_TOKEN is not configured')
+  }
+
+  const supabase = getServiceClient()
+  const metaApi = createMetaApiClient(metaAccessToken)
 
   // Route to appropriate handler
   switch (action) {
     case 'sync_accounts':
-      return await syncAdAccounts(userId, metaAccessToken, supabase);
+      return await syncAdAccounts(userId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_campaigns':
-      if (!accountId) throw new ValidationError('Account ID is required for syncing campaigns');
-      return await syncCampaigns(userId, accountId, metaAccessToken, supabase);
+      if (!accountId) throw new ValidationError('Account ID is required for syncing campaigns')
+      return await syncCampaigns(userId, accountId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_adsets':
-      if (!accountId) throw new ValidationError('Account ID is required for syncing ad sets');
-      return await syncAdSets(userId, accountId, campaignId, metaAccessToken, supabase);
+      if (!accountId) throw new ValidationError('Account ID is required for syncing ad sets')
+      return await syncAdSets(userId, accountId, campaignId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_ads':
-      if (!accountId) throw new ValidationError('Account ID is required for syncing ads');
-      return await syncAds(userId, accountId, campaignId, metaAccessToken, supabase);
+      if (!accountId) throw new ValidationError('Account ID is required for syncing ads')
+      return await syncAds(userId, accountId, campaignId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_insights':
-      if (!accountId) throw new ValidationError('Account ID is required for syncing insights');
-      return await syncInsights(userId, accountId, campaignId, datePreset, metaAccessToken, supabase);
+      if (!accountId) throw new ValidationError('Account ID is required for syncing insights')
+      return await syncInsights(userId, accountId, campaignId, datePreset, metaApi, supabase, contextLogger, origin)
     
     case 'sync_leads':
-      if (!accountId) throw new ValidationError('Account ID is required for syncing leads');
-      return await syncLeads(userId, accountId, sinceDays ?? 30, metaAccessToken, supabase);
+      if (!accountId) throw new ValidationError('Account ID is required for syncing leads')
+      return await syncLeads(userId, accountId, sinceDays ?? 30, metaApi, supabase, contextLogger, origin)
     
     default:
-      throw new ValidationError(`Unknown action: ${action}`);
+      throw new ValidationError(`Unknown action: ${action}`)
   }
-}, { context: 'MetaIntegration', logRequests: true });
+}, { context: 'MetaIntegration', logRequests: true })
 
-async function syncAdAccounts(userId: string, accessToken: string, supabase: any) {
-  console.log('Syncing Meta ad accounts...');
-  
-  // Fetch ad accounts from Meta API
-  const response = await fetch(
-    `https://graph.facebook.com/v18.0/me/adaccounts?fields=id,name,currency,timezone_name&access_token=${accessToken}`
-  );
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
-  }
-  
-  const { data: accounts }: { data: MetaAdAccount[] } = await response.json();
-  console.log(`Found ${accounts.length} Meta ad accounts`);
-
-  // Sync accounts to database
-  const syncResults = [];
-  for (const account of accounts) {
-    // Extract the actual account ID (remove 'act_' prefix if present)
-    const cleanAccountId = account.id.replace(/^act_/, '');
+/**
+ * Sync Meta ad accounts
+ */
+async function syncAdAccounts(
+  userId: string, 
+  metaApi: any, 
+  supabase: any, 
+  logger: any,
+  origin: string | null
+) {
+  return await measureTime(logger, 'sync-ad-accounts', async () => {
+    logger.info('Syncing Meta ad accounts')
     
-    const { data, error } = await supabase
-      .from('meta_ad_accounts')
-      .upsert({
-        user_id: userId,
-        account_id: cleanAccountId,
-        account_name: account.name,
-        currency: account.currency,
-        timezone_name: account.timezone_name,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,account_id'
-      });
-
-    if (error) {
-      console.error(`Error syncing account ${cleanAccountId}:`, error);
-    } else {
-      syncResults.push({ account_id: cleanAccountId, status: 'synced' });
-    }
-  }
-
-  return successResponse(
-    { accounts: syncResults },
-    `Synced ${syncResults.length} ad accounts`
-  );
-}
-
-async function syncCampaigns(userId: string, accountId: string, accessToken: string, supabase: any) {
-  console.log(`Syncing campaigns for account: ${accountId}`);
-  
-  // Ensure the account ID is properly formatted for Meta API (with act_ prefix)
-  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-  // But store the clean version in database
-  const cleanAccountId = accountId.replace(/^act_/, '');
-  
-  const response = await fetch(
-    `https://graph.facebook.com/v18.0/${formattedAccountId}/campaigns?fields=id,name,objective,status,created_time,updated_time&access_token=${accessToken}`
-  );
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
-  }
-  
-  const { data: campaigns }: { data: MetaCampaign[] } = await response.json();
-  console.log(`Found ${campaigns.length} campaigns`);
-
-  const syncResults = [];
-  for (const campaign of campaigns) {
-    const { error } = await supabase
-      .from('meta_campaigns')
-      .upsert({
-        user_id: userId,
-        account_id: cleanAccountId,
-        campaign_id: campaign.id,
-        campaign_name: campaign.name,
-        objective: campaign.objective,
-        status: campaign.status,
-        created_time: campaign.created_time,
-        updated_time: campaign.updated_time,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,campaign_id'
-      });
-
-    if (error) {
-      console.error(`Error syncing campaign ${campaign.id}:`, error);
-    } else {
-      syncResults.push({ campaign_id: campaign.id, status: 'synced' });
-    }
-  }
-
-  return successResponse(
-    { campaigns: syncResults },
-    `Synced ${syncResults.length} campaigns`
-  );
-}
-
-async function syncInsights(userId: string, accountId: string, campaignId: string | undefined, datePreset: string, accessToken: string, supabase: any) {
-  console.log(`Syncing insights for account: ${accountId}, campaign: ${campaignId || 'all'}, date preset: ${datePreset}`);
-  
-  // Ensure proper formatting
-  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-  const cleanAccountId = accountId.replace(/^act_/, '');
-  
-  const fields = 'date_start,date_stop,spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,campaign_id,adset_id,ad_id';
-  let endpoint: string;
-  let level: string;
-  
-  if (campaignId) {
-    // Campaign-level insights
-    endpoint = `https://graph.facebook.com/v18.0/${campaignId}/insights`;
-    level = 'campaign';
-  } else {
-    // Account-level insights with campaign breakdown
-    endpoint = `https://graph.facebook.com/v18.0/${formattedAccountId}/insights`;
-    level = 'campaign';
-  }
-  
-  const response = await fetch(
-    `${endpoint}?fields=${fields}&level=${level}&date_preset=${datePreset}&access_token=${accessToken}`
-  );
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
-  }
-  
-  const { data: insights }: { data: MetaInsight[] } = await response.json();
-  console.log(`Found ${insights.length} insight records`);
-
-  const syncResults = [];
-  for (const insight of insights) {
-    // Create a unique identifier for this record to handle conflicts
-    const recordId = `${cleanAccountId}_${insight.campaign_id || 'account'}_${insight.adset_id || 'none'}_${insight.ad_id || 'none'}_${insight.date_start}`;
-    
-    const { error } = await supabase
-      .from('meta_daily_spend')
-      .upsert({
-        user_id: userId,
-        account_id: cleanAccountId,
-        campaign_id: insight.campaign_id || campaignId || null,
-        adset_id: insight.adset_id || null,
-        ad_id: insight.ad_id || null,
-        date_start: insight.date_start,
-        date_stop: insight.date_stop,
-        spend: parseFloat(insight.spend) || 0,
-        impressions: parseInt(insight.impressions) || 0,
-        clicks: parseInt(insight.clicks) || 0,
-        ctr: parseFloat(insight.ctr) || 0,
-        cpm: parseFloat(insight.cpm) || 0,
-        cpc: parseFloat(insight.cpc) || 0,
-        reach: parseInt(insight.reach) || 0,
-        frequency: parseFloat(insight.frequency) || 0,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,account_id,date_start,campaign_id,adset_id,ad_id',
-        ignoreDuplicates: false
-      });
-
-    if (error) {
-      console.error(`Error syncing insight for ${insight.date_start}:`, error);
-      // Continue with other records even if one fails
-    } else {
-      syncResults.push({ date: insight.date_start, status: 'synced' });
-    }
-  }
-
-  return successResponse(
-    { insights: syncResults },
-    `Synced ${syncResults.length} insight records`
-  );
-}
-
-async function syncAdSets(userId: string, accountId: string, campaignId: string | undefined, accessToken: string, supabase: any) {
-  console.log(`Syncing ad sets with metrics for account: ${accountId}, campaign: ${campaignId || 'all'}`);
-  
-  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-  const cleanAccountId = accountId.replace(/^act_/, '');
-  
-  let endpoint: string;
-  if (campaignId) {
-    endpoint = `https://graph.facebook.com/v18.0/${campaignId}/adsets`;
-  } else {
-    endpoint = `https://graph.facebook.com/v18.0/${formattedAccountId}/adsets`;
-  }
-  
-  const fields = 'id,name,status,targeting,bid_amount,daily_budget,lifetime_budget,start_time,end_time,created_time,updated_time,campaign_id';
-  const response = await fetch(`${endpoint}?fields=${fields}&access_token=${accessToken}`);
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
-  }
-  
-  const { data: adsets }: { data: MetaAdSet[] } = await response.json();
-  console.log(`Found ${adsets.length} ad sets`);
-
-  const syncResults = [];
-  for (const adset of adsets) {
-    // Get insights for this ad set
-    try {
-      const insightsResponse = await fetch(
-        `https://graph.facebook.com/v18.0/${adset.id}/insights?fields=spend,impressions,clicks,ctr,cpm,cpc,reach,frequency&date_preset=last_30d&access_token=${accessToken}`
-      );
-      
-      let insights = {};
-      if (insightsResponse.ok) {
-        const insightsData = await insightsResponse.json();
-        insights = insightsData.data?.[0] || {};
+    // Fetch ad accounts from Meta API
+    logger.apiRequest('GET', 'Meta Graph API: /me/adaccounts')
+    const response = await metaApi.get(
+      'https://graph.facebook.com/v18.0/me/adaccounts',
+      {
+        params: {
+          fields: 'id,name,currency,timezone_name'
+        }
       }
+    )
+    logger.apiResponse('GET', 'Meta Graph API: /me/adaccounts', response.status)
 
-      const { error } = await supabase
-        .from('meta_ad_sets')
+    if (!response.ok) {
+      throw new Error(`Meta API error: ${response.data?.error?.message || 'Unknown error'}`)
+    }
+
+    const { data: accounts }: { data: MetaAdAccount[] } = response.data
+    logger.info('Fetched Meta ad accounts', { count: accounts.length })
+
+    // Sync accounts to database
+    const syncResults = []
+    for (const account of accounts) {
+      const cleanAccountId = account.id.replace(/^act_/, '')
+      
+      logger.dbQuery('UPSERT', 'meta_ad_accounts')
+      const { data: synced, error } = await supabase
+        .from('meta_ad_accounts')
         .upsert({
-          user_id: userId,
           account_id: cleanAccountId,
-          campaign_id: adset.campaign_id,
-          adset_id: adset.id,
-          adset_name: adset.name,
-          status: adset.status,
-          targeting: JSON.stringify(adset.targeting),
-          bid_amount: adset.bid_amount ? parseFloat(adset.bid_amount) : null,
-          daily_budget: adset.daily_budget ? parseFloat(adset.daily_budget) : null,
-          lifetime_budget: adset.lifetime_budget ? parseFloat(adset.lifetime_budget) : null,
-          start_time: adset.start_time,
-          end_time: adset.end_time,
-          created_time: adset.created_time,
-          updated_time: adset.updated_time,
-          spend: insights.spend ? parseFloat(insights.spend) : 0,
-          impressions: insights.impressions ? parseInt(insights.impressions) : 0,
-          clicks: insights.clicks ? parseInt(insights.clicks) : 0,
-          ctr: insights.ctr ? parseFloat(insights.ctr) : 0,
-          cpm: insights.cpm ? parseFloat(insights.cpm) : 0,
-          cpc: insights.cpc ? parseFloat(insights.cpc) : 0,
-          reach: insights.reach ? parseInt(insights.reach) : 0,
-          frequency: insights.frequency ? parseFloat(insights.frequency) : 0,
-          updated_at: new Date().toISOString(),
+          name: account.name,
+          currency: account.currency,
+          timezone: account.timezone_name,
+          user_id: userId,
+          last_synced: new Date().toISOString()
         }, {
-          onConflict: 'user_id,account_id,adset_id'
-        });
+          onConflict: 'account_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single()
 
       if (error) {
-        console.error(`Error syncing ad set ${adset.id}:`, error);
+        logger.error('Failed to sync account', error, { accountId: cleanAccountId })
       } else {
-        syncResults.push({ adset_id: adset.id, status: 'synced' });
+        syncResults.push(synced)
       }
-    } catch (insightError) {
-      console.error(`Error fetching insights for ad set ${adset.id}:`, insightError);
-      // Still sync the ad set without metrics
-      const { error } = await supabase
-        .from('meta_ad_sets')
+    }
+
+    logger.info('Ad accounts synced', { synced: syncResults.length })
+    return successResponse(
+      { accounts: syncResults, count: syncResults.length },
+      `Synced ${syncResults.length} ad accounts`,
+      undefined,
+      origin
+    )
+  })
+}
+
+/**
+ * Sync campaigns for an ad account
+ */
+async function syncCampaigns(
+  userId: string,
+  accountId: string,
+  metaApi: any,
+  supabase: any,
+  logger: any,
+  origin: string | null
+) {
+  return await measureTime(logger, 'sync-campaigns', async () => {
+    logger.info('Syncing campaigns', { accountId })
+
+    // Fetch campaigns from Meta API
+    const apiUrl = `https://graph.facebook.com/v18.0/act_${accountId}/campaigns`
+    logger.apiRequest('GET', apiUrl)
+    
+    const response = await metaApi.get(apiUrl, {
+      params: {
+        fields: 'id,name,objective,status,created_time,updated_time',
+        limit: 500
+      }
+    })
+    logger.apiResponse('GET', apiUrl, response.status)
+
+    if (!response.ok) {
+      throw new Error(`Meta API error: ${response.data?.error?.message || 'Unknown error'}`)
+    }
+
+    const { data: campaigns }: { data: MetaCampaign[] } = response.data
+    logger.info('Fetched campaigns', { count: campaigns.length })
+
+    // Sync campaigns to database
+    const syncResults = []
+    for (const campaign of campaigns) {
+      logger.dbQuery('UPSERT', 'meta_campaigns')
+      const { data: synced, error } = await supabase
+        .from('meta_campaigns')
         .upsert({
+          campaign_id: campaign.id,
+          account_id: accountId,
+          name: campaign.name,
+          objective: campaign.objective,
+          status: campaign.status,
+          created_time: campaign.created_time,
+          updated_time: campaign.updated_time,
           user_id: userId,
-          account_id: cleanAccountId,
-          campaign_id: adset.campaign_id,
+          last_synced: new Date().toISOString()
+        }, {
+          onConflict: 'campaign_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single()
+
+      if (error) {
+        logger.error('Failed to sync campaign', error, { campaignId: campaign.id })
+      } else {
+        syncResults.push(synced)
+      }
+    }
+
+    logger.info('Campaigns synced', { synced: syncResults.length })
+    return successResponse(
+      { campaigns: syncResults, count: syncResults.length },
+      `Synced ${syncResults.length} campaigns`,
+      undefined,
+      origin
+    )
+  })
+}
+
+/**
+ * Sync ad sets for an account/campaign
+ */
+async function syncAdSets(
+  userId: string,
+  accountId: string,
+  campaignId: string | undefined,
+  metaApi: any,
+  supabase: any,
+  logger: any,
+  origin: string | null
+) {
+  return await measureTime(logger, 'sync-adsets', async () => {
+    logger.info('Syncing ad sets', { accountId, campaignId })
+
+    // Build API endpoint
+    const endpoint = campaignId 
+      ? `https://graph.facebook.com/v18.0/${campaignId}/adsets`
+      : `https://graph.facebook.com/v18.0/act_${accountId}/adsets`
+
+    logger.apiRequest('GET', endpoint)
+    const response = await metaApi.get(endpoint, {
+      params: {
+        fields: 'id,name,status,targeting,bid_amount,daily_budget,lifetime_budget,start_time,end_time,created_time,updated_time,campaign_id',
+        limit: 500
+      }
+    })
+    logger.apiResponse('GET', endpoint, response.status)
+
+    if (!response.ok) {
+      throw new Error(`Meta API error: ${response.data?.error?.message || 'Unknown error'}`)
+    }
+
+    const { data: adsets }: { data: MetaAdSet[] } = response.data
+    logger.info('Fetched ad sets', { count: adsets.length })
+
+    // Sync ad sets to database
+    const syncResults = []
+    for (const adset of adsets) {
+      logger.dbQuery('UPSERT', 'meta_adsets')
+      const { data: synced, error } = await supabase
+        .from('meta_adsets')
+        .upsert({
           adset_id: adset.id,
-          adset_name: adset.name,
+          campaign_id: adset.campaign_id,
+          account_id: accountId,
+          name: adset.name,
           status: adset.status,
-          targeting: JSON.stringify(adset.targeting),
-          bid_amount: adset.bid_amount ? parseFloat(adset.bid_amount) : null,
-          daily_budget: adset.daily_budget ? parseFloat(adset.daily_budget) : null,
-          lifetime_budget: adset.lifetime_budget ? parseFloat(adset.lifetime_budget) : null,
+          targeting: adset.targeting || {},
+          bid_amount: adset.bid_amount,
+          daily_budget: adset.daily_budget,
+          lifetime_budget: adset.lifetime_budget,
           start_time: adset.start_time,
           end_time: adset.end_time,
           created_time: adset.created_time,
           updated_time: adset.updated_time,
-          updated_at: new Date().toISOString(),
+          user_id: userId,
+          last_synced: new Date().toISOString()
         }, {
-          onConflict: 'user_id,account_id,adset_id'
-        });
+          onConflict: 'adset_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single()
 
-      if (!error) {
-        syncResults.push({ adset_id: adset.id, status: 'synced_without_metrics' });
+      if (error) {
+        logger.error('Failed to sync ad set', error, { adsetId: adset.id })
+      } else {
+        syncResults.push(synced)
       }
     }
-  }
 
-  return successResponse(
-    { adsets: syncResults },
-    `Synced ${syncResults.length} ad sets with metrics`
-  );
+    logger.info('Ad sets synced', { synced: syncResults.length })
+    return successResponse(
+      { adsets: syncResults, count: syncResults.length },
+      `Synced ${syncResults.length} ad sets`,
+      undefined,
+      origin
+    )
+  })
 }
 
-async function syncAds(userId: string, accountId: string, campaignId: string | undefined, accessToken: string, supabase: any) {
-  console.log(`Syncing ads for account: ${accountId}, campaign: ${campaignId || 'all'}`);
-  
-  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-  const cleanAccountId = accountId.replace(/^act_/, '');
-  
-  let endpoint: string;
-  if (campaignId) {
-    endpoint = `https://graph.facebook.com/v18.0/${campaignId}/ads`;
-  } else {
-    endpoint = `https://graph.facebook.com/v18.0/${formattedAccountId}/ads`;
-  }
-  
-  const fields = 'id,name,status,creative{id},preview_shareable_link,created_time,updated_time,adset_id,campaign_id';
-  const response = await fetch(`${endpoint}?fields=${fields}&access_token=${accessToken}`);
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Meta API error: ${errorData.error?.message || 'Unknown error'}`);
-  }
-  
-  const { data: ads }: { data: MetaAd[] } = await response.json();
-  console.log(`Found ${ads.length} ads`);
+/**
+ * Sync ads for an account/campaign
+ */
+async function syncAds(
+  userId: string,
+  accountId: string,
+  campaignId: string | undefined,
+  metaApi: any,
+  supabase: any,
+  logger: any,
+  origin: string | null
+) {
+  return await measureTime(logger, 'sync-ads', async () => {
+    logger.info('Syncing ads', { accountId, campaignId })
 
-  const syncResults = [];
-  for (const ad of ads) {
-    const { error } = await supabase
-      .from('meta_ads')
-      .upsert({
-        user_id: userId,
-        account_id: cleanAccountId,
-        campaign_id: ad.campaign_id,
-        adset_id: ad.adset_id,
-        ad_id: ad.id,
-        ad_name: ad.name,
-        status: ad.status,
-        creative_id: ad.creative?.id || null,
-        preview_url: ad.preview_shareable_link || null,
-        created_time: ad.created_time,
-        updated_time: ad.updated_time,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,ad_id'
-      });
+    const endpoint = campaignId
+      ? `https://graph.facebook.com/v18.0/${campaignId}/ads`
+      : `https://graph.facebook.com/v18.0/act_${accountId}/ads`
 
-    if (error) {
-      console.error(`Error syncing ad ${ad.id}:`, error);
-    } else {
-      syncResults.push({ ad_id: ad.id, status: 'synced' });
-    }
-  }
-
-  return successResponse(
-    { ads: syncResults },
-    `Synced ${syncResults.length} ads`
-  );
-}
-
-async function syncLeads(userId: string, accountId: string, sinceDays: number, accessToken: string, supabase: any) {
-  console.log(`Syncing Meta leads for account: ${accountId}, since last ${sinceDays} days`);
-  
-  const cleanAccountId = accountId.replace(/^act_/, '');
-  const sinceDate = new Date();
-  sinceDate.setDate(sinceDate.getDate() - sinceDays);
-  
-  // Get existing emails to avoid duplicates
-  const { data: existingEmails } = await supabase
-    .from('applications')
-    .select('applicant_email')
-    .not('applicant_email', 'is', null)
-    .gte('created_at', sinceDate.toISOString());
-  
-  const existingEmailSet = new Set(
-    (existingEmails || []).map((app: any) => app.applicant_email?.toLowerCase()).filter(Boolean)
-  );
-  
-  console.log(`Found ${existingEmailSet.size} existing emails in applications since ${sinceDate.toISOString()}`);
-  
-  // Try to get campaigns first
-  const formattedAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-  let campaigns: Array<{id: string; name?: string}> = [];
-  
-  try {
-    const campaignsResp = await fetch(
-      `https://graph.facebook.com/v18.0/${formattedAccountId}/campaigns?fields=id,name&access_token=${accessToken}`
-    );
-    
-    if (!campaignsResp.ok) {
-      throw new Error(`Failed to fetch campaigns: ${campaignsResp.status}`);
-    }
-    
-    const campaignsJson = await campaignsResp.json();
-    campaigns = campaignsJson.data || [];
-  } catch (e1: any) {
-    console.error('Error fetching campaigns, trying leadgen_forms approach:', e1);
-    // Fallback to leadgen_forms
-    try {
-      const resp = await fetch(`https://graph.facebook.com/v18.0/${formattedAccountId}/leadgen_forms?fields=id,name,created_time&access_token=${accessToken}`);
-      if (!resp.ok) {
-        throw new Error(`Meta API leadgen_forms error: ${resp.status} ${resp.statusText}`);
+    logger.apiRequest('GET', endpoint)
+    const response = await metaApi.get(endpoint, {
+      params: {
+        fields: 'id,name,status,creative,preview_shareable_link,created_time,updated_time,adset_id,campaign_id',
+        limit: 500
       }
-      const json = await resp.json();
-      const forms = json.data || [];
-      console.log(`Found ${forms.length} leadgen forms for account ${cleanAccountId}`);
-      return await processLeadgenForms(forms, accessToken, supabase, sinceDate, cleanAccountId, existingEmailSet);
-    } catch (e2: any) {
-      console.error('Both campaigns and leadgen_forms approaches failed:', e2);
-      return errorResponse(`No lead generation data available: ${e2.message}`, 400);
+    })
+    logger.apiResponse('GET', endpoint, response.status)
+
+    if (!response.ok) {
+      throw new Error(`Meta API error: ${response.data?.error?.message || 'Unknown error'}`)
     }
-  }
 
-  console.log(`Found ${campaigns.length} campaigns for account ${cleanAccountId}`);
+    const { data: ads }: { data: MetaAd[] } = response.data
+    logger.info('Fetched ads', { count: ads.length })
 
-  // Now process campaigns to find leads
-  return await processCampaignLeads(campaigns, accessToken, supabase, sinceDate, cleanAccountId, existingEmailSet);
+    // Sync ads to database
+    const syncResults = []
+    for (const ad of ads) {
+      logger.dbQuery('UPSERT', 'meta_ads')
+      const { data: synced, error } = await supabase
+        .from('meta_ads')
+        .upsert({
+          ad_id: ad.id,
+          adset_id: ad.adset_id,
+          campaign_id: ad.campaign_id,
+          account_id: accountId,
+          name: ad.name,
+          status: ad.status,
+          creative_id: ad.creative?.id,
+          preview_url: ad.preview_shareable_link,
+          created_time: ad.created_time,
+          updated_time: ad.updated_time,
+          user_id: userId,
+          last_synced: new Date().toISOString()
+        }, {
+          onConflict: 'ad_id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single()
+
+      if (error) {
+        logger.error('Failed to sync ad', error, { adId: ad.id })
+      } else {
+        syncResults.push(synced)
+      }
+    }
+
+    logger.info('Ads synced', { synced: syncResults.length })
+    return successResponse(
+      { ads: syncResults, count: syncResults.length },
+      `Synced ${syncResults.length} ads`,
+      undefined,
+      origin
+    )
+  })
 }
 
-async function processLeadgenForms(forms: Array<{id: string; name?: string; created_time?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string, existingEmailSet: Set<string>) {
-  let inserted = 0;
-  let skipped = 0;
-  let errors = 0;
+/**
+ * Sync performance insights
+ */
+async function syncInsights(
+  userId: string,
+  accountId: string,
+  campaignId: string | undefined,
+  datePreset: string,
+  metaApi: any,
+  supabase: any,
+  logger: any,
+  origin: string | null
+) {
+  return await measureTime(logger, 'sync-insights', async () => {
+    logger.info('Syncing insights', { accountId, campaignId, datePreset })
 
-  for (const form of forms) {
-    console.log(`Processing leadgen form: ${form.name || form.id}`);
-    let nextUrl: string | null = `https://graph.facebook.com/v18.0/${form.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
-    
-    while (nextUrl) {
-      const leadsResp = await fetch(nextUrl);
-      if (!leadsResp.ok) {
-        const e = await leadsResp.json();
-        console.error('Leads fetch error:', e);
-        errors++;
-        break;
+    const endpoint = campaignId
+      ? `https://graph.facebook.com/v18.0/${campaignId}/insights`
+      : `https://graph.facebook.com/v18.0/act_${accountId}/insights`
+
+    logger.apiRequest('GET', endpoint)
+    const response = await metaApi.get(endpoint, {
+      params: {
+        fields: 'date_start,date_stop,spend,impressions,clicks,ctr,cpm,cpc,reach,frequency,campaign_id,adset_id,ad_id',
+        date_preset: datePreset,
+        time_increment: 1,
+        limit: 500
       }
-      const leadsJson = await leadsResp.json();
-      const leads = leadsJson.data || [];
-      console.log(`Found ${leads.length} leads from form ${form.id}`);
+    })
+    logger.apiResponse('GET', endpoint, response.status)
+
+    if (!response.ok) {
+      throw new Error(`Meta API error: ${response.data?.error?.message || 'Unknown error'}`)
+    }
+
+    const { data: insights }: { data: MetaInsight[] } = response.data
+    logger.info('Fetched insights', { count: insights.length })
+
+    // Sync insights to database
+    const syncResults = []
+    for (const insight of insights) {
+      logger.dbQuery('UPSERT', 'meta_daily_spend')
+      const { data: synced, error } = await supabase
+        .from('meta_daily_spend')
+        .upsert({
+          account_id: accountId,
+          campaign_id: insight.campaign_id || campaignId,
+          adset_id: insight.adset_id,
+          ad_id: insight.ad_id,
+          date_start: insight.date_start,
+          date_stop: insight.date_stop,
+          spend: parseFloat(insight.spend) || 0,
+          impressions: parseInt(insight.impressions) || 0,
+          clicks: parseInt(insight.clicks) || 0,
+          ctr: parseFloat(insight.ctr) || 0,
+          cpm: parseFloat(insight.cpm) || 0,
+          cpc: parseFloat(insight.cpc) || 0,
+          reach: parseInt(insight.reach) || 0,
+          frequency: parseFloat(insight.frequency) || 0,
+          user_id: userId,
+        }, {
+          onConflict: 'account_id,date_start',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single()
+
+      if (error) {
+        logger.error('Failed to sync insight', error, { date: insight.date_start })
+      } else {
+        syncResults.push(synced)
+      }
+    }
+
+    logger.info('Insights synced', { synced: syncResults.length })
+    return successResponse(
+      { insights: syncResults, count: syncResults.length },
+      `Synced ${syncResults.length} insights`,
+      undefined,
+      origin
+    )
+  })
+}
+
+/**
+ * Sync lead form submissions
+ */
+async function syncLeads(
+  userId: string,
+  accountId: string,
+  sinceDays: number,
+  metaApi: any,
+  supabase: any,
+  logger: any,
+  origin: string | null
+) {
+  return await measureTime(logger, 'sync-leads', async () => {
+    logger.info('Syncing leads', { accountId, sinceDays })
+
+    // Calculate date range
+    const sinceDate = new Date()
+    sinceDate.setDate(sinceDate.getDate() - sinceDays)
+    const sinceTimestamp = Math.floor(sinceDate.getTime() / 1000)
+
+    // First, get all lead forms for the account
+    const formsEndpoint = `https://graph.facebook.com/v18.0/act_${accountId}/leadgen_forms`
+    logger.apiRequest('GET', formsEndpoint)
+    
+    const formsResponse = await metaApi.get(formsEndpoint, {
+      params: {
+        fields: 'id,name',
+        limit: 100
+      }
+    })
+    logger.apiResponse('GET', formsEndpoint, formsResponse.status)
+
+    if (!formsResponse.ok) {
+      throw new Error(`Meta API error: ${formsResponse.data?.error?.message || 'Unknown error'}`)
+    }
+
+    const { data: forms } = formsResponse.data
+    logger.info('Fetched lead forms', { count: forms.length })
+
+    let totalLeads = 0
+
+    // Fetch leads for each form
+    for (const form of forms) {
+      const leadsEndpoint = `https://graph.facebook.com/v18.0/${form.id}/leads`
+      logger.apiRequest('GET', leadsEndpoint)
       
-      const result = await processLeads(leads, supabase, sinceDate, existingEmailSet);
-      inserted += result.inserted;
-      skipped += result.skipped;
-      errors += result.errors;
+      const leadsResponse = await metaApi.get(leadsEndpoint, {
+        params: {
+          fields: 'id,created_time,field_data',
+          filtering: JSON.stringify([{
+            field: 'time_created',
+            operator: 'GREATER_THAN',
+            value: sinceTimestamp
+          }]),
+          limit: 500
+        }
+      })
+      logger.apiResponse('GET', leadsEndpoint, leadsResponse.status)
 
-      nextUrl = leadsJson?.paging?.next || null;
-      await new Promise((r) => setTimeout(r, 100)); // Slightly longer delay
-    }
-  }
+      if (leadsResponse.ok) {
+        const { data: leads } = leadsResponse.data
+        
+        // Process and store leads
+        for (const lead of leads) {
+          const leadData: Record<string, any> = {}
+          
+          // Parse field data
+          lead.field_data?.forEach((field: any) => {
+            leadData[field.name] = field.values?.[0] || ''
+          })
 
-  return successResponse(
-    { inserted, skipped, errors },
-    `Leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`
-  );
-}
+          logger.dbQuery('UPSERT', 'meta_leads')
+          const { error } = await supabase
+            .from('meta_leads')
+            .upsert({
+              lead_id: lead.id,
+              form_id: form.id,
+              form_name: form.name,
+              account_id: accountId,
+              created_time: lead.created_time,
+              field_data: leadData,
+              full_name: leadData.full_name || '',
+              email: leadData.email || '',
+              phone_number: normalizePhone(leadData.phone_number || ''),
+              user_id: userId,
+            }, {
+              onConflict: 'lead_id',
+              ignoreDuplicates: true
+            })
 
-async function processCampaignLeads(campaigns: Array<{id: string; name?: string}>, accessToken: string, supabase: any, sinceDate: Date, cleanAccountId: string, existingEmailSet: Set<string>) {
-  let inserted = 0;
-  let skipped = 0;
-  let errors = 0;
-
-  for (const campaign of campaigns) {
-    console.log(`Processing campaign: ${campaign.name || campaign.id}`);
-    
-    // Try to get leads from campaign level with pagination
-    let nextUrl: string | null = `https://graph.facebook.com/v18.0/${campaign.id}/leads?fields=created_time,ad_id,adset_id,campaign_id,field_data,platform&limit=100&access_token=${accessToken}`;
-    
-    try {
-      while (nextUrl) {
-        const leadsResp = await fetch(nextUrl);
-        if (!leadsResp.ok) {
-          if (leadsResp.status === 404) {
-            console.log(`No leads found for campaign ${campaign.id} (${campaign.name})`);
-          } else {
-            console.error(`Error fetching leads for campaign ${campaign.id}: ${leadsResp.status}`);
-            errors++;
+          if (!error) {
+            totalLeads++
           }
-          break;
         }
-        
-        const leadsJson = await leadsResp.json();
-        const leads = leadsJson.data || [];
-        
-        if (leads.length > 0) {
-          console.log(`Found ${leads.length} leads for campaign ${campaign.id}`);
-          const result = await processLeads(leads, supabase, sinceDate, existingEmailSet);
-          inserted += result.inserted;
-          skipped += result.skipped;
-          errors += result.errors;
-        }
-        
-        nextUrl = leadsJson?.paging?.next || null;
-        await new Promise((r) => setTimeout(r, 100)); // Rate limiting
-      }
-    } catch (e: any) {
-      console.error(`Error fetching leads for campaign ${campaign.id}:`, e);
-      errors++;
-    }
-  }
-
-  return successResponse(
-    { inserted, skipped, errors },
-    `Campaign leads sync complete: inserted=${inserted}, skipped=${skipped}, errors=${errors}`
-  );
-}
-
-async function processLeads(leads: any[], supabase: any, sinceDate: Date, existingEmailSet: Set<string>) {
-  let inserted = 0;
-  let skipped = 0;
-  let errors = 0;
-
-  for (const lead of leads) {
-    const createdAt = new Date(lead.created_time);
-    if (createdAt < sinceDate) {
-      skipped++;
-      continue;
-    }
-    
-    const fieldsObj: Record<string, string> = {};
-    for (const f of lead.field_data || []) {
-      const key = (f.name || '').toLowerCase();
-      const val = Array.isArray(f.values) && f.values.length > 0 ? String(f.values[0]) : '';
-      if (key) fieldsObj[key] = val;
-    }
-
-    let firstName = fieldsObj['first_name'] || '';
-    let lastName = fieldsObj['last_name'] || '';
-    const email = fieldsObj['email'] || fieldsObj['email_address'] || null;
-    const phone = fieldsObj['phone_number'] || fieldsObj['phone'] || null;
-
-    // Extract names from full_name if needed
-    if (!firstName && !lastName) {
-      const fullName = fieldsObj['full_name'] || '';
-      if (fullName) {
-        const parts = fullName.split(' ');
-        firstName = parts[0] || '';
-        lastName = parts.slice(1).join(' ');
       }
     }
 
-    // Skip if email already exists in our pre-loaded set
-    if (email && existingEmailSet.has(email.toLowerCase())) {
-      skipped++;
-      continue;
-    }
-
-    // Lookup city/state from zip code for consistency
-    const lookupCityState = async (zipCode: string) => {
-      if (!zipCode || zipCode.length < 5) {
-        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-      }
-
-      const cleanZip = zipCode.replace(/\D/g, '').substring(0, 5);
-      
-      if (cleanZip.length !== 5) {
-        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-      }
-
-      try {
-        const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
-        
-        if (!response.ok) {
-          console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
-          return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-        }
-
-        const data = await response.json();
-        
-        if (data.places && data.places.length > 0) {
-          const place = data.places[0];
-          return {
-            city: place['place name'],
-            state: place['state abbreviation']
-          };
-        }
-        
-        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-      } catch (error) {
-        console.error(`Error looking up zip code ${cleanZip}:`, error);
-        return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
-      }
-    };
-
-    const { city, state } = await lookupCityState(fieldsObj.zip);
-
-    const insertPayload: any = {
-      first_name: firstName || null,
-      last_name: lastName || null,
-      applicant_email: email,
-      phone: normalizePhone(phone),
-      city: city,
-      state: state,
-      zip: fieldsObj.zip,
-      source: 'fb', // Facebook/Meta leads
-      status: 'pending',
-      created_at: createdAt.toISOString(),
-      applied_at: createdAt.toISOString(),
-      notes: `Meta Lead • campaign ${lead.campaign_id || ''} • adset ${lead.adset_id || ''} • ad ${lead.ad_id || ''}`,
-      display_fields: fieldsObj,
-      // Enhanced attribution fields
-      campaign_id: lead.campaign_id || null,
-      adset_id: lead.adset_id || null,
-      ad_id: lead.ad_id || null,
-    };
-
-    const { error } = await supabase.from('applications').insert(insertPayload);
-    if (error) {
-      console.error('Insert application error:', error);
-      errors++;
-    } else {
-      inserted++;
-    }
-  }
-
-  return { inserted, skipped, errors };
+    logger.info('Leads synced', { totalLeads })
+    return successResponse(
+      { count: totalLeads },
+      `Synced ${totalLeads} new leads`,
+      undefined,
+      origin
+    )
+  })
 }
 
 serve(handler)

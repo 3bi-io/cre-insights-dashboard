@@ -3,7 +3,7 @@
  * Provides consistent response formatting across all functions
  */
 
-import { corsHeaders } from './cors.ts';
+import { getCorsHeaders } from './cors-config.ts';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -22,7 +22,8 @@ export interface ApiResponse<T = any> {
 export function successResponse<T>(
   data: T,
   message?: string,
-  meta?: Record<string, any>
+  meta?: Record<string, any>,
+  origin?: string
 ): Response {
   const responseData: ApiResponse<T> = {
     success: true,
@@ -36,7 +37,7 @@ export function successResponse<T>(
 
   return new Response(JSON.stringify(responseData), {
     status: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(origin || null), 'Content-Type': 'application/json' },
   });
 }
 
@@ -46,7 +47,8 @@ export function successResponse<T>(
 export function errorResponse(
   error: string | Error,
   statusCode: number = 500,
-  details?: Record<string, any>
+  details?: Record<string, any>,
+  origin?: string
 ): Response {
   const errorMessage = error instanceof Error ? error.message : error;
   
@@ -61,7 +63,7 @@ export function errorResponse(
 
   return new Response(JSON.stringify(responseData), {
     status: statusCode,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(origin || null), 'Content-Type': 'application/json' },
   });
 }
 
@@ -69,7 +71,8 @@ export function errorResponse(
  * Create a validation error response
  */
 export function validationErrorResponse(
-  errors: Array<{ field: string; message: string }> | string
+  errors: Array<{ field: string; message: string }> | string,
+  origin?: string
 ): Response {
   const errorMessage = typeof errors === 'string' 
     ? errors 
@@ -86,7 +89,7 @@ export function validationErrorResponse(
 
   return new Response(JSON.stringify(responseData), {
     status: 400,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(origin || null), 'Content-Type': 'application/json' },
   });
 }
 
@@ -114,7 +117,7 @@ export function notFoundResponse(resource: string = 'Resource'): Response {
 /**
  * Create a rate limit error response
  */
-export function rateLimitResponse(retryAfter?: number): Response {
+export function rateLimitResponse(retryAfter?: number, origin?: string): Response {
   const responseData: ApiResponse = {
     success: false,
     error: 'Rate limit exceeded',
@@ -127,7 +130,7 @@ export function rateLimitResponse(retryAfter?: number): Response {
   return new Response(JSON.stringify(responseData), {
     status: 429,
     headers: {
-      ...corsHeaders,
+      ...getCorsHeaders(origin || null),
       'Content-Type': 'application/json',
       ...(retryAfter && { 'Retry-After': retryAfter.toString() }),
     },
