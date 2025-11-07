@@ -16,7 +16,7 @@ const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [organizationFilter, setOrganizationFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'title' | 'salary-high' | 'salary-low'>('recent');
   
   const {
@@ -27,32 +27,32 @@ const JobsPage = () => {
     endVoiceApplication,
   } = useElevenLabsVoice();
 
-  // Fetch all organizations that have job listings
-  const { data: allOrganizations } = useQuery({
-    queryKey: ['public-organizations'],
+  // Fetch all clients that have job listings
+  const { data: allClients } = useQuery({
+    queryKey: ['public-clients'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('organizations')
-        .select('id, name, slug')
+        .from('clients')
+        .select('id, name')
         .order('name');
       
       if (error) throw error;
       
-      // Filter to only organizations that have at least one job listing
-      const orgIds = data?.map(org => org.id) || [];
+      // Filter to only clients that have at least one job listing
+      const clientIds = data?.map(client => client.id) || [];
       const { data: jobCounts } = await supabase
         .from('job_listings')
-        .select('organization_id')
-        .in('organization_id', orgIds);
+        .select('client_id')
+        .in('client_id', clientIds);
       
-      const orgsWithJobs = new Set(jobCounts?.map(j => j.organization_id));
-      return data?.filter(org => orgsWithJobs.has(org.id)) || [];
+      const clientsWithJobs = new Set(jobCounts?.map(j => j.client_id).filter(Boolean));
+      return data?.filter(client => clientsWithJobs.has(client.id)) || [];
     },
   });
 
   // Fetch all public job listings with voice agents
   const { data: jobs, isLoading } = useQuery({
-    queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter, organizationFilter],
+    queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter, clientFilter],
     queryFn: async () => {
       let query = supabase
         .from('job_listings')
@@ -79,9 +79,9 @@ const JobsPage = () => {
         query = query.or(`city.ilike.%${locationFilter}%,state.ilike.%${locationFilter}%,location.ilike.%${locationFilter}%`);
       }
 
-      // Apply organization filter
-      if (organizationFilter && organizationFilter !== '__ALL__') {
-        query = query.eq('organization_id', organizationFilter);
+      // Apply client filter
+      if (clientFilter && clientFilter !== '__ALL__') {
+        query = query.eq('client_id', clientFilter);
       }
 
       const { data, error } = await query;
@@ -118,10 +118,10 @@ const JobsPage = () => {
     return Array.from(locationSet).sort();
   }, [jobs]);
 
-  // Use the separate organizations query for the dropdown
-  const organizations = React.useMemo(() => {
-    return allOrganizations || [];
-  }, [allOrganizations]);
+  // Use the separate clients query for the dropdown
+  const clients = React.useMemo(() => {
+    return allClients || [];
+  }, [allClients]);
 
   const filteredJobs = React.useMemo(() => {
     if (!jobs) return [];
@@ -211,15 +211,15 @@ const JobsPage = () => {
                 />
               </div>
               
-              <Select value={organizationFilter} onValueChange={setOrganizationFilter}>
+              <Select value={clientFilter} onValueChange={setClientFilter}>
                 <SelectTrigger className="w-full sm:w-56">
-                  <SelectValue placeholder="All Companies" />
+                  <SelectValue placeholder="All Clients" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="__ALL__">All Companies</SelectItem>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name}
+                  <SelectItem value="__ALL__">All Clients</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

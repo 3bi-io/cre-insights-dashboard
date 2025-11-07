@@ -20,7 +20,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const displayTitle = job.title || job.job_title || 'Untitled Job';
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
   const displayDescription = job.job_summary || job.description;
-  const companyName = job.organizations?.name || job.clients?.name || job.client || 'Company';
+  const companyName = job.clients?.name || job.client || 'Company';
   const hasVoiceAgent = !!job.voiceAgent;
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
