@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Briefcase, UserCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const AuthPage = () => {
@@ -15,6 +15,8 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [userType, setUserType] = useState<'employer' | 'candidate'>('employer');
+  const [showUserTypeSelection, setShowUserTypeSelection] = useState(false);
   
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
@@ -40,12 +42,13 @@ const AuthPage = () => {
     setIsLoading(true);
     setError('');
 
-    const { error } = await signUp(email, password);
+    const { error } = await signUp(email, password, userType);
     
     if (error) {
       setError(error.message);
     } else {
-      navigate('/');
+      // Redirect based on user type
+      navigate(userType === 'candidate' ? '/my-jobs' : '/');
     }
     
     setIsLoading(false);
@@ -129,53 +132,109 @@ const AuthPage = () => {
               </TabsContent>
               
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                {!showUserTypeSelection ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center mb-4">
+                      Choose your account type to get started
+                    </p>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-auto py-6 flex flex-col items-center gap-2 hover:bg-accent"
+                        onClick={() => {
+                          setUserType('employer');
+                          setShowUserTypeSelection(true);
+                        }}
+                      >
+                        <Briefcase className="h-8 w-8 text-primary" />
+                        <div>
+                          <div className="font-semibold">I'm hiring talent</div>
+                          <div className="text-xs text-muted-foreground">Post jobs and manage applicants</div>
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-auto py-6 flex flex-col items-center gap-2 hover:bg-accent"
+                        onClick={() => {
+                          setUserType('candidate');
+                          setShowUserTypeSelection(true);
+                        }}
+                      >
+                        <UserCircle className="h-8 w-8 text-primary" />
+                        <div>
+                          <div className="font-semibold">I'm looking for work</div>
+                          <div className="text-xs text-muted-foreground">Find jobs and track applications</div>
+                        </div>
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Create a password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+                ) : (
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowUserTypeSelection(false)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        ← Back
                       </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {userType === 'employer' ? 'Employer Account' : 'Candidate Account'}
+                      </span>
                     </div>
-                  </div>
 
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="signup-password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Create a password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating account...' : 'Create Account'}
-                  </Button>
-                </form>
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? 'Creating account...' : 'Create Account'}
+                    </Button>
+                  </form>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

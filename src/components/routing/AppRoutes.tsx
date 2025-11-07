@@ -28,6 +28,7 @@ const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
 // Main application pages
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
 const AdminDashboard = React.lazy(() => import("@/pages/AdminDashboard"));
+const CandidateDashboard = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateDashboard })));
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
 const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
@@ -142,6 +143,13 @@ const AppRoutes: React.FC = () => {
       }>
         <Route index element={<RouteWrapper><Dashboard /></RouteWrapper>} />
       </Route>
+
+      {/* Candidate Routes */}
+      <Route path="/my-jobs" element={
+        <ProtectedRoute requireSubscription={false}>
+          <RouteWrapper><CandidateDashboard /></RouteWrapper>
+        </ProtectedRoute>
+      } />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<LayoutWrapper />}>

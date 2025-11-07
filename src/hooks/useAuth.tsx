@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: string | null;
+  userType: string | null;
   organization: {
     id: string;
     name: string;
@@ -17,8 +18,14 @@ interface AuthContextType {
     settings?: Record<string, unknown>;
     subscription_status?: string;
   } | null;
+  candidateProfile: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    profile_completion_percentage?: number;
+  } | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, userType?: 'employer' | 'candidate') => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
@@ -30,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userType, setUserType] = useState<string | null>(null);
   const [organization, setOrganization] = useState<{
     id: string;
     name: string;
@@ -37,6 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logo_url?: string;
     settings?: Record<string, unknown>;
     subscription_status?: string;
+  } | null>(null);
+  const [candidateProfile, setCandidateProfile] = useState<{
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    profile_completion_percentage?: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -63,11 +77,13 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       }
     }
 
-    // Fetch user's organization via profile (super admins may not have an organization)
+    // Fetch user's profile with organization and user_type
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select(`
         organization_id,
+        user_type,
+        candidate_profile_id,
         organizations:organization_id(
           id,
           name,
@@ -78,29 +94,58 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
         )
       `)
       .eq('id', _userId)
-      .maybeSingle();
+      .maybeSingle() as any;
 
     if (profileError) {
       logger.error('Error fetching user profile', profileError);
-      console.log('[AUTH] Error fetching organization:', profileError);
+      console.log('[AUTH] Error fetching profile:', profileError);
       setOrganization(null);
-    } else if (profileData?.organizations) {
-      console.log('[AUTH] Organization loaded:', profileData.organizations.name);
-      logger.info('User organization loaded', { 
-        orgName: profileData.organizations.name,
-        orgId: profileData.organizations.id 
-      });
-      setOrganization(profileData.organizations as any);
+      setUserType('employer');
     } else {
-      console.log('[AUTH] No organization found (may be super admin)');
-      logger.debug('No organization found for user (may be super admin)');
-      setOrganization(null);
+      // Set user type
+      setUserType((profileData as any)?.user_type || 'employer');
+      console.log('[AUTH] User type:', (profileData as any)?.user_type);
+
+      // Set organization
+      if ((profileData as any)?.organizations) {
+        console.log('[AUTH] Organization loaded:', (profileData as any).organizations.name);
+        logger.info('User organization loaded', { 
+          orgName: (profileData as any).organizations.name,
+          orgId: (profileData as any).organizations.id 
+        });
+        setOrganization((profileData as any).organizations as any);
+      } else {
+        console.log('[AUTH] No organization found');
+        logger.debug('No organization found for user');
+        setOrganization(null);
+      }
+
+      // Fetch candidate profile if user is a candidate
+      if ((profileData as any)?.user_type === 'candidate' && (profileData as any)?.candidate_profile_id) {
+        const { data: candidateData, error: candidateError } = await supabase
+          .from('candidate_profiles' as any)
+          .select('id, first_name, last_name, profile_completion_percentage')
+          .eq('id', (profileData as any).candidate_profile_id)
+          .maybeSingle();
+
+        if (candidateError) {
+          logger.error('Error fetching candidate profile', candidateError);
+          console.log('[AUTH] Error fetching candidate profile:', candidateError);
+        } else if (candidateData) {
+          console.log('[AUTH] Candidate profile loaded');
+          setCandidateProfile(candidateData as any);
+        }
+      } else {
+        setCandidateProfile(null);
+      }
     }
   } catch (error: unknown) {
     logger.error('Error fetching user data', error);
     console.log('[AUTH] Exception fetching user data:', error);
     setUserRole('user');
+    setUserType('employer');
     setOrganization(null);
+    setCandidateProfile(null);
   }
 };
 
@@ -203,9 +248,20 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       logger.info('Navigation decision', { role });
       console.log('[AUTH] Navigating based on role:', role);
       
-      // Navigate based on role
+      // Get user type to determine navigation
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', data.session.user.id)
+        .maybeSingle() as any;
+
+      const userTypeValue = (profileData as any)?.user_type || 'employer';
+
+      // Navigate based on role and user type
       if (role === 'super_admin') {
         navigate('/admin');
+      } else if (userTypeValue === 'candidate') {
+        navigate('/my-jobs');
       } else {
         navigate('/dashboard');
       }
@@ -219,24 +275,55 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, userType: 'employer' | 'candidate' = 'employer') => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            user_type: userType
+          }
+        }
+      });
+      
+      if (error) {
+        return { error };
       }
-    });
-    
-    return { error };
+
+      // Create candidate profile if user type is candidate
+      if (data.user && userType === 'candidate') {
+        const { error: profileError } = await supabase
+          .from('candidate_profiles' as any)
+          .insert({
+            user_id: data.user.id,
+            email: email,
+            profile_visibility: 'private',
+            open_to_opportunities: true
+          });
+
+        if (profileError) {
+          logger.error('Error creating candidate profile', profileError);
+          console.error('[AUTH] Error creating candidate profile:', profileError);
+        }
+      }
+
+      return { error: null };
+    } catch (err) {
+      const errorObj = err instanceof Error ? err : new Error('Sign up failed');
+      return { error: errorObj };
+    }
   };
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setUserRole(null);
+    setUserType(null);
     setOrganization(null);
+    setCandidateProfile(null);
     navigate('/');
   };
 
@@ -251,7 +338,9 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       user,
       session,
       userRole,
+      userType,
       organization,
+      candidateProfile,
       signIn,
       signUp,
       signOut,
