@@ -31,11 +31,11 @@ const AppSidebar = () => {
   const { counts: tenstreetCounts } = useTenstreetNotifications();
   // Main standalone items
   const mainItems = [
-    ...(userRole === 'super_admin' || userRole === 'admin' ? [{
+    {
       path: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard
-    }] : [])
+    }
   ];
 
   const navigationItems = [{
