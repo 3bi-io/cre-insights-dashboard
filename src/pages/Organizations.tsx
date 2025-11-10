@@ -12,6 +12,7 @@ import { OrganizationFeaturesDialog } from '@/components/admin/OrganizationFeatu
 import { DeleteOrganizationDialog } from '@/components/admin/DeleteOrganizationDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { OrganizationPlatformAccessDialog } from '@/components/admin';
+import PlanBadge from '@/components/PlanBadge';
 
 const Organizations = () => {
   const { userRole } = useAuth();
@@ -96,6 +97,7 @@ const Organizations = () => {
                           <CardDescription>{org.slug}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
+                          <PlanBadge planType={org.plan_type || 'enterprise'} />
                           <Badge variant={org.subscription_status === 'active' ? 'secondary' : 'outline'}>
                             {org.subscription_status}
                           </Badge>

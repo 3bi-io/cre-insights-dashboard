@@ -149,6 +149,7 @@ export interface Organization {
   domain_verification_token?: string;
   domain_deployed_at?: string;
   subscription_status?: string;
+  plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
   settings?: Record<string, unknown>;
   created_at: string;
   updated_at: string;

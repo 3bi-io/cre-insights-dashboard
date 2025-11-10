@@ -17,6 +17,7 @@ interface AuthContextType {
     logo_url?: string;
     settings?: Record<string, unknown>;
     subscription_status?: string;
+    plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
   } | null;
   candidateProfile: {
     id: string;
@@ -45,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logo_url?: string;
     settings?: Record<string, unknown>;
     subscription_status?: string;
+    plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
   } | null>(null);
   const [candidateProfile, setCandidateProfile] = useState<{
     id: string;
@@ -88,7 +90,8 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
           slug,
           logo_url,
           settings,
-          subscription_status
+          subscription_status,
+          plan_type
         )
       `)
       .eq('id', _userId)

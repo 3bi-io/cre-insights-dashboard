@@ -2726,6 +2726,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          plan_type: string
           settings: Json | null
           slug: string
           subscription_status: string | null
@@ -2742,6 +2743,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          plan_type?: string
           settings?: Json | null
           slug: string
           subscription_status?: string | null
@@ -2758,6 +2760,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          plan_type?: string
           settings?: Json | null
           slug?: string
           subscription_status?: string | null

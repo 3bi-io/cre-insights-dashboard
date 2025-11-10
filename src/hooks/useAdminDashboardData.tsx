@@ -18,6 +18,7 @@ interface OrganizationData {
   slug: string;
   created_at: string;
   subscription_status: string;
+  plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
   userCount: number;
   jobCount: number;
   applicationCount: number;
@@ -122,7 +123,8 @@ export const useOrganizationsData = () => {
           name,
           slug,
           created_at,
-          subscription_status
+          subscription_status,
+          plan_type
         `);
 
       if (!organizations) return [];
@@ -177,6 +179,7 @@ export const useOrganizationsData = () => {
             slug: org.slug,
             created_at: org.created_at,
             subscription_status: org.subscription_status,
+            plan_type: org.plan_type as 'free' | 'starter' | 'professional' | 'enterprise' | undefined,
             userCount: userCount || 0,
             jobCount: jobCount || 0,
             applicationCount,
