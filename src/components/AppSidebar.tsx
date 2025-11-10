@@ -99,11 +99,11 @@ const AppSidebar = () => {
         label: 'XML Feeds',
         icon: Rss
       },
-      {
+      ...(userRole === 'super_admin' ? [{
         path: '/admin/universal-feeds',
         label: 'Universal Feeds',
         icon: Share2
-      },
+      }] : []),
       {
         path: '/admin/publishers',
         label: 'Publishers',

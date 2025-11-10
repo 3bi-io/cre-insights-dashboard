@@ -197,8 +197,94 @@ const DashboardPage = () => {
     );
   }
 
-  // Organization admin view - organization-specific access
-  return <OrganizationAdminDashboard organizationName={organization?.name} />;
+  // Admin view - organization-specific access with full analytics
+  if (userRole === 'admin') {
+    return <OrganizationAdminDashboard organizationName={organization?.name} />;
+  }
+
+  // Regular user view - personal metrics and activity
+  return (
+    <PageLayout 
+      title="My Dashboard"
+      description="Your personal metrics and activity"
+    >
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">My Applications</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">
+                Applications managed
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
+              <Truck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">
+                Job listings active
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">
+                Actions this week
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest actions and updates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">No recent activity</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Common tasks and shortcuts</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <a href="/admin/applications">
+                  <Users className="mr-2 h-4 w-4" />
+                  View Applications
+                </a>
+              </Button>
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <a href="/admin/jobs">
+                  <Truck className="mr-2 h-4 w-4" />
+                  Manage Jobs
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </PageLayout>
+  );
 };
 
 export default DashboardPage;
