@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { PageLayout } from '@/features/shared';
 import SubscriptionGate from '@/components/SubscriptionGate';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -104,7 +104,7 @@ const FeedsManagement = () => {
 
   return (
     <SubscriptionGate>
-      <DashboardLayout>
+      <PageLayout>
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -398,7 +398,7 @@ const FeedsManagement = () => {
             )}
           </DialogContent>
         </Dialog>
-      </DashboardLayout>
+      </PageLayout>
     </SubscriptionGate>
   );
 };
