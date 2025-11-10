@@ -77,13 +77,11 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       }
     }
 
-    // Fetch user's profile with organization and user_type
+    // Fetch user's profile with organization
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select(`
         organization_id,
-        user_type,
-        candidate_profile_id,
         organizations:organization_id(
           id,
           name,
@@ -102,9 +100,9 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
       setOrganization(null);
       setUserType('employer');
     } else {
-      // Set user type
-      setUserType((profileData as any)?.user_type || 'employer');
-      console.log('[AUTH] User type:', (profileData as any)?.user_type);
+      // Set user type - default to 'employer' since user_type column doesn't exist
+      setUserType('employer');
+      console.log('[AUTH] User type defaulted to employer');
 
       // Set organization
       if ((profileData as any)?.organizations) {
@@ -120,24 +118,9 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
         setOrganization(null);
       }
 
-      // Fetch candidate profile if user is a candidate
-      if ((profileData as any)?.user_type === 'candidate' && (profileData as any)?.candidate_profile_id) {
-        const { data: candidateData, error: candidateError } = await supabase
-          .from('candidate_profiles' as any)
-          .select('id, first_name, last_name, profile_completion_percentage')
-          .eq('id', (profileData as any).candidate_profile_id)
-          .maybeSingle();
-
-        if (candidateError) {
-          logger.error('Error fetching candidate profile', candidateError);
-          console.log('[AUTH] Error fetching candidate profile:', candidateError);
-        } else if (candidateData) {
-          console.log('[AUTH] Candidate profile loaded');
-          setCandidateProfile(candidateData as any);
-        }
-      } else {
-        setCandidateProfile(null);
-      }
+      // Candidate profile logic removed - user_type and candidate_profile_id columns don't exist
+      // If needed in the future, add these columns to profiles table first
+      setCandidateProfile(null);
     }
   } catch (error: unknown) {
     logger.error('Error fetching user data', error);
@@ -248,20 +231,9 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       logger.info('Navigation decision', { role });
       console.log('[AUTH] Navigating based on role:', role);
       
-      // Get user type to determine navigation
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('user_type')
-        .eq('id', data.session.user.id)
-        .maybeSingle() as any;
-
-      const userTypeValue = (profileData as any)?.user_type || 'employer';
-
-      // Navigate based on role and user type
+      // Navigate based on role - default to employer/dashboard navigation
       if (role === 'super_admin') {
         navigate('/admin');
-      } else if (userTypeValue === 'candidate') {
-        navigate('/my-jobs');
       } else {
         navigate('/dashboard');
       }
