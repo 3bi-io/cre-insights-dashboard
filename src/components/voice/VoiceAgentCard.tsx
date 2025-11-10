@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { 
   Phone, 
@@ -10,11 +10,13 @@ import {
   MoreVertical, 
   Edit, 
   Trash2, 
-  Building
+  Building,
+  AlertTriangle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import VoiceAgentDialog from './VoiceAgentDialog';
 import { useVoiceAgentConnection, VoiceConnectionStatus, VoiceAgent } from '@/features/elevenlabs';
+import { checkBrowserCompatibility, SUPPORTED_BROWSERS } from '@/features/elevenlabs/utils/browserCompatibility';
 
 interface VoiceAgentCardProps {
   agent: VoiceAgent;
@@ -32,6 +34,17 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
   isDeleting = false
 }) => {
   const { toast } = useToast();
+  const [browserWarning, setBrowserWarning] = useState<string | null>(null);
+  const [browserCompatible, setBrowserCompatible] = useState(true);
+
+  // Check browser compatibility on mount
+  useEffect(() => {
+    const check = checkBrowserCompatibility();
+    if (!check.isSupported) {
+      setBrowserWarning(check.warningMessage);
+      setBrowserCompatible(false);
+    }
+  }, []);
 
   const { isConnected, isConnecting, isSpeaking, connect, disconnect } = useVoiceAgentConnection({
     onConnect: () => {
@@ -148,7 +161,34 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
               LLM Model: <Badge variant="outline" className="text-xs">{agent.llm_model}</Badge>
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <span>Browser:</span>
+            <Badge variant={browserCompatible ? "outline" : "destructive"} className="text-xs">
+              {browserCompatible ? "Compatible ✓" : "Not Supported"}
+            </Badge>
+          </div>
         </div>
+
+        {/* Browser Compatibility Warning */}
+        {browserWarning && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Browser Not Compatible</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p className="text-sm">{browserWarning}</p>
+              <div className="text-xs mt-2">
+                <strong>Supported Browsers:</strong>
+                <ul className="list-disc list-inside ml-2 mt-1">
+                  {SUPPORTED_BROWSERS.map((browser) => (
+                    <li key={browser.name}>
+                      {browser.name} {browser.minVersion}+ {browser.name === 'Chrome' ? '(recommended)' : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Connection Status */}
         <VoiceConnectionStatus 
@@ -162,7 +202,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
             <Button 
               onClick={handleStartConversation} 
               className="flex-1"
-              disabled={!agent.is_active || isConnecting}
+              disabled={!agent.is_active || isConnecting || !browserCompatible}
             >
               <Phone className="w-4 h-4 mr-2" />
               {isConnecting ? 'Connecting...' : 'Connect'}

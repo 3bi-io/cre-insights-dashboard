@@ -8,12 +8,52 @@ import { VoiceAgentError } from '../types';
 export function parseVoiceAgentError(error: any): VoiceAgentError {
   const errorString = error?.message || error?.toString() || 'Unknown error';
 
+  // AudioWorklet errors (check first - most specific)
+  if (errorString.includes('audioConcatProcessor') || 
+      errorString.includes('AudioWorklet') ||
+      errorString.includes('worklet') ||
+      errorString.includes('registerProcessor')) {
+    return {
+      code: 'AUDIOWORKLET_NOT_SUPPORTED',
+      message: 'Your browser doesn\'t support audio processing features required for voice chat. Please use the latest version of Chrome, Firefox, or Edge.',
+      originalError: error,
+      recoverySteps: [
+        'Update your browser to the latest version',
+        'Try using Chrome 120+ or Firefox 120+ (recommended)',
+        'Disable browser extensions that may block audio',
+        'Ensure you\'re using HTTPS (not HTTP)',
+        'Check if your network has content security policies blocking audio'
+      ]
+    };
+  }
+
+  // Browser compatibility errors
+  if (errorString.includes('BROWSER_NOT_COMPATIBLE')) {
+    return {
+      code: 'BROWSER_NOT_COMPATIBLE',
+      message: errorString.replace('BROWSER_NOT_COMPATIBLE: ', ''),
+      originalError: error,
+      recoverySteps: [
+        'Update your browser to the latest version',
+        'Switch to Chrome 66+, Firefox 76+, Edge 79+, or Safari 14.1+',
+        'Disable browser extensions temporarily',
+        'Try using a different device if available'
+      ]
+    };
+  }
+
   // Microphone access errors
   if (errorString.includes('getUserMedia') || errorString.includes('NotAllowedError')) {
     return {
       code: 'MICROPHONE_ACCESS_DENIED',
       message: 'Microphone access is required. Please allow microphone permissions in your browser settings.',
-      originalError: error
+      originalError: error,
+      recoverySteps: [
+        'Click the microphone icon in your browser\'s address bar',
+        'Select "Always allow" for microphone access',
+        'Refresh the page and try again',
+        'Check your system settings to ensure microphone is not blocked'
+      ]
     };
   }
 
@@ -66,6 +106,10 @@ export function getErrorTitle(error: VoiceAgentError): string {
       return 'Invalid Agent';
     case 'CONNECTION_FAILED':
       return 'Connection Failed';
+    case 'AUDIOWORKLET_NOT_SUPPORTED':
+      return 'Browser Audio Not Supported';
+    case 'BROWSER_NOT_COMPATIBLE':
+      return 'Incompatible Browser';
     default:
       return 'Voice Agent Error';
   }

@@ -15,3 +15,4 @@ export * from './components';
 // Utils
 export * from './utils/errorHandling';
 export * from './utils/agentConfig';
+export * from './utils/browserCompatibility';

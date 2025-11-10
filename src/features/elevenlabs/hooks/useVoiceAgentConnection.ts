@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { parseVoiceAgentError, getErrorTitle, getUserFriendlyErrorMessage } from '../utils/errorHandling';
+import { checkBrowserCompatibility } from '../utils/browserCompatibility';
 import { SignedUrlResponse } from '../types';
 
 interface UseVoiceAgentConnectionOptions {
@@ -94,6 +95,12 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     try {
       setIsConnecting(true);
 
+      // Check browser compatibility first
+      const browserCheck = checkBrowserCompatibility();
+      if (!browserCheck.isSupported) {
+        throw new Error(`BROWSER_NOT_COMPATIBLE: ${browserCheck.warningMessage}`);
+      }
+
       // Request microphone access
       const hasAccess = await requestMicrophoneAccess();
       if (!hasAccess) {
@@ -116,9 +123,17 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
       setIsConnecting(false);
       
       const parsedError = parseVoiceAgentError(error);
+      
+      // Enhanced error message with recovery steps
+      let description = getUserFriendlyErrorMessage(parsedError);
+      if (parsedError.recoverySteps && parsedError.recoverySteps.length > 0) {
+        description += '\n\nTry these steps:\n' + 
+          parsedError.recoverySteps.map((step, i) => `${i + 1}. ${step}`).join('\n');
+      }
+
       toast({
         title: getErrorTitle(parsedError),
-        description: getUserFriendlyErrorMessage(parsedError),
+        description,
         variant: 'destructive'
       });
       

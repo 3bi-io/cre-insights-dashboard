@@ -176,7 +176,8 @@ export const LLM_MODEL_OPTIONS: LLMModelOption[] = [
 // ============= Error Types =============
 
 export interface VoiceAgentError {
-  code: 'MICROPHONE_ACCESS_DENIED' | 'API_KEY_MISSING' | 'INVALID_AGENT_ID' | 'CONNECTION_FAILED' | 'UNKNOWN';
+  code: 'MICROPHONE_ACCESS_DENIED' | 'API_KEY_MISSING' | 'INVALID_AGENT_ID' | 'CONNECTION_FAILED' | 'AUDIOWORKLET_NOT_SUPPORTED' | 'BROWSER_NOT_COMPATIBLE' | 'UNKNOWN';
   message: string;
   originalError?: any;
+  recoverySteps?: string[];
 }
