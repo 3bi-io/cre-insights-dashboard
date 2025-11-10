@@ -81,9 +81,6 @@ verify_jwt = true
 [functions.visitor-analytics]
 verify_jwt = true
 
-[functions.ai-chat]
-verify_jwt = false
-
 [functions.send-application-email]
 verify_jwt = true
 
@@ -91,4 +88,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.meta-integration]
+verify_jwt = true
+
+[functions.ai-chat]
 verify_jwt = true
