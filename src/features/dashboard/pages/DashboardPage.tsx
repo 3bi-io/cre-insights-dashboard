@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Building2, 
   Users, 
@@ -21,12 +22,16 @@ import {
   Shield,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  FileText,
+  Briefcase
 } from 'lucide-react';
 
 import { PageLayout } from '@/features/shared';
 import { useAuth } from '@/hooks/useAuth';
 import { OrganizationAdminDashboard } from '../components';
+import { useUserDashboardData } from '@/hooks/useUserDashboardData';
+import { useSuperAdminDashboardData } from '@/hooks/useSuperAdminDashboardData';
 
 const DashboardPage = () => {
   const { user, userRole, organization, loading } = useAuth();
@@ -57,6 +62,25 @@ const DashboardPage = () => {
 
   // Super admin view - has access to everything
   if (userRole === 'super_admin') {
+    const { data: adminMetrics, isLoading: isLoadingMetrics } = useSuperAdminDashboardData();
+
+    if (isLoadingMetrics) {
+      return (
+        <PageLayout 
+          title="Super Admin Dashboard"
+          description="System-wide administration and monitoring"
+        >
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          </div>
+        </PageLayout>
+      );
+    }
+
     return (
       <PageLayout 
         title="Super Admin Dashboard"
@@ -70,9 +94,16 @@ const DashboardPage = () => {
                 <Building2 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">12</div>
+                <div className="text-2xl font-bold">{adminMetrics?.totalOrganizations || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +2 from last month
+                  {adminMetrics?.organizationGrowth.current || 0} new this month
+                  {adminMetrics?.organizationGrowth.percentageChange !== undefined && 
+                    adminMetrics.organizationGrowth.percentageChange !== 0 && (
+                    <span className={adminMetrics.organizationGrowth.percentageChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                      {' '}({adminMetrics.organizationGrowth.percentageChange > 0 ? '+' : ''}
+                      {adminMetrics.organizationGrowth.percentageChange.toFixed(1)}%)
+                    </span>
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -83,9 +114,16 @@ const DashboardPage = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">2,847</div>
+                <div className="text-2xl font-bold">{adminMetrics?.totalUsers || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +18% from last month
+                  {adminMetrics?.userGrowth.current || 0} new this month
+                  {adminMetrics?.userGrowth.percentageChange !== undefined && 
+                    adminMetrics.userGrowth.percentageChange !== 0 && (
+                    <span className={adminMetrics.userGrowth.percentageChange > 0 ? 'text-green-500' : 'text-red-500'}>
+                      {' '}({adminMetrics.userGrowth.percentageChange > 0 ? '+' : ''}
+                      {adminMetrics.userGrowth.percentageChange.toFixed(1)}%)
+                    </span>
+                  )}
                 </p>
               </CardContent>
             </Card>
@@ -96,22 +134,22 @@ const DashboardPage = () => {
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">99.9%</div>
+                <div className="text-2xl font-bold">{adminMetrics?.systemHealth || 99.9}%</div>
                 <p className="text-xs text-muted-foreground">
-                  Uptime this month
+                  All systems operational
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$54,231</div>
+                <div className="text-2xl font-bold">{adminMetrics?.totalApplications || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  +12% from last month
+                  Across all organizations
                 </p>
               </CardContent>
             </Card>
@@ -203,6 +241,25 @@ const DashboardPage = () => {
   }
 
   // Regular user view - personal metrics and activity
+  const { data: userMetrics, isLoading: isLoadingUserMetrics } = useUserDashboardData();
+
+  if (isLoadingUserMetrics) {
+    return (
+      <PageLayout 
+        title="My Dashboard"
+        description="Your personal metrics and activity"
+      >
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout 
       title="My Dashboard"
@@ -213,12 +270,12 @@ const DashboardPage = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">My Applications</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{userMetrics?.totalApplications || 0}</div>
               <p className="text-xs text-muted-foreground">
-                Applications managed
+                Total applications received
               </p>
             </CardContent>
           </Card>
@@ -226,12 +283,12 @@ const DashboardPage = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-              <Truck className="h-4 w-4 text-muted-foreground" />
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{userMetrics?.activeJobs || 0}</div>
               <p className="text-xs text-muted-foreground">
-                Job listings active
+                Currently open positions
               </p>
             </CardContent>
           </Card>
@@ -242,24 +299,41 @@ const DashboardPage = () => {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{userMetrics?.recentActivity || 0}</div>
               <p className="text-xs text-muted-foreground">
-                Actions this week
+                New this week
               </p>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Your latest actions and updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">No recent activity</p>
-            </CardContent>
-          </Card>
+          {userMetrics?.recentApplications && userMetrics.recentApplications.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Applications</CardTitle>
+                <CardDescription>Latest applications received</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {userMetrics.recentApplications.map((app) => (
+                    <div key={app.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                      <div className="flex-1">
+                        <p className="font-medium">{app.name}</p>
+                        <p className="text-sm text-muted-foreground">{app.jobTitle}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(app.appliedAt).toLocaleDateString()}
+                        </span>
+                        <Badge variant="secondary">{app.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           <Card>
             <CardHeader>
@@ -269,14 +343,20 @@ const DashboardPage = () => {
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
                 <a href="/admin/applications">
-                  <Users className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-4 w-4" />
                   View Applications
                 </a>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
                 <a href="/admin/jobs">
-                  <Truck className="mr-2 h-4 w-4" />
+                  <Briefcase className="mr-2 h-4 w-4" />
                   Manage Jobs
+                </a>
+              </Button>
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <a href="/admin/analytics">
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  View Analytics
                 </a>
               </Button>
             </CardContent>
