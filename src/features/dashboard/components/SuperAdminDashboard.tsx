@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,8 +14,45 @@ import { useSuperAdminDashboardData } from '@/hooks/useSuperAdminDashboardData';
 import { MetricCard } from './shared/MetricCard';
 import { DashboardSkeleton } from './shared/DashboardSkeleton';
 
-export const SuperAdminDashboard: React.FC = () => {
+export const SuperAdminDashboard = React.memo(() => {
   const { data: metrics, isLoading } = useSuperAdminDashboardData();
+
+  const metricCards = useMemo(() => ({
+    organizations: {
+      title: "Total Organizations",
+      value: metrics?.totalOrganizations || 0,
+      description: `${metrics?.organizationGrowth.current || 0} new this month`,
+      trend: metrics?.organizationGrowth.percentageChange !== undefined &&
+        metrics.organizationGrowth.percentageChange !== 0
+        ? {
+            value: metrics.organizationGrowth.percentageChange,
+            isPositive: metrics.organizationGrowth.percentageChange > 0,
+          }
+        : undefined
+    },
+    users: {
+      title: "Active Users",
+      value: metrics?.totalUsers || 0,
+      description: `${metrics?.userGrowth.current || 0} new this month`,
+      trend: metrics?.userGrowth.percentageChange !== undefined &&
+        metrics.userGrowth.percentageChange !== 0
+        ? {
+            value: metrics.userGrowth.percentageChange,
+            isPositive: metrics.userGrowth.percentageChange > 0,
+          }
+        : undefined
+    },
+    health: {
+      title: "System Health",
+      value: `${metrics?.systemHealth || 99.9}%`,
+      description: "All systems operational"
+    },
+    applications: {
+      title: "Total Applications",
+      value: metrics?.totalApplications || 0,
+      description: "Across all organizations"
+    }
+  }), [metrics]);
 
   if (isLoading) {
     return (
@@ -35,51 +72,10 @@ export const SuperAdminDashboard: React.FC = () => {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard
-            title="Total Organizations"
-            value={metrics?.totalOrganizations || 0}
-            icon={Building2}
-            description={`${metrics?.organizationGrowth.current || 0} new this month`}
-            trend={
-              metrics?.organizationGrowth.percentageChange !== undefined &&
-              metrics.organizationGrowth.percentageChange !== 0
-                ? {
-                    value: metrics.organizationGrowth.percentageChange,
-                    isPositive: metrics.organizationGrowth.percentageChange > 0,
-                  }
-                : undefined
-            }
-          />
-
-          <MetricCard
-            title="Active Users"
-            value={metrics?.totalUsers || 0}
-            icon={Users}
-            description={`${metrics?.userGrowth.current || 0} new this month`}
-            trend={
-              metrics?.userGrowth.percentageChange !== undefined &&
-              metrics.userGrowth.percentageChange !== 0
-                ? {
-                    value: metrics.userGrowth.percentageChange,
-                    isPositive: metrics.userGrowth.percentageChange > 0,
-                  }
-                : undefined
-            }
-          />
-
-          <MetricCard
-            title="System Health"
-            value={`${metrics?.systemHealth || 99.9}%`}
-            icon={CheckCircle}
-            description="All systems operational"
-          />
-
-          <MetricCard
-            title="Total Applications"
-            value={metrics?.totalApplications || 0}
-            icon={FileText}
-            description="Across all organizations"
-          />
+          <MetricCard {...metricCards.organizations} icon={Building2} />
+          <MetricCard {...metricCards.users} icon={Users} />
+          <MetricCard {...metricCards.health} icon={CheckCircle} />
+          <MetricCard {...metricCards.applications} icon={FileText} />
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
@@ -160,4 +156,6 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
     </PageLayout>
   );
-};
+});
+
+SuperAdminDashboard.displayName = 'SuperAdminDashboard';

@@ -8,7 +8,7 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ 
+export const EmptyState = React.memo<EmptyStateProps>(({ 
   icon: Icon = AlertCircle, 
   title, 
   description,
@@ -22,4 +22,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       {action && <div className="mt-6">{action}</div>}
     </div>
   );
-};
+});
+
+EmptyState.displayName = 'EmptyState';

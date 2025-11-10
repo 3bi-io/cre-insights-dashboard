@@ -9,7 +9,7 @@ interface QuickActionsProps {
   description?: string;
 }
 
-export const QuickActions: React.FC<QuickActionsProps> = ({ 
+export const QuickActions = React.memo<QuickActionsProps>(({ 
   actions, 
   title = "Quick Actions",
   description = "Common tasks and shortcuts"
@@ -37,4 +37,6 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+QuickActions.displayName = 'QuickActions';

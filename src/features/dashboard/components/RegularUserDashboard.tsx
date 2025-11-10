@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -13,14 +13,21 @@ import { MetricCard } from './shared/MetricCard';
 import { QuickActions } from './shared/QuickActions';
 import { DashboardSkeleton } from './shared/DashboardSkeleton';
 
-const quickActions = [
-  { label: 'View Applications', href: '/admin/applications', icon: FileText },
-  { label: 'Manage Jobs', href: '/admin/jobs', icon: Briefcase },
-  { label: 'View Analytics', href: '/admin/analytics', icon: BarChart3 },
-];
-
-export const RegularUserDashboard: React.FC = () => {
+export const RegularUserDashboard = React.memo(() => {
   const { data: metrics, isLoading } = useUserDashboardData();
+
+  const quickActions = useMemo(() => [
+    { label: 'View Applications', href: '/admin/applications', icon: FileText },
+    { label: 'Manage Jobs', href: '/admin/jobs', icon: Briefcase },
+    { label: 'View Analytics', href: '/admin/analytics', icon: BarChart3 },
+  ], []);
+
+  const sortedApplications = useMemo(() => 
+    metrics?.recentApplications?.sort((a, b) => 
+      new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()
+    ) || [],
+    [metrics?.recentApplications]
+  );
 
   if (isLoading) {
     return (
@@ -63,7 +70,7 @@ export const RegularUserDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {metrics?.recentApplications && metrics.recentApplications.length > 0 && (
+          {sortedApplications.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Recent Applications</CardTitle>
@@ -71,7 +78,7 @@ export const RegularUserDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {metrics.recentApplications.map((app) => (
+                  {sortedApplications.map((app) => (
                     <div key={app.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
                       <div className="flex-1">
                         <p className="font-medium">{app.name}</p>
@@ -95,4 +102,6 @@ export const RegularUserDashboard: React.FC = () => {
       </div>
     </PageLayout>
   );
-};
+});
+
+RegularUserDashboard.displayName = 'RegularUserDashboard';
