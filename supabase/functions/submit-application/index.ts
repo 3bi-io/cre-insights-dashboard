@@ -1,11 +1,50 @@
 // @ts-nocheck
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { 
   normalizePhone, 
   findOrCreateJobListing, 
   insertApplication 
 } from "../_shared/application-processor.ts";
+
+// Zod validation schema for application submissions
+const ApplicationSubmissionSchema = z.object({
+  // Required fields
+  firstName: z.string().trim().min(1, 'First name is required').max(100, 'First name too long').optional(),
+  first_name: z.string().trim().min(1, 'First name is required').max(100, 'First name too long').optional(),
+  lastName: z.string().trim().min(1, 'Last name is required').max(100, 'Last name too long').optional(),
+  last_name: z.string().trim().min(1, 'Last name is required').max(100, 'Last name too long').optional(),
+  email: z.string().email('Invalid email format').max(255, 'Email too long').optional(),
+  applicant_email: z.string().email('Invalid email format').max(255, 'Email too long').optional(),
+  
+  // Phone validation - accepts various formats
+  phone: z.string().regex(/^\+?[\d\s\-\(\)]{10,}$/, 'Invalid phone format').optional(),
+  
+  // Location fields
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code format').max(10).optional(),
+  city: z.string().max(100, 'City name too long').optional(),
+  state: z.string().max(2, 'State must be 2-letter code').optional(),
+  
+  // Job-related fields
+  job_listing_id: z.string().uuid('Invalid job listing ID').optional(),
+  job_id: z.string().max(50, 'Job ID too long').optional(),
+  
+  // Application fields with reasonable limits
+  cdl: z.string().max(50).optional(),
+  experience: z.string().max(50).optional(),
+  over21: z.string().max(10).optional(),
+  drug: z.string().max(50).optional(),
+  veteran: z.string().max(50).optional(),
+  consent: z.string().max(50).optional(),
+  privacy: z.string().max(50).optional(),
+  
+  // Employment history - limit to prevent DoS
+  employmentHistory: z.any().optional(),
+}).refine(
+  (data) => (data.firstName || data.first_name) && (data.lastName || data.last_name) && (data.email || data.applicant_email),
+  { message: 'First name, last name, and email are required' }
+);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,8 +73,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    const formData = await req.json();
-    console.log('Received form data:', formData);
+    const rawData = await req.json();
+    
+    // Validate input data with Zod schema
+    const validationResult = ApplicationSubmissionSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      console.error('Validation failed:', validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`));
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input data', 
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    const formData = validationResult.data;
 
     // Get the CR England organization ID
     const { data: crEnglandOrg } = await supabase
@@ -148,7 +208,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Application submitted successfully:', data);
+    // Application submitted successfully - log only non-PII data
+    console.log('Application submitted successfully:', { id: data.id, job_listing_id: data.job_listing_id, status: data.status });
 
     return new Response(
       JSON.stringify({ 
