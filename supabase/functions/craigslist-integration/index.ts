@@ -1,11 +1,24 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { enforceAuth } from '../_shared/serverAuth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Zod validation schemas
+const JobPostingSchema = z.object({
+  title: z.string().trim().min(1, 'Title is required').max(200, 'Title too long'),
+  description: z.string().trim().min(1, 'Description is required').max(10000, 'Description too long'),
+  location: z.string().trim().min(1, 'Location is required').max(200, 'Location too long'),
+  compensation: z.string().trim().max(100, 'Compensation text too long'),
+  contactEmail: z.string().email('Invalid email format').max(255).optional(),
+  category: z.string().trim().min(1, 'Category is required').max(100, 'Category too long'),
+  subCategory: z.string().trim().max(100, 'Subcategory too long').optional(),
+});
 
 interface CraigslistJobData {
   title: string;
@@ -21,6 +34,12 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Enforce admin authentication
+  const authContext = await enforceAuth(req, ['admin', 'super_admin']);
+  if (authContext instanceof Response) {
+    return authContext;
   }
 
   try {
@@ -63,7 +82,29 @@ serve(async (req) => {
             { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-        const jobData: CraigslistJobData = await req.json();
+        
+        // Parse and validate job data
+        const rawJobData = await req.json();
+        const validationResult = JobPostingSchema.safeParse(rawJobData);
+        
+        if (!validationResult.success) {
+          console.error('Validation failed:', validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`));
+          return new Response(
+            JSON.stringify({ 
+              error: 'Invalid job data', 
+              details: validationResult.error.issues.map(issue => ({
+                field: issue.path.join('.'),
+                message: issue.message
+              }))
+            }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        const jobData: CraigslistJobData = validationResult.data;
         return handleJobPosting(username, password, accountId, jobData);
       
       case 'categories':
@@ -93,14 +134,14 @@ serve(async (req) => {
 
 async function handleConnectionStatus(username: string, accountId: string) {
   try {
-    console.log(`Checking connection status for username: ${username}, account: ${accountId}`);
+    console.log('Checking Craigslist connection status');
     
     // For now, return configured status since we have credentials
     // In a production implementation, you would verify the credentials with Craigslist
     const status = {
       connected: true,
-      username: username,
-      accountId: accountId,
+      username: username.substring(0, 3) + '***', // Mask username for security
+      accountId: accountId.substring(0, 4) + '***', // Mask account ID
       lastChecked: new Date().toISOString(),
       status: 'active'
     };
