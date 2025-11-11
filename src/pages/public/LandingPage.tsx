@@ -5,6 +5,7 @@
 
 import React, { lazy, Suspense } from 'react';
 import { SEO } from '@/components/SEO';
+import { StructuredData, buildWebSiteSchema } from '@/components/StructuredData';
 import HeroSection from '@/features/landing/components/sections/HeroSection';
 import StatsSection from '@/features/landing/components/sections/StatsSection';
 
@@ -20,13 +21,14 @@ const CTASection = lazy(() => import('@/features/landing/components/sections/CTA
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen">
       <SEO
-        title="ATS.me - AI-Powered Recruitment Platform | Join Our Pilot Program"
+        title="AI-Powered Recruitment Platform | Join ATS.me Pilot Program"
         description="Transform hiring with ATS.me's AI platform. Voice Apply technology, Tenstreet integration, 100+ job boards, predictive analytics. 50+ pilot companies, 50% off early adopter pricing."
         keywords="AI recruitment, ATS software, Voice Apply, Tenstreet, job board posting, recruitment analytics, pilot program, early adopter"
         canonical="https://ats.me/"
       />
+      <StructuredData data={buildWebSiteSchema()} />
       <HeroSection />
       <StatsSection />
       
@@ -41,7 +43,7 @@ const LandingPage = () => {
         <FAQSection />
         <CTASection />
       </Suspense>
-    </div>
+    </main>
   );
 };
 

@@ -1,5 +1,8 @@
 project_id = "auwhcdpppldjlcaxzsme"
 
+[functions.generate-sitemap]
+verify_jwt = false
+
 [functions.tenstreet-xchange]
 verify_jwt = true
 

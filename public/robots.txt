@@ -24,7 +24,9 @@ Disallow: /platforms
 Disallow: /ai-tools
 Disallow: /organizations
 
-# Sitemap
+# Sitemap (dynamic generation via edge function)
+Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/generate-sitemap
+# Fallback static sitemap
 Sitemap: https://ats.me/sitemap.xml
 
 # Crawl-delay for all bots

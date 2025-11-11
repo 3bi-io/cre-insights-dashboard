@@ -31,9 +31,12 @@ const HeroSection = () => {
           />
           <img
             src={heroImage600}
-            alt="Modern recruitment platform with AI-powered analytics dashboard"
+            alt="Modern recruitment platform with AI-powered analytics dashboard showing candidate pipelines and hiring metrics"
             className="w-full h-full object-cover object-center"
             loading="eager"
+            width="2400"
+            height="1600"
+            fetchPriority="high"
           />
         </picture>
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/85"></div>
