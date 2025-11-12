@@ -42,7 +42,7 @@ const AppSidebar = () => {
     group: "Recruitment", 
     items: [
       {
-        path: '/admin/applications',
+        path: '/applications',
         label: 'Applications',
         icon: Users
       },
