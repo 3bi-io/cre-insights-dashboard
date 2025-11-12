@@ -4,6 +4,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const STATIC_ROUTES = [
   { loc: 'https://ats.me/', changefreq: 'daily', priority: 1.0 },
@@ -12,10 +13,12 @@ const STATIC_ROUTES = [
   { loc: 'https://ats.me/features', changefreq: 'weekly', priority: 0.9 },
   { loc: 'https://ats.me/resources', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://ats.me/contact', changefreq: 'monthly', priority: 0.8 },
+  { loc: 'https://ats.me/blog', changefreq: 'daily', priority: 0.8 },
   { loc: 'https://ats.me/auth', changefreq: 'monthly', priority: 0.6 },
   { loc: 'https://ats.me/privacy-policy', changefreq: 'yearly', priority: 0.3 },
   { loc: 'https://ats.me/terms-of-service', changefreq: 'yearly', priority: 0.3 },
   { loc: 'https://ats.me/cookie-policy', changefreq: 'yearly', priority: 0.3 },
+  { loc: 'https://ats.me/sitemap', changefreq: 'monthly', priority: 0.8 },
 ];
 
 function escapeXml(unsafe: string): string {
@@ -67,17 +70,24 @@ serve(async (req) => {
     // Start with static routes
     const allUrls = [...STATIC_ROUTES];
 
-    // Future: Add dynamic URLs from database
-    // Example: Fetch blog posts, job listings, etc.
-    // const { data: blogPosts } = await supabase.from('blog_posts').select('slug, updated_at');
-    // blogPosts?.forEach(post => {
-    //   allUrls.push({
-    //     loc: `https://ats.me/blog/${post.slug}`,
-    //     lastmod: post.updated_at,
-    //     changefreq: 'weekly',
-    //     priority: 0.7,
-    //   });
-    // });
+    // Add dynamic blog posts
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data: blogPosts } = await supabase
+      .from('blog_posts')
+      .select('slug, updated_at, published_at')
+      .eq('published', true);
+
+    blogPosts?.forEach(post => {
+      allUrls.push({
+        loc: `https://ats.me/blog/${post.slug}`,
+        lastmod: post.updated_at,
+        changefreq: 'weekly',
+        priority: 0.7,
+      });
+    });
 
     const sitemapXML = generateSitemapXML(allUrls);
 
