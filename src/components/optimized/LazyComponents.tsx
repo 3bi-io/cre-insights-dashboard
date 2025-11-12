@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { PageSkeleton, DashboardSkeleton, TableSkeleton } from '@/components/ui/skeleton-loader';
 
 // Lazy load commonly used pages for better code splitting
 export const LazyDashboard = lazy(() => import('@/pages/Dashboard'));
@@ -24,16 +25,18 @@ export const TenstreetUpdateModal = lazy(() => import('@/components/applications
 export const JobAnalyticsDialog = lazy(() => import('@/components/JobAnalyticsDialog'));
 export const JobEditDialog = lazy(() => import('@/components/JobEditDialog'));
 
-// Loading fallback component
+// Enhanced loading fallbacks with proper skeletons
 export const ComponentLoadingFallback = () => (
   <div className="flex items-center justify-center p-8">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
   </div>
 );
 
-// Page loading fallback component
-export const PageLoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+// Page loading fallbacks with content-specific skeletons
+export const PageLoadingFallback = () => <PageSkeleton />;
+export const DashboardLoadingFallback = () => <DashboardSkeleton />;
+export const TableLoadingFallback = () => (
+  <div className="container mx-auto p-6">
+    <TableSkeleton />
   </div>
 );

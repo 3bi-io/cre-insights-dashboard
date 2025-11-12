@@ -118,24 +118,73 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-label',
-            '@radix-ui/react-toast',
-          ],
-          'data-vendor': ['@tanstack/react-query', '@supabase/supabase-js'],
-          'charts': ['recharts'],
-          'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'ai-features': ['@11labs/react'],
-          'utilities': ['date-fns', 'clsx', 'tailwind-merge'],
+        manualChunks: (id) => {
+          // Core vendors - loaded on every page
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            if (id.includes('@tanstack/react-query') || id.includes('@supabase/supabase-js')) {
+              return 'data-vendor';
+            }
+            if (id.includes('recharts')) {
+              return 'charts';
+            }
+            if (id.includes('react-hook-form') || id.includes('@hookform/resolvers') || id.includes('zod')) {
+              return 'forms';
+            }
+            if (id.includes('@11labs/react')) {
+              return 'ai-features';
+            }
+            if (id.includes('date-fns') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'utilities';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            // Other node_modules as vendor
+            return 'vendor';
+          }
+
+          // Feature-based code splitting
+          if (id.includes('/src/features/tenstreet/')) {
+            return 'feature-tenstreet';
+          }
+          if (id.includes('/src/features/admin/')) {
+            return 'feature-admin';
+          }
+          if (id.includes('/src/features/platforms/')) {
+            return 'feature-platforms';
+          }
+          if (id.includes('/src/features/applications/')) {
+            return 'feature-applications';
+          }
+          if (id.includes('/src/features/campaigns/')) {
+            return 'feature-campaigns';
+          }
+          if (id.includes('/src/features/jobs/')) {
+            return 'feature-jobs';
+          }
+          if (id.includes('/src/features/media/')) {
+            return 'feature-media';
+          }
+          if (id.includes('/src/features/settings/')) {
+            return 'feature-settings';
+          }
+          if (id.includes('/src/features/ai/')) {
+            return 'feature-ai';
+          }
+          
+          // Component groups
+          if (id.includes('/src/components/charts/')) {
+            return 'component-charts';
+          }
+          if (id.includes('/src/components/forms/')) {
+            return 'component-forms';
+          }
         },
       },
     },
@@ -151,5 +200,6 @@ export default defineConfig(({ mode }) => ({
         safari10: true,
       },
     },
+    sourcemap: false, // Disable sourcemaps in production for smaller bundle
   },
 }));
