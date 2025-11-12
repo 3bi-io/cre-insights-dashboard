@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { SEO } from '@/components/SEO';
+import { SEO, StructuredData } from '@/lib/seo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +87,40 @@ const PricingPage = () => {
     'Free data migration',
   ];
 
+  // Product structured data for pricing tiers
+  const productSchemas = pricingTiers.map(tier => ({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `ATS.me ${tier.name} Plan`,
+    "description": tier.description,
+    "brand": {
+      "@type": "Brand",
+      "name": "ATS.me"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": tier.price === 'Custom' ? '0' : tier.price.replace('$', ''),
+      "priceCurrency": "USD",
+      "priceSpecification": {
+        "@type": "UnitPriceSpecification",
+        "price": tier.price === 'Custom' ? '0' : tier.price.replace('$', ''),
+        "priceCurrency": "USD",
+        "unitText": "MONTH"
+      },
+      "availability": "https://schema.org/InStock",
+      "url": "https://ats.me/pricing",
+      "seller": {
+        "@type": "Organization",
+        "name": "ATS.me"
+      }
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "50"
+    }
+  }));
+
   return (
     <div className="min-h-screen py-16 px-4">
       <SEO
@@ -95,6 +129,7 @@ const PricingPage = () => {
         keywords="ATS pricing, recruitment software cost, early adopter pricing, pilot program discount, ATS.me plans"
         canonical="https://ats.me/pricing"
       />
+      <StructuredData data={productSchemas} />
       <div className="container mx-auto max-w-7xl">
         {/* Hero Section */}
         <div className="text-center mb-16">

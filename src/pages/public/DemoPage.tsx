@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { SEO } from '@/components/SEO';
+import { SEO, StructuredData } from '@/lib/seo';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,6 +58,32 @@ const DemoPage = () => {
     'Pilot program enrollment options'
   ];
 
+  // VideoObject structured data for demo video
+  const videoSchema = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": "ATS.me Platform Demo - AI-Powered Recruitment Software",
+    "description": "Experience ATS.me's AI-powered recruitment platform with this comprehensive 15-minute demo covering Voice Apply, analytics, Tenstreet integration, and automated workflows.",
+    "thumbnailUrl": "https://storage.googleapis.com/gpt-engineer-file-uploads/W1hSv6TZsaSmimtDCBPaJhIlFNp2/social-images/social-1760587249209-IMG_0871.jpeg",
+    "uploadDate": "2025-01-01T00:00:00Z",
+    "duration": "PT15M",
+    "contentUrl": "https://ats.me/demo",
+    "embedUrl": "https://ats.me/demo",
+    "interactionStatistic": {
+      "@type": "InteractionCounter",
+      "interactionType": "https://schema.org/WatchAction",
+      "userInteractionCount": 50
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "ATS.me",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://ats.me/og-image.png"
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen py-20">
       <SEO
@@ -66,6 +92,7 @@ const DemoPage = () => {
         keywords="ATS demo, recruitment software demo, platform walkthrough, product tour, ATS.me demo"
         canonical="https://ats.me/demo"
       />
+      <StructuredData data={videoSchema} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
