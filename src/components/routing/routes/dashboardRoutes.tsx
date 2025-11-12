@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { ProtectedRoute } from '@/features/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Dashboard page

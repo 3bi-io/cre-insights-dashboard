@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { ProtectedRoute } from '@/features/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Candidate feature pages

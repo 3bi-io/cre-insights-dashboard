@@ -3,8 +3,8 @@ import { lazy } from 'react';
 // Lazy load commonly used pages for better code splitting
 export const LazyDashboard = lazy(() => import('@/pages/Dashboard'));
 export const LazyApplications = lazy(() => import('@/features/applications').then(m => ({ default: m.ApplicationsPage })));
-export const LazyPlatforms = lazy(() => import('@/pages/Platforms'));
-export const LazySettings = lazy(() => import('@/pages/Settings'));
+export const LazyPlatforms = lazy(() => import('@/features/platforms').then(m => ({ default: m.PlatformsPage })));
+export const LazySettings = lazy(() => import('@/features/settings').then(m => ({ default: m.SettingsPage })));
 export const LazyAuth = lazy(() => import('@/pages/Auth'));
 export const LazyApply = lazy(() => import('@/pages/Apply'));
 export const LazyDetailedApply = lazy(() => import('@/pages/DetailedApply'));
