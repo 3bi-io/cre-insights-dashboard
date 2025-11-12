@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
 import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/lib/logger";
+import { initSentry } from "@/lib/sentry";
 import AppRoutes from "@/components/routing/AppRoutes";
 import CountryBlockWrapper from "@/components/CountryBlockWrapper";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -16,6 +17,9 @@ import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 import { AIChatbot } from "@/components/ai/AIChatbot";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useEffect } from "react";
+
+// Initialize Sentry error monitoring
+initSentry();
 
 // Service Worker Registration
 function PWAUpdater() {
