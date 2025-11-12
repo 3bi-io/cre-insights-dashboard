@@ -62,8 +62,9 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
     console.log('[AUTH] Fetching role and organization for user:', _userId);
     logger.info(`Fetching role and organization for user`, { userId: _userId });
     
-    // Fetch user role
+    // Fetch user role using secure function
     const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+    
     if (roleError) {
       logger.error('Error fetching user role', roleError);
       console.log('[AUTH] Error fetching role:', roleError);
@@ -71,12 +72,7 @@ const fetchUserRoleAndOrganization = async (_userId: string) => {
     } else {
       console.log('[AUTH] Role loaded:', roleData);
       logger.debug('User role fetched', { role: roleData });
-      // Check if user is super admin by email or role
-      if (roleData === 'super_admin') {
-        setUserRole('super_admin');
-      } else {
-        setUserRole((roleData as string) || 'user');
-      }
+      setUserRole((roleData as string) || 'user');
     }
 
     // Fetch user's profile with organization
