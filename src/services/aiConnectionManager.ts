@@ -32,7 +32,7 @@ class AIConnectionManager {
     },
     anthropic: {
       provider: 'anthropic',
-      model: 'claude-3-5-sonnet-20241022', // Latest Claude model
+      model: 'claude-3-5-haiku-20241022', // Valid Claude model
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     },
@@ -88,7 +88,9 @@ class AIConnectionManager {
         case 'grok':
           response = await supabase.functions.invoke('grok-chat', {
             body: {
-              message: config.testMessage,
+              messages: [
+                { role: 'user', content: config.testMessage }
+              ],
               model: config.model
             }
           });
