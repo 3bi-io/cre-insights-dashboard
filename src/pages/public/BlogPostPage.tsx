@@ -6,6 +6,7 @@ import { SEO, buildArticleSchema, StructuredData, Breadcrumbs } from '@/lib/seo'
 import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import DOMPurify from 'dompurify';
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -132,7 +133,15 @@ const BlogPostPage = () => {
 
         <main className="container-wide py-8">
           <div className="prose prose-lg max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+            <div dangerouslySetInnerHTML={{ 
+              __html: DOMPurify.sanitize(post.content, {
+                ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'blockquote', 'code', 'pre', 'br', 'hr', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
+                ALLOW_DATA_ATTR: false,
+                FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button'],
+                FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur']
+              })
+            }} />
           </div>
 
           <div className="mt-12 pt-8 border-t border-border">
