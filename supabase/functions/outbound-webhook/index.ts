@@ -12,8 +12,9 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders, createSuccessResponse, createErrorResponse } from '../_shared/responses.ts';
-import { wrapHandler } from '../_shared/handler-wrapper.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler } from '../_shared/error-handler.ts';
 
 interface OutboundWebhookPayload {
   application_id: string;
@@ -61,14 +62,15 @@ async function sendWebhook(
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  const corsHeaders = getCorsHeaders();
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
-    return createErrorResponse('Method not allowed', 405);
+    return errorResponse('Method not allowed', 405, undefined, origin);
   }
 
   const supabase = getServiceClient();
@@ -78,9 +80,11 @@ const handler = async (req: Request): Promise<Response> => {
   const { application_id, webhook_url, event_type } = payload;
 
   if (!application_id || !webhook_url || !event_type) {
-    return createErrorResponse(
+    return errorResponse(
       'Missing required fields: application_id, webhook_url, event_type',
-      400
+      400,
+      undefined,
+      origin
     );
   }
 
@@ -99,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (fetchError || !application) {
     console.error('[OUTBOUND-WEBHOOK] Application not found:', fetchError);
-    return createErrorResponse('Application not found', 404);
+    return errorResponse('Application not found', 404, undefined, origin);
   }
 
   // Prepare comprehensive webhook payload
@@ -213,16 +217,18 @@ const handler = async (req: Request): Promise<Response> => {
   });
 
   if (result.success) {
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       message: 'Webhook delivered successfully',
       status: result.status,
       duration_ms,
-    });
+    }, undefined, undefined, origin);
   } else {
-    return createErrorResponse(
+    return errorResponse(
       `Webhook delivery failed: ${result.error}`,
-      result.status >= 400 && result.status < 500 ? result.status : 500
+      result.status >= 400 && result.status < 500 ? result.status : 500,
+      undefined,
+      origin
     );
   }
 };
