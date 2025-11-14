@@ -12,8 +12,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders, createSuccessResponse, createErrorResponse } from '../_shared/responses.ts';
-import { wrapHandler } from '../_shared/handler-wrapper.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler } from '../_shared/error-handler.ts';
 
 interface TriggerWebhookRequest {
   webhook_id: string;
@@ -61,7 +62,8 @@ async function sendWebhook(
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  const corsHeaders = getCorsHeaders();
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -73,7 +75,7 @@ const handler = async (req: Request): Promise<Response> => {
   const { webhook_id, test_mode = false, payload = {} }: TriggerWebhookRequest = await req.json();
 
   if (!webhook_id) {
-    return createErrorResponse('Missing required field: webhook_id', 400);
+    return errorResponse('Missing required field: webhook_id', 400, undefined, origin);
   }
 
   console.log('[TRIGGER-WEBHOOK] Triggering webhook', {
@@ -90,13 +92,13 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (fetchError || !webhook) {
     console.error('[TRIGGER-WEBHOOK] Webhook not found:', fetchError);
-    return createErrorResponse('Webhook not found', 404);
+    return errorResponse('Webhook not found', 404, undefined, origin);
   }
 
   // Check if webhook is enabled (skip check in test mode)
   if (!webhook.enabled && !test_mode) {
     console.log('[TRIGGER-WEBHOOK] Webhook is disabled');
-    return createErrorResponse('Webhook is disabled', 400);
+    return errorResponse('Webhook is disabled', 400, undefined, origin);
   }
 
   // Prepare webhook payload
@@ -130,17 +132,19 @@ const handler = async (req: Request): Promise<Response> => {
   });
 
   if (result.success) {
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       status: result.status,
       message: 'Webhook triggered successfully',
       duration_ms,
       response: result.body.substring(0, 500),
-    });
+    }, undefined, undefined, origin);
   } else {
-    return createErrorResponse(
+    return errorResponse(
       `Webhook failed: ${result.error}`,
-      result.status >= 400 && result.status < 500 ? result.status : 500
+      result.status >= 400 && result.status < 500 ? result.status : 500,
+      undefined,
+      origin
     );
   }
 };

@@ -12,8 +12,9 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders, createSuccessResponse, createErrorResponse } from '../_shared/responses.ts';
-import { wrapHandler } from '../_shared/handler-wrapper.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler } from '../_shared/error-handler.ts';
 
 interface WebhookRequest {
   application_id: string;
@@ -113,7 +114,8 @@ async function sendWebhookWithRetry(
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  const corsHeaders = getCorsHeaders();
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -159,17 +161,17 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (appError || !application) {
     console.error('[CLIENT-WEBHOOK] Application not found:', appError);
-    return createErrorResponse('Application not found', 404);
+    return errorResponse('Application not found', 404, undefined, origin);
   }
 
   const client_id = application.job_listing?.client_id;
   
   if (!client_id) {
     console.log('[CLIENT-WEBHOOK] No client associated with application');
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       message: 'No client webhook configured (no client assigned)',
-    });
+    }, undefined, undefined, origin);
   }
 
   // Fetch webhook configuration for this client
@@ -181,28 +183,28 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (webhookError || !webhook) {
     console.log('[CLIENT-WEBHOOK] No webhook configured for client:', client_id);
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       message: 'No webhook configured for this client',
-    });
+    }, undefined, undefined, origin);
   }
 
   // Check if webhook is enabled (skip in test mode)
   if (!test_mode && !webhook.enabled) {
     console.log('[CLIENT-WEBHOOK] Webhook disabled for client:', client_id);
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       message: 'Webhook is disabled for this client',
-    });
+    }, undefined, undefined, origin);
   }
 
   // Check if this event type should be sent
   if (!test_mode && webhook.event_types && !webhook.event_types.includes(event_type)) {
     console.log('[CLIENT-WEBHOOK] Event type not configured:', event_type);
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       message: `Event type '${event_type}' not configured for this webhook`,
-    });
+    }, undefined, undefined, origin);
   }
 
   // Prepare webhook payload
@@ -272,11 +274,11 @@ const handler = async (req: Request): Promise<Response> => {
       duration_ms,
     });
 
-    return createSuccessResponse({
+    return successResponse({
       success: true,
       message: 'Webhook sent successfully',
       duration_ms,
-    });
+    }, undefined, undefined, origin);
   } else {
     await supabase
       .from('client_webhooks')
@@ -292,7 +294,7 @@ const handler = async (req: Request): Promise<Response> => {
       duration_ms,
     });
 
-    return createErrorResponse(result.error || 'Webhook delivery failed', 500);
+    return errorResponse(result.error || 'Webhook delivery failed', 500, undefined, origin);
   }
 };
 
