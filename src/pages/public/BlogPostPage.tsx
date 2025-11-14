@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,19 @@ import DOMPurify from 'dompurify';
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  
+  const sanitizeContent = useMemo(() => {
+    return (content: string) => {
+      if (typeof window === 'undefined') return content;
+      return DOMPurify.sanitize(content, {
+        ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'blockquote', 'code', 'pre', 'br', 'hr', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
+        ALLOW_DATA_ATTR: false,
+        FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button'],
+        FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur']
+      });
+    };
+  }, []);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['blog-post', slug],
@@ -134,13 +147,7 @@ const BlogPostPage = () => {
         <main className="container-wide py-8">
           <div className="prose prose-lg max-w-none">
             <div dangerouslySetInnerHTML={{ 
-              __html: DOMPurify.sanitize(post.content, {
-                ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'blockquote', 'code', 'pre', 'br', 'hr', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
-                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
-                ALLOW_DATA_ATTR: false,
-                FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button'],
-                FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur']
-              })
+              __html: sanitizeContent(post.content)
             }} />
           </div>
 
