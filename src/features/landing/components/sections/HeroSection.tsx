@@ -36,7 +36,6 @@ const HeroSection = () => {
             loading="eager"
             width="2400"
             height="1600"
-            fetchPriority="high"
           />
         </picture>
         <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/85"></div>

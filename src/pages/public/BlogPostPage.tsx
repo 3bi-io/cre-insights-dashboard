@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,14 +6,21 @@ import { SEO, buildArticleSchema, StructuredData, Breadcrumbs } from '@/lib/seo'
 import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import DOMPurify from 'dompurify';
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   
+  const [DOMPurify, setDOMPurify] = useState<any>(null);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('dompurify').then(module => setDOMPurify(() => module.default));
+    }
+  }, []);
+  
   const sanitizeContent = useMemo(() => {
     return (content: string) => {
-      if (typeof window === 'undefined') return content;
+      if (!DOMPurify || typeof window === 'undefined') return content;
       return DOMPurify.sanitize(content, {
         ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'blockquote', 'code', 'pre', 'br', 'hr', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
         ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
@@ -22,7 +29,7 @@ const BlogPostPage = () => {
         FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur']
       });
     };
-  }, []);
+  }, [DOMPurify]);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ['blog-post', slug],
