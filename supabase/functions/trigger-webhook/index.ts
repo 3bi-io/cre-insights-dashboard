@@ -1,99 +1,148 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+/**
+ * Trigger Webhook Handler
+ * 
+ * Tests and triggers configured webhooks.
+ * Used by the webhook management UI for testing.
+ * 
+ * SECURITY:
+ * - Validates webhook configuration exists
+ * - Respects enabled status (unless test mode)
+ * - Logs all attempts
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
+import { getCorsHeaders, createSuccessResponse, createErrorResponse } from '../_shared/responses.ts';
+import { wrapHandler } from '../_shared/handler-wrapper.ts';
 
-serve(async (req) => {
+interface TriggerWebhookRequest {
+  webhook_id: string;
+  test_mode?: boolean;
+  payload?: Record<string, any>;
+}
+
+/**
+ * Send webhook with timeout
+ */
+async function sendWebhook(
+  url: string,
+  payload: Record<string, any>
+): Promise<{ success: boolean; status: number; body: string; error?: string }> {
+  try {
+    console.log('[TRIGGER-WEBHOOK] Sending to:', url.substring(0, 50) + '...');
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Supabase-Webhook-Test/1.0',
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30000), // 30 second timeout
+    });
+
+    const responseBody = await response.text();
+
+    return {
+      success: response.ok,
+      status: response.status,
+      body: responseBody,
+      error: response.ok ? undefined : `HTTP ${response.status}`,
+    };
+  } catch (error) {
+    console.error('[TRIGGER-WEBHOOK] Send failed:', error);
+    return {
+      success: false,
+      status: 500,
+      body: '',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders();
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getServiceClient();
+  const startTime = Date.now();
 
-    const { webhook_id, test_mode, payload } = await req.json();
+  const { webhook_id, test_mode = false, payload = {} }: TriggerWebhookRequest = await req.json();
 
-    console.log('Triggering webhook:', { webhook_id, test_mode });
+  if (!webhook_id) {
+    return createErrorResponse('Missing required field: webhook_id', 400);
+  }
 
-    // Fetch webhook configuration
-    const { data: webhook, error: fetchError } = await supabase
-      .from('webhook_configurations')
-      .select('*')
-      .eq('id', webhook_id)
-      .single();
+  console.log('[TRIGGER-WEBHOOK] Triggering webhook', {
+    webhook_id,
+    test_mode,
+  });
 
-    if (fetchError || !webhook) {
-      throw new Error('Webhook not found');
-    }
+  // Fetch webhook configuration
+  const { data: webhook, error: fetchError } = await supabase
+    .from('webhook_configurations')
+    .select('*')
+    .eq('id', webhook_id)
+    .single();
 
-    if (!webhook.enabled && !test_mode) {
-      throw new Error('Webhook is disabled');
-    }
+  if (fetchError || !webhook) {
+    console.error('[TRIGGER-WEBHOOK] Webhook not found:', fetchError);
+    return createErrorResponse('Webhook not found', 404);
+  }
 
-    // Prepare webhook payload
-    const webhookPayload = {
-      timestamp: new Date().toISOString(),
-      test_mode: test_mode || false,
-      data: payload,
-      organization_id: webhook.organization_id,
-    };
+  // Check if webhook is enabled (skip check in test mode)
+  if (!webhook.enabled && !test_mode) {
+    console.log('[TRIGGER-WEBHOOK] Webhook is disabled');
+    return createErrorResponse('Webhook is disabled', 400);
+  }
 
-    console.log('Sending webhook to:', webhook.webhook_url);
+  // Prepare webhook payload
+  const webhookPayload = {
+    timestamp: new Date().toISOString(),
+    test_mode: test_mode || false,
+    data: payload,
+    organization_id: webhook.organization_id,
+    webhook_id: webhook.id,
+  };
 
-    // Send webhook
-    const webhookResponse = await fetch(webhook.webhook_url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(webhookPayload),
+  // Send webhook
+  const result = await sendWebhook(webhook.webhook_url, webhookPayload);
+  const duration_ms = Date.now() - startTime;
+
+  // Log the webhook call
+  await supabase.from('webhook_logs').insert({
+    webhook_id: webhook.id,
+    trigger_event: test_mode ? 'test' : 'manual',
+    payload: webhookPayload,
+    response_status: result.status,
+    response_body: result.body.substring(0, 1000),
+    error_message: result.error || null,
+  });
+
+  console.log('[TRIGGER-WEBHOOK] Result', {
+    webhook_id,
+    success: result.success,
+    status: result.status,
+    duration_ms,
+  });
+
+  if (result.success) {
+    return createSuccessResponse({
+      success: true,
+      status: result.status,
+      message: 'Webhook triggered successfully',
+      duration_ms,
+      response: result.body.substring(0, 500),
     });
-
-    const responseStatus = webhookResponse.status;
-    const responseBody = await webhookResponse.text();
-
-    console.log('Webhook response:', { responseStatus, responseBody });
-
-    // Log the webhook call
-    await supabase.from('webhook_logs').insert({
-      webhook_id: webhook.id,
-      trigger_event: 'test',
-      payload: webhookPayload,
-      response_status: responseStatus,
-      response_body: responseBody.substring(0, 1000),
-      error_message: responseStatus >= 400 ? responseBody : null,
-    });
-
-    if (responseStatus >= 400) {
-      throw new Error(`Webhook failed with status ${responseStatus}: ${responseBody}`);
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        status: responseStatus,
-        message: 'Webhook triggered successfully',
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-  } catch (error: any) {
-    console.error('Webhook error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+  } else {
+    return createErrorResponse(
+      `Webhook failed: ${result.error}`,
+      result.status >= 400 && result.status < 500 ? result.status : 500
     );
   }
-});
+};
+
+serve(wrapHandler(handler));
