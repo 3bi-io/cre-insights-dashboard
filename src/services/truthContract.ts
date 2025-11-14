@@ -165,7 +165,7 @@ Validate this content according to the Truth Contract principles.
       body: {
         message: validationPrompt,
         systemPrompt: 'You are a Truth Contract Validator. Respond only with valid JSON.',
-        model: 'claude-3-5-sonnet-20241022'
+        model: 'claude-3-5-haiku-20241022'
       }
     });
 
@@ -203,7 +203,7 @@ Respond with JSON: {"biases": [{"type": "string", "severity": "low|medium|high",
         body: {
           message: biasPrompt,
           systemPrompt: 'You are a bias detection expert. Respond only with valid JSON.',
-          model: 'claude-3-5-sonnet-20241022'
+          model: 'claude-3-5-haiku-20241022'
         }
       });
 
@@ -247,7 +247,7 @@ Respond with JSON: {"isComplete": boolean, "missingElements": ["string"], "score
         body: {
           message: completenessPrompt,
           systemPrompt: 'You are a completeness validator. Respond only with valid JSON.',
-          model: 'claude-3-5-sonnet-20241022'
+          model: 'claude-3-5-haiku-20241022'
         }
       });
 
@@ -295,7 +295,7 @@ Respond with JSON: {"claims": [{"claim": "string", "verification": "verified|dis
         body: {
           message: factCheckPrompt,
           systemPrompt: 'You are a fact-checking expert. Respond only with valid JSON.',
-          model: 'claude-3-5-sonnet-20241022'
+          model: 'claude-3-5-haiku-20241022'
         }
       });
 
