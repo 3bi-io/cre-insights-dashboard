@@ -20,7 +20,7 @@ const BlogPostPage = () => {
   
   const sanitizeContent = useMemo(() => {
     return (content: string) => {
-      if (!DOMPurify || typeof window === 'undefined') return content;
+      if (!DOMPurify || typeof window === 'undefined') return '';
       return DOMPurify.sanitize(content, {
         ALLOWED_TAGS: ['p', 'b', 'i', 'em', 'strong', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'blockquote', 'code', 'pre', 'br', 'hr', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
         ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel'],
@@ -63,7 +63,7 @@ const BlogPostPage = () => {
     publisher: 'ATS.me',
   }) : null;
 
-  if (isLoading) {
+  if (isLoading || !DOMPurify) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container-wide py-12">
