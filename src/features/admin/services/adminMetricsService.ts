@@ -9,8 +9,6 @@ export class AdminMetricsService {
    * Fetches admin dashboard metrics
    */
   static async fetchDashboardMetrics(): Promise<AdminDashboardMetrics> {
-    console.log('AdminMetricsService: Fetching dashboard metrics');
-    
     // Get total organizations
     const { count: totalOrganizations } = await supabase
       .from('organizations')
@@ -85,8 +83,6 @@ export class AdminMetricsService {
    * Fetches organizations with statistics
    */
   static async fetchOrganizationsWithStats(): Promise<OrganizationStats[]> {
-    console.log('AdminMetricsService: Fetching organizations with stats');
-    
     // Get organizations with counts
     const { data: organizations } = await supabase
       .from('organizations')
@@ -165,8 +161,6 @@ export class AdminMetricsService {
    * Fetches recent user activity
    */
   static async fetchUserActivity(): Promise<UserActivity[]> {
-    console.log('AdminMetricsService: Fetching user activity');
-    
     // Get recent user activity with organization and role info
     const { data: profiles } = await supabase
       .from('profiles')
