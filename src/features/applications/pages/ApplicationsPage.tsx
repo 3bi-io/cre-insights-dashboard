@@ -208,26 +208,11 @@ const ApplicationsPage = () => {
     }
   }, [selectedApplications, updateApplication, toast]);
 
-  const handleBulkDelete = useCallback(async () => {
-    const selectedIds = Array.from(selectedApplications);
-    try {
-      await Promise.all(
-        selectedIds.map(id => deleteApplication(id))
-      );
-      toast({
-        title: "Applications Deleted",
-        description: `${selectedIds.length} application(s) deleted successfully`,
-      });
-      setSelectedApplications(new Set());
-    } catch (error) {
-      logger.error('Bulk delete error', error, 'Applications');
-      toast({
-        title: "Delete Failed",
-        description: "Failed to delete applications",
-        variant: "destructive",
-      });
-    }
-  }, [selectedApplications, deleteApplication, toast]);
+  const handleBulkDelete = useCallback(() => {
+    // Delete not supported for compliance - applications maintain audit trail
+    deleteApplication();
+    setSelectedApplications(new Set());
+  }, [deleteApplication]);
 
   const handleBulkExportSelected = useCallback(() => {
     try {
