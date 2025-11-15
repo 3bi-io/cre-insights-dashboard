@@ -60,79 +60,48 @@ class ApplicationsService extends BaseFeatureService {
     city?: string;
     state?: string;
     organization_id?: string;
+    accessReason?: string;
   }): Promise<ApiResponse<any>> {
     return this.handleApiCall(async () => {
-      let query = (supabase as any).from(this.tableName)
-        .select(`
-          *,
-          job_listings:job_listing_id (
-            title,
-            location,
-            job_type,
-            organization_id
-          )
-        `, { count: 'exact' })
-        .order('applied_at', { ascending: false });
-
-      // Apply application-specific filters
-      if (filters?.job_id) {
-        query = query.eq('job_listing_id', filters.job_id);
-      }
-
-      if (filters?.organization_id) {
-        // Filter by organization through job_listings relationship
-        query = query.eq('job_listings.organization_id', filters.organization_id);
-      }
+      // Build filters object for RPC function
+      const rpcFilters: Record<string, any> = {};
       
-      if (filters?.status) {
-        query = query.eq('status', filters.status);
-      }
+      if (filters?.job_id) rpcFilters.job_id = filters.job_id;
+      if (filters?.status) rpcFilters.status = filters.status;
+      if (filters?.city) rpcFilters.city = filters.city;
+      if (filters?.state) rpcFilters.state = filters.state;
+      if (filters?.search) rpcFilters.search = filters.search;
       
-      if (filters?.cdl_license !== undefined) {
-        query = query.eq('cdl_license', filters.cdl_license);
-      }
-      
-      if (filters?.veteran_status !== undefined) {
-        query = query.eq('veteran_status', filters.veteran_status);
-      }
-      
-      if (filters?.experience_years_min !== undefined) {
-        query = query.gte('experience_years', filters.experience_years_min);
-      }
-      
-      if (filters?.city) {
-        query = query.ilike('city', `%${filters.city}%`);
-      }
-      
-      if (filters?.state) {
-        query = query.eq('state', filters.state);
-      }
-
-      // Apply search to name and email
-      if (filters?.search && filters.search.length > 0) {
-        query = query.or(
-          `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
-        );
-      }
-
-      // Apply pagination
+      // Pagination
       const page = filters?.page || 1;
       const pageSize = filters?.pageSize || 200;
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      
-      query = query.range(from, to);
+      rpcFilters.limit = pageSize;
+      rpcFilters.offset = (page - 1) * pageSize;
 
-      const result = await query;
+      // Use audited RPC function with access reason
+      const accessReason = filters?.accessReason || 'Application list review';
       
-      if (result.error) return result;
+      const { data, error } = await supabase.rpc('get_applications_list_with_audit', {
+        filters: rpcFilters,
+        access_reason: accessReason
+      });
 
-      const totalCount = result.count || 0;
-      const hasMore = to < totalCount - 1;
+      if (error) {
+        console.error('Error fetching applications:', error);
+        return { data: null, error: error.message };
+      }
+
+      // Extract total count from first row (all rows have same total_count)
+      const totalCount = data && data.length > 0 ? data[0].total_count : 0;
+      
+      // Remove total_count from individual rows
+      const cleanData = data?.map(({ total_count, ...rest }) => rest) || [];
+      
+      const hasMore = rpcFilters.offset + pageSize < totalCount;
 
       return {
         data: {
-          data: result.data,
+          data: cleanData,
           totalCount,
           page,
           pageSize,
@@ -143,42 +112,51 @@ class ApplicationsService extends BaseFeatureService {
     }, 'getApplications');
   }
 
-  async createApplication(data: CreateApplicationData): Promise<ApiResponse<Application>> {
-    const validation = this.validation.validateCreate(data);
-    if (validation.error) {
-      return { data: null, error: validation.error };
-    }
+  async createApplication(
+    data: CreateApplicationData, 
+    accessReason: string = 'New application submission'
+  ): Promise<ApiResponse<Application>> {
+    return this.handleApiCall(async () => {
+      // Use audited RPC function for creation
+      const { data: result, error } = await supabase.rpc('create_application_with_audit', {
+        application_data: data,
+        created_by_reason: accessReason
+      });
 
-    // Add applied_at timestamp
-    const applicationData = {
-      ...validation.data,
-      applied_at: new Date().toISOString()
-    };
+      if (error) {
+        console.error('Error creating application:', error);
+        return { data: null, error: error.message };
+      }
 
-    return this.create<Application>(applicationData);
+      return { data: result as Application, error: null };
+    }, 'createApplication');
   }
 
-  async updateApplication(id: string, data: UpdateApplicationData): Promise<ApiResponse<Application>> {
-    const idValidation = this.validation.validateId(id);
-    if (idValidation.error) {
-      return { data: null, error: idValidation.error };
-    }
+  async updateApplication(
+    id: string, 
+    data: UpdateApplicationData,
+    accessReason: string = 'Application update'
+  ): Promise<ApiResponse<Application>> {
+    return this.handleApiCall(async () => {
+      const idValidation = this.validation.validateId(id);
+      if (idValidation.error) {
+        return { data: null, error: idValidation.error };
+      }
 
-    const dataValidation = this.validation.validateUpdate(data);
-    if (dataValidation.error) {
-      return { data: null, error: dataValidation.error };
-    }
+      // Use audited RPC function for updates
+      const { data: result, error } = await supabase.rpc('update_application_with_audit', {
+        application_id: id,
+        update_data: data,
+        update_reason: accessReason
+      });
 
-    // Add reviewed_at timestamp if status is being updated
-    let updateData = dataValidation.data;
-    if (data.status && data.status !== 'pending') {
-      updateData = {
-        ...updateData,
-        reviewed_at: new Date().toISOString()
-      };
-    }
+      if (error) {
+        console.error('Error updating application:', error);
+        return { data: null, error: error.message };
+      }
 
-    return this.update<Application>(id, updateData);
+      return { data: result as Application, error: null };
+    }, 'updateApplication');
   }
 
   async deleteApplication(id: string): Promise<ApiResponse<void>> {
@@ -190,22 +168,44 @@ class ApplicationsService extends BaseFeatureService {
     return this.delete(id);
   }
 
-  async getApplicationById(id: string): Promise<ApiResponse<Application>> {
-    const validation = this.validation.validateId(id);
-    if (validation.error) {
-      return { data: null, error: validation.error };
-    }
+  async getApplicationById(
+    id: string, 
+    includePII: boolean = false,
+    accessReason: string = 'Application detail view'
+  ): Promise<ApiResponse<Application>> {
+    return this.handleApiCall(async () => {
+      const validation = this.validation.validateId(id);
+      if (validation.error) {
+        return { data: null, error: validation.error };
+      }
 
-    return this.getById<Application>(id);
+      // Use audited RPC function
+      const { data: result, error } = await supabase.rpc('get_application_with_audit', {
+        application_id: id,
+        access_reason: accessReason,
+        include_pii: includePII
+      });
+
+      if (error) {
+        console.error('Error fetching application:', error);
+        return { data: null, error: error.message };
+      }
+
+      return { data: result as Application, error: null };
+    }, 'getApplicationById');
   }
 
   // Custom business logic methods
-  async reviewApplication(id: string, status: 'reviewed' | 'interviewing' | 'hired' | 'rejected', notes?: string): Promise<ApiResponse<Application>> {
-    return this.updateApplication(id, { 
-      status,
-      notes,
-      reviewed_at: new Date().toISOString()
-    });
+  async reviewApplication(
+    id: string, 
+    status: 'reviewed' | 'interviewing' | 'hired' | 'rejected', 
+    notes?: string
+  ): Promise<ApiResponse<Application>> {
+    return this.updateApplication(
+      id, 
+      { status, notes },
+      `Application review: status changed to ${status}`
+    );
   }
 
   async getApplicationStats(jobId?: string): Promise<ApiResponse<{

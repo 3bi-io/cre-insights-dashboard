@@ -4487,6 +4487,10 @@ export type Database = {
       cleanup_expired_sms_links: { Args: never; Returns: undefined }
       cleanup_old_feed_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      create_application_with_audit: {
+        Args: { application_data: Json; created_by_reason?: string }
+        Returns: Json
+      }
       create_organization: {
         Args: { _admin_email?: string; _name: string; _slug: string }
         Returns: string
@@ -4554,6 +4558,14 @@ export type Database = {
           status: string
         }[]
       }
+      get_application_with_audit: {
+        Args: {
+          access_reason?: string
+          application_id: string
+          include_pii?: boolean
+        }
+        Returns: Json
+      }
       get_application_xchange_summary: {
         Args: { app_id: string }
         Returns: {
@@ -4562,6 +4574,33 @@ export type Database = {
           pending_requests: number
           total_cost_cents: number
           total_requests: number
+        }[]
+      }
+      get_applications_list_with_audit: {
+        Args: { access_reason?: string; filters?: Json }
+        Returns: {
+          applicant_email: string
+          applied_at: string
+          cdl: string
+          city: string
+          created_at: string
+          education_level: string
+          exp: string
+          first_name: string
+          id: string
+          job_listing_id: string
+          job_location: string
+          job_title: string
+          last_name: string
+          notes: string
+          phone: string
+          source: string
+          state: string
+          status: string
+          total_count: number
+          updated_at: string
+          work_authorization: string
+          zip: string
         }[]
       }
       get_current_user_role: {
@@ -4636,6 +4675,14 @@ export type Database = {
       set_organization_platform_access: {
         Args: { _enabled: boolean; _org_id: string; _platform_name: string }
         Returns: undefined
+      }
+      update_application_with_audit: {
+        Args: {
+          application_id: string
+          update_data: Json
+          update_reason?: string
+        }
+        Returns: Json
       }
       update_organization_features: {
         Args: { _features: Json; _org_id: string }
