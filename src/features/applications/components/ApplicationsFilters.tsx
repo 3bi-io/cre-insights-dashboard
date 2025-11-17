@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 import type { Organization } from '@/types/common.types';
+import type { WebhookOption } from '@/hooks/useWebhookOptions';
 
 interface ApplicationsFiltersProps {
   searchTerm: string;
@@ -21,6 +22,10 @@ interface ApplicationsFiltersProps {
   onClientChange?: (value: string) => void;
   clients?: Array<{ id: string; name: string; company?: string | null }>;
   showClientFilter?: boolean;
+  webhookFilter?: string;
+  onWebhookChange?: (value: string) => void;
+  webhookOptions?: WebhookOption[];
+  showWebhookFilter?: boolean;
 }
 
 export const ApplicationsFilters = ({
@@ -40,6 +45,10 @@ export const ApplicationsFilters = ({
   onClientChange,
   clients = [],
   showClientFilter = false,
+  webhookFilter,
+  onWebhookChange,
+  webhookOptions = [],
+  showWebhookFilter = false,
 }: ApplicationsFiltersProps) => {
   return (
     <Card className="p-4">
@@ -124,6 +133,24 @@ export const ApplicationsFilters = ({
               {clients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.company || client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {showWebhookFilter && webhookFilter && onWebhookChange && (
+        <div className="mt-4">
+          <Select value={webhookFilter} onValueChange={onWebhookChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by Webhook Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Webhook Sources</SelectItem>
+              {webhookOptions.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {option.label} ({option.count})
                 </SelectItem>
               ))}
             </SelectContent>

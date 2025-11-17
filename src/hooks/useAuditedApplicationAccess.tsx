@@ -43,6 +43,7 @@ export interface ApplicationListOptions {
   state?: string;
   search?: string;
   organizationId?: string;
+  webhookId?: string;
   page?: number;
   pageSize?: number;
   accessReason?: string;
@@ -103,6 +104,7 @@ export const useAuditedApplicationAccess = () => {
       state,
       search,
       organizationId,
+      webhookId,
       page = 1,
       pageSize = 200,
       accessReason = 'Application list review'
@@ -119,6 +121,7 @@ export const useAuditedApplicationAccess = () => {
     if (state) filters.state = state;
     if (search) filters.search = search;
     if (organizationId) filters.organization_id = organizationId;
+    if (webhookId) filters.webhook_id = webhookId;
 
     const { data, error } = await supabase.rpc('get_applications_list_with_audit', {
       filters,
