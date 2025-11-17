@@ -4,11 +4,9 @@ import App from './App.tsx'
 import './index.css'
 import './i18n/config' // Initialize i18n
 import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
-import { initSentry } from '@/utils/sentry'
 import { initAnalytics } from '@/utils/analytics'
 
 // Initialize monitoring services (production)
-initSentry();
 initAnalytics();
 startPerformanceMonitoring();
 

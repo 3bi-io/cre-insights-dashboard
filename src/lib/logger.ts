@@ -1,9 +1,9 @@
 /**
  * Production Logger
  * 
- * Optimized for production use with Sentry integration.
+ * Optimized for production use with minimal overhead.
  * All detailed logging is disabled for performance.
- * Only errors and warnings are sent to monitoring.
+ * Only errors and warnings are logged to console.
  */
 
 interface LogContext {
@@ -21,18 +21,10 @@ function formatError(error: unknown): string {
 }
 
 /**
- * Send error to monitoring service
+ * Send error to monitoring service (disabled)
  */
-function sendToMonitoring(level: 'error' | 'warn', message: string, context?: LogContext) {
-  import('@/utils/sentry').then(({ captureMessage, captureException }) => {
-    if (level === 'error') {
-      captureException(new Error(message), context);
-    } else {
-      captureMessage(message, 'warning' as any, context);
-    }
-  }).catch(() => {
-    // Silently fail if Sentry is not configured
-  });
+function sendToMonitoring(_level: 'error' | 'warn', _message: string, _context?: LogContext) {
+  // Monitoring disabled
 }
 
 export const logger = {
