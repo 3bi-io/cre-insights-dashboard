@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -10,19 +9,47 @@ import {
   Clock, 
   Bot,
   Zap,
-  BarChart3 
+  BarChart3,
+  Loader2
 } from 'lucide-react';
 
 import { PageLayout } from '@/features/shared';
+import { useAIImpactMetrics } from '@/hooks/useAIImpactMetrics';
 
 const AIImpactDashboardPage = () => {
-  // Mock data - replace with actual AI impact metrics
-  const metrics = {
-    totalInteractions: 1247,
-    avgResponseTime: 0.8,
-    satisfactionRate: 94,
-    automationSavings: 15200
-  };
+  const { data: metrics, isLoading, error } = useAIImpactMetrics(30);
+
+  if (isLoading) {
+    return (
+      <PageLayout 
+        title="AI Impact Dashboard" 
+        description="Measure the impact of AI on your recruitment operations"
+      >
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </PageLayout>
+    );
+  }
+
+  if (error || !metrics) {
+    return (
+      <PageLayout 
+        title="AI Impact Dashboard" 
+        description="Measure the impact of AI on your recruitment operations"
+      >
+        <div className="p-6 max-w-7xl mx-auto">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground">
+                Unable to load AI impact metrics. Please try again later.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout 
@@ -99,15 +126,15 @@ const AIImpactDashboardPage = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Application Screening</span>
-                  <Badge variant="outline">87% Automated</Badge>
+                  <Badge variant="outline">{metrics.automationBreakdown.screening}% Automated</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Initial Candidate Contact</span>
-                  <Badge variant="outline">94% Automated</Badge>
+                  <Badge variant="outline">{metrics.automationBreakdown.initialContact}% Automated</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">FAQ Resolution</span>
-                  <Badge variant="outline">91% Automated</Badge>
+                  <Badge variant="outline">{metrics.automationBreakdown.faqResolution}% Automated</Badge>
                 </div>
               </div>
             </CardContent>
@@ -128,23 +155,23 @@ const AIImpactDashboardPage = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm">Response Time Improvement</span>
-                    <span className="text-sm font-medium">75% faster</span>
+                    <span className="text-sm font-medium">{metrics.performanceImprovements.responseTime}% faster</span>
                   </div>
-                  <Progress value={75} />
+                  <Progress value={metrics.performanceImprovements.responseTime} />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm">Application Processing</span>
-                    <span className="text-sm font-medium">60% faster</span>
+                    <span className="text-sm font-medium">{metrics.performanceImprovements.applicationProcessing}% faster</span>
                   </div>
-                  <Progress value={60} />
+                  <Progress value={metrics.performanceImprovements.applicationProcessing} />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm">Candidate Engagement</span>
-                    <span className="text-sm font-medium">45% increase</span>
+                    <span className="text-sm font-medium">{metrics.performanceImprovements.candidateEngagement}% increase</span>
                   </div>
-                  <Progress value={45} />
+                  <Progress value={metrics.performanceImprovements.candidateEngagement} />
                 </div>
               </div>
             </CardContent>
