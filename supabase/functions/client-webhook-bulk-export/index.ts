@@ -11,10 +11,12 @@
  */
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { getServiceClient, verifyUser } from '../_shared/supabase-client.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { successResponse, errorResponse } from '../_shared/response.ts';
+import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
 import { wrapHandler, ValidationError, AuthorizationError, NotFoundError } from '../_shared/error-handler.ts';
+import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
 
 interface BulkExportRequest {
   webhook_id: string;
@@ -25,6 +27,17 @@ interface BulkExportRequest {
     date_to?: string;
   };
 }
+
+// Zod validation schema for bulk export request
+const BulkExportRequestSchema = z.object({
+  webhook_id: z.string().uuid('Invalid webhook ID'),
+  filters: z.object({
+    status: z.string().max(50).optional(),
+    search: z.string().max(200).optional(),
+    date_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)').optional(),
+    date_to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (use YYYY-MM-DD)').optional(),
+  }).optional(),
+});
 
 interface BulkExportPayload {
   event_type: 'bulk_export';
@@ -110,13 +123,47 @@ const handler = async (req: Request): Promise<Response> => {
   const { userId } = await verifyUser(req);
   console.log('[CLIENT-WEBHOOK-BULK] Request from user:', userId);
 
-  // Parse request body
-  const body = await req.json() as BulkExportRequest;
-  const { webhook_id, filters = {} } = body;
-
-  if (!webhook_id) {
-    throw new ValidationError('webhook_id is required');
+  // Apply rate limiting: 5 bulk exports per hour per user
+  const identifier = `user:${userId}`;
+  try {
+    await enforceRateLimit(identifier, {
+      maxRequests: 5,
+      windowMs: 3600000, // 1 hour
+      keyPrefix: 'bulk-export'
+    });
+  } catch (error: any) {
+    console.warn('[CLIENT-WEBHOOK-BULK] Rate limit exceeded', { userId });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Too many bulk export requests. Please try again later.',
+        retryAfter: error.retryAfter 
+      }),
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': error.retryAfter?.toString() || '3600',
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      }
+    );
   }
+
+  // Parse and validate request body
+  const rawBody = await req.json();
+  const validationResult = BulkExportRequestSchema.safeParse(rawBody);
+  
+  if (!validationResult.success) {
+    const errors = validationResult.error.issues.map(issue => ({
+      field: issue.path.join('.'),
+      message: issue.message
+    }));
+    console.warn('[CLIENT-WEBHOOK-BULK] Validation failed', { errors });
+    return validationErrorResponse(errors, origin);
+  }
+
+  const body = validationResult.data;
+  const { webhook_id, filters = {} } = body;
 
   // Fetch webhook configuration
   const { data: webhook, error: webhookError } = await supabase
