@@ -77,9 +77,9 @@ const ApplicationsSearch = ({
         </SelectTrigger>
         <SelectContent className="z-50 bg-popover border shadow-md">
           <SelectItem value="all">All Sources</SelectItem>
-          <SelectItem value="fb">fb</SelectItem>
-          <SelectItem value="ig">ig</SelectItem>
+          <SelectItem value="Direct Application">Direct Application</SelectItem>
           <SelectItem value="ElevenLabs">ElevenLabs</SelectItem>
+          <SelectItem value="Facebook Lead Gen">Facebook Lead Gen</SelectItem>
         </SelectContent>
       </Select>
     </div>
