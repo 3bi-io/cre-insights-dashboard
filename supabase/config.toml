@@ -95,3 +95,9 @@ verify_jwt = true
 
 [functions.ai-chat]
 verify_jwt = true
+
+[functions.organization-webhook-export]
+verify_jwt = true
+
+[functions.campaign-ai-optimizer]
+verify_jwt = true

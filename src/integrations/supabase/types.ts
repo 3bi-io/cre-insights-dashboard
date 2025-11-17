@@ -937,6 +937,73 @@ export type Database = {
           },
         ]
       }
+      campaign_ai_analysis: {
+        Row: {
+          ai_provider: string
+          analysis_type: string
+          campaign_id: string | null
+          confidence_score: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          insights: Json
+          metrics: Json
+          organization_id: string | null
+          recommendations: Json
+          updated_at: string
+        }
+        Insert: {
+          ai_provider: string
+          analysis_type: string
+          campaign_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          insights?: Json
+          metrics?: Json
+          organization_id?: string | null
+          recommendations?: Json
+          updated_at?: string
+        }
+        Update: {
+          ai_provider?: string
+          analysis_type?: string
+          campaign_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          insights?: Json
+          metrics?: Json
+          organization_id?: string | null
+          recommendations?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_ai_analysis_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_ai_analysis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_ai_analysis_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_job_assignments: {
         Row: {
           campaign_id: string
