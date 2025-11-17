@@ -96,8 +96,10 @@ const GlassdoorPlatformActions: React.FC = () => {
 
         {/* API Configuration */}
         <div className="space-y-3">
-          <Label>Glassdoor API Key (Optional)</Label>
+          <Label htmlFor="glassdoor-api-key">Glassdoor API Key (Optional)</Label>
           <Input
+            id="glassdoor-api-key"
+            name="glassdoorApiKey"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="Enter your Glassdoor API key for enhanced features"
@@ -107,9 +109,11 @@ const GlassdoorPlatformActions: React.FC = () => {
 
         {/* Feed URL Section */}
         <div className="space-y-3">
-          <Label>Glassdoor XML Feed URL</Label>
+          <Label htmlFor="glassdoor-feed-url">Glassdoor XML Feed URL</Label>
           <div className="flex gap-2">
             <Input
+              id="glassdoor-feed-url"
+              name="glassdoorFeedUrl"
               value={feedUrl}
               readOnly
               className="flex-1 font-mono text-sm"

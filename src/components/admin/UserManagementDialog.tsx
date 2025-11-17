@@ -169,9 +169,10 @@ export const UserManagementDialog = ({ organization, trigger }: UserManagementDi
             <form onSubmit={handleInviteUser} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="user-email">Email Address</Label>
                   <Input
-                    id="email"
+                    id="user-email"
+                    name="userEmail"
                     type="email"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
@@ -180,9 +181,13 @@ export const UserManagementDialog = ({ organization, trigger }: UserManagementDi
                   />
                 </div>
                 <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={inviteRole} onValueChange={(value: 'admin' | 'user') => setInviteRole(value)}>
-                    <SelectTrigger>
+                  <Label htmlFor="user-role">Role</Label>
+                  <Select 
+                    name="userRole"
+                    value={inviteRole} 
+                    onValueChange={(value: 'admin' | 'user') => setInviteRole(value)}
+                  >
+                    <SelectTrigger id="user-role">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
