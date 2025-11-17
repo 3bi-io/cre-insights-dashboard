@@ -1,28 +1,25 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { getServiceClient } from '../_shared/supabase-client.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler } from '../_shared/error-handler.ts';
+import { createLogger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const logger = createLogger('visitor-analytics');
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    )
+  const supabaseClient = getServiceClient();
+  
+  const url = new URL(req.url);
+  const startdate = url.searchParams.get('startdate');
+  const enddate = url.searchParams.get('enddate');
 
-    const url = new URL(req.url);
-    const startdate = url.searchParams.get('startdate');
-    const enddate = url.searchParams.get('enddate');
-
-    console.log(`Fetching real visitor analytics from ${startdate} to ${enddate}`);
+  logger.info('Fetching visitor analytics', { startdate, enddate });
 
     const start = startdate ? new Date(startdate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = enddate ? new Date(enddate) : new Date();
@@ -192,36 +189,11 @@ serve(async (req) => {
       }
     };
 
-    console.log('Successfully fetched real visitor analytics data:', {
+    logger.info('Successfully fetched visitor analytics data', {
       totalVisitors,
       totalPageviews,
       totalSessions: (sessions || []).length
     });
 
-    return new Response(
-      JSON.stringify(analyticsData),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
-
-  } catch (error) {
-    console.error('Error in visitor-analytics function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        message: 'Failed to fetch analytics data'
-      }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
-  }
-})
+    return successResponse(analyticsData, origin);
+}));
