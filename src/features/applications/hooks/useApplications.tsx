@@ -53,6 +53,7 @@ export function useApplications(options?: {
         city: options?.filters?.city,
         state: options?.filters?.state,
         search: options?.filters?.search,
+        organizationId: options?.filters?.organization_id,
         page,
         pageSize: options?.filters?.pageSize || 200,
         accessReason
