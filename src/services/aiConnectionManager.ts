@@ -77,10 +77,28 @@ class AIConnectionManager {
           break;
           
         case 'elevenlabs':
+          // Fetch a real agent from the database for testing
+          const { data: voiceAgents } = await supabase
+            .from('voice_agents')
+            .select('elevenlabs_agent_id')
+            .eq('is_active', true)
+            .limit(1)
+            .single();
+          
+          if (!voiceAgents?.elevenlabs_agent_id) {
+            // No active agents configured - skip test
+            return {
+              provider,
+              isConnected: false,
+              lastChecked: new Date(),
+              latency: 0,
+              error: 'No active voice agents configured'
+            };
+          }
+          
           response = await supabase.functions.invoke('elevenlabs-agent', {
             body: {
-              agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65',
-              action: 'test'
+              agentId: voiceAgents.elevenlabs_agent_id
             }
           });
           break;
