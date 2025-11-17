@@ -2221,6 +2221,70 @@ export type Database = {
         }
         Relationships: []
       }
+      job_group_suggestions: {
+        Row: {
+          ai_provider: string
+          campaign_id: string | null
+          confidence_score: number | null
+          created_at: string
+          expires_at: string
+          id: string
+          organization_id: string | null
+          reasoning: Json
+          status: string
+          suggested_groups: Json
+          updated_at: string
+        }
+        Insert: {
+          ai_provider: string
+          campaign_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          organization_id?: string | null
+          reasoning?: Json
+          status?: string
+          suggested_groups?: Json
+          updated_at?: string
+        }
+        Update: {
+          ai_provider?: string
+          campaign_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          organization_id?: string | null
+          reasoning?: Json
+          status?: string
+          suggested_groups?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_group_suggestions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_group_suggestions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_group_suggestions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_groups: {
         Row: {
           campaign_id: string
@@ -3143,6 +3207,60 @@ export type Database = {
           },
           {
             foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      publisher_performance_metrics: {
+        Row: {
+          calculation_date: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_value: number
+          organization_id: string | null
+          publisher_name: string
+          time_period: string
+          updated_at: string
+        }
+        Insert: {
+          calculation_date: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_value: number
+          organization_id?: string | null
+          publisher_name: string
+          time_period: string
+          updated_at?: string
+        }
+        Update: {
+          calculation_date?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number
+          organization_id?: string | null
+          publisher_name?: string
+          time_period?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publisher_performance_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publisher_performance_metrics_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
