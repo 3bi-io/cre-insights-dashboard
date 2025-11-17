@@ -86,13 +86,11 @@ export const ApplicationsFilters = ({
           <SelectTrigger>
             <SelectValue placeholder="Source" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50 bg-popover border shadow-md">
             <SelectItem value="all">All Sources</SelectItem>
-            <SelectItem value="Meta">Meta</SelectItem>
-            <SelectItem value="Indeed">Indeed</SelectItem>
-            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-            <SelectItem value="Direct">Direct Apply</SelectItem>
-            <SelectItem value="Referral">Referral</SelectItem>
+            <SelectItem value="Direct Application">Direct Application</SelectItem>
+            <SelectItem value="ElevenLabs">ElevenLabs</SelectItem>
+            <SelectItem value="Facebook Lead Gen">Facebook Lead Gen</SelectItem>
           </SelectContent>
         </Select>
       </div>
