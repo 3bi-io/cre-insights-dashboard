@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
+import { ExportToN8nButton } from '@/components/applications/ExportToN8nButton';
 
 import {
   ApplicationDetailsDialog,
@@ -277,6 +278,16 @@ const ApplicationsPage = () => {
           onColumnVisibilityChange={handleColumnVisibilityChange}
         />
       )}
+      
+      <ExportToN8nButton
+        filters={{
+          search: searchTerm,
+          status: categoryFilter,
+          source: sourceFilter,
+          organization_id: organizationFilter,
+        }}
+        disabled={!applications || applications.length === 0}
+      />
       
       <ApplicationsActions
         selectedCount={selectedApplications.size}
