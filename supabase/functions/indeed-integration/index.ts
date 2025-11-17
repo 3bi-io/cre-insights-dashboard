@@ -1,79 +1,82 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { enforceAuth, logSecurityEvent, getClientInfo, createAuthenticatedClient } from '../_shared/serverAuth.ts'
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { enforceAuth, logSecurityEvent, getClientInfo, createAuthenticatedClient } from '../_shared/serverAuth.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
+import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
+import { createLogger } from '../_shared/logger.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const logger = createLogger('indeed-integration');
 
-serve(async (req) => {
+// VALIDATION: Request schema
+const requestSchema = z.object({
+  action: z.enum(['sync_analytics', 'get_stats']),
+  employerId: z.string().min(1),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
+});
+
+const handler = wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(origin) });
   }
 
-  try {
-    // SECURITY: Server-side JWT verification with role check
-    const authContext = await enforceAuth(req, ['admin', 'super_admin'])
-    if (authContext instanceof Response) return authContext
+  // SECURITY: Server-side JWT verification with role check
+  const authContext = await enforceAuth(req, ['admin', 'super_admin']);
+  if (authContext instanceof Response) return authContext;
 
-    const { userId, organizationId } = authContext
-    const { ipAddress, userAgent } = getClientInfo(req)
+  const { userId, organizationId } = authContext;
+  const { ipAddress, userAgent } = getClientInfo(req);
 
-    // VALIDATION: Parse and validate request body
-    const requestSchema = z.object({
-      action: z.enum(['sync_analytics', 'get_stats']),
-      employerId: z.string().min(1),
-      startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-      endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional()
-    })
+  // VALIDATION: Parse and validate request body
+  const body = await req.json();
+  const validationResult = requestSchema.safeParse(body);
+  
+  if (!validationResult.success) {
+    throw new ValidationError('Invalid request parameters', validationResult.error.errors.map(e => ({
+      field: e.path.join('.'),
+      message: e.message
+    })));
+  }
 
-    const { action, employerId, startDate, endDate } = requestSchema.parse(await req.json())
+  const { action, employerId, startDate, endDate } = validationResult.data;
+  
+  logger.info(`${action} for employer ${employerId}`, { userId, employerId, action });
+
+  // Create authenticated Supabase client
+  const supabaseClient = createAuthenticatedClient(req);
+
+  // AUDIT LOGGING
+  await logSecurityEvent(supabaseClient, authContext, `INDEED_${action.toUpperCase()}`, {
+    table: 'indeed_integration',
+    recordId: employerId,
+    ipAddress,
+    userAgent
+  });
+
+  switch (action) {
+    case 'sync_analytics':
+      return await syncIndeedAnalytics(employerId, startDate!, endDate!, userId, supabaseClient, origin);
     
-    console.log(`[INDEED] ${action} for employer ${employerId} by user ${userId}`)
-
-    // Create authenticated Supabase client
-    const supabaseClient = createAuthenticatedClient(req)
-
-    // AUDIT LOGGING
-    await logSecurityEvent(supabaseClient, authContext, `INDEED_${action.toUpperCase()}`, {
-      table: 'indeed_integration',
-      recordId: employerId,
-      ipAddress,
-      userAgent
-    })
-
-    switch (action) {
-      case 'sync_analytics':
-        return await syncIndeedAnalytics(employerId, startDate!, endDate!, userId, supabaseClient)
-      
-      case 'get_stats':
-        return await getIndeedStats(employerId, userId, supabaseClient)
-      
-      default:
-        throw new Error(`Unknown action: ${action}`)
-    }
-
-  } catch (error) {
-    console.error('Indeed integration error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
+    case 'get_stats':
+      return await getIndeedStats(employerId, userId, supabaseClient, origin);
+    
+    default:
+      throw new Error(`Unknown action: ${action}`);
   }
-})
+}, { context: 'indeed-integration', logRequests: true });
 
 async function syncIndeedAnalytics(
   employerId: string,
   startDate: string,
   endDate: string,
   userId: string,
-  supabaseClient: any
+  supabaseClient: any,
+  origin: string | null
 ) {
-  console.log(`Syncing Indeed analytics for employer ${employerId} from ${startDate} to ${endDate}`)
+  logger.info('Syncing Indeed analytics', { employerId, startDate, endDate });
   
   // TODO: Replace with actual Indeed API integration
   // For now, generate mock data
@@ -107,42 +110,53 @@ async function syncIndeedAnalytics(
     .upsert(mockData, { onConflict: 'employer_id,job_id,date' })
 
   if (error) {
-    throw error
+    throw error;
   }
 
-  return new Response(
-    JSON.stringify({
-      success: true,
+  logger.info('Analytics synced successfully', { recordsProcessed: mockData.length });
+
+  return successResponse(
+    {
       message: `Synced ${mockData.length} days of Indeed analytics`,
       recordsProcessed: mockData.length
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
+    },
+    undefined,
+    undefined,
+    origin
+  );
 }
 
-async function getIndeedStats(employerId: string, userId: string, supabaseClient: any) {
+async function getIndeedStats(
+  employerId: string,
+  userId: string,
+  supabaseClient: any,
+  origin: string | null
+) {
+  logger.info('Fetching Indeed stats', { employerId, userId });
+
   const { data, error } = await supabaseClient
     .from('indeed_analytics')
     .select('*')
     .eq('user_id', userId)
     .eq('employer_id', employerId)
     .order('date', { ascending: false })
-    .limit(30)
+    .limit(30);
 
   if (error) {
-    throw error
+    throw error;
   }
 
-  const totals = data.reduce((acc, row) => ({
+  const totals = data.reduce((acc: any, row: any) => ({
     spend: acc.spend + (row.spend || 0),
     clicks: acc.clicks + (row.clicks || 0),
     impressions: acc.impressions + (row.impressions || 0),
     applications: acc.applications + (row.applications || 0),
-  }), { spend: 0, clicks: 0, impressions: 0, applications: 0 })
+  }), { spend: 0, clicks: 0, impressions: 0, applications: 0 });
 
-  return new Response(
-    JSON.stringify({
-      success: true,
+  logger.info('Stats fetched successfully', { totalRecords: data.length });
+
+  return successResponse(
+    {
       data: data,
       totals: {
         ...totals,
@@ -150,7 +164,11 @@ async function getIndeedStats(employerId: string, userId: string, supabaseClient
         cpc: totals.clicks > 0 ? (totals.spend / totals.clicks).toFixed(2) : 0,
         cpa: totals.applications > 0 ? (totals.spend / totals.applications).toFixed(2) : 0,
       }
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
+    },
+    undefined,
+    undefined,
+    origin
+  );
 }
+
+serve(handler);
