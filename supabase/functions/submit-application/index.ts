@@ -23,6 +23,7 @@ import {
   findOrCreateJobListing, 
   insertApplication 
 } from '../_shared/application-processor.ts';
+import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
 
 const logger = createLogger('submit-application');
 
@@ -74,6 +75,31 @@ const handler = async (req: Request): Promise<Response> => {
 
   if (req.method !== 'POST') {
     return errorResponse('Method not allowed', 405, undefined, origin);
+  }
+
+  // Apply rate limiting: 10 submissions per minute per IP
+  const identifier = getRateLimitIdentifier(req, false);
+  try {
+    await enforceRateLimit(identifier, {
+      maxRequests: 10,
+      windowMs: 60000,
+      keyPrefix: 'submit-app'
+    });
+  } catch (error: any) {
+    logger.warn('Rate limit exceeded', { identifier });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Too many requests. Please try again later.',
+        retryAfter: error.retryAfter 
+      }),
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': error.retryAfter?.toString() || '60',
+          ...corsHeaders
+        }
+      }
+    );
   }
 
   const supabase = getServiceClient();

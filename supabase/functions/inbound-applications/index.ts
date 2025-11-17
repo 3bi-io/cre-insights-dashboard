@@ -1,12 +1,14 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { 
   normalizePhone, 
   findOrCreateJobListing, 
   findClientByIdentifier,
   insertApplication 
 } from "../_shared/application-processor.ts";
+import { enforceRateLimit, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,6 +77,27 @@ interface InboundApplicationData {
   status?: string;
   [key: string]: any;
 }
+
+// Zod validation schema for inbound applications
+const InboundApplicationSchema = z.object({
+  first_name: z.string().trim().max(100).optional(),
+  last_name: z.string().trim().max(100).optional(),
+  full_name: z.string().trim().max(200).optional(),
+  applicant_email: z.string().email().max(255).optional(),
+  email: z.string().email().max(255).optional(),
+  phone: z.string().max(50).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(2).optional(),
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/).optional(),
+  job_listing_id: z.string().uuid().optional(),
+  job_id: z.string().max(50).optional(),
+  cdl: z.string().max(50).optional(),
+  experience_years: z.string().max(50).optional(),
+  source: z.string().max(100).optional(),
+}).refine(
+  (data) => (data.email || data.applicant_email) && (data.first_name || data.last_name || data.full_name),
+  { message: 'Email and name are required' }
+);
 
 /**
  * Verify webhook signature for security using Web Crypto API
@@ -183,6 +206,32 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 
+  // Apply rate limiting: 20 webhook calls per minute per IP
+  const identifier = getRateLimitIdentifier(req, false);
+  try {
+    await enforceRateLimit(identifier, {
+      maxRequests: 20,
+      windowMs: 60000,
+      keyPrefix: 'inbound-app'
+    });
+  } catch (error: any) {
+    console.warn('Rate limit exceeded', { identifier });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Too many requests. Please try again later.',
+        retryAfter: error.retryAfter 
+      }),
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': error.retryAfter?.toString() || '60',
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      }
+    );
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -225,6 +274,26 @@ const handler = async (req: Request): Promise<Response> => {
       possible_phone: body.phone || body.phone_number || body.phoneNumber || body.Phone,
     });
     console.log('=== END PAYLOAD DEBUG ===');
+
+    // Validate input data
+    const validationResult = InboundApplicationSchema.safeParse(body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message
+      }));
+      console.warn('Validation failed', { errors });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Validation failed', 
+          details: errors 
+        }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
 
     // Optional: Verify webhook signature if provided
     const signature = req.headers.get('x-webhook-signature');
