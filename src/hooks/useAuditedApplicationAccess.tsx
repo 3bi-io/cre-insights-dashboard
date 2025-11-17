@@ -42,6 +42,7 @@ export interface ApplicationListOptions {
   city?: string;
   state?: string;
   search?: string;
+  organizationId?: string;
   page?: number;
   pageSize?: number;
   accessReason?: string;
@@ -101,6 +102,7 @@ export const useAuditedApplicationAccess = () => {
       city,
       state,
       search,
+      organizationId,
       page = 1,
       pageSize = 200,
       accessReason = 'Application list review'
@@ -116,6 +118,7 @@ export const useAuditedApplicationAccess = () => {
     if (city) filters.city = city;
     if (state) filters.state = state;
     if (search) filters.search = search;
+    if (organizationId) filters.organization_id = organizationId;
 
     const { data, error } = await supabase.rpc('get_applications_list_with_audit', {
       filters,
