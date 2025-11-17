@@ -6,7 +6,11 @@
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
+import { createLogger } from '../_shared/logger.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
+
+const logger = createLogger('tenstreet-analytics');
 
 interface AnalyticsRequest {
   type: 'application_metrics' | 'source_performance' | 'conversion_funnel';
@@ -15,14 +19,12 @@ interface AnalyticsRequest {
   forceRefresh?: boolean;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(wrapHandler(async (req) => {
   const origin = req.headers.get('origin');
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: getCorsHeaders(origin) });
   }
-
-  try {
     // Authenticate user
     const authContext = await enforceAuth(req, 'user');
     if (authContext instanceof Response) return authContext;
@@ -30,9 +32,9 @@ Deno.serve(async (req) => {
     const supabase = getServiceClient();
     const { type, startDate, endDate, forceRefresh = false } = await req.json() as AnalyticsRequest;
 
-    if (!type) {
-      return errorResponse('Analytics type is required', 400);
-    }
+  if (!type) {
+    throw new ValidationError('Analytics type is required');
+  }
 
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
@@ -44,11 +46,11 @@ Deno.serve(async (req) => {
         .gt('expires_at', new Date().toISOString())
         .single();
 
-      if (!cacheError && cachedData) {
-        console.log(`Cache hit for ${type}`);
-        return successResponse(cachedData.data, 'Analytics data retrieved from cache');
-      }
+    if (!cacheError && cachedData) {
+      logger.info('Cache hit', { type });
+      return successResponse(cachedData.data, 'Analytics data retrieved from cache', {}, origin);
     }
+  }
 
     // Get organization's Tenstreet credentials
     const { data: credentials, error: credError } = await supabase
@@ -58,11 +60,11 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .single();
 
-    if (credError || !credentials) {
-      return errorResponse('Tenstreet credentials not configured', 400);
-    }
+  if (credError || !credentials) {
+    throw new ValidationError('Tenstreet credentials not configured');
+  }
 
-    console.log(`Fetching ${type} analytics from database`);
+  logger.info('Fetching analytics from database', { type });
 
     let analyticsData;
     switch (type) {
@@ -75,9 +77,9 @@ Deno.serve(async (req) => {
       case 'conversion_funnel':
         analyticsData = await fetchConversionFunnel(supabase, authContext.organizationId, startDate, endDate);
         break;
-      default:
-        return errorResponse('Invalid analytics type', 400);
-    }
+    default:
+      throw new ValidationError('Invalid analytics type');
+  }
 
     // Cache the results (30 minute TTL)
     const cacheKey = `${authContext.organizationId}_${type}_${startDate}_${endDate}`;
@@ -92,13 +94,8 @@ Deno.serve(async (req) => {
         expires_at: expiresAt
       });
 
-    return successResponse(analyticsData, 'Analytics data retrieved successfully');
-
-  } catch (error) {
-    console.error('Error in tenstreet-analytics function:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal server error', 500);
-  }
-});
+  return successResponse(analyticsData, 'Analytics data retrieved successfully', {}, origin);
+}, { context: 'tenstreet-analytics', logRequests: true }));
 
 async function fetchApplicationMetrics(supabase: any, organizationId: string, startDate?: string, endDate?: string) {
   const start = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
