@@ -29,7 +29,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ClientWebhook {
   id: string;
-  client_id: string;
+  client_id?: string;
+  source_filter: string[];
   webhook_url: string;
   enabled: boolean;
   event_types: string[];
@@ -41,14 +42,8 @@ interface ClientWebhook {
   updated_at: string;
 }
 
-interface Client {
-  id: string;
-  name: string;
-  company?: string;
-}
-
 interface WebhookFormData {
-  client_id: string;
+  source_filter: string[];
   webhook_url: string;
   enabled: boolean;
   event_types: string[];
@@ -56,12 +51,18 @@ interface WebhookFormData {
 }
 
 const initialFormData: WebhookFormData = {
-  client_id: '',
+  source_filter: [],
   webhook_url: '',
   enabled: true,
   event_types: ['created', 'updated'],
   secret_key: '',
 };
+
+const sourceOptions = [
+  { value: 'Direct Application', label: 'Direct Applications (/apply)' },
+  { value: 'ElevenLabs', label: 'ElevenLabs (Voice Agent)' },
+  { value: 'Facebook Lead Gen', label: 'Facebook Lead Gen' },
+];
 
 const eventTypeOptions = [
   { value: 'created', label: 'Application Created' },
@@ -76,21 +77,6 @@ export default function ClientWebhookManager() {
   const [editingWebhook, setEditingWebhook] = useState<ClientWebhook | null>(null);
   const [formData, setFormData] = useState<WebhookFormData>(initialFormData);
 
-  // Fetch clients
-  const { data: clients = [], isLoading: clientsLoading } = useQuery({
-    queryKey: ['clients', organization?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, name, company')
-        .eq('organization_id', organization?.id)
-        .order('name');
-      
-      if (error) throw error;
-      return data as Client[];
-    },
-    enabled: !!organization?.id,
-  });
 
   // Fetch webhooks
   const { data: webhooks = [], isLoading: webhooksLoading } = useQuery({
@@ -108,10 +94,13 @@ export default function ClientWebhookManager() {
     enabled: !!organization?.id,
   });
 
-  // Get client name helper
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? `${client.name}${client.company ? ` (${client.company})` : ''}` : 'Unknown Client';
+  // Get source labels helper
+  const getSourceLabels = (sources: string[]) => {
+    if (!sources || sources.length === 0) return 'No sources selected';
+    return sources.map(source => {
+      const option = sourceOptions.find(opt => opt.value === source);
+      return option ? option.label : source;
+    }).join(', ');
   };
 
   // Create/Update webhook mutation
@@ -121,6 +110,7 @@ export default function ClientWebhookManager() {
         const { error } = await supabase
           .from('client_webhooks')
           .update({
+            source_filter: data.source_filter,
             webhook_url: data.webhook_url,
             enabled: data.enabled,
             event_types: data.event_types,
@@ -133,7 +123,7 @@ export default function ClientWebhookManager() {
         const { error } = await supabase
           .from('client_webhooks')
           .insert({
-            client_id: data.client_id,
+            source_filter: data.source_filter,
             organization_id: organization?.id,
             user_id: (await supabase.auth.getUser()).data.user?.id,
             webhook_url: data.webhook_url,
@@ -218,7 +208,7 @@ export default function ClientWebhookManager() {
   const handleEdit = (webhook: ClientWebhook) => {
     setEditingWebhook(webhook);
     setFormData({
-      client_id: webhook.client_id,
+      source_filter: webhook.source_filter || [],
       webhook_url: webhook.webhook_url,
       enabled: webhook.enabled,
       event_types: webhook.event_types,
@@ -228,8 +218,8 @@ export default function ClientWebhookManager() {
   };
 
   const handleSubmit = () => {
-    if (!formData.client_id || !formData.webhook_url) {
-      toast.error('Please fill in all required fields');
+    if (formData.source_filter.length === 0 || !formData.webhook_url) {
+      toast.error('Please select at least one source and provide a webhook URL');
       return;
     }
 
@@ -239,6 +229,20 @@ export default function ClientWebhookManager() {
     }
 
     saveWebhookMutation.mutate(formData);
+  };
+
+  const toggleSource = (source: string) => {
+    setFormData(prev => {
+      const currentSources = prev.source_filter || [];
+      const isSelected = currentSources.includes(source);
+      
+      return {
+        ...prev,
+        source_filter: isSelected
+          ? currentSources.filter(s => s !== source)
+          : [...currentSources, source]
+      };
+    });
   };
 
   const toggleEventType = (eventType: string) => {
@@ -271,7 +275,7 @@ export default function ClientWebhookManager() {
     return new Date(date).toLocaleString();
   };
 
-  if (clientsLoading || webhooksLoading) {
+  if (webhooksLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -308,23 +312,27 @@ export default function ClientWebhookManager() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="client">Client *</Label>
-                <Select
-                  value={formData.client_id}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
-                  disabled={!!editingWebhook}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients.map(client => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}{client.company && ` (${client.company})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Webhook Sources *</Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Select which application sources should trigger this webhook
+                </p>
+                <div className="space-y-2 border rounded-md p-3">
+                  {sourceOptions.map(source => (
+                    <div key={source.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`source-${source.value}`}
+                        checked={formData.source_filter.includes(source.value)}
+                        onCheckedChange={() => toggleSource(source.value)}
+                      />
+                      <Label 
+                        htmlFor={`source-${source.value}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {source.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -410,7 +418,7 @@ export default function ClientWebhookManager() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold">{getClientName(webhook.client_id)}</h3>
+                    <h3 className="font-semibold">{getSourceLabels(webhook.source_filter)}</h3>
                     {getStatusBadge(webhook)}
                   </div>
                   <p className="text-sm text-muted-foreground break-all">{webhook.webhook_url}</p>

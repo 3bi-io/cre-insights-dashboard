@@ -1835,7 +1835,7 @@ export type Database = {
       }
       client_webhooks: {
         Row: {
-          client_id: string
+          client_id: string | null
           created_at: string | null
           enabled: boolean
           event_types: string[] | null
@@ -1845,12 +1845,13 @@ export type Database = {
           last_triggered_at: string | null
           organization_id: string
           secret_key: string | null
+          source_filter: string[] | null
           updated_at: string | null
           user_id: string
           webhook_url: string
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           created_at?: string | null
           enabled?: boolean
           event_types?: string[] | null
@@ -1860,12 +1861,13 @@ export type Database = {
           last_triggered_at?: string | null
           organization_id: string
           secret_key?: string | null
+          source_filter?: string[] | null
           updated_at?: string | null
           user_id: string
           webhook_url: string
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           created_at?: string | null
           enabled?: boolean
           event_types?: string[] | null
@@ -1875,6 +1877,7 @@ export type Database = {
           last_triggered_at?: string | null
           organization_id?: string
           secret_key?: string | null
+          source_filter?: string[] | null
           updated_at?: string | null
           user_id?: string
           webhook_url?: string
