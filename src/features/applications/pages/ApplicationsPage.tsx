@@ -39,7 +39,7 @@ const ApplicationsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [organizationFilter, setOrganizationFilter] = useState('all');
-  const [webhookFilter, setWebhookFilter] = useState('all');
+  const [webhookFilter, setWebhookFilter] = useState('direct');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
