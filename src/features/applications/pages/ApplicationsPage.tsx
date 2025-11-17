@@ -1,18 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download } from 'lucide-react';
-import * as XLSX from 'xlsx';
 
 import { PageLayout } from '@/features/shared';
-import { useApplications } from '../hooks/useApplications';
-import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
-import { useOrganizationData } from '../hooks/useOrganizationData';
+import { 
+  useApplications, 
+  useApplicationDialogs, 
+  useOrganizationData,
+  useApplicationsExport,
+  useApplicationsBulkActions 
+} from '../hooks';
 import { useWebhookOptions } from '@/hooks/useWebhookOptions';
-import { getStatusCounts, getCategoryCounts, getApplicantCategory, getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
-import { generateApplicationsPDF } from '@/utils/pdfGenerator';
+import { getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
 import { ExportToN8nButton } from '@/components/applications/ExportToN8nButton';
@@ -41,7 +41,6 @@ const ApplicationsPage = () => {
   const [organizationFilter, setOrganizationFilter] = useState('all');
   const [webhookFilter, setWebhookFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     applicant: true,
     job: true,
@@ -53,7 +52,6 @@ const ApplicationsPage = () => {
     actions: true,
   });
   const isMobile = useIsMobile();
-  const { toast } = useToast();
   const { userRole } = useAuth();
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
@@ -297,12 +295,12 @@ const ApplicationsPage = () => {
       
       <ApplicationsActions
         selectedCount={selectedApplications.size}
-        onExportPDF={downloadApplicationsPDF}
-        onExportCSV={downloadApplicationsCSV}
+        onExportPDF={() => exportToPDF(applications)}
+        onExportCSV={() => exportToCSV(applications)}
         onBulkStatusChange={handleBulkStatusChange}
         onBulkDelete={handleBulkDelete}
-        onBulkExportSelected={handleBulkExportSelected}
-        onClearSelection={() => setSelectedApplications(new Set())}
+        onBulkExportSelected={() => exportSelectedToExcel(applications, selectedApplications)}
+        onClearSelection={clearSelection}
       />
     </div>
   );
