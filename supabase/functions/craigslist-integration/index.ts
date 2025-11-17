@@ -89,61 +89,29 @@ Deno.serve(wrapHandler(async (req) => {
       return handleJobPosting(username, password, accountId, jobData, origin);
     
     case 'categories':
-        return handleGetCategories();
+      return handleGetCategories(origin);
       
       default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return errorResponse('Invalid action', 400, {}, origin);
     }
-
-  } catch (error) {
-    console.error('Craigslist integration error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        message: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-});
+}));
 
 async function handleConnectionStatus(username: string, accountId: string, origin: string | null) {
   try {
-    console.log('Checking Craigslist connection status');
+    logger.info('Checking Craigslist connection status');
     
-    // For now, return configured status since we have credentials
-    // In a production implementation, you would verify the credentials with Craigslist
     const status = {
       connected: true,
-      username: username.substring(0, 3) + '***', // Mask username for security
-      accountId: accountId.substring(0, 4) + '***', // Mask account ID
+      username: username.substring(0, 3) + '***',
+      accountId: accountId.substring(0, 4) + '***',
       lastChecked: new Date().toISOString(),
       status: 'active'
     };
 
-    return new Response(
-      JSON.stringify(status),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return successResponse(status, origin);
   } catch (error) {
-    console.error('Connection status check failed:', error);
-    return new Response(
-      JSON.stringify({ 
-        connected: false,
-        error: 'Connection check failed',
-        message: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    logger.error('Connection status check failed', error);
+    return errorResponse('Connection check failed', 500, { connected: false }, origin);
   }
 }
 
@@ -151,7 +119,8 @@ async function handleJobPosting(
   username: string, 
   password: string, 
   accountId: string, 
-  jobData: CraigslistJobData
+  jobData: CraigslistJobData,
+  origin: string | null
 ) {
   try {
     console.log('Posting job to Craigslist:', { 
@@ -180,70 +149,23 @@ async function handleJobPosting(
       message: 'Job posting simulated - Craigslist requires manual posting or approved third-party tools'
     };
 
-    return new Response(
-      JSON.stringify(postResult),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return successResponse(postResult, origin);
   } catch (error) {
-    console.error('Job posting failed:', error);
-    return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: 'Job posting failed',
-        message: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    logger.error('Job posting failed', error);
+    return errorResponse('Job posting failed', 500, {}, origin);
   }
 }
 
 async function handleGetCategories(origin: string | null) {
   try {
-    // Common Craigslist job categories
     const categories = [
-      { id: 'accounting', name: 'Accounting/Finance', subcategories: ['bookkeeping', 'tax preparation'] },
-      { id: 'admin', name: 'Admin/Office', subcategories: ['data entry', 'receptionist', 'assistant'] },
-      { id: 'automotive', name: 'Automotive', subcategories: ['mechanic', 'sales', 'driver'] },
-      { id: 'beauty', name: 'Beauty/Wellness', subcategories: ['salon', 'spa', 'fitness'] },
-      { id: 'construction', name: 'Construction/Skilled Trade', subcategories: ['carpenter', 'electrician', 'plumber'] },
-      { id: 'customer_service', name: 'Customer Service', subcategories: ['call center', 'retail', 'support'] },
-      { id: 'education', name: 'Education', subcategories: ['teaching', 'tutoring', 'childcare'] },
-      { id: 'engineering', name: 'Engineering', subcategories: ['software', 'mechanical', 'electrical'] },
-      { id: 'food', name: 'Food/Beverage/Hospitality', subcategories: ['restaurant', 'hotel', 'catering'] },
-      { id: 'healthcare', name: 'Healthcare', subcategories: ['nursing', 'medical', 'dental'] },
-      { id: 'labor', name: 'General Labor', subcategories: ['warehouse', 'manufacturing', 'cleaning'] },
-      { id: 'legal', name: 'Legal/Paralegal', subcategories: ['paralegal', 'legal assistant'] },
-      { id: 'marketing', name: 'Marketing/Advertising/PR', subcategories: ['digital marketing', 'social media'] },
-      { id: 'nonprofit', name: 'Nonprofit Sector', subcategories: ['fundraising', 'social work'] },
-      { id: 'real_estate', name: 'Real Estate', subcategories: ['agent', 'property management'] },
-      { id: 'retail', name: 'Retail/Wholesale', subcategories: ['sales associate', 'cashier'] },
-      { id: 'sales', name: 'Sales', subcategories: ['inside sales', 'outside sales'] },
-      { id: 'security', name: 'Security', subcategories: ['guard', 'surveillance'] },
-      { id: 'software', name: 'Software/QA/DBA/etc', subcategories: ['developer', 'qa tester'] },
-      { id: 'transport', name: 'Transportation', subcategories: ['truck driver', 'delivery', 'logistics'] },
-      { id: 'tv_film_video', name: 'TV/Film/Video/Radio', subcategories: ['production', 'editing'] },
-      { id: 'web_info_design', name: 'Web/HTML/Info Design', subcategories: ['web developer', 'designer'] },
+...
       { id: 'writing_editing', name: 'Writing/Editing', subcategories: ['copywriting', 'content creation'] }
     ];
 
-    return new Response(
-      JSON.stringify({ categories }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return successResponse({ categories }, origin);
   } catch (error) {
-    console.error('Failed to get categories:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to get categories',
-        message: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    logger.error('Failed to get categories', error);
+    return errorResponse('Failed to get categories', 500, {}, origin);
   }
 }
