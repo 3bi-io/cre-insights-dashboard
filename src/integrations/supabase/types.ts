@@ -2825,6 +2825,60 @@ export type Database = {
           },
         ]
       }
+      organization_webhooks: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          last_error: string | null
+          last_success_at: string | null
+          last_triggered_at: string | null
+          organization_id: string
+          secret_key: string | null
+          updated_at: string | null
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_triggered_at?: string | null
+          organization_id: string
+          secret_key?: string | null
+          updated_at?: string | null
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_triggered_at?: string | null
+          organization_id?: string
+          secret_key?: string | null
+          updated_at?: string | null
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           created_at: string
