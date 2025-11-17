@@ -84,7 +84,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
     queryKey: ['meta-accounts', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
-      console.log('Fetching Meta accounts for actual ID:', CR_ENGLAND_ACTUAL_ID);
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
@@ -92,7 +91,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         .order('account_name');
       
       if (error) throw error;
-      console.log('Meta accounts fetched:', data?.length);
       
       // Transform data to show display IDs
       const transformedData = data?.map(transformAccountDataForDisplay);
@@ -105,7 +103,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
     queryKey: ['meta-campaigns', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
-      console.log('Fetching Meta campaigns for actual ID:', CR_ENGLAND_ACTUAL_ID);
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
@@ -113,7 +110,6 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         .order('campaign_name');
       
       if (error) throw error;
-      console.log('Meta campaigns fetched:', data?.length);
       return data;
     },
     enabled: !!metaAccounts?.length,
@@ -199,9 +195,8 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     setSyncStatus(`Starting ${action}...`);
 
     try {
-      // Use actual account ID for API calls, but display account ID for logging
+      // Use actual account ID for API calls
       const actualAccountId = getActualAccountId(accountId || CR_ENGLAND_DISPLAY_ID);
-      console.log(`Attempting ${action} with display accountId: ${accountId || CR_ENGLAND_DISPLAY_ID}, actual: ${actualAccountId}`);
       
       const metaDatePreset = getMetaDatePreset(dateRange);
       const sinceDays = getSinceDays(dateRange);
@@ -471,12 +466,10 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                           setSyncStatus('');
                           
                           // Check total Meta leads after sync
-                          const { data: metaLeads } = await supabase
+                          await supabase
                             .from('applications')
                             .select('source')
                             .in('source', ['fb', 'ig', 'meta']);
-                          
-                          console.log(`Total Meta leads (fb/ig/meta): ${metaLeads?.length || 0}`);
                         } catch (error: any) {
                           toast({
                             title: "Error",

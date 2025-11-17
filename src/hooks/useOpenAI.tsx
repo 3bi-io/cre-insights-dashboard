@@ -36,8 +36,6 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
     setError(null);
 
     try {
-      console.log('Invoking OpenAI function:', functionName, request);
-
       const response = await supabase.functions.invoke(functionName, {
         body: request
       });
@@ -51,8 +49,6 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
       if (!data || !data.generatedText) {
         throw new Error('Invalid response from OpenAI function');
       }
-
-      console.log('OpenAI response received:', data);
 
       if (onSuccess) {
         onSuccess(data);

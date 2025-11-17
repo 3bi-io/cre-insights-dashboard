@@ -41,8 +41,6 @@ export const useJobs = () => {
   const { data: jobListings, isLoading, refetch, error } = useQuery({
     queryKey: ['job-listings', showAllOrganizations ? 'all' : organization?.id],
     queryFn: async () => {
-      console.log('Fetching job listings...', showAllOrganizations ? 'for all organizations' : 'for current organization');
-      
       // Build the query
       let query = supabase
         .from('job_listings')
@@ -71,8 +69,6 @@ export const useJobs = () => {
         throw error;
       }
       
-      console.log('Job listings fetched successfully:', data?.length || 0);
-      console.log('Sample job listing:', data?.[0]);
       return data || [];
     },
     retry: 2,

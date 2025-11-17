@@ -60,13 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
   try {
-    console.log('[AUTH] Fetching role and organization for user:', _userId);
     logger.info(`Fetching role and organization for user`, { userId: _userId });
     
     // Try cache first for performance
     const cached = getCachedAuthData();
     if (cached) {
-      console.log('[AUTH] Using cached auth data');
       setUserRole(cached.userRole);
       setOrganization(cached.organization);
       setUserType('employer');
@@ -79,11 +77,9 @@ const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
     
     if (roleError) {
       logger.error('Error fetching user role', roleError);
-      console.log('[AUTH] Error fetching role:', roleError);
       if (!cached) setUserRole('user');
     } else {
       const role = (roleData as string) || 'user';
-      console.log('[AUTH] Role loaded:', role);
       logger.debug('User role fetched', { role });
       setUserRole(role);
     }
@@ -108,7 +104,6 @@ const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
 
     if (profileError) {
       logger.error('Error fetching user profile', profileError);
-      console.log('[AUTH] Error fetching profile:', profileError);
       if (!cached) {
         setOrganization(null);
         setUserType('employer');
@@ -116,19 +111,16 @@ const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
     } else {
       // Set user type - default to 'employer' since user_type column doesn't exist
       setUserType('employer');
-      console.log('[AUTH] User type defaulted to employer');
 
       // Set organization
       const org = (profileData as any)?.organizations || null;
       if (org) {
-        console.log('[AUTH] Organization loaded:', org.name);
         logger.info('User organization loaded', { 
           orgName: org.name,
           orgId: org.id 
         });
         setOrganization(org);
       } else {
-        console.log('[AUTH] No organization found');
         logger.debug('No organization found for user');
         setOrganization(null);
       }
@@ -141,7 +133,6 @@ const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
     }
   } catch (error: unknown) {
     logger.error('Error fetching user data', error);
-    console.log('[AUTH] Exception fetching user data:', error);
     if (!getCachedAuthData()) {
       setUserRole('user');
       setUserType('employer');
@@ -156,7 +147,6 @@ const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
 const { data: { subscription } } = supabase.auth.onAuthStateChange(
   (event, session) => {
     logger.debug('Auth state changed', { event, hasSession: !!session });
-    console.log('[AUTH] Auth state changed:', { event, hasSession: !!session });
     setSession(session);
     setUser(session?.user ?? null);
     
@@ -171,13 +161,11 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     }
     
     setLoading(false);
-    console.log('[AUTH] Loading complete');
   }
 );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[AUTH] Initial session check:', { hasSession: !!session });
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -189,17 +177,14 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       }
       
       setLoading(false);
-      console.log('[AUTH] Initial load complete');
     });
 
     // Session heartbeat - refresh every 7 hours (before 8-hour expiry)
     const refreshInterval = setInterval(async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (session && !error) {
-        console.log('[AUTH] Refreshing session (7-hour heartbeat)');
         logger.info('Automatic session refresh triggered');
         await supabase.auth.refreshSession();
-        console.log('[AUTH] Session refreshed successfully');
       }
     }, 7 * 60 * 60 * 1000); // 7 hours in milliseconds
 
@@ -248,7 +233,6 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       
       const role = (roleData as string) || 'user';
       logger.info('Navigation decision', { role });
-      console.log('[AUTH] Navigating based on role:', role);
       
       // Navigate based on role - default to employer/dashboard navigation
       if (role === 'super_admin') {

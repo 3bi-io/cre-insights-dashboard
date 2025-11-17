@@ -133,7 +133,6 @@ export const useCostPerLead = (dateRange?: string) => {
         metaCostPerLead
       };
 
-      console.log('Cost per lead calculation:', result);
       return result;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
