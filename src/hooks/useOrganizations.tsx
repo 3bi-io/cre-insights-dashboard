@@ -46,7 +46,6 @@ export const useOrganizations = () => {
   const { data: organizations, isLoading } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
-      console.log('Fetching organizations...');
       const { data, error } = await supabase
         .from('organizations')
         .select('*')
@@ -57,7 +56,6 @@ export const useOrganizations = () => {
         throw error;
       }
       
-      console.log('Organizations fetched:', data?.length);
       return data as Organization[];
     },
     enabled: userRole === 'admin' || userRole === 'super_admin', // Allow both admin and super admin

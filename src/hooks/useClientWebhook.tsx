@@ -13,13 +13,10 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
     eventType: 'created' | 'updated' | 'deleted'
   ) => {
     if (!enabled) {
-      console.log('[CLIENT-WEBHOOK] Webhook triggers disabled');
       return false;
     }
 
     try {
-      console.log('[CLIENT-WEBHOOK] Triggering webhook for application:', applicationId);
-      
       const { data, error } = await supabase.functions.invoke('client-webhook', {
         body: {
           application_id: applicationId,
@@ -34,7 +31,6 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
         return false;
       }
 
-      console.log('[CLIENT-WEBHOOK] Response:', data);
       return data?.success || false;
     } catch (error) {
       console.error('[CLIENT-WEBHOOK] Exception:', error);
@@ -44,8 +40,6 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
 
   const testWebhook = async (webhookId: string, applicationId: string) => {
     try {
-      console.log('[CLIENT-WEBHOOK] Testing webhook:', webhookId);
-      
       const { data, error } = await supabase.functions.invoke('client-webhook', {
         body: {
           application_id: applicationId,

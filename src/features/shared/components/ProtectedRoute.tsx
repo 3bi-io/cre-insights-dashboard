@@ -20,7 +20,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const isLoading = authLoading || (user && userRole === null) || (requireSubscription && subLoading);
   
   if (isLoading) {
-    console.log('[PROTECTED] Still loading:', { authLoading, subLoading, user: !!user, userRole, requireSubscription });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -28,32 +27,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  console.log('[PROTECTED] Auth state:', { 
-    user: !!user, 
-    userRole, 
-    hasActiveSubscription, 
-    authLoading, 
-    subLoading 
-  });
-
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
   // Super admins bypass all checks
   if (userRole === 'super_admin') {
-    console.log('[PROTECTED] Super admin access granted');
     return <>{children}</>;
   }
 
   // If subscription required and user lacks active subscription, redirect to pricing
   if (requireSubscription && !hasActiveSubscription) {
-    console.log('[PROTECTED] Redirecting to pricing - no active subscription');
     return <Navigate to="/pricing" state={{ from: location.pathname }} replace />;
   }
 
   // Grant access
-  console.log('[PROTECTED] Access granted');
   return <>{children}</>;
 };
 

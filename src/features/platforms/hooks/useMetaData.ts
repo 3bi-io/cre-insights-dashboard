@@ -10,7 +10,6 @@ export const useMetaAccounts = (accountId: string) => {
   return useQuery({
     queryKey: ['meta-accounts', accountId],
     queryFn: async () => {
-      console.log('Fetching Meta accounts for ID:', accountId);
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
@@ -18,7 +17,6 @@ export const useMetaAccounts = (accountId: string) => {
         .order('account_name');
       
       if (error) throw error;
-      console.log('Meta accounts fetched:', data?.length);
       return data as MetaAccount[];
     },
     retry: 2,
@@ -33,7 +31,6 @@ export const useMetaCampaigns = (accountId: string, enabled = true) => {
   return useQuery({
     queryKey: ['meta-campaigns', accountId],
     queryFn: async () => {
-      console.log('Fetching Meta campaigns for ID:', accountId);
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
@@ -41,7 +38,6 @@ export const useMetaCampaigns = (accountId: string, enabled = true) => {
         .order('campaign_name');
       
       if (error) throw error;
-      console.log('Meta campaigns fetched:', data?.length);
       return data as MetaCampaign[];
     },
     enabled,

@@ -14,13 +14,10 @@ export const useOutboundWebhook = ({ webhookUrl, enabled = false }: UseOutboundW
     eventType: 'created' | 'updated' | 'deleted'
   ) => {
     if (!enabled || !webhookUrl) {
-      console.log('Outbound webhook not enabled or URL not provided');
       return;
     }
 
     try {
-      console.log('Triggering outbound webhook for application:', applicationId);
-      
       const { data, error } = await supabase.functions.invoke('outbound-webhook', {
         body: {
           application_id: applicationId,
@@ -39,7 +36,6 @@ export const useOutboundWebhook = ({ webhookUrl, enabled = false }: UseOutboundW
         return false;
       }
 
-      console.log('Outbound webhook sent successfully:', data);
       return true;
     } catch (error) {
       console.error('Error triggering outbound webhook:', error);
