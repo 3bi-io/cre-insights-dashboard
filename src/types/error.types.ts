@@ -24,7 +24,7 @@ export interface ErrorBoundaryProps {
   /** Tags for error categorization */
   tags?: Record<string, string>;
   /** Additional error context */
-  extraData?: Record<string, unknown>;
+  extraData?: Record<string, any>;
   /** Custom fallback render function */
   fallback?: (error: Error | null, retry: () => void, errorId: string | null) => ReactNode;
   /** Props for default fallback component */
@@ -65,7 +65,7 @@ export interface ErrorContext {
   errorBoundary?: string;
   level: ErrorLevel;
   tags?: Record<string, string>;
-  extra?: Record<string, unknown>;
+  extra?: Record<string, any>;
   userReported?: boolean;
 }
 
@@ -73,36 +73,22 @@ export interface ValidationError {
   field: string;
   message: string;
   code: string;
-  value?: unknown;
+  value?: any;
 }
 
 export interface ApiError {
   message: string;
   code: string;
   statusCode: number;
-  details?: Record<string, unknown>;
+  details?: any;
   timestamp: string;
   requestId?: string;
 }
 
 export interface NetworkError extends Error {
   statusCode?: number;
-  response?: unknown;
+  response?: any;
   requestId?: string;
-}
-
-export interface SupabaseError extends Error {
-  code?: string;
-  details?: string;
-  hint?: string;
-  message: string;
-}
-
-export interface DatabaseError extends Error {
-  code: string;
-  table?: string;
-  column?: string;
-  constraint?: string;
 }
 
 export interface ErrorServiceConfig {

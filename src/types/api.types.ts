@@ -4,7 +4,7 @@
  */
 
 // === BASE API TYPES ===
-export interface ApiResponse<T = unknown> {
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: ApiError;
@@ -16,7 +16,7 @@ export interface ApiError {
   message: string;
   code: string;
   statusCode: number;
-  details?: Record<string, unknown>;
+  details?: Record<string, any>;
   timestamp: string;
   requestId?: string;
   path?: string;
@@ -42,8 +42,8 @@ export interface ResponseMeta {
 export interface ApiRequestConfig {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   url: string;
-  data?: unknown;
-  params?: Record<string, unknown>;
+  data?: any;
+  params?: Record<string, any>;
   headers?: Record<string, string>;
   timeout?: number;
   retries?: number;
@@ -55,7 +55,7 @@ export interface PaginatedRequest {
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  filters?: Record<string, unknown>;
+  filters?: Record<string, any>;
   search?: string;
 }
 

@@ -5,11 +5,9 @@
 
 import { useEffect, useCallback } from 'react';
 
-import type { Organization } from '@/types/common.types';
-
 interface CachedAuthData {
   userRole: string | null;
-  organization: Organization | null;
+  organization: any | null;
   timestamp: number;
 }
 
@@ -44,7 +42,7 @@ export function getCachedAuthData(): CachedAuthData | null {
 /**
  * Set cached auth data
  */
-export function setCachedAuthData(userRole: string | null, organization: Organization | null): void {
+export function setCachedAuthData(userRole: string | null, organization: any | null): void {
   try {
     const data: CachedAuthData = {
       userRole,

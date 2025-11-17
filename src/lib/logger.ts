@@ -7,7 +7,7 @@
  */
 
 interface LogContext {
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 /**
@@ -31,29 +31,29 @@ export const logger = {
   /**
    * No-op for production (previously debug logs)
    */
-  log: (_message: string, _contextOrData?: LogContext | unknown, _legacyContext?: string) => {
+  log: (_message: string, _contextOrData?: LogContext | any, _legacyContext?: string) => {
     // Production: no logging
   },
 
   /**
    * No-op for production (previously info logs)
    */
-  info: (_message: string, _contextOrData?: LogContext | unknown, _legacyContext?: string) => {
+  info: (_message: string, _contextOrData?: LogContext | any, _legacyContext?: string) => {
     // Production: no logging
   },
 
   /**
    * No-op for production (previously debug logs)
    */
-  debug: (_message: string, _contextOrData?: LogContext | unknown, _legacyContext?: string) => {
+  debug: (_message: string, _contextOrData?: LogContext | any, _legacyContext?: string) => {
     // Production: no logging
   },
 
   /**
    * Log warnings and send to monitoring
    */
-  warn: (message: string, contextOrData?: LogContext | unknown, legacyContext?: string) => {
-    const ctx = legacyContext ? { context: legacyContext, ...contextOrData as LogContext } : contextOrData as LogContext;
+  warn: (message: string, contextOrData?: LogContext | any, legacyContext?: string) => {
+    const ctx = legacyContext ? { context: legacyContext, ...contextOrData } : contextOrData;
     console.warn(message);
     sendToMonitoring('warn', message, ctx);
   },

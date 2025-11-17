@@ -2,25 +2,9 @@ import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { wrapHandler } from '../_shared/error-handler.ts';
 import { createLogger } from '../_shared/logger.ts';
-import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
-import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
 
 const logger = createLogger('tenstreet-webhook');
-
-// Zod validation schema for Tenstreet webhook data
-const TenstreetWebhookSchema = z.object({
-  eventType: z.enum(['new_applicant', 'status_update', 'applicant_created', 'extract_complete']),
-  driverId: z.string().trim().max(100, 'Driver ID too long'),
-  status: z.string().trim().max(50, 'Status too long').optional(),
-  personalData: z.object({
-    firstName: z.string().trim().max(100, 'First name too long').optional(),
-    lastName: z.string().trim().max(100, 'Last name too long').optional(),
-    email: z.string().email('Invalid email format').max(255, 'Email too long').optional(),
-    phone: z.string().max(50, 'Phone too long').optional(),
-  }).optional(),
-  applicationData: z.record(z.any()).optional(),
-});
 
 Deno.serve(wrapHandler(async (req) => {
   const origin = req.headers.get('origin');
@@ -28,31 +12,6 @@ Deno.serve(wrapHandler(async (req) => {
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
-  }
-
-  // Apply rate limiting: 100 webhook calls per minute per IP
-  const identifier = getRateLimitIdentifier(req, false);
-  try {
-    await enforceRateLimit(identifier, {
-      maxRequests: 100,
-      windowMs: 60000,
-      keyPrefix: 'tenstreet-webhook'
-    });
-  } catch (error: any) {
-    logger.warn('Rate limit exceeded', { identifier });
-    return new Response(
-      JSON.stringify({ 
-        error: 'Too many requests. Please try again later.',
-        retryAfter: error.retryAfter 
-      }),
-      { 
-        status: 429,
-        headers: {
-          'Retry-After': error.retryAfter?.toString() || '60',
-          ...corsHeaders
-        }
-      }
-    );
   }
 
   const supabaseClient = getServiceClient();
@@ -70,19 +29,8 @@ Deno.serve(wrapHandler(async (req) => {
     logger.info('Received Tenstreet webhook JSON', { eventType: webhookData.eventType });
   }
 
-  // Validate webhook data
-  const validationResult = TenstreetWebhookSchema.safeParse(webhookData);
-  if (!validationResult.success) {
-    const errors = validationResult.error.issues.map(issue => ({
-      field: issue.path.join('.'),
-      message: issue.message
-    }));
-    logger.warn('Validation failed', { errors });
-    return validationErrorResponse(errors, origin);
-  }
-
   // Process webhook based on event type
-  const result = await processWebhook(supabaseClient, validationResult.data);
+  const result = await processWebhook(supabaseClient, webhookData);
 
   return successResponse({ processed: result }, 'Webhook processed successfully', {}, origin);
 }, { context: 'tenstreet-webhook', logRequests: true }));

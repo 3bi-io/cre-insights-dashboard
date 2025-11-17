@@ -1,18 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 import { PageLayout } from '@/features/shared';
-import { 
-  useApplications, 
-  useApplicationDialogs, 
-  useOrganizationData,
-  useApplicationsExport,
-  useApplicationsBulkActions 
-} from '../hooks';
+import { useApplications } from '../hooks/useApplications';
+import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
+import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useWebhookOptions } from '@/hooks/useWebhookOptions';
-import { getStatusCounts, getCategoryCounts, getApplicantCategory } from '@/utils/applicationHelpers';
+import { getStatusCounts, getCategoryCounts, getApplicantCategory, getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
+import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
 import { ExportToN8nButton } from '@/components/applications/ExportToN8nButton';
@@ -41,6 +41,7 @@ const ApplicationsPage = () => {
   const [organizationFilter, setOrganizationFilter] = useState('all');
   const [webhookFilter, setWebhookFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     applicant: true,
     job: true,
@@ -52,6 +53,7 @@ const ApplicationsPage = () => {
     actions: true,
   });
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const { userRole } = useAuth();
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
@@ -125,16 +127,134 @@ const ApplicationsPage = () => {
     });
   }, [serverFilteredApplications, categoryFilter, sourceFilter]);
 
-  // Use refactored hooks for export and bulk actions
-  const { exportToPDF, exportToCSV, exportSelectedToExcel } = useApplicationsExport();
-  const {
-    selectedApplications,
-    handleSelectAll,
-    handleSelectApplication,
-    handleBulkStatusChange,
-    handleBulkDelete,
-    clearSelection,
-  } = useApplicationsBulkActions(applications, updateApplication, deleteApplication);
+  const downloadApplicationsPDF = async () => {
+    try {
+      await generateApplicationsPDF(applications || []);
+      toast({
+        title: "PDF Downloaded",
+        description: "Applications report has been downloaded successfully",
+      });
+    } catch (error) {
+      logger.error('PDF generation error', error, 'Applications');
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF report",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadApplicationsCSV = () => {
+    try {
+      const exportData = applications.map(app => ({
+        'Applicant Name': getApplicantName(app),
+        'Email': getApplicantEmail(app),
+        'Phone': app.phone || '',
+        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
+        'Status': app.status,
+        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
+        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
+        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+      XLSX.writeFile(wb, `applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "CSV Downloaded",
+        description: "Applications data has been exported successfully",
+      });
+    } catch (error) {
+      logger.error('CSV export error', error, 'Applications');
+      toast({
+        title: "Export Failed",
+        description: "Failed to export CSV data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSelectApplication = useCallback((applicationId: string, checked: boolean) => {
+    setSelectedApplications(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(applicationId);
+      } else {
+        newSet.delete(applicationId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedApplications(new Set(applications.map(app => app.id)));
+    } else {
+      setSelectedApplications(new Set());
+    }
+  }, [applications]);
+
+  const handleBulkStatusChange = useCallback(async (status: 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected') => {
+    const selectedIds = Array.from(selectedApplications);
+    try {
+      await Promise.all(
+        selectedIds.map(id => updateApplication(id, { status }))
+      );
+      toast({
+        title: "Status Updated",
+        description: `${selectedIds.length} application(s) updated to ${status}`,
+      });
+      setSelectedApplications(new Set());
+    } catch (error) {
+      logger.error('Bulk status change error', error, 'Applications');
+      toast({
+        title: "Update Failed",
+        description: "Failed to update application statuses",
+        variant: "destructive",
+      });
+    }
+  }, [selectedApplications, updateApplication, toast]);
+
+  const handleBulkDelete = useCallback(() => {
+    // Delete not supported for compliance - applications maintain audit trail
+    deleteApplication();
+    setSelectedApplications(new Set());
+  }, [deleteApplication]);
+
+  const handleBulkExportSelected = useCallback(() => {
+    try {
+      const selectedApps = applications.filter(app => selectedApplications.has(app.id));
+      const exportData = selectedApps.map(app => ({
+        'Applicant Name': getApplicantName(app),
+        'Email': getApplicantEmail(app),
+        'Phone': app.phone || '',
+        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
+        'Status': app.status,
+        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
+        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
+        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Selected Applications');
+      XLSX.writeFile(wb, `selected-applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "Export Complete",
+        description: `${selectedApps.length} application(s) exported successfully`,
+      });
+    } catch (error) {
+      logger.error('Bulk export error', error, 'Applications');
+      toast({
+        title: "Export Failed",
+        description: "Failed to export selected applications",
+        variant: "destructive",
+      });
+    }
+  }, [applications, selectedApplications, toast]);
 
   const handleColumnVisibilityChange = useCallback((column: keyof ColumnVisibility) => {
     setColumnVisibility(prev => ({
@@ -177,12 +297,12 @@ const ApplicationsPage = () => {
       
       <ApplicationsActions
         selectedCount={selectedApplications.size}
-        onExportPDF={() => exportToPDF(applications)}
-        onExportCSV={() => exportToCSV(applications)}
+        onExportPDF={downloadApplicationsPDF}
+        onExportCSV={downloadApplicationsCSV}
         onBulkStatusChange={handleBulkStatusChange}
         onBulkDelete={handleBulkDelete}
-        onBulkExportSelected={() => exportSelectedToExcel(applications, selectedApplications)}
-        onClearSelection={clearSelection}
+        onBulkExportSelected={handleBulkExportSelected}
+        onClearSelection={() => setSelectedApplications(new Set())}
       />
     </div>
   );
