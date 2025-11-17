@@ -113,6 +113,186 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_decision_tracking: {
+        Row: {
+          ai_provider: string | null
+          application_id: string
+          created_at: string
+          decision_type: string
+          hire_outcome: string | null
+          hire_outcome_date: string | null
+          id: string
+          organization_id: string | null
+          quality_score: number | null
+          time_to_decision_minutes: number | null
+          updated_at: string
+          used_ai: boolean
+        }
+        Insert: {
+          ai_provider?: string | null
+          application_id: string
+          created_at?: string
+          decision_type: string
+          hire_outcome?: string | null
+          hire_outcome_date?: string | null
+          id?: string
+          organization_id?: string | null
+          quality_score?: number | null
+          time_to_decision_minutes?: number | null
+          updated_at?: string
+          used_ai?: boolean
+        }
+        Update: {
+          ai_provider?: string | null
+          application_id?: string
+          created_at?: string
+          decision_type?: string
+          hire_outcome?: string | null
+          hire_outcome_date?: string | null
+          id?: string
+          organization_id?: string | null
+          quality_score?: number | null
+          time_to_decision_minutes?: number | null
+          updated_at?: string
+          used_ai?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_decision_tracking_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decision_tracking_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decision_tracking_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decision_tracking_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decision_tracking_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_decision_tracking_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_interaction_logs: {
+        Row: {
+          ai_provider: string | null
+          application_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          interaction_type: string
+          job_listing_id: string | null
+          organization_id: string | null
+          response_time_ms: number | null
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          ai_provider?: string | null
+          application_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          interaction_type: string
+          job_listing_id?: string | null
+          organization_id?: string | null
+          response_time_ms?: number | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          ai_provider?: string | null
+          application_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          interaction_type?: string
+          job_listing_id?: string | null
+          organization_id?: string | null
+          response_time_ms?: number | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_interaction_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interaction_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interaction_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interaction_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interaction_logs_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interaction_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interaction_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_metrics: {
         Row: {
           ai_value: number | null
@@ -157,6 +337,69 @@ export type Database = {
           },
           {
             foreignKeyName: "ai_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_performance_metrics: {
+        Row: {
+          ai_applications_processed: number | null
+          ai_avg_cost_per_hire: number | null
+          ai_avg_quality_score: number | null
+          ai_avg_time_to_hire_hours: number | null
+          created_at: string
+          id: string
+          metric_date: string
+          organization_id: string | null
+          traditional_applications_processed: number | null
+          traditional_avg_cost_per_hire: number | null
+          traditional_avg_quality_score: number | null
+          traditional_avg_time_to_hire_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_applications_processed?: number | null
+          ai_avg_cost_per_hire?: number | null
+          ai_avg_quality_score?: number | null
+          ai_avg_time_to_hire_hours?: number | null
+          created_at?: string
+          id?: string
+          metric_date?: string
+          organization_id?: string | null
+          traditional_applications_processed?: number | null
+          traditional_avg_cost_per_hire?: number | null
+          traditional_avg_quality_score?: number | null
+          traditional_avg_time_to_hire_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_applications_processed?: number | null
+          ai_avg_cost_per_hire?: number | null
+          ai_avg_quality_score?: number | null
+          ai_avg_time_to_hire_hours?: number | null
+          created_at?: string
+          id?: string
+          metric_date?: string
+          organization_id?: string | null
+          traditional_applications_processed?: number | null
+          traditional_avg_cost_per_hire?: number | null
+          traditional_avg_quality_score?: number | null
+          traditional_avg_time_to_hire_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_performance_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_performance_metrics_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
