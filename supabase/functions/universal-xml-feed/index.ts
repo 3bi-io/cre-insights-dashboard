@@ -1,9 +1,11 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { getServiceClient } from '../_shared/supabase-client.ts'
+import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { errorResponse } from '../_shared/response.ts'
+import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
+import { createLogger } from '../_shared/logger.ts'
+import { isValidUuid } from '../_shared/validation-helpers.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const logger = createLogger('universal-xml-feed');
 
 interface JobListing {
   id: string;
@@ -27,10 +29,12 @@ interface JobListing {
   client_id?: string;
 }
 
-Deno.serve(async (req) => {
+const handler = wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   const startTime = Date.now();
@@ -39,53 +43,51 @@ Deno.serve(async (req) => {
   const clientId = url.searchParams.get('client_id');
   const format = url.searchParams.get('format') || 'generic';
 
-  console.log('Universal XML Feed Request:', { organizationId, clientId, format });
+  logger.info('Universal XML Feed Request', { organizationId, clientId, format });
 
-  try {
-    // Validate required parameters
-    if (!organizationId) {
-      return new Response(
-        generateErrorXML('Missing required parameter: organization_id'),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
-        }
-      );
-    }
+  // Validate required parameters
+  if (!organizationId) {
+    return new Response(
+      generateErrorXML('Missing required parameter: organization_id'),
+      {
+        status: 400,
+        headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/xml' }
+      }
+    );
+  }
 
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(organizationId)) {
-      return new Response(
-        generateErrorXML('Invalid organization_id format'),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
-        }
-      );
-    }
+  // Validate UUID format
+  if (!isValidUuid(organizationId)) {
+    return new Response(
+      generateErrorXML('Invalid organization_id format'),
+      {
+        status: 400,
+        headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/xml' }
+      }
+    );
+  }
 
-    if (clientId && !uuidRegex.test(clientId)) {
-      return new Response(
-        generateErrorXML('Invalid client_id format'),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
-        }
-      );
-    }
+  if (clientId && !isValidUuid(clientId)) {
+    return new Response(
+      generateErrorXML('Invalid client_id format'),
+      {
+        status: 400,
+        headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/xml' }
+      }
+    );
+  }
 
-    // Validate format
-    const validFormats = ['indeed', 'google', 'generic'];
-    if (!validFormats.includes(format)) {
-      return new Response(
-        generateErrorXML(`Invalid format. Must be one of: ${validFormats.join(', ')}`),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
-        }
-      );
-    }
+  // Validate format
+  const validFormats = ['indeed', 'google', 'generic'];
+  if (!validFormats.includes(format)) {
+    return new Response(
+      generateErrorXML(`Invalid format. Must be one of: ${validFormats.join(', ')}`),
+      {
+        status: 400,
+        headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/xml' }
+      }
+    );
+  }
 
     // Rate limiting using Deno KV
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -97,12 +99,13 @@ Deno.serve(async (req) => {
     
     if (currentCount >= 1000) {
       await kv.close();
+      logger.warn('Rate limit exceeded', { clientIP, currentCount });
       return new Response(
         generateErrorXML('Rate limit exceeded. Maximum 1000 requests per hour.'),
         {
           status: 429,
           headers: { 
-            ...corsHeaders, 
+            ...getCorsHeaders(origin), 
             'Content-Type': 'application/xml',
             'Retry-After': '3600'
           }
@@ -115,9 +118,7 @@ Deno.serve(async (req) => {
     await kv.close();
 
     // Initialize Supabase client with service role (bypasses RLS)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Build query
     let query = supabase
@@ -139,12 +140,12 @@ Deno.serve(async (req) => {
     const { data: jobs, error } = await query;
 
     if (error) {
-      console.error('Database error:', error);
+      logger.error('Database error', error);
       return new Response(
         generateErrorXML('Failed to fetch job listings'),
         {
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
+          headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/xml' }
         }
       );
     }
@@ -200,7 +201,7 @@ Deno.serve(async (req) => {
       response_time_ms: responseTime,
     });
 
-    console.log('Feed generated successfully:', {
+    logger.info('Feed generated successfully', {
       format,
       jobCount: transformedJobs.length,
       responseTime
@@ -208,23 +209,14 @@ Deno.serve(async (req) => {
 
     return new Response(xmlContent, {
       headers: {
-        ...corsHeaders,
+        ...getCorsHeaders(origin),
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
       },
     });
+}, { context: 'universal-xml-feed', logRequests: true });
 
-  } catch (error) {
-    console.error('Error generating feed:', error);
-    return new Response(
-      generateErrorXML('Internal server error'),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/xml' }
-      }
-    );
-  }
-});
+Deno.serve(handler);
 
 function generateIndeedXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
