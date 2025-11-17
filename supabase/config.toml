@@ -31,6 +31,9 @@ verify_jwt = true
 [functions.client-webhook]
 verify_jwt = false
 
+[functions.client-webhook-bulk-export]
+verify_jwt = true
+
 [functions.universal-xml-feed]
 verify_jwt = false
 

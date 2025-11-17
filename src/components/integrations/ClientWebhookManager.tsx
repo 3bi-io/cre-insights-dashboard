@@ -119,6 +119,13 @@ export default function ClientWebhookManager() {
   // Create/Update webhook mutation
   const saveWebhookMutation = useMutation({
     mutationFn: async (data: WebhookFormData) => {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       if (editingWebhook) {
         const { error } = await supabase
           .from('client_webhooks')
@@ -138,7 +145,7 @@ export default function ClientWebhookManager() {
           .insert({
             source_filter: data.source_filter,
             organization_id: organization?.id,
-            user_id: (await supabase.auth.getUser()).data.user?.id,
+            user_id: user.id,
             webhook_url: data.webhook_url,
             enabled: data.enabled,
             event_types: data.event_types,
