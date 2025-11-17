@@ -24,8 +24,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2, Edit, TestTube, Eye, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit, TestTube, Eye, CheckCircle, XCircle, AlertCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ClientWebhook {
   id: string;
@@ -76,6 +86,9 @@ export default function ClientWebhookManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<ClientWebhook | null>(null);
   const [formData, setFormData] = useState<WebhookFormData>(initialFormData);
+  const [bulkExportWebhookId, setBulkExportWebhookId] = useState<string | null>(null);
+  const [bulkExportCount, setBulkExportCount] = useState<number>(0);
+  const [bulkExportLoading, setBulkExportLoading] = useState(false);
 
 
   // Fetch webhooks
@@ -198,6 +211,58 @@ export default function ClientWebhookManager() {
       toast.error(error.message || 'Failed to send test webhook');
     },
   });
+
+  // Bulk export mutation
+  const bulkExportMutation = useMutation({
+    mutationFn: async (webhookId: string) => {
+      const { data, error } = await supabase.functions.invoke('client-webhook-bulk-export', {
+        body: { webhook_id: webhookId }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Bulk export successful: ${data.applications_sent} applications sent`);
+      queryClient.invalidateQueries({ queryKey: ['client-webhooks'] });
+      setBulkExportWebhookId(null);
+    },
+    onError: (error: Error) => {
+      toast.error(`Bulk export failed: ${error.message}`);
+      setBulkExportWebhookId(null);
+    },
+  });
+
+  // Handle bulk export click - count applications first
+  const handleBulkExportClick = async (webhook: ClientWebhook) => {
+    setBulkExportLoading(true);
+    
+    try {
+      // Query count of applications matching source_filter
+      let query = supabase
+        .from('applications')
+        .select('id, job_listings!inner(organization_id)', { count: 'exact', head: true })
+        .eq('job_listings.organization_id', organization?.id);
+      
+      if (webhook.source_filter && webhook.source_filter.length > 0) {
+        query = query.in('source', webhook.source_filter);
+      }
+      
+      const { count, error } = await query;
+      
+      if (error) {
+        toast.error('Failed to count applications');
+        setBulkExportLoading(false);
+        return;
+      }
+      
+      setBulkExportCount(count || 0);
+      setBulkExportWebhookId(webhook.id);
+    } catch (error) {
+      toast.error('Failed to count applications');
+    } finally {
+      setBulkExportLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setFormData(initialFormData);
@@ -452,6 +517,19 @@ export default function ClientWebhookManager() {
                 <Button
                   size="sm"
                   variant="outline"
+                  onClick={() => handleBulkExportClick(webhook)}
+                  disabled={!webhook.enabled || bulkExportLoading || bulkExportMutation.isPending}
+                >
+                  {(bulkExportLoading && bulkExportWebhookId === webhook.id) || (bulkExportMutation.isPending && bulkExportWebhookId === webhook.id) ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-1" />
+                  )}
+                  Bulk Export
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => testWebhookMutation.mutate(webhook)}
                   disabled={testWebhookMutation.isPending}
                 >
@@ -484,6 +562,36 @@ export default function ClientWebhookManager() {
           ))}
         </div>
       )}
+
+      {/* Bulk Export Confirmation Dialog */}
+      <AlertDialog open={!!bulkExportWebhookId && !bulkExportLoading} onOpenChange={() => setBulkExportWebhookId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Bulk Export</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will send <strong>{bulkExportCount} application(s)</strong> to the configured webhook URL.
+              {bulkExportCount === 0 && (
+                <span className="block mt-2 text-yellow-600">
+                  No applications match the webhook's source filter.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (bulkExportWebhookId) {
+                  bulkExportMutation.mutate(bulkExportWebhookId);
+                }
+              }}
+              disabled={bulkExportCount === 0}
+            >
+              Export {bulkExportCount} Application{bulkExportCount !== 1 ? 's' : ''}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
