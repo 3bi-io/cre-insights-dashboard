@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { enforceAuth, hasRequiredRole, logSecurityEvent, getClientInfo, type UserRole } from "../_shared/serverAuth.ts";
 import { getAuthenticatedClient } from "../_shared/supabase-client.ts";
+import { getCorsHeaders } from "../_shared/cors-config.ts";
+import { successResponse, errorResponse } from "../_shared/response.ts";
+import { wrapHandler } from "../_shared/error-handler.ts";
+import { createLogger } from "../_shared/logger.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const logger = createLogger('admin-check');
 
 /**
  * Server-Side Authorization Check
@@ -13,83 +14,77 @@ const corsHeaders = {
  * CRITICAL SECURITY: Always validate admin/super_admin status server-side.
  * Client-side checks can be bypassed. This edge function provides
  * authoritative authorization validation.
- * 
- * Refactored to use shared authentication utilities for consistency.
  */
-serve(async (req) => {
+const handler = wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
-  try {
-    // Parse request body for required role
-    const { requiredRole = 'admin' } = await req.json().catch(() => ({}));
+  // Parse request body for required role
+  const { requiredRole = 'admin' } = await req.json().catch(() => ({}));
 
-    // Verify authentication (no role requirement at this stage)
-    const authResult = await enforceAuth(req);
-    
-    // If auth failed, return the error response
-    if (authResult instanceof Response) {
-      return authResult;
-    }
+  // Verify authentication (no role requirement at this stage)
+  const authResult = await enforceAuth(req);
+  
+  // If auth failed, return the error response
+  if (authResult instanceof Response) {
+    return authResult;
+  }
 
-    // Auth succeeded, check role
-    const isAuthorized = hasRequiredRole(authResult.userRole, requiredRole as UserRole);
+  // Auth succeeded, check role
+  const isAuthorized = hasRequiredRole(authResult.userRole, requiredRole as UserRole);
 
-    // Get client info for audit logging
-    const { ipAddress, userAgent } = getClientInfo(req);
-    const supabase = getAuthenticatedClient(req);
+  // Get client info for audit logging
+  const { ipAddress, userAgent } = getClientInfo(req);
+  const supabase = getAuthenticatedClient(req);
 
-    if (!isAuthorized) {
-      // Log unauthorized access attempt
-      await logSecurityEvent(supabase, authResult, 'UNAUTHORIZED_ACCESS_ATTEMPT', {
-        table: 'authorization',
-        sensitiveFields: ['role_check'],
-        ipAddress,
-        userAgent,
-      });
+  if (!isAuthorized) {
+    // Log unauthorized access attempt
+    await logSecurityEvent(supabase, authResult, 'UNAUTHORIZED_ACCESS_ATTEMPT', {
+      table: 'authorization',
+      sensitiveFields: ['role_check'],
+      ipAddress,
+      userAgent,
+    });
 
-      return new Response(
-        JSON.stringify({ 
-          authorized: false, 
-          error: 'Insufficient permissions',
-          required: requiredRole,
-          actual: authResult.userRole 
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    logger.warn('Unauthorized access attempt', {
+      userId: authResult.userId,
+      userRole: authResult.userRole,
+      requiredRole,
+      ipAddress,
+    });
 
-    // Success - user is authorized
-    console.log(`[AUTH] User ${authResult.userId} authorized as ${authResult.userRole} for role: ${requiredRole}`);
-    
-    return new Response(
-      JSON.stringify({ 
-        authorized: true, 
-        role: authResult.userRole,
-        userId: authResult.userId 
-      }),
+    return errorResponse(
+      'Insufficient permissions',
+      403,
       {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-
-  } catch (error) {
-    console.error('[AUTH] Admin check error:', error);
-    return new Response(
-      JSON.stringify({ 
-        authorized: false, 
-        error: 'Internal server error' 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+        required: requiredRole,
+        actual: authResult.userRole,
+      },
+      origin
     );
   }
-});
+
+  // Success - user is authorized
+  logger.info('User authorized', {
+    userId: authResult.userId,
+    userRole: authResult.userRole,
+    requiredRole,
+  });
+  
+  return successResponse(
+    {
+      authorized: true, 
+      role: authResult.userRole,
+      userId: authResult.userId,
+    },
+    undefined,
+    undefined,
+    origin
+  );
+}, { context: 'admin-check', logRequests: true });
+
+serve(handler);
