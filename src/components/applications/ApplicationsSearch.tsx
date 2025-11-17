@@ -2,18 +2,23 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import type { WebhookOption } from '@/hooks/useWebhookOptions';
 
 interface ApplicationsSearchProps {
   searchTerm: string;
   categoryFilter: string;
   sourceFilter: string;
   organizationFilter?: string;
+  webhookFilter?: string;
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onSourceChange: (value: string) => void;
   onOrganizationChange?: (value: string) => void;
+  onWebhookChange?: (value: string) => void;
   showOrganizationFilter?: boolean;
+  showWebhookFilter?: boolean;
   organizations?: Array<{ id: string; name: string; }>;
+  webhookOptions?: WebhookOption[];
 }
 
 const ApplicationsSearch = ({
@@ -21,12 +26,16 @@ const ApplicationsSearch = ({
   categoryFilter,
   sourceFilter,
   organizationFilter = 'all',
+  webhookFilter = 'all',
   onSearchChange,
   onCategoryChange,
   onSourceChange,
   onOrganizationChange,
+  onWebhookChange,
   showOrganizationFilter = false,
+  showWebhookFilter = false,
   organizations = [],
+  webhookOptions = [],
 }: ApplicationsSearchProps) => {
   const isMobile = useIsMobile();
 
@@ -82,6 +91,23 @@ const ApplicationsSearch = ({
           <SelectItem value="Facebook Lead Gen">Facebook Lead Gen</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Webhook Filter */}
+      {showWebhookFilter && onWebhookChange && (
+        <Select value={webhookFilter} onValueChange={onWebhookChange}>
+          <SelectTrigger className={`${isMobile ? 'w-full h-12 text-base' : 'w-64'} bg-background border shadow-sm`}>
+            <SelectValue placeholder="Filter by webhook" />
+          </SelectTrigger>
+          <SelectContent className="z-50 bg-popover border shadow-md">
+            <SelectItem value="all">All Webhook Sources</SelectItem>
+            {webhookOptions.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label} ({option.count})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 };

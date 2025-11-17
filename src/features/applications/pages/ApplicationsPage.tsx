@@ -8,6 +8,7 @@ import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useOrganizationData } from '../hooks/useOrganizationData';
+import { useWebhookOptions } from '@/hooks/useWebhookOptions';
 import { getStatusCounts, getCategoryCounts, getApplicantCategory, getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,6 +39,7 @@ const ApplicationsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [organizationFilter, setOrganizationFilter] = useState('all');
+  const [webhookFilter, setWebhookFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
@@ -60,6 +62,9 @@ const ApplicationsPage = () => {
 
   // Use refactored hooks
   const { organizations } = useOrganizationData(isSuperAdmin);
+  const { data: webhookOptions = [] } = useWebhookOptions(
+    organizationFilter !== 'all' ? organizationFilter : undefined
+  );
   const {
     selectedApplication,
     smsDialogOpen,
@@ -97,6 +102,7 @@ const ApplicationsPage = () => {
         : organizationFilter !== 'all' 
           ? organizationFilter 
           : undefined,
+      webhook_id: webhookFilter !== 'all' ? webhookFilter : undefined,
     }
   });
 
@@ -367,12 +373,16 @@ const ApplicationsPage = () => {
             categoryFilter={categoryFilter}
             sourceFilter={sourceFilter}
             organizationFilter={organizationFilter}
+            webhookFilter={webhookFilter}
             onSearchChange={setSearchTerm}
             onCategoryChange={setCategoryFilter}
             onSourceChange={setSourceFilter}
             onOrganizationChange={setOrganizationFilter}
+            onWebhookChange={setWebhookFilter}
             showOrganizationFilter={isSuperAdmin}
+            showWebhookFilter={isAdmin}
             organizations={organizations}
+            webhookOptions={webhookOptions}
           />
 
           {/* Pagination Indicator */}

@@ -13,6 +13,7 @@ export interface ApplicationFilters extends FilterOptions {
   city?: string;
   state?: string;
   organization_id?: string;
+  webhook_id?: string;
   accessReason?: string; // Audit reason for access logging
 }
 
@@ -54,6 +55,7 @@ export function useApplications(options?: {
         state: options?.filters?.state,
         search: options?.filters?.search,
         organizationId: options?.filters?.organization_id,
+        webhookId: options?.filters?.webhook_id,
         page,
         pageSize: options?.filters?.pageSize || 200,
         accessReason

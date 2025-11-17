@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApplications } from './useApplications';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
+import { useWebhookOptions } from '@/hooks/useWebhookOptions';
 import type { Application } from '@/types/common.types';
 
 export interface ApplicationsManagementFilters {
@@ -23,8 +24,14 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [organizationFilter, setOrganizationFilter] = useState<string>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
+  const [webhookFilter, setWebhookFilter] = useState<string>('all');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  // Fetch webhook options
+  const { data: webhookOptions = [] } = useWebhookOptions(
+    organizationFilter !== 'all' ? organizationFilter : undefined
+  );
 
   // Applications data with RLS-based filtering
   const {
@@ -43,6 +50,7 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
         : organizationFilter !== 'all' 
           ? organizationFilter 
           : undefined,
+      webhook_id: webhookFilter !== 'all' ? webhookFilter : undefined,
     }
   });
 
@@ -146,6 +154,9 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     setOrganizationFilter,
     clientFilter,
     setClientFilter,
+    webhookFilter,
+    setWebhookFilter,
+    webhookOptions,
     
     // View mode
     viewMode,
