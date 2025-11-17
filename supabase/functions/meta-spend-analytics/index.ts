@@ -1,41 +1,25 @@
-// @ts-nocheck
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getAuthenticatedClient } from '../_shared/supabase-client.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler } from '../_shared/error-handler.ts';
+import { createLogger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const logger = createLogger('meta-spend-analytics');
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
-  try {
-    console.log('Meta Spend Analytics function called');
-    
-    // Get auth header safely
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header provided');
-    }
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      throw new Error('Unauthorized: ' + (userError?.message || 'No user found'));
-    }
-
-    const body = await req.json().catch(() => ({}));
-    const { analysisType = 'overview', dateRange = 'last_30d' } = body;
+  const { supabase, user } = await getAuthenticatedClient(req);
+  
+  const body = await req.json().catch(() => ({}));
+  const { analysisType = 'overview', dateRange = 'last_30d' } = body;
+  
+  logger.info('Meta spend analytics requested', { userId: user.id, analysisType, dateRange });
 
     // Fetch meta ad sets data
     const { data: adSets, error: adSetsError } = await supabaseClient
@@ -62,7 +46,11 @@ serve(async (req) => {
 
     if (adsError) throw adsError;
 
-    console.log(`Analyzing ${adSets.length} ad sets, ${campaigns.length} campaigns, ${ads.length} ads`);
+    logger.info('Analyzing Meta ad performance', { 
+      adSetsCount: adSets.length,
+      campaignsCount: campaigns.length,
+      adsCount: ads.length
+    });
 
     // Calculate aggregate metrics
     const totalSpend = adSets.reduce((sum, adSet) => sum + (parseFloat(adSet.spend) || 0), 0);
@@ -267,31 +255,7 @@ Format your response as a JSON object:
       generatedAt: new Date().toISOString()
     };
 
-    console.log('Meta spend analysis complete');
+    logger.info('Meta spend analysis complete');
 
-    return new Response(
-      JSON.stringify(result),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
-  } catch (error) {
-    console.error('Error in meta-spend-analytics function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'Failed to analyze Meta spend data',
-        details: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
-  }
-});
+    return successResponse(result, origin);
+}));

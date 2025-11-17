@@ -1,17 +1,11 @@
-// @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { getServiceClient } from '../_shared/supabase-client.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse } from '../_shared/response.ts';
+import { wrapHandler } from '../_shared/error-handler.ts';
+import { createLogger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
+const logger = createLogger('chatbot-analytics');
+const supabase = getServiceClient();
 
 interface AnalyticsQuery {
   query: string;
@@ -298,15 +292,16 @@ const generateAnalyticalResponse = async (query: string, analytics: any): Promis
   return response;
 };
 
-serve(async (req) => {
+Deno.serve(wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
-  try {
-    const { query, context, organizationId, organizationName }: AnalyticsQuery = await req.json();
+  const { query, context, organizationId, organizationName }: AnalyticsQuery = await req.json();
 
-    console.log('Received analytics query:', query, 'for organization:', organizationName || 'all');
+  logger.info('Received analytics query', { query, organizationName: organizationName || 'all' });
 
     // Analyze the query to determine what data to fetch
     const { tables } = analyzeQuery(query);
@@ -333,24 +328,11 @@ serve(async (req) => {
     // Generate analytical response
     const response = await generateAnalyticalResponse(query, analytics);
 
-    console.log('Generated analytics response for organization:', organizationName || 'all');
+    logger.info('Generated analytics response', { organizationName: organizationName || 'all' });
 
-    return new Response(JSON.stringify({ 
+    return successResponse({ 
       response,
       analytics,
       detectedTables: tables
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
-  } catch (error) {
-    console.error('Error in chatbot-analytics function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      response: "I'm sorry, I encountered an error while analyzing your data. Please try rephrasing your question or contact support if the issue persists."
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-});
+    }, origin);
+}));
