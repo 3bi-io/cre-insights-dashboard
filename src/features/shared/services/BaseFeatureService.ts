@@ -11,7 +11,7 @@ export abstract class BaseFeatureService {
     this.featureName = featureName;
   }
 
-  protected createError(code: string, message: string, context?: Record<string, any>): FeatureError {
+  protected createError(code: string, message: string, context?: Record<string, unknown>): FeatureError {
     return {
       code,
       message,
@@ -22,18 +22,27 @@ export abstract class BaseFeatureService {
   }
 
   protected async handleApiCall<T>(
-    operation: () => Promise<any>,
+    operation: () => Promise<unknown>,
     operationName: string
   ): Promise<ApiResponse<T>> {
     try {
       logger.info(`${this.featureName}: Starting ${operationName}`, { tableName: this.tableName });
       
-      const result = await operation();
+      const result = await operation() as { data: T | null; error: Error | null; count?: number } | T;
       
-      if (result.error) {
+      // Handle direct data return (e.g., from RPC calls)
+      if (!result || typeof result !== 'object' || !('error' in result)) {
+        logger.info(`${this.featureName}: ${operationName} succeeded`, { 
+          dataLength: Array.isArray(result) ? result.length : 1 
+        });
+        return { data: result as T, error: null };
+      }
+      
+      // Handle standard Supabase response format
+      if ('error' in result && result.error) {
         const error = this.createError(
           'API_ERROR',
-          result.error.message,
+          (result.error as Error).message || String(result.error),
           { operation: operationName, originalError: result.error }
         );
         
@@ -60,7 +69,9 @@ export abstract class BaseFeatureService {
 
   protected async getAll<T>(filters?: FilterOptions): Promise<ApiResponse<PaginatedResponse<T>>> {
     return this.handleApiCall(async () => {
-      let query = (supabase as any).from(this.tableName).select('*', { count: 'exact' });
+      // Use dynamic table access with type assertion
+      const client = supabase as unknown as { from: (table: string) => any };
+      let query = client.from(this.tableName).select('*', { count: 'exact' });
 
       // Apply filters
       if (filters?.search && filters.search.length > 0) {
