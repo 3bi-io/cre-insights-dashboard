@@ -1,35 +1,35 @@
-
 // @ts-nocheck
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getServiceClient } from '../_shared/supabase-client.ts'
+import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { errorResponse } from '../_shared/response.ts'
+import { wrapHandler } from '../_shared/error-handler.ts'
+import { createLogger } from '../_shared/logger.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const logger = createLogger('job-feed-xml');
 
-serve(async (req) => {
+const handler = wrapHandler(async (req) => {
+  const origin = req.headers.get('origin');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: getCorsHeaders(origin) })
   }
 
   const startTime = Date.now();
   const requestIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
   const userAgent = req.headers.get('user-agent') || 'unknown';
 
-  try {
-    // Get query parameters
-    const url = new URL(req.url)
-    const platform = url.searchParams.get('platform')
-    const user_id = url.searchParams.get('user_id')
+  // Get query parameters
+  const url = new URL(req.url)
+  const platform = url.searchParams.get('platform')
+  const user_id = url.searchParams.get('user_id')
 
-    // Create Supabase client with service role to bypass RLS
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+  logger.info('Job feed request', { platform, user_id, requestIp });
+
+  // Create Supabase client with service role to bypass RLS
+  const supabaseClient = getServiceClient()
 
     // Build query for job listings (include ALL active jobs)
     const selectFields = `
@@ -59,7 +59,7 @@ serve(async (req) => {
     // Validate XML feed before generation
     const validation = validateXMLFeed(platform, jobListings || [])
     if (validation.warnings.length > 0) {
-      console.warn('XML Feed Validation Warnings:', validation.warnings)
+      logger.warn('XML Feed Validation Warnings', { warnings: validation.warnings })
     }
 
     // Generate XML based on platform
@@ -121,26 +121,24 @@ serve(async (req) => {
       user_agent: userAgent,
       job_count: jobListings?.length || 0,
       response_time_ms: responseTime
-    }).catch(err => console.error('Failed to log feed access:', err));
+    }).catch(err => logger.error('Failed to log feed access', err));
+
+    logger.info('Feed generated successfully', { 
+      platform, 
+      jobCount: jobListings?.length || 0, 
+      responseTime 
+    });
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {
-        ...corsHeaders,
+        ...getCorsHeaders(origin),
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
       },
     })
-  } catch (error) {
-    console.error('Error generating XML feed:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
-  }
-})
+}, { context: 'job-feed-xml', logRequests: true });
+
+serve(handler);
 
 function generateJobFeedXML(jobs: any[]): string {
   const xmlJobs = jobs.map(job => {
