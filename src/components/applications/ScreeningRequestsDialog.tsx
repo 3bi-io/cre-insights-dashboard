@@ -221,9 +221,13 @@ const ScreeningRequestsDialog: React.FC<ScreeningRequestsDialogProps> = ({
             <Card className="border-border/40">
               <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <Label>Request Type</Label>
-                  <Select value={requestType} onValueChange={(value: any) => setRequestType(value)}>
-                    <SelectTrigger>
+                  <Label htmlFor="screening-request-type">Request Type</Label>
+                  <Select 
+                    name="requestType"
+                    value={requestType} 
+                    onValueChange={(value: any) => setRequestType(value)}
+                  >
+                    <SelectTrigger id="screening-request-type">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -251,8 +255,10 @@ const ScreeningRequestsDialog: React.FC<ScreeningRequestsDialogProps> = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Recipient Email</Label>
+                    <Label htmlFor="screening-recipient-email">Recipient Email</Label>
                     <Input
+                      id="screening-recipient-email"
+                      name="recipientEmail"
                       type="email"
                       value={recipientEmail}
                       onChange={(e) => setRecipientEmail(e.target.value)}
@@ -262,8 +268,10 @@ const ScreeningRequestsDialog: React.FC<ScreeningRequestsDialogProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Provider Name (Optional)</Label>
+                    <Label htmlFor="screening-provider-name">Provider Name (Optional)</Label>
                     <Input
+                      id="screening-provider-name"
+                      name="providerName"
                       value={providerName}
                       onChange={(e) => setProviderName(e.target.value)}
                       placeholder="e.g., Acme Screening Services"
@@ -272,8 +280,10 @@ const ScreeningRequestsDialog: React.FC<ScreeningRequestsDialogProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Notes (Optional)</Label>
+                  <Label htmlFor="screening-notes">Notes (Optional)</Label>
                   <Textarea
+                    id="screening-notes"
+                    name="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add any additional notes or instructions..."

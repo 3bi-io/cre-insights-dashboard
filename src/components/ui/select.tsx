@@ -4,7 +4,35 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Select = SelectPrimitive.Root
+const Select = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & { 
+    name?: string;
+    id?: string;
+  }
+>(({ name, id, ...props }, ref) => {
+  const autoId = React.useId();
+  const fieldId = id || autoId;
+  
+  return (
+    <>
+      <SelectPrimitive.Root {...props}>
+        {props.children}
+      </SelectPrimitive.Root>
+      {name && (
+        <input 
+          type="hidden" 
+          id={fieldId}
+          name={name} 
+          value={props.value as string} 
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      )}
+    </>
+  );
+});
+Select.displayName = "Select";
 
 const SelectGroup = SelectPrimitive.Group
 
