@@ -7,7 +7,7 @@ export type DataSensitivity = 'public' | 'internal' | 'sensitive' | 'restricted'
 
 export interface AIRequest {
   prompt: string;
-  data: any;
+  data: Record<string, unknown>;
   sensitivity: DataSensitivity;
   requiresAI: boolean;
   context?: string;
@@ -188,7 +188,7 @@ class AIService {
     }
   }
 
-  private async callAnthropic(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+  private async callAnthropic(prompt: string, data: Record<string, unknown>, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('anthropic-chat', {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
@@ -207,7 +207,7 @@ class AIService {
     };
   }
 
-  private async callOpenAI(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+  private async callOpenAI(prompt: string, data: Record<string, unknown>, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('openai-chat', {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
@@ -226,7 +226,7 @@ class AIService {
     };
   }
 
-  private async callGrok(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+  private async callGrok(prompt: string, data: Record<string, unknown>, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('grok-chat', {
       body: {
         messages: [
@@ -252,8 +252,8 @@ class AIService {
     let confidence = 0.95;
 
     // Example rule-based analysis
-    if (request.data.applications) {
-      const apps = request.data.applications;
+    if (request.data.applications && Array.isArray(request.data.applications)) {
+      const apps = request.data.applications as Array<{ cdl?: string; months?: string; [key: string]: unknown }>;
       const totalApps = apps.length;
       const cdlHolders = apps.filter(app => app.cdl === 'Yes').length;
       const experienced = apps.filter(app => app.months === '48+').length;
@@ -285,14 +285,14 @@ class AIService {
     };
   }
 
-  private sanitizeData(data: any, sensitivity: DataSensitivity): any {
+  private sanitizeData(data: Record<string, unknown>, sensitivity: DataSensitivity): Record<string, unknown> {
     // Remove or mask sensitive information based on sensitivity level
     const sanitized = { ...data };
 
     if (sensitivity === 'sensitive' || sensitivity === 'restricted') {
       // Remove PII
-      if (sanitized.applications) {
-        sanitized.applications = sanitized.applications.map(app => ({
+      if (sanitized.applications && Array.isArray(sanitized.applications)) {
+        sanitized.applications = (sanitized.applications as Array<Record<string, unknown>>).map(app => ({
           ...app,
           applicant_email: undefined,
           first_name: undefined,
@@ -304,8 +304,8 @@ class AIService {
 
     if (sensitivity === 'restricted') {
       // Remove all identifying information
-      if (sanitized.applications) {
-        sanitized.applications = sanitized.applications.map(app => ({
+      if (sanitized.applications && Array.isArray(sanitized.applications)) {
+        sanitized.applications = (sanitized.applications as Array<Record<string, unknown>>).map(app => ({
           cdl: app.cdl,
           exp: app.exp,
           months: app.months,
@@ -319,7 +319,7 @@ class AIService {
     return sanitized;
   }
 
-  private buildPrompt(basePrompt: string, data: any, parameters?: AIParameters): string {
+  private buildPrompt(basePrompt: string, data: Record<string, unknown>, parameters?: AIParameters): string {
     let prompt = basePrompt;
 
     if (parameters) {
