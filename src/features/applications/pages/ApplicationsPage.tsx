@@ -29,6 +29,8 @@ import {
 } from '../components';
 import { TableColumnVisibility, ColumnVisibility } from '../components/TableColumnVisibility';
 import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 const ApplicationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -361,6 +363,25 @@ const ApplicationsPage = () => {
             showOrganizationFilter={isSuperAdmin}
             organizations={organizations}
           />
+
+          {/* Pagination Indicator */}
+          {totalCount > 0 && (
+            <Alert className="bg-muted/50 border-border">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Showing <strong>{applications.length}</strong> of <strong>{totalCount}</strong> applications
+                {hasMore && (
+                  <Button
+                    variant="link"
+                    className="ml-2 p-0 h-auto"
+                    onClick={loadMore}
+                  >
+                    Load more
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-4">
             {applications && applications.length > 0 ? (
