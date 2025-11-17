@@ -6,7 +6,11 @@
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
+import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
+import { createLogger } from '../_shared/logger.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
+
+const logger = createLogger('tenstreet-bulk-operations');
 
 interface BulkOperationRequest {
   operationType: 'import' | 'export' | 'status_update' | 'sync';
@@ -17,14 +21,12 @@ interface BulkOperationRequest {
   fieldSelection?: string[];
 }
 
-Deno.serve(async (req) => {
+Deno.serve(wrapHandler(async (req) => {
   const origin = req.headers.get('origin');
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: getCorsHeaders(origin) });
   }
-
-  try {
     // Authenticate user - require admin for bulk operations
     const authContext = await enforceAuth(req, 'admin');
     if (authContext instanceof Response) return authContext;
@@ -39,51 +41,51 @@ Deno.serve(async (req) => {
       fieldSelection 
     } = await req.json() as BulkOperationRequest;
 
-    if (!operationType) {
-      return validationErrorResponse('operationType is required');
-    }
+  if (!operationType) {
+    throw new ValidationError('operationType is required');
+  }
 
-    console.log(`Starting bulk operation: ${operationType} for org ${authContext.organizationId}`);
+  logger.info('Starting bulk operation', { operationType, organizationId: authContext.organizationId });
 
     let result;
     let operationDetails: Record<string, any> = {};
 
     switch (operationType) {
-      case 'import':
-        if (!fileData) {
-          return validationErrorResponse('fileData is required for import operations');
-        }
+    case 'import':
+      if (!fileData) {
+        throw new ValidationError('fileData is required for import operations');
+      }
         result = await handleBulkImport(supabase, authContext.organizationId, fileData);
         operationDetails = { recordsProcessed: result.imported, errors: result.errors };
         break;
 
-      case 'export':
-        if (!applicationIds || applicationIds.length === 0) {
-          return validationErrorResponse('applicationIds are required for export operations');
-        }
+    case 'export':
+      if (!applicationIds || applicationIds.length === 0) {
+        throw new ValidationError('applicationIds are required for export operations');
+      }
         result = await handleBulkExport(supabase, authContext.organizationId, applicationIds, fieldSelection);
         operationDetails = { recordsExported: result.count };
         break;
 
-      case 'status_update':
-        if (!applicationIds || !newStatus) {
-          return validationErrorResponse('applicationIds and newStatus are required for status updates');
-        }
+    case 'status_update':
+      if (!applicationIds || !newStatus) {
+        throw new ValidationError('applicationIds and newStatus are required for status updates');
+      }
         result = await handleBulkStatusUpdate(supabase, authContext.organizationId, applicationIds, newStatus);
         operationDetails = { recordsUpdated: result.updated };
         break;
 
-      case 'sync':
-        if (!syncSource) {
-          return validationErrorResponse('syncSource is required for sync operations');
-        }
+    case 'sync':
+      if (!syncSource) {
+        throw new ValidationError('syncSource is required for sync operations');
+      }
         result = await handleBulkSync(supabase, authContext.organizationId, syncSource);
         operationDetails = { recordsSynced: result.synced };
         break;
 
-      default:
-        return validationErrorResponse(`Invalid operation type: ${operationType}`);
-    }
+    default:
+      throw new ValidationError(`Invalid operation type: ${operationType}`);
+  }
 
     // Log the bulk operation
     const { data: operation, error: logError } = await supabase
@@ -100,21 +102,16 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
-    if (logError) {
-      console.error('Failed to log bulk operation:', logError);
-    }
-
-    return successResponse({
-      operationId: operation?.id,
-      ...result,
-      ...operationDetails
-    }, `Bulk ${operationType} completed successfully`);
-
-  } catch (error) {
-    console.error('Error in tenstreet-bulk-operations function:', error);
-    return errorResponse(error instanceof Error ? error.message : 'Internal server error', 500);
+  if (logError) {
+    logger.error('Failed to log bulk operation', logError);
   }
-});
+
+  return successResponse({
+    operationId: operation?.id,
+    ...result,
+    ...operationDetails
+  }, `Bulk ${operationType} completed successfully`, {}, origin);
+}, { context: 'tenstreet-bulk-operations', logRequests: true }));
 
 async function handleBulkImport(supabase: any, organizationId: string, fileData: string) {
   try {
