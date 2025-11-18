@@ -114,3 +114,63 @@ verify_jwt = true
 
 [functions.meta-adset-report]
 verify_jwt = true
+
+[functions.admin-update-password]
+verify_jwt = true
+
+[functions.admin_password_reset]
+verify_jwt = true
+
+[functions.anthropic-chat]
+verify_jwt = true
+
+[functions.background-tasks]
+verify_jwt = true
+
+[functions.chatbot-analytics]
+verify_jwt = true
+
+[functions.data-analysis]
+verify_jwt = true
+
+[functions.domain-configuration]
+verify_jwt = true
+
+[functions.google-indexing]
+verify_jwt = true
+
+[functions.google-jobs-xml]
+verify_jwt = false
+
+[functions.import-jobs-from-feed]
+verify_jwt = true
+
+[functions.indeed-xml-feed]
+verify_jwt = false
+
+[functions.job-group-xml-feed]
+verify_jwt = false
+
+[functions.openai-chat]
+verify_jwt = true
+
+[functions.outbound-webhook]
+verify_jwt = false
+
+[functions.send-magic-link]
+verify_jwt = true
+
+[functions.send-screening-request]
+verify_jwt = true
+
+[functions.send-sms]
+verify_jwt = true
+
+[functions.sms-auth]
+verify_jwt = false
+
+[functions.tenstreet-integration]
+verify_jwt = true
+
+[functions.trigger-webhook]
+verify_jwt = true
