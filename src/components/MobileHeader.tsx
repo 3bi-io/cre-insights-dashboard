@@ -76,7 +76,7 @@ const MobileHeader = () => {
         
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
-          <Brand size="md" showAsLink={false} />
+          <Brand variant="icon" size="sm" showAsLink={false} />
           <div className="flex flex-col">
             <h1 className="text-lg font-semibold leading-none text-foreground">
               {getPageTitle()}

@@ -9,7 +9,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-          <Brand size="sm" showAsLink={false} />
+          <Brand variant="horizontal" size="sm" showAsLink={false} />
             <span className="text-sm text-muted-foreground">
               © 2024 ATS.me. All rights reserved.
             </span>

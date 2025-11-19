@@ -174,7 +174,7 @@ const handleSignUp = async (e: React.FormEvent) => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex items-center justify-center mb-6">
-            <Brand size="xl" showAsLink={false} />
+            <Brand variant="horizontal" size="lg" showAsLink={false} />
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Next-Generation Applicant Tracking System
