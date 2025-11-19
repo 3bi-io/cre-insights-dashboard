@@ -1,87 +1,228 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { LazyImage } from '@/components/optimized/LazyImage';
 
 interface BrandProps {
-  variant?: 'horizontal' | 'icon' | 'text';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'horizontal' | 'icon' | 'text' | 'auto';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'auto';
   theme?: 'light' | 'dark' | 'auto';
   linkTo?: string;
   className?: string;
   showAsLink?: boolean;
+  priority?: boolean;
+  customLogoUrl?: string | null;
+  organizationName?: string;
 }
 
 const sizeMap = {
-  xs: { height: 'h-4', width: 'w-auto' },
-  sm: { height: 'h-6', width: 'w-auto' },
-  md: { height: 'h-8', width: 'w-auto' },
-  lg: { height: 'h-10', width: 'w-auto' },
-  xl: { height: 'h-12', width: 'w-auto' }
+  xs: { height: 'h-4', width: 'w-auto', pixels: 16 },
+  sm: { height: 'h-6', width: 'w-auto', pixels: 24 },
+  md: { height: 'h-8', width: 'w-auto', pixels: 32 },
+  lg: { height: 'h-10', width: 'w-auto', pixels: 40 },
+  xl: { height: 'h-12', width: 'w-auto', pixels: 48 },
+  auto: { height: 'h-auto', width: 'w-auto', pixels: 32 }
 };
 
 const iconSizeMap = {
-  xs: { height: 'h-4', width: 'w-4' },
-  sm: { height: 'h-6', width: 'w-6' },
-  md: { height: 'h-8', width: 'w-8' },
-  lg: { height: 'h-10', width: 'w-10' },
-  xl: { height: 'h-12', width: 'w-12' }
+  xs: { height: 'h-4', width: 'w-4', pixels: 16 },
+  sm: { height: 'h-6', width: 'w-6', pixels: 24 },
+  md: { height: 'h-8', width: 'w-8', pixels: 32 },
+  lg: { height: 'h-10', width: 'w-10', pixels: 40 },
+  xl: { height: 'h-12', width: 'w-12', pixels: 48 },
+  auto: { height: 'h-auto', width: 'w-auto', pixels: 32 }
 };
 
 export const Brand: React.FC<BrandProps> = ({ 
-  variant = 'horizontal',
-  size = 'md', 
+  variant: propVariant = 'horizontal',
+  size: propSize = 'md', 
   theme = 'auto',
   linkTo = '/', 
   className,
-  showAsLink = true
+  showAsLink = true,
+  priority = false,
+  customLogoUrl,
+  organizationName = 'ATS.me'
 }) => {
+  const { isMobile, isTablet, isDesktop } = useResponsiveLayout();
+  const [imageError, setImageError] = useState(false);
+
+  // Auto-responsive variant and size
+  const variant = propVariant === 'auto' 
+    ? (isMobile ? 'icon' : 'horizontal')
+    : propVariant;
+    
+  const size = propSize === 'auto'
+    ? (isMobile ? 'sm' : isTablet ? 'md' : 'lg')
+    : propSize;
+
   const sizeClasses = variant === 'icon' ? iconSizeMap[size] : sizeMap[size];
+  const pixelSize = sizeClasses.pixels;
+
+  // Handle custom organization logo
+  if (customLogoUrl && !imageError) {
+    const logoAlt = `${organizationName} logo`;
+    
+    return (
+      <div className={cn("flex items-center", className)}>
+        {priority ? (
+          <picture>
+            <source 
+              type="image/webp" 
+              srcSet={`${customLogoUrl}?format=webp&w=${pixelSize * 2} 2x, ${customLogoUrl}?format=webp&w=${pixelSize} 1x`}
+            />
+            <img
+              src={customLogoUrl}
+              alt={logoAlt}
+              width={pixelSize}
+              height={pixelSize}
+              loading="eager"
+              decoding="async"
+              onError={() => setImageError(true)}
+              className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
+            />
+          </picture>
+        ) : (
+          <LazyImage
+            src={customLogoUrl}
+            alt={logoAlt}
+            width={pixelSize}
+            height={pixelSize}
+            priority={priority}
+            skeleton={false}
+            className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
+            onError={() => setImageError(true)}
+          />
+        )}
+      </div>
+    );
+  }
   
   const getLogo = () => {
-    if (variant === 'text') {
+    // Text-only fallback
+    if (variant === 'text' || imageError) {
       return (
-        <span className="font-bold text-primary text-xl">
+        <span className={cn(
+          "font-bold text-primary",
+          size === 'xs' && "text-sm",
+          size === 'sm' && "text-base",
+          size === 'md' && "text-lg",
+          size === 'lg' && "text-xl",
+          size === 'xl' && "text-2xl"
+        )}>
           ATS.me
         </span>
       );
     }
 
+    // Icon variant
     if (variant === 'icon') {
-      return (
-        <img 
-          src="/logo-icon.png" 
-          alt="ATS.me" 
+      return priority ? (
+        <picture>
+          <source 
+            type="image/webp" 
+            srcSet={`/logo-icon.webp 2x, /logo-icon.webp 1x`}
+          />
+          <img 
+            src="/logo-icon.png" 
+            alt="ATS.me" 
+            width={pixelSize}
+            height={pixelSize}
+            loading="eager"
+            decoding="async"
+            onError={() => setImageError(true)}
+            className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
+          />
+        </picture>
+      ) : (
+        <LazyImage
+          src="/logo-icon.png"
+          alt="ATS.me"
+          width={pixelSize}
+          height={pixelSize}
+          priority={priority}
+          skeleton={false}
+          onError={() => setImageError(true)}
           className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
         />
       );
     }
 
-    // Horizontal logo
-    const logoSrc = theme === 'dark' 
-      ? '/logo-white.png' 
-      : theme === 'light'
-      ? '/logo.png'
-      : '/logo.png'; // Auto defaults to regular logo (works on both themes)
-
-    return (
-      <img 
-        src={logoSrc}
-        alt="ATS.me" 
+    // Horizontal logo with dark mode support
+    const lightLogo = priority ? (
+      <picture>
+        <source 
+          type="image/webp" 
+          srcSet={`/logo.webp 2x, /logo.webp 1x`}
+        />
+        <img 
+          src="/logo.png"
+          alt="ATS.me" 
+          width={pixelSize * 3}
+          height={pixelSize}
+          loading="eager"
+          decoding="async"
+          onError={() => setImageError(true)}
+          className={cn(sizeClasses.height, sizeClasses.width, "object-contain dark:hidden")}
+        />
+      </picture>
+    ) : (
+      <LazyImage
+        src="/logo.png"
+        alt="ATS.me"
+        width={pixelSize * 3}
+        height={pixelSize}
+        priority={priority}
+        skeleton={false}
+        onError={() => setImageError(true)}
         className={cn(sizeClasses.height, sizeClasses.width, "object-contain dark:hidden")}
       />
+    );
+
+    const darkLogo = theme === 'auto' && (
+      priority ? (
+        <picture>
+          <source 
+            type="image/webp" 
+            srcSet={`/logo-white.webp 2x, /logo-white.webp 1x`}
+          />
+          <img 
+            src="/logo-white.png"
+            alt="ATS.me" 
+            width={pixelSize * 3}
+            height={pixelSize}
+            loading="eager"
+            decoding="async"
+            onError={() => setImageError(true)}
+            className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
+          />
+        </picture>
+      ) : (
+        <LazyImage
+          src="/logo-white.png"
+          alt="ATS.me"
+          width={pixelSize * 3}
+          height={pixelSize}
+          priority={priority}
+          skeleton={false}
+          onError={() => setImageError(true)}
+          className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
+        />
+      )
+    );
+
+    return (
+      <>
+        {lightLogo}
+        {darkLogo}
+      </>
     );
   };
 
   const brandElement = (
     <div className={cn("flex items-center", className)}>
       {getLogo()}
-      {theme === 'auto' && variant === 'horizontal' && (
-        <img 
-          src="/logo-white.png"
-          alt="ATS.me" 
-          className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
-        />
-      )}
     </div>
   );
 
@@ -93,6 +234,7 @@ export const Brand: React.FC<BrandProps> = ({
     <Link 
       to={linkTo} 
       className="flex items-center hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+      aria-label={`${organizationName} - Return to ${linkTo === '/' ? 'home' : 'dashboard'}`}
     >
       {brandElement}
     </Link>
