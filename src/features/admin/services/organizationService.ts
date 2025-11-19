@@ -9,6 +9,8 @@ export class OrganizationService {
    * Fetches all organizations
    */
   static async fetchOrganizations(): Promise<Organization[]> {
+    console.log('OrganizationService: Fetching organizations');
+    
     const { data, error } = await supabase
       .from('organizations')
       .select('*')
@@ -27,6 +29,8 @@ export class OrganizationService {
    * Fetches a single organization by ID
    */
   static async fetchOrganization(id: string): Promise<Organization> {
+    console.log('OrganizationService: Fetching organization', id);
+    
     const { data, error } = await supabase
       .from('organizations')
       .select('*')
@@ -95,6 +99,8 @@ export class OrganizationService {
    * Deletes an organization
    */
   static async deleteOrganization(id: string): Promise<void> {
+    console.log('OrganizationService: Deleting organization', id);
+    
     const { error } = await supabase
       .from('organizations')
       .delete()
@@ -104,6 +110,8 @@ export class OrganizationService {
       console.error('OrganizationService: Error deleting organization', error);
       throw error;
     }
+    
+    console.log('OrganizationService: Organization deleted', id);
   }
 
   /**
@@ -142,6 +150,8 @@ export class OrganizationService {
       console.error('OrganizationService: Error updating features', error);
       throw error;
     }
+    
+    console.log('OrganizationService: Features updated');
   }
 
   /**
@@ -182,5 +192,7 @@ export class OrganizationService {
       console.error('OrganizationService: Error setting platform access', error);
       throw error;
     }
+    
+    console.log('OrganizationService: Platform access updated');
   }
 }

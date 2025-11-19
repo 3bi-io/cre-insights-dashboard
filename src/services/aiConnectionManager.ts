@@ -32,7 +32,7 @@ class AIConnectionManager {
     },
     anthropic: {
       provider: 'anthropic',
-      model: 'claude-3-5-haiku-20241022', // Valid Claude model
+      model: 'claude-3-5-sonnet-20241022', // Latest Claude model
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     },
@@ -77,28 +77,10 @@ class AIConnectionManager {
           break;
           
         case 'elevenlabs':
-          // Fetch a real agent from the database for testing
-          const { data: voiceAgents } = await supabase
-            .from('voice_agents')
-            .select('elevenlabs_agent_id')
-            .eq('is_active', true)
-            .limit(1)
-            .single();
-          
-          if (!voiceAgents?.elevenlabs_agent_id) {
-            // No active agents configured - skip test
-            return {
-              provider,
-              isConnected: false,
-              lastChecked: new Date(),
-              latency: 0,
-              error: 'No active voice agents configured'
-            };
-          }
-          
           response = await supabase.functions.invoke('elevenlabs-agent', {
             body: {
-              agentId: voiceAgents.elevenlabs_agent_id
+              agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65',
+              action: 'test'
             }
           });
           break;
@@ -106,9 +88,7 @@ class AIConnectionManager {
         case 'grok':
           response = await supabase.functions.invoke('grok-chat', {
             body: {
-              messages: [
-                { role: 'user', content: config.testMessage }
-              ],
+              message: config.testMessage,
               model: config.model
             }
           });

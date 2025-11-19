@@ -180,8 +180,8 @@ const DashboardContent = () => {
       logInfo(`Fetched ${applications?.length || 0} applications for analysis`, { applicationCount: applications?.length || 0 }, 'Dashboard');
       setTotalApplications(applications?.length || 0);
 
-      // Call data analysis edge function with selected AI provider
-      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('data-analysis', {
+      // Call enhanced edge function with selected AI provider
+      const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('ai-analytics-enhanced', {
         body: {
           applications,
           aiProvider,

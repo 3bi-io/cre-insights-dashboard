@@ -6,7 +6,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,6 +36,7 @@ const ContactPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
+    console.log('Form submitted:', formData);
   };
 
   const contactMethods = [
@@ -152,20 +152,20 @@ const ContactPage = () => {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="contact-firstName">First Name *</Label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">
+                          First Name *
+                        </label>
                         <Input
-                          id="contact-firstName"
-                          name="firstName"
                           value={formData.firstName}
                           onChange={(e) => handleInputChange('firstName', e.target.value)}
                           required
                         />
                       </div>
                       <div>
-                        <Label htmlFor="contact-lastName">Last Name *</Label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">
+                          Last Name *
+                        </label>
                         <Input
-                          id="contact-lastName"
-                          name="lastName"
                           value={formData.lastName}
                           onChange={(e) => handleInputChange('lastName', e.target.value)}
                           required
@@ -174,10 +174,10 @@ const ContactPage = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="contact-email">Email Address *</Label>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Email Address *
+                      </label>
                       <Input
-                        id="contact-email"
-                        name="email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
@@ -187,20 +187,20 @@ const ContactPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="contact-company">Company *</Label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">
+                          Company *
+                        </label>
                         <Input
-                          id="contact-company"
-                          name="company"
                           value={formData.company}
                           onChange={(e) => handleInputChange('company', e.target.value)}
                           required
                         />
                       </div>
                       <div>
-                        <Label htmlFor="contact-jobTitle">Job Title</Label>
+                        <label className="text-sm font-medium text-foreground mb-2 block">
+                          Job Title
+                        </label>
                         <Input
-                          id="contact-jobTitle"
-                          name="jobTitle"
                           value={formData.jobTitle}
                           onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                         />
@@ -208,12 +208,11 @@ const ContactPage = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="contact-companySize">Company Size</Label>
-                      <Select 
-                        name="companySize"
-                        onValueChange={(value) => handleInputChange('companySize', value)}
-                      >
-                        <SelectTrigger id="contact-companySize">
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Company Size
+                      </label>
+                      <Select onValueChange={(value) => handleInputChange('companySize', value)}>
+                        <SelectTrigger>
                           <SelectValue placeholder="Select company size" />
                         </SelectTrigger>
                         <SelectContent>
@@ -227,12 +226,11 @@ const ContactPage = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="contact-subject">Subject *</Label>
-                      <Select 
-                        name="subject"
-                        onValueChange={(value) => handleInputChange('subject', value)}
-                      >
-                        <SelectTrigger id="contact-subject">
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Subject *
+                      </label>
+                      <Select onValueChange={(value) => handleInputChange('subject', value)} >
+                        <SelectTrigger>
                           <SelectValue placeholder="What can we help you with?" />
                         </SelectTrigger>
                         <SelectContent>
@@ -248,10 +246,10 @@ const ContactPage = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="contact-message">Message *</Label>
+                      <label className="text-sm font-medium text-foreground mb-2 block">
+                        Message *
+                      </label>
                       <Textarea
-                        id="contact-message"
-                        name="message"
                         value={formData.message}
                         onChange={(e) => handleInputChange('message', e.target.value)}
                         placeholder="Tell us more about your requirements..."

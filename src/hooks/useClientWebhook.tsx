@@ -13,10 +13,13 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
     eventType: 'created' | 'updated' | 'deleted'
   ) => {
     if (!enabled) {
+      console.log('[CLIENT-WEBHOOK] Webhook triggers disabled');
       return false;
     }
 
     try {
+      console.log('[CLIENT-WEBHOOK] Triggering webhook for application:', applicationId);
+      
       const { data, error } = await supabase.functions.invoke('client-webhook', {
         body: {
           application_id: applicationId,
@@ -31,6 +34,7 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
         return false;
       }
 
+      console.log('[CLIENT-WEBHOOK] Response:', data);
       return data?.success || false;
     } catch (error) {
       console.error('[CLIENT-WEBHOOK] Exception:', error);
@@ -40,6 +44,8 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
 
   const testWebhook = async (webhookId: string, applicationId: string) => {
     try {
+      console.log('[CLIENT-WEBHOOK] Testing webhook:', webhookId);
+      
       const { data, error } = await supabase.functions.invoke('client-webhook', {
         body: {
           application_id: applicationId,
@@ -83,56 +89,8 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
     }
   };
 
-  const bulkExport = async (webhookId: string) => {
-    if (!enabled) {
-      return { success: false, count: 0 };
-    }
-
-    try {
-      const { data, error } = await supabase.functions.invoke('client-webhook-bulk-export', {
-        body: {
-          webhook_id: webhookId,
-        }
-      });
-
-      if (error) {
-        console.error('[CLIENT-WEBHOOK-BULK] Error:', error);
-        toast({
-          title: "Bulk Export Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { success: false, count: 0 };
-      }
-
-      if (data?.success) {
-        toast({
-          title: "Bulk Export Successful",
-          description: `Sent ${data.applications_sent} applications to webhook`,
-        });
-        return { success: true, count: data.applications_sent };
-      } else {
-        toast({
-          title: "Bulk Export Failed",
-          description: data?.error || "Unknown error",
-          variant: "destructive",
-        });
-        return { success: false, count: 0 };
-      }
-    } catch (error) {
-      console.error('[CLIENT-WEBHOOK-BULK] Exception:', error);
-      toast({
-        title: "Bulk Export Error",
-        description: "An error occurred while exporting applications",
-        variant: "destructive",
-      });
-      return { success: false, count: 0 };
-    }
-  };
-
   return {
     triggerWebhook,
     testWebhook,
-    bulkExport,
   };
 };

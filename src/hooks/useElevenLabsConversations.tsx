@@ -52,6 +52,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
     queryKey: ['elevenlabs-conversations', voiceAgentId],
     enabled: !!session && (userRole === 'super_admin' || userRole === 'admin'),
     queryFn: async () => {
+      console.log('Fetching ElevenLabs conversations for agent:', voiceAgentId || 'all');
       let query = supabase
         .from('elevenlabs_conversations')
         .select(`
@@ -75,6 +76,8 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
         console.error('Error fetching conversations:', error);
         throw error;
       }
+      
+      console.log('Fetched conversations:', conversationsData?.length || 0);
       
       // Fetch transcript counts for each conversation
       if (conversationsData && conversationsData.length > 0) {

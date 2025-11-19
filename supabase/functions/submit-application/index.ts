@@ -1,30 +1,12 @@
-/**
- * Submit Application Handler
- * 
- * Public endpoint for receiving job applications from external sources.
- * Validates input, normalizes data, and stores applications in the database.
- * 
- * SECURITY:
- * - Public endpoint (no JWT required)
- * - Validates all input data with Zod schemas
- * - Rate limiting applied
- * - Logs all submissions for audit
- */
+// @ts-nocheck
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
-import { wrapHandler } from '../_shared/error-handler.ts';
-import { createLogger } from '../_shared/logger.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { 
   normalizePhone, 
   findOrCreateJobListing, 
   insertApplication 
-} from '../_shared/application-processor.ts';
-
-const logger = createLogger('submit-application');
+} from "../_shared/application-processor.ts";
 
 // Zod validation schema for application submissions
 const ApplicationSubmissionSchema = z.object({
@@ -64,54 +46,63 @@ const ApplicationSubmissionSchema = z.object({
   { message: 'First name, last name, and email are required' }
 );
 
-const handler = async (req: Request): Promise<Response> => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return errorResponse('Method not allowed', 405, undefined, origin);
-  }
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-  const supabase = getServiceClient();
-  const startTime = Date.now();
+    if (req.method !== 'POST') {
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed' }),
+        { 
+          status: 405, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
-  const rawData = await req.json();
-  
-  logger.info('Application submission received', { 
-    hasEmail: !!(rawData.email || rawData.applicant_email),
-    hasJobId: !!(rawData.job_listing_id || rawData.job_id)
-  });
-  
-  // Validate input data with Zod schema
-  const validationResult = ApplicationSubmissionSchema.safeParse(rawData);
-  
-  if (!validationResult.success) {
-    const errors = validationResult.error.issues.map(issue => ({
-      field: issue.path.join('.'),
-      message: issue.message
-    }));
+    const rawData = await req.json();
     
-    logger.warn('Validation failed', { errors });
-    return validationErrorResponse(errors, origin);
-  }
-  
-  const formData = validationResult.data;
+    // Validate input data with Zod schema
+    const validationResult = ApplicationSubmissionSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      console.error('Validation failed:', validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`));
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input data', 
+          details: validationResult.error.issues.map(issue => ({
+            field: issue.path.join('.'),
+            message: issue.message
+          }))
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    const formData = validationResult.data;
 
-  // Get the CR England organization ID
-  const { data: crEnglandOrg, error: orgError } = await supabase
-    .from('organizations')
-    .select('id')
-    .eq('slug', 'cr-england')
-    .single();
-
-  if (orgError || !crEnglandOrg) {
-    logger.error('Failed to fetch organization', { error: orgError });
-    return errorResponse('Organization not found', 500, undefined, origin);
-  }
+    // Get the CR England organization ID
+    const { data: crEnglandOrg } = await supabase
+      .from('organizations')
+      .select('id')
+      .eq('slug', 'cr-england')
+      .single();
 
     // Determine experience level based on months
     const getExperienceLevel = (months: string) => {
@@ -162,21 +153,19 @@ const handler = async (req: Request): Promise<Response> => {
       }
     };
 
-  const { city, state } = await lookupCityState(formData.zip);
+    const { city, state } = await lookupCityState(formData.zip);
 
-  logger.info('Location resolved', { city, state, zip: formData.zip });
-
-  // Get or create a job listing for the application using shared processor
-  const jobListingId = await findOrCreateJobListing(supabase, {
-    jobListingId: formData.job_listing_id,
-    jobId: formData.job_id,
-    jobTitle: 'General Application',
-    organizationId: crEnglandOrg.id,
-    clientId: null,
-    city,
-    state,
-    source: 'Direct Application',
-  });
+    // Get or create a job listing for the application using shared processor
+    const jobListingId = await findOrCreateJobListing(supabase, {
+      jobListingId: formData.job_listing_id,
+      jobId: formData.job_id,
+      jobTitle: 'General Application',
+      organizationId: crEnglandOrg?.id || '',
+      clientId: null,
+      city,
+      state,
+      source: 'Direct Application',
+    });
 
     // Map form data to applications table schema
     // Support both camelCase and snake_case field names
@@ -205,33 +194,42 @@ const handler = async (req: Request): Promise<Response> => {
       updated_at: new Date().toISOString()
     };
 
-  // Insert into applications table using shared processor
-  const { data, error } = await insertApplication(supabase, applicationData);
+    // Insert into applications table using shared processor
+    const { data, error } = await insertApplication(supabase, applicationData);
 
-  if (error) {
-    logger.error('Failed to insert application', { error });
-    return errorResponse('Failed to submit application', 500, { details: error.message }, origin);
+    if (error) {
+      console.error('Error inserting application:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to submit application', details: error.message }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Application submitted successfully - log only non-PII data
+    console.log('Application submitted successfully:', { id: data.id, job_listing_id: data.job_listing_id, status: data.status });
+
+    return new Response(
+      JSON.stringify({ 
+        message: 'Application submitted successfully', 
+        applicationId: data.id 
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+
+  } catch (error) {
+    console.error('Error processing application:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
-
-  const duration_ms = Date.now() - startTime;
-
-  // Application submitted successfully - log only non-PII data
-  logger.info('Application submitted successfully', { 
-    id: data.id, 
-    job_listing_id: data.job_listing_id, 
-    status: data.status,
-    duration_ms
-  });
-
-  return successResponse(
-    { 
-      message: 'Application submitted successfully', 
-      applicationId: data.id 
-    },
-    undefined,
-    { duration_ms },
-    origin
-  );
-};
-
-serve(wrapHandler(handler, { context: 'submit-application', logRequests: true }));
+});

@@ -10,8 +10,7 @@ import {
   DollarSign,
   Users,
   AlertCircle,
-  Loader2,
-  Brain
+  Loader2
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -19,7 +18,6 @@ import { PageLayout } from '@/features/shared';
 import { useCampaigns } from '../hooks/useCampaigns';
 import { CreateCampaignDialog } from '../components/CreateCampaignDialog';
 import { CampaignCard } from '../components/CampaignCard';
-import { CampaignAIInsights } from '../components/CampaignAIInsights';
 import { Database } from '@/integrations/supabase/types';
 
 type Campaign = Database['public']['Tables']['campaigns']['Row'];
@@ -27,7 +25,6 @@ type Campaign = Database['public']['Tables']['campaigns']['Row'];
 const CampaignsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCampaignForAI, setSelectedCampaignForAI] = useState<string | null>(null);
   
   const {
     campaigns,
@@ -189,16 +186,6 @@ const CampaignsPage = () => {
           </div>
         </div>
 
-        {/* AI Insights for Selected Campaign */}
-        {selectedCampaignForAI && (
-          <div className="mb-6">
-            <CampaignAIInsights
-              campaignId={selectedCampaignForAI}
-              campaignName={campaigns.find(c => c.id === selectedCampaignForAI)?.name || 'Campaign'}
-            />
-          </div>
-        )}
-
         {/* Error State */}
         {isError && (
           <Alert variant="destructive" className="mb-6">
@@ -241,24 +228,12 @@ const CampaignsPage = () => {
               </Card>
             ) : (
               filteredCampaigns.map((campaign) => (
-                <div key={campaign.id} className="space-y-2">
-                  <CampaignCard
-                    campaign={campaign}
-                    onToggleStatus={handleToggleStatus}
-                    onDelete={handleDeleteCampaign}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setSelectedCampaignForAI(
-                      selectedCampaignForAI === campaign.id ? null : campaign.id
-                    )}
-                  >
-                    <Brain className="w-4 h-4 mr-2" />
-                    {selectedCampaignForAI === campaign.id ? 'Hide' : 'Show'} AI Insights
-                  </Button>
-                </div>
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onToggleStatus={handleToggleStatus}
+                  onDelete={handleDeleteCampaign}
+                />
               ))
             )}
           </div>

@@ -37,6 +37,8 @@ export const useAnthropic = (options: UseAnthropicOptions = {}) => {
     setError(null);
 
     try {
+      console.log('Invoking Anthropic function:', functionName, request);
+
       const response = await supabase.functions.invoke(functionName, {
         body: request
       });
@@ -50,6 +52,8 @@ export const useAnthropic = (options: UseAnthropicOptions = {}) => {
       if (!data || !data.generatedText) {
         throw new Error('Invalid response from Anthropic function');
       }
+
+      console.log('Anthropic response received:', data);
 
       if (onSuccess) {
         onSuccess(data);

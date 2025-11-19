@@ -162,7 +162,6 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
                   <Label htmlFor="meta-app-id">Meta App ID</Label>
                   <Input
                     id="meta-app-id"
-                    name="metaAppId"
                     value={metaAppId}
                     onChange={(e) => setMetaAppId(e.target.value)}
                     placeholder="Your Meta App ID"
@@ -173,7 +172,6 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
                   <Label htmlFor="meta-app-secret">Meta App Secret</Label>
                   <Input
                     id="meta-app-secret"
-                    name="metaAppSecret"
                     type="password"
                     value={metaAppSecret}
                     onChange={(e) => setMetaAppSecret(e.target.value)}
@@ -185,7 +183,6 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
                   <Label htmlFor="meta-access-token">Meta Access Token</Label>
                   <Textarea
                     id="meta-access-token"
-                    name="metaAccessToken"
                     value={metaAccessToken}
                     onChange={(e) => setMetaAccessToken(e.target.value)}
                     placeholder="Your Meta Access Token"

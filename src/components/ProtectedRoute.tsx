@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +14,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireSubscription = true 
 }) => {
   const location = useLocation();
-  const { user, loading: authLoading, userRole } = useAuth();
+  const { user, loading: authLoading, userRole, organization } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
 
   // Wait for auth data to load - only wait for subscription if it's required

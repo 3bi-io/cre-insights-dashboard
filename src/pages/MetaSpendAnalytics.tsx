@@ -83,6 +83,8 @@ const MetaSpendAnalytics = () => {
   const generateAnalytics = async () => {
     setLoading(true);
     try {
+      console.log('Generating Meta spend analytics...');
+      
       const { data: result, error } = await supabase.functions.invoke('meta-spend-analytics', {
         body: {
           analysisType: 'overview',

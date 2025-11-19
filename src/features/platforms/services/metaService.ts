@@ -10,6 +10,8 @@ export class MetaService {
    */
   static async invokeAction(params: MetaActionParams): Promise<MetaActionResult> {
     try {
+      console.log('MetaService: Invoking action', params);
+      
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: params
       });

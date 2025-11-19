@@ -185,15 +185,19 @@ const SuperAdminFeeds = () => {
     setSelectedJobs(new Set());
     
     try {
+      console.log('Fetching feeds from:', feedSource);
+      
       let data, functionError;
       
       if (feedSource === 'cdl_jobcast') {
+        console.log('Fetching CDL Job Cast for user:', userParam);
         const response = await supabase.functions.invoke('fetch-feeds', {
           body: { user: userParam, board: boardParam }
         });
         data = response.data;
         functionError = response.error;
       } else if (feedSource === 'crengland') {
+        console.log('Fetching CR England jobs, division:', crEnglandDivision);
         const response = await supabase.functions.invoke('fetch-crengland-jobs', {
           body: { division: crEnglandDivision || null }
         });
@@ -317,8 +321,9 @@ const SuperAdminFeeds = () => {
     setImporting(true);
     try {
       const jobsToImport = feeds.filter(job => selectedJobs.has(job.id!));
+      console.log('Importing selected jobs:', jobsToImport.length);
       
-      const organizationId = feedSource === 'crengland'
+      const organizationId = feedSource === 'crengland' 
         ? 'b8d5e7f9-4c2a-4e8d-9a1b-3f5c8d9e2a7b'
         : '84214b48-7b51-45bc-ad7f-723bcf50466c';
 
@@ -360,6 +365,8 @@ const SuperAdminFeeds = () => {
   const generateApplications = async () => {
     setGenerating(true);
     try {
+      console.log('Generating applications for Hayes...');
+      
       const { data, error: functionError } = await supabase.functions.invoke('generate-hayes-applications', {
         body: { 
           count: appCount,

@@ -115,12 +115,8 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
 
       <div className="space-y-2">
         <Label htmlFor="over21" className="text-sm font-medium">Are you over 21?</Label>
-        <Select 
-          name="over21"
-          value={formData.over21} 
-          onValueChange={(value) => onInputChange('over21', value)}
-        >
-          <SelectTrigger id="over21" className="h-12 sm:h-10 text-base sm:text-sm">
+        <Select value={formData.over21} onValueChange={(value) => onInputChange('over21', value)}>
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select your age status..." />
           </SelectTrigger>
           <SelectContent>

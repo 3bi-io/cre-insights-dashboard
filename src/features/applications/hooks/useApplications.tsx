@@ -1,7 +1,7 @@
 import React from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { useAuditedApplicationAccess, AUDIT_REASONS } from '@/hooks/useAuditedApplicationAccess';
+import { applicationsService, Application, CreateApplicationData, UpdateApplicationData } from '../services/ApplicationsService';
 import { FilterOptions } from '@/features/shared/types/feature.types';
 
 export interface ApplicationFilters extends FilterOptions {
@@ -13,8 +13,6 @@ export interface ApplicationFilters extends FilterOptions {
   city?: string;
   state?: string;
   organization_id?: string;
-  webhook_id?: string;
-  accessReason?: string; // Audit reason for access logging
 }
 
 export function useApplications(options?: { 
@@ -25,18 +23,8 @@ export function useApplications(options?: {
   const queryClient = useQueryClient();
   const [page, setPage] = React.useState(1);
   const [allApplications, setAllApplications] = React.useState<any[]>([]);
-  
-  // Use audited application access hook for FCRA/GDPR/CCPA compliance
-  const {
-    getApplicationList,
-    createApplication: createApplicationMutation,
-    updateApplication: updateApplicationMutation,
-    isCreating,
-    isUpdating,
-    canAccessPII
-  } = useAuditedApplicationAccess();
 
-  // Query for fetching applications with audit logging
+  // Query for fetching applications with filters
   const {
     data: queryData,
     isLoading: loading,
@@ -45,27 +33,14 @@ export function useApplications(options?: {
   } = useQuery({
     queryKey: [`applications`, options?.filters, page],
     queryFn: async () => {
-      // Use appropriate audit reason based on context
-      const accessReason = options?.filters?.accessReason || AUDIT_REASONS.APPLICATION_REVIEW;
-      
-      const result = await getApplicationList({
-        jobId: options?.filters?.job_id,
-        status: options?.filters?.status,
-        city: options?.filters?.city,
-        state: options?.filters?.state,
-        search: options?.filters?.search,
-        organizationId: options?.filters?.organization_id,
-        webhookId: options?.filters?.webhook_id,
-        page,
-        pageSize: options?.filters?.pageSize || 200,
-        accessReason
+      const response = await applicationsService.getApplications({
+        ...options?.filters,
+        page
       });
-      
-      return {
-        data: result.applications,
-        totalCount: result.totalCount,
-        hasMore: result.applications.length >= (options?.filters?.pageSize || 200)
-      };
+      if (response.error) {
+        throw response.error;
+      }
+      return response.data;
     },
     enabled: options?.enabled !== false,
     staleTime: 2 * 60 * 1000 // 2 minutes
@@ -88,75 +63,92 @@ export function useApplications(options?: {
   const error = queryError as any;
   const initialized = !loading;
 
-  // Action functions with audit logging
-  const createApplication = (data: any, accessReason?: string) => {
-    createApplicationMutation({ 
-      data,
-      accessReason: accessReason || AUDIT_REASONS.APPLICATION_REVIEW
-    });
-  };
-
-  const updateApplication = (id: string, data: any, updateReason?: string) => {
-    updateApplicationMutation({
-      applicationId: id,
-      updates: data,
-      updateReason: updateReason || AUDIT_REASONS.STATUS_UPDATE
-    });
-  };
-
-  // Delete not supported - applications should be archived for audit trail
-  const deleteApplication = () => {
-    toast({
-      title: 'Operation Not Supported',
-      description: 'Applications cannot be permanently deleted. Please update status to "rejected" or archive instead.',
-      variant: 'destructive'
-    });
-  };
-
-  const reviewApplication = (
-    id: string, 
-    status: 'reviewed' | 'interviewing' | 'hired' | 'rejected', 
-    notes?: string
-  ) => {
-    // Use appropriate audit reason based on status change
-    const updateReason = status === 'hired' 
-      ? AUDIT_REASONS.OFFER_PREPARATION
-      : status === 'interviewing'
-      ? AUDIT_REASONS.INTERVIEW_SCHEDULING
-      : AUDIT_REASONS.STATUS_UPDATE;
-      
-    updateApplicationMutation({
-      applicationId: id,
-      updates: {
-        status,
-        notes,
-        reviewed_at: new Date().toISOString()
-      },
-      updateReason
-    });
-  };
-
-  const getApplicationStats = async (jobId?: string) => {
-    try {
-      const result = await getApplicationList({
-        jobId,
-        accessReason: AUDIT_REASONS.APPLICATION_REVIEW
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: CreateApplicationData) => {
+      const response = await applicationsService.createApplication(data);
+      if (response.error) {
+        throw response.error;
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`applications`] });
+      toast({
+        title: "Success",
+        description: "Application created successfully",
       });
-      
-      const stats = {
-        total: result.totalCount,
-        pending: result.applications.filter((app: any) => app.status === 'pending').length,
-        reviewed: result.applications.filter((app: any) => app.status === 'reviewed').length,
-        interviewing: result.applications.filter((app: any) => app.status === 'interviewing').length,
-        hired: result.applications.filter((app: any) => app.status === 'hired').length,
-        rejected: result.applications.filter((app: any) => app.status === 'rejected').length
-      };
-      
-      return stats;
-    } catch (error) {
-      console.error('Error fetching application stats:', error);
-      throw error;
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create application",
+        variant: "destructive",
+      });
     }
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateApplicationData }) => {
+      const response = await applicationsService.updateApplication(id, data);
+      if (response.error) {
+        throw response.error;
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`applications`] });
+      toast({
+        title: "Success",
+        description: "Application updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update application",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await applicationsService.deleteApplication(id);
+      if (response.error) {
+        throw response.error;
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`applications`] });
+      toast({
+        title: "Success",
+        description: "Application deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete application",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Wrapper methods with proper typing
+  const createApplication = (data: CreateApplicationData) => {
+    createMutation.mutate(data);
+  };
+
+  const updateApplication = (id: string, data: UpdateApplicationData) => {
+    updateMutation.mutate({ id, data });
+  };
+
+  const deleteApplication = (id: string) => {
+    deleteMutation.mutate(id);
   };
 
   const loadMore = () => {
@@ -165,16 +157,32 @@ export function useApplications(options?: {
     }
   };
 
-  const refresh = () => {
+  const refresh = async () => {
     setPage(1);
     setAllApplications([]);
-    refetch();
+    await refetch();
+  };
+
+  const clearError = () => {
+    // Error clearing handled by react-query
   };
 
   const reset = () => {
     setPage(1);
     setAllApplications([]);
     queryClient.removeQueries({ queryKey: [`applications`] });
+  };
+
+  const reviewApplication = async (id: string, status: 'reviewed' | 'interviewing' | 'hired' | 'rejected', notes?: string) => {
+    const result = await applicationsService.reviewApplication(id, status, notes);
+    if (!result.error) {
+      refresh();
+    }
+    return result;
+  };
+
+  const getApplicationStats = async (jobId?: string) => {
+    return await applicationsService.getApplicationStats(jobId);
   };
 
   return {
@@ -186,28 +194,23 @@ export function useApplications(options?: {
     error,
     initialized,
     currentPage: page,
-    
-    // Actions with audit logging
+
+    // Actions
     createApplication,
     updateApplication,
     deleteApplication,
     reviewApplication,
     getApplicationStats,
-    
-    // Pagination
     loadMore,
     refresh,
+    clearError,
     reset,
-    
-    // State
-    isCreating,
-    isUpdating,
-    isDeleting: false, // Delete not supported for compliance
-    
-    // Permissions
-    canAccessPII,
-    
-    // Utilities
-    clearError: () => {} // Placeholder for compatibility
+
+    // States
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending
   };
 }
+
+export default useApplications;

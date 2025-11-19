@@ -1,56 +1,71 @@
-import { getAuthenticatedClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { successResponse, errorResponse } from '../_shared/response.ts';
-import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
-import { createLogger } from '../_shared/logger.ts';
-import { enforceAuth } from '../_shared/serverAuth.ts';
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const logger = createLogger('adzuna-integration');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-Deno.serve(wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-  
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: getCorsHeaders(origin) });
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const authContext = await enforceAuth(req, 'user');
-  if (authContext instanceof Response) return authContext;
+  try {
+    const { action, campaignId, startDate, endDate } = await req.json()
+    
+    console.log(`Adzuna integration: ${action} for campaign ${campaignId}`)
 
-  const { action, campaignId, startDate, endDate } = await req.json();
-  
-  if (!action) {
-    throw new ValidationError('Action is required');
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+
+    const { data: { user } } = await supabaseClient.auth.getUser()
+    if (!user) {
+      throw new Error('Unauthorized')
+    }
+
+    switch (action) {
+      case 'sync_analytics':
+        return await syncAdzunaAnalytics(campaignId, startDate, endDate, user.id, supabaseClient)
+      
+      case 'get_stats':
+        return await getAdzunaStats(campaignId, user.id, supabaseClient)
+      
+      case 'post_job':
+        return await postJobToAdzuna(req, user.id, supabaseClient)
+      
+      default:
+        throw new Error(`Unknown action: ${action}`)
+    }
+
+  } catch (error) {
+    console.error('Adzuna integration error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
-
-  logger.info('Processing action', { action, campaignId });
-
-  const supabaseClient = getAuthenticatedClient(req);
-
-  switch (action) {
-    case 'sync_analytics':
-      return await syncAdzunaAnalytics(campaignId, startDate, endDate, authContext.user.id, supabaseClient, origin);
-    
-    case 'get_stats':
-      return await getAdzunaStats(campaignId, authContext.user.id, supabaseClient, origin);
-    
-    case 'post_job':
-      return await postJobToAdzuna(req, authContext.user.id, supabaseClient, origin);
-    
-    default:
-      throw new ValidationError(`Unknown action: ${action}`);
-  }
-}, { context: 'adzuna-integration', logRequests: true }));
+})
 
 async function syncAdzunaAnalytics(
   campaignId: string,
   startDate: string,
   endDate: string,
   userId: string,
-  supabaseClient: any,
-  origin: string | null
+  supabaseClient: any
 ) {
-  logger.info('Syncing Adzuna analytics', { campaignId, startDate, endDate });
+  console.log(`Syncing Adzuna analytics for campaign ${campaignId}`)
   
   // Generate mock data (replace with actual Adzuna API call)
   const mockData = []
@@ -82,16 +97,20 @@ async function syncAdzunaAnalytics(
     .upsert(mockData, { onConflict: 'campaign_id,job_id,date' })
 
   if (error) {
-    throw error;
+    throw error
   }
 
-  return successResponse({
-    recordsProcessed: mockData.length,
-    dateRange: { start: startDate, end: endDate }
-  }, `Synced ${mockData.length} days of Adzuna analytics`, {}, origin);
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Synced ${mockData.length} days of Adzuna analytics`,
+      recordsProcessed: mockData.length
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
-async function getAdzunaStats(campaignId: string, userId: string, supabaseClient: any, origin: string | null) {
+async function getAdzunaStats(campaignId: string, userId: string, supabaseClient: any) {
   const { data, error } = await supabaseClient
     .from('adzuna_analytics')
     .select('*')
@@ -111,18 +130,22 @@ async function getAdzunaStats(campaignId: string, userId: string, supabaseClient
     applications: acc.applications + (row.applications || 0),
   }), { spend: 0, clicks: 0, impressions: 0, applications: 0 })
 
-  return successResponse({
-    data: data,
-    totals: {
-      ...totals,
-      ctr: totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
-      cpc: totals.clicks > 0 ? (totals.spend / totals.clicks).toFixed(2) : 0,
-      cpa: totals.applications > 0 ? (totals.spend / totals.applications).toFixed(2) : 0,
-    }
-  }, 'Adzuna stats retrieved successfully', {}, origin);
+  return new Response(
+    JSON.stringify({
+      success: true,
+      data: data,
+      totals: {
+        ...totals,
+        ctr: totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
+        cpc: totals.clicks > 0 ? (totals.spend / totals.clicks).toFixed(2) : 0,
+        cpa: totals.applications > 0 ? (totals.spend / totals.applications).toFixed(2) : 0,
+      }
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
-async function postJobToAdzuna(req: Request, userId: string, supabaseClient: any, origin: string | null) {
+async function postJobToAdzuna(req: Request, userId: string, supabaseClient: any) {
   const { jobData } = await req.json()
   
   console.log('Posting job to Adzuna:', jobData)

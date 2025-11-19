@@ -8,12 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, ExternalLink, Activity, Webhook } from 'lucide-react';
+import { Loader2, Plus, Trash2, ExternalLink, Activity } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { OrganizationWebhookConfig } from '@/components/webhooks/OrganizationWebhookConfig';
 
 interface WebhookConfig {
   id: string;
@@ -201,32 +199,14 @@ export const WebhookManager = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Webhook className="h-5 w-5" />
-            Webhook Configuration
-          </CardTitle>
-          <CardDescription>
-            Configure webhooks to receive application data in your external systems
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="inbound" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="inbound">Inbound Webhooks</TabsTrigger>
-              <TabsTrigger value="outbound">n8n Export</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="inbound" className="space-y-4 mt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Inbound Webhooks</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Receive real-time application data as it's submitted
-                  </p>
-                </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Webhook Integrations</h2>
+          <p className="text-muted-foreground">
+            Connect 3rd party tools like Zapier to automate workflows
+          </p>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => { setEditingWebhook(null); resetForm(); }}>
@@ -380,14 +360,6 @@ export const WebhookManager = () => {
           </Card>
         )}
       </div>
-    </TabsContent>
-
-    <TabsContent value="outbound" className="space-y-4 mt-4">
-      <OrganizationWebhookConfig />
-    </TabsContent>
-  </Tabs>
-        </CardContent>
-      </Card>
     </div>
   );
 };

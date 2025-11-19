@@ -1,46 +1,57 @@
-import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { successResponse } from '../_shared/response.ts';
-import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
-import { createLogger } from '../_shared/logger.ts';
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const logger = createLogger('trucking-platform-integration');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-Deno.serve(wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: getCorsHeaders(origin) });
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const { action, platform } = await req.json();
-  
-  if (!action || !platform) {
-    throw new ValidationError('Action and platform are required');
+  try {
+    const { action, platform } = await req.json()
+    
+    console.log(`Trucking platform integration: ${action} for ${platform}`)
+
+    // Create Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+
+    switch (action) {
+      case 'check_connection':
+        return await checkPlatformConnection(platform)
+      
+      case 'post_job':
+        return await postJobToPlatform(platform, supabaseClient)
+      
+      case 'get_platform_stats':
+        return await getPlatformStats(platform, supabaseClient)
+      
+      default:
+        throw new Error(`Unknown action: ${action}`)
+    }
+
+  } catch (error) {
+    console.error('Trucking platform integration error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
+})
 
-  logger.info('Processing action', { action, platform });
-
-  const supabaseClient = getServiceClient();
-
-  switch (action) {
-    case 'check_connection':
-      return await checkPlatformConnection(platform, origin);
-    
-    case 'post_job':
-      return await postJobToPlatform(platform, supabaseClient, origin);
-    
-    case 'get_platform_stats':
-      return await getPlatformStats(platform, supabaseClient, origin);
-    
-    default:
-      throw new ValidationError(`Unknown action: ${action}`);
-  }
-}, { context: 'trucking-platform-integration', logRequests: true }));
-
-async function checkPlatformConnection(platform: string, origin: string | null) {
-  logger.info('Checking connection', { platform });
+async function checkPlatformConnection(platform: string) {
+  console.log(`Checking connection for ${platform}`)
   
   // Simulate connection check for different platforms
   const platformConfigs = {
@@ -80,17 +91,20 @@ async function checkPlatformConnection(platform: string, origin: string | null) 
     throw new Error(`Unknown platform: ${platform}`)
   }
 
-  return successResponse({
-    platform: config.name,
-    connected: config.connected,
-    feedSupported: config.feedSupported,
-    features: config.features,
-    lastChecked: new Date().toISOString()
-  }, 'Platform connection status retrieved', {}, origin);
+  return new Response(
+    JSON.stringify({
+      platform: config.name,
+      connected: config.connected,
+      feedSupported: config.feedSupported,
+      features: config.features,
+      lastChecked: new Date().toISOString()
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
-async function postJobToPlatform(platform: string, supabaseClient: any, origin: string | null) {
-  logger.info('Posting job', { platform });
+async function postJobToPlatform(platform: string, supabaseClient: any) {
+  console.log(`Posting job to ${platform}`)
   
   // For free platforms, we primarily use XML feeds
   // This function simulates the posting process
@@ -103,11 +117,14 @@ async function postJobToPlatform(platform: string, supabaseClient: any, origin: 
     timestamp: new Date().toISOString()
   }
 
-  return successResponse(result, 'Job successfully posted to platform', {}, origin);
+  return new Response(
+    JSON.stringify(result),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
-async function getPlatformStats(platform: string, supabaseClient: any, origin: string | null) {
-  logger.info('Getting platform stats', { platform });
+async function getPlatformStats(platform: string, supabaseClient: any) {
+  console.log(`Getting stats for ${platform}`)
   
   // Simulate platform statistics
   const stats = {
@@ -123,12 +140,8 @@ async function getPlatformStats(platform: string, supabaseClient: any, origin: s
     }
   }
 
-  return successResponse({
-    platform,
-    activeJobs: stats.activeJobs,
-    totalViews: stats.totalViews,
-    applications: stats.applications,
-    lastUpdate: stats.lastUpdate,
-    performance: stats.performance
-  }, 'Platform stats retrieved successfully', {}, origin);
+  return new Response(
+    JSON.stringify(stats),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }

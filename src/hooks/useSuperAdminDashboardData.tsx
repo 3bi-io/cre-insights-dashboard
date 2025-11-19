@@ -32,14 +32,10 @@ export const useSuperAdminDashboardData = () => {
         .select('*', { count: 'exact', head: true })
         .not('organization_id', 'is', null);
 
-      // 3. Total applications - direct count query without limits
-      const { count: totalApps, error: appsError } = await supabase
+      // 3. Total applications
+      const { count: totalApps } = await supabase
         .from('applications')
-        .select('id', { count: 'exact', head: true });
-      
-      if (appsError) {
-        console.error('Error fetching applications count:', appsError);
-      }
+        .select('*', { count: 'exact', head: true });
 
       // 4. Calculate growth (last 30 days)
       const thirtyDaysAgo = new Date();

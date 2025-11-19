@@ -20,12 +20,8 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange }: Ba
       
       <div className="space-y-2">
         <Label htmlFor="drug" className="text-sm font-medium">Can you pass a drug test?</Label>
-        <Select 
-          name="drug"
-          value={formData.drug} 
-          onValueChange={(value) => onInputChange('drug', value)}
-        >
-          <SelectTrigger id="drug" className="h-12 sm:h-10 text-base sm:text-sm">
+        <Select value={formData.drug} onValueChange={(value) => onInputChange('drug', value)}>
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
@@ -37,12 +33,8 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange }: Ba
 
       <div className="space-y-2">
         <Label htmlFor="veteran" className="text-sm font-medium">Are you a veteran?</Label>
-        <Select 
-          name="veteran"
-          value={formData.veteran} 
-          onValueChange={(value) => onInputChange('veteran', value)}
-        >
-          <SelectTrigger id="veteran" className="h-12 sm:h-10 text-base sm:text-sm">
+        <Select value={formData.veteran} onValueChange={(value) => onInputChange('veteran', value)}>
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>

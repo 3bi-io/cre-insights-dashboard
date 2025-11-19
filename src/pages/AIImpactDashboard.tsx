@@ -114,13 +114,11 @@ const AIImpactDashboard = () => {
   const loadMetrics = async () => {
     setLoading(true);
     try {
-      // Fetch application count only (no PII exposure)
+      // Fetch applications and their decision data
       const {
-        count: applicationsCount,
+        data: applications,
         error
-      } = await supabase
-        .from('applications')
-        .select('id', { count: 'exact', head: true });
+      } = await supabase.from('applications').select('*');
       if (error) throw error;
 
       // Simulate AI impact metrics (in real implementation, this would come from tracked data)
@@ -175,10 +173,10 @@ const AIImpactDashboard = () => {
         }
       };
       const mockDecisionData: AIDecisionTracking = {
-        totalDecisions: applicationsCount || 0,
-        aiAssisted: Math.floor((applicationsCount || 0) * 0.6),
-        traditional: Math.floor((applicationsCount || 0) * 0.25),
-        hybridApproach: Math.floor((applicationsCount || 0) * 0.15),
+        totalDecisions: applications?.length || 0,
+        aiAssisted: Math.floor((applications?.length || 0) * 0.6),
+        traditional: Math.floor((applications?.length || 0) * 0.25),
+        hybridApproach: Math.floor((applications?.length || 0) * 0.15),
         successRate: {
           ai: 84.2,
           traditional: 67.8,

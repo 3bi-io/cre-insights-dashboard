@@ -20,9 +20,7 @@ export const ALLOWED_ORIGINS = [
  * Check if origin is from Lovable preview environment
  */
 export function isLovablePreview(origin: string): boolean {
-  return origin.includes('lovable.app') || 
-         origin.includes('lovable.dev') || 
-         origin.includes('lovableproject.com');
+  return origin.includes('lovable.app') || origin.includes('lovable.dev');
 }
 
 /**

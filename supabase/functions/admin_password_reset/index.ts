@@ -1,15 +1,5 @@
-/**
- * DEPRECATED: This function is a duplicate of admin-update-password
- * 
- * This file is kept for backward compatibility but forwards all requests
- * to the standardized admin-update-password function.
- * 
- * TODO: Update all callers to use admin-update-password instead, then remove this function
- */
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { enforceAuth, logSecurityEvent, getClientInfo } from "../_shared/serverAuth.ts";
-import { getServiceClient, getAuthenticatedClient } from "../_shared/supabase-client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,72 +7,101 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface PasswordResetRequest {
+interface Payload {
   email?: string;
   new_password?: string;
   user_id?: string;
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.warn('[DEPRECATED] admin_password_reset is deprecated, use admin-update-password instead');
-
   try {
-    console.log('[PASSWORD-RESET] Starting password reset request');
+    console.log("admin_password_reset: start");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify authentication and require admin/super_admin role
-    const authResult = await enforceAuth(req, ['admin', 'super_admin']);
-    
-    if (authResult instanceof Response) {
-      return authResult;
+    const authHeader = req.headers.get("Authorization");
+
+    // Client bound to the caller to verify their role
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader ?? "" } },
+    });
+
+    // Admin client for privileged operations
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    const {
+      data: { user: currentUser },
+      error: currentUserError,
+    } = await supabase.auth.getUser();
+
+    if (currentUserError || !currentUser) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Parse and validate request body
-    const body: PasswordResetRequest = await req.json();
+    // Check role (allow admin or super_admin) using caller-bound client
+    const { data: role, error: roleError } = await supabase.rpc(
+      "get_current_user_role",
+    );
+
+    if (roleError) {
+      return new Response(JSON.stringify({ error: roleError.message }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (!role || (role !== "admin" && role !== "super_admin")) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const body: Payload = await req.json();
     const email = (body.email || "").toLowerCase().trim();
     const newPassword = (body.new_password || "").trim();
     const targetUserId = (body.user_id || "").trim();
 
-    // Validate password requirements
     if (!newPassword || newPassword.length < 8) {
-      console.warn('[PASSWORD-RESET] Invalid password length');
       return new Response(
         JSON.stringify({ error: "Password must be at least 8 characters" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
       );
     }
 
-    // Require either user_id or email
-    if (!targetUserId && !email) {
-      return new Response(
-        JSON.stringify({ error: "Provide either user_id or email" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    // Get service client for privileged operations
-    const admin = getServiceClient();
     let userId = targetUserId;
 
-    // Resolve user ID from email if needed
-    if (!userId && email) {
-      console.log(`[PASSWORD-RESET] Resolving user ID for email: ${email}`);
-      
+    if (!userId) {
+      if (!email) {
+        return new Response(
+          JSON.stringify({ error: "Provide either user_id or email" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } },
+        );
+      }
+
+      // Try to resolve user_id via Auth (admin) by email
       try {
         const { data: usersList, error: listError } = await admin.auth.admin.listUsers();
         if (!listError && usersList?.users?.length) {
           const match = usersList.users.find((u: any) => (u.email || "").toLowerCase() === email);
           if (match?.id) {
-            userId = match.id;
+            userId = match.id as string;
           }
         }
       } catch (e) {
-        console.warn('[PASSWORD-RESET] listUsers failed:', e);
+        console.warn("admin_password_reset: listUsers failed", e);
       }
 
+      // Fallback: Look up user id via profiles table
       if (!userId) {
         const { data: profile, error: profileError } = await admin
           .from("profiles")
@@ -91,54 +110,36 @@ serve(async (req) => {
           .maybeSingle();
 
         if (profileError || !profile?.id) {
-          console.error('[PASSWORD-RESET] User not found:', email);
-          return new Response(
-            JSON.stringify({ error: "User not found" }),
-            { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
-          );
+          return new Response(JSON.stringify({ error: "User not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
         }
-        userId = profile.id;
+        userId = profile.id as string;
       }
     }
 
     // Update password using Admin API
-    console.log(`[PASSWORD-RESET] Resetting password for user: ${userId}`);
     const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
       password: newPassword,
     });
 
     if (updateError) {
-      console.error('[PASSWORD-RESET] Reset failed:', updateError);
-      return new Response(
-        JSON.stringify({ error: updateError.message }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+      return new Response(JSON.stringify({ error: updateError.message }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
     }
 
-    // Log password reset to audit logs
-    const { ipAddress, userAgent } = getClientInfo(req);
-    const supabase = getAuthenticatedClient(req);
-    
-    await logSecurityEvent(supabase, authResult, 'PASSWORD_RESET_BY_ADMIN', {
-      table: 'auth.users',
-      recordId: userId,
-      sensitiveFields: ['password'],
-      ipAddress,
-      userAgent,
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
-
-    console.log(`[PASSWORD-RESET] Successfully reset password for user: ${userId}`);
-    
-    return new Response(
-      JSON.stringify({ success: true, user_id: userId }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-
   } catch (e) {
-    console.error('[PASSWORD-RESET] Unexpected error:', e);
-    return new Response(
-      JSON.stringify({ error: "Unexpected error" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    console.error("admin_password_reset: unexpected error", e);
+    return new Response(JSON.stringify({ error: "Unexpected error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 });

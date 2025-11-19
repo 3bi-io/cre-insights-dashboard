@@ -1,10 +1,9 @@
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { logger } from '@/lib/logger';
-import { getCachedAuthData, setCachedAuthData, clearAuthCache } from './useAuthCache';
 
 interface AuthContextType {
   user: User | null;
@@ -58,30 +57,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
+const fetchUserRoleAndOrganization = async (_userId: string) => {
   try {
+    console.log('[AUTH] Fetching role and organization for user:', _userId);
     logger.info(`Fetching role and organization for user`, { userId: _userId });
     
-    // Try cache first for performance
-    const cached = getCachedAuthData();
-    if (cached) {
-      setUserRole(cached.userRole);
-      setOrganization(cached.organization);
-      setUserType('employer');
-      setCandidateProfile(null);
-      // Still fetch in background to update cache
-    }
-    
-    // Fetch user role using secure function
+    // Fetch user role
     const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
-    
     if (roleError) {
       logger.error('Error fetching user role', roleError);
-      if (!cached) setUserRole('user');
+      console.log('[AUTH] Error fetching role:', roleError);
+      setUserRole('user');
     } else {
-      const role = (roleData as string) || 'user';
-      logger.debug('User role fetched', { role });
-      setUserRole(role);
+      console.log('[AUTH] Role loaded:', roleData);
+      logger.debug('User role fetched', { role: roleData });
+      // Check if user is super admin by email or role
+      if (roleData === 'super_admin') {
+        setUserRole('super_admin');
+      } else {
+        setUserRole((roleData as string) || 'user');
+      }
     }
 
     // Fetch user's profile with organization
@@ -104,49 +99,48 @@ const fetchUserRoleAndOrganization = useCallback(async (_userId: string) => {
 
     if (profileError) {
       logger.error('Error fetching user profile', profileError);
-      if (!cached) {
-        setOrganization(null);
-        setUserType('employer');
-      }
+      console.log('[AUTH] Error fetching profile:', profileError);
+      setOrganization(null);
+      setUserType('employer');
     } else {
       // Set user type - default to 'employer' since user_type column doesn't exist
       setUserType('employer');
+      console.log('[AUTH] User type defaulted to employer');
 
       // Set organization
-      const org = (profileData as any)?.organizations || null;
-      if (org) {
+      if ((profileData as any)?.organizations) {
+        console.log('[AUTH] Organization loaded:', (profileData as any).organizations.name);
         logger.info('User organization loaded', { 
-          orgName: org.name,
-          orgId: org.id 
+          orgName: (profileData as any).organizations.name,
+          orgId: (profileData as any).organizations.id 
         });
-        setOrganization(org);
+        setOrganization((profileData as any).organizations as any);
       } else {
+        console.log('[AUTH] No organization found');
         logger.debug('No organization found for user');
         setOrganization(null);
       }
 
-      // Update cache with fresh data
-      setCachedAuthData(roleData as string || 'user', org);
-
       // Candidate profile logic removed - user_type and candidate_profile_id columns don't exist
+      // If needed in the future, add these columns to profiles table first
       setCandidateProfile(null);
     }
   } catch (error: unknown) {
     logger.error('Error fetching user data', error);
-    if (!getCachedAuthData()) {
-      setUserRole('user');
-      setUserType('employer');
-      setOrganization(null);
-      setCandidateProfile(null);
-    }
+    console.log('[AUTH] Exception fetching user data:', error);
+    setUserRole('user');
+    setUserType('employer');
+    setOrganization(null);
+    setCandidateProfile(null);
   }
-}, []);
+};
 
   useEffect(() => {
     // Set up auth state listener
 const { data: { subscription } } = supabase.auth.onAuthStateChange(
   (event, session) => {
     logger.debug('Auth state changed', { event, hasSession: !!session });
+    console.log('[AUTH] Auth state changed:', { event, hasSession: !!session });
     setSession(session);
     setUser(session?.user ?? null);
     
@@ -161,11 +155,13 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     }
     
     setLoading(false);
+    console.log('[AUTH] Loading complete');
   }
 );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[AUTH] Initial session check:', { hasSession: !!session });
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -177,14 +173,17 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       }
       
       setLoading(false);
+      console.log('[AUTH] Initial load complete');
     });
 
     // Session heartbeat - refresh every 7 hours (before 8-hour expiry)
     const refreshInterval = setInterval(async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (session && !error) {
+        console.log('[AUTH] Refreshing session (7-hour heartbeat)');
         logger.info('Automatic session refresh triggered');
         await supabase.auth.refreshSession();
+        console.log('[AUTH] Session refreshed successfully');
       }
     }, 7 * 60 * 60 * 1000); // 7 hours in milliseconds
 
@@ -233,6 +232,7 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
       
       const role = (roleData as string) || 'user';
       logger.info('Navigation decision', { role });
+      console.log('[AUTH] Navigating based on role:', role);
       
       // Navigate based on role - default to employer/dashboard navigation
       if (role === 'super_admin') {
@@ -293,40 +293,35 @@ const { data: { subscription } } = supabase.auth.onAuthStateChange(
     }
   };
 
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
     await supabase.auth.signOut();
-    clearAuthCache(); // Clear cache on logout
     setUserRole(null);
     setUserType(null);
     setOrganization(null);
     setCandidateProfile(null);
     navigate('/');
-  }, [navigate]);
+  };
 
-  const refreshUser = useCallback(async () => {
+  const refreshUser = async () => {
     if (user?.id) {
-      clearAuthCache(); // Clear cache to force fresh data
       await fetchUserRoleAndOrganization(user.id);
     }
-  }, [user?.id, fetchUserRoleAndOrganization]);
-
-  // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    user,
-    session,
-    userRole,
-    userType,
-    organization,
-    candidateProfile,
-    signIn,
-    signUp,
-    signOut,
-    refreshUser,
-    loading
-  }), [user, session, userRole, userType, organization, candidateProfile, signIn, signUp, signOut, refreshUser, loading]);
+  };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      userRole,
+      userType,
+      organization,
+      candidateProfile,
+      signIn,
+      signUp,
+      signOut,
+      refreshUser,
+      loading
+    }}>
       {children}
     </AuthContext.Provider>
   );

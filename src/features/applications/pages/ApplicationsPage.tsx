@@ -1,21 +1,20 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download } from 'lucide-react';
+import { Download, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import * as XLSX from 'xlsx';
 
 import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useOrganizationData } from '../hooks/useOrganizationData';
-import { useWebhookOptions } from '@/hooks/useWebhookOptions';
 import { getStatusCounts, getCategoryCounts, getApplicantCategory, getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
-import { ExportToN8nButton } from '@/components/applications/ExportToN8nButton';
 
 import {
   ApplicationDetailsDialog,
@@ -26,20 +25,16 @@ import {
   ApplicationsSearch,
   ApplicationCard,
   ApplicationsTableView,
-  ApplicationsActions,
-  ApplicationsHeader
+  ApplicationsActions
 } from '../components';
 import { TableColumnVisibility, ColumnVisibility } from '../components/TableColumnVisibility';
 import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
 
 const ApplicationsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [organizationFilter, setOrganizationFilter] = useState('all');
-  const [webhookFilter, setWebhookFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
@@ -62,9 +57,6 @@ const ApplicationsPage = () => {
 
   // Use refactored hooks
   const { organizations } = useOrganizationData(isSuperAdmin);
-  const { data: webhookOptions = [] } = useWebhookOptions(
-    organizationFilter !== 'all' ? organizationFilter : undefined
-  );
   const {
     selectedApplication,
     smsDialogOpen,
@@ -102,7 +94,6 @@ const ApplicationsPage = () => {
         : organizationFilter !== 'all' 
           ? organizationFilter 
           : undefined,
-      webhook_id: webhookFilter !== 'all' ? webhookFilter : undefined,
     }
   });
 
@@ -217,11 +208,26 @@ const ApplicationsPage = () => {
     }
   }, [selectedApplications, updateApplication, toast]);
 
-  const handleBulkDelete = useCallback(() => {
-    // Delete not supported for compliance - applications maintain audit trail
-    deleteApplication();
-    setSelectedApplications(new Set());
-  }, [deleteApplication]);
+  const handleBulkDelete = useCallback(async () => {
+    const selectedIds = Array.from(selectedApplications);
+    try {
+      await Promise.all(
+        selectedIds.map(id => deleteApplication(id))
+      );
+      toast({
+        title: "Applications Deleted",
+        description: `${selectedIds.length} application(s) deleted successfully`,
+      });
+      setSelectedApplications(new Set());
+    } catch (error) {
+      logger.error('Bulk delete error', error, 'Applications');
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete applications",
+        variant: "destructive",
+      });
+    }
+  }, [selectedApplications, deleteApplication, toast]);
 
   const handleBulkExportSelected = useCallback(() => {
     try {
@@ -278,22 +284,26 @@ const ApplicationsPage = () => {
 
   const pageActions = (
     <div className="flex items-center gap-2 flex-wrap">
+      <ToggleGroup 
+        type="single" 
+        value={viewMode} 
+        onValueChange={(value) => value && setViewMode(value as 'card' | 'table')}
+        className="border border-input rounded-md p-1 bg-background"
+      >
+        <ToggleGroupItem value="card" aria-label="Card view" variant="outline">
+          <LayoutGrid className="w-4 h-4" />
+        </ToggleGroupItem>
+        <ToggleGroupItem value="table" aria-label="Table view" variant="outline">
+          <TableIcon className="w-4 h-4" />
+        </ToggleGroupItem>
+      </ToggleGroup>
+      
       {viewMode === 'table' && (
         <TableColumnVisibility
           columnVisibility={columnVisibility}
           onColumnVisibilityChange={handleColumnVisibilityChange}
         />
       )}
-      
-      <ExportToN8nButton
-        filters={{
-          search: searchTerm,
-          status: categoryFilter,
-          source: sourceFilter,
-          organization_id: organizationFilter,
-        }}
-        disabled={!applications || applications.length === 0}
-      />
       
       <ApplicationsActions
         selectedCount={selectedApplications.size}
@@ -310,27 +320,33 @@ const ApplicationsPage = () => {
   if (loading) {
     return (
       <PageLayout title="Applications" description="Track and manage job applications">
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="h-8 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted/50 rounded"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+        <div className="p-6 max-w-7xl mx-auto">
+          <div className="space-y-6 animate-fade-in">
+            <Card>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-4 bg-gradient-to-r from-primary/20 to-primary/5 rounded animate-pulse"></div>
+                      <div className="h-8 bg-gradient-to-r from-primary/10 to-transparent rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-6">
                     <div className="flex gap-4">
-                      <div className="w-12 h-12 bg-muted rounded-full"></div>
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full"></div>
                       <div className="flex-1 space-y-3">
-                        <div className="h-4 bg-muted rounded w-1/3"></div>
-                        <div className="h-3 bg-muted/70 rounded w-1/2"></div>
+                        <div className="h-4 bg-gradient-to-r from-primary/20 to-transparent rounded w-1/3"></div>
+                        <div className="h-3 bg-gradient-to-r from-primary/10 to-transparent rounded w-1/2"></div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="h-3 bg-gradient-to-r from-primary/10 to-transparent rounded"></div>
+                          <div className="h-3 bg-gradient-to-r from-primary/10 to-transparent rounded"></div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -355,71 +371,53 @@ const ApplicationsPage = () => {
       }
       actions={pageActions}
     >
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
         <div className="space-y-6">
-          <ApplicationsHeader 
-            totalCount={applications?.length || 0}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
+          <Card className="border-border/40 bg-card/50 backdrop-blur-sm animate-fade-in">
+            <CardContent className="p-6">
+              <ApplicationsOverview 
+                statusCounts={statusCounts} 
+                categoryCounts={categoryCounts} 
+              />
+            </CardContent>
+          </Card>
           
-          <ApplicationsOverview 
-            statusCounts={statusCounts} 
-            categoryCounts={categoryCounts} 
-          />
-          
-          <ApplicationsSearch
-            searchTerm={searchTerm}
-            categoryFilter={categoryFilter}
-            sourceFilter={sourceFilter}
-            organizationFilter={organizationFilter}
-            webhookFilter={webhookFilter}
-            onSearchChange={setSearchTerm}
-            onCategoryChange={setCategoryFilter}
-            onSourceChange={setSourceFilter}
-            onOrganizationChange={setOrganizationFilter}
-            onWebhookChange={setWebhookFilter}
-            showOrganizationFilter={isSuperAdmin}
-            showWebhookFilter={isAdmin}
-            organizations={organizations}
-            webhookOptions={webhookOptions}
-          />
-
-          {/* Pagination Indicator */}
-          {totalCount > 0 && (
-            <Alert className="bg-muted/50 border-border">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Showing <strong>{applications.length}</strong> of <strong>{totalCount}</strong> applications
-                {hasMore && (
-                  <Button
-                    variant="link"
-                    className="ml-2 p-0 h-auto"
-                    onClick={loadMore}
-                  >
-                    Load more
-                  </Button>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
+          <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <ApplicationsSearch
+              searchTerm={searchTerm}
+              categoryFilter={categoryFilter}
+              sourceFilter={sourceFilter}
+              organizationFilter={organizationFilter}
+              onSearchChange={setSearchTerm}
+              onCategoryChange={setCategoryFilter}
+              onSourceChange={setSourceFilter}
+              onOrganizationChange={setOrganizationFilter}
+              showOrganizationFilter={isSuperAdmin}
+              organizations={organizations}
+            />
+          </div>
 
           <div className="space-y-4">
             {applications && applications.length > 0 ? (
               viewMode === 'card' ? (
-                applications.map((application) => (
-                  <ApplicationCard
-                    key={application.id}
-                    application={application}
-                    onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
-                    onRecruiterAssignment={(applicationId, recruiterId) => {
-                      logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
-                    }}
-                    onDetailsView={() => handleDetailsView(application)}
-                    onSmsOpen={() => handleSmsOpen(application)}
-                    onScreeningOpen={() => handleScreeningOpen(application)}
-                    onTenstreetUpdate={() => handleTenstreetUpdate(application)}
-                  />
+                applications.map((application, index) => (
+                  <div 
+                    key={application.id || index}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${(index % 10) * 50}ms` }}
+                  >
+                    <ApplicationCard
+                      application={application}
+                      onStatusChange={(applicationId, newStatus) => updateApplication(applicationId, { status: newStatus as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })}
+                      onRecruiterAssignment={(applicationId, recruiterId) => {
+                        logger.debug('Recruiter assignment requested', { applicationId, recruiterId }, 'Applications');
+                      }}
+                      onDetailsView={() => handleDetailsView(application)}
+                      onSmsOpen={() => handleSmsOpen(application)}
+                      onScreeningOpen={() => handleScreeningOpen(application)}
+                      onTenstreetUpdate={() => handleTenstreetUpdate(application)}
+                    />
+                  </div>
                 ))
               ) : (
                 <ApplicationsTableView
@@ -439,7 +437,7 @@ const ApplicationsPage = () => {
                 />
               )
             ) : (
-              <Card>
+              <Card className="border-border/40 bg-card/50 backdrop-blur-sm animate-fade-in">
                 <CardContent className="p-16 text-center">
                   <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <svg className="w-10 h-10 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -456,7 +454,7 @@ const ApplicationsPage = () => {
           </div>
 
           {hasMore && !loading && applications && applications.length > 0 && (
-            <div className="flex justify-center py-6">
+            <div className="flex justify-center py-6 animate-fade-in">
               <Button 
                 onClick={loadMore}
                 variant="outline"

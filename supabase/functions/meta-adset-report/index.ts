@@ -1,9 +1,12 @@
+// @ts-nocheck
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { getAuthenticatedClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { successResponse, errorResponse } from '../_shared/response.ts';
-import { wrapHandler } from '../_shared/error-handler.ts';
-import { createLogger } from '../_shared/logger.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 interface AdSetReportData {
   adSetName: string;
@@ -27,19 +30,39 @@ interface AdSetReportData {
   updatedTime?: string;
 }
 
-const logger = createLogger('meta-adset-report');
-
-Deno.serve(wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: getCorsHeaders(origin) });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  const { supabase, user } = await getAuthenticatedClient(req);
-  
-  const { dateRange = 'last_30d', organizationId } = await req.json();
-  logger.info('Meta Ad Set Report requested', { userId: user.id, dateRange, organizationId });
+  try {
+    const { dateRange = 'last_30d', organizationId } = await req.json();
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase configuration is missing');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user ID from the request
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header is required');
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Invalid authentication');
+    }
+
+    console.log('Meta Ad Set Report function called for user:', user.id);
 
     // Calculate date range
     const today = new Date();
@@ -63,7 +86,7 @@ Deno.serve(wrapHandler(async (req) => {
     }
 
     const endDate = today.toISOString().split('T')[0];
-    logger.info('Generating report for date range', { startDate, endDate });
+    console.log('Generating report for date range:', startDate, 'to', endDate);
 
     // First, fetch applications (leads) within the date range to determine which ad sets to include
     const { data: leadsInRange, error: leadsError } = await supabase
@@ -74,21 +97,21 @@ Deno.serve(wrapHandler(async (req) => {
       .not('adset_id', 'is', null); // Only leads with adset attribution
 
     if (leadsError) {
-      logger.error('Error fetching leads in date range', leadsError);
+      console.error('Error fetching leads in date range:', leadsError);
       throw leadsError;
     }
 
-    logger.info(`Found ${leadsInRange?.length || 0} leads in date range`);
+    console.log(`Found ${leadsInRange?.length || 0} leads in date range`);
 
     // If no leads in date range, continue to return ad sets (with 0 leads)
     if (!leadsInRange || leadsInRange.length === 0) {
-      logger.info('No leads found in date range; including all ad sets with 0 leads');
+      console.log('No leads found in date range; including all ad sets with 0 leads.');
     }
 
     // Get unique ad set IDs from leads in date range
     const adSetIdsWithLeads = [...new Set(leadsInRange.map(lead => lead.adset_id).filter(Boolean))];
     
-    logger.info(`Found ${adSetIdsWithLeads.length} unique ad sets with leads in date range`);
+    console.log(`Found ${adSetIdsWithLeads.length} unique ad sets with leads in date range`);
 
     // Fetch ad sets (if leads exist, filter to those; otherwise include all)
     let adSetsQuery = supabase
@@ -112,7 +135,7 @@ Deno.serve(wrapHandler(async (req) => {
       throw adSetsError;
     }
 
-    logger.info(`Found ${adSets?.length || 0} ad sets with leads in date range`);
+    console.log(`Found ${adSets?.length || 0} ad sets with leads in date range`);
 
     // Fetch campaigns to map campaign_name by campaign_id
     const campaignIds = [...new Set(adSets?.map(as => as.campaign_id).filter(Boolean) || [])];
@@ -130,7 +153,7 @@ Deno.serve(wrapHandler(async (req) => {
     
     const { data: campaigns, error: campaignsError } = await campaignsQuery;
     if (campaignsError) {
-      logger.error('Error fetching campaigns', campaignsError);
+      console.error('Error fetching campaigns:', campaignsError);
       throw campaignsError;
     }
     const campaignsMap = new Map((campaigns || []).map((c: any) => [c.campaign_id, c]));
@@ -208,15 +231,40 @@ Deno.serve(wrapHandler(async (req) => {
       }
     };
 
-    logger.info('Meta Ad Set Report generated successfully', { 
-      summaryTotalSpend: summary.totalSpend,
-      adSetsCount: adSetReport.length
-    });
+    console.log('Meta Ad Set Report generated successfully');
+    console.log('Final report summary:', JSON.stringify(summary, null, 2));
+    console.log('Final adSetReport length:', adSetReport.length);
+    console.log('Sample adSet:', adSetReport.length > 0 ? JSON.stringify(adSetReport[0], null, 2) : 'No ad sets');
 
-    return successResponse({
+    const response = {
       success: true,
       summary,
       adSets: adSetReport,
       generatedAt: new Date().toISOString()
-    }, origin);
-}));
+    };
+
+    console.log('Returning response with adSets count:', response.adSets.length);
+
+    return new Response(
+      JSON.stringify(response),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('Error in meta-adset-report function:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        adSets: [],
+        summary: null
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

@@ -9,6 +9,8 @@ export class UserManagementService {
    * Fetches all users
    */
   static async fetchUsers(): Promise<User[]> {
+    console.log('UserManagementService: Fetching users');
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -18,7 +20,8 @@ export class UserManagementService {
       console.error('UserManagementService: Error fetching users', error);
       throw error;
     }
-
+    
+    console.log('UserManagementService: Users fetched', data?.length);
     return data || [];
   }
 
@@ -26,6 +29,8 @@ export class UserManagementService {
    * Fetches users for a specific organization
    */
   static async fetchOrganizationUsers(organizationId: string): Promise<User[]> {
+    console.log('UserManagementService: Fetching org users', organizationId);
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -44,6 +49,8 @@ export class UserManagementService {
    * Fetches a single user by ID
    */
   static async fetchUser(id: string): Promise<User> {
+    console.log('UserManagementService: Fetching user', id);
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -62,6 +69,8 @@ export class UserManagementService {
    * Updates a user's profile
    */
   static async updateUser(id: string, updates: UpdateUserPayload): Promise<User> {
+    console.log('UserManagementService: Updating user', id);
+    
     const { data, error } = await supabase
       .from('profiles')
       .update({
@@ -76,7 +85,8 @@ export class UserManagementService {
       console.error('UserManagementService: Error updating user', error);
       throw error;
     }
-
+    
+    console.log('UserManagementService: User updated', data.id);
     return data;
   }
 
@@ -95,6 +105,8 @@ export class UserManagementService {
       console.error('UserManagementService: Error updating user status', error);
       throw error;
     }
+    
+    console.log('UserManagementService: User status updated');
   }
 
   /**
@@ -134,12 +146,16 @@ export class UserManagementService {
       console.error('UserManagementService: Error assigning role', error);
       throw error;
     }
+    
+    console.log('UserManagementService: Role assigned');
   }
 
   /**
    * Removes a role from a user
    */
   static async removeRole(userId: string, role: UserRole): Promise<void> {
+    console.log('UserManagementService: Removing role', userId, role);
+    
     const { error } = await supabase
       .from('user_roles')
       .delete()
@@ -150,6 +166,8 @@ export class UserManagementService {
       console.error('UserManagementService: Error removing role', error);
       throw error;
     }
+    
+    console.log('UserManagementService: Role removed');
   }
 
   /**

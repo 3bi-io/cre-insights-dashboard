@@ -1,12 +1,11 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { enforceAuth, hasRequiredRole, logSecurityEvent, getClientInfo, type UserRole } from "../_shared/serverAuth.ts";
-import { getAuthenticatedClient } from "../_shared/supabase-client.ts";
-import { getCorsHeaders } from "../_shared/cors-config.ts";
-import { successResponse, errorResponse } from "../_shared/response.ts";
-import { wrapHandler } from "../_shared/error-handler.ts";
-import { createLogger } from "../_shared/logger.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
-const logger = createLogger('admin-check');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 /**
  * Server-Side Authorization Check
@@ -14,77 +13,156 @@ const logger = createLogger('admin-check');
  * CRITICAL SECURITY: Always validate admin/super_admin status server-side.
  * Client-side checks can be bypassed. This edge function provides
  * authoritative authorization validation.
+ * 
+ * Usage:
+ *   const { data, error } = await supabase.functions.invoke('admin-check', {
+ *     body: { requiredRole: 'admin' }
+ *   });
  */
-const handler = wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: getCorsHeaders(origin) });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  // Parse request body for required role
-  const { requiredRole = 'admin' } = await req.json().catch(() => ({}));
+  try {
+    // Get authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ 
+          authorized: false, 
+          error: 'Missing authorization header' 
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
-  // Verify authentication (no role requirement at this stage)
-  const authResult = await enforceAuth(req);
-  
-  // If auth failed, return the error response
-  if (authResult instanceof Response) {
-    return authResult;
-  }
-
-  // Auth succeeded, check role
-  const isAuthorized = hasRequiredRole(authResult.userRole, requiredRole as UserRole);
-
-  // Get client info for audit logging
-  const { ipAddress, userAgent } = getClientInfo(req);
-  const supabase = getAuthenticatedClient(req);
-
-  if (!isAuthorized) {
-    // Log unauthorized access attempt
-    await logSecurityEvent(supabase, authResult, 'UNAUTHORIZED_ACCESS_ATTEMPT', {
-      table: 'authorization',
-      sensitiveFields: ['role_check'],
-      ipAddress,
-      userAgent,
-    });
-
-    logger.warn('Unauthorized access attempt', {
-      userId: authResult.userId,
-      userRole: authResult.userRole,
-      requiredRole,
-      ipAddress,
-    });
-
-    return errorResponse(
-      'Insufficient permissions',
-      403,
+    // Create Supabase client with user's auth token
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        required: requiredRole,
-        actual: authResult.userRole,
-      },
-      origin
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return new Response(
+        JSON.stringify({ 
+          authorized: false, 
+          error: 'Authentication failed' 
+        }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Get required role from request (default to 'admin')
+    const { requiredRole = 'admin' } = await req.json().catch(() => ({}));
+
+    // Check user role server-side using database function
+    const { data: roleData, error: roleError } = await supabase
+      .rpc('get_current_user_role');
+
+    if (roleError) {
+      console.error('Role check failed:', roleError);
+      return new Response(
+        JSON.stringify({ 
+          authorized: false, 
+          error: 'Failed to verify user role' 
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const userRole = roleData as string;
+
+    // Super admins have access to everything
+    if (userRole === 'super_admin') {
+      return new Response(
+        JSON.stringify({ 
+          authorized: true, 
+          role: 'super_admin',
+          userId: user.id 
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Check if user has required role
+    const allowedRoles: Record<string, string[]> = {
+      'admin': ['admin', 'super_admin'],
+      'moderator': ['moderator', 'admin', 'super_admin'],
+      'user': ['user', 'moderator', 'admin', 'super_admin'],
+    };
+
+    const isAuthorized = allowedRoles[requiredRole]?.includes(userRole) ?? false;
+
+    if (!isAuthorized) {
+      // Log unauthorized access attempt
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        table_name: 'authorization',
+        action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+        sensitive_fields: ['role_check'],
+      }).catch(err => console.error('Audit log failed:', err));
+
+      return new Response(
+        JSON.stringify({ 
+          authorized: false, 
+          error: 'Insufficient permissions',
+          requiredRole,
+          userRole 
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Success - user is authorized
+    return new Response(
+      JSON.stringify({ 
+        authorized: true, 
+        role: userRole,
+        userId: user.id 
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('Admin check error:', error);
+    return new Response(
+      JSON.stringify({ 
+        authorized: false, 
+        error: 'Internal server error' 
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
-
-  // Success - user is authorized
-  logger.info('User authorized', {
-    userId: authResult.userId,
-    userRole: authResult.userRole,
-    requiredRole,
-  });
-  
-  return successResponse(
-    {
-      authorized: true, 
-      role: authResult.userRole,
-      userId: authResult.userId,
-    },
-    undefined,
-    undefined,
-    origin
-  );
-}, { context: 'admin-check', logRequests: true });
-
-serve(handler);
+});

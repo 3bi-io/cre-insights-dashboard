@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { SEO, buildFAQSchema, StructuredData } from '@/lib/seo';
+import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,35 +31,6 @@ import {
 } from 'lucide-react';
 
 const FeaturesPage = () => {
-  const faqData = [
-    {
-      question: "How does AI-powered candidate matching work?",
-      answer: "Our advanced machine learning algorithms analyze resumes, job requirements, and historical hiring data to identify the best-fit candidates automatically. The system performs smart resume parsing, predictive candidate scoring, provides bias-free screening recommendations, and identifies skills gaps."
-    },
-    {
-      question: "Can I customize the automated workflows?",
-      answer: "Yes, you can fully customize workflows to match your organization's unique requirements. Use customizable workflow templates, set up automated candidate communications, configure interview scheduling automation, and manage approval processes according to your needs."
-    },
-    {
-      question: "What analytics and reporting features are available?",
-      answer: "You get comprehensive analytics including real-time hiring metrics, custom report builder, predictive analytics, and ROI tracking. The advanced analytics dashboard provides deep insights into your recruitment performance with real-time reporting capabilities."
-    },
-    {
-      question: "Which platforms and tools can I integrate with?",
-      answer: "ATS.me integrates with 100+ platforms including Slack, Microsoft Teams, Google Workspace, LinkedIn, Indeed, Glassdoor, ZipRecruiter, Workday, BambooHR, Greenhouse, Lever, and SmartRecruiters. We also support custom integrations through our API."
-    },
-    {
-      question: "How does multi-platform job distribution work?",
-      answer: "With one click, you can post jobs to 100+ job boards and platforms simultaneously. The system handles all the formatting and submission requirements for each platform, saving you hours of manual work."
-    },
-    {
-      question: "Is the platform mobile-friendly?",
-      answer: "Yes, ATS.me features a mobile-first design with full functionality on any device. You can manage your entire recruitment process from your smartphone or tablet, anywhere, anytime."
-    }
-  ];
-
-  const faqSchema = buildFAQSchema(faqData);
-
   const coreFeatures = [
     {
       icon: Brain,
@@ -184,7 +155,6 @@ const FeaturesPage = () => {
         keywords="ATS features, Voice Apply technology, AI screening, job board integration, Tenstreet integration, recruitment automation"
         canonical="https://ats.me/features"
       />
-      <StructuredData data={faqSchema} />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}

@@ -56,6 +56,10 @@ export const useMetaAdSetReport = (dateRange: string = 'last_30d') => {
     setError(null);
 
     try {
+      console.log('Fetching Meta Ad Set report for date range:', dateRange);
+      console.log('Organization ID:', organization?.id);
+      console.log('Organization data:', organization);
+
       const { data: reportData, error: reportError } = await supabase.functions.invoke(
         'meta-adset-report',
         {
@@ -65,6 +69,9 @@ export const useMetaAdSetReport = (dateRange: string = 'last_30d') => {
           }
         }
       );
+
+      console.log('Edge function response - reportData:', reportData);
+      console.log('Edge function response - reportError:', reportError);
 
       if (reportError) {
         console.error('Error calling meta-adset-report function:', reportError);
@@ -76,6 +83,7 @@ export const useMetaAdSetReport = (dateRange: string = 'last_30d') => {
         throw new Error(reportData?.error || 'Failed to generate Ad Set report');
       }
 
+      console.log('Meta Ad Set report fetched successfully:', reportData.summary);
       setData(reportData);
 
     } catch (err) {

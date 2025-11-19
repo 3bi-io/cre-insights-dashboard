@@ -39,6 +39,19 @@ const RoutesPage = () => {
   // Stable filtered routes to prevent unnecessary re-renders
   const filteredRoutes = useStableFilter(routes, filterPredicate, [searchTerm]);
 
+  // Debug logging
+  console.log('Routes Page Debug:', {
+    routesCount: routes?.length || 0,
+    filteredCount: filteredRoutes?.length || 0,
+    loading: isLoading,
+    error,
+    userRole,
+    isAdmin,
+    organization: organization?.name || 'No organization',
+    organizationId: organization?.id || 'No ID',
+    searchTerm
+  });
+
   if (isLoading) {
     return (
       <PageLayout title="Routes" description="View transportation routes from job listings">

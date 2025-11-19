@@ -21,6 +21,8 @@ const CsvApplicationTransformer: React.FC = () => {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const excelData = XLSX.utils.sheet_to_json<ExcelRow>(firstSheet);
 
+      console.log(`Processing ${excelData.length} rows from Excel file`);
+
       // Generate clean CSV
       const csvContent = generateCsvFromExcelData(excelData);
       

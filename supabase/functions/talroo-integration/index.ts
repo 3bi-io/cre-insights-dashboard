@@ -60,10 +60,9 @@ async function syncTalrooAnalytics(
   startDate: string,
   endDate: string,
   userId: string,
-  supabaseClient: any,
-  origin: string | null
+  supabaseClient: any
 ) {
-  logger.info('Syncing Talroo analytics', { campaignId, startDate, endDate });
+  console.log(`Syncing Talroo analytics for campaign ${campaignId}`)
   
   const mockData = []
   const start = new Date(startDate)
@@ -96,16 +95,20 @@ async function syncTalrooAnalytics(
     .upsert(mockData, { onConflict: 'campaign_id,job_id,date' })
 
   if (error) {
-    throw error;
+    throw error
   }
 
-  return successResponse({
-    recordsProcessed: mockData.length,
-    dateRange: { start: startDate, end: endDate }
-  }, `Synced ${mockData.length} days of Talroo analytics`, {}, origin);
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Synced ${mockData.length} days of Talroo analytics`,
+      recordsProcessed: mockData.length
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
-async function getTalrooStats(campaignId: string, userId: string, supabaseClient: any, origin: string | null) {
+async function getTalrooStats(campaignId: string, userId: string, supabaseClient: any) {
   const { data, error } = await supabaseClient
     .from('talroo_analytics')
     .select('*')
@@ -125,13 +128,17 @@ async function getTalrooStats(campaignId: string, userId: string, supabaseClient
     applications: acc.applications + (row.applications || 0),
   }), { spend: 0, clicks: 0, impressions: 0, applications: 0 })
 
-  return successResponse({
-    data: data,
-    totals: {
-      ...totals,
-      ctr: totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
-      cpc: totals.clicks > 0 ? (totals.spend / totals.clicks).toFixed(2) : 0,
-      cpa: totals.applications > 0 ? (totals.spend / totals.applications).toFixed(2) : 0,
-    }
-  }, 'Talroo stats retrieved successfully', {}, origin);
+  return new Response(
+    JSON.stringify({
+      success: true,
+      data: data,
+      totals: {
+        ...totals,
+        ctr: totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : 0,
+        cpc: totals.clicks > 0 ? (totals.spend / totals.clicks).toFixed(2) : 0,
+        cpa: totals.applications > 0 ? (totals.spend / totals.applications).toFixed(2) : 0,
+      }
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }

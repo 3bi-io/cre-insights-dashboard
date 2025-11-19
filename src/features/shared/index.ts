@@ -10,4 +10,4 @@ export * from './utils/featureValidation';
 export { default as PageLayout } from '@/components/PageLayout';
 export { FeatureGuard } from '@/components/FeatureGuard';
 export { default as Footer } from '@/components/Footer';
-export { default as ProtectedRoute } from './components/ProtectedRoute';
+export { default as ProtectedRoute } from '@/components/ProtectedRoute';

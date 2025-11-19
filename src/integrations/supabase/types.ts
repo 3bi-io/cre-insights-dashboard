@@ -113,186 +113,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ai_decision_tracking: {
-        Row: {
-          ai_provider: string | null
-          application_id: string
-          created_at: string
-          decision_type: string
-          hire_outcome: string | null
-          hire_outcome_date: string | null
-          id: string
-          organization_id: string | null
-          quality_score: number | null
-          time_to_decision_minutes: number | null
-          updated_at: string
-          used_ai: boolean
-        }
-        Insert: {
-          ai_provider?: string | null
-          application_id: string
-          created_at?: string
-          decision_type: string
-          hire_outcome?: string | null
-          hire_outcome_date?: string | null
-          id?: string
-          organization_id?: string | null
-          quality_score?: number | null
-          time_to_decision_minutes?: number | null
-          updated_at?: string
-          used_ai?: boolean
-        }
-        Update: {
-          ai_provider?: string | null
-          application_id?: string
-          created_at?: string
-          decision_type?: string
-          hire_outcome?: string | null
-          hire_outcome_date?: string | null
-          id?: string
-          organization_id?: string | null
-          quality_score?: number | null
-          time_to_decision_minutes?: number | null
-          updated_at?: string
-          used_ai?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_decision_tracking_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_decision_tracking_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications_basic"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_decision_tracking_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications_contact"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_decision_tracking_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications_sensitive"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_decision_tracking_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_decision_tracking_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_interaction_logs: {
-        Row: {
-          ai_provider: string | null
-          application_id: string | null
-          created_at: string
-          error_message: string | null
-          id: string
-          interaction_type: string
-          job_listing_id: string | null
-          organization_id: string | null
-          response_time_ms: number | null
-          success: boolean
-          user_id: string | null
-        }
-        Insert: {
-          ai_provider?: string | null
-          application_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          interaction_type: string
-          job_listing_id?: string | null
-          organization_id?: string | null
-          response_time_ms?: number | null
-          success?: boolean
-          user_id?: string | null
-        }
-        Update: {
-          ai_provider?: string | null
-          application_id?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          interaction_type?: string
-          job_listing_id?: string | null
-          organization_id?: string | null
-          response_time_ms?: number | null
-          success?: boolean
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_interaction_logs_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_interaction_logs_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications_basic"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_interaction_logs_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications_contact"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_interaction_logs_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "applications_sensitive"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_interaction_logs_job_listing_id_fkey"
-            columns: ["job_listing_id"]
-            isOneToOne: false
-            referencedRelation: "job_listings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_interaction_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_interaction_logs_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ai_metrics: {
         Row: {
           ai_value: number | null
@@ -337,69 +157,6 @@ export type Database = {
           },
           {
             foreignKeyName: "ai_metrics_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ai_performance_metrics: {
-        Row: {
-          ai_applications_processed: number | null
-          ai_avg_cost_per_hire: number | null
-          ai_avg_quality_score: number | null
-          ai_avg_time_to_hire_hours: number | null
-          created_at: string
-          id: string
-          metric_date: string
-          organization_id: string | null
-          traditional_applications_processed: number | null
-          traditional_avg_cost_per_hire: number | null
-          traditional_avg_quality_score: number | null
-          traditional_avg_time_to_hire_hours: number | null
-          updated_at: string
-        }
-        Insert: {
-          ai_applications_processed?: number | null
-          ai_avg_cost_per_hire?: number | null
-          ai_avg_quality_score?: number | null
-          ai_avg_time_to_hire_hours?: number | null
-          created_at?: string
-          id?: string
-          metric_date?: string
-          organization_id?: string | null
-          traditional_applications_processed?: number | null
-          traditional_avg_cost_per_hire?: number | null
-          traditional_avg_quality_score?: number | null
-          traditional_avg_time_to_hire_hours?: number | null
-          updated_at?: string
-        }
-        Update: {
-          ai_applications_processed?: number | null
-          ai_avg_cost_per_hire?: number | null
-          ai_avg_quality_score?: number | null
-          ai_avg_time_to_hire_hours?: number | null
-          created_at?: string
-          id?: string
-          metric_date?: string
-          organization_id?: string | null
-          traditional_applications_processed?: number | null
-          traditional_avg_cost_per_hire?: number | null
-          traditional_avg_quality_score?: number | null
-          traditional_avg_time_to_hire_hours?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_performance_metrics_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ai_performance_metrics_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
@@ -1004,117 +761,6 @@ export type Database = {
           },
         ]
       }
-      blog_categories: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          slug: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          slug: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          slug?: string
-        }
-        Relationships: []
-      }
-      blog_post_categories: {
-        Row: {
-          blog_category_id: string
-          blog_post_id: string
-        }
-        Insert: {
-          blog_category_id: string
-          blog_post_id: string
-        }
-        Update: {
-          blog_category_id?: string
-          blog_post_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "blog_post_categories_blog_category_id_fkey"
-            columns: ["blog_category_id"]
-            isOneToOne: false
-            referencedRelation: "blog_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "blog_post_categories_blog_post_id_fkey"
-            columns: ["blog_post_id"]
-            isOneToOne: false
-            referencedRelation: "blog_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      blog_posts: {
-        Row: {
-          author: string
-          author_id: string | null
-          content: string
-          created_at: string
-          excerpt: string
-          featured_image: string | null
-          id: string
-          keywords: string[] | null
-          meta_description: string | null
-          meta_title: string | null
-          published: boolean
-          published_at: string | null
-          reading_time: number | null
-          slug: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          author: string
-          author_id?: string | null
-          content: string
-          created_at?: string
-          excerpt: string
-          featured_image?: string | null
-          id?: string
-          keywords?: string[] | null
-          meta_description?: string | null
-          meta_title?: string | null
-          published?: boolean
-          published_at?: string | null
-          reading_time?: number | null
-          slug: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          author?: string
-          author_id?: string | null
-          content?: string
-          created_at?: string
-          excerpt?: string
-          featured_image?: string | null
-          id?: string
-          keywords?: string[] | null
-          meta_description?: string | null
-          meta_title?: string | null
-          published?: boolean
-          published_at?: string | null
-          reading_time?: number | null
-          slug?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       budget_allocations: {
         Row: {
           campaign_id: string | null
@@ -1173,73 +819,6 @@ export type Database = {
           },
           {
             foreignKeyName: "budget_allocations_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      campaign_ai_analysis: {
-        Row: {
-          ai_provider: string
-          analysis_type: string
-          campaign_id: string | null
-          confidence_score: number | null
-          created_at: string
-          expires_at: string
-          id: string
-          insights: Json
-          metrics: Json
-          organization_id: string | null
-          recommendations: Json
-          updated_at: string
-        }
-        Insert: {
-          ai_provider: string
-          analysis_type: string
-          campaign_id?: string | null
-          confidence_score?: number | null
-          created_at?: string
-          expires_at: string
-          id?: string
-          insights?: Json
-          metrics?: Json
-          organization_id?: string | null
-          recommendations?: Json
-          updated_at?: string
-        }
-        Update: {
-          ai_provider?: string
-          analysis_type?: string
-          campaign_id?: string | null
-          confidence_score?: number | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          insights?: Json
-          metrics?: Json
-          organization_id?: string | null
-          recommendations?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_ai_analysis_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_ai_analysis_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "campaign_ai_analysis_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
@@ -1835,7 +1414,7 @@ export type Database = {
       }
       client_webhooks: {
         Row: {
-          client_id: string | null
+          client_id: string
           created_at: string | null
           enabled: boolean
           event_types: string[] | null
@@ -1845,13 +1424,12 @@ export type Database = {
           last_triggered_at: string | null
           organization_id: string
           secret_key: string | null
-          source_filter: string[] | null
           updated_at: string | null
           user_id: string
           webhook_url: string
         }
         Insert: {
-          client_id?: string | null
+          client_id: string
           created_at?: string | null
           enabled?: boolean
           event_types?: string[] | null
@@ -1861,13 +1439,12 @@ export type Database = {
           last_triggered_at?: string | null
           organization_id: string
           secret_key?: string | null
-          source_filter?: string[] | null
           updated_at?: string | null
           user_id: string
           webhook_url: string
         }
         Update: {
-          client_id?: string | null
+          client_id?: string
           created_at?: string | null
           enabled?: boolean
           event_types?: string[] | null
@@ -1877,7 +1454,6 @@ export type Database = {
           last_triggered_at?: string | null
           organization_id?: string
           secret_key?: string | null
-          source_filter?: string[] | null
           updated_at?: string | null
           user_id?: string
           webhook_url?: string
@@ -2466,70 +2042,6 @@ export type Database = {
           job_listing_id?: string
         }
         Relationships: []
-      }
-      job_group_suggestions: {
-        Row: {
-          ai_provider: string
-          campaign_id: string | null
-          confidence_score: number | null
-          created_at: string
-          expires_at: string
-          id: string
-          organization_id: string | null
-          reasoning: Json
-          status: string
-          suggested_groups: Json
-          updated_at: string
-        }
-        Insert: {
-          ai_provider: string
-          campaign_id?: string | null
-          confidence_score?: number | null
-          created_at?: string
-          expires_at: string
-          id?: string
-          organization_id?: string | null
-          reasoning?: Json
-          status?: string
-          suggested_groups?: Json
-          updated_at?: string
-        }
-        Update: {
-          ai_provider?: string
-          campaign_id?: string | null
-          confidence_score?: number | null
-          created_at?: string
-          expires_at?: string
-          id?: string
-          organization_id?: string | null
-          reasoning?: Json
-          status?: string
-          suggested_groups?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "job_group_suggestions_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_group_suggestions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_group_suggestions_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       job_groups: {
         Row: {
@@ -3202,60 +2714,6 @@ export type Database = {
           },
         ]
       }
-      organization_webhooks: {
-        Row: {
-          created_at: string | null
-          enabled: boolean | null
-          id: string
-          last_error: string | null
-          last_success_at: string | null
-          last_triggered_at: string | null
-          organization_id: string
-          secret_key: string | null
-          updated_at: string | null
-          webhook_url: string
-        }
-        Insert: {
-          created_at?: string | null
-          enabled?: boolean | null
-          id?: string
-          last_error?: string | null
-          last_success_at?: string | null
-          last_triggered_at?: string | null
-          organization_id: string
-          secret_key?: string | null
-          updated_at?: string | null
-          webhook_url: string
-        }
-        Update: {
-          created_at?: string | null
-          enabled?: boolean | null
-          id?: string
-          last_error?: string | null
-          last_success_at?: string | null
-          last_triggered_at?: string | null
-          organization_id?: string
-          secret_key?: string | null
-          updated_at?: string | null
-          webhook_url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_webhooks_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "organization_webhooks_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: true
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       organizations: {
         Row: {
           created_at: string
@@ -3453,60 +2911,6 @@ export type Database = {
           },
           {
             foreignKeyName: "profiles_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "public_organization_info"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      publisher_performance_metrics: {
-        Row: {
-          calculation_date: string
-          created_at: string
-          id: string
-          metadata: Json | null
-          metric_type: string
-          metric_value: number
-          organization_id: string | null
-          publisher_name: string
-          time_period: string
-          updated_at: string
-        }
-        Insert: {
-          calculation_date: string
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          metric_type: string
-          metric_value: number
-          organization_id?: string | null
-          publisher_name: string
-          time_period: string
-          updated_at?: string
-        }
-        Update: {
-          calculation_date?: string
-          created_at?: string
-          id?: string
-          metadata?: Json | null
-          metric_type?: string
-          metric_value?: number
-          organization_id?: string | null
-          publisher_name?: string
-          time_period?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "publisher_performance_metrics_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "publisher_performance_metrics_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
@@ -4972,10 +4376,6 @@ export type Database = {
       cleanup_expired_sms_links: { Args: never; Returns: undefined }
       cleanup_old_feed_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
-      create_application_with_audit: {
-        Args: { application_data: Json; created_by_reason?: string }
-        Returns: Json
-      }
       create_organization: {
         Args: { _admin_email?: string; _name: string; _slug: string }
         Returns: string
@@ -5043,14 +4443,6 @@ export type Database = {
           status: string
         }[]
       }
-      get_application_with_audit: {
-        Args: {
-          access_reason?: string
-          application_id: string
-          include_pii?: boolean
-        }
-        Returns: Json
-      }
       get_application_xchange_summary: {
         Args: { app_id: string }
         Returns: {
@@ -5059,33 +4451,6 @@ export type Database = {
           pending_requests: number
           total_cost_cents: number
           total_requests: number
-        }[]
-      }
-      get_applications_list_with_audit: {
-        Args: { access_reason?: string; filters?: Json }
-        Returns: {
-          applicant_email: string
-          applied_at: string
-          cdl: string
-          city: string
-          created_at: string
-          education_level: string
-          exp: string
-          first_name: string
-          id: string
-          job_listing_id: string
-          job_location: string
-          job_title: string
-          last_name: string
-          notes: string
-          phone: string
-          source: string
-          state: string
-          status: string
-          total_count: number
-          updated_at: string
-          work_authorization: string
-          zip: string
         }[]
       }
       get_current_user_role: {
@@ -5160,14 +4525,6 @@ export type Database = {
       set_organization_platform_access: {
         Args: { _enabled: boolean; _org_id: string; _platform_name: string }
         Returns: undefined
-      }
-      update_application_with_audit: {
-        Args: {
-          application_id: string
-          update_data: Json
-          update_reason?: string
-        }
-        Returns: Json
       }
       update_organization_features: {
         Args: { _features: Json; _org_id: string }

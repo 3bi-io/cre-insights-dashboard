@@ -20,10 +20,7 @@
  * - IP allowlisting (TODO: configure Tenstreet IP ranges)
  */
 
-import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { wrapHandler } from '../_shared/error-handler.ts';
-import { createLogger } from '../_shared/logger.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import {
   parseSOAPEnvelope,
   parseTenstreetExtractComplete,
@@ -33,56 +30,59 @@ import {
   type ExtractCompleteData
 } from '../_shared/soap-parser.ts';
 
-const logger = createLogger('tenstreet-extractcomplete');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Content-Type': 'text/xml; charset=utf-8'
+};
 
-Deno.serve(wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = {
-    ...getCorsHeaders(origin),
-    'Content-Type': 'text/xml; charset=utf-8'
-  };
-
+Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = getServiceClient();
-  logger.info('Received extractcomplete callback');
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
-  // Only accept POST requests
-  if (req.method !== 'POST') {
-    logger.warn('Invalid method', { method: req.method });
-    return new Response(
-      createSOAPFault('Client', 'Only POST requests are accepted'),
-      { status: 405, headers: corsHeaders }
-    );
-  }
+  try {
+    console.log('[Webhook] Received extractcomplete callback');
 
-  // Read SOAP XML payload
-  const soapXml = await req.text();
-  logger.info('Received payload', { length: soapXml.length });
+    // Only accept POST requests
+    if (req.method !== 'POST') {
+      console.error('[Webhook] Invalid method:', req.method);
+      return new Response(
+        createSOAPFault('Client', 'Only POST requests are accepted'),
+        { status: 405, headers: corsHeaders }
+      );
+    }
 
-  // Validate SOAP structure
-  const validation = validateSOAPStructure(soapXml);
-  if (!validation.valid) {
-    logger.error('Invalid SOAP structure', null, { errors: validation.errors });
-    return new Response(
-      createSOAPFault('Client', `Invalid SOAP structure: ${validation.errors.join(', ')}`),
-      { status: 400, headers: corsHeaders }
-    );
-  }
+    // Read SOAP XML payload
+    const soapXml = await req.text();
+    console.log('[Webhook] Received payload length:', soapXml.length);
 
-  // Parse SOAP envelope
-  const envelope = parseSOAPEnvelope(soapXml);
-  const extractData = parseTenstreetExtractComplete(envelope.body);
+    // Validate SOAP structure
+    const validation = validateSOAPStructure(soapXml);
+    if (!validation.valid) {
+      console.error('[Webhook] Invalid SOAP structure:', validation.errors);
+      return new Response(
+        createSOAPFault('Client', `Invalid SOAP structure: ${validation.errors.join(', ')}`),
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
-  logger.info('Parsed data', {
-    packetId: extractData.packetId,
-    driverId: extractData.driverId,
-    status: extractData.status,
-    hasExtractURL: !!extractData.extractURL
-  });
+    // Parse SOAP envelope
+    const envelope = parseSOAPEnvelope(soapXml);
+    const extractData = parseTenstreetExtractComplete(envelope.body);
+
+    console.log('[Webhook] Parsed data:', {
+      packetId: extractData.packetId,
+      driverId: extractData.driverId,
+      status: extractData.status,
+      hasExtractURL: !!extractData.extractURL
+    });
 
     // Check for duplicate (idempotency)
     const { data: existingLog } = await supabase
@@ -92,10 +92,10 @@ Deno.serve(wrapHandler(async (req) => {
       .eq('processed', true)
       .single();
 
-  if (existingLog) {
-    logger.info('Duplicate webhook detected, already processed', { packetId: extractData.packetId });
-    
-    // Log duplicate attempt
+    if (existingLog) {
+      console.log('[Webhook] Duplicate webhook detected, already processed:', extractData.packetId);
+      
+      // Log duplicate attempt
       await supabase.from('tenstreet_webhook_logs').insert({
         packet_id: extractData.packetId,
         driver_id: extractData.driverId,
@@ -105,65 +105,65 @@ Deno.serve(wrapHandler(async (req) => {
         processed: true
       });
 
-    // Still return success (idempotent)
-    return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
-  }
-
-  // Validate ClientId against organization credentials
-  if (extractData.clientId) {
-    const { data: credentials } = await supabase
-      .from('tenstreet_credentials')
-      .select('client_id, organization_id')
-      .eq('client_id', extractData.clientId)
-      .eq('status', 'active')
-      .single();
-
-    if (!credentials) {
-      logger.error('Invalid ClientId', null, { clientId: extractData.clientId });
-      return new Response(
-        createSOAPFault('Client', 'Invalid or inactive ClientId'),
-        { status: 401, headers: corsHeaders }
-      );
-    }
-
-    // Find corresponding Xchange request
-    const { data: xchangeRequest, error: findError } = await supabase
-      .from('tenstreet_xchange_requests')
-      .select('id, application_id, organization_id, status')
-      .eq('tenstreet_request_id', extractData.packetId)
-      .single();
-
-    if (findError || !xchangeRequest) {
-      logger.error('Xchange request not found', findError, { packetId: extractData.packetId });
-      
-      // Log webhook but don't fail
-      await supabase.from('tenstreet_webhook_logs').insert({
-        packet_id: extractData.packetId,
-        driver_id: extractData.driverId,
-        soap_payload: soapXml,
-        parsed_data: extractData,
-        organization_id: credentials.organization_id,
-        processed: false,
-        error: 'Xchange request not found in database'
-      });
-
+      // Still return success (idempotent)
       return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
     }
 
-    // Download extract file if URL provided
-    let extractResults = null;
-    if (extractData.extractURL && extractData.status === 'Complete') {
-      try {
-        logger.info('Downloading extract file', { url: extractData.extractURL });
-        const extractResponse = await fetch(extractData.extractURL);
-        if (extractResponse.ok) {
-          const extractContent = await extractResponse.text();
-          extractResults = { raw: extractContent, url: extractData.extractURL };
-        }
-      } catch (extractError) {
-        logger.error('Failed to download extract file', extractError);
+    // Validate ClientId against organization credentials
+    if (extractData.clientId) {
+      const { data: credentials } = await supabase
+        .from('tenstreet_credentials')
+        .select('client_id, organization_id')
+        .eq('client_id', extractData.clientId)
+        .eq('status', 'active')
+        .single();
+
+      if (!credentials) {
+        console.error('[Webhook] Invalid ClientId:', extractData.clientId);
+        return new Response(
+          createSOAPFault('Client', 'Invalid or inactive ClientId'),
+          { status: 401, headers: corsHeaders }
+        );
       }
-    }
+
+      // Find corresponding Xchange request
+      const { data: xchangeRequest, error: findError } = await supabase
+        .from('tenstreet_xchange_requests')
+        .select('id, application_id, organization_id, status')
+        .eq('tenstreet_request_id', extractData.packetId)
+        .single();
+
+      if (findError || !xchangeRequest) {
+        console.error('[Webhook] Xchange request not found:', extractData.packetId, findError);
+        
+        // Log webhook but don't fail
+        await supabase.from('tenstreet_webhook_logs').insert({
+          packet_id: extractData.packetId,
+          driver_id: extractData.driverId,
+          soap_payload: soapXml,
+          parsed_data: extractData,
+          organization_id: credentials.organization_id,
+          processed: false,
+          error: 'Xchange request not found in database'
+        });
+
+        return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
+      }
+
+      // Download extract file if URL provided
+      let extractResults = null;
+      if (extractData.extractURL && extractData.status === 'Complete') {
+        try {
+          console.log('[Webhook] Downloading extract file from:', extractData.extractURL);
+          const extractResponse = await fetch(extractData.extractURL);
+          if (extractResponse.ok) {
+            const extractContent = await extractResponse.text();
+            extractResults = { raw: extractContent, url: extractData.extractURL };
+          }
+        } catch (extractError) {
+          console.error('[Webhook] Failed to download extract file:', extractError);
+        }
+      }
 
       // Update Xchange request status
       const updateData: any = {
@@ -178,45 +178,54 @@ Deno.serve(wrapHandler(async (req) => {
         updateData.error_message = extractData.errorMessage;
       }
 
-    const { error: updateError } = await supabase
-      .from('tenstreet_xchange_requests')
-      .update(updateData)
-      .eq('id', xchangeRequest.id);
+      const { error: updateError } = await supabase
+        .from('tenstreet_xchange_requests')
+        .update(updateData)
+        .eq('id', xchangeRequest.id);
 
-    if (updateError) {
-      logger.error('Failed to update Xchange request', updateError);
-      throw new Error(`Database update failed: ${updateError.message}`);
+      if (updateError) {
+        console.error('[Webhook] Failed to update Xchange request:', updateError);
+        throw new Error(`Database update failed: ${updateError.message}`);
+      }
+
+      console.log('[Webhook] Successfully updated Xchange request:', xchangeRequest.id);
+
+      // Log successful webhook processing
+      await supabase.from('tenstreet_webhook_logs').insert({
+        packet_id: extractData.packetId,
+        driver_id: extractData.driverId,
+        soap_payload: soapXml,
+        parsed_data: extractData,
+        organization_id: credentials.organization_id,
+        processed: true,
+        duplicate: false
+      });
+
+      // Return SOAP success response
+      return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
+
+    } else {
+      // No ClientId provided - log but accept
+      console.warn('[Webhook] No ClientId in webhook payload');
+      
+      await supabase.from('tenstreet_webhook_logs').insert({
+        packet_id: extractData.packetId,
+        driver_id: extractData.driverId,
+        soap_payload: soapXml,
+        parsed_data: extractData,
+        processed: false,
+        error: 'No ClientId provided in webhook'
+      });
+
+      return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
     }
 
-    logger.info('Successfully updated Xchange request', { requestId: xchangeRequest.id });
-
-    // Log successful webhook processing
-    await supabase.from('tenstreet_webhook_logs').insert({
-      packet_id: extractData.packetId,
-      driver_id: extractData.driverId,
-      soap_payload: soapXml,
-      parsed_data: extractData,
-      organization_id: credentials.organization_id,
-      processed: true,
-      duplicate: false
-    });
-
-    // Return SOAP success response
-    return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
-
-  } else {
-    // No ClientId provided - log but accept
-    logger.warn('No ClientId in webhook payload');
+  } catch (error) {
+    console.error('[Webhook] Error processing webhook:', error);
     
-    await supabase.from('tenstreet_webhook_logs').insert({
-      packet_id: extractData.packetId,
-      driver_id: extractData.driverId,
-      soap_payload: soapXml,
-      parsed_data: extractData,
-      processed: false,
-      error: 'No ClientId provided in webhook'
-    });
-
-    return new Response(createSOAPResponse(true), { status: 200, headers: corsHeaders });
+    return new Response(
+      createSOAPFault('Server', error.message || 'Internal server error'),
+      { status: 500, headers: corsHeaders }
+    );
   }
-}, { context: 'tenstreet-extractcomplete', logRequests: true }));
+});

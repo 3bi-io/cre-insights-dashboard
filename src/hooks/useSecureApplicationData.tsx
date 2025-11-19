@@ -59,6 +59,8 @@ export const useSecureApplicationData = () => {
       queryKey: ['application-basic', applicationId],
       queryFn: async (): Promise<BasicApplicationData | null> => {
         if (!applicationId) return null;
+
+        console.log('Fetching basic application data for:', applicationId);
         
         const { data, error } = await supabase
           .rpc('get_application_basic_data', { 
@@ -83,6 +85,8 @@ export const useSecureApplicationData = () => {
       queryKey: ['application-summary', applicationId],
       queryFn: async (): Promise<ApplicationSummary | null> => {
         if (!applicationId) return null;
+
+        console.log('Fetching application summary for:', applicationId);
         
         const { data, error } = await supabase
           .rpc('get_application_summary', { 
@@ -112,6 +116,8 @@ export const useSecureApplicationData = () => {
         if (userRole !== 'super_admin' && userRole !== 'admin') {
           throw new Error('Insufficient privileges to access sensitive personal information');
         }
+
+        console.log('Fetching sensitive application data for:', applicationId, 'Reason:', accessReason);
         
         const { data, error } = await supabase
           .rpc('get_application_sensitive_data', { 
@@ -137,6 +143,8 @@ export const useSecureApplicationData = () => {
       if (userRole !== 'super_admin' && userRole !== 'admin') {
         throw new Error('Access denied: Insufficient privileges');
       }
+
+      console.log('Accessing sensitive data with reason:', reason);
 
       const { data, error } = await supabase
         .rpc('get_application_sensitive_data', {

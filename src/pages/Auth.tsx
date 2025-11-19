@@ -259,10 +259,9 @@ const handleSignUp = async (e: React.FormEvent) => {
                 {resetMode ? (
                   <form onSubmit={handlePasswordReset} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="auth-reset-email">Email</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input 
-                        id="auth-reset-email"
-                        name="email"
+                        id="email" 
                         type="email" 
                         value={email} 
                         onChange={e => setEmail(e.target.value)} 
@@ -285,10 +284,9 @@ const handleSignUp = async (e: React.FormEvent) => {
                 ) : signUpMode ? (
                   <form onSubmit={handleSignUp} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="auth-signup-email">Email</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input 
-                        id="auth-signup-email"
-                        name="email"
+                        id="email" 
                         type="email" 
                         value={email} 
                         onChange={e => setEmail(e.target.value)} 
@@ -297,10 +295,9 @@ const handleSignUp = async (e: React.FormEvent) => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="auth-signup-password">Password</Label>
+                      <Label htmlFor="password">Password</Label>
                       <Input 
-                        id="auth-signup-password"
-                        name="password"
+                        id="password" 
                         type="password" 
                         value={password} 
                         onChange={e => setPassword(e.target.value)} 
@@ -323,10 +320,9 @@ const handleSignUp = async (e: React.FormEvent) => {
                 ) : (
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="auth-signin-email">Email</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input 
-                        id="auth-signin-email"
-                        name="email"
+                        id="email" 
                         type="email" 
                         value={email} 
                         onChange={e => setEmail(e.target.value)} 
@@ -335,10 +331,9 @@ const handleSignUp = async (e: React.FormEvent) => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="auth-signin-password">Password</Label>
+                      <Label htmlFor="password">Password</Label>
                       <Input 
-                        id="auth-signin-password"
-                        name="password"
+                        id="password" 
                         type="password" 
                         value={password} 
                         onChange={e => setPassword(e.target.value)} 

@@ -5,12 +5,9 @@
  * SECURITY: Credentials fetched from database, PII redaction enabled
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
-import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
-import { createLogger, measureTime } from '../_shared/logger.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts'
 import { 
   buildTenstreetXML, 
@@ -24,87 +21,93 @@ import {
   fetchTenstreetCredentials,
   validateCredentials,
   maskCredentialsForLog
-} from '../_shared/tenstreet-credentials.ts';
-import { sanitizeForLogging, redactApplicationData } from '../_shared/tenstreet-pii-utils.ts';
+} from '../_shared/tenstreet-credentials.ts'
+import { sanitizeForLogging, redactApplicationData } from '../_shared/tenstreet-pii-utils.ts'
 
-const logger = createLogger('tenstreet-sync');
+const corsHeaders = getCorsHeaders();
 
-const handler = wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: getCorsHeaders(origin) });
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabaseClient = getServiceClient();
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-  const { action, organizationId, companyId, ...params } = await req.json();
-  
-  logger.info('Tenstreet sync action', { action, organizationId });
+    const { action, organizationId, companyId, ...params } = await req.json()
+    
+    console.log(`[Tenstreet Sync] Action: ${action}`)
 
-  // SECURITY: Fetch credentials from database (no hardcoded credentials)
-  const credentials = await measureTime(
-    logger,
-    'fetch-credentials',
-    () => fetchTenstreetCredentials(supabaseClient, {
+    // SECURITY: Fetch credentials from database (no hardcoded credentials)
+    const credentials = await fetchTenstreetCredentials(supabaseClient, {
       organizationId,
       companyId: companyId || params.company_id
-    })
-  );
+    });
 
-  if (!credentials || !validateCredentials(credentials)) {
-    logger.warn('Invalid or missing credentials', { organizationId });
-    return validationErrorResponse(
-      'No valid Tenstreet credentials found. Please configure credentials in settings.',
-      origin
-    );
-  }
+    if (!credentials || !validateCredentials(credentials)) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'No valid Tenstreet credentials found. Please configure credentials in settings.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-  logger.debug('Using credentials', maskCredentialsForLog(credentials));
+    console.log('[Tenstreet Sync] Using credentials:', maskCredentialsForLog(credentials));
 
-  // Create API client
-  const apiClient = getTenstreetAPIClient();
+    // Create API client
+    const apiClient = getTenstreetAPIClient();
 
-  switch (action) {
-    case 'sync_applicants':
-      return await syncApplicantsFromTenstreet(supabaseClient, apiClient, credentials, params, origin);
-    
-    case 'push_applicant':
-      return await pushApplicantToTenstreet(supabaseClient, apiClient, credentials, params, origin);
-    
-    case 'update_status':
-      return await updateApplicantStatus(supabaseClient, apiClient, credentials, params, origin);
-    
-    case 'search_and_sync':
-      return await searchAndSyncApplicant(supabaseClient, apiClient, credentials, params, origin);
+    switch (action) {
+      case 'sync_applicants':
+        return await syncApplicantsFromTenstreet(supabaseClient, apiClient, credentials, params, corsHeaders)
       
-    default:
-      throw new ValidationError(`Unknown action: ${action}`);
+      case 'push_applicant':
+        return await pushApplicantToTenstreet(supabaseClient, apiClient, credentials, params, corsHeaders)
+      
+      case 'update_status':
+        return await updateApplicantStatus(supabaseClient, apiClient, credentials, params, corsHeaders)
+      
+      case 'search_and_sync':
+        return await searchAndSyncApplicant(supabaseClient, apiClient, credentials, params, corsHeaders)
+        
+      default:
+        throw new Error(`Unknown action: ${action}`)
+    }
+
+  } catch (error) {
+    console.error('[Tenstreet Sync] Error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
-}, { context: 'tenstreet-sync', logRequests: true });
+})
 
 async function syncApplicantsFromTenstreet(
   supabaseClient: any,
   apiClient: any,
   credentials: any,
   params: any,
-  origin: string | null
+  corsHeaders: any
 ) {
-  const { dateRange, email, phone, lastName } = params;
+  const { dateRange, email, phone, lastName } = params
   
-  logger.info('Searching applicants', sanitizeForLogging({ email, phone, lastName }));
+  console.log('[Sync] Searching applicants:', sanitizeForLogging({ email, phone, lastName }));
 
   // Use API client to search
-  const response = await measureTime(
-    logger,
-    'search-applicants-api',
-    () => apiClient.searchApplicants(credentials, {
-      email,
-      phone,
-      lastName,
-      dateRange: dateRange ? `${dateRange.startDate}/${dateRange.endDate}` : undefined
-    })
-  );
+  const response = await apiClient.searchApplicants(credentials, {
+    email,
+    phone,
+    lastName,
+    dateRange: dateRange ? `${dateRange.startDate}/${dateRange.endDate}` : undefined
+  });
 
   if (!response.success) {
     throw new Error(`Tenstreet API error: ${response.data.errors.join(', ')}`);
@@ -113,31 +116,33 @@ async function syncApplicantsFromTenstreet(
   // Parse applicants from response
   const applicants = parseApplicantsFromXML(response.responseXml);
   
-  logger.info('Applicants found', { count: applicants.length });
+  console.log(`[Sync] Found ${applicants.length} applicants`);
 
   if (applicants.length === 0) {
-    return successResponse(
-      { synced: 0, message: 'No applicants found' },
-      'No applicants found',
-      undefined,
-      origin
-    );
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'No applicants found',
+        synced: 0
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
 
   // Sync each applicant to database
-  const syncedApplicants = [];
+  const syncedApplicants = []
   for (const applicant of applicants) {
     try {
       if (!applicant.driverId) continue;
 
-      logger.debug('Processing applicant', sanitizeForLogging(applicant));
+      console.log('[Sync] Processing applicant:', sanitizeForLogging(applicant));
 
       // Check if applicant exists
       const { data: existing } = await supabaseClient
         .from('applications')
         .select('id, driver_id')
         .eq('driver_id', applicant.driverId)
-        .single();
+        .single()
 
       const applicantData = {
         first_name: applicant.firstName,
@@ -157,12 +162,12 @@ async function syncApplicantsFromTenstreet(
           .from('applications')
           .update(applicantData)
           .eq('id', existing.id)
-          .select();
+          .select()
 
         if (!error) {
-          syncedApplicants.push({ ...data[0], action: 'updated' });
+          syncedApplicants.push({ ...data[0], action: 'updated' })
         } else {
-          logger.error('Update error', error);
+          console.error('[Sync] Update error:', error);
         }
       } else {
         // Insert new applicant
@@ -174,30 +179,30 @@ async function syncApplicantsFromTenstreet(
             source: 'Tenstreet',
             applied_at: applicant.appliedAt || new Date().toISOString()
           })
-          .select();
+          .select()
 
         if (!error) {
-          syncedApplicants.push({ ...data[0], action: 'created' });
+          syncedApplicants.push({ ...data[0], action: 'created' })
         } else {
-          logger.error('Insert error', error);
+          console.error('[Sync] Insert error:', error);
         }
       }
     } catch (error) {
-      logger.error('Error syncing applicant', error, { driverId: applicant.driverId });
+      console.error('[Sync] Error syncing applicant:', applicant.driverId, error)
     }
   }
 
   // Redact PII from response
   const sanitizedResults = syncedApplicants.map(app => redactApplicationData(app));
 
-  logger.info('Sync completed', { synced: syncedApplicants.length });
-
-  return successResponse(
-    { synced: syncedApplicants.length, applicants: sanitizedResults },
-    `Synced ${syncedApplicants.length} applicants`,
-    undefined,
-    origin
-  );
+  return new Response(
+    JSON.stringify({
+      success: true,
+      synced: syncedApplicants.length,
+      applicants: sanitizedResults
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
 async function pushApplicantToTenstreet(
@@ -205,24 +210,22 @@ async function pushApplicantToTenstreet(
   apiClient: any,
   credentials: any,
   params: any,
-  origin: string | null
+  corsHeaders: any
 ) {
-  const { applicationId } = params;
-
-  logger.info('Pushing applicant to Tenstreet', { applicationId });
+  const { applicationId } = params
 
   // Get application from database
   const { data: application, error: fetchError } = await supabaseClient
     .from('applications')
     .select('*, job_listings(*)')
     .eq('id', applicationId)
-    .single();
+    .single()
 
   if (fetchError || !application) {
-    throw new Error('Application not found');
+    throw new Error('Application not found')
   }
 
-  logger.debug('Application fetched', { applicationId });
+  console.log('[Push] Pushing application:', applicationId);
 
   // Build applicant XML using shared utilities
   const personalDataXml = buildPersonalDataXML({
@@ -268,14 +271,10 @@ async function pushApplicantToTenstreet(
   const uploadXML = buildTenstreetXML(credentials, 'subject_upload', contentXml);
 
   // Make request using API client (with PII redaction in logs)
-  const response = await measureTime(
-    logger,
-    'push-applicant-api',
-    () => apiClient.makeRequest(credentials, {
-      service: 'subject_upload',
-      xmlContent: contentXml
-    })
-  );
+  const response = await apiClient.makeRequest(credentials, {
+    service: 'subject_upload',
+    xmlContent: contentXml
+  });
 
   // Update application with driver_id if successful
   if (response.success && response.data.driverId) {
@@ -287,23 +286,19 @@ async function pushApplicantToTenstreet(
         tenstreet_last_sync: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', applicationId);
+      .eq('id', applicationId)
 
-    logger.info('Application synced', { 
-      applicationId, 
-      driverId: response.data.driverId 
-    });
+    console.log('[Push] Application synced, driver_id:', response.data.driverId);
   }
 
-  return successResponse(
-    {
+  return new Response(
+    JSON.stringify({
+      success: response.success,
       driverId: response.data.driverId,
       errors: response.data.errors
-    },
-    'Application pushed to Tenstreet',
-    undefined,
-    origin
-  );
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
 async function updateApplicantStatus(
@@ -311,28 +306,29 @@ async function updateApplicantStatus(
   apiClient: any,
   credentials: any,
   params: any,
-  origin: string | null
+  corsHeaders: any
 ) {
-  const { applicationId, status, statusTag } = params;
-
-  logger.info('Updating applicant status', { applicationId, status });
+  const { applicationId, status, statusTag } = params
 
   // Get application
   const { data: application } = await supabaseClient
     .from('applications')
     .select('driver_id')
     .eq('id', applicationId)
-    .single();
+    .single()
 
   if (!application?.driver_id) {
-    throw new Error('Application not found or missing driver_id');
+    throw new Error('Application not found or missing driver_id')
   }
 
+  console.log('[Update Status]', { driverId: application.driver_id, status });
+
   // Use API client
-  const response = await measureTime(
-    logger,
-    'update-status-api',
-    () => apiClient.updateStatus(credentials, application.driver_id, status, statusTag)
+  const response = await apiClient.updateStatus(
+    credentials,
+    application.driver_id,
+    status,
+    statusTag
   );
 
   // Update local database
@@ -344,17 +340,17 @@ async function updateApplicantStatus(
         tenstreet_last_sync: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', applicationId);
-    
-    logger.info('Status updated', { applicationId, status });
+      .eq('id', applicationId)
   }
 
-  return successResponse(
-    { status, errors: response.data.errors },
-    'Status updated',
-    undefined,
-    origin
-  );
+  return new Response(
+    JSON.stringify({
+      success: response.success,
+      status,
+      errors: response.data.errors
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
 async function searchAndSyncApplicant(
@@ -362,11 +358,11 @@ async function searchAndSyncApplicant(
   apiClient: any,
   credentials: any,
   params: any,
-  origin: string | null
+  corsHeaders: any
 ) {
-  const { email, phone, driverId } = params;
+  const { email, phone, driverId } = params
 
-  logger.info('Searching applicant', sanitizeForLogging({ email, phone, driverId }));
+  console.log('[Search] Criteria:', sanitizeForLogging({ email, phone, driverId }));
 
   let response;
   
@@ -386,14 +382,13 @@ async function searchAndSyncApplicant(
     ? [parseApplicantFromXML(response.responseXml)]
     : parseApplicantsFromXML(response.responseXml);
 
-  logger.info('Search completed', { count: applicants.length });
-
-  return successResponse(
-    { applicants: applicants.map(app => sanitizeForLogging(app)) },
-    `Found ${applicants.length} applicant(s)`,
-    undefined,
-    origin
-  );
+  return new Response(
+    JSON.stringify({
+      success: true,
+      applicants: applicants.map(app => sanitizeForLogging(app))
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
 // Helper functions
@@ -464,5 +459,3 @@ function mapTenstreetStatus(tenstreetStatus: string): string {
   
   return statusMap[tenstreetStatus?.toLowerCase()] || tenstreetStatus || 'pending';
 }
-
-serve(handler);

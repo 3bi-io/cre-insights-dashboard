@@ -105,10 +105,9 @@ const ZipRecruiterPlatformActions: React.FC = () => {
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="ziprecruiter-api-key">ZipRecruiter API Key</Label>
+            <Label htmlFor="apiKey">ZipRecruiter API Key</Label>
             <Input
-              id="ziprecruiter-api-key"
-              name="ziprecruiterApiKey"
+              id="apiKey"
               type="password"
               placeholder="Enter your ZipRecruiter API key"
               value={apiKey}
@@ -117,10 +116,9 @@ const ZipRecruiterPlatformActions: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ziprecruiter-company-id">Company ID</Label>
+            <Label htmlFor="companyId">Company ID</Label>
             <Input
-              id="ziprecruiter-company-id"
-              name="ziprecruiterCompanyId"
+              id="companyId"
               placeholder="Enter your ZipRecruiter Company ID"
               value={companyId}
               onChange={(e) => setCompanyId(e.target.value)}

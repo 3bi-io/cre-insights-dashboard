@@ -6,12 +6,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, BriefcaseIcon, AlertTriangle, Edit, Trash2, Settings, ExternalLink, Search, Brain } from 'lucide-react';
+import { Plus, BriefcaseIcon, AlertTriangle, Edit, Trash2, Settings, ExternalLink, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useJobGroups } from '@/features/job-groups/hooks/useJobGroups';
 import { JobGroupDialog } from '@/features/job-groups/components/JobGroupDialog';
 import { JobAssignmentDialog } from '@/features/job-groups/components/JobAssignmentDialog';
-import { JobGroupAIPanel } from '@/features/job-groups/components/JobGroupAIPanel';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -201,17 +200,6 @@ const JobGroups = () => {
           </SelectContent>
         </Select>
       </div>
-
-      {/* AI Panel - Show when campaign is selected */}
-      {selectedCampaign && selectedCampaign !== 'all' && (
-        <div className="mb-6">
-          <JobGroupAIPanel
-            campaignId={selectedCampaign}
-            campaignName={campaigns.find(c => c.id === selectedCampaign)?.name || 'Campaign'}
-            organizationId={undefined}
-          />
-        </div>
-      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

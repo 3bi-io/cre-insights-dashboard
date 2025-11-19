@@ -193,7 +193,7 @@ class AIService {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
         systemPrompt: this.buildSystemPrompt(parameters),
-        model: 'claude-3-5-haiku-20241022' // Valid Claude model
+        model: 'claude-3-5-sonnet-20241022' // Latest Claude model
       }
     });
 
@@ -229,9 +229,8 @@ class AIService {
   private async callGrok(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('grok-chat', {
       body: {
-        messages: [
-          { role: 'user', content: this.buildPrompt(prompt, data, parameters) }
-        ],
+        message: this.buildPrompt(prompt, data, parameters),
+        systemPrompt: this.buildSystemPrompt(parameters),
         model: 'grok-2-1212' // Latest Grok model
       }
     });
@@ -399,7 +398,7 @@ Provide only the corrected content that maintains the original intent while fixi
         body: {
           message: correctionPrompt,
           systemPrompt: 'You are a content corrector. Provide only the corrected content without explanations.',
-          model: 'claude-3-5-haiku-20241022'
+          model: 'claude-3-5-sonnet-20241022'
         }
       });
 

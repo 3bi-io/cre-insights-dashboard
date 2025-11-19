@@ -41,41 +41,25 @@ function PWAUpdater() {
   return null;
 }
 
-// Optimized QueryClient configuration with performance-focused caching
+// Optimized QueryClient configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Caching strategy
-      staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh for 5 minutes
-      gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache for 30 minutes (formerly cacheTime)
-      
-      // Retry logic - smart retry based on error type
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
       retry: (failureCount, error) => {
-        // Don't retry on 4xx errors (client errors)
+        // Don't retry on 4xx errors
         if (error && typeof error === 'object' && 'status' in error) {
           const status = error.status as number;
           if (status >= 400 && status < 500) return false;
         }
-        // Don't retry auth errors
-        if (error && typeof error === 'object' && 'message' in error) {
-          const message = (error.message as string).toLowerCase();
-          if (message.includes('auth') || message.includes('unauthorized')) return false;
-        }
         return failureCount < 2;
       },
-      
-      // Performance settings
-      refetchOnWindowFocus: false, // Don't refetch on window focus
-      refetchOnReconnect: true, // Refetch on network reconnect
-      refetchOnMount: true, // Refetch on component mount
-      refetchInterval: false, // No automatic polling by default
-      
-      // Network settings
-      networkMode: 'online', // Only run queries when online
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
     },
     mutations: {
-      retry: false, // Don't retry mutations by default
-      networkMode: 'online',
+      retry: false,
     },
   },
 });

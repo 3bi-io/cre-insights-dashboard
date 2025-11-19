@@ -1,5 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Brain, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ApplicationsOverviewProps {
   statusCounts?: Record<string, number>;
@@ -17,16 +20,31 @@ const ApplicationsOverview = ({ statusCounts, categoryCounts }: ApplicationsOver
   const totalApplications = Object.values(statusCounts || {}).reduce((sum, count) => sum + count, 0);
 
   return (
-    <div className="space-y-6">
+    <>
+      {/* Header with AI Analytics Link */}
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold">Applications Overview</h3>
+        <div className="flex gap-2">
+          <Link to="/admin/ai-analytics">
+            <Button variant="outline" size="sm">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              AI Analytics
+            </Button>
+          </Link>
+          <Badge variant="outline" className="bg-primary/10">
+            {totalApplications} Total Applications
+          </Badge>
+        </div>
+      </div>
       {/* Status Overview */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
           <Card key={status}>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-foreground mb-1">
+              <div className="text-2xl font-bold text-white mb-1">
                 {statusCounts?.[status] || 0}
               </div>
-              <div className="text-sm text-muted-foreground capitalize">{status}</div>
+              <div className="text-sm text-gray-600 capitalize">{status}</div>
             </CardContent>
           </Card>
         ))}
@@ -42,16 +60,16 @@ const ApplicationsOverview = ({ statusCounts, categoryCounts }: ApplicationsOver
                   {category.code}
                 </Badge>
               </div>
-              <div className="text-2xl font-bold text-foreground mb-1">
+              <div className="text-2xl font-bold text-white mb-1">
                 {categoryCounts?.[category.code] || 0}
               </div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">{category.label}</div>
-              <div className="text-xs text-muted-foreground/70">{category.desc}</div>
+              <div className="text-sm font-medium text-gray-300 mb-1">{category.label}</div>
+              <div className="text-xs text-gray-500">{category.desc}</div>
             </CardContent>
           </Card>
         ))}
       </div>
-    </div>
+    </>
   );
 };
 

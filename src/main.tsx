@@ -4,19 +4,17 @@ import App from './App.tsx'
 import './index.css'
 import './i18n/config' // Initialize i18n
 import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
+import { initSentry } from '@/utils/sentry'
 import { initAnalytics } from '@/utils/analytics'
 
 // Initialize monitoring services (production)
+initSentry();
 initAnalytics();
 startPerformanceMonitoring();
 
 // Suppress noisy third‑party RUM/recorder errors blocked by ad blockers
-// and known library bundling issues that don't affect functionality
-const suppressPatterns = [
-  /ingesteer\.services-prod\.nsvcs\.net/i,
-  /charts-.*\.js.*Cannot access.*before initialization/i,
-  /Failed to fetch/i
-];
+// e.g. "Failed to fetch (ingesteer.services-prod.nsvcs.net)"
+const suppressPatterns = [/ingesteer\.services-prod\.nsvcs\.net/i];
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
   const reason: any = (event as any).reason;

@@ -9,6 +9,8 @@ export class PlatformService {
    * Fetches all platforms
    */
   static async fetchPlatforms(): Promise<Platform[]> {
+    console.log('PlatformService: Fetching platforms');
+    
     const { data, error } = await supabase
       .from('platforms')
       .select('*')
@@ -19,6 +21,7 @@ export class PlatformService {
       throw error;
     }
     
+    console.log('PlatformService: Platforms fetched', data?.length);
     return data || [];
   }
 
@@ -60,6 +63,8 @@ export class PlatformService {
     id: string, 
     updates: Partial<Omit<Platform, 'id' | 'created_at'>>
   ): Promise<Platform> {
+    console.log('PlatformService: Updating platform', id);
+    
     const { data, error } = await supabase
       .from('platforms')
       .update(updates)
@@ -72,6 +77,7 @@ export class PlatformService {
       throw error;
     }
     
+    console.log('PlatformService: Platform updated', data.id);
     return data;
   }
 
@@ -79,6 +85,8 @@ export class PlatformService {
    * Deletes a platform
    */
   static async deletePlatform(id: string): Promise<void> {
+    console.log('PlatformService: Deleting platform', id);
+    
     const { error } = await supabase
       .from('platforms')
       .delete()
@@ -88,5 +96,7 @@ export class PlatformService {
       console.error('PlatformService: Error deleting platform', error);
       throw error;
     }
+    
+    console.log('PlatformService: Platform deleted', id);
   }
 }

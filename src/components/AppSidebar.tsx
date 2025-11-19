@@ -212,16 +212,6 @@ const AppSidebar = () => {
         path: '/admin/hayes-data',
         label: 'Hayes Data',
         icon: Users
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/edge-functions-test',
-        label: 'Edge Functions Test',
-        icon: Zap
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/settings',
-        label: 'Settings',
-        icon: Settings
       }] : [])
     ]
   }];

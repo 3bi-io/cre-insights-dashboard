@@ -14,11 +14,10 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { successResponse, errorResponse } from '../_shared/response.ts'
 import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
-import { getServiceClient } from '../_shared/supabase-client.ts'
+import { getServiceClient, verifyUser } from '../_shared/supabase-client.ts'
 import { createLogger, measureTime } from '../_shared/logger.ts'
 import { createHttpClient } from '../_shared/http-client.ts'
 import { normalizePhone } from '../_shared/application-processor.ts'
-import { enforceAuth } from '../_shared/serverAuth.ts'
 
 const logger = createLogger('meta-integration')
 
@@ -113,13 +112,9 @@ const handler = wrapHandler(async (req: Request) => {
     return new Response(null, { headers: getCorsHeaders(origin) })
   }
 
-  // SECURITY: Only admins and super admins can access Meta API integration
-  const authContext = await enforceAuth(req, ['admin', 'super_admin'])
-  if (authContext instanceof Response) {
-    return authContext
-  }
-  
-  const contextLogger = logger.child({ userId: authContext.userId })
+  // Verify authentication
+  const { userId } = await verifyUser(req)
+  const contextLogger = logger.child({ userId })
 
   // Parse and validate request
   const body = await req.json()
@@ -139,27 +134,27 @@ const handler = wrapHandler(async (req: Request) => {
   // Route to appropriate handler
   switch (action) {
     case 'sync_accounts':
-      return await syncAdAccounts(authContext.userId, metaApi, supabase, contextLogger, origin)
+      return await syncAdAccounts(userId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_campaigns':
       if (!accountId) throw new ValidationError('Account ID is required for syncing campaigns')
-      return await syncCampaigns(authContext.userId, accountId, metaApi, supabase, contextLogger, origin)
+      return await syncCampaigns(userId, accountId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_adsets':
       if (!accountId) throw new ValidationError('Account ID is required for syncing ad sets')
-      return await syncAdSets(authContext.userId, accountId, campaignId, metaApi, supabase, contextLogger, origin)
+      return await syncAdSets(userId, accountId, campaignId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_ads':
       if (!accountId) throw new ValidationError('Account ID is required for syncing ads')
-      return await syncAds(authContext.userId, accountId, campaignId, metaApi, supabase, contextLogger, origin)
+      return await syncAds(userId, accountId, campaignId, metaApi, supabase, contextLogger, origin)
     
     case 'sync_insights':
       if (!accountId) throw new ValidationError('Account ID is required for syncing insights')
-      return await syncInsights(authContext.userId, accountId, campaignId, datePreset, metaApi, supabase, contextLogger, origin)
+      return await syncInsights(userId, accountId, campaignId, datePreset, metaApi, supabase, contextLogger, origin)
     
     case 'sync_leads':
       if (!accountId) throw new ValidationError('Account ID is required for syncing leads')
-      return await syncLeads(authContext.userId, accountId, sinceDays ?? 30, metaApi, supabase, contextLogger, origin)
+      return await syncLeads(userId, accountId, sinceDays ?? 30, metaApi, supabase, contextLogger, origin)
     
     default:
       throw new ValidationError(`Unknown action: ${action}`)

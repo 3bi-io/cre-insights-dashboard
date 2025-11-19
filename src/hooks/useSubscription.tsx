@@ -18,6 +18,8 @@ export const useSubscription = (): SubscriptionStatus => {
   });
 
   useEffect(() => {
+    console.log('[SUBSCRIPTION] Checking subscription status:', { authLoading, hasOrg: !!organization });
+    
     // Wait for auth to finish loading
     if (authLoading) {
       setStatus(prev => ({ ...prev, loading: true }));
@@ -26,6 +28,7 @@ export const useSubscription = (): SubscriptionStatus => {
 
     // If no organization, user has no subscription
     if (!organization) {
+      console.log('[SUBSCRIPTION] No organization found - no subscription');
       setStatus({
         hasActiveSubscription: false,
         subscriptionStatus: null,
@@ -39,6 +42,8 @@ export const useSubscription = (): SubscriptionStatus => {
     const subscriptionStatus = organization.subscription_status || 'inactive';
     const hasActiveSubscription = ['active', 'trialing'].includes(subscriptionStatus);
     const isTrialing = subscriptionStatus === 'trialing';
+
+    console.log('[SUBSCRIPTION] Status determined:', { subscriptionStatus, hasActiveSubscription, isTrialing });
 
     setStatus({
       hasActiveSubscription,

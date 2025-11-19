@@ -1,17 +1,4 @@
-[functions.ai-chat]
-verify_jwt = true
-
-[functions.organization-webhook-export]
-verify_jwt = true
-
-[functions.campaign-ai-optimizer]
-verify_jwt = true
-
-[functions.job-group-ai-manager]
-verify_jwt = true
-
-[functions.ai-metrics-aggregator]
-verify_jwt = true
+project_id = "auwhcdpppldjlcaxzsme"
 
 [functions.generate-sitemap]
 verify_jwt = false
@@ -30,9 +17,6 @@ verify_jwt = true
 
 [functions.client-webhook]
 verify_jwt = false
-
-[functions.client-webhook-bulk-export]
-verify_jwt = true
 
 [functions.universal-xml-feed]
 verify_jwt = false
@@ -109,71 +93,5 @@ verify_jwt = true
 [functions.meta-integration]
 verify_jwt = true
 
-[functions.meta-spend-analytics]
-verify_jwt = true
-
-[functions.meta-adset-report]
-verify_jwt = true
-
-[functions.admin-update-password]
-verify_jwt = true
-
-[functions.admin_password_reset]
-verify_jwt = true
-
-[functions.anthropic-chat]
-verify_jwt = true
-
-[functions.background-tasks]
-verify_jwt = true
-
-[functions.chatbot-analytics]
-verify_jwt = true
-
-[functions.data-analysis]
-verify_jwt = true
-
-[functions.domain-configuration]
-verify_jwt = true
-
-[functions.google-indexing]
-verify_jwt = true
-
-[functions.google-jobs-xml]
-verify_jwt = false
-
-[functions.import-jobs-from-feed]
-verify_jwt = true
-
-[functions.indeed-xml-feed]
-verify_jwt = false
-
-[functions.job-group-xml-feed]
-verify_jwt = false
-
-[functions.openai-chat]
-verify_jwt = true
-
-[functions.outbound-webhook]
-verify_jwt = false
-
-[functions.send-magic-link]
-verify_jwt = true
-
-[functions.send-screening-request]
-verify_jwt = true
-
-[functions.send-sms]
-verify_jwt = true
-
-[functions.sms-auth]
-verify_jwt = false
-
-[functions.tenstreet-integration]
-verify_jwt = true
-
-[functions.trigger-webhook]
-verify_jwt = true
-
-[functions.fetch-crengland-jobs]
+[functions.ai-chat]
 verify_jwt = true

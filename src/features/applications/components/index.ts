@@ -17,7 +17,6 @@ export { ApplicationHeader } from './ApplicationHeader';
 export { ApplicationInfo } from './ApplicationInfo';
 export { ApplicationsTableView } from './ApplicationsTableView';
 export { ApplicationsActions } from './ApplicationsActions';
-export { ApplicationsHeader } from './ApplicationsHeader';
 
 // Admin page components
 export { ApplicationsStats } from './ApplicationsStats';

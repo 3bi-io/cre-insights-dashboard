@@ -114,7 +114,7 @@ const EdgeFunctionsTest = () => {
   const testGrokChat = () => {
     testEdgeFunction(
       'grok-chat',
-      { messages: [{ role: 'user', content: grokMessage }], model: 'grok-2-1212' },
+      { message: grokMessage, model: 'grok-2-1212' },
       'Grok Chat'
     );
   };

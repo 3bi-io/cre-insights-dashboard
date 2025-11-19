@@ -1,79 +1,101 @@
-import { getServiceClient } from '../_shared/supabase-client.ts';
-import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { wrapHandler } from '../_shared/error-handler.ts';
-import { createLogger } from '../_shared/logger.ts';
-import { successResponse, errorResponse } from '../_shared/response.ts';
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 
-const logger = createLogger('tenstreet-webhook');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-Deno.serve(wrapHandler(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
-
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const supabaseClient = getServiceClient();
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-  // Parse incoming Tenstreet webhook
-  const contentType = req.headers.get('content-type') || '';
-  
-  let webhookData;
-  if (contentType.includes('application/xml') || contentType.includes('text/xml')) {
-    const xmlText = await req.text();
-    logger.info('Received Tenstreet webhook XML', { length: xmlText.length });
-    webhookData = parseWebhookXML(xmlText);
-  } else {
-    webhookData = await req.json();
-    logger.info('Received Tenstreet webhook JSON', { eventType: webhookData.eventType });
+    // Parse incoming Tenstreet webhook
+    const contentType = req.headers.get('content-type') || ''
+    
+    let webhookData
+    if (contentType.includes('application/xml') || contentType.includes('text/xml')) {
+      const xmlText = await req.text()
+      console.log('Received Tenstreet webhook XML:', xmlText)
+      webhookData = parseWebhookXML(xmlText)
+    } else {
+      webhookData = await req.json()
+      console.log('Received Tenstreet webhook JSON:', webhookData)
+    }
+
+    // Process webhook based on event type
+    const result = await processWebhook(supabaseClient, webhookData)
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        processed: result
+      }),
+      { 
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+
+  } catch (error) {
+    console.error('Tenstreet webhook error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
-
-  // Process webhook based on event type
-  const result = await processWebhook(supabaseClient, webhookData);
-
-  return successResponse({ processed: result }, 'Webhook processed successfully', {}, origin);
-}, { context: 'tenstreet-webhook', logRequests: true }));
+})
 
 async function processWebhook(supabaseClient: any, webhookData: any) {
-  const { eventType, driverId, status, personalData, applicationData } = webhookData;
+  const { eventType, driverId, status, personalData, applicationData } = webhookData
 
-  logger.info('Processing webhook', { eventType, driverId, status });
+  console.log('Processing webhook:', { eventType, driverId, status })
 
   // Find existing application by driver_id
   const { data: existingApp } = await supabaseClient
     .from('applications')
     .select('id')
     .eq('driver_id', driverId)
-    .single();
+    .single()
 
   if (existingApp) {
     // Update existing application
     const updateData: any = {
       updated_at: new Date().toISOString()
-    };
+    }
 
     if (status) {
-      updateData.status = mapTenstreetStatus(status);
+      updateData.status = mapTenstreetStatus(status)
     }
 
     if (personalData) {
-      Object.assign(updateData, mapPersonalData(personalData));
+      Object.assign(updateData, mapPersonalData(personalData))
     }
 
     const { data, error } = await supabaseClient
       .from('applications')
       .update(updateData)
       .eq('id', existingApp.id)
-      .select();
+      .select()
 
     if (error) {
-      logger.error('Error updating application', error);
-      throw error;
+      console.error('Error updating application:', error)
+      throw error
     }
 
-    logger.info('Updated application', { applicationId: data[0]?.id });
-    return { action: 'updated', applicationId: data[0]?.id };
+    console.log('Updated application:', data[0]?.id)
+    return { action: 'updated', applicationId: data[0]?.id }
 
   } else if (eventType === 'new_applicant' || eventType === 'applicant_created') {
     // Create new application from webhook
@@ -84,24 +106,23 @@ async function processWebhook(supabaseClient: any, webhookData: any) {
       applied_at: new Date().toISOString(),
       ...mapPersonalData(personalData),
       ...mapApplicationData(applicationData)
-    };
+    }
 
     const { data, error } = await supabaseClient
       .from('applications')
       .insert(insertData)
-      .select();
+      .select()
 
     if (error) {
-      logger.error('Error creating application', error);
-      throw error;
+      console.error('Error creating application:', error)
+      throw error
     }
 
-    logger.info('Created application', { applicationId: data[0]?.id });
-    return { action: 'created', applicationId: data[0]?.id };
+    console.log('Created application:', data[0]?.id)
+    return { action: 'created', applicationId: data[0]?.id }
   }
 
-  logger.info('Webhook ignored', { reason: 'No matching application and not a new applicant event' });
-  return { action: 'ignored', reason: 'No matching application and not a new applicant event' };
+  return { action: 'ignored', reason: 'No matching application and not a new applicant event' }
 }
 
 function parseWebhookXML(xmlText: string) {
