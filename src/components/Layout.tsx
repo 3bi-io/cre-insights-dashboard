@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Brand } from '@/components/common';
+import { PullToRefresh } from '@/components/PullToRefresh';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +31,17 @@ const LayoutContent = () => {
   const location = useLocation();
   const { user, userRole, organization, signOut } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const hasShownWelcome = useRef(false);
+  
+  // Handle pull-to-refresh
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries();
+    toast({
+      description: "Content refreshed",
+      duration: 2000,
+    });
+  }, [queryClient, toast]);
   
   // Show welcome balloon for admins
   useEffect(() => {
@@ -150,9 +162,15 @@ const LayoutContent = () => {
           </header>
         </div>
         
-        <main className="flex-1 overflow-auto flex flex-col pb-16 md:pb-0">
-          <Outlet />
-        </main>
+        <PullToRefresh 
+          onRefresh={handleRefresh} 
+          enabled={isMobile}
+          className="flex-1 flex flex-col pb-16 md:pb-0"
+        >
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </PullToRefresh>
         
         {/* Mobile Bottom Navigation */}
         <MobileBottomNav />
