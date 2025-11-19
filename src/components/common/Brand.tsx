@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/components/ThemeProvider';
 
 interface BrandProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -9,12 +10,12 @@ interface BrandProps {
   showAsLink?: boolean;
 }
 
-const sizeClasses = {
-  xs: 'text-lg',
-  sm: 'text-xl', 
-  md: 'text-2xl',
-  lg: 'text-3xl',
-  xl: 'text-4xl'
+const sizeHeights = {
+  xs: 'h-6',  // 24px
+  sm: 'h-8',  // 32px
+  md: 'h-10', // 40px
+  lg: 'h-12', // 48px
+  xl: 'h-16'  // 64px
 };
 
 export const Brand: React.FC<BrandProps> = ({ 
@@ -23,16 +24,24 @@ export const Brand: React.FC<BrandProps> = ({
   className,
   showAsLink = true
 }) => {
+  const { theme } = useTheme();
+  
+  // Determine if dark mode is active
+  const isDarkMode = theme === 'dark' || 
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  const logoSrc = isDarkMode ? '/logo-white.png' : '/logo.png';
+  
   const brandElement = (
-    <span 
+    <img 
+      src={logoSrc}
+      alt="ATS.me"
       className={cn(
-        "font-bold text-primary transition-all duration-200",
-        sizeClasses[size],
+        "w-auto transition-all duration-200",
+        sizeHeights[size],
         className
       )}
-    >
-      ATS.me
-    </span>
+    />
   );
 
   if (!showAsLink) {
