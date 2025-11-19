@@ -18,7 +18,7 @@ const PublicLayout = () => {
             
             {/* Company Info */}
             <div className="col-span-1 md:col-span-2">
-              <Brand size="md" showAsLink={true} className="mb-4" />
+              <Brand variant="horizontal" size="md" showAsLink={true} className="mb-4" />
               <p className="text-muted-foreground mb-6 max-w-md">
                 Revolutionize your hiring process with AI-powered analytics, automated workflows, 
                 and comprehensive candidate tracking. Transform how you find, evaluate, and hire top talent.

@@ -264,23 +264,17 @@ const AppSidebar = () => {
                 <img 
                   src={organization.logo_url} 
                   alt={organization.name} 
-                  className="h-8 w-auto" 
+                  className="h-8 w-auto max-w-[150px] object-contain" 
                 />
               ) : (
-                <img 
-                  src="/logo.png" 
-                  alt={organization.name} 
-                  className="h-8 w-auto" 
-                />
+                <Brand variant="horizontal" size="md" showAsLink={false} />
               )}
               <div className="flex flex-col">
                 <span className="font-semibold text-sm">{organization.name}</span>
               </div>
             </>
           ) : (
-            <>
-              <Brand size="md" showAsLink={false} />
-            </>
+            <Brand variant="horizontal" size="md" showAsLink={false} />
           )}
         </div>
       </SidebarHeader>

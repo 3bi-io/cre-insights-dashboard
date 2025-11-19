@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Brand } from '@/components/common';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,25 +96,8 @@ const LayoutContent = () => {
           <header className="h-16 flex items-center justify-between border-b bg-card px-4 shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
-              {(state === 'collapsed') && organization && (
-                <div className="flex items-center gap-2">
-                  {organization.logo_url ? (
-                    <img 
-                      src={organization.logo_url} 
-                      alt={organization.name} 
-                      className="h-8 w-auto"
-                    />
-                  ) : (
-                     <img 
-                       src="/logo.png" 
-                       alt={organization.name} 
-                       className="h-8 w-auto"
-                     />
-                  )}
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {organization.name}
-                  </span>
-                </div>
+              {(state === 'collapsed') && (
+                <Brand variant="horizontal" size="md" showAsLink={true} linkTo="/dashboard" />
               )}
             </div>
             
