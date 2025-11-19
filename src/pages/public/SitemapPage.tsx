@@ -63,7 +63,6 @@ const SitemapPage = () => {
         { path: '/jobs', label: 'Jobs', icon: <Briefcase className="w-4 h-4" />, description: 'Browse available positions' },
         { path: '/features', label: 'Features', icon: <Sparkles className="w-4 h-4" />, description: 'Platform features and capabilities' },
         { path: '/pricing', label: 'Pricing', icon: <DollarSign className="w-4 h-4" />, description: 'Pricing plans and packages' },
-        { path: '/demo', label: 'Demo', icon: <PlayCircle className="w-4 h-4" />, description: 'Product demonstration' },
         { path: '/resources', label: 'Resources', icon: <FileText className="w-4 h-4" />, description: 'Guides and documentation' },
         { path: '/contact', label: 'Contact', icon: <Phone className="w-4 h-4" />, description: 'Get in touch with us' },
       ],
