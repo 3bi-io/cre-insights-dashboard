@@ -298,9 +298,9 @@ const ResourcesPage = () => {
                 Contact Support
               </Button>
             </Link>
-            <Link to="/demo">
+            <Link to="/features">
               <Button variant="outline" size="lg">
-                Schedule a Demo
+                Explore Features
               </Button>
             </Link>
           </div>

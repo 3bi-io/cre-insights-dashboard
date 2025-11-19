@@ -32,7 +32,7 @@ const CTASection = () => {
           primaryText={ctaContent.cta.primary}
           primaryPath="/auth"
           secondaryText={ctaContent.cta.secondary}
-          secondaryPath="/demo"
+          secondaryPath="/contact"
         />
       </div>
 

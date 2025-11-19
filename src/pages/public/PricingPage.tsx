@@ -206,8 +206,8 @@ const PricingPage = () => {
             <Button size="lg" onClick={() => navigate('/auth')}>
               Start Free Trial
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/demo')}>
-              Watch Demo
+            <Button size="lg" variant="outline" onClick={() => navigate('/contact')}>
+              Contact Sales
             </Button>
           </div>
         </div>
