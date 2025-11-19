@@ -109,7 +109,7 @@ const LayoutContent = () => {
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               {(state === 'collapsed') && (
-                <Brand variant="horizontal" size="md" showAsLink={true} linkTo="/dashboard" />
+                <Brand variant="horizontal" size="md" showAsLink={true} linkTo="/dashboard" priority={true} />
               )}
             </div>
             

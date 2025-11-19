@@ -259,22 +259,16 @@ const AppSidebar = () => {
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-4 py-3">
           {organization ? (
-            <>
-              {organization.logo_url ? (
-                <img 
-                  src={organization.logo_url} 
-                  alt={organization.name} 
-                  className="h-8 w-auto max-w-[150px] object-contain" 
-                />
-              ) : (
-                <Brand variant="horizontal" size="md" showAsLink={false} />
-              )}
-              <div className="flex flex-col">
-                <span className="font-semibold text-sm">{organization.name}</span>
-              </div>
-            </>
+            <Brand 
+              variant="horizontal" 
+              size="md" 
+              showAsLink={false}
+              priority={true}
+              customLogoUrl={organization.logo_url}
+              organizationName={organization.name}
+            />
           ) : (
-            <Brand variant="horizontal" size="md" showAsLink={false} />
+            <Brand variant="horizontal" size="md" showAsLink={false} priority={true} />
           )}
         </div>
       </SidebarHeader>
