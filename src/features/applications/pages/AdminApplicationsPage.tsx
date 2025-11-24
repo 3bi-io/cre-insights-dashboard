@@ -56,11 +56,15 @@ export default function AdminApplicationsPage() {
     enabled: isOrgAdmin && !!organization
   });
 
-  // Applications management
+  // Applications management with pagination
   const {
     applications,
     loading,
     statusCounts,
+    totalCount,
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -79,14 +83,13 @@ export default function AdminApplicationsPage() {
     handleSelectAll,
     handleSelectApplication,
     clearSelection,
-    updateApplication,
     handleBulkStatusChange,
     handleExportPDF,
     handleExportCSV,
   } = useApplicationsManagement(hasAccess, isOrgAdmin);
 
-  // Get deleteApplication from useApplications hook
-  const { deleteApplication } = useApplications({ enabled: hasAccess });
+  // Get deleteApplication and updateApplication from useApplications hook
+  const { deleteApplication, updateApplication } = useApplications({ enabled: hasAccess });
 
   // Dialog state management
   const {
@@ -220,7 +223,7 @@ export default function AdminApplicationsPage() {
             selectedCount={selectedApplications.size}
             onExportPDF={handleExportPDF}
             onExportCSV={handleExportCSV}
-            onBulkStatusChange={handleBulkStatusChange}
+            onBulkStatusChange={(status) => handleBulkStatusChange(status, updateApplication)}
             onBulkDelete={handleBulkDelete}
             onBulkExportSelected={handleBulkExportSelected}
             onClearSelection={clearSelection}
@@ -260,7 +263,7 @@ export default function AdminApplicationsPage() {
         {/* Applications View - Grid or Table */}
         {viewMode === 'grid' ? (
           <ApplicationsGrid
-            applications={applications}
+            applications={applications as any}
             statusCounts={statusCounts}
             selectedApplications={selectedApplications}
             onSelectAll={handleSelectAll}
@@ -275,7 +278,7 @@ export default function AdminApplicationsPage() {
           />
         ) : (
           <ApplicationsTable
-            applications={applications}
+            applications={applications as any}
             statusCounts={statusCounts}
             selectedApplications={selectedApplications}
             onSelectAll={handleSelectAll}
@@ -288,6 +291,32 @@ export default function AdminApplicationsPage() {
             onTenstreetUpdate={handleTenstreetUpdate}
             onScreeningOpen={handleScreeningOpen}
           />
+        )}
+
+        {/* Pagination */}
+        {hasNextPage && (
+          <div className="flex justify-center py-8">
+            <button
+              onClick={() => loadMore()}
+              disabled={isFetchingNextPage}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isFetchingNextPage ? 'Loading...' : `Load More (${totalCount - applications.length} remaining)`}
+            </button>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {hasNextPage && (
+          <div className="flex justify-center py-8">
+            <button
+              onClick={() => loadMore()}
+              disabled={isFetchingNextPage}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isFetchingNextPage ? 'Loading...' : `Load More (${totalCount - applications.length} remaining)`}
+            </button>
+          </div>
         )}
       </div>
 

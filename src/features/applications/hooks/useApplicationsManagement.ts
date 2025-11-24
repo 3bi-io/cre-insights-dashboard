@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useApplications } from './useApplications';
-import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
+import { usePaginatedApplications } from './usePaginatedApplications';
+import { getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import type { Application } from '@/types/common.types';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface ApplicationsManagementFilters {
   searchTerm: string;
@@ -16,6 +17,8 @@ export interface ApplicationsManagementFilters {
 export type ViewMode = 'grid' | 'table';
 
 export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolean) => {
+  const { organization } = useAuth();
+  
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -26,37 +29,53 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-  // Applications data with RLS-based filtering
-  const {
-    applications,
-    loading,
-    error,
-    updateApplication,
-    refresh,
-  } = useApplications({
-    enabled: hasAccess,
-    filters: {
-      search: searchTerm,
+  // Build filters for pagination
+  const paginationFilters = useMemo(() => {
+    return {
+      // For org admins, RLS automatically scopes to their organization
+      // For super admins, we only apply org filter if explicitly selected
+      organizationId: !isOrgAdmin && organizationFilter !== 'all' 
+        ? organizationFilter 
+        : undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined,
-      organization_id: isOrgAdmin && organizationFilter === 'all' 
-        ? undefined // RLS handles org scoping
-        : organizationFilter !== 'all' 
-          ? organizationFilter 
-          : undefined,
-    }
-  });
+      search: searchTerm || undefined,
+    };
+  }, [isOrgAdmin, organizationFilter, statusFilter, searchTerm]);
 
-  // Filtered applications
+  // Paginated applications data
+  const {
+    data,
+    isLoading: loading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = usePaginatedApplications(paginationFilters);
+
+  // Flatten paginated data
+  const applications = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) || [];
+  }, [data]);
+
+  const totalCount = data?.pages[0]?.totalCount || 0;
+
+  // Client-side filtering for category and source (not in DB query)
   const filteredApplications = useMemo(() => {
-    let filtered = filterApplications(
-      applications,
-      searchTerm,
-      categoryFilter,
-      sourceFilter,
-      organizationFilter
-    );
+    let filtered = applications;
     
-    // Additional client filtering
+    // Category filtering by category_id
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(app => 
+        app.job_listings?.category_id === categoryFilter
+      );
+    }
+    
+    // Source filtering
+    if (sourceFilter !== 'all') {
+      filtered = filtered.filter(app => app.source === sourceFilter);
+    }
+    
+    // Client filtering
     if (clientFilter !== 'all') {
       filtered = filtered.filter(app => 
         app.job_listings?.client_id === clientFilter
@@ -64,7 +83,7 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     }
     
     return filtered;
-  }, [applications, searchTerm, categoryFilter, sourceFilter, organizationFilter, clientFilter]);
+  }, [applications, categoryFilter, sourceFilter, clientFilter]);
 
   // Statistics
   const statusCounts = useMemo(() => getStatusCounts(filteredApplications), [filteredApplications]);
@@ -89,14 +108,17 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     setSelectedApplications(newSelected);
   };
 
-  // Bulk actions
-  const handleBulkStatusChange = async (newStatus: 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected') => {
+  // Bulk actions - Note: updateApplication not available from paginated hook
+  // This will need to be passed in from parent component
+  const handleBulkStatusChange = async (
+    newStatus: 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected',
+    updateFn: (id: string, data: any) => void
+  ) => {
     const promises = Array.from(selectedApplications).map(id =>
-      updateApplication(id, { status: newStatus })
+      updateFn(id, { status: newStatus })
     );
     await Promise.all(promises);
     setSelectedApplications(new Set());
-    refresh();
   };
 
   // Export functions
@@ -113,7 +135,7 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
       app.status || '',
       app.source || '',
       app.applied_at ? new Date(app.applied_at).toLocaleDateString() : '',
-      app.job_listings?.title || ''
+      app.job_listings?.title || app.job_listings?.job_title || ''
     ]);
     
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -132,6 +154,12 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     error,
     statusCounts,
     categoryCounts,
+    totalCount,
+    
+    // Pagination
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore: fetchNextPage,
     
     // Filters
     searchTerm,
@@ -158,10 +186,8 @@ export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolea
     clearSelection: () => setSelectedApplications(new Set()),
     
     // Actions
-    updateApplication,
     handleBulkStatusChange,
     handleExportPDF,
     handleExportCSV,
-    refresh,
   };
 };

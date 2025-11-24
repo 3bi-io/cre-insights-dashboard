@@ -3,6 +3,7 @@ export type { ApplicationFilters } from './useApplications';
 export { useApplicationDialogs } from './useApplicationDialogs';
 export { useOrganizationData } from './useOrganizationData';
 export { useApplicationsManagement } from './useApplicationsManagement';
+export { usePaginatedApplications } from './usePaginatedApplications';
 
 // New consolidated hooks for improved architecture
 export { useApplicationsFilters } from './useApplicationsFilters';
