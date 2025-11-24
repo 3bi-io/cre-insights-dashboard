@@ -1,18 +1,20 @@
-import React, { useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, LayoutGrid, Table as TableIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid, Table as TableIcon } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import * as XLSX from 'xlsx';
+import { Progress } from '@/components/ui/progress';
 
 import { PageLayout } from '@/features/shared';
 import { useApplications } from '../hooks/useApplications';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useOrganizationData } from '../hooks/useOrganizationData';
-import { getStatusCounts, getCategoryCounts, getApplicantCategory, getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
-import { generateApplicationsPDF } from '@/utils/pdfGenerator';
+import { useApplicationsFilters } from '../hooks/useApplicationsFilters';
+import { useApplicationsExport } from '../hooks/useApplicationsExport';
+import { useApplicationsBulkActions } from '../hooks/useApplicationsBulkActions';
+import { getStatusCounts, getCategoryCounts, getApplicantCategory } from '@/utils/applicationHelpers';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useToast } from '@/hooks/use-toast';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
 
@@ -25,18 +27,14 @@ import {
   ApplicationsSearch,
   ApplicationCard,
   ApplicationsTableView,
-  ApplicationsActions
+  ApplicationsActions,
+  KeyboardShortcutsHint
 } from '../components';
 import { TableColumnVisibility, ColumnVisibility } from '../components/TableColumnVisibility';
 import ScreeningRequestsDialog from '@/components/applications/ScreeningRequestsDialog';
 
 const ApplicationsPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [sourceFilter, setSourceFilter] = useState('all');
-  const [organizationFilter, setOrganizationFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     applicant: true,
     job: true,
@@ -47,16 +45,27 @@ const ApplicationsPage = () => {
     recruiter: true,
     actions: true,
   });
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
-  const { toast } = useToast();
   const { userRole } = useAuth();
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   const isSuperAdmin = userRole === 'super_admin';
   const isOrgAdmin = userRole === 'admin' && !isSuperAdmin;
 
-  // Use refactored hooks
+  // Consolidated hooks
   const { organizations } = useOrganizationData(isSuperAdmin);
+  const {
+    filters,
+    setSearchTerm,
+    setStatusFilter,
+    setCategoryFilter,
+    setSourceFilter,
+    setOrganizationFilter,
+    clearFilters,
+    hasActiveFilters,
+  } = useApplicationsFilters();
+  
   const {
     selectedApplication,
     smsDialogOpen,
@@ -87,180 +96,84 @@ const ApplicationsPage = () => {
   } = useApplications({
     enabled: true,
     filters: {
-      search: searchTerm,
-      // Org admins see only their organization's applications
-      organization_id: isOrgAdmin && organizationFilter === 'all' 
-        ? undefined // Let RLS handle it for org admins
-        : organizationFilter !== 'all' 
-          ? organizationFilter 
+      search: filters.searchTerm,
+      organization_id: isOrgAdmin && filters.organizationFilter === 'all' 
+        ? undefined 
+        : filters.organizationFilter !== 'all' 
+          ? filters.organizationFilter 
           : undefined,
     }
   });
 
-  // Client-side filtering for category and source (not database fields)
+  const { exportApplications } = useApplicationsExport();
+
+  const {
+    selectedApplications,
+    handleSelectAll,
+    handleSelectApplication,
+    clearSelection,
+    handleBulkStatusChange,
+    handleBulkDelete,
+    bulkProgress,
+    hasSelection,
+    selectionCount,
+  } = useApplicationsBulkActions({ 
+    updateApplication: async (id, data) => updateApplication(id, data),
+    refresh 
+  });
+
+  // Client-side filtering for category and source
   const applications = React.useMemo(() => {
     if (!serverFilteredApplications) return [];
     
     return serverFilteredApplications.filter(app => {
-      // Category filter
-      if (categoryFilter !== 'all') {
+      if (filters.categoryFilter !== 'all') {
         const category = getApplicantCategory(app);
-        if (category.code !== categoryFilter) return false;
+        if (category.code !== filters.categoryFilter) return false;
       }
       
-      // Source filter
-      if (sourceFilter !== 'all') {
+      if (filters.sourceFilter !== 'all') {
         const source = app.source || 'Other';
-        if (source !== sourceFilter) return false;
+        if (source !== filters.sourceFilter) return false;
       }
       
       return true;
     });
-  }, [serverFilteredApplications, categoryFilter, sourceFilter]);
+  }, [serverFilteredApplications, filters.categoryFilter, filters.sourceFilter]);
 
-  const downloadApplicationsPDF = async () => {
-    try {
-      await generateApplicationsPDF(applications || []);
-      toast({
-        title: "PDF Downloaded",
-        description: "Applications report has been downloaded successfully",
-      });
-    } catch (error) {
-      logger.error('PDF generation error', error, 'Applications');
-      toast({
-        title: "Export Failed",
-        description: "Failed to generate PDF report",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const downloadApplicationsCSV = () => {
-    try {
-      const exportData = applications.map(app => ({
-        'Applicant Name': getApplicantName(app),
-        'Email': getApplicantEmail(app),
-        'Phone': app.phone || '',
-        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
-        'Status': app.status,
-        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
-        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
-        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Applications');
-      XLSX.writeFile(wb, `applications-${new Date().toISOString().split('T')[0]}.xlsx`);
-
-      toast({
-        title: "CSV Downloaded",
-        description: "Applications data has been exported successfully",
-      });
-    } catch (error) {
-      logger.error('CSV export error', error, 'Applications');
-      toast({
-        title: "Export Failed",
-        description: "Failed to export CSV data",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSelectApplication = useCallback((applicationId: string, checked: boolean) => {
-    setSelectedApplications(prev => {
-      const newSet = new Set(prev);
-      if (checked) {
-        newSet.add(applicationId);
-      } else {
-        newSet.delete(applicationId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const handleSelectAll = useCallback((checked: boolean) => {
-    if (checked) {
-      setSelectedApplications(new Set(applications.map(app => app.id)));
-    } else {
-      setSelectedApplications(new Set());
-    }
-  }, [applications]);
-
-  const handleBulkStatusChange = useCallback(async (status: 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected') => {
-    const selectedIds = Array.from(selectedApplications);
-    try {
-      await Promise.all(
-        selectedIds.map(id => updateApplication(id, { status }))
-      );
-      toast({
-        title: "Status Updated",
-        description: `${selectedIds.length} application(s) updated to ${status}`,
-      });
-      setSelectedApplications(new Set());
-    } catch (error) {
-      logger.error('Bulk status change error', error, 'Applications');
-      toast({
-        title: "Update Failed",
-        description: "Failed to update application statuses",
-        variant: "destructive",
-      });
-    }
-  }, [selectedApplications, updateApplication, toast]);
-
-  const handleBulkDelete = useCallback(async () => {
-    const selectedIds = Array.from(selectedApplications);
-    try {
-      await Promise.all(
-        selectedIds.map(id => deleteApplication(id))
-      );
-      toast({
-        title: "Applications Deleted",
-        description: `${selectedIds.length} application(s) deleted successfully`,
-      });
-      setSelectedApplications(new Set());
-    } catch (error) {
-      logger.error('Bulk delete error', error, 'Applications');
-      toast({
-        title: "Delete Failed",
-        description: "Failed to delete applications",
-        variant: "destructive",
-      });
-    }
-  }, [selectedApplications, deleteApplication, toast]);
-
-  const handleBulkExportSelected = useCallback(() => {
-    try {
-      const selectedApps = applications.filter(app => selectedApplications.has(app.id));
-      const exportData = selectedApps.map(app => ({
-        'Applicant Name': getApplicantName(app),
-        'Email': getApplicantEmail(app),
-        'Phone': app.phone || '',
-        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
-        'Status': app.status,
-        'Location': `${app.city || ''} ${app.state || ''}`.trim(),
-        'Date Applied': new Date(app.applied_at).toLocaleDateString(),
-        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Selected Applications');
-      XLSX.writeFile(wb, `selected-applications-${new Date().toISOString().split('T')[0]}.xlsx`);
-
-      toast({
-        title: "Export Complete",
-        description: `${selectedApps.length} application(s) exported successfully`,
-      });
-    } catch (error) {
-      logger.error('Bulk export error', error, 'Applications');
-      toast({
-        title: "Export Failed",
-        description: "Failed to export selected applications",
-        variant: "destructive",
-      });
-    }
-  }, [applications, selectedApplications, toast]);
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: '/',
+      ctrl: false,
+      handler: () => searchInputRef.current?.focus(),
+      description: 'Focus search',
+    },
+    {
+      key: 'Escape',
+      ctrl: false,
+      handler: clearFilters,
+      description: 'Clear filters',
+    },
+    {
+      key: 'r',
+      ctrl: true,
+      handler: () => refresh(),
+      description: 'Refresh',
+    },
+    {
+      key: 'e',
+      ctrl: true,
+      handler: () => exportApplications(applications, 'csv'),
+      description: 'Export',
+    },
+    {
+      key: 'a',
+      ctrl: true,
+      handler: () => handleSelectAll(true, applications.map(a => a.id)),
+      description: 'Select all',
+    },
+  ]);
 
   const handleColumnVisibilityChange = useCallback((column: keyof ColumnVisibility) => {
     setColumnVisibility(prev => ({
@@ -279,7 +192,9 @@ const ApplicationsPage = () => {
     userRole,
     isAdmin,
     isOrgAdmin,
-    filters: { searchTerm, categoryFilter, sourceFilter, organizationFilter }
+    filters,
+    hasSelection,
+    selectionCount,
   }, 'Applications');
 
   const pageActions = (
@@ -306,13 +221,18 @@ const ApplicationsPage = () => {
       )}
       
       <ApplicationsActions
-        selectedCount={selectedApplications.size}
-        onExportPDF={downloadApplicationsPDF}
-        onExportCSV={downloadApplicationsCSV}
+        selectedCount={selectionCount}
+        onExportPDF={() => exportApplications(applications, 'pdf')}
+        onExportCSV={() => exportApplications(applications, 'csv')}
         onBulkStatusChange={handleBulkStatusChange}
-        onBulkDelete={handleBulkDelete}
-        onBulkExportSelected={handleBulkExportSelected}
-        onClearSelection={() => setSelectedApplications(new Set())}
+        onBulkDelete={async () => {
+          await handleBulkDelete(async (id) => deleteApplication(id));
+        }}
+        onBulkExportSelected={() => {
+          const selectedApps = applications.filter(app => selectedApplications.has(app.id));
+          exportApplications(selectedApps, 'xlsx');
+        }}
+        onClearSelection={clearSelection}
       />
     </div>
   );
@@ -384,10 +304,10 @@ const ApplicationsPage = () => {
           
           <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
             <ApplicationsSearch
-              searchTerm={searchTerm}
-              categoryFilter={categoryFilter}
-              sourceFilter={sourceFilter}
-              organizationFilter={organizationFilter}
+              searchTerm={filters.searchTerm}
+              categoryFilter={filters.categoryFilter}
+              sourceFilter={filters.sourceFilter}
+              organizationFilter={filters.organizationFilter}
               onSearchChange={setSearchTerm}
               onCategoryChange={setCategoryFilter}
               onSourceChange={setSourceFilter}
@@ -396,6 +316,24 @@ const ApplicationsPage = () => {
               organizations={organizations}
             />
           </div>
+          
+          {/* Keyboard Shortcuts Hint */}
+          <KeyboardShortcutsHint />
+
+          {/* Bulk Action Progress */}
+          {bulkProgress.status === 'processing' && (
+            <Card className="border-primary/50 bg-primary/5 animate-fade-in">
+              <CardContent className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">Processing bulk action...</span>
+                    <span className="text-muted-foreground">{bulkProgress.current}/{bulkProgress.total}</span>
+                  </div>
+                  <Progress value={bulkProgress.percentage} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="space-y-4">
             {applications && applications.length > 0 ? (
@@ -433,7 +371,7 @@ const ApplicationsPage = () => {
                   onScreeningOpen={handleScreeningOpen}
                   onTenstreetUpdate={handleTenstreetUpdate}
                   onSelectApplication={handleSelectApplication}
-                  onSelectAll={handleSelectAll}
+                  onSelectAll={(checked) => handleSelectAll(checked, applications.map(a => a.id))}
                 />
               )
             ) : (
