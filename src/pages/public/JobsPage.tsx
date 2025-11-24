@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, DollarSign, Building2, Clock, Mic, MicOff } from 'lucide-react';
+import { Search, MapPin, DollarSign, Building2, Clock, Mic, MicOff, Loader2 } from 'lucide-react';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { VoiceConnectionStatus } from '@/features/elevenlabs';
+import { usePaginatedPublicJobs } from '@/hooks/usePaginatedPublicJobs';
 
 const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +27,20 @@ const JobsPage = () => {
     startVoiceApplication,
     endVoiceApplication,
   } = useElevenLabsVoice();
+
+  const {
+    jobs,
+    totalCount,
+    isLoading,
+    isFetchingMore,
+    hasMore,
+    loadMore
+  } = usePaginatedPublicJobs({
+    searchTerm,
+    locationFilter,
+    categoryFilter,
+    clientFilter
+  });
 
   // Fetch all clients that have job listings
   const { data: allClients } = useQuery({
@@ -47,63 +62,6 @@ const JobsPage = () => {
       
       const clientsWithJobs = new Set(jobCounts?.map(j => j.client_id).filter(Boolean));
       return data?.filter(client => clientsWithJobs.has(client.id)) || [];
-    },
-  });
-
-  // Fetch all public job listings with voice agents
-  const { data: jobs, isLoading } = useQuery({
-    queryKey: ['public-jobs', searchTerm, locationFilter, categoryFilter, clientFilter],
-    queryFn: async () => {
-      let query = supabase
-        .from('job_listings')
-        .select(`
-          *,
-          organizations!inner(
-            name, 
-            slug,
-            id
-          ),
-          job_categories(name),
-          clients(name, logo_url)
-        `)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      // Apply search filter
-      if (searchTerm) {
-        query = query.or(`title.ilike.%${searchTerm}%,job_title.ilike.%${searchTerm}%,job_summary.ilike.%${searchTerm}%`);
-      }
-
-      // Apply location filter
-      if (locationFilter && locationFilter !== '__ALL__') {
-        query = query.or(`city.ilike.%${locationFilter}%,state.ilike.%${locationFilter}%,location.ilike.%${locationFilter}%`);
-      }
-
-      // Apply client filter
-      if (clientFilter && clientFilter !== '__ALL__') {
-        query = query.eq('client_id', clientFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      // Fetch voice agents for organizations
-      if (data && data.length > 0) {
-        const orgIds = [...new Set(data.map(job => job.organizations?.id).filter(Boolean))];
-        const { data: voiceAgents } = await supabase
-          .from('voice_agents')
-          .select('*')
-          .in('organization_id', orgIds)
-          .eq('is_active', true);
-        
-        // Attach voice agents to jobs
-        return data.map(job => ({
-          ...job,
-          voiceAgent: voiceAgents?.find(va => va.organization_id === job.organizations?.id)
-        }));
-      }
-      
-      return data;
     },
   });
 
@@ -258,7 +216,7 @@ const JobsPage = () => {
           {/* Results Count */}
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">
-              {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
+              Showing {filteredJobs.length} of {totalCount} job{totalCount !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -275,16 +233,39 @@ const JobsPage = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredJobs.map((job) => (
-              <PublicJobCard 
-                key={job.id} 
-                job={job}
-                onVoiceApply={startVoiceApplication}
-                isVoiceConnected={isConnected && selectedJob?.jobId === job.id}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredJobs.map((job) => (
+                <PublicJobCard 
+                  key={job.id} 
+                  job={job}
+                  onVoiceApply={startVoiceApplication}
+                  isVoiceConnected={isConnected && selectedJob?.jobId === job.id}
+                />
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={loadMore}
+                  disabled={isFetchingMore}
+                  variant="outline"
+                  size="lg"
+                >
+                  {isFetchingMore ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading more jobs...
+                    </>
+                  ) : (
+                    <>Load More Jobs</>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
         
         {/* Voice Application Status */}
