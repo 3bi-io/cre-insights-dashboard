@@ -38,7 +38,7 @@ const GrokChatPage = React.lazy(() => import("@/features/ai-chat").then(m => ({ 
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
 const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
-const AdminApplications = React.lazy(() => import("@/features/applications/pages/AdminApplicationsPage"));
+const Applications = React.lazy(() => import("@/features/applications").then(m => ({ default: m.ApplicationsPage })));
 const ImportApplications = React.lazy(() => import("@/pages/ImportApplications"));
 const AIAnalytics = React.lazy(() => import("@/features/ai-analytics/pages/AIAnalyticsPage"));
 const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
@@ -169,7 +169,7 @@ const AppRoutes: React.FC = () => {
         <Route path="jobs" element={<ProtectedRouteWrapper><Jobs /></ProtectedRouteWrapper>} />
         <Route path="campaigns" element={<ProtectedRouteWrapper><Campaigns /></ProtectedRouteWrapper>} />
         <Route path="job-groups" element={<ProtectedRouteWrapper><JobGroups /></ProtectedRouteWrapper>} />
-        <Route path="applications" element={<ProtectedRouteWrapper><AdminApplications /></ProtectedRouteWrapper>} />
+        <Route path="applications" element={<ProtectedRouteWrapper><Applications /></ProtectedRouteWrapper>} />
         <Route path="applications/import" element={<ProtectedRouteWrapper><ImportApplications /></ProtectedRouteWrapper>} />
         <Route path="ai-impact" element={<ProtectedRouteWrapper><AIImpactDashboard /></ProtectedRouteWrapper>} />
         <Route path="ai-analytics" element={<ProtectedRouteWrapper><AIAnalytics /></ProtectedRouteWrapper>} />

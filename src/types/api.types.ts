@@ -430,3 +430,62 @@ export interface TypedApiClient {
     get: (params: AnalyticsRequest) => Promise<ApiResponse<AnalyticsResponse>>;
   };
 }
+
+// === ADDITIONAL APPLICATION TYPES ===
+export type ApplicationStatus = 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected';
+
+export interface ApplicationFilters {
+  job_id?: string;
+  status?: ApplicationStatus | 'all';
+  search?: string;
+  organization_id?: string;
+  client_id?: string;
+  source?: string;
+  city?: string;
+  state?: string;
+  cdl_license?: boolean;
+  veteran_status?: boolean;
+  experience_years_min?: number;
+  applied_after?: string;
+  applied_before?: string;
+}
+
+// === BULK ACTION TYPES ===
+export interface BulkActionProgress {
+  current: number;
+  total: number;
+  percentage: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+export interface BulkActionRequest<T = unknown> {
+  action: string;
+  ids: string[];
+  data?: T;
+}
+
+export interface BulkActionResult {
+  success: number;
+  failed: number;
+  errors?: Array<{
+    id: string;
+    error: string;
+  }>;
+}
+
+// === EXPORT TYPES ===
+export type ExportFormat = 'pdf' | 'csv' | 'xlsx';
+
+export interface ExportOptions {
+  format: ExportFormat;
+  filename?: string;
+  fields?: string[];
+  filters?: Record<string, unknown>;
+}
+
+export interface ExportResult {
+  success: boolean;
+  filename?: string;
+  error?: string;
+  downloadUrl?: string;
+}
