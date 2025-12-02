@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
 const AppSidebar = () => {
@@ -82,11 +82,6 @@ const AppSidebar = () => {
   }, {
     group: "Management",
     items: [
-      {
-        path: '/admin/feeds',
-        label: 'XML Feeds',
-        icon: Rss
-      },
       ...(userRole === 'super_admin' ? [{
         path: '/admin/universal-feeds',
         label: 'Universal Feeds',
@@ -117,12 +112,7 @@ const AppSidebar = () => {
         path: '/admin/organizations',
         label: 'Organizations',
         icon: Building
-       }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/media',
-        label: 'Media',
-        icon: FileImage
-      }] : [])
+       }] : [])
     ]
   }, {
     group: "AI & Analytics",
