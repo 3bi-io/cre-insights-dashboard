@@ -38,9 +38,18 @@ export const isAliasAccount = (accountId: string): boolean => {
 };
 
 /**
+ * Meta account data interface
+ */
+interface MetaAccountData {
+  account_id: string;
+  account_name?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Transform account data to use display IDs
  */
-export const transformAccountDataForDisplay = (account: any): any => {
+export const transformAccountDataForDisplay = <T extends MetaAccountData>(account: T): T => {
   if (!account) return account;
   
   return {
@@ -56,7 +65,7 @@ export const transformAccountDataForDisplay = (account: any): any => {
 /**
  * Transform display data back to actual IDs for API calls
  */
-export const transformAccountDataForAPI = (account: any): any => {
+export const transformAccountDataForAPI = <T extends MetaAccountData>(account: T): T => {
   if (!account) return account;
   
   return {

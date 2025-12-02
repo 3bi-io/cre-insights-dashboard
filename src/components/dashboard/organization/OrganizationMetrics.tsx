@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, LucideIcon } from 'lucide-react';
 
 interface MetricsCardProps {
   title: string;
   value: string | number;
   description: string;
-  icon: any;
+  icon: LucideIcon;
   trend?: { value: string; positive: boolean; };
 }
 

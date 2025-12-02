@@ -5,9 +5,22 @@ import { truthContractService, type TruthContractRequest, type TruthContractVali
 export type AIProvider = 'openai' | 'anthropic' | 'grok' | 'basic';
 export type DataSensitivity = 'public' | 'internal' | 'sensitive' | 'restricted';
 
+export interface AIRequestData {
+  applications?: Array<{
+    cdl?: string;
+    exp?: string;
+    months?: string;
+    veteran?: string;
+    city?: string;
+    state?: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
 export interface AIRequest {
   prompt: string;
-  data: any;
+  data: AIRequestData;
   sensitivity: DataSensitivity;
   requiresAI: boolean;
   context?: string;
@@ -188,7 +201,7 @@ class AIService {
     }
   }
 
-  private async callAnthropic(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+  private async callAnthropic(prompt: string, data: AIRequestData, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('anthropic-chat', {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
@@ -207,7 +220,7 @@ class AIService {
     };
   }
 
-  private async callOpenAI(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+  private async callOpenAI(prompt: string, data: AIRequestData, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('openai-chat', {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
@@ -226,7 +239,7 @@ class AIService {
     };
   }
 
-  private async callGrok(prompt: string, data: any, parameters?: AIParameters): Promise<Partial<AIResponse>> {
+  private async callGrok(prompt: string, data: AIRequestData, parameters?: AIParameters): Promise<Partial<AIResponse>> {
     const response = await supabase.functions.invoke('grok-chat', {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
@@ -284,7 +297,7 @@ class AIService {
     };
   }
 
-  private sanitizeData(data: any, sensitivity: DataSensitivity): any {
+  private sanitizeData(data: AIRequestData, sensitivity: DataSensitivity): AIRequestData {
     // Remove or mask sensitive information based on sensitivity level
     const sanitized = { ...data };
 
@@ -318,7 +331,7 @@ class AIService {
     return sanitized;
   }
 
-  private buildPrompt(basePrompt: string, data: any, parameters?: AIParameters): string {
+  private buildPrompt(basePrompt: string, data: AIRequestData, parameters?: AIParameters): string {
     let prompt = basePrompt;
 
     if (parameters) {
@@ -455,7 +468,7 @@ Provide only the corrected content that maintains the original intent while fixi
     return await truthContractService.healthCheck();
   }
 
-  updateTruthContractConfig(config: any) {
+  updateTruthContractConfig(config: Record<string, unknown>) {
     truthContractService.updateConfig(config);
   }
 

@@ -19,8 +19,21 @@ import {
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 
+interface DashboardFilters {
+  status: string;
+  platform: string;
+  category: string;
+  location: string;
+  metrics: {
+    showSpend: boolean;
+    showApplications: boolean;
+    showConversions: boolean;
+    showCTR: boolean;
+  };
+}
+
 interface FilterDialogProps {
-  onFiltersChange: (filters: any) => void;
+  onFiltersChange: (filters: DashboardFilters) => void;
 }
 
 const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {

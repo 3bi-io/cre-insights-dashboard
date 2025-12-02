@@ -14,10 +14,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { exportToCSV, exportToPDF } from '@/utils/exportData';
 
+interface ExportableData {
+  [key: string]: string | number | boolean | null | undefined;
+}
+
 interface ExportDataDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  data: any[];
+  data: ExportableData[];
   availableFields: string[];
   defaultFields?: string[];
   filename: string;
@@ -67,7 +71,7 @@ export function ExportDataDialog({
 
     // Filter data to only include selected fields
     const filteredData = data.map(item => {
-      const filtered: any = {};
+      const filtered: Record<string, unknown> = {};
       selectedFields.forEach(field => {
         filtered[field] = item[field];
       });
