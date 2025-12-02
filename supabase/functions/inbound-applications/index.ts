@@ -159,6 +159,195 @@ const validateApplicationData = (data: InboundApplicationData): { valid: boolean
   };
 };
 
+/**
+ * Trigger webhooks for applications matching the source filter
+ */
+async function triggerSourceWebhooks(
+  supabase: any, 
+  applicationId: string, 
+  source: string
+): Promise<void> {
+  console.log('Triggering webhooks for application:', applicationId, 'source:', source);
+  
+  // Find all enabled webhooks that match this source
+  const { data: webhooks, error: webhookError } = await supabase
+    .from('client_webhooks')
+    .select('id, webhook_url, event_types, source_filter, secret_key')
+    .eq('enabled', true);
+
+  if (webhookError) {
+    console.error('Error fetching webhooks:', webhookError);
+    return;
+  }
+
+  if (!webhooks || webhooks.length === 0) {
+    console.log('No enabled webhooks found');
+    return;
+  }
+
+  // Filter webhooks that have this source in their source_filter AND 'created' in event_types
+  const matchingWebhooks = webhooks.filter((webhook: any) => {
+    const hasMatchingSource = webhook.source_filter && webhook.source_filter.includes(source);
+    const hasCreatedEvent = !webhook.event_types || webhook.event_types.length === 0 || webhook.event_types.includes('created');
+    return hasMatchingSource && hasCreatedEvent;
+  });
+
+  if (matchingWebhooks.length === 0) {
+    console.log('No webhooks match source filter:', source);
+    return;
+  }
+
+  console.log(`Found ${matchingWebhooks.length} matching webhooks for source: ${source}`);
+
+  // Fetch full application data
+  const { data: application, error: appError } = await supabase
+    .from('applications')
+    .select(`
+      *,
+      job_listings (
+        id, title, city, state, organization_id,
+        clients (id, name, company)
+      )
+    `)
+    .eq('id', applicationId)
+    .single();
+
+  if (appError || !application) {
+    console.error('Error fetching application for webhook:', appError);
+    return;
+  }
+
+  // Send to each matching webhook
+  for (const webhook of matchingWebhooks) {
+    const startTime = Date.now();
+    let responseStatus: number | null = null;
+    let responseBody: string | null = null;
+    let errorMessage: string | null = null;
+
+    try {
+      // Build payload
+      const payload = {
+        event_type: 'created',
+        timestamp: new Date().toISOString(),
+        application: {
+          id: application.id,
+          first_name: application.first_name,
+          last_name: application.last_name,
+          full_name: application.full_name,
+          email: application.applicant_email,
+          phone: application.phone,
+          city: application.city,
+          state: application.state,
+          zip: application.zip,
+          cdl: application.cdl,
+          cdl_class: application.cdl_class,
+          exp: application.exp,
+          source: application.source,
+          status: application.status,
+          applied_at: application.applied_at,
+          created_at: application.created_at,
+        },
+        job_listing: application.job_listings ? {
+          id: application.job_listings.id,
+          title: application.job_listings.title,
+          city: application.job_listings.city,
+          state: application.job_listings.state,
+        } : null,
+        client: application.job_listings?.clients ? {
+          id: application.job_listings.clients.id,
+          name: application.job_listings.clients.name,
+          company: application.job_listings.clients.company,
+        } : null,
+      };
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      // Sign payload if secret key is present
+      if (webhook.secret_key) {
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          "raw",
+          encoder.encode(webhook.secret_key),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"]
+        );
+        const signatureBuffer = await crypto.subtle.sign(
+          "HMAC",
+          key,
+          encoder.encode(JSON.stringify(payload))
+        );
+        const signature = Array.from(new Uint8Array(signatureBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        headers['X-Webhook-Signature'] = signature;
+      }
+
+      // Send webhook
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(webhook.webhook_url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      responseStatus = response.status;
+      responseBody = await response.text().catch(() => null);
+
+      console.log(`Webhook ${webhook.id} response: ${responseStatus}`);
+
+      // Update webhook status
+      const updateData: any = {
+        last_triggered_at: new Date().toISOString(),
+      };
+
+      if (response.ok) {
+        updateData.last_success_at = new Date().toISOString();
+        updateData.last_error = null;
+      } else {
+        updateData.last_error = `HTTP ${responseStatus}: ${responseBody?.substring(0, 200)}`;
+      }
+
+      await supabase
+        .from('client_webhooks')
+        .update(updateData)
+        .eq('id', webhook.id);
+
+    } catch (error) {
+      errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Webhook ${webhook.id} failed:`, errorMessage);
+
+      await supabase
+        .from('client_webhooks')
+        .update({
+          last_triggered_at: new Date().toISOString(),
+          last_error: errorMessage,
+        })
+        .eq('id', webhook.id);
+    }
+
+    // Log webhook attempt
+    const durationMs = Date.now() - startTime;
+    await supabase.from('client_webhook_logs').insert({
+      webhook_id: webhook.id,
+      application_id: applicationId,
+      event_type: 'created',
+      request_payload: { source, application_id: applicationId },
+      response_status: responseStatus,
+      response_body: responseBody?.substring(0, 1000),
+      error_message: errorMessage,
+      duration_ms: durationMs,
+    });
+  }
+
+  console.log('Webhook triggering complete');
+}
 
 const handler = async (req: Request): Promise<Response> => {
   console.log('=== INBOUND APPLICATION WEBHOOK ===', {
@@ -426,6 +615,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('Application created successfully:', application.id);
+
+    // Trigger webhooks for this source (non-blocking)
+    try {
+      await triggerSourceWebhooks(supabase, application.id, applicationData.source || 'CDL Job Cast');
+    } catch (webhookError) {
+      console.error('Webhook trigger failed (non-blocking):', webhookError);
+    }
 
     return new Response(
       JSON.stringify({ 
