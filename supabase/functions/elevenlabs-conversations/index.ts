@@ -134,7 +134,21 @@ serve(async (req) => {
         );
 
         if (!response.ok) {
-          throw new Error(`ElevenLabs API error: ${await response.text()}`);
+          const errorText = await response.text();
+          // Handle "conversation not found" gracefully
+          if (response.status === 404 || errorText.includes('conversation_history_not_found') || errorText.includes('document_not_found')) {
+            console.warn(`Conversation ${conversationId} not found in ElevenLabs`);
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: 'transcript_not_found',
+                message: 'Transcript not available - conversation may have been deleted from ElevenLabs or history not retained.',
+                transcript: { transcript: [] }
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          throw new Error(`ElevenLabs API error: ${errorText}`);
         }
 
         const data = await response.json();
@@ -146,26 +160,40 @@ serve(async (req) => {
           .eq('conversation_id', conversationId)
           .single();
 
-        if (conversation && data.transcript) {
-          // Store transcript messages
+        if (conversation && data.transcript && data.transcript.length > 0) {
+          // Store transcript messages using upsert to prevent duplicates
           for (let i = 0; i < data.transcript.length; i++) {
             const msg = data.transcript[i];
-            await supabase
+            const { error: upsertError } = await supabase
               .from('elevenlabs_transcripts')
-              .insert({
+              .upsert({
                 conversation_id: conversation.id,
                 speaker: msg.role || msg.speaker,
                 message: msg.message || msg.text,
                 sequence_number: i,
-                timestamp: msg.timestamp,
+                timestamp: msg.timestamp || new Date().toISOString(),
                 confidence_score: msg.confidence,
                 metadata: msg.metadata || {},
+              }, {
+                onConflict: 'conversation_id,sequence_number',
+                ignoreDuplicates: false
               });
+            
+            if (upsertError) {
+              console.error(`Failed to upsert transcript message ${i}:`, upsertError);
+            }
           }
+          console.log(`Stored ${data.transcript.length} transcript messages for conversation ${conversationId}`);
         }
 
         return new Response(
-          JSON.stringify({ success: true, transcript: data }),
+          JSON.stringify({ 
+            success: true, 
+            transcript: data,
+            message: data.transcript?.length > 0 
+              ? `Loaded ${data.transcript.length} transcript messages` 
+              : 'No transcript messages found'
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

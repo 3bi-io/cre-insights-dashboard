@@ -130,9 +130,9 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
       .eq('conversation_id', conversationDbId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
     return data as Audio | null;
   };
 
@@ -221,6 +221,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
     isSyncing: syncConversationsMutation.isPending,
     fetchTranscript,
     fetchTranscriptFromApi: fetchTranscriptMutation.mutate,
+    fetchTranscriptFromApiAsync: fetchTranscriptMutation.mutateAsync,
     isFetchingTranscript: fetchTranscriptMutation.isPending,
     fetchAudio,
     downloadAudio: downloadAudioMutation.mutate,

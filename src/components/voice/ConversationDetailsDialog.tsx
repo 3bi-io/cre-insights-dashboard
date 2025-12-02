@@ -10,10 +10,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { User, Bot, Clock, Calendar } from 'lucide-react';
+import { User, Bot, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Conversation {
   id: string;
@@ -37,10 +38,11 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
   open,
   onOpenChange,
 }) => {
-  const { fetchTranscript, fetchAudio, fetchTranscriptFromApi, isFetchingTranscript } = useElevenLabsConversations();
+  const { fetchTranscript, fetchAudio, fetchTranscriptFromApiAsync, isFetchingTranscript } = useElevenLabsConversations();
   const [transcript, setTranscript] = useState<any[]>([]);
   const [audio, setAudio] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [transcriptError, setTranscriptError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && conversation) {
@@ -50,15 +52,32 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
 
   const loadConversationData = async () => {
     setLoading(true);
+    setTranscriptError(null);
     try {
       const [transcriptData, audioData] = await Promise.all([
         fetchTranscript(conversation.id),
         fetchAudio(conversation.id),
       ]);
 
-      // If no transcript in DB, fetch from API
+      // If no transcript in DB, fetch from API and then re-query
       if (!transcriptData || transcriptData.length === 0) {
-        fetchTranscriptFromApi(conversation.conversation_id);
+        try {
+          const apiResult = await fetchTranscriptFromApiAsync(conversation.conversation_id);
+          
+          // Check if API returned an error
+          if (apiResult?.error === 'transcript_not_found') {
+            setTranscriptError(apiResult.message || 'Transcript not available from ElevenLabs');
+            setTranscript([]);
+          } else {
+            // Re-fetch from DB after API stored the data
+            const newTranscriptData = await fetchTranscript(conversation.id);
+            setTranscript(newTranscriptData || []);
+          }
+        } catch (apiError) {
+          console.error('Could not load transcript from ElevenLabs:', apiError);
+          setTranscriptError('Could not load transcript from ElevenLabs');
+          setTranscript([]);
+        }
       } else {
         setTranscript(transcriptData);
       }
@@ -66,6 +85,25 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
       setAudio(audioData);
     } catch (error) {
       console.error('Error loading conversation data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRetryLoadTranscript = async () => {
+    setLoading(true);
+    setTranscriptError(null);
+    try {
+      const apiResult = await fetchTranscriptFromApiAsync(conversation.conversation_id);
+      if (apiResult?.error === 'transcript_not_found') {
+        setTranscriptError(apiResult.message || 'Transcript not available');
+      } else {
+        const newTranscriptData = await fetchTranscript(conversation.id);
+        setTranscript(newTranscriptData || []);
+      }
+    } catch (error) {
+      console.error('Retry failed:', error);
+      setTranscriptError('Failed to load transcript');
     } finally {
       setLoading(false);
     }
@@ -144,15 +182,22 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
                 ))}
               </div>
             ) : transcript.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <p>No transcript available</p>
+              <div className="text-center py-8 space-y-4">
+                {transcriptError ? (
+                  <Alert variant="destructive" className="text-left">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{transcriptError}</AlertDescription>
+                  </Alert>
+                ) : (
+                  <p className="text-muted-foreground">No transcript available</p>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4"
-                  onClick={() => fetchTranscriptFromApi(conversation.conversation_id)}
+                  onClick={handleRetryLoadTranscript}
+                  disabled={isFetchingTranscript}
                 >
-                  Load Transcript from API
+                  {isFetchingTranscript ? 'Loading...' : 'Retry Load Transcript'}
                 </Button>
               </div>
             ) : (
