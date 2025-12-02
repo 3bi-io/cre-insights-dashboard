@@ -98,13 +98,11 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
           return acc;
         }, {} as Record<string, number>) || {};
 
-        // Filter conversations with at least 3 messages and add count
-        return conversationsData
-          .map(conv => ({
-            ...conv,
-            message_count: messageCounts[conv.id] || 0
-          }))
-          .filter(conv => conv.message_count >= 3) as Conversation[];
+        // Return all conversations with message count
+        return conversationsData.map(conv => ({
+          ...conv,
+          message_count: messageCounts[conv.id] || 0
+        })) as Conversation[];
       }
 
       return [];
