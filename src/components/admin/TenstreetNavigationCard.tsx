@@ -40,7 +40,7 @@ export function TenstreetNavigationCard() {
               Applicant tracking, background screening, and analytics
             </CardDescription>
           </div>
-          <Button onClick={() => navigate('/admin/tenstreet')}>
+          <Button onClick={() => navigate('/admin/ats-command')}>
             Open Dashboard
           </Button>
         </div>
@@ -51,7 +51,7 @@ export function TenstreetNavigationCard() {
             variant="outline" 
             size="sm"
             className="h-16 flex-col gap-1"
-            onClick={() => navigate('/admin/tenstreet')}
+            onClick={() => navigate('/admin/ats-command')}
           >
             <LayoutDashboard className="h-4 w-4" />
             <span className="text-xs">Overview</span>
@@ -61,7 +61,7 @@ export function TenstreetNavigationCard() {
             variant="outline" 
             size="sm"
             className="h-16 flex-col gap-1"
-            onClick={() => navigate('/admin/tenstreet/xchange')}
+            onClick={() => navigate('/admin/ats-command?tab=xchange')}
             disabled={!isConfigured}
           >
             <Shield className="h-4 w-4" />
@@ -72,7 +72,7 @@ export function TenstreetNavigationCard() {
             variant="outline" 
             size="sm"
             className="h-16 flex-col gap-1"
-            onClick={() => navigate('/admin/tenstreet/focus')}
+            onClick={() => navigate('/admin/ats-command?tab=focus')}
             disabled={!isConfigured}
           >
             <TrendingUp className="h-4 w-4" />
@@ -83,7 +83,7 @@ export function TenstreetNavigationCard() {
             variant="outline" 
             size="sm"
             className="h-16 flex-col gap-1"
-            onClick={() => navigate('/admin/tenstreet-explorer')}
+            onClick={() => navigate('/admin/ats-command?tab=explorer')}
             disabled={!isConfigured}
           >
             <Activity className="h-4 w-4" />

@@ -31,9 +31,9 @@ export const QuickActionsPanel = () => {
       color: 'bg-red-50 hover:bg-red-100 text-red-700',
     },
     {
-      label: 'ATS Explorer',
+      label: 'ATS Command',
       icon: Zap,
-      href: '/admin/tenstreet-explorer',
+      href: '/admin/ats-command',
       color: 'bg-amber-50 hover:bg-amber-100 text-amber-700',
     },
     {

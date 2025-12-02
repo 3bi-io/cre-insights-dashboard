@@ -97,8 +97,7 @@ const AppSidebar = () => {
       group: "Settings",
       icon: Settings,
       items: [
-        { path: '/admin/ai-settings', label: 'AI Configuration', icon: Settings },
-        { path: '/admin/privacy-controls', label: 'Privacy & Compliance', icon: Shield },
+        { path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings },
         { path: '/admin/support', label: 'Support', icon: HelpCircle }
       ]
     },
