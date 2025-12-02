@@ -9,12 +9,20 @@ import { successResponse, errorResponse, validationErrorResponse } from '../_sha
 import { enforceAuth } from '../_shared/serverAuth.ts';
 
 interface BulkOperationRequest {
-  operationType: 'import' | 'export' | 'status_update' | 'sync';
+  operationType: 'import' | 'export' | 'status_update' | 'sync' | 'export_organization_data';
   fileData?: string; // Base64 encoded CSV/Excel
   applicationIds?: string[];
   newStatus?: string;
   syncSource?: 'facebook' | 'hubspot' | 'indeed';
   fieldSelection?: string[];
+  organizationId?: string;
+  filters?: {
+    dateFrom?: string;
+    dateTo?: string;
+    statuses?: string[];
+    jobListingIds?: string[];
+  };
+  format?: 'csv' | 'xlsx';
 }
 
 Deno.serve(async (req) => {
@@ -36,7 +44,10 @@ Deno.serve(async (req) => {
       applicationIds, 
       newStatus, 
       syncSource,
-      fieldSelection 
+      fieldSelection,
+      organizationId: requestOrgId,
+      filters,
+      format
     } = await req.json() as BulkOperationRequest;
 
     if (!operationType) {
@@ -79,6 +90,38 @@ Deno.serve(async (req) => {
         }
         result = await handleBulkSync(supabase, authContext.organizationId, syncSource);
         operationDetails = { recordsSynced: result.synced };
+        break;
+
+      case 'export_organization_data':
+        result = await handleOrganizationExport(
+          supabase, 
+          requestOrgId || authContext.organizationId, 
+          filters || {},
+          fieldSelection,
+          format || 'csv'
+        );
+        operationDetails = { recordsExported: result.count };
+        // Return early with export data
+        if (result.success && result.exportData) {
+          // Log the operation
+          await supabase
+            .from('tenstreet_bulk_operations')
+            .insert({
+              organization_id: requestOrgId || authContext.organizationId,
+              operation_type: 'export_organization_data',
+              status: 'completed',
+              records_processed: result.count,
+              errors: [],
+              initiated_by: authContext.userId,
+              completed_at: new Date().toISOString()
+            });
+          
+          return successResponse({
+            exportData: result.exportData,
+            count: result.count,
+            format: result.format,
+          }, 'Export completed successfully');
+        }
         break;
 
       default:
@@ -251,4 +294,143 @@ async function handleBulkSync(supabase: any, organizationId: string, syncSource:
     synced: 0,
     message: `Sync from ${syncSource} is not yet implemented`
   };
+}
+
+async function handleOrganizationExport(
+  supabase: any, 
+  organizationId: string, 
+  filters: {
+    dateFrom?: string;
+    dateTo?: string;
+    statuses?: string[];
+    jobListingIds?: string[];
+  },
+  fieldSelection?: string[],
+  format: 'csv' | 'xlsx' = 'csv'
+) {
+  console.log(`Exporting organization data for ${organizationId}`, { filters, format });
+
+  try {
+    // Build query for applications with organization filter via job_listings
+    let query = supabase
+      .from('applications')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        applicant_email,
+        phone,
+        address_1,
+        address_2,
+        city,
+        state,
+        zip,
+        status,
+        applied_at,
+        source,
+        cdl_class,
+        cdl_endorsements,
+        driving_experience_years,
+        exp,
+        notes,
+        created_at,
+        job_listings!inner(id, title, organization_id)
+      `)
+      .eq('job_listings.organization_id', organizationId);
+
+    // Apply filters
+    if (filters.dateFrom) {
+      query = query.gte('applied_at', filters.dateFrom);
+    }
+    if (filters.dateTo) {
+      query = query.lte('applied_at', filters.dateTo);
+    }
+    if (filters.statuses && filters.statuses.length > 0) {
+      query = query.in('status', filters.statuses);
+    }
+    if (filters.jobListingIds && filters.jobListingIds.length > 0) {
+      query = query.in('job_listing_id', filters.jobListingIds);
+    }
+
+    query = query.order('applied_at', { ascending: false });
+
+    const { data: applications, error } = await query;
+
+    if (error) {
+      console.error('Error fetching applications for export:', error);
+      throw error;
+    }
+
+    if (!applications || applications.length === 0) {
+      return {
+        success: true,
+        count: 0,
+        exportData: '',
+        format
+      };
+    }
+
+    // Default fields if none specified
+    const fields = fieldSelection && fieldSelection.length > 0 
+      ? fieldSelection 
+      : ['first_name', 'last_name', 'applicant_email', 'phone', 'status', 'applied_at'];
+
+    // Build CSV
+    const headers = fields.map(f => {
+      // Convert snake_case to Title Case for headers
+      return f.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    });
+
+    const csvLines = [headers.join(',')];
+
+    applications.forEach((app: any) => {
+      const values = fields.map(field => {
+        let value = app[field];
+        
+        // Handle arrays (like cdl_endorsements)
+        if (Array.isArray(value)) {
+          value = value.join('; ');
+        }
+        
+        // Handle dates
+        if (field === 'applied_at' || field === 'created_at') {
+          value = value ? new Date(value).toLocaleDateString() : '';
+        }
+        
+        // Handle null/undefined
+        if (value === null || value === undefined) {
+          value = '';
+        }
+        
+        // Escape CSV values
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      });
+      csvLines.push(values.join(','));
+    });
+
+    const csvData = csvLines.join('\n');
+    
+    // For XLSX format, we still return CSV but the frontend can handle conversion
+    // In production, you might use a library like xlsx on the backend
+    const base64Data = btoa(unescape(encodeURIComponent(csvData)));
+
+    return {
+      success: true,
+      count: applications.length,
+      exportData: base64Data,
+      format: 'csv' // Always CSV for now, frontend handles the naming
+    };
+
+  } catch (error) {
+    console.error('Organization export error:', error);
+    return {
+      success: false,
+      count: 0,
+      errors: [{ error: error instanceof Error ? error.message : 'Export failed' }]
+    };
+  }
 }
