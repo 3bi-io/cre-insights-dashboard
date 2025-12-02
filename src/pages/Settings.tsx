@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AdminPageLayout } from '@/features/shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,14 +13,23 @@ import AdministratorsSettingsTab from '@/components/settings/AdministratorsSetti
 
 const Settings = () => {
   const { userRole } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  
+  const validTabs = ['profile', 'integrations', 'webhooks', 'documentation', 'notifications', 'privacy', 'administrators'];
+  const tabParam = searchParams.get('tab');
+  const activeTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'profile';
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   return (
     <AdminPageLayout
       title="Settings"
       description="Manage your account and application preferences"
     >
-      <Tabs defaultValue="profile" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
