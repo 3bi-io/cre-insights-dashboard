@@ -7,15 +7,17 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const STATIC_ROUTES = [
   { loc: 'https://ats.me/', changefreq: 'daily', priority: 1.0 },
-  { loc: 'https://ats.me/pricing', changefreq: 'weekly', priority: 0.9 },
-  { loc: 'https://ats.me/demo', changefreq: 'weekly', priority: 0.9 },
+  { loc: 'https://ats.me/jobs', changefreq: 'daily', priority: 0.9 },
   { loc: 'https://ats.me/features', changefreq: 'weekly', priority: 0.9 },
+  { loc: 'https://ats.me/pricing', changefreq: 'monthly', priority: 0.9 },
+  { loc: 'https://ats.me/demo', changefreq: 'weekly', priority: 0.9 },
   { loc: 'https://ats.me/resources', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://ats.me/contact', changefreq: 'monthly', priority: 0.8 },
   { loc: 'https://ats.me/auth', changefreq: 'monthly', priority: 0.6 },
   { loc: 'https://ats.me/privacy-policy', changefreq: 'yearly', priority: 0.3 },
   { loc: 'https://ats.me/terms-of-service', changefreq: 'yearly', priority: 0.3 },
   { loc: 'https://ats.me/cookie-policy', changefreq: 'yearly', priority: 0.3 },
+  { loc: 'https://ats.me/sitemap', changefreq: 'monthly', priority: 0.5 },
 ];
 
 function escapeXml(unsafe: string): string {
