@@ -6,14 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
-import { useImportApplicationsAccess } from '@/hooks/useImportApplicationsAccess';
 import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Phone, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Upload, Target, TrendingUp, Sparkles } from 'lucide-react';
+import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, FileImage, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
 const AppSidebar = () => {
@@ -27,7 +26,6 @@ const AppSidebar = () => {
   } = useAuth();
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
   const { hasATSExplorerAccess } = useATSExplorerAccess();
-  const { hasImportApplicationsAccess } = useImportApplicationsAccess();
   const { counts: tenstreetCounts } = useTenstreetNotifications();
   // Main standalone items
   const mainItems = [
@@ -46,11 +44,6 @@ const AppSidebar = () => {
         label: 'Applications',
         icon: Users
       },
-      ...(hasImportApplicationsAccess && userRole === 'super_admin' ? [{
-        path: '/admin/applications/import',
-        label: 'Import Applications',
-        icon: Upload
-      }] : []),
       {
         path: '/admin/jobs',
         label: 'Job Listings',
@@ -66,11 +59,6 @@ const AppSidebar = () => {
         label: 'Routes',
         icon: MapPin
       },
-      ...(hasVoiceAgent() ? [{
-        path: '/admin/voice-agent',
-        label: 'Voice Agent',
-        icon: Phone
-      }] : []),
       ...(hasVoiceAgent() && (userRole === 'super_admin' || userRole === 'admin') ? [{
         path: '/admin/elevenlabs-admin',
         label: 'ElevenLabs Admin',
