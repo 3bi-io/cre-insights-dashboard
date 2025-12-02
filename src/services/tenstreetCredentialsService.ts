@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import type { OrganizationCredentialStatus, CredentialsSummary } from '@/types/tenstreet/service-types';
 
 export type { OrganizationCredentialStatus, CredentialsSummary };
@@ -13,7 +14,7 @@ export class TenstreetCredentialsService {
       const { data, error } = await supabase.rpc('get_organizations_credentials_summary');
 
       if (error) {
-        console.error('Error fetching organizations credentials summary:', error);
+        logger.error('Error fetching organizations credentials summary', error, 'Tenstreet');
         throw error;
       }
 
@@ -51,7 +52,7 @@ export class TenstreetCredentialsService {
         connection_health: row.connection_health as 'active' | 'inactive' | 'error' | 'unknown',
       }));
     } catch (error) {
-      console.error('Failed to fetch organization credentials:', error);
+      logger.error('Failed to fetch organization credentials', error, 'Tenstreet');
       throw error;
     }
   }

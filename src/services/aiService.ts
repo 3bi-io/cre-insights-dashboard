@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { cacheService } from './cacheService';
 import { truthContractService, type TruthContractRequest, type TruthContractValidation } from './truthContract';
+import { logger } from '@/lib/logger';
 
 export type AIProvider = 'openai' | 'anthropic' | 'grok' | 'basic';
 export type DataSensitivity = 'public' | 'internal' | 'sensitive' | 'restricted';
@@ -59,11 +60,19 @@ class AIService {
     const cacheKey = cacheService.getCacheKey(request.data, 'auto', request.parameters);
     const cachedResult = await cacheService.get(cacheKey);
     
-    if (cachedResult) {
+    if (cachedResult && typeof cachedResult === 'object' && cachedResult !== null) {
+      const cached = cachedResult as AIResponse;
       return {
-        ...cachedResult,
+        content: cached.content || '',
+        provider: cached.provider || 'basic',
+        processingType: cached.processingType || 'rule-based',
+        confidence: cached.confidence || 0,
+        explanation: cached.explanation,
+        fallbackUsed: false,
         processingTime: Date.now() - startTime,
-        fallbackUsed: false
+        truthValidation: cached.truthValidation,
+        isValidated: cached.isValidated || false,
+        originalContent: cached.originalContent,
       };
     }
 
@@ -96,7 +105,7 @@ class AIService {
 
         // If truth contract validation fails, attempt correction or rejection
         if (!truthValidation.isValid) {
-          console.warn('Truth Contract validation failed:', truthValidation);
+          logger.warn('Truth Contract validation failed', { truthValidation }, 'AIService');
           
           if (truthValidation.score < 50 || truthValidation.violations.some(v => v.severity === 'critical')) {
             // Critical failures - reject and try next provider
@@ -139,7 +148,7 @@ class AIService {
 
         return response;
       } catch (error) {
-        console.warn(`Provider ${provider} failed:`, error);
+        logger.warn(`Provider ${provider} failed`, { error }, 'AIService');
         
         // If this is the last provider, throw the error
         if (i === this.preferredProviders.length - 1) {
@@ -373,7 +382,7 @@ class AIService {
     try {
       return await truthContractService.validateResponse(request);
     } catch (error) {
-      console.error('Truth Contract validation error:', error);
+      logger.error('Truth Contract validation error', error, 'AIService');
       // Return minimal validation on error
       return {
         isValid: false,
@@ -418,7 +427,7 @@ Provide only the corrected content that maintains the original intent while fixi
       if (response.error) return null;
       return response.data.generatedText;
     } catch (error) {
-      console.error('Truth correction failed:', error);
+      logger.error('Truth correction failed', error, 'AIService');
       return null;
     }
   }
