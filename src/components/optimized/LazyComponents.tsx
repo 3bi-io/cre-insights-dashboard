@@ -14,8 +14,7 @@ export const LazyNotFound = lazy(() => import('@/pages/NotFound'));
 export const DashboardCharts = lazy(() => import('@/components/dashboard/DashboardCharts'));
 export const SpendChart = lazy(() => import('@/components/SpendChart'));
 export const PlatformBreakdown = lazy(() => import('@/components/PlatformBreakdown'));
-export const ChatBot = lazy(() => import('@/components/chat/ChatBot'));
-export const MobileChatBot = lazy(() => import('@/components/chat/MobileChatBot'));
+export const ChatBot = lazy(() => import('@/components/chat/MobileChatBot'));
 
 // Lazy load dialog components
 export const ApplicationDetailsDialog = lazy(() => import('@/components/applications/ApplicationDetailsDialog'));
