@@ -17,8 +17,25 @@ export class TenstreetCredentialsService {
         throw error;
       }
 
+      // Define the expected row shape from the RPC
+      interface CredentialRow {
+        id: string;
+        name: string;
+        slug: string;
+        created_at: string;
+        credential_id: string | null;
+        credential_status: string | null;
+        mode: string | null;
+        api_endpoint: string | null;
+        credentials_updated: string | null;
+        total_applications: number | string;
+        last_sync_time: string | null;
+        synced_count: number | string;
+        connection_health: string;
+      }
+
       // Transform database results to match interface
-      return (data || []).map((row: any) => ({
+      return (data || []).map((row: CredentialRow) => ({
         id: row.id,
         name: row.name,
         slug: row.slug,

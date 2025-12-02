@@ -10,6 +10,41 @@ import type {
 } from '@/types/tenstreet';
 
 /**
+ * Applicant response from Tenstreet API
+ */
+export interface TenstreetApplicantResponse {
+  driverId: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  cdl?: string;
+  experience?: string;
+  status: string;
+  appliedAt: string;
+  data?: Record<string, unknown>;
+}
+
+/**
+ * Data for creating a new applicant
+ */
+export interface ApplicantCreateData {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  cdl?: string;
+  experience?: string;
+  [key: string]: unknown;
+}
+
+/**
  * Search parameters for applicant search
  */
 export interface SearchParams {
@@ -55,7 +90,7 @@ export interface XchangeRequest {
   referenceNumber?: string;
   requestDate: string;
   completionDate?: string;
-  resultData?: any;
+  resultData?: Record<string, unknown>;
 }
 
 export interface XchangeStatus {
@@ -75,16 +110,16 @@ export interface Job {
   companyId: string;
   status: string;
   location?: string;
-  requirements?: any;
+  requirements?: Record<string, unknown>;
 }
 
-export interface Application {
+export interface TenstreetApplication {
   id: string;
   jobId: string;
   driverId: string;
   status: string;
   appliedAt: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export interface Assignment {
@@ -108,7 +143,7 @@ export interface Metrics {
   hiredCount: number;
   averageTimeToHire: number;
   conversionRate: number;
-  trends?: any;
+  trends?: Array<{ date: string; value: number }>;
 }
 
 export interface SourceStats {
@@ -146,7 +181,7 @@ export interface ImportResult {
   failed: number;
   skipped: number;
   errors?: string[];
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export interface BulkUpdateResult {
@@ -268,7 +303,7 @@ export class TenstreetService {
    */
   private static async callEdgeFunction<T>(
     functionName: string,
-    payload: any
+    payload: Record<string, unknown>
   ): Promise<TenstreetResponse<T>> {
     try {
       logger.info(`TenstreetService: Calling ${functionName}`, { action: payload.action });
@@ -309,7 +344,7 @@ export class TenstreetService {
   /**
    * Search for applicants using various criteria
    */
-  static async searchApplicants(params: SearchParams): Promise<TenstreetResponse<any[]>> {
+  static async searchApplicants(params: SearchParams): Promise<TenstreetResponse<TenstreetApplicantResponse[]>> {
     return this.callEdgeFunction(this.EXPLORER_FUNCTION, {
       action: 'search_applicants',
       ...params
@@ -319,7 +354,7 @@ export class TenstreetService {
   /**
    * Get detailed data for a specific applicant
    */
-  static async getApplicantData(driverId: string, companyId: string): Promise<TenstreetResponse<any>> {
+  static async getApplicantData(driverId: string, companyId: string): Promise<TenstreetResponse<TenstreetApplicantResponse>> {
     return this.callEdgeFunction(this.EXPLORER_FUNCTION, {
       action: 'get_applicant_data',
       driverId,
@@ -330,7 +365,7 @@ export class TenstreetService {
   /**
    * Create a new applicant in Tenstreet
    */
-  static async createApplicant(data: any, companyId: string): Promise<TenstreetResponse<any>> {
+  static async createApplicant(data: ApplicantCreateData, companyId: string): Promise<TenstreetResponse<TenstreetApplicantResponse>> {
     return this.callEdgeFunction(this.EXPLORER_FUNCTION, {
       action: 'create_applicant',
       applicantData: data,
@@ -343,9 +378,9 @@ export class TenstreetService {
    */
   static async updateApplicant(
     driverId: string,
-    updates: Partial<any>,
+    updates: Partial<ApplicantCreateData>,
     companyId: string
-  ): Promise<TenstreetResponse<any>> {
+  ): Promise<TenstreetResponse<TenstreetApplicantResponse>> {
     return this.callEdgeFunction(this.EXPLORER_FUNCTION, {
       action: 'update_applicant',
       driverId,
@@ -501,7 +536,7 @@ export class TenstreetService {
   /**
    * Get applications for a specific job
    */
-  static async getJobApplications(jobId: string, companyId: string): Promise<TenstreetResponse<Application[]>> {
+  static async getJobApplications(jobId: string, companyId: string): Promise<TenstreetResponse<TenstreetApplication[]>> {
     return this.callEdgeFunction(this.EXPLORER_FUNCTION, {
       action: 'get_job_applications',
       jobId,

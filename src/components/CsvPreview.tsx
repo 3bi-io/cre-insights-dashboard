@@ -2,8 +2,12 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
 
+interface CsvRowData {
+  [key: string]: string | number | boolean | null | undefined;
+}
+
 interface CsvPreviewProps {
-  data: any[];
+  data: CsvRowData[];
 }
 
 const CsvPreview: React.FC<CsvPreviewProps> = ({ data }) => {
@@ -27,8 +31,8 @@ const CsvPreview: React.FC<CsvPreviewProps> = ({ data }) => {
           <tbody>
             {data.map((row, index) => (
               <tr key={index} className="border-t">
-                {Object.values(row).map((value: any, i) => (
-                  <td key={i} className="p-2 truncate max-w-32">{value}</td>
+                {Object.values(row).map((value, i) => (
+                  <td key={i} className="p-2 truncate max-w-32">{String(value ?? '')}</td>
                 ))}
               </tr>
             ))}
