@@ -80,16 +80,24 @@ class AIConnectionManager {
           break;
           
         case 'elevenlabs':
-          // ElevenLabs requires a valid agent ID to test - skip actual API call
-          // Just verify the edge function is reachable (will return error without valid agent)
+          // ElevenLabs requires a valid agent ID to test
+          // We use a dummy ID - if we get "not found" it means API key is valid
           response = await supabase.functions.invoke('elevenlabs-agent', {
             body: {
               agentId: 'connection-test'
             }
           });
-          // Consider connected if we get any response (even error means the function works)
-          // The actual agent ID validation happens at runtime with real agent IDs
-          isConnected = !response.error || (response.data && response.data.error?.includes('not found'));
+          // If we get a 404 "not found" error, it means the API key is valid
+          // (authentication passed, just the agent doesn't exist)
+          if (response.data?.error?.includes('not found') || 
+              response.data?.success === true) {
+            isConnected = true;
+          } else if (response.error?.message?.includes('not configured')) {
+            isConnected = false;
+          } else {
+            // Any other response means the edge function is reachable
+            isConnected = !response.error;
+          }
           break;
           
         case 'grok':
