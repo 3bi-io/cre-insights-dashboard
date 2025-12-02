@@ -19,9 +19,11 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange }: Ba
       </h2>
       
       <div className="space-y-2">
-        <Label htmlFor="drug" className="text-sm font-medium">Can you pass a drug test?</Label>
+        <Label htmlFor="drug" className="text-sm font-medium">
+          Can you pass a drug test? <span className="text-destructive">*</span>
+        </Label>
         <Select value={formData.drug} onValueChange={(value) => onInputChange('drug', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>

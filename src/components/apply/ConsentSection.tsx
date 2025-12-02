@@ -20,10 +20,10 @@ export const ConsentSection = React.memo(({ formData, onInputChange }: ConsentSe
       
       <div className="space-y-2">
         <Label htmlFor="consent" className="text-sm font-medium">
-          Do you agree to receive SMS messages from C.R. England?
+          Do you agree to receive SMS messages from C.R. England? <span className="text-destructive">*</span>
         </Label>
         <Select value={formData.consent} onValueChange={(value) => onInputChange('consent', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
@@ -35,10 +35,10 @@ export const ConsentSection = React.memo(({ formData, onInputChange }: ConsentSe
 
       <div className="space-y-2">
         <Label htmlFor="privacy" className="text-sm font-medium">
-          Do you agree to our privacy policy?
+          Do you agree to our privacy policy? <span className="text-destructive">*</span>
         </Label>
         <Select value={formData.privacy} onValueChange={(value) => onInputChange('privacy', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>

@@ -1,7 +1,7 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 
@@ -20,6 +20,16 @@ interface FormData {
   veteran: string;
   consent: string;
   privacy: string;
+  // URL tracking parameters
+  ad_id: string;
+  campaign_id: string;
+  adset_id: string;
+  job_listing_id: string;
+  job_id: string;
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+  referral_source: string;
 }
 
 const initialFormData: FormData = {
@@ -37,12 +47,39 @@ const initialFormData: FormData = {
   veteran: '',
   consent: '',
   privacy: '',
+  // URL tracking parameters
+  ad_id: '',
+  campaign_id: '',
+  adset_id: '',
+  job_listing_id: '',
+  job_id: '',
+  utm_source: '',
+  utm_medium: '',
+  utm_campaign: '',
+  referral_source: '',
 };
 
 export const useApplicationForm = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
+  // Capture URL parameters on mount
+  useEffect(() => {
+    const urlParams: Partial<FormData> = {
+      ad_id: searchParams.get('ad_id') || '',
+      campaign_id: searchParams.get('campaign_id') || '',
+      adset_id: searchParams.get('adset_id') || '',
+      job_listing_id: searchParams.get('job_listing_id') || '',
+      job_id: searchParams.get('job_id') || '',
+      utm_source: searchParams.get('utm_source') || '',
+      utm_medium: searchParams.get('utm_medium') || '',
+      utm_campaign: searchParams.get('utm_campaign') || '',
+      referral_source: document.referrer || '',
+    };
+
+    setFormData(prev => ({ ...prev, ...urlParams }));
+  }, [searchParams]);
 
   const getExperienceValue = useCallback((months: string) => {
     if (!months) return '';
@@ -54,6 +91,49 @@ export const useApplicationForm = () => {
       return 'More than 3 months';
     }
   }, []);
+
+  const validateForm = useCallback((): boolean => {
+    // Required personal fields
+    if (!formData.firstName.trim()) {
+      toast.error('Please enter your first name');
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      toast.error('Please enter your last name');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      toast.error('Please enter your email');
+      return false;
+    }
+    if (!formData.phone.trim()) {
+      toast.error('Please enter your phone number');
+      return false;
+    }
+    if (!formData.zip.trim()) {
+      toast.error('Please enter your ZIP code');
+      return false;
+    }
+
+    // Required screening fields
+    const requiredFields = [
+      { field: 'over21' as keyof FormData, label: 'age verification' },
+      { field: 'cdl' as keyof FormData, label: 'CDL status' },
+      { field: 'experience' as keyof FormData, label: 'experience' },
+      { field: 'drug' as keyof FormData, label: 'drug test response' },
+      { field: 'consent' as keyof FormData, label: 'SMS consent' },
+      { field: 'privacy' as keyof FormData, label: 'privacy policy agreement' },
+    ];
+
+    for (const { field, label } of requiredFields) {
+      if (!formData[field]) {
+        toast.error(`Please select ${label}`);
+        return false;
+      }
+    }
+
+    return true;
+  }, [formData]);
 
   const submitApplication = useMutation({
     mutationFn: async (data: FormData) => {
@@ -94,8 +174,13 @@ export const useApplicationForm = () => {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     submitApplication.mutate(formData);
-  }, [formData, submitApplication]);
+  }, [formData, submitApplication, validateForm]);
 
   return {
     formData,
