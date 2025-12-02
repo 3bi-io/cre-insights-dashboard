@@ -185,11 +185,6 @@ const AppSidebar = () => {
         path: '/admin/super-admin-feeds',
         label: 'Feed Management',
         icon: Rss
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/hayes-data',
-        label: 'Hayes Data',
-        icon: Users
       }] : [])
     ]
   }];
