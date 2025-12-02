@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface Conversation {
   id: string;
@@ -13,7 +14,7 @@ interface Conversation {
   started_at: string;
   ended_at: string | null;
   duration_seconds: number | null;
-  metadata: any;
+  metadata: Record<string, unknown>;
   message_count?: number;
   voice_agents?: {
     agent_name: string;
@@ -52,7 +53,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
     queryKey: ['elevenlabs-conversations', voiceAgentId],
     enabled: !!session && (userRole === 'super_admin' || userRole === 'admin'),
     queryFn: async () => {
-      console.log('Fetching ElevenLabs conversations for agent:', voiceAgentId || 'all');
+      logger.debug('Fetching ElevenLabs conversations', { agentId: voiceAgentId || 'all' }, 'ElevenLabs');
       let query = supabase
         .from('elevenlabs_conversations')
         .select(`
@@ -73,11 +74,11 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
       const { data: conversationsData, error } = await query;
 
       if (error) {
-        console.error('Error fetching conversations:', error);
+        logger.error('Error fetching conversations', error, 'ElevenLabs');
         throw error;
       }
       
-      console.log('Fetched conversations:', conversationsData?.length || 0);
+      logger.debug('Fetched conversations', { count: conversationsData?.length || 0 }, 'ElevenLabs');
       
       // Fetch transcript counts for each conversation
       if (conversationsData && conversationsData.length > 0) {
@@ -89,7 +90,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
           .in('conversation_id', conversationIds);
 
         if (countError) {
-          console.error('Error fetching transcript counts:', countError);
+          logger.error('Error fetching transcript counts', countError, 'ElevenLabs');
         }
 
         // Count messages per conversation
@@ -152,7 +153,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
         description: "Successfully synced conversations from ElevenLabs.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Sync failed",
         description: error.message || "Failed to sync conversations.",
@@ -178,7 +179,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
         description: "Conversation transcript loaded successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to load transcript",
         description: error.message,
@@ -203,7 +204,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
         description: "Conversation audio downloaded successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Download failed",
         description: error.message,

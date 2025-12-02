@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export type AIProvider = 'openai' | 'anthropic' | 'elevenlabs' | 'grok';
 
@@ -139,7 +140,7 @@ class AIConnectionManager {
   }
 
   async checkAllConnections(): Promise<AIConnectionStatus[]> {
-    console.log('Checking all AI provider connections...');
+    logger.debug('Checking all AI provider connections', undefined, 'AIConnection');
     
     const providers: AIProvider[] = ['openai', 'anthropic', 'elevenlabs', 'grok'];
     const results = await Promise.allSettled(
@@ -159,7 +160,7 @@ class AIConnectionManager {
       }
     });
     
-    console.log('AI connection status:', statuses);
+    logger.debug('AI connection status', { statuses }, 'AIConnection');
     return statuses;
   }
 
@@ -216,7 +217,7 @@ class AIConnectionManager {
 
   // Force refresh all connections
   async refreshAllConnections(): Promise<void> {
-    console.log('Refreshing all AI platform connections...');
+    logger.debug('Refreshing all AI platform connections', undefined, 'AIConnection');
     
     // Clear existing status
     this.connectionStatus.clear();
@@ -224,7 +225,7 @@ class AIConnectionManager {
     // Check all connections
     await this.checkAllConnections();
     
-    console.log('AI platform connections refreshed');
+    logger.debug('AI platform connections refreshed', undefined, 'AIConnection');
   }
 
   // Get provider health summary

@@ -22,6 +22,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 const CraigslistPlatformActions: React.FC = () => {
   const [feedUrl, setFeedUrl] = useState('');
@@ -48,7 +49,7 @@ const CraigslistPlatformActions: React.FC = () => {
       if (error) throw error;
       setConnectionStatus(data);
     } catch (error) {
-      console.error('Failed to check connection status:', error);
+      logger.error('Failed to check Craigslist connection status', error, 'Craigslist');
       setConnectionStatus({ connected: false, error: 'Failed to check connection' });
     } finally {
       setLoading(false);

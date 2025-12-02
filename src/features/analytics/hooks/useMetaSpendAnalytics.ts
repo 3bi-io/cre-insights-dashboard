@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { metaAnalyticsService } from '../services';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 import type { AnalyticsMetaSpendMetrics, DateRange } from '../types';
 
 export const useMetaSpendAnalytics = (dateRange: DateRange = 'last_30d') => {
@@ -27,7 +28,7 @@ export const useMetaSpendAnalytics = (dateRange: DateRange = 'last_30d') => {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
-      console.error('Error fetching Meta analytics:', err);
+      logger.error('Error fetching Meta analytics', err, 'Analytics');
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface AnthropicRequest {
   message: string;
@@ -37,7 +38,7 @@ export const useAnthropic = (options: UseAnthropicOptions = {}) => {
     setError(null);
 
     try {
-      console.log('Invoking Anthropic function:', functionName, request);
+      logger.debug('Invoking Anthropic function', { functionName, request }, 'Anthropic');
 
       const response = await supabase.functions.invoke(functionName, {
         body: request
@@ -53,7 +54,7 @@ export const useAnthropic = (options: UseAnthropicOptions = {}) => {
         throw new Error('Invalid response from Anthropic function');
       }
 
-      console.log('Anthropic response received:', data);
+      logger.debug('Anthropic response received', { data }, 'Anthropic');
 
       if (onSuccess) {
         onSuccess(data);
@@ -63,7 +64,7 @@ export const useAnthropic = (options: UseAnthropicOptions = {}) => {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('Anthropic function error:', errorMessage);
+      logger.error('Anthropic function error', err, 'Anthropic');
       
       setError(errorMessage);
 

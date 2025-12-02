@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Globe, CheckCircle, XCircle, Clock, AlertTriangle, Copy, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface DomainManagementProps {
   organization: any;
@@ -87,7 +88,7 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
         description: "Domain has been configured. Please set up DNS records to verify.",
       });
     } catch (error) {
-      console.error('Error configuring domain:', error);
+      logger.error('Error configuring domain', error, 'Domain');
       toast({
         title: "Configuration failed",
         description: "Failed to configure domain. Please try again.",
@@ -123,7 +124,7 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
         variant: data.verified ? "default" : "destructive",
       });
     } catch (error) {
-      console.error('Error verifying domain:', error);
+      logger.error('Error verifying domain', error, 'Domain');
       toast({
         title: "Verification failed",
         description: "Failed to verify domain. Please try again.",
@@ -157,7 +158,7 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
         description: "Domain deployment has been started. SSL certificate will be provisioned.",
       });
     } catch (error) {
-      console.error('Error deploying domain:', error);
+      logger.error('Error deploying domain', error, 'Domain');
       toast({
         title: "Deployment failed",
         description: "Failed to deploy domain. Please try again.",
@@ -196,7 +197,7 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
         description: "Domain configuration has been removed.",
       });
     } catch (error) {
-      console.error('Error removing domain:', error);
+      logger.error('Error removing domain', error, 'Domain');
       toast({
         title: "Removal failed",
         description: "Failed to remove domain configuration.",
