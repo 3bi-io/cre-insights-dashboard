@@ -64,17 +64,26 @@ export const useApplicationForm = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Capture URL parameters on mount
+  // Capture URL parameters on mount (case-insensitive for common variations)
   useEffect(() => {
+    // Helper to get param with case variations
+    const getParam = (...names: string[]): string => {
+      for (const name of names) {
+        const value = searchParams.get(name);
+        if (value) return value;
+      }
+      return '';
+    };
+
     const urlParams: Partial<FormData> = {
-      ad_id: searchParams.get('ad_id') || '',
-      campaign_id: searchParams.get('campaign_id') || '',
-      adset_id: searchParams.get('adset_id') || '',
-      job_listing_id: searchParams.get('job_listing_id') || '',
-      job_id: searchParams.get('job_id') || '',
-      utm_source: searchParams.get('utm_source') || '',
-      utm_medium: searchParams.get('utm_medium') || '',
-      utm_campaign: searchParams.get('utm_campaign') || '',
+      ad_id: getParam('ad_id', 'adId', 'AdID', 'ad'),
+      campaign_id: getParam('campaign_id', 'campaignId', 'CampaignID', 'campaign'),
+      adset_id: getParam('adset_id', 'adsetId', 'AdsetID', 'adset'),
+      job_listing_id: getParam('job_listing_id', 'jobListingId', 'JobListingID'),
+      job_id: getParam('job_id', 'jobId', 'JobID', 'job', 'organization'),
+      utm_source: getParam('utm_source', 'utmSource', 'source'),
+      utm_medium: getParam('utm_medium', 'utmMedium', 'medium'),
+      utm_campaign: getParam('utm_campaign', 'utmCampaign', 'campaign_name'),
       referral_source: document.referrer || '',
     };
 
