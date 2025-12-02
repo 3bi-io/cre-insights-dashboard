@@ -13,8 +13,13 @@ initAnalytics();
 startPerformanceMonitoring();
 
 // Suppress noisy third‑party RUM/recorder errors blocked by ad blockers
-// e.g. "Failed to fetch (ingesteer.services-prod.nsvcs.net)"
-const suppressPatterns = [/ingesteer\.services-prod\.nsvcs\.net/i];
+// e.g. "Failed to fetch (ingesteer.services-prod.nsvcs.net)", RudderStack, X-Frame-Options
+const suppressPatterns = [
+  /ingesteer\.services-prod\.nsvcs\.net/i,
+  /rudderstack/i,
+  /cdn\.rudderlabs\.com/i,
+  /X-Frame-Options/i,
+];
 
 window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
   const reason: any = (event as any).reason;
