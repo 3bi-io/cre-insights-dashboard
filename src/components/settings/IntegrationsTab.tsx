@@ -227,7 +227,7 @@ const IntegrationsTab = () => {
             </CardHeader>
             <CardContent>
               <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/admin/tenstreet/xchange">
+                <Link to="/admin/ats-command?tab=xchange">
                   Open Xchange
                 </Link>
               </Button>
@@ -243,7 +243,7 @@ const IntegrationsTab = () => {
             </CardHeader>
             <CardContent>
               <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/admin/tenstreet/focus">
+                <Link to="/admin/ats-command?tab=focus">
                   View Analytics
                 </Link>
               </Button>
@@ -259,7 +259,7 @@ const IntegrationsTab = () => {
             </CardHeader>
             <CardContent>
               <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/admin/tenstreet/bulk">
+                <Link to="/admin/ats-command?tab=bulk">
                   Manage Data
                 </Link>
               </Button>

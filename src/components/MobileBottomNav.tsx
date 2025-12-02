@@ -65,7 +65,7 @@ const MobileBottomNav: React.FC = () => {
       title: 'Integrations',
       icon: Share2,
       items: [
-        { icon: Share2, label: 'ATS Dashboard', path: '/admin/tenstreet', activePatterns: ['/admin/tenstreet'] },
+        { icon: Share2, label: 'ATS Command', path: '/admin/ats-command', activePatterns: ['/admin/ats-command'] },
         { icon: Share2, label: 'Publishers', path: '/admin/publishers', activePatterns: ['/admin/publishers'] },
         ...(isAdmin ? [{ icon: Share2, label: 'Webhooks', path: '/admin/webhook-management', activePatterns: ['/admin/webhook-management'] }] : [])
       ]
@@ -79,12 +79,19 @@ const MobileBottomNav: React.FC = () => {
         { icon: TrendingUp, label: 'AI Analytics', path: '/admin/ai-analytics', activePatterns: ['/admin/ai-analytics'] }
       ]
     },
+    ...(isSuperAdmin ? [{
+      title: 'Analytics',
+      icon: TrendingUp,
+      items: [
+        { icon: TrendingUp, label: 'Visitor Analytics', path: '/admin/visitor-analytics', activePatterns: ['/admin/visitor-analytics'] },
+        { icon: TrendingUp, label: 'Meta Analytics', path: '/admin/meta-analytics', activePatterns: ['/admin/meta-analytics'] }
+      ]
+    }] : []),
     {
       title: 'Settings',
       icon: Settings,
       items: [
-        { icon: Settings, label: 'AI Configuration', path: '/admin/ai-settings', activePatterns: ['/admin/ai-settings'] },
-        { icon: Settings, label: 'Privacy', path: '/admin/privacy-controls', activePatterns: ['/admin/privacy-controls'] },
+        { icon: Settings, label: 'AI Configuration', path: '/admin/ai-configuration', activePatterns: ['/admin/ai-configuration'] },
         { icon: Settings, label: 'Support', path: '/admin/support', activePatterns: ['/admin/support'] }
       ]
     },
