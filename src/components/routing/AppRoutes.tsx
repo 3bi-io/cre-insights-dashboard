@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import PublicLayout from "@/components/public/PublicLayout";
@@ -45,6 +45,13 @@ const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
 const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ default: m.AIToolsPage })));
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
 const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
+
+// Consolidated pages
+const ATSCommandCenterPage = React.lazy(() => import("@/features/ats").then(m => ({ default: m.ATSCommandCenterPage })));
+const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m => ({ default: m.MetaAnalyticsPage })));
+const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
+
+// Legacy pages (kept for backward compatibility - will redirect)
 const TenstreetDashboard = React.lazy(() => import("@/pages/TenstreetDashboard"));
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const TenstreetExplorer = React.lazy(() => import("@/pages/TenstreetExplorer"));
@@ -174,17 +181,28 @@ const AppRoutes: React.FC = () => {
         <Route path="ai-impact" element={<ProtectedRouteWrapper><AIImpactDashboard /></ProtectedRouteWrapper>} />
         <Route path="ai-analytics" element={<ProtectedRouteWrapper><AIAnalytics /></ProtectedRouteWrapper>} />
         <Route path="ai-tools" element={<ProtectedRouteWrapper><AITools /></ProtectedRouteWrapper>} />
-        <Route path="privacy-controls" element={<ProtectedRouteWrapper><PrivacyControls /></ProtectedRouteWrapper>} />
         <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
         <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
+        
+        {/* Consolidated Routes */}
+        <Route path="ats-command" element={<ProtectedRouteWrapper><ATSCommandCenterPage /></ProtectedRouteWrapper>} />
+        <Route path="meta-analytics" element={<ProtectedRouteWrapper><MetaAnalyticsPage /></ProtectedRouteWrapper>} />
+        <Route path="ai-configuration" element={<ProtectedRouteWrapper><AIConfigurationPage /></ProtectedRouteWrapper>} />
+        
+        {/* Legacy routes - redirect to consolidated pages */}
+        <Route path="tenstreet" element={<Navigate to="/admin/ats-command" replace />} />
+        <Route path="tenstreet-explorer" element={<Navigate to="/admin/ats-command" replace />} />
+        <Route path="tenstreet/xchange" element={<Navigate to="/admin/ats-command" replace />} />
+        <Route path="tenstreet/focus" element={<Navigate to="/admin/ats-command" replace />} />
+        <Route path="tenstreet/bulk" element={<Navigate to="/admin/ats-command" replace />} />
+        <Route path="tenstreet-credentials" element={<Navigate to="/admin/ats-command" replace />} />
+        <Route path="meta-adset-report" element={<Navigate to="/admin/meta-analytics" replace />} />
+        <Route path="meta-spend-analytics" element={<Navigate to="/admin/meta-analytics" replace />} />
+        <Route path="ai-settings" element={<Navigate to="/admin/ai-configuration" replace />} />
+        <Route path="privacy-controls" element={<Navigate to="/admin/ai-configuration" replace />} />
+        
+        {/* Remaining routes */}
         <Route path="tenstreet-integration" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet" element={<ProtectedRouteWrapper><TenstreetDashboard /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet-explorer" element={<ProtectedRouteWrapper><TenstreetExplorer /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet/xchange" element={<ProtectedRouteWrapper><TenstreetXchange /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet/focus" element={<ProtectedRouteWrapper><TenstreetFocus /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet/bulk" element={<ProtectedRouteWrapper><TenstreetBulk /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet-credentials" element={<ProtectedRouteWrapper><TenstreetCredentialsManagement /></ProtectedRouteWrapper>} />
-        <Route path="ai-settings" element={<ProtectedRouteWrapper><AIPlatformSettings /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
         <Route path="platforms" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
         <Route path="publishers" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
@@ -198,8 +216,6 @@ const AppRoutes: React.FC = () => {
         <Route path="super-admin-feeds" element={<ProtectedRouteWrapper><SuperAdminFeeds /></ProtectedRouteWrapper>} />
         <Route path="webhook-management" element={<ProtectedRouteWrapper><WebhookManagement /></ProtectedRouteWrapper>} />
         <Route path="hayes-data" element={<ProtectedRouteWrapper><HayesDataPopulation /></ProtectedRouteWrapper>} />
-        <Route path="meta-adset-report" element={<ProtectedRouteWrapper><MetaAdSetReportPage /></ProtectedRouteWrapper>} />
-        <Route path="meta-spend-analytics" element={<ProtectedRouteWrapper><MetaSpendAnalytics /></ProtectedRouteWrapper>} />
         <Route path="visitor-analytics" element={<ProtectedRouteWrapper><VisitorAnalytics /></ProtectedRouteWrapper>} />
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />

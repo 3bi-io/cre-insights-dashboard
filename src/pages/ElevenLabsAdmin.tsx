@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import PageLayout from '@/components/PageLayout';
+import { AdminPageLayout } from '@/features/shared';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -59,7 +59,6 @@ const ElevenLabsAdmin = () => {
     if (!allConversations) return [];
 
     return allConversations.filter(conv => {
-      // Search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         const agentName = conv.voice_agents?.agent_name?.toLowerCase() || '';
@@ -73,12 +72,10 @@ const ElevenLabsAdmin = () => {
         }
       }
 
-      // Status filter
       if (statusFilter !== 'all' && conv.status !== statusFilter) {
         return false;
       }
 
-      // Date filters
       if (dateFrom) {
         const convDate = format(new Date(conv.started_at), 'yyyy-MM-dd');
         if (convDate < dateFrom) return false;
@@ -100,24 +97,6 @@ const ElevenLabsAdmin = () => {
     setDateTo('');
   };
 
-  // Check if user is super admin or org admin
-  const isAuthorized = userRole === 'super_admin' || userRole === 'admin';
-
-  if (!isAuthorized) {
-    return (
-      <PageLayout
-        title="ElevenLabs Administration"
-        description="Manage AI voice agents and conversations"
-      >
-        <Alert variant="destructive">
-          <AlertDescription>
-            You don't have permission to access this page. Super admin or organization admin access required.
-          </AlertDescription>
-        </Alert>
-      </PageLayout>
-    );
-  }
-
   const handleSyncConversations = () => {
     if (selectedAgent === 'all') {
       voiceAgents?.forEach(agent => {
@@ -136,29 +115,59 @@ const ElevenLabsAdmin = () => {
   const activeAgents = voiceAgents?.filter(a => a.is_active).length || 0;
   const totalDuration = allConversations?.reduce((sum, conv) => sum + (conv.duration_seconds || 0), 0) || 0;
 
+  const pageActions = (
+    <div className="flex items-center gap-2">
+      {voiceAgents && voiceAgents.length > 0 && (
+        <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by agent" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Agents</SelectItem>
+            {voiceAgents.map((agent) => (
+              <SelectItem key={agent.id} value={agent.id}>
+                {agent.agent_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      <ConversationExport 
+        conversations={filteredConversations}
+        disabled={loadingConversations}
+      />
+      <Button
+        onClick={handleSyncConversations}
+        disabled={isSyncing || !voiceAgents || voiceAgents.length === 0}
+      >
+        <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+        Sync
+      </Button>
+    </div>
+  );
+
   return (
-    <PageLayout
-      title="ElevenLabs Administration"
+    <AdminPageLayout
+      title="Voice Agents"
       description="Manage AI voice agents, conversations, and transcripts"
+      requiredRole={['admin', 'super_admin']}
+      actions={pageActions}
+      isLoading={loadingAgents}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl space-y-6">
+      <div className="space-y-6">
         {/* Info Alert */}
         <Alert>
           <Bot className="h-4 w-4" />
           <AlertDescription>
-            <div className="flex items-center justify-between">
-              <span>
-                Each organization needs a unique ElevenLabs agent ID. Get yours from the{' '}
-                <a 
-                  href="https://elevenlabs.io/app/conversational-ai" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="font-medium underline"
-                >
-                  ElevenLabs Dashboard
-                </a>
-              </span>
-            </div>
+            Each organization needs a unique ElevenLabs agent ID. Get yours from the{' '}
+            <a 
+              href="https://elevenlabs.io/app/conversational-ai" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium underline"
+            >
+              ElevenLabs Dashboard
+            </a>
           </AlertDescription>
         </Alert>
 
@@ -184,9 +193,7 @@ const ElevenLabsAdmin = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalConversations}</div>
-              <p className="text-xs text-muted-foreground">
-                Across all agents
-              </p>
+              <p className="text-xs text-muted-foreground">Across all agents</p>
             </CardContent>
           </Card>
 
@@ -196,19 +203,14 @@ const ElevenLabsAdmin = () => {
               <AudioLines className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.floor(totalDuration / 60)}m
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {totalDuration}s total
-              </p>
+              <div className="text-2xl font-bold">{Math.floor(totalDuration / 60)}m</div>
+              <p className="text-xs text-muted-foreground">{totalDuration}s total</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Content */}
         <Tabs defaultValue="conversations" className="space-y-4">
-          <div className="flex items-center justify-between">
           <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="conversations">Conversations</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -232,39 +234,6 @@ const ElevenLabsAdmin = () => {
               </>
             )}
           </TabsList>
-
-            <div className="flex items-center gap-2">
-              {voiceAgents && voiceAgents.length > 0 && (
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Agents</SelectItem>
-                    {voiceAgents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        {agent.agent_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-
-              <div className="flex gap-2">
-                <ConversationExport 
-                  conversations={filteredConversations}
-                  disabled={loadingConversations}
-                />
-                <Button
-                  onClick={handleSyncConversations}
-                  disabled={isSyncing || !voiceAgents || voiceAgents.length === 0}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                  Sync Conversations
-                </Button>
-              </div>
-            </div>
-          </div>
 
           <TabsContent value="conversations" className="space-y-4">
             <ConversationFilters
@@ -290,17 +259,11 @@ const ElevenLabsAdmin = () => {
               </CardHeader>
               <CardContent>
                 {loadingConversations ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading conversations...
-                  </div>
+                  <div className="text-center py-8 text-muted-foreground">Loading conversations...</div>
                 ) : conversationsError ? (
-                  <div className="text-center py-8">
-                    <Alert variant="destructive">
-                      <AlertDescription>
-                        Failed to load conversations. Please check your permissions and try again.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
+                  <Alert variant="destructive">
+                    <AlertDescription>Failed to load conversations. Please check your permissions.</AlertDescription>
+                  </Alert>
                 ) : filteredConversations.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -320,9 +283,7 @@ const ElevenLabsAdmin = () => {
 
           <TabsContent value="analytics" className="space-y-4">
             {loadingConversations ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading analytics...
-              </div>
+              <div className="text-center py-8 text-muted-foreground">Loading analytics...</div>
             ) : (
               <ConversationAnalytics conversations={allConversations || []} />
             )}
@@ -332,21 +293,12 @@ const ElevenLabsAdmin = () => {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <h3 className="text-lg font-semibold">Voice Agents</h3>
-                <p className="text-sm text-muted-foreground">
-                  Manage your ElevenLabs AI voice agents
-                </p>
+                <p className="text-sm text-muted-foreground">Manage your ElevenLabs AI voice agents</p>
               </div>
-              <VoiceAgentDialog 
-                onSubmit={createVoiceAgent}
-                isLoading={isCreating}
-              />
+              <VoiceAgentDialog onSubmit={createVoiceAgent} isLoading={isCreating} />
             </div>
 
-            {loadingAgents ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading voice agents...
-              </div>
-            ) : voiceAgents && voiceAgents.length > 0 ? (
+            {voiceAgents && voiceAgents.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {voiceAgents.map((agent) => (
                   <VoiceAgentCard 
@@ -364,13 +316,8 @@ const ElevenLabsAdmin = () => {
                 <CardContent className="text-center py-8">
                   <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Voice Agents</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Get started by creating your first voice agent
-                  </p>
-                  <VoiceAgentDialog 
-                    onSubmit={createVoiceAgent}
-                    isLoading={isCreating}
-                  />
+                  <p className="text-muted-foreground mb-4">Get started by creating your first voice agent</p>
+                  <VoiceAgentDialog onSubmit={createVoiceAgent} isLoading={isCreating} />
                 </CardContent>
               </Card>
             )}
@@ -379,22 +326,15 @@ const ElevenLabsAdmin = () => {
           <TabsContent value="assignments" className="space-y-4">
             {userRole === 'super_admin' ? (
               <>
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">Organization Agent Assignments</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Assign unique ElevenLabs voice agents to each organization
-                    </p>
-                  </div>
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Organization Agent Assignments</h3>
+                  <p className="text-sm text-muted-foreground">Assign unique ElevenLabs voice agents to each organization</p>
                 </div>
-
                 <OrganizationAgentAssignment />
               </>
             ) : (
               <Alert variant="destructive">
-                <AlertDescription>
-                  Only super admins can manage organization agent assignments.
-                </AlertDescription>
+                <AlertDescription>Only super admins can manage organization agent assignments.</AlertDescription>
               </Alert>
             )}
           </TabsContent>
@@ -404,9 +344,7 @@ const ElevenLabsAdmin = () => {
               <WebhookManager />
             ) : (
               <Alert variant="destructive">
-                <AlertDescription>
-                  Only super admins can manage webhooks.
-                </AlertDescription>
+                <AlertDescription>Only super admins can manage webhooks.</AlertDescription>
               </Alert>
             )}
           </TabsContent>
@@ -418,9 +356,7 @@ const ElevenLabsAdmin = () => {
                   <Volume2 className="h-5 w-5" />
                   Voice Library
                 </CardTitle>
-                <CardDescription>
-                  Browse and preview all available ElevenLabs voices
-                </CardDescription>
+                <CardDescription>Browse and preview all available ElevenLabs voices</CardDescription>
               </CardHeader>
               <CardContent>
                 <VoiceLibrary />
@@ -437,7 +373,7 @@ const ElevenLabsAdmin = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </PageLayout>
+    </AdminPageLayout>
   );
 };
 
