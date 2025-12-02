@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Mail } from 'lucide-react';
+import { AlertCircle, Mail, Building2, Briefcase, ArrowLeft, Check } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Brand } from '@/components/common';
+import { cn } from '@/lib/utils';
+
+type UserType = 'organization' | 'jobseeker';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -27,9 +29,10 @@ const Auth = () => {
   const [signUpMode, setSignUpMode] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [userTypeSelection, setUserTypeSelection] = useState<UserType | null>(null);
+  const [showUserTypeStep, setShowUserTypeStep] = useState(true);
 
   React.useEffect(() => {
-    // Only redirect once auth is fully loaded and user is authenticated
     if (!authLoading && user) {
       if (userRole === 'super_admin') {
         navigate('/admin', { replace: true });
@@ -46,128 +49,170 @@ const Auth = () => {
     }
   }, []);
 
-const handleSignIn = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  const { error } = await signIn(email, password);
-  if (error) {
-    // Map common Supabase errors to user-friendly messages
-    const errorMessage = error.message.toLowerCase();
-    if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid email or password')) {
-      setError('Incorrect email or password.');
-    } else if (errorMessage.includes('email not confirmed')) {
-      setError('Please verify your email before signing in. Check your inbox for the verification link.');
-    } else {
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const { error } = await signIn(email, password);
+    if (error) {
+      const errorMessage = error.message.toLowerCase();
+      if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid email or password')) {
+        setError('Incorrect email or password.');
+      } else if (errorMessage.includes('email not confirmed')) {
+        setError('Please verify your email before signing in. Check your inbox for the verification link.');
+      } else {
+        setError(error.message);
+      }
+    }
+    setLoading(false);
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      
+      if (error) throw error;
+      
+      setResetSent(true);
+      toast({
+        title: "Password reset sent",
+        description: "Check your email for password reset instructions.",
+      });
+    } catch (error: any) {
       setError(error.message);
     }
-  }
-  setLoading(false);
-};
-
-const handlePasswordReset = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  
-  try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?reset=true`,
-    });
-    
-    if (error) throw error;
-    
-    setResetSent(true);
-    toast({
-      title: "Password reset sent",
-      description: "Check your email for password reset instructions.",
-    });
-  } catch (error: any) {
-    setError(error.message);
-  }
-  setLoading(false);
-};
-
-const handleUpdatePassword = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
-  
-  if (newPassword !== confirmPassword) {
-    setError('Passwords do not match');
     setLoading(false);
-    return;
-  }
+  };
 
-  if (newPassword.length < 6) {
-    setError('Password must be at least 6 characters');
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({ 
+        password: newPassword 
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully updated. Please sign in.",
+      });
+      
+      setUpdatePasswordMode(false);
+      setNewPassword('');
+      setConfirmPassword('');
+      window.history.replaceState({}, '', '/auth');
+    } catch (error: any) {
+      setError(error.message || 'Failed to update password. The reset link may have expired.');
+    }
     setLoading(false);
-    return;
-  }
+  };
 
-  try {
-    const { error } = await supabase.auth.updateUser({ 
-      password: newPassword 
-    });
-    
-    if (error) throw error;
-    
-    toast({
-      title: "Password updated",
-      description: "Your password has been successfully updated. Please sign in.",
-    });
-    
-    setUpdatePasswordMode(false);
-    setNewPassword('');
-    setConfirmPassword('');
-    window.history.replaceState({}, '', '/auth');
-  } catch (error: any) {
-    setError(error.message || 'Failed to update password. The reset link may have expired.');
-  }
-  setLoading(false);
-};
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-const handleSignUp = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
 
-  if (password.length < 6) {
-    setError('Password must be at least 6 characters');
-    setLoading(false);
-    return;
-  }
+    if (!userTypeSelection) {
+      setError('Please select account type');
+      setLoading(false);
+      return;
+    }
 
-  try {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
+    try {
+      const redirectUrl = userTypeSelection === 'organization' 
+        ? `${window.location.origin}/onboarding`
+        : `${window.location.origin}/my-jobs/profile`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            user_type: userTypeSelection
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Account created successfully",
+        description: "Please check your email to verify your account.",
+      });
+      
+      setEmail('');
+      setPassword('');
+      setSignUpMode(false);
+      setUserTypeSelection(null);
+      setShowUserTypeStep(true);
+    } catch (error: any) {
+      if (error.message?.includes('already registered')) {
+        setError('This email is already registered. Please sign in instead.');
+      } else {
+        setError(error.message);
       }
-    });
-    
-    if (error) throw error;
-    
-    toast({
-      title: "Account created successfully",
-      description: "Please check your email to verify your account.",
-    });
-    
+    }
+    setLoading(false);
+  };
+
+  const handleUserTypeSelect = (type: UserType) => {
+    setUserTypeSelection(type);
+    setShowUserTypeStep(false);
+  };
+
+  const resetSignUpFlow = () => {
+    setShowUserTypeStep(true);
+    setUserTypeSelection(null);
     setEmail('');
     setPassword('');
-    setSignUpMode(false);
-  } catch (error: any) {
-    if (error.message?.includes('already registered')) {
-      setError('This email is already registered. Please sign in instead.');
-    } else {
-      setError(error.message);
+    setError('');
+  };
+
+  const userTypeOptions = [
+    {
+      type: 'organization' as UserType,
+      icon: Building2,
+      title: 'Organization',
+      description: 'Post jobs, manage applications, and hire top talent',
+      features: ['Post unlimited job listings', 'Track applications', 'AI-powered candidate screening']
+    },
+    {
+      type: 'jobseeker' as UserType,
+      icon: Briefcase,
+      title: 'Jobseeker',
+      description: 'Find your next opportunity and track your applications',
+      features: ['Search and apply for jobs', 'Track application status', 'Get job recommendations']
     }
-  }
-  setLoading(false);
-};
+  ];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
@@ -189,7 +234,7 @@ const handleSignUp = async (e: React.FormEvent) => {
                 : resetMode 
                   ? 'Reset Password' 
                   : signUpMode 
-                    ? 'Create Account' 
+                    ? (showUserTypeStep ? 'Choose Account Type' : 'Create Account')
                     : 'Welcome Back'}
             </CardTitle>
             <CardDescription>
@@ -198,7 +243,9 @@ const handleSignUp = async (e: React.FormEvent) => {
                 : resetMode 
                   ? 'Enter your email to receive password reset instructions'
                   : signUpMode
-                    ? 'Sign up to create your account and get started'
+                    ? (showUserTypeStep 
+                        ? 'Select how you want to use the platform' 
+                        : `Creating ${userTypeSelection === 'organization' ? 'an Organization' : 'a Jobseeker'} account`)
                     : 'Sign in to your account to access the dashboard'
               }
             </CardDescription>
@@ -239,7 +286,7 @@ const handleSignUp = async (e: React.FormEvent) => {
                 </div>
                 <div>
                   <h3 className="text-lg font-medium">Check your email</h3>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     We've sent password reset instructions to {email}
                   </p>
                 </div>
@@ -282,41 +329,88 @@ const handleSignUp = async (e: React.FormEvent) => {
                     </Button>
                   </form>
                 ) : signUpMode ? (
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={email} 
-                        onChange={e => setEmail(e.target.value)} 
-                        required 
-                        placeholder="Enter your email" 
-                      />
+                  showUserTypeStep ? (
+                    <div className="space-y-4">
+                      {userTypeOptions.map((option) => {
+                        const Icon = option.icon;
+                        return (
+                          <button
+                            key={option.type}
+                            type="button"
+                            onClick={() => handleUserTypeSelect(option.type)}
+                            className={cn(
+                              "w-full p-4 rounded-lg border-2 text-left transition-all hover:border-primary hover:bg-accent/50",
+                              "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            )}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className="p-2 rounded-lg bg-primary/10">
+                                <Icon className="w-6 h-6 text-primary" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-foreground">{option.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                                <ul className="mt-3 space-y-1">
+                                  {option.features.map((feature, i) => (
+                                    <li key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <Check className="w-3 h-3 text-primary" />
+                                      {feature}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="w-full" 
+                        onClick={() => setSignUpMode(false)}
+                      >
+                        Already have an account? Sign in
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        value={password} 
-                        onChange={e => setPassword(e.target.value)} 
-                        required 
-                        placeholder="Create a password (min 6 characters)" 
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? 'Creating account...' : 'Sign Up'}
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      className="w-full" 
-                      onClick={() => setSignUpMode(false)}
-                    >
-                      Already have an account? Sign in
-                    </Button>
-                  </form>
+                  ) : (
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm"
+                        className="mb-2 -ml-2"
+                        onClick={resetSignUpFlow}
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-1" />
+                        Change account type
+                      </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input 
+                          id="email" 
+                          type="email" 
+                          value={email} 
+                          onChange={e => setEmail(e.target.value)} 
+                          required 
+                          placeholder="Enter your email" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input 
+                          id="password" 
+                          type="password" 
+                          value={password} 
+                          onChange={e => setPassword(e.target.value)} 
+                          required 
+                          placeholder="Create a password (min 6 characters)" 
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={loading}>
+                        {loading ? 'Creating account...' : 'Create Account'}
+                      </Button>
+                    </form>
+                  )
                 ) : (
                   <form onSubmit={handleSignIn} className="space-y-4">
                     <div className="space-y-2">

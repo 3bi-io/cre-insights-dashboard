@@ -9,7 +9,7 @@ import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles, Webhook, Globe, Key, FolderKanban } from 'lucide-react';
+import { LogOut, LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles, Webhook, Globe, FolderKanban, User, CreditCard, Lock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
@@ -111,6 +111,7 @@ const AppSidebar = () => {
       ]
     }] : [])
   ];
+
   const isActive = (path: string) => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard' && !location.search;
@@ -121,9 +122,11 @@ const AppSidebar = () => {
     }
     return location.pathname === path;
   };
+
   const handleSignOut = async () => {
     await signOut();
   };
+
   const getRoleBadgeColor = (role: string | null) => {
     switch (role) {
       case 'super_admin':
@@ -136,10 +139,12 @@ const AppSidebar = () => {
         return 'bg-muted text-muted-foreground border-muted';
     }
   };
+
   const getUserInitials = () => {
     if (!user?.email) return 'U';
     return user.email.charAt(0).toUpperCase();
   };
+
   // First group (Recruitment) shown expanded, rest in accordion
   const regularGroups = navigationItems.filter(group => group.group === "Recruitment");
   const accordionGroups = navigationItems.filter(group => group.group !== "Recruitment");
@@ -149,7 +154,9 @@ const AppSidebar = () => {
   const defaultExpandedValues = shouldExpandAll 
     ? accordionGroups.map(group => group.group) 
     : [];
-  return <Sidebar>
+
+  return (
+    <Sidebar>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-4 py-3">
           {organization ? (
@@ -275,6 +282,41 @@ const AppSidebar = () => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin/settings/profile" className="flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Profile Settings
+                </Link>
+              </DropdownMenuItem>
+              {organization && (
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/settings/organization" className="flex items-center">
+                    <Building className="w-4 h-4 mr-2" />
+                    Organization Settings
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/user-management" className="flex items-center">
+                    <UserCog className="w-4 h-4 mr-2" />
+                    Team Members
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem asChild>
+                <Link to="/admin/settings/billing" className="flex items-center">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Billing
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/settings/security" className="flex items-center">
+                  <Lock className="w-4 h-4 mr-2" />
+                  Security
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
@@ -283,7 +325,8 @@ const AppSidebar = () => {
           </DropdownMenu>
         </div>
       </SidebarFooter>
-      
-    </Sidebar>;
+    </Sidebar>
+  );
 };
+
 export default AppSidebar;

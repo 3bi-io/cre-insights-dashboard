@@ -9,12 +9,17 @@ import {
   User, 
   MessageSquare,
   LogOut,
-  Home
+  Home,
+  Settings,
+  Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Brand } from '@/components/common';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const CandidateLayout = () => {
-  const { signOut, candidateProfile } = useAuth();
+  const { signOut, candidateProfile, user } = useAuth();
   const location = useLocation();
 
   const navigation = [
@@ -26,6 +31,26 @@ const CandidateLayout = () => {
     { name: 'Profile', href: '/my-jobs/profile', icon: User },
   ];
 
+  const getUserInitials = () => {
+    if (candidateProfile?.first_name) {
+      return candidateProfile.first_name.charAt(0).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
+  const getDisplayName = () => {
+    if (candidateProfile?.first_name && candidateProfile?.last_name) {
+      return `${candidateProfile.first_name} ${candidateProfile.last_name}`;
+    }
+    if (candidateProfile?.first_name) {
+      return candidateProfile.first_name;
+    }
+    return 'Candidate';
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -33,22 +58,48 @@ const CandidateLayout = () => {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <img 
-                src="/logo.png" 
-                alt="ATS.me" 
-                className="h-8 w-auto"
-              />
-              <span className="text-lg font-semibold">Candidate Portal</span>
+              <Brand variant="horizontal" size="md" showAsLink={false} />
+              <span className="text-lg font-semibold hidden sm:inline">Candidate Portal</span>
             </div>
             
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground hidden sm:inline">
-                {candidateProfile?.first_name || 'Candidate'}
-              </span>
-              <Button variant="ghost" size="sm" onClick={() => signOut()}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm hidden sm:inline">{getDisplayName()}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-jobs/profile" className="flex items-center">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-jobs/settings" className="flex items-center">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Account Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-jobs/notifications" className="flex items-center">
+                      <Bell className="w-4 h-4 mr-2" />
+                      Notifications
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>

@@ -73,6 +73,16 @@ const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const Install = React.lazy(() => import("@/pages/Install"));
 const Offline = React.lazy(() => import("@/pages/Offline"));
 
+// Settings pages
+const ProfileSettings = React.lazy(() => import("@/pages/settings/ProfileSettings"));
+const OrganizationSettings = React.lazy(() => import("@/pages/settings/OrganizationSettings"));
+const SecuritySettings = React.lazy(() => import("@/pages/settings/SecuritySettings"));
+const BillingSettings = React.lazy(() => import("@/pages/settings/BillingSettings"));
+
+// Candidate settings
+const CandidateAccountSettings = React.lazy(() => import("@/features/candidate/pages/AccountSettings"));
+const CandidateNotifications = React.lazy(() => import("@/features/candidate/pages/NotificationsPage"));
+
 // Loading fallback component
 const PageSkeleton = React.memo(() => (
   <div className="p-6 space-y-6">
@@ -158,6 +168,8 @@ const AppRoutes: React.FC = () => {
         <Route path="saved" element={<RouteWrapper><SavedJobsPage /></RouteWrapper>} />
         <Route path="messages" element={<RouteWrapper><MessagesPage /></RouteWrapper>} />
         <Route path="profile" element={<RouteWrapper><ProfilePage /></RouteWrapper>} />
+        <Route path="settings" element={<RouteWrapper><CandidateAccountSettings /></RouteWrapper>} />
+        <Route path="notifications" element={<RouteWrapper><CandidateNotifications /></RouteWrapper>} />
       </Route>
 
       {/* Admin Routes */}
@@ -210,6 +222,10 @@ const AppRoutes: React.FC = () => {
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
         <Route path="grok" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
+        <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
+        <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
+        <Route path="settings/security" element={<ProtectedRouteWrapper><SecuritySettings /></ProtectedRouteWrapper>} />
+        <Route path="settings/billing" element={<ProtectedRouteWrapper><BillingSettings /></ProtectedRouteWrapper>} />
       </Route>
 
       {/* Access Denied Route */}
