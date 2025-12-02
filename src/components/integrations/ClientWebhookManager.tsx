@@ -317,17 +317,17 @@ export default function ClientWebhookManager() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="client">Client *</Label>
+                <Label htmlFor="client">Application Filter *</Label>
                 <Select
                   value={formData.client_id}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
                   disabled={!!editingWebhook}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a client" />
+                    <SelectValue placeholder="Select application filter" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Clients</SelectItem>
+                    <SelectItem value="all">All Applications (Any Client)</SelectItem>
                     {clients.map(client => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}{client.company && ` (${client.company})`}
@@ -335,6 +335,9 @@ export default function ClientWebhookManager() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose which applications trigger this webhook - all applications or only those associated with a specific client
+                </p>
               </div>
 
               <div className="space-y-2">
