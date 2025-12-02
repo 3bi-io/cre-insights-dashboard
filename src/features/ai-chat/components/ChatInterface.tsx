@@ -51,9 +51,9 @@ export function ChatInterface() {
             <Sparkles className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Grok Assistant</h2>
+            <h2 className="text-lg font-semibold">Grok 4 Assistant</h2>
             <p className="text-sm text-muted-foreground">
-              Powered by xAI
+              Powered by xAI • 256K context
             </p>
           </div>
         </div>
@@ -80,10 +80,10 @@ export function ChatInterface() {
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Welcome to Grok</h3>
+                <h3 className="text-lg font-semibold">Welcome to Grok 4</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Ask me anything! I'm powered by xAI's Grok model and ready to help with
-                  information, analysis, creative tasks, and more.
+                  I'm powered by xAI's most advanced Grok 4 model with 256K token context.
+                  Ask me anything about analysis, reasoning, creative tasks, and more!
                 </p>
               </div>
               <div className="grid gap-2 text-left">
@@ -119,7 +119,7 @@ export function ChatInterface() {
                   <Loader2 className="h-5 w-5 animate-spin" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm mb-2">Grok</p>
+                  <p className="font-semibold text-sm mb-2">Grok 4</p>
                   <p className="text-sm text-muted-foreground">Thinking...</p>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export function ChatInterface() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Grok anything..."
+            placeholder="Ask Grok 4 anything..."
             className="min-h-[60px] max-h-[200px] resize-none"
             disabled={isLoading}
           />

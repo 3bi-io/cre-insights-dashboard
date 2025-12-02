@@ -44,7 +44,7 @@ class AIConnectionManager {
     },
     grok: {
       provider: 'grok',
-      model: 'grok-2-1212', // Latest Grok model
+      model: 'grok-4-0709', // Latest Grok 4 model with 256K context
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     }
