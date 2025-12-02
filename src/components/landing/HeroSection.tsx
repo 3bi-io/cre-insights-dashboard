@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Play, Star, Search } from 'lucide-react';
+import { ArrowRight, Play, Search } from 'lucide-react';
 import heroImage2400 from '@/assets/hero-recruitment-2400.webp';
 import heroImage1200 from '@/assets/hero-recruitment-1200.webp';
 import heroImage600 from '@/assets/hero-recruitment-600.webp';
@@ -89,24 +89,6 @@ const HeroSection = () => {
                 Watch Demo
               </Button>
             </Link>
-          </div>
-          
-          {/* Social Proof */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8 text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <span className="text-sm">4.8/5 from beta users</span>
-            </div>
-            <div className="text-sm">
-              50+ companies in our pilot program
-            </div>
-            <div className="text-sm">
-              🚀 Early adopter pricing available
-            </div>
           </div>
         </div>
       </div>
