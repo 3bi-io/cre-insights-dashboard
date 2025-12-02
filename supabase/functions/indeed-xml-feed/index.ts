@@ -88,7 +88,7 @@ function generateIndeedXML(jobs: any[]): string {
     const remotetype = escapeXml(job.remote_type || '')
     const experience = escapeXml(job.experience_level || '')
     const referencenumber = escapeXml(job.id || '')
-    const url = escapeXml(job.url || job.apply_url || `https://yoursite.com/jobs/${job.id}`)
+    const url = escapeXml(job.url || job.apply_url || `https://ats.me/apply/${job.id}`)
     
     // Format salary
     let salaryText = ''
@@ -159,8 +159,8 @@ function generateIndeedXML(jobs: any[]): string {
   }).join('\n')
 
   return `<source>
-    <publisher>Recruitment Platform</publisher>
-    <publisherurl>https://yoursite.com</publisherurl>
+    <publisher>ATS.me</publisher>
+    <publisherurl>https://ats.me</publisherurl>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${xmlJobs}
 </source>`

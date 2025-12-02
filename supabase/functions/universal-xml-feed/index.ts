@@ -228,7 +228,7 @@ function generateIndeedXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const applyUrl = escapeXML(job.apply_url || `https://example.com/apply/${job.id}`);
+    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
     
     return `    <job>
       <title>${escapeXML(job.title)}</title>
@@ -250,8 +250,8 @@ function generateIndeedXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <source>
-  <publisher>Recruiter Platform</publisher>
-  <publisherurl>https://example.com</publisherurl>
+  <publisher>ATS.me</publisher>
+  <publisherurl>https://ats.me</publisherurl>
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
   ${jobsXML}
 </source>`;
@@ -259,7 +259,7 @@ function generateIndeedXML(jobs: JobListing[]): string {
 
 function generateGoogleJobsXML(jobs: JobListing[], organizationId: string): string {
   const jobsXML = jobs.map(job => {
-    const applyUrl = escapeXML(job.apply_url || `https://example.com/apply/${job.id}`);
+    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
     
     return `  <url>
     <loc>${applyUrl}</loc>
@@ -280,7 +280,7 @@ function generateGenericXML(jobs: JobListing[]): string {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const location = formatLocation(job.location, job.city, job.state);
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const applyUrl = escapeXML(job.apply_url || `https://example.com/apply/${job.id}`);
+    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
     
     return `  <job>
     <id>${escapeXML(job.id)}</id>
