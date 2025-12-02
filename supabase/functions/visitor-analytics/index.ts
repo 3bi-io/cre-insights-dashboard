@@ -6,8 +6,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Parse browser from user agent
+const parseBrowser = (ua: string): string => {
+  if (!ua) return 'Unknown';
+  if (ua.includes('Edg/')) return 'Edge';
+  if (ua.includes('Chrome/')) return 'Chrome';
+  if (ua.includes('Firefox/')) return 'Firefox';
+  if (ua.includes('Safari/') && !ua.includes('Chrome')) return 'Safari';
+  if (ua.includes('Opera') || ua.includes('OPR/')) return 'Opera';
+  if (ua.includes('MSIE') || ua.includes('Trident/')) return 'IE';
+  return 'Other';
+};
+
+// Parse OS from user agent
+const parseOS = (ua: string): string => {
+  if (!ua) return 'Unknown';
+  if (ua.includes('Windows')) return 'Windows';
+  if (ua.includes('Mac OS')) return 'macOS';
+  if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
+  if (ua.includes('Android')) return 'Android';
+  if (ua.includes('Linux')) return 'Linux';
+  return 'Other';
+};
+
+// Extract domain from referrer URL
+const extractDomain = (url: string): string => {
+  if (!url) return 'Direct';
+  try {
+    const domain = new URL(url).hostname;
+    return domain.replace('www.', '');
+  } catch {
+    return url.substring(0, 50);
+  }
+};
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,12 +55,11 @@ serve(async (req) => {
     const startdate = url.searchParams.get('startdate');
     const enddate = url.searchParams.get('enddate');
 
-    console.log(`Fetching real visitor analytics from ${startdate} to ${enddate}`);
+    console.log(`Fetching enhanced visitor analytics from ${startdate} to ${enddate}`);
 
     const start = startdate ? new Date(startdate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = enddate ? new Date(enddate) : new Date();
 
-    // Query page views within date range
     const { data: pageViews, error: pageViewsError } = await supabaseClient
       .from('page_views')
       .select('*')
@@ -37,7 +69,6 @@ serve(async (req) => {
 
     if (pageViewsError) throw pageViewsError;
 
-    // Query visitor sessions within date range
     const { data: sessions, error: sessionsError } = await supabaseClient
       .from('visitor_sessions')
       .select('*')
@@ -46,11 +77,9 @@ serve(async (req) => {
 
     if (sessionsError) throw sessionsError;
 
-    // Process data by date for time series
     const dateMap = new Map();
     const days = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
     
-    // Initialize all dates
     for (let i = 0; i < days; i++) {
       const date = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split('T')[0];
@@ -63,7 +92,14 @@ serve(async (req) => {
       });
     }
 
-    // Aggregate page views by date
+    const visitorFirstSeen = new Map<string, Date>();
+    const newVisitors = new Set<string>();
+    const returningVisitors = new Set<string>();
+    const browserCounts = new Map<string, number>();
+    const osCounts = new Map<string, number>();
+    const referrerCounts = new Map<string, number>();
+    const hourlyDistribution = Array(24).fill(0);
+
     (pageViews || []).forEach((pv: any) => {
       const date = new Date(pv.created_at).toISOString().split('T')[0];
       if (dateMap.has(date)) {
@@ -71,9 +107,34 @@ serve(async (req) => {
         dayData.visitors.add(pv.visitor_id);
         dayData.pageviews++;
       }
+
+      const pvDate = new Date(pv.created_at);
+      if (!visitorFirstSeen.has(pv.visitor_id) || pvDate < visitorFirstSeen.get(pv.visitor_id)!) {
+        visitorFirstSeen.set(pv.visitor_id, pvDate);
+      }
+
+      const browser = parseBrowser(pv.user_agent || '');
+      browserCounts.set(browser, (browserCounts.get(browser) || 0) + 1);
+
+      const os = parseOS(pv.user_agent || '');
+      osCounts.set(os, (osCounts.get(os) || 0) + 1);
+
+      const referrerDomain = extractDomain(pv.referrer || '');
+      referrerCounts.set(referrerDomain, (referrerCounts.get(referrerDomain) || 0) + 1);
+
+      const hour = new Date(pv.created_at).getHours();
+      hourlyDistribution[hour]++;
     });
 
-    // Aggregate sessions by date
+    const rangeStart = start.getTime();
+    visitorFirstSeen.forEach((firstSeen, visitorId) => {
+      if (firstSeen.getTime() >= rangeStart) {
+        newVisitors.add(visitorId);
+      } else {
+        returningVisitors.add(visitorId);
+      }
+    });
+
     (sessions || []).forEach((session: any) => {
       const date = new Date(session.started_at).toISOString().split('T')[0];
       if (dateMap.has(date)) {
@@ -88,7 +149,6 @@ serve(async (req) => {
       }
     });
 
-    // Convert to time series format
     const visitorsData = [];
     const pageviewsData = [];
     const sessionDurationData = [];
@@ -99,7 +159,7 @@ serve(async (req) => {
       pageviewsData.push({ date, value: data.pageviews });
       
       const avgDuration = data.sessionDurations.length > 0
-        ? Math.floor(data.sessionDurations.reduce((a, b) => a + b, 0) / data.sessionDurations.length)
+        ? Math.floor(data.sessionDurations.reduce((a: number, b: number) => a + b, 0) / data.sessionDurations.length)
         : 0;
       sessionDurationData.push({ date, value: avgDuration });
       
@@ -109,43 +169,45 @@ serve(async (req) => {
       bounceRateData.push({ date, value: bounceRate });
     }
 
-    // Calculate totals
     const totalVisitors = new Set((pageViews || []).map((pv: any) => pv.visitor_id)).size;
     const totalPageviews = (pageViews || []).length;
-    const avgSessionDuration = (sessions || []).length > 0
-      ? Math.floor((sessions || []).reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0) / (sessions || []).length)
+    const totalSessions = (sessions || []).length;
+    const avgSessionDuration = totalSessions > 0
+      ? Math.floor((sessions || []).reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0) / totalSessions)
       : 0;
-    const avgBounceRate = (sessions || []).length > 0
-      ? Math.floor(((sessions || []).filter((s: any) => s.bounced).length / (sessions || []).length) * 100)
+    const avgBounceRate = totalSessions > 0
+      ? Math.floor(((sessions || []).filter((s: any) => s.bounced).length / totalSessions) * 100)
+      : 0;
+    const avgPagesPerSession = totalSessions > 0
+      ? (sessions || []).reduce((sum: number, s: any) => sum + (s.page_count || 1), 0) / totalSessions
       : 0;
 
-    // Aggregate by page path
-    const pageCounts = new Map();
+    const pageData = new Map<string, { count: number; title: string }>();
     (pageViews || []).forEach((pv: any) => {
-      pageCounts.set(pv.page_path, (pageCounts.get(pv.page_path) || 0) + 1);
+      const existing = pageData.get(pv.page_path);
+      if (existing) {
+        existing.count++;
+      } else {
+        pageData.set(pv.page_path, { count: 1, title: pv.page_title || pv.page_path });
+      }
     });
-    const topPages = Array.from(pageCounts.entries())
-      .map(([label, value]) => ({ label, value }))
+    const topPages = Array.from(pageData.entries())
+      .map(([path, data]) => ({ label: path, title: data.title, value: data.count }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    // Aggregate by source
     const sourceCounts = new Map();
     (sessions || []).forEach((s: any) => {
       sourceCounts.set(s.source, (sourceCounts.get(s.source) || 0) + 1);
     });
-    const sources = Array.from(sourceCounts.entries())
-      .map(([label, value]) => ({ label, value }));
+    const sources = Array.from(sourceCounts.entries()).map(([label, value]) => ({ label, value }));
 
-    // Aggregate by device
     const deviceCounts = new Map();
     (sessions || []).forEach((s: any) => {
       deviceCounts.set(s.device_type, (deviceCounts.get(s.device_type) || 0) + 1);
     });
-    const devices = Array.from(deviceCounts.entries())
-      .map(([label, value]) => ({ label, value }));
+    const devices = Array.from(deviceCounts.entries()).map(([label, value]) => ({ label, value }));
 
-    // Aggregate by country
     const countryCounts = new Map();
     (sessions || []).forEach((s: any) => {
       countryCounts.set(s.country, (countryCounts.get(s.country) || 0) + 1);
@@ -154,74 +216,77 @@ serve(async (req) => {
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value);
 
+    const browsers = Array.from(browserCounts.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
+
+    const operatingSystems = Array.from(osCounts.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
+
+    const referrers = Array.from(referrerCounts.entries())
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 20);
+
+    const recentActivity = (pageViews || [])
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 20)
+      .map((pv: any) => ({
+        path: pv.page_path,
+        title: pv.page_title || pv.page_path,
+        time: pv.created_at,
+        device: pv.device_type,
+        country: pv.country || 'US',
+        browser: parseBrowser(pv.user_agent || ''),
+        visitorId: pv.visitor_id?.substring(0, 8) || 'unknown'
+      }));
+
+    const hourlyData = hourlyDistribution.map((count, hour) => ({
+      hour: `${hour.toString().padStart(2, '0')}:00`,
+      value: count
+    }));
+
     const analyticsData = {
       timeSeries: {
-        visitors: {
-          data: visitorsData,
-          total: totalVisitors
-        },
-        pageviews: {
-          data: pageviewsData,
-          total: totalPageviews
-        },
-        sessionDuration: {
-          data: sessionDurationData,
-          total: avgSessionDuration
-        },
-        bounceRate: {
-          data: bounceRateData,
-          total: avgBounceRate
-        },
-        pageviewsPerVisit: {
-          total: totalVisitors > 0 ? totalPageviews / totalVisitors : 0
-        }
+        visitors: { data: visitorsData, total: totalVisitors },
+        pageviews: { data: pageviewsData, total: totalPageviews },
+        sessionDuration: { data: sessionDurationData, total: avgSessionDuration },
+        bounceRate: { data: bounceRateData, total: avgBounceRate },
+        pageviewsPerVisit: { total: totalVisitors > 0 ? totalPageviews / totalVisitors : 0 }
       },
       lists: {
-        page: {
-          data: topPages
-        },
-        source: {
-          data: sources
-        },
-        device: {
-          data: devices
-        },
-        country: {
-          data: countries
-        }
-      }
+        page: { data: topPages },
+        source: { data: sources },
+        device: { data: devices },
+        country: { data: countries },
+        browser: { data: browsers },
+        os: { data: operatingSystems },
+        referrer: { data: referrers }
+      },
+      metrics: {
+        totalSessions,
+        avgPagesPerSession: Math.round(avgPagesPerSession * 10) / 10,
+        newVisitors: newVisitors.size,
+        returningVisitors: returningVisitors.size
+      },
+      hourlyDistribution: hourlyData,
+      recentActivity
     };
 
-    console.log('Successfully fetched real visitor analytics data:', {
-      totalVisitors,
-      totalPageviews,
-      totalSessions: (sessions || []).length
+    console.log('Successfully fetched enhanced visitor analytics data:', {
+      totalVisitors, totalPageviews, totalSessions, browsers: browsers.length, referrers: referrers.length
     });
 
-    return new Response(
-      JSON.stringify(analyticsData),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return new Response(JSON.stringify(analyticsData), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
 
   } catch (error) {
     console.error('Error in visitor-analytics function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        message: 'Failed to fetch analytics data'
-      }),
-      { 
-        status: 500,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
+      JSON.stringify({ error: error.message, message: 'Failed to fetch analytics data' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 })

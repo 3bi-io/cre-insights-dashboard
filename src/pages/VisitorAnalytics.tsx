@@ -2,16 +2,19 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
 import { 
   Users, Eye, Clock, TrendingDown, Globe, Smartphone, 
-  MousePointerClick, Activity 
+  MousePointerClick, Activity, Monitor, Link, Timer, 
+  UserPlus, UserCheck, FileText, Laptop
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -79,8 +82,8 @@ const VisitorAnalytics = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Visitor Analytics</h1>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+          {[...Array(6)].map((_, i) => (
             <Card key={i}>
               <CardHeader className="animate-pulse">
                 <div className="h-4 bg-muted rounded w-24"></div>
@@ -97,6 +100,9 @@ const VisitorAnalytics = () => {
 
   const timeSeries = analytics?.timeSeries || {};
   const lists = analytics?.lists || {};
+  const metrics = analytics?.metrics || {};
+  const hourlyDistribution = analytics?.hourlyDistribution || [];
+  const recentActivity = analytics?.recentActivity || [];
 
   // Safe data extraction with defaults
   const visitorsData = timeSeries.visitors?.data || [];
@@ -109,6 +115,10 @@ const VisitorAnalytics = () => {
   const avgSessionDuration = timeSeries.sessionDuration?.total || 0;
   const avgBounceRate = timeSeries.bounceRate?.total || 0;
   const pagesPerVisit = timeSeries.pageviewsPerVisit?.total || 0;
+  const totalSessions = metrics.totalSessions || 0;
+  const avgPagesPerSession = metrics.avgPagesPerSession || 0;
+  const newVisitors = metrics.newVisitors || 0;
+  const returningVisitors = metrics.returningVisitors || 0;
 
   // Prepare chart data with safe mapping
   const chartData = visitorsData.map((item: any, index: number) => ({
@@ -118,6 +128,12 @@ const VisitorAnalytics = () => {
     sessionDuration: sessionDurationData[index]?.value || 0,
     bounceRate: bounceRateData[index]?.value || 0,
   }));
+
+  // New vs returning data for pie chart
+  const visitorTypeData = [
+    { label: 'New', value: newVisitors },
+    { label: 'Returning', value: returningVisitors }
+  ];
 
   const hasData = chartData.length > 0 || totalVisitors > 0;
 
@@ -166,9 +182,9 @@ const VisitorAnalytics = () => {
         </Card>
       )}
 
-      {/* Key Metrics */}
+      {/* Key Metrics - 6 cards */}
       {!error && hasData && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <MetricCard
             title="Total Visitors"
             value={totalVisitors.toLocaleString()}
@@ -182,7 +198,13 @@ const VisitorAnalytics = () => {
             subtitle={`${pagesPerVisit.toFixed(1)} pages per visit`}
           />
           <MetricCard
-            title="Avg Session Duration"
+            title="Total Sessions"
+            value={totalSessions.toLocaleString()}
+            icon={Activity}
+            subtitle={`${avgPagesPerSession} pages/session`}
+          />
+          <MetricCard
+            title="Avg Session"
             value={formatDuration(avgSessionDuration)}
             icon={Clock}
             subtitle="Time spent per visit"
@@ -193,16 +215,24 @@ const VisitorAnalytics = () => {
             icon={TrendingDown}
             subtitle="Single page visits"
           />
+          <MetricCard
+            title="New Visitors"
+            value={`${totalVisitors > 0 ? Math.round((newVisitors / totalVisitors) * 100) : 0}%`}
+            icon={UserPlus}
+            subtitle={`${newVisitors} new, ${returningVisitors} returning`}
+          />
         </div>
       )}
 
       {/* Charts */}
       {!error && hasData && (
         <Tabs defaultValue="visitors" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex flex-wrap">
           <TabsTrigger value="visitors">Visitors</TabsTrigger>
           <TabsTrigger value="engagement">Engagement</TabsTrigger>
           <TabsTrigger value="sources">Sources</TabsTrigger>
+          <TabsTrigger value="technology">Technology</TabsTrigger>
+          <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="demographics">Demographics</TabsTrigger>
         </TabsList>
 
@@ -231,6 +261,63 @@ const VisitorAnalytics = () => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {/* New vs Returning Visitors */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>New vs Returning Visitors</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={visitorTypeData}
+                      dataKey="value"
+                      nameKey="label"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={(entry) => `${entry.label}: ${entry.value}`}
+                    >
+                      {visitorTypeData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Visitor Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4 text-chart-1" />
+                    <span className="font-medium">New Visitors</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold">{newVisitors}</span>
+                    <Badge variant="outline">{totalVisitors > 0 ? Math.round((newVisitors / totalVisitors) * 100) : 0}%</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4 text-chart-2" />
+                    <span className="font-medium">Returning Visitors</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold">{returningVisitors}</span>
+                    <Badge variant="outline">{totalVisitors > 0 ? Math.round((returningVisitors / totalVisitors) * 100) : 0}%</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="engagement" className="space-y-4">
@@ -293,11 +380,14 @@ const VisitorAnalytics = () => {
                 {lists.page?.data && lists.page.data.length > 0 ? (
                   lists.page.data.slice(0, 10).map((page: any, index: number) => (
                     <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{page.label || 'Unknown'}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <span className="font-medium block truncate">{page.title || page.label}</span>
+                          <span className="text-xs text-muted-foreground truncate block">{page.label}</span>
+                        </div>
                       </div>
-                      <span className="text-muted-foreground">{(page.value || 0).toLocaleString()} views</span>
+                      <span className="text-muted-foreground ml-2">{(page.value || 0).toLocaleString()} views</span>
                     </div>
                   ))
                 ) : (
@@ -359,6 +449,240 @@ const VisitorAnalytics = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Detailed Referrers */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5" />
+                Top Referrers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {lists.referrer?.data && lists.referrer.data.length > 0 ? (
+                  lists.referrer.data.slice(0, 15).map((ref: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="font-medium truncate">{ref.label}</span>
+                      </div>
+                      <Badge variant="secondary">{(ref.value || 0).toLocaleString()}</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No referrer data available</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Technology Tab - Browser & OS */}
+        <TabsContent value="technology" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5" />
+                  Browser Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={lists.browser?.data || []} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis dataKey="label" type="category" stroke="hsl(var(--muted-foreground))" width={80} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="value" fill="hsl(var(--chart-1))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Laptop className="h-5 w-5" />
+                  Operating System
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={lists.os?.data || []}
+                      dataKey="value"
+                      nameKey="label"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={(entry) => entry.label}
+                    >
+                      {(lists.os?.data || []).map((_: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Browser & OS breakdown lists */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Browser Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {lists.browser?.data && lists.browser.data.length > 0 ? (
+                    lists.browser.data.map((browser: any, index: number) => {
+                      const percentage = totalPageviews > 0 ? (browser.value / totalPageviews * 100) : 0;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{browser.label}</span>
+                            <span className="text-muted-foreground">{browser.value.toLocaleString()} ({percentage.toFixed(1)}%)</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all" 
+                              style={{ 
+                                width: `${percentage}%`,
+                                backgroundColor: COLORS[index % COLORS.length]
+                              }} 
+                            />
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No browser data available</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>OS Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {lists.os?.data && lists.os.data.length > 0 ? (
+                    lists.os.data.map((os: any, index: number) => {
+                      const percentage = totalPageviews > 0 ? (os.value / totalPageviews * 100) : 0;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{os.label}</span>
+                            <span className="text-muted-foreground">{os.value.toLocaleString()} ({percentage.toFixed(1)}%)</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all" 
+                              style={{ 
+                                width: `${percentage}%`,
+                                backgroundColor: COLORS[index % COLORS.length]
+                              }} 
+                            />
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No OS data available</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Activity Tab - Hourly & Recent */}
+        <TabsContent value="activity" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Timer className="h-5 w-5" />
+                Hourly Activity Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={hourlyDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="hsl(var(--chart-1))" 
+                    fill="hsl(var(--chart-1))" 
+                    fillOpacity={0.3}
+                    name="Page Views"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity Feed */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Recent Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity: any, index: number) => (
+                    <div key={index} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Activity className="h-5 w-5 text-primary" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{activity.title}</p>
+                        <p className="text-sm text-muted-foreground truncate">{activity.path}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{activity.browser}</Badge>
+                          <Badge variant="outline" className="text-xs capitalize">{activity.device}</Badge>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(activity.time), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No recent activity</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="demographics" className="space-y-4">
@@ -418,7 +742,7 @@ const VisitorAnalytics = () => {
               <div className="space-y-4">
                 {lists.device?.data && lists.device.data.length > 0 ? (
                   lists.device.data.map((device: any, index: number) => {
-                    const percentage = totalVisitors > 0 ? (device.value / totalVisitors * 100) : 0;
+                    const percentage = totalSessions > 0 ? (device.value / totalSessions * 100) : 0;
                     return (
                       <div key={index} className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -426,14 +750,15 @@ const VisitorAnalytics = () => {
                             <Smartphone className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium capitalize">{device.label || 'Unknown'}</span>
                           </div>
-                          <span className="text-muted-foreground">{(device.value || 0).toLocaleString()}</span>
+                          <span className="text-muted-foreground">{(device.value || 0).toLocaleString()} ({percentage.toFixed(1)}%)</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-primary rounded-full"
+                            className="h-full rounded-full transition-all" 
                             style={{ 
-                              width: `${percentage}%` 
-                            }}
+                              width: `${percentage}%`,
+                              backgroundColor: COLORS[index % COLORS.length]
+                            }} 
                           />
                         </div>
                       </div>
