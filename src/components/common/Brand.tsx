@@ -119,22 +119,16 @@ export const Brand: React.FC<BrandProps> = ({
     // Icon variant
     if (variant === 'icon') {
       return priority ? (
-        <picture>
-          <source 
-            type="image/webp" 
-            srcSet={`/logo-icon.webp 2x, /logo-icon.webp 1x`}
-          />
-          <img 
-            src="/logo-icon.png" 
-            alt="ATS.me" 
-            width={pixelSize}
-            height={pixelSize}
-            loading="eager"
-            decoding="async"
-            onError={() => setImageError(true)}
-            className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
-          />
-        </picture>
+        <img 
+          src="/logo-icon.png" 
+          alt="ATS.me" 
+          width={pixelSize}
+          height={pixelSize}
+          loading="eager"
+          decoding="async"
+          onError={() => setImageError(true)}
+          className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
+        />
       ) : (
         <LazyImage
           src="/logo-icon.png"
@@ -151,22 +145,16 @@ export const Brand: React.FC<BrandProps> = ({
 
     // Horizontal logo with dark mode support
     const lightLogo = priority ? (
-      <picture>
-        <source 
-          type="image/webp" 
-          srcSet={`/logo.webp 2x, /logo.webp 1x`}
-        />
-        <img 
-          src="/logo.png"
-          alt="ATS.me" 
-          width={pixelSize * 3}
-          height={pixelSize}
-          loading="eager"
-          decoding="async"
-          onError={() => setImageError(true)}
-          className={cn(sizeClasses.height, sizeClasses.width, "object-contain dark:hidden")}
-        />
-      </picture>
+      <img 
+        src="/logo.png"
+        alt="ATS.me" 
+        width={pixelSize * 3}
+        height={pixelSize}
+        loading="eager"
+        decoding="async"
+        onError={() => setImageError(true)}
+        className={cn(sizeClasses.height, sizeClasses.width, "object-contain dark:hidden")}
+      />
     ) : (
       <LazyImage
         src="/logo.png"
@@ -182,22 +170,16 @@ export const Brand: React.FC<BrandProps> = ({
 
     const darkLogo = theme === 'auto' && (
       priority ? (
-        <picture>
-          <source 
-            type="image/webp" 
-            srcSet={`/logo-white.webp 2x, /logo-white.webp 1x`}
-          />
-          <img 
-            src="/logo-white.png"
-            alt="ATS.me" 
-            width={pixelSize * 3}
-            height={pixelSize}
-            loading="eager"
-            decoding="async"
-            onError={() => setImageError(true)}
-            className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
-          />
-        </picture>
+        <img 
+          src="/logo-white.png"
+          alt="ATS.me" 
+          width={pixelSize * 3}
+          height={pixelSize}
+          loading="eager"
+          decoding="async"
+          onError={() => setImageError(true)}
+          className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
+        />
       ) : (
         <LazyImage
           src="/logo-white.png"

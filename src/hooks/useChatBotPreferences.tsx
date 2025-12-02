@@ -38,7 +38,7 @@ export const useChatBotPreferences = () => {
         .from('user_preferences')
         .select('chatbot_preferences')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
         console.error('Error loading chatbot preferences:', error);
