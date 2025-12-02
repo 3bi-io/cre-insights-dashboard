@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Bot, MessageSquare, AudioLines } from 'lucide-react';
+import { RefreshCw, Bot, MessageSquare, AudioLines, Volume2, Mic, BarChart3 } from 'lucide-react';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { ConversationHistoryTable } from '@/components/voice/ConversationHistoryTable';
@@ -16,6 +16,9 @@ import { OrganizationAgentAssignment } from '@/components/voice/OrganizationAgen
 import { WebhookManager } from '@/components/integrations/WebhookManager';
 import VoiceAgentCard from '@/components/voice/VoiceAgentCard';
 import VoiceAgentDialog from '@/components/voice/VoiceAgentDialog';
+import { VoiceLibrary } from '@/components/voice/VoiceLibrary';
+import { TextToSpeechPanel } from '@/components/voice/TextToSpeechPanel';
+import { ElevenLabsUsageAnalytics } from '@/components/voice/ElevenLabsUsageAnalytics';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 
@@ -206,10 +209,22 @@ const ElevenLabsAdmin = () => {
         {/* Main Content */}
         <Tabs defaultValue="conversations" className="space-y-4">
           <div className="flex items-center justify-between">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="conversations">Conversations</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="agents">Voice Agents</TabsTrigger>
+            <TabsTrigger value="voices">
+              <Volume2 className="h-4 w-4 mr-1" />
+              Voices
+            </TabsTrigger>
+            <TabsTrigger value="tts">
+              <Mic className="h-4 w-4 mr-1" />
+              TTS
+            </TabsTrigger>
+            <TabsTrigger value="api">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              API
+            </TabsTrigger>
             {userRole === 'super_admin' && (
               <>
                 <TabsTrigger value="assignments">Org Assignments</TabsTrigger>
@@ -394,6 +409,31 @@ const ElevenLabsAdmin = () => {
                 </AlertDescription>
               </Alert>
             )}
+          </TabsContent>
+
+          <TabsContent value="voices" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Volume2 className="h-5 w-5" />
+                  Voice Library
+                </CardTitle>
+                <CardDescription>
+                  Browse and preview all available ElevenLabs voices
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <VoiceLibrary />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tts" className="space-y-4">
+            <TextToSpeechPanel />
+          </TabsContent>
+
+          <TabsContent value="api" className="space-y-4">
+            <ElevenLabsUsageAnalytics />
           </TabsContent>
         </Tabs>
       </div>
