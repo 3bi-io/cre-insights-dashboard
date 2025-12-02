@@ -33,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    const { message, model = 'claude-3-5-sonnet-20241022', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
+    const { message, model = 'claude-sonnet-4-20250514', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
 
     if (!message) {
       return new Response(JSON.stringify({ 
