@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Bot, MessageSquare, AudioLines, BarChart3 } from 'lucide-react';
+import { RefreshCw, Bot, MessageSquare, AudioLines } from 'lucide-react';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { ConversationHistoryTable } from '@/components/voice/ConversationHistoryTable';
@@ -32,7 +32,6 @@ const ElevenLabsAdmin = () => {
     isDeleting
   } = useVoiceAgents();
   const [selectedAgent, setSelectedAgent] = useState<string>('all');
-  const [selectedConversation, setSelectedConversation] = useState<any>(null);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,7 +138,7 @@ const ElevenLabsAdmin = () => {
       title="ElevenLabs Administration"
       description="Manage AI voice agents, conversations, and transcripts"
     >
-      <div className="space-y-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 max-w-7xl space-y-6">
         {/* Info Alert */}
         <Alert>
           <Bot className="h-4 w-4" />
@@ -296,7 +295,6 @@ const ElevenLabsAdmin = () => {
                 ) : (
                   <ConversationHistoryTable
                     conversations={filteredConversations}
-                    onViewDetails={setSelectedConversation}
                     onDownloadAudio={downloadAudio}
                     isDownloadingAudio={isDownloadingAudio}
                   />

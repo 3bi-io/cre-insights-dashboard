@@ -24,14 +24,13 @@ interface Conversation {
 
 interface ConversationHistoryTableProps {
   conversations: Conversation[];
-  onViewDetails: (conversation: Conversation) => void;
+  onViewDetails?: (conversation: Conversation) => void;
   onDownloadAudio: (conversationId: string) => void;
   isDownloadingAudio: boolean;
 }
 
 export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> = ({
   conversations,
-  onViewDetails,
   onDownloadAudio,
   isDownloadingAudio,
 }) => {
@@ -88,10 +87,7 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setSelectedConversation(conversation);
-                          onViewDetails(conversation);
-                        }}
+                        onClick={() => setSelectedConversation(conversation)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
