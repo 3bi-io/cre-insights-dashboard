@@ -171,10 +171,10 @@ const JobsPage = () => {
               
               <Select value={clientFilter} onValueChange={setClientFilter}>
                 <SelectTrigger className="w-full sm:w-56">
-                  <SelectValue placeholder="All Clients" />
+                  <SelectValue placeholder="All Companies" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="__ALL__">All Clients</SelectItem>
+                  <SelectItem value="__ALL__">All Companies</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
