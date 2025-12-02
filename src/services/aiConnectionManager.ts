@@ -56,6 +56,7 @@ class AIConnectionManager {
     
     try {
       let response;
+      let isConnected = false;
       
       switch (provider) {
         case 'openai':
@@ -65,6 +66,7 @@ class AIConnectionManager {
               model: config.model
             }
           });
+          isConnected = !response.error && response.data && (response.data.generatedText || response.data.choices);
           break;
           
         case 'anthropic':
@@ -74,24 +76,29 @@ class AIConnectionManager {
               model: config.model
             }
           });
+          isConnected = !response.error && response.data && response.data.generatedText;
           break;
           
         case 'elevenlabs':
           response = await supabase.functions.invoke('elevenlabs-agent', {
             body: {
-              agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65',
-              action: 'test'
+              agentId: 'agent_1501k4dpkf2hfevs6eh5e7947a65'
             }
           });
+          // ElevenLabs returns { success: true, signedUrl } on success
+          isConnected = !response.error && response.data && response.data.success === true;
           break;
           
         case 'grok':
+          // Grok expects messages array format
           response = await supabase.functions.invoke('grok-chat', {
             body: {
-              message: config.testMessage,
-              model: config.model
+              messages: [{ role: 'user', content: config.testMessage }],
+              model: config.model,
+              stream: false
             }
           });
+          isConnected = !response.error && response.data && (response.data.choices || response.data.content);
           break;
       }
 
@@ -99,7 +106,7 @@ class AIConnectionManager {
       
       const status: AIConnectionStatus = {
         provider,
-        isConnected: !response.error && response.data,
+        isConnected,
         lastChecked: new Date(),
         latency,
         model: config.model
@@ -108,6 +115,8 @@ class AIConnectionManager {
       if (response.error) {
         status.error = response.error.message;
         status.isConnected = false;
+      } else if (!isConnected && response.data?.error) {
+        status.error = response.data.error;
       }
 
       this.connectionStatus.set(provider, status);
