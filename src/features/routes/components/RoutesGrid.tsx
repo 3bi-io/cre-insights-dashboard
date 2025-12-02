@@ -26,7 +26,7 @@ const RoutesGrid = ({ routes }: RoutesGridProps) => {
       dest_city: route.dest_city,
       dest_state: route.dest_state
     });
-    navigate(`/dashboard/jobs?${params.toString()}`);
+    navigate(`/admin/jobs?${params.toString()}`);
   }, [navigate]);
 
   if (routes.length === 0) {
