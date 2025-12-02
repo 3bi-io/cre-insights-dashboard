@@ -54,7 +54,21 @@ serve(async (req) => {
         );
 
         if (!response.ok) {
-          throw new Error(`ElevenLabs API error: ${await response.text()}`);
+          const errorText = await response.text();
+          // Handle agent not found gracefully
+          if (response.status === 404 || errorText.includes('document_not_found')) {
+            console.warn(`Agent ${agentId} not found in ElevenLabs - may have been deleted`);
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: 'agent_not_found',
+                message: `Agent ${agentId} was not found in ElevenLabs. It may have been deleted or the ID is incorrect.`,
+                conversations: { conversations: [] }
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          throw new Error(`ElevenLabs API error: ${errorText}`);
         }
 
         const conversations = await response.json();
