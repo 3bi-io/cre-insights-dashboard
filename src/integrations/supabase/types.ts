@@ -1423,6 +1423,84 @@ export type Database = {
           },
         ]
       }
+      candidate_profiles: {
+        Row: {
+          cdl_class: string | null
+          cdl_endorsements: string[] | null
+          city: string | null
+          created_at: string | null
+          desired_job_title: string | null
+          desired_salary_max: number | null
+          desired_salary_min: number | null
+          email: string | null
+          first_name: string | null
+          headline: string | null
+          id: string
+          last_name: string | null
+          open_to_opportunities: boolean | null
+          phone: string | null
+          profile_completion_percentage: number | null
+          profile_visibility: string | null
+          resume_url: string | null
+          state: string | null
+          summary: string | null
+          updated_at: string | null
+          user_id: string
+          years_experience: number | null
+          zip: string | null
+        }
+        Insert: {
+          cdl_class?: string | null
+          cdl_endorsements?: string[] | null
+          city?: string | null
+          created_at?: string | null
+          desired_job_title?: string | null
+          desired_salary_max?: number | null
+          desired_salary_min?: number | null
+          email?: string | null
+          first_name?: string | null
+          headline?: string | null
+          id?: string
+          last_name?: string | null
+          open_to_opportunities?: boolean | null
+          phone?: string | null
+          profile_completion_percentage?: number | null
+          profile_visibility?: string | null
+          resume_url?: string | null
+          state?: string | null
+          summary?: string | null
+          updated_at?: string | null
+          user_id: string
+          years_experience?: number | null
+          zip?: string | null
+        }
+        Update: {
+          cdl_class?: string | null
+          cdl_endorsements?: string[] | null
+          city?: string | null
+          created_at?: string | null
+          desired_job_title?: string | null
+          desired_salary_max?: number | null
+          desired_salary_min?: number | null
+          email?: string | null
+          first_name?: string | null
+          headline?: string | null
+          id?: string
+          last_name?: string | null
+          open_to_opportunities?: boolean | null
+          phone?: string | null
+          profile_completion_percentage?: number | null
+          profile_visibility?: string | null
+          resume_url?: string | null
+          state?: string | null
+          summary?: string | null
+          updated_at?: string | null
+          user_id?: string
+          years_experience?: number | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
       candidate_rankings: {
         Row: {
           application_id: string | null
@@ -3422,6 +3500,7 @@ export type Database = {
           id: string
           organization_id: string | null
           updated_at: string
+          user_type: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -3432,6 +3511,7 @@ export type Database = {
           id: string
           organization_id?: string | null
           updated_at?: string
+          user_type?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -3442,6 +3522,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           updated_at?: string
+          user_type?: string | null
         }
         Relationships: [
           {

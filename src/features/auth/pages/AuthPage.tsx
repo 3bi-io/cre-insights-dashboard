@@ -15,7 +15,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userType, setUserType] = useState<'employer' | 'candidate'>('employer');
+  const [userType, setUserType] = useState<'organization' | 'jobseeker'>('organization');
   const [showUserTypeSelection, setShowUserTypeSelection] = useState(false);
   
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const AuthPage = () => {
       setError(error.message);
     } else {
       // Redirect based on user type
-      navigate(userType === 'candidate' ? '/my-jobs' : '/');
+      navigate(userType === 'jobseeker' ? '/my-jobs' : '/');
     }
     
     setIsLoading(false);
