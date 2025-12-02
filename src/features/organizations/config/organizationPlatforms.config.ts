@@ -1,5 +1,5 @@
 import { PlatformConfig, PlatformKey, PlatformCategory } from '../types/platforms.types';
-import { Truck, Globe, FileText, DollarSign, Building2, Zap } from 'lucide-react';
+import { Truck, Globe, FileText, DollarSign, Building2, Zap, TrendingUp } from 'lucide-react';
 
 /**
  * Centralized platform configuration
@@ -86,6 +86,20 @@ export const ORGANIZATION_PLATFORMS: Record<PlatformKey, PlatformConfig> = {
     icon: 'FileText',
     adminOnly: true,
   },
+  adzuna: {
+    key: 'adzuna',
+    name: 'Adzuna',
+    description: 'Performance-based job advertising platform',
+    category: 'General Platforms',
+    icon: 'TrendingUp',
+  },
+  talroo: {
+    key: 'talroo',
+    name: 'Talroo',
+    description: 'Programmatic job advertising with CPA/CPC pricing',
+    category: 'General Platforms',
+    icon: 'TrendingUp',
+  },
 };
 
 /**
@@ -142,6 +156,8 @@ export const getPlatformIcon = (platformKey: PlatformKey) => {
       return Building2;
     case 'Zap':
       return Zap;
+    case 'TrendingUp':
+      return TrendingUp;
     default:
       return Globe;
   }

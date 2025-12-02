@@ -80,7 +80,8 @@ export const usePlatformAccess = (organizationId?: string) => {
 
   // Check if a platform is enabled (utility function)
   const checkPlatformAccess = async (platformName: string): Promise<boolean> => {
-    if (!organizationId) return false;
+    // Default to true if no organization - aligns with DB default behavior
+    if (!organizationId) return true;
     
     const platformsMap = await OrganizationPlatformsService.fetchOrganizationPlatformsMap(organizationId);
     return platformsMap[platformName as any] ?? true; // Default to true if not found

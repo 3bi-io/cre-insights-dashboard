@@ -14,7 +14,9 @@ export type PlatformKey =
   | 'newjobs4you'
   | 'roadwarriors'
   | 'ats_explorer'
-  | 'import_applications';
+  | 'import_applications'
+  | 'adzuna'
+  | 'talroo';
 
 /**
  * Platform category for grouping
