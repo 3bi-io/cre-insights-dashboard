@@ -17,17 +17,22 @@ export const STATIC_ROUTES: SitemapUrl[] = [
     priority: 1.0,
   },
   {
-    loc: 'https://ats.me/pricing',
-    changefreq: 'weekly',
-    priority: 0.9,
-  },
-  {
-    loc: 'https://ats.me/demo',
-    changefreq: 'weekly',
+    loc: 'https://ats.me/jobs',
+    changefreq: 'daily',
     priority: 0.9,
   },
   {
     loc: 'https://ats.me/features',
+    changefreq: 'weekly',
+    priority: 0.9,
+  },
+  {
+    loc: 'https://ats.me/pricing',
+    changefreq: 'monthly',
+    priority: 0.9,
+  },
+  {
+    loc: 'https://ats.me/demo',
     changefreq: 'weekly',
     priority: 0.9,
   },
@@ -60,6 +65,11 @@ export const STATIC_ROUTES: SitemapUrl[] = [
     loc: 'https://ats.me/cookie-policy',
     changefreq: 'yearly',
     priority: 0.3,
+  },
+  {
+    loc: 'https://ats.me/sitemap',
+    changefreq: 'monthly',
+    priority: 0.5,
   },
 ];
 
