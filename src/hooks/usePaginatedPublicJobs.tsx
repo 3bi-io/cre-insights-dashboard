@@ -45,6 +45,7 @@ export function usePaginatedPublicJobs({
           clients(name, logo_url)
         `, { count: 'exact' })
         .eq('status', 'active')
+        .neq('organizations.slug', 'acme') // Exclude ACME organization listings
         .order('created_at', { ascending: false })
         .range(from, to);
 
