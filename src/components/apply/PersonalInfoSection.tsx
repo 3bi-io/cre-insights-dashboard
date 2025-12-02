@@ -27,23 +27,29 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-2">
-          <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+          <Label htmlFor="firstName" className="text-sm font-medium">
+            First Name <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="firstName"
             value={formData.firstName}
             onChange={(e) => onInputChange('firstName', e.target.value)}
             required
+            aria-required="true"
             placeholder="Enter your first name"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+          <Label htmlFor="lastName" className="text-sm font-medium">
+            Last Name <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="lastName"
             value={formData.lastName}
             onChange={(e) => onInputChange('lastName', e.target.value)}
             required
+            aria-required="true"
             placeholder="Enter your last name"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
@@ -52,19 +58,24 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">
+            Email <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="email"
             type="email"
             value={formData.email}
             onChange={(e) => onInputChange('email', e.target.value)}
             required
+            aria-required="true"
             placeholder="Enter your email"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+          <Label htmlFor="phone" className="text-sm font-medium">
+            Phone Number <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="phone"
             type="tel"
@@ -72,6 +83,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('phone', e.target.value)}
             placeholder="(555) 123-4567"
             required
+            aria-required="true"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
@@ -84,7 +96,6 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             id="city"
             value={formData.city}
             onChange={(e) => onInputChange('city', e.target.value)}
-            required
             placeholder="Enter your city"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
@@ -95,18 +106,20 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             id="state"
             value={formData.state}
             onChange={(e) => onInputChange('state', e.target.value)}
-            required
             placeholder="Enter your state"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="zip" className="text-sm font-medium">ZIP Code</Label>
+          <Label htmlFor="zip" className="text-sm font-medium">
+            ZIP Code <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="zip"
             value={formData.zip}
             onChange={(e) => onInputChange('zip', e.target.value)}
             required
+            aria-required="true"
             placeholder="Enter your ZIP code"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
@@ -114,9 +127,11 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="over21" className="text-sm font-medium">Are you over 21?</Label>
+        <Label htmlFor="over21" className="text-sm font-medium">
+          Are you over 21? <span className="text-destructive">*</span>
+        </Label>
         <Select value={formData.over21} onValueChange={(value) => onInputChange('over21', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select your age status..." />
           </SelectTrigger>
           <SelectContent>

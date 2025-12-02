@@ -19,9 +19,11 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange }: CDLInfoSe
       </h2>
       
       <div className="space-y-2">
-        <Label htmlFor="cdl" className="text-sm font-medium">Do you have a CDL-A license?</Label>
+        <Label htmlFor="cdl" className="text-sm font-medium">
+          Do you have a CDL-A license? <span className="text-destructive">*</span>
+        </Label>
         <Select value={formData.cdl} onValueChange={(value) => onInputChange('cdl', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select CDL status..." />
           </SelectTrigger>
           <SelectContent>
@@ -32,9 +34,11 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange }: CDLInfoSe
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="experience" className="text-sm font-medium">Months of CDL-A driving experience?</Label>
+        <Label htmlFor="experience" className="text-sm font-medium">
+          Months of CDL-A driving experience? <span className="text-destructive">*</span>
+        </Label>
         <Select value={formData.experience} onValueChange={(value) => onInputChange('experience', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select months of experience..." />
           </SelectTrigger>
           <SelectContent className="max-h-[200px]">

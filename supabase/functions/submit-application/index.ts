@@ -33,11 +33,22 @@ const ApplicationSubmissionSchema = z.object({
   // Application fields with reasonable limits
   cdl: z.string().max(50).optional(),
   experience: z.string().max(50).optional(),
+  months: z.string().max(10).optional(),
+  exp: z.string().max(100).optional(),
   over21: z.string().max(10).optional(),
   drug: z.string().max(50).optional(),
   veteran: z.string().max(50).optional(),
   consent: z.string().max(50).optional(),
   privacy: z.string().max(50).optional(),
+  
+  // URL tracking parameters
+  ad_id: z.string().max(100).optional(),
+  campaign_id: z.string().max(100).optional(),
+  adset_id: z.string().max(100).optional(),
+  utm_source: z.string().max(100).optional(),
+  utm_medium: z.string().max(100).optional(),
+  utm_campaign: z.string().max(100).optional(),
+  referral_source: z.string().max(500).optional(),
   
   // Employment history - limit to prevent DoS
   employmentHistory: z.any().optional(),
@@ -169,10 +180,14 @@ Deno.serve(async (req) => {
 
     // Map form data to applications table schema
     // Support both camelCase and snake_case field names
+    const firstName = formData.firstName || formData.first_name || '';
+    const lastName = formData.lastName || formData.last_name || '';
+    
     const applicationData = {
       job_listing_id: jobListingId,
-      first_name: formData.firstName || formData.first_name,
-      last_name: formData.lastName || formData.last_name,
+      first_name: firstName,
+      last_name: lastName,
+      full_name: `${firstName} ${lastName}`.trim() || null,
       applicant_email: formData.email || formData.applicant_email,
       phone: normalizePhone(formData.phone),
       city: city,
@@ -180,13 +195,19 @@ Deno.serve(async (req) => {
       zip: formData.zip,
       age: formData.over21,
       cdl: formData.cdl,
-      exp: getExperienceLevel(formData.experience),
+      exp: formData.exp || getExperienceLevel(formData.experience),
       drug: formData.drug,
       veteran: formData.veteran,
       employment_history: formData.employmentHistory,
       consent: formData.consent,
       privacy: formData.privacy,
-      months: formData.experience,
+      months: formData.months || formData.experience,
+      // URL tracking parameters
+      ad_id: formData.ad_id || null,
+      campaign_id: formData.campaign_id || null,
+      adset_id: formData.adset_id || null,
+      referral_source: formData.referral_source || formData.utm_source || null,
+      how_did_you_hear: formData.utm_medium || formData.utm_campaign || null,
       source: 'Direct Application',
       status: 'pending',
       applied_at: new Date().toISOString(),
