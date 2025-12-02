@@ -23,3 +23,10 @@ export { KeyboardShortcutsHint } from './KeyboardShortcutsHint';
 export { ApplicationsStats } from './ApplicationsStats';
 export { ApplicationsFilters } from './ApplicationsFilters';
 export { ApplicationsGrid } from './ApplicationsGrid';
+
+// Decomposed ApplicationsPage components
+export { ApplicationsLoadingSkeleton } from './ApplicationsLoadingSkeleton';
+export { ApplicationsBulkProgress } from './ApplicationsBulkProgress';
+export { ApplicationsDialogs } from './ApplicationsDialogs';
+export { ApplicationsList } from './ApplicationsList';
+export { ApplicationsPageActions } from './ApplicationsPageActions';
