@@ -62,6 +62,172 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Build comprehensive payload for Zapier/webhooks
+function buildZapierPayload(app: any) {
+  return {
+    // Event metadata
+    event_type: 'created',
+    timestamp: new Date().toISOString(),
+    
+    // Application ID
+    id: app.id,
+    job_listing_id: app.job_listing_id,
+    job_id: app.job_id,
+    
+    // Personal information
+    first_name: app.first_name,
+    last_name: app.last_name,
+    full_name: app.full_name,
+    email: app.applicant_email,
+    phone: app.phone,
+    
+    // Location
+    city: app.city,
+    state: app.state,
+    zip: app.zip,
+    country: app.country || 'US',
+    
+    // Screening fields
+    age_verification: app.age,
+    cdl_status: app.cdl,
+    experience_text: app.exp,
+    experience_months: app.months,
+    drug_screen: app.drug,
+    veteran_status: app.veteran,
+    
+    // Consent
+    sms_consent: app.consent,
+    privacy_accepted: app.privacy,
+    
+    // Marketing attribution
+    ad_id: app.ad_id,
+    campaign_id: app.campaign_id,
+    adset_id: app.adset_id,
+    referral_source: app.referral_source,
+    how_did_you_hear: app.how_did_you_hear,
+    
+    // Metadata
+    source: app.source,
+    status: app.status,
+    applied_at: app.applied_at,
+    created_at: app.created_at,
+  };
+}
+
+// Trigger webhooks for applications matching the source filter
+async function triggerSourceWebhooks(
+  supabase: any, 
+  applicationId: string, 
+  source: string
+): Promise<void> {
+  // Find all enabled webhooks that match this source
+  const { data: webhooks, error: webhookError } = await supabase
+    .from('client_webhooks')
+    .select('id, webhook_url, event_types, source_filter')
+    .eq('enabled', true);
+
+  if (webhookError) {
+    console.error('Error fetching webhooks:', webhookError);
+    return;
+  }
+
+  // Filter webhooks that have this source in their source_filter
+  const matchingWebhooks = (webhooks || []).filter((webhook: any) => {
+    if (!webhook.source_filter || webhook.source_filter.length === 0) return false;
+    return webhook.source_filter.includes(source);
+  });
+
+  if (matchingWebhooks.length === 0) {
+    console.log('No webhooks configured for source:', source);
+    return;
+  }
+
+  // Get complete application data
+  const { data: application, error: appError } = await supabase
+    .from('applications')
+    .select('*')
+    .eq('id', applicationId)
+    .single();
+
+  if (appError || !application) {
+    console.error('Error fetching application for webhook:', appError);
+    return;
+  }
+
+  // Send to each matching webhook
+  for (const webhook of matchingWebhooks) {
+    // Check if 'created' event type is enabled (or if no event_types specified, default to all)
+    if (webhook.event_types && webhook.event_types.length > 0 && !webhook.event_types.includes('created')) {
+      console.log(`Webhook ${webhook.id} skipped: 'created' not in event_types`);
+      continue;
+    }
+
+    const payload = buildZapierPayload(application);
+    const startTime = Date.now();
+    
+    try {
+      const response = await fetch(webhook.webhook_url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      const durationMs = Date.now() - startTime;
+      const responseText = await response.text().catch(() => '');
+      
+      console.log(`Webhook ${webhook.id} sent: status=${response.status}, duration=${durationMs}ms`);
+      
+      // Log the webhook call
+      await supabase.from('client_webhook_logs').insert({
+        webhook_id: webhook.id,
+        application_id: applicationId,
+        event_type: 'created',
+        request_payload: payload,
+        response_status: response.status,
+        response_body: responseText.substring(0, 1000),
+        duration_ms: durationMs,
+      });
+      
+      // Update last triggered timestamp
+      const updateData: any = {
+        last_triggered_at: new Date().toISOString(),
+      };
+      if (response.ok) {
+        updateData.last_success_at = new Date().toISOString();
+        updateData.last_error = null;
+      } else {
+        updateData.last_error = `HTTP ${response.status}: ${responseText.substring(0, 200)}`;
+      }
+      
+      await supabase.from('client_webhooks')
+        .update(updateData)
+        .eq('id', webhook.id);
+      
+    } catch (err) {
+      const durationMs = Date.now() - startTime;
+      console.error(`Webhook ${webhook.id} failed:`, err);
+      
+      // Log the failed attempt
+      await supabase.from('client_webhook_logs').insert({
+        webhook_id: webhook.id,
+        application_id: applicationId,
+        event_type: 'created',
+        request_payload: payload,
+        error_message: err.message || 'Unknown error',
+        duration_ms: durationMs,
+      });
+      
+      // Update error status
+      await supabase.from('client_webhooks')
+        .update({
+          last_triggered_at: new Date().toISOString(),
+          last_error: err.message || 'Unknown error',
+        })
+        .eq('id', webhook.id);
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -229,8 +395,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Application submitted successfully - log only non-PII data
+// Application submitted successfully - log only non-PII data
     console.log('Application submitted successfully:', { id: data.id, job_listing_id: data.job_listing_id, status: data.status });
+
+    // Trigger webhooks for Direct Application source (non-blocking)
+    try {
+      await triggerSourceWebhooks(supabase, data.id, 'Direct Application');
+    } catch (webhookError) {
+      console.error('Webhook trigger failed (non-blocking):', webhookError);
+    }
 
     return new Response(
       JSON.stringify({ 
