@@ -123,7 +123,7 @@ function generateGoogleJobsXML(jobListings: any[], userId: string): string {
 `;
 
   jobListings.forEach(job => {
-    const applyUrl = job.apply_url || `https://apply.example.com/job/${job.id}`;
+    const applyUrl = job.apply_url || `https://ats.me/apply/${job.id}`;
     const lastMod = new Date(job.updated_at || job.created_at).toISOString().split('T')[0];
 
     xml += `  <url>
