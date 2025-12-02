@@ -144,7 +144,7 @@ const AuthPage = () => {
                         variant="outline"
                         className="h-auto py-6 flex flex-col items-center gap-2 hover:bg-accent"
                         onClick={() => {
-                          setUserType('employer');
+                          setUserType('organization');
                           setShowUserTypeSelection(true);
                         }}
                       >
@@ -160,7 +160,7 @@ const AuthPage = () => {
                         variant="outline"
                         className="h-auto py-6 flex flex-col items-center gap-2 hover:bg-accent"
                         onClick={() => {
-                          setUserType('candidate');
+                          setUserType('jobseeker');
                           setShowUserTypeSelection(true);
                         }}
                       >
@@ -184,7 +184,7 @@ const AuthPage = () => {
                         ← Back
                       </Button>
                       <span className="text-sm text-muted-foreground">
-                        {userType === 'employer' ? 'Employer Account' : 'Candidate Account'}
+                        {userType === 'organization' ? 'Employer Account' : 'Jobseeker Account'}
                       </span>
                     </div>
 
