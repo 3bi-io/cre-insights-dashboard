@@ -3,191 +3,120 @@ import { Link, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
-import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
 import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut } from 'lucide-react';
+import { LogOut, LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles, Webhook, Globe, Key, FolderKanban } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, Palette, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
+
 const AppSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
-  const {
-    user,
-    userRole,
-    organization,
-    signOut
-  } = useAuth();
+  const { user, userRole, organization, signOut } = useAuth();
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
   const { hasATSExplorerAccess } = useATSExplorerAccess();
   const { counts: tenstreetCounts } = useTenstreetNotifications();
+
+  // Check role helpers
+  const isSuperAdmin = userRole === 'super_admin';
+  const isAdmin = userRole === 'admin' || isSuperAdmin;
+
   // Main standalone items
   const mainItems = [
-    {
-      path: '/dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard
-    }
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
   ];
 
-  const navigationItems = [{
-    group: "Recruitment", 
-    items: [
-      {
-        path: '/admin/applications',
-        label: 'Applications',
-        icon: Users
-      },
-      {
-        path: '/admin/jobs',
-        label: 'Job Listings',
-        icon: BriefcaseIcon
-      },
-      ...(organization?.slug !== 'acme' ? [{
-        path: '/admin/clients',
-        label: 'Clients',
-        icon: UserCheck
-      }] : []),
-      {
-        path: '/admin/routes',
-        label: 'Routes',
-        icon: MapPin
-      },
-      ...(hasVoiceAgent() && (userRole === 'super_admin' || userRole === 'admin') ? [{
-        path: '/admin/elevenlabs-admin',
-        label: 'ElevenLabs Admin',
-        icon: MessageSquare
-      }] : [])
-    ]
-  }, {
-    group: "Campaigns",
-    items: [
-      {
-        path: '/admin/campaigns',
-        label: 'Campaigns',
-        icon: Target
-      },
-      {
-        path: '/admin/job-groups',
-        label: 'Job Groups',
-        icon: BriefcaseIcon
-      }
-    ]
-  }, {
-    group: "Management",
-    items: [
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/universal-feeds',
-        label: 'Universal Feeds',
-        icon: Share2
-      }] : []),
-      {
-        path: '/admin/publishers',
-        label: 'Publishers',
-        icon: Share2
-      },
-      ...(hasTenstreetAccess() ? [{
-        path: '/admin/tenstreet',
-        label: 'ATS Integrations',
-        icon: Share2,
-        badge: tenstreetCounts.totalNotifications > 0 ? tenstreetCounts.totalNotifications : undefined
-      }] : []),
-      ...(hasATSExplorerAccess ? [{
-        path: '/admin/tenstreet-explorer',
-        label: 'ATS Explorer',
-        icon: Zap
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/tenstreet-credentials',
-        label: 'ATS Credentials',
-        icon: Settings
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/organizations',
-        label: 'Organizations',
-        icon: Building
-       }] : [])
-    ]
-  }, {
-    group: "AI & Analytics",
-    items: [
-      {
-        path: '/admin/grok',
-        label: 'Grok Assistant',
-        icon: Sparkles
-      },
-      {
-        path: '/admin/ai-tools',
-        label: 'AI Tools',
-        icon: Bot
-      },
-      {
-        path: '/admin/ai-analytics',
-        label: 'AI Analytics',
-        icon: BarChart3
-      },
-      {
-        path: '/admin/ai-impact',
-        label: 'AI Impact',
-        icon: Zap
-      },
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/visitor-analytics',
-        label: 'Visitor Analytics',
-        icon: BarChart3
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/meta-adset-report',
-        label: 'Meta Ad Set Report',
-        icon: TrendingUp
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/meta-spend-analytics',
-        label: 'Meta Spend Analytics',
-        icon: Share2
-      }] : [])
-    ]
-  }, {
-    group: "Settings",
-    items: [
-      {
-        path: '/admin/support',
-        label: 'Support',
-        icon: HelpCircle
-      },
-      {
-        path: '/admin/ai-settings',
-        label: 'AI Settings',
-        icon: Settings
-      },
-      {
-        path: '/admin/privacy-controls',
-        label: 'Privacy Controls',
-        icon: Shield
-      },
-      ...(userRole === 'super_admin' || userRole === 'admin' ? [{
-        path: '/admin/webhook-management',
-        label: 'Webhooks',
-        icon: Share2
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/user-management',
-        label: 'User Management',
-        icon: UserCog
-      }] : []),
-      ...(userRole === 'super_admin' ? [{
-        path: '/admin/super-admin-feeds',
-        label: 'Feed Management',
-        icon: Rss
-      }] : [])
-    ]
-  }];
+  // Restructured navigation with logical groupings
+  const navigationItems = [
+    {
+      group: "Recruitment",
+      icon: Users,
+      items: [
+        { path: '/admin/applications', label: 'Applications', icon: Users },
+        { path: '/admin/jobs', label: 'Job Listings', icon: BriefcaseIcon },
+        ...(organization?.slug !== 'acme' ? [
+          { path: '/admin/clients', label: 'Clients', icon: UserCheck }
+        ] : []),
+        { path: '/admin/routes', label: 'Routes', icon: MapPin },
+        ...(hasVoiceAgent() && isAdmin ? [
+          { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: MessageSquare }
+        ] : [])
+      ]
+    },
+    {
+      group: "Campaigns",
+      icon: Target,
+      items: [
+        { path: '/admin/campaigns', label: 'Campaigns', icon: Target },
+        { path: '/admin/job-groups', label: 'Job Groups', icon: FolderKanban }
+      ]
+    },
+    {
+      group: "Integrations",
+      icon: Share2,
+      items: [
+        ...(hasTenstreetAccess() ? [{
+          path: '/admin/tenstreet',
+          label: 'ATS Dashboard',
+          icon: Share2,
+          badge: tenstreetCounts.totalNotifications > 0 ? tenstreetCounts.totalNotifications : undefined
+        }] : []),
+        ...(hasATSExplorerAccess ? [
+          { path: '/admin/tenstreet-explorer', label: 'ATS Explorer', icon: Zap }
+        ] : []),
+        { path: '/admin/publishers', label: 'Publishers', icon: Globe },
+        ...(isAdmin ? [
+          { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
+        ] : []),
+        ...(isSuperAdmin ? [
+          { path: '/admin/universal-feeds', label: 'Universal Feeds', icon: Rss },
+          { path: '/admin/tenstreet-credentials', label: 'ATS Credentials', icon: Key }
+        ] : [])
+      ]
+    },
+    {
+      group: "AI Platform",
+      icon: Bot,
+      items: [
+        { path: '/admin/grok', label: 'AI Assistant', icon: Sparkles },
+        { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
+        { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
+        { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap }
+      ]
+    },
+    ...(isSuperAdmin ? [{
+      group: "Analytics",
+      icon: TrendingUp,
+      items: [
+        { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
+        { path: '/admin/meta-adset-report', label: 'Meta Ad Sets', icon: TrendingUp },
+        { path: '/admin/meta-spend-analytics', label: 'Meta Spend', icon: Share2 }
+      ]
+    }] : []),
+    {
+      group: "Settings",
+      icon: Settings,
+      items: [
+        { path: '/admin/ai-settings', label: 'AI Configuration', icon: Settings },
+        { path: '/admin/privacy-controls', label: 'Privacy & Compliance', icon: Shield },
+        { path: '/admin/support', label: 'Support', icon: HelpCircle }
+      ]
+    },
+    ...(isSuperAdmin ? [{
+      group: "Administration",
+      icon: Building,
+      items: [
+        { path: '/admin/organizations', label: 'Organizations', icon: Building },
+        { path: '/admin/user-management', label: 'User Management', icon: UserCog },
+        { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss }
+      ]
+    }] : [])
+  ];
   const isActive = (path: string) => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard' && !location.search;
@@ -217,17 +146,15 @@ const AppSidebar = () => {
     if (!user?.email) return 'U';
     return user.email.charAt(0).toUpperCase();
   };
+  // First group (Recruitment) shown expanded, rest in accordion
   const regularGroups = navigationItems.filter(group => group.group === "Recruitment");
-  const accordionGroups = navigationItems.filter(group => 
-    group.group === "Campaigns" || 
-    group.group === "Management" || 
-    group.group === "AI & Analytics" || 
-    group.group === "Settings"
-  );
+  const accordionGroups = navigationItems.filter(group => group.group !== "Recruitment");
   
-  // Auto-expand all accordion groups on /dashboard for desktop and tablet devices
+  // Auto-expand relevant accordion groups on dashboard
   const shouldExpandAll = location.pathname === '/dashboard' && !isMobile;
-  const defaultExpandedValues = shouldExpandAll ? accordionGroups.map(group => group.group) : [];
+  const defaultExpandedValues = shouldExpandAll 
+    ? accordionGroups.map(group => group.group) 
+    : [];
   return <Sidebar>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-4 py-3">
