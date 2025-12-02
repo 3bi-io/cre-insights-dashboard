@@ -29,7 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ClientWebhook {
   id: string;
-  client_id: string;
+  client_id: string | null;
   webhook_url: string;
   enabled: boolean;
   event_types: string[];
@@ -109,7 +109,8 @@ export default function ClientWebhookManager() {
   });
 
   // Get client name helper
-  const getClientName = (clientId: string) => {
+  const getClientName = (clientId: string | null) => {
+    if (!clientId) return 'All Clients';
     const client = clients.find(c => c.id === clientId);
     return client ? `${client.name}${client.company ? ` (${client.company})` : ''}` : 'Unknown Client';
   };
@@ -133,7 +134,7 @@ export default function ClientWebhookManager() {
         const { error } = await supabase
           .from('client_webhooks')
           .insert({
-            client_id: data.client_id,
+            client_id: data.client_id === 'all' ? null : data.client_id,
             organization_id: organization?.id,
             user_id: (await supabase.auth.getUser()).data.user?.id,
             webhook_url: data.webhook_url,
@@ -218,7 +219,7 @@ export default function ClientWebhookManager() {
   const handleEdit = (webhook: ClientWebhook) => {
     setEditingWebhook(webhook);
     setFormData({
-      client_id: webhook.client_id,
+      client_id: webhook.client_id || 'all',
       webhook_url: webhook.webhook_url,
       enabled: webhook.enabled,
       event_types: webhook.event_types,
@@ -318,6 +319,7 @@ export default function ClientWebhookManager() {
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="all">All Clients</SelectItem>
                     {clients.map(client => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}{client.company && ` (${client.company})`}

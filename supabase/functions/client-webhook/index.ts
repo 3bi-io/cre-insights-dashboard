@@ -67,218 +67,221 @@ Deno.serve(async (req) => {
     }
 
     const client_id = application.job_listing?.client_id;
-    
-    if (!client_id) {
-      console.log('[CLIENT-WEBHOOK] No client associated with this application');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'No client webhook configured (no client assigned)' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const organization_id = application.job_listing?.organization_id;
 
-    // Fetch webhook configuration for this client
-    const { data: webhook, error: webhookError } = await supabase
+    // Fetch webhook configurations - both client-specific and organization-wide (All Clients)
+    let webhookQuery = supabase
       .from('client_webhooks')
       .select('*')
-      .eq('client_id', client_id)
-      .single();
+      .eq('organization_id', organization_id);
 
-    if (webhookError || !webhook) {
-      console.log('[CLIENT-WEBHOOK] No webhook configured for client:', client_id);
+    if (client_id) {
+      // Get webhooks for specific client OR "All Clients" (client_id is null)
+      webhookQuery = webhookQuery.or(`client_id.eq.${client_id},client_id.is.null`);
+    } else {
+      // No client assigned, only get "All Clients" webhooks
+      webhookQuery = webhookQuery.is('client_id', null);
+    }
+
+    const { data: webhooks, error: webhookError } = await webhookQuery;
+
+    if (webhookError) {
+      console.error('[CLIENT-WEBHOOK] Error fetching webhooks:', webhookError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch webhook configurations' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!webhooks || webhooks.length === 0) {
+      console.log('[CLIENT-WEBHOOK] No webhooks configured for client:', client_id, 'or organization:', organization_id);
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'No webhook configured for this client' 
+          message: 'No webhook configured for this client or organization' 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Check if webhook is enabled (skip in test mode)
-    if (!test_mode && !webhook.enabled) {
-      console.log('[CLIENT-WEBHOOK] Webhook disabled for client:', client_id);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Webhook is disabled for this client' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log('[CLIENT-WEBHOOK] Found', webhooks.length, 'webhook(s) to process');
 
-    // Check if this event type should be sent
-    if (!test_mode && webhook.event_types && !webhook.event_types.includes(event_type)) {
-      console.log('[CLIENT-WEBHOOK] Event type not configured:', event_type);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `Event type '${event_type}' not configured for this webhook` 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Process all matching webhooks
+    const results: any[] = [];
+    
+    for (const webhook of webhooks) {
 
-    // Prepare webhook payload
-    const webhookPayload = {
-      event_type: test_mode ? 'test' : event_type,
-      timestamp: new Date().toISOString(),
-      test_mode,
-      client: {
-        id: application.job_listing.client.id,
-        name: application.job_listing.client.name,
-        company: application.job_listing.client.company,
-      },
-      job_listing: {
-        id: application.job_listing.id,
-        title: application.job_listing.title,
-        job_id: application.job_listing.job_id,
-      },
-      application: {
-        id: application.id,
-        first_name: application.first_name,
-        last_name: application.last_name,
-        email: application.applicant_email,
-        phone: application.phone,
-        city: application.city,
-        state: application.state,
-        zip: application.zip,
-        status: application.status,
-        cdl: application.cdl,
-        cdl_class: application.cdl_class,
-        cdl_state: application.cdl_state,
-        exp: application.exp,
-        experience: application.driving_experience_years,
-        work_authorization: application.work_authorization,
-        education_level: application.education_level,
-        veteran: application.veteran,
-        source: application.source,
-        notes: application.notes,
-        applied_at: application.applied_at,
-        created_at: application.created_at,
-        recruiter: application.recruiter ? {
-          id: application.recruiter.id,
-          name: application.recruiter.name,
-          email: application.recruiter.email,
-        } : null,
-      },
-    };
+      // Check if webhook is enabled (skip in test mode)
+      if (!test_mode && !webhook.enabled) {
+        console.log('[CLIENT-WEBHOOK] Webhook disabled, skipping:', webhook.id);
+        results.push({ webhook_id: webhook.id, skipped: true, reason: 'disabled' });
+        continue;
+      }
 
-    // Calculate HMAC signature if secret key is provided
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'User-Agent': 'TruckingATS-ClientWebhook/1.0',
-    };
+      // Check if this event type should be sent
+      if (!test_mode && webhook.event_types && !webhook.event_types.includes(event_type)) {
+        console.log('[CLIENT-WEBHOOK] Event type not configured, skipping:', webhook.id);
+        results.push({ webhook_id: webhook.id, skipped: true, reason: 'event_type_not_configured' });
+        continue;
+      }
 
-    if (webhook.secret_key) {
-      const encoder = new TextEncoder();
-      const keyData = encoder.encode(webhook.secret_key);
-      const messageData = encoder.encode(JSON.stringify(webhookPayload));
-      
-      const cryptoKey = await crypto.subtle.importKey(
-        'raw',
-        keyData,
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
-      
-      const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-      const signatureHex = Array.from(new Uint8Array(signature))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-      
-      headers['X-Webhook-Signature'] = `sha256=${signatureHex}`;
-    }
-
-    // Send webhook request
-    const startTime = Date.now();
-    let response: Response;
-    let responseBody: string = '';
-    let errorMessage: string | null = null;
-
-    try {
-      console.log('[CLIENT-WEBHOOK] Sending to:', webhook.webhook_url);
-      
-      response = await fetch(webhook.webhook_url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(webhookPayload),
-        signal: AbortSignal.timeout(30000), // 30 second timeout
-      });
-
-      responseBody = await response.text();
-      console.log('[CLIENT-WEBHOOK] Response:', response.status, responseBody.substring(0, 200));
-
-    } catch (error) {
-      console.error('[CLIENT-WEBHOOK] Request failed:', error);
-      errorMessage = error.message;
-      response = new Response('', { status: 0 });
-    }
-
-    const duration = Date.now() - startTime;
-
-    // Log the webhook attempt
-    const { error: logError } = await supabase
-      .from('client_webhook_logs')
-      .insert({
-        webhook_id: webhook.id,
-        application_id: application.id,
+      // Prepare webhook payload
+      const webhookPayload = {
         event_type: test_mode ? 'test' : event_type,
-        request_payload: webhookPayload,
-        response_status: response.status,
-        response_body: responseBody.substring(0, 1000), // Limit to 1000 chars
-        error_message: errorMessage,
-        duration_ms: duration,
-      });
+        timestamp: new Date().toISOString(),
+        test_mode,
+        client: application.job_listing?.client ? {
+          id: application.job_listing.client.id,
+          name: application.job_listing.client.name,
+          company: application.job_listing.client.company,
+        } : null,
+        job_listing: {
+          id: application.job_listing.id,
+          title: application.job_listing.title,
+          job_id: application.job_listing.job_id,
+        },
+        application: {
+          id: application.id,
+          first_name: application.first_name,
+          last_name: application.last_name,
+          email: application.applicant_email,
+          phone: application.phone,
+          city: application.city,
+          state: application.state,
+          zip: application.zip,
+          status: application.status,
+          cdl: application.cdl,
+          cdl_class: application.cdl_class,
+          cdl_state: application.cdl_state,
+          exp: application.exp,
+          experience: application.driving_experience_years,
+          work_authorization: application.work_authorization,
+          education_level: application.education_level,
+          veteran: application.veteran,
+          source: application.source,
+          notes: application.notes,
+          applied_at: application.applied_at,
+          created_at: application.created_at,
+          recruiter: application.recruiter ? {
+            id: application.recruiter.id,
+            name: application.recruiter.name,
+            email: application.recruiter.email,
+          } : null,
+        },
+      };
 
-    if (logError) {
-      console.error('[CLIENT-WEBHOOK] Failed to log webhook:', logError);
-    }
+      // Calculate HMAC signature if secret key is provided
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'TruckingATS-ClientWebhook/1.0',
+      };
 
-    // Update webhook status
-    const updateData: any = {
-      last_triggered_at: new Date().toISOString(),
-    };
+      if (webhook.secret_key) {
+        const encoder = new TextEncoder();
+        const keyData = encoder.encode(webhook.secret_key);
+        const messageData = encoder.encode(JSON.stringify(webhookPayload));
+        
+        const cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          keyData,
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign']
+        );
+        
+        const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+        const signatureHex = Array.from(new Uint8Array(signature))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        
+        headers['X-Webhook-Signature'] = `sha256=${signatureHex}`;
+      }
 
-    if (response.status >= 200 && response.status < 300) {
-      updateData.last_success_at = new Date().toISOString();
-      updateData.last_error = null;
-    } else {
-      updateData.last_error = errorMessage || `HTTP ${response.status}: ${responseBody.substring(0, 200)}`;
-    }
+      // Send webhook request
+      const startTime = Date.now();
+      let response: Response;
+      let responseBody: string = '';
+      let errorMessage: string | null = null;
 
-    await supabase
-      .from('client_webhooks')
-      .update(updateData)
-      .eq('id', webhook.id);
+      try {
+        console.log('[CLIENT-WEBHOOK] Sending to:', webhook.webhook_url);
+        
+        response = await fetch(webhook.webhook_url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(webhookPayload),
+          signal: AbortSignal.timeout(30000), // 30 second timeout
+        });
 
-    // Return response
-    if (response.status >= 200 && response.status < 300) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'Webhook sent successfully',
+        responseBody = await response.text();
+        console.log('[CLIENT-WEBHOOK] Response:', response.status, responseBody.substring(0, 200));
+
+      } catch (error) {
+        console.error('[CLIENT-WEBHOOK] Request failed:', error);
+        errorMessage = error.message;
+        response = new Response('', { status: 0 });
+      }
+
+      const duration = Date.now() - startTime;
+
+      // Log the webhook attempt
+      const { error: logError } = await supabase
+        .from('client_webhook_logs')
+        .insert({
           webhook_id: webhook.id,
-          duration_ms: duration,
-          test_mode,
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: errorMessage || `Webhook failed with status ${response.status}`,
-          webhook_id: webhook.id,
-          duration_ms: duration,
+          application_id: application.id,
+          event_type: test_mode ? 'test' : event_type,
+          request_payload: webhookPayload,
           response_status: response.status,
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+          response_body: responseBody.substring(0, 1000), // Limit to 1000 chars
+          error_message: errorMessage,
+          duration_ms: duration,
+        });
+
+      if (logError) {
+        console.error('[CLIENT-WEBHOOK] Failed to log webhook:', logError);
+      }
+
+      // Update webhook status
+      const updateData: any = {
+        last_triggered_at: new Date().toISOString(),
+      };
+
+      if (response.status >= 200 && response.status < 300) {
+        updateData.last_success_at = new Date().toISOString();
+        updateData.last_error = null;
+      } else {
+        updateData.last_error = errorMessage || `HTTP ${response.status}: ${responseBody.substring(0, 200)}`;
+      }
+
+      await supabase
+        .from('client_webhooks')
+        .update(updateData)
+        .eq('id', webhook.id);
+
+      results.push({
+        webhook_id: webhook.id,
+        success: response.status >= 200 && response.status < 300,
+        duration_ms: duration,
+        response_status: response.status,
+        error: errorMessage,
+      });
     }
+
+    // Return aggregated response
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => r.success === false).length;
+    const skippedCount = results.filter(r => r.skipped).length;
+
+    return new Response(
+      JSON.stringify({
+        success: failCount === 0,
+        message: `Processed ${results.length} webhook(s): ${successCount} successful, ${failCount} failed, ${skippedCount} skipped`,
+        results,
+        test_mode,
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[CLIENT-WEBHOOK] Unexpected error:', error);
