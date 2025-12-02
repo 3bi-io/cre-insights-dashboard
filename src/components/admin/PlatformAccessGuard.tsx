@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { usePlatformAccess } from '@/hooks/usePlatformAccess';
-import { Lock, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Lock } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
 interface PlatformAccessGuardProps {
@@ -16,25 +17,34 @@ const PlatformAccessGuard: React.FC<PlatformAccessGuardProps> = ({
   children,
   fallback
 }) => {
-  const [hasAccess, setHasAccess] = useState<boolean>(true); // Default to true to avoid flash
+  const [hasAccess, setHasAccess] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
-  const { checkPlatformAccess } = usePlatformAccess();
+  const { organization, userRole } = useAuth();
+  const { checkPlatformAccess } = usePlatformAccess(organization?.id);
 
   useEffect(() => {
     const checkAccess = async () => {
+      // Super admins always have access
+      if (userRole === 'super_admin') {
+        setHasAccess(true);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const access = await checkPlatformAccess(platformName);
         setHasAccess(access);
       } catch (error) {
         logger.error('Error checking platform access', error);
-        setHasAccess(false);
+        // Default to true on error to avoid blocking users
+        setHasAccess(true);
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAccess();
-  }, [platformName, checkPlatformAccess]);
+  }, [platformName, checkPlatformAccess, userRole]);
 
   if (isLoading) {
     return (
