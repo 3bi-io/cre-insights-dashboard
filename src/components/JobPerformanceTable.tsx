@@ -104,7 +104,7 @@ const JobPerformanceTable = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/dashboard/jobs">View All</Link>
+            <Link to="/admin/jobs">View All</Link>
           </Button>
         </div>
         <div className="flex items-center justify-center h-32 text-muted-foreground">
@@ -119,7 +119,7 @@ const JobPerformanceTable = () => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-foreground">Job Performance by Listing</h3>
         <Button variant="outline" size="sm" asChild>
-          <Link to="/dashboard/jobs">View All</Link>
+          <Link to="/admin/jobs">View All</Link>
         </Button>
       </div>
       
