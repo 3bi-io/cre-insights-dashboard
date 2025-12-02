@@ -274,7 +274,7 @@ const WebhookManagement = () => {
                     <li>Slack notifications</li>
                   </ul>
                 </div>
-                <Link to="/settings?tab=integrations">
+                <Link to="/admin/settings?tab=integrations">
                   <Button variant="default" size="sm" className="w-full mt-2">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Configure Outbound Webhooks
@@ -289,7 +289,7 @@ const WebhookManagement = () => {
               <AlertDescription className="text-sm">
                 <strong>Want to send /apply form data to Zapier?</strong>
                 <br />
-                Go to <Link to="/settings?tab=integrations" className="text-primary hover:underline font-medium">Settings → Integrations → Client Webhooks</Link> and 
+                Go to <Link to="/admin/settings?tab=integrations" className="text-primary hover:underline font-medium">Settings → Integrations → Client Webhooks</Link> and 
                 create a webhook with <code className="bg-muted px-1 py-0.5 rounded text-xs">source_filter: ["Direct Application"]</code> and 
                 <code className="bg-muted px-1 py-0.5 rounded text-xs ml-1">event_types: ["created"]</code>.
               </AlertDescription>
