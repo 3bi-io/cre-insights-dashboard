@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
   const organizationId = url.searchParams.get('organization_id');
   const clientId = url.searchParams.get('client_id');
   const format = url.searchParams.get('format') || 'generic';
+  const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
 
   console.log('Universal XML Feed Request:', { organizationId, clientId, format });
 
@@ -87,16 +88,22 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Rate limiting using Deno KV
-    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const rateLimitKey = ['rate_limit', 'universal_feed', clientIP];
-    const kv = await Deno.openKv();
-    
-    const rateLimitEntry = await kv.get(rateLimitKey);
-    const currentCount = (rateLimitEntry.value as number) || 0;
-    
-    if (currentCount >= 1000) {
-      await kv.close();
+    // Initialize Supabase client with service role (bypasses RLS)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Database-based rate limiting using feed_access_logs
+    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+    const { count: recentRequests } = await supabase
+      .from('feed_access_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('ip_address', clientIP)
+      .eq('feed_type', 'universal-xml-feed')
+      .gte('created_at', oneHourAgo);
+
+    if ((recentRequests || 0) >= 1000) {
+      console.log('Rate limit exceeded for IP:', clientIP);
       return new Response(
         generateErrorXML('Rate limit exceeded. Maximum 1000 requests per hour.'),
         {
@@ -109,15 +116,6 @@ Deno.serve(async (req) => {
         }
       );
     }
-
-    // Increment rate limit counter
-    await kv.set(rateLimitKey, currentCount + 1, { expireIn: 3600000 }); // 1 hour
-    await kv.close();
-
-    // Initialize Supabase client with service role (bypasses RLS)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Build query
     let query = supabase
@@ -210,7 +208,7 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
+        'Cache-Control': 'public, max-age=300',
       },
     });
 
@@ -229,7 +227,6 @@ Deno.serve(async (req) => {
 function generateIndeedXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const location = formatLocation(job.location, job.city, job.state);
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     const applyUrl = escapeXML(job.apply_url || `https://example.com/apply/${job.id}`);
     
