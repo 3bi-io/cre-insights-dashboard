@@ -131,12 +131,20 @@ export default function ClientWebhookManager() {
         
         if (error) throw error;
       } else {
+        // Fetch user ID before constructing the insert object
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData.user?.id;
+        
+        if (!userId) {
+          throw new Error('User not authenticated');
+        }
+
         const { error } = await supabase
           .from('client_webhooks')
           .insert({
             client_id: data.client_id === 'all' ? null : data.client_id,
             organization_id: organization?.id,
-            user_id: (await supabase.auth.getUser()).data.user?.id,
+            user_id: userId,
             webhook_url: data.webhook_url,
             enabled: data.enabled,
             event_types: data.event_types,
