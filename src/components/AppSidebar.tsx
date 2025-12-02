@@ -61,21 +61,17 @@ const AppSidebar = () => {
       icon: Share2,
       items: [
         ...(hasTenstreetAccess() ? [{
-          path: '/admin/tenstreet',
-          label: 'ATS Dashboard',
+          path: '/admin/ats-command',
+          label: 'ATS Command Center',
           icon: Share2,
           badge: tenstreetCounts.totalNotifications > 0 ? tenstreetCounts.totalNotifications : undefined
         }] : []),
-        ...(hasATSExplorerAccess ? [
-          { path: '/admin/tenstreet-explorer', label: 'ATS Explorer', icon: Zap }
-        ] : []),
         { path: '/admin/publishers', label: 'Publishers', icon: Globe },
         ...(isAdmin ? [
           { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
         ] : []),
         ...(isSuperAdmin ? [
-          { path: '/admin/universal-feeds', label: 'Universal Feeds', icon: Rss },
-          { path: '/admin/tenstreet-credentials', label: 'ATS Credentials', icon: Key }
+          { path: '/admin/universal-feeds', label: 'Universal Feeds', icon: Rss }
         ] : [])
       ]
     },
@@ -94,8 +90,7 @@ const AppSidebar = () => {
       icon: TrendingUp,
       items: [
         { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
-        { path: '/admin/meta-adset-report', label: 'Meta Ad Sets', icon: TrendingUp },
-        { path: '/admin/meta-spend-analytics', label: 'Meta Spend', icon: Share2 }
+        { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: TrendingUp }
       ]
     }] : []),
     {
