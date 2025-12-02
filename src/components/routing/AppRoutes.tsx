@@ -51,15 +51,8 @@ const ATSCommandCenterPage = React.lazy(() => import("@/features/ats").then(m =>
 const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m => ({ default: m.MetaAnalyticsPage })));
 const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
 
-// Legacy pages (kept for backward compatibility - will redirect)
-const TenstreetDashboard = React.lazy(() => import("@/pages/TenstreetDashboard"));
+// Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
-const TenstreetExplorer = React.lazy(() => import("@/pages/TenstreetExplorer"));
-const TenstreetXchange = React.lazy(() => import("@/pages/TenstreetXchange"));
-const TenstreetFocus = React.lazy(() => import("@/pages/TenstreetFocus"));
-const TenstreetBulk = React.lazy(() => import("@/pages/TenstreetBulk"));
-const TenstreetCredentialsManagement = React.lazy(() => import("@/pages/TenstreetCredentialsManagement"));
-const AIPlatformSettings = React.lazy(() => import("@/pages/AIPlatformSettings"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
 const FeedsManagement = React.lazy(() => import("@/pages/FeedsManagement"));
@@ -68,13 +61,10 @@ const Organizations = React.lazy(() => import("@/pages/Organizations"));
 const Settings = React.lazy(() => import("@/pages/Settings"));
 const Media = React.lazy(() => import("@/pages/Media"));
 const UserManagement = React.lazy(() => import("@/pages/UserManagement"));
-const MetaAdSetReportPage = React.lazy(() => import("@/pages/MetaAdSetReportPage"));
-const MetaSpendAnalytics = React.lazy(() => import("@/pages/MetaSpendAnalytics"));
 const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
 const EdgeFunctionsTest = React.lazy(() => import("@/pages/EdgeFunctionsTest"));
 const HayesDataPopulation = React.lazy(() => import("@/pages/HayesDataPopulation"));
-const PrivacyControls = React.lazy(() => import("@/pages/PrivacyControls"));
 const Support = React.lazy(() => import("@/pages/Support"));
 const VisitorAnalytics = React.lazy(() => import("@/pages/VisitorAnalytics"));
 const UniversalFeeds = React.lazy(() => import("@/pages/UniversalFeeds"));
