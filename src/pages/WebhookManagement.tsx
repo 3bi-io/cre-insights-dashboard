@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Copy, Check, AlertCircle, Webhook, Send, Code, Book } from 'lucide-react';
+import { Copy, Check, AlertCircle, Webhook, Send, Code, Book, ArrowDownToLine, ArrowUpFromLine, Settings, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const WebhookManagement = () => {
@@ -207,6 +208,92 @@ const WebhookManagement = () => {
               <Badge variant="outline">Content-Type: application/json</Badge>
               <Badge variant="outline">No Authentication Required</Badge>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Webhook Types Overview */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Understanding Webhook Types
+            </CardTitle>
+            <CardDescription>
+              Configure how applications flow in and out of your system
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Inbound Webhooks */}
+              <div className="space-y-3 p-4 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <ArrowDownToLine className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Inbound Webhooks</h3>
+                    <Badge variant="secondary" className="text-xs">This Page</Badge>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  External services send application data <strong>TO</strong> your system. 
+                  Configure your job boards and lead sources to send applications here.
+                </p>
+                <div className="text-sm">
+                  <span className="font-medium">Examples:</span>
+                  <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
+                    <li>CDL Job Cast</li>
+                    <li>Facebook Lead Ads</li>
+                    <li>Indeed Apply</li>
+                    <li>Custom job boards</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Outbound Webhooks */}
+              <div className="space-y-3 p-4 rounded-lg border bg-card">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-full bg-green-500/10">
+                    <ArrowUpFromLine className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Outbound Webhooks</h3>
+                    <Badge variant="outline" className="text-xs">Configure in Settings</Badge>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Automatically send application data <strong>FROM</strong> your system to external services 
+                  when new applications arrive via the /apply form.
+                </p>
+                <div className="text-sm">
+                  <span className="font-medium">Examples:</span>
+                  <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
+                    <li>Zapier automation</li>
+                    <li>Custom CRM integration</li>
+                    <li>Email marketing platforms</li>
+                    <li>Slack notifications</li>
+                  </ul>
+                </div>
+                <Link to="/settings?tab=integrations">
+                  <Button variant="default" size="sm" className="w-full mt-2">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Configure Outbound Webhooks
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Zapier Info Alert */}
+            <Alert className="mt-6 border-green-500/30 bg-green-500/5">
+              <ArrowUpFromLine className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-sm">
+                <strong>Want to send /apply form data to Zapier?</strong>
+                <br />
+                Go to <Link to="/settings?tab=integrations" className="text-primary hover:underline font-medium">Settings → Integrations → Client Webhooks</Link> and 
+                create a webhook with <code className="bg-muted px-1 py-0.5 rounded text-xs">source_filter: ["Direct Application"]</code> and 
+                <code className="bg-muted px-1 py-0.5 rounded text-xs ml-1">event_types: ["created"]</code>.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
 
