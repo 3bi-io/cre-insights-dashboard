@@ -14,12 +14,14 @@ import {
   CheckCircle2,
   AlertCircle,
   TrendingUp,
-  Users
+  Users,
+  Download
 } from 'lucide-react';
 import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import TenstreetCredentialsDialog from '@/components/applications/TenstreetCredentialsDialog';
+import TenstreetExportDialog from '@/components/tenstreet/TenstreetExportDialog';
 
 // Lazy load tab content
 const TenstreetExplorerContent = lazy(() => import('@/components/tenstreet/TenstreetExplorerContent'));
@@ -39,7 +41,24 @@ const TabLoader = () => (
 const ATSCommandCenterPage = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const { credentials, isLoading: configLoading } = useTenstreetConfiguration();
+
+  // Fetch user's organization
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-profile-for-export'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+      if (error) throw error;
+      return data;
+    }
+  });
 
   // Fetch application metrics summary
   const { data: applicationsData, isLoading: appsLoading } = useQuery({
@@ -348,9 +367,13 @@ const ATSCommandCenterPage = () => {
                       <Upload className="h-4 w-4 mr-2" />
                       Import Applications
                     </Button>
-                    <Button className="w-full justify-start" variant="outline" disabled={!isConfigured}>
-                      <Activity className="h-4 w-4 mr-2" />
-                      Export Data
+                    <Button 
+                      className="w-full justify-start" 
+                      variant="outline" 
+                      onClick={() => setShowExportDialog(true)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Tenstreet Data
                     </Button>
                     <Button className="w-full justify-start" variant="outline" disabled={!isConfigured}>
                       <TrendingUp className="h-4 w-4 mr-2" />
@@ -370,6 +393,12 @@ const ATSCommandCenterPage = () => {
                       <Badge variant={isConfigured ? 'default' : 'secondary'}>
                         {isConfigured ? 'Connected' : 'Disconnected'}
                       </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Tenstreet Company ID</span>
+                      <span className="text-sm font-mono text-muted-foreground">
+                        {credentials?.client_id ? `***${credentials.client_id.slice(-4)}` : 'Not set'}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Last Sync</span>
@@ -425,6 +454,13 @@ const ATSCommandCenterPage = () => {
         <TenstreetCredentialsDialog 
           open={showCredentialsDialog} 
           onOpenChange={setShowCredentialsDialog} 
+        />
+
+        <TenstreetExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          organizationId={userProfile?.organization_id}
+          tenstreetCompanyId={credentials?.client_id}
         />
       </div>
     </AdminPageLayout>
