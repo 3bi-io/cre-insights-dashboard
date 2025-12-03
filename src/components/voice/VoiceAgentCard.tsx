@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { 
   Phone, 
   PhoneOff, 
+  PhoneOutgoing,
   MoreVertical, 
   Edit, 
   Trash2, 
@@ -167,6 +168,15 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
               {browserCompatible ? "Compatible ✓" : "Not Supported"}
             </Badge>
           </div>
+          {agent.is_outbound_enabled && (
+            <div className="flex items-center gap-2">
+              <PhoneOutgoing className="w-3 h-3" />
+              <span>Outbound:</span>
+              <Badge variant="default" className="text-xs">
+                Enabled
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Browser Compatibility Warning */}

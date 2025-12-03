@@ -63,6 +63,7 @@ export const ApplicationsFilters = ({
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="follow_up">Follow-up</SelectItem>
             <SelectItem value="reviewed">Reviewed</SelectItem>
             <SelectItem value="interviewing">Interviewing</SelectItem>
             <SelectItem value="hired">Hired</SelectItem>

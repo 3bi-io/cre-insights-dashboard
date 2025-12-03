@@ -3388,6 +3388,107 @@ export type Database = {
         }
         Relationships: []
       }
+      outbound_calls: {
+        Row: {
+          application_id: string | null
+          call_sid: string | null
+          completed_at: string | null
+          created_at: string
+          duration_seconds: number | null
+          elevenlabs_conversation_id: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          organization_id: string | null
+          phone_number: string
+          status: string
+          updated_at: string
+          voice_agent_id: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          call_sid?: string | null
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          elevenlabs_conversation_id?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          phone_number: string
+          status?: string
+          updated_at?: string
+          voice_agent_id?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          call_sid?: string | null
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          elevenlabs_conversation_id?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          organization_id?: string | null
+          phone_number?: string
+          status?: string
+          updated_at?: string
+          voice_agent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbound_calls_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_calls_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_calls_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_calls_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_calls_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_calls_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbound_calls_voice_agent_id_fkey"
+            columns: ["voice_agent_id"]
+            isOneToOne: false
+            referencedRelation: "voice_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_views: {
         Row: {
           country: string | null
@@ -4683,12 +4784,14 @@ export type Database = {
         Row: {
           agent_id: string
           agent_name: string
+          agent_phone_number_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
           elevenlabs_agent_id: string | null
           id: string
           is_active: boolean
+          is_outbound_enabled: boolean | null
           llm_model: string | null
           organization_id: string
           updated_at: string
@@ -4697,12 +4800,14 @@ export type Database = {
         Insert: {
           agent_id: string
           agent_name: string
+          agent_phone_number_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           elevenlabs_agent_id?: string | null
           id?: string
           is_active?: boolean
+          is_outbound_enabled?: boolean | null
           llm_model?: string | null
           organization_id: string
           updated_at?: string
@@ -4711,12 +4816,14 @@ export type Database = {
         Update: {
           agent_id?: string
           agent_name?: string
+          agent_phone_number_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           elevenlabs_agent_id?: string | null
           id?: string
           is_active?: boolean
+          is_outbound_enabled?: boolean | null
           llm_model?: string | null
           organization_id?: string
           updated_at?: string

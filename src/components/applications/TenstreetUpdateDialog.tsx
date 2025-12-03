@@ -1121,6 +1121,7 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="follow_up">Follow-up</SelectItem>
                           <SelectItem value="reviewed">Reviewed</SelectItem>
                           <SelectItem value="interviewed">Interviewed</SelectItem>
                           <SelectItem value="hired">Hired</SelectItem>

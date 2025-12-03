@@ -5,6 +5,7 @@
 
 // Types
 export * from './types';
+export * from './types/outboundCall';
 
 // Hooks
 export * from './hooks';

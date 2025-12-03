@@ -66,6 +66,7 @@ const ApplicationCard = ({
 
   const statusColors = {
     pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+    follow_up: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
     reviewed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     interviewed: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
     hired: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -135,6 +136,7 @@ const ApplicationCard = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="follow_up">Follow-up</SelectItem>
                 <SelectItem value="reviewed">Reviewed</SelectItem>
                 <SelectItem value="interviewed">Interviewed</SelectItem>
                 <SelectItem value="hired">Hired</SelectItem>
