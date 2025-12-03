@@ -32,7 +32,9 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
     voice_id: '9BWtsMINqrJLrRacOk9x', // Default to Aria
     description: '',
     llm_model: 'gpt-4o-mini',
-    is_active: true
+    is_active: true,
+    agent_phone_number_id: '',
+    is_outbound_enabled: false
   });
 
   const { organizations } = useOrganizations();
@@ -46,7 +48,9 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         voice_id: agent.voice_id || '9BWtsMINqrJLrRacOk9x',
         description: agent.description || '',
         llm_model: agent.llm_model || 'gpt-4o-mini',
-        is_active: agent.is_active ?? true
+        is_active: agent.is_active ?? true,
+        agent_phone_number_id: agent.agent_phone_number_id || '',
+        is_outbound_enabled: agent.is_outbound_enabled ?? false
       });
     } else {
       setFormData({
@@ -56,7 +60,9 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         voice_id: '9BWtsMINqrJLrRacOk9x',
         description: '',
         llm_model: 'gpt-4o-mini',
-        is_active: true
+        is_active: true,
+        agent_phone_number_id: '',
+        is_outbound_enabled: false
       });
     }
   }, [agent, open]);
@@ -209,6 +215,38 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
               onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
             />
             <Label htmlFor="is_active">Active</Label>
+          </div>
+
+          {/* Outbound Calling Configuration */}
+          <div className="border-t pt-4 mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="is_outbound_enabled" className="font-medium">Outbound Calling</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable automatic outbound calls for follow-up applications
+                </p>
+              </div>
+              <Switch
+                id="is_outbound_enabled"
+                checked={formData.is_outbound_enabled}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_outbound_enabled: checked })}
+              />
+            </div>
+
+            {formData.is_outbound_enabled && (
+              <div className="space-y-2">
+                <Label htmlFor="agent_phone_number_id">ElevenLabs Phone Number ID</Label>
+                <Input
+                  id="agent_phone_number_id"
+                  placeholder="phone_xxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={formData.agent_phone_number_id}
+                  onChange={(e) => setFormData({ ...formData, agent_phone_number_id: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Get from ElevenLabs Dashboard → Conversational AI → Phone Numbers
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-4">

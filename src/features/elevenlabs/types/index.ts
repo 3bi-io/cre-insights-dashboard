@@ -15,6 +15,8 @@ export interface VoiceAgent {
   description: string | null;
   is_active: boolean;
   llm_model?: string;
+  agent_phone_number_id?: string | null;
+  is_outbound_enabled?: boolean;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -36,6 +38,8 @@ export interface CreateVoiceAgentData {
   description?: string;
   is_active?: boolean;
   llm_model?: string;
+  agent_phone_number_id?: string;
+  is_outbound_enabled?: boolean;
 }
 
 export interface UpdateVoiceAgentData extends Partial<CreateVoiceAgentData> {

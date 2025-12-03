@@ -98,3 +98,6 @@ verify_jwt = true
 
 [functions.elevenlabs-api]
 verify_jwt = true
+
+[functions.elevenlabs-outbound-call]
+verify_jwt = true
