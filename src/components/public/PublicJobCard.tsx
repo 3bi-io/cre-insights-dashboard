@@ -65,9 +65,11 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg leading-tight mb-2 line-clamp-2">
-              {displayTitle}
-            </CardTitle>
+            <Link to={`/jobs/${job.id}`} className="hover:underline">
+              <CardTitle className="text-lg leading-tight mb-2 line-clamp-2">
+                {displayTitle}
+              </CardTitle>
+            </Link>
             <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
               <Avatar className="h-10 w-10 border">
                 {job.clients?.logo_url ? (
@@ -131,6 +133,11 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
         )}
 
         <div className="pt-4 border-t space-y-2">
+          <Link to={`/jobs/${job.id}`} className="block">
+            <Button className="w-full" size="lg" variant="outline">
+              View Details
+            </Button>
+          </Link>
           <Link to={applyUrl} className="block">
             <Button className="w-full" size="lg">
               Apply Now
