@@ -123,11 +123,11 @@ function generateGoogleJobsXML(jobListings: any[], userId: string): string {
 `;
 
   jobListings.forEach(job => {
-    const applyUrl = job.apply_url || `https://ats.me/apply/${job.id}`;
+    const jobUrl = `https://ats.me/jobs/${job.id}`;
     const lastMod = new Date(job.updated_at || job.created_at).toISOString().split('T')[0];
 
     xml += `  <url>
-    <loc>${escapeXML(applyUrl)}</loc>
+    <loc>${escapeXML(jobUrl)}</loc>
     <lastmod>${lastMod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

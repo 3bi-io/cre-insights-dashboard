@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Public pages
 const LandingPage = React.lazy(() => import("@/pages/public/LandingPage"));
 const JobsPage = React.lazy(() => import("@/pages/public/JobsPage"));
+const JobDetailsPage = React.lazy(() => import("@/pages/public/JobDetailsPage"));
 const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
 const PricingPage = React.lazy(() => import("@/pages/public/PricingPage"));
 const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
@@ -130,6 +131,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={<PublicLayout />}>
         <Route index element={<RouteWrapper><LandingPage /></RouteWrapper>} />
         <Route path="jobs" element={<RouteWrapper><JobsPage /></RouteWrapper>} />
+        <Route path="jobs/:id" element={<RouteWrapper><JobDetailsPage /></RouteWrapper>} />
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
         <Route path="pricing" element={<RouteWrapper><PricingPage /></RouteWrapper>} />
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />

@@ -228,13 +228,13 @@ function generateIndeedXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
     
     return `    <job>
       <title>${escapeXML(job.title)}</title>
       <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
       <referencenumber>${escapeXML(job.id)}</referencenumber>
-      <url>${applyUrl}</url>
+      <url>${jobUrl}</url>
       <company>${company}</company>
       <city>${escapeXML(job.city || 'Remote')}</city>
       <state>${escapeXML(job.state || '')}</state>
@@ -259,10 +259,10 @@ function generateIndeedXML(jobs: JobListing[]): string {
 
 function generateGoogleJobsXML(jobs: JobListing[], organizationId: string): string {
   const jobsXML = jobs.map(job => {
-    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
     
     return `  <url>
-    <loc>${applyUrl}</loc>
+    <loc>${jobUrl}</loc>
     <lastmod>${new Date(job.created_at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -280,7 +280,8 @@ function generateGenericXML(jobs: JobListing[]): string {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const location = formatLocation(job.location, job.city, job.state);
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const applyUrl = escapeXML(`https://ats.me/apply/${job.id}`);
     
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -292,7 +293,8 @@ function generateGenericXML(jobs: JobListing[]): string {
     ${job.job_type ? `<type>${escapeXML(job.job_type)}</type>` : ''}
     ${job.experience_level ? `<experience>${escapeXML(job.experience_level)}</experience>` : ''}
     ${job.category_name ? `<category>${escapeXML(job.category_name)}</category>` : ''}
-    <url>${applyUrl}</url>
+    <url>${jobUrl}</url>
+    <apply_url>${applyUrl}</apply_url>
     <posted>${new Date(job.created_at).toISOString()}</posted>
   </job>`;
   }).join('\n');
