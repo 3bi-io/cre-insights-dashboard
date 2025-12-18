@@ -9,9 +9,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 const STATIC_ROUTES = [
   { loc: 'https://ats.me/', changefreq: 'daily', priority: 1.0 },
   { loc: 'https://ats.me/jobs', changefreq: 'daily', priority: 0.9 },
+  { loc: 'https://ats.me/apply', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://ats.me/features', changefreq: 'weekly', priority: 0.9 },
   { loc: 'https://ats.me/pricing', changefreq: 'monthly', priority: 0.9 },
-  
   { loc: 'https://ats.me/resources', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://ats.me/contact', changefreq: 'monthly', priority: 0.8 },
   { loc: 'https://ats.me/auth', changefreq: 'monthly', priority: 0.6 },

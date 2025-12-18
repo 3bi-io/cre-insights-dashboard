@@ -32,9 +32,9 @@ export const STATIC_ROUTES: SitemapUrl[] = [
     priority: 0.9,
   },
   {
-    loc: 'https://ats.me/demo',
+    loc: 'https://ats.me/apply',
     changefreq: 'weekly',
-    priority: 0.9,
+    priority: 0.7,
   },
   {
     loc: 'https://ats.me/resources',
