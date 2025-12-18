@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Play, Search } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
 import heroImage2400 from '@/assets/hero-recruitment-2400.webp';
 import heroImage1200 from '@/assets/hero-recruitment-1200.webp';
 import heroImage600 from '@/assets/hero-recruitment-600.webp';
@@ -77,16 +77,6 @@ const HeroSection = () => {
               >
                 <Search className="mr-2 h-5 w-5" />
                 Browse Jobs
-              </Button>
-            </Link>
-            <Link to="/demo">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-8 py-3 text-lg border-primary text-primary hover:bg-primary/10"
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
               </Button>
             </Link>
           </div>

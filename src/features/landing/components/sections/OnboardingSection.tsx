@@ -58,7 +58,7 @@ const OnboardingSection = () => {
           {onboardingContent.ctaTitle}
         </h3>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/demo">
+          <Link to="/contact">
             <Button size="lg" className="bg-primary hover:bg-primary/90">
               {onboardingContent.ctaPrimary}
               <ArrowRight className="ml-2 h-5 w-5" />

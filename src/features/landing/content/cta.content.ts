@@ -10,7 +10,7 @@ export const ctaContent = {
   description: 'Join 50+ companies in our pilot program. Get 50% off for 6 months, lifetime grandfathered pricing, and direct access to our product team.',
   cta: {
     primary: 'Start Free Trial',
-    secondary: 'Watch Demo'
+    secondary: 'Contact Sales'
   },
   stats: [
     { value: '30 Days', label: 'Free trial, no credit card' },
