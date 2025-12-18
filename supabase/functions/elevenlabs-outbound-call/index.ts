@@ -283,16 +283,18 @@ async function processOutboundCall(
     }
 
     // Check rate limiting - max 1 call per application per hour
+    // Only count successful/in-progress calls, not failed ones (allow retries)
     if (applicationId) {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { data: recentCalls } = await supabase
         .from('outbound_calls')
-        .select('id')
+        .select('id, status')
         .eq('application_id', applicationId)
         .gte('created_at', oneHourAgo)
-        .neq('status', 'queued');
+        .in('status', ['completed', 'in-progress', 'initiated', 'initiating']);
 
       if (recentCalls && recentCalls.length > 0) {
+        console.log(`Rate limit check: found ${recentCalls.length} recent successful calls for application ${applicationId}`);
         return { success: false, error: 'Rate limit exceeded - only 1 call per application per hour', status: 429 };
       }
     }
