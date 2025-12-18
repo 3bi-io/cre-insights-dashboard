@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatforms } from '@/hooks/usePlatforms';
 import ClientWebhookManager from '@/components/integrations/ClientWebhookManager';
+import { CallWebhookManager } from '@/components/voice/CallWebhookManager';
 
 const IntegrationsTab = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -204,6 +205,17 @@ const IntegrationsTab = () => {
           Configure outbound webhooks to automatically send application data to your clients' systems
         </p>
         <ClientWebhookManager />
+      </div>
+
+      <Separator className="my-8" />
+
+      {/* Call Webhooks */}
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Call Webhooks</h2>
+        <p className="text-muted-foreground mb-6">
+          Receive notifications when outbound voice calls complete, fail, or go unanswered
+        </p>
+        <CallWebhookManager />
       </div>
 
       <Separator className="my-8" />

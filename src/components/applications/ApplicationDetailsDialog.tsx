@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown } from 'lucide-react';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
+import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -15,6 +17,7 @@ interface ApplicationDetailsDialogProps {
 }
 
 const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
+  const [isCallHistoryOpen, setIsCallHistoryOpen] = useState(false);
   // Use zip code lookup for city and state display
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
 
@@ -321,6 +324,28 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               </div>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Outbound Call History */}
+          <Collapsible open={isCallHistoryOpen} onOpenChange={setIsCallHistoryOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
+                <span className="flex items-center gap-2 text-lg font-semibold">
+                  <PhoneCall className="w-4 h-4" />
+                  Outbound Call History
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isCallHistoryOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <OutboundCallHistory
+                applicationId={application.id}
+                showTitle={false}
+                maxHeight="300px"
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Additional Links */}
           {(customFields.resume_url || customFields.linkedin_url || customFields.portfolio_url) && (

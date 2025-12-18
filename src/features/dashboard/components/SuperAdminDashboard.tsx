@@ -20,7 +20,8 @@ import {
   ExternalLink,
   ChevronRight,
   Cpu,
-  BarChart3
+  BarChart3,
+  Phone
 } from 'lucide-react';
 import { PageLayout } from '@/features/shared';
 import { useSuperAdminDashboardData } from '@/hooks/useSuperAdminDashboardData';
@@ -28,6 +29,7 @@ import { MetricCard } from './shared/MetricCard';
 import { DashboardSkeleton } from './shared/DashboardSkeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { OutboundCallAnalytics } from '@/components/voice/OutboundCallAnalytics';
 
 export const SuperAdminDashboard = React.memo(() => {
   const { data: metrics, isLoading } = useSuperAdminDashboardData();
@@ -128,6 +130,7 @@ export const SuperAdminDashboard = React.memo(() => {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="organizations">Organizations</TabsTrigger>
+            <TabsTrigger value="voice-calls">Voice Calls</TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -265,6 +268,10 @@ export const SuperAdminDashboard = React.memo(() => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="voice-calls" className="space-y-4">
+            <OutboundCallAnalytics />
           </TabsContent>
           
           <TabsContent value="system" className="space-y-4">

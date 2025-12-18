@@ -1180,6 +1180,117 @@ export type Database = {
           },
         ]
       }
+      call_webhook_logs: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          event_type: string
+          id: string
+          outbound_call_id: string
+          request_payload: Json
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          outbound_call_id: string
+          request_payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          outbound_call_id?: string
+          request_payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_webhook_logs_outbound_call_id_fkey"
+            columns: ["outbound_call_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "call_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_webhooks: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          event_types: string[] | null
+          id: string
+          last_error: string | null
+          last_success_at: string | null
+          last_triggered_at: string | null
+          organization_id: string
+          secret_key: string | null
+          updated_at: string | null
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          event_types?: string[] | null
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_triggered_at?: string | null
+          organization_id: string
+          secret_key?: string | null
+          updated_at?: string | null
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          event_types?: string[] | null
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_triggered_at?: string | null
+          organization_id?: string
+          secret_key?: string | null
+          updated_at?: string | null
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_ai_analysis: {
         Row: {
           ai_provider: string

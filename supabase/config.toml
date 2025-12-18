@@ -113,3 +113,6 @@ verify_jwt = true
 
 [functions.data-analysis]
 verify_jwt = true
+
+[functions.elevenlabs-call-status]
+verify_jwt = false
