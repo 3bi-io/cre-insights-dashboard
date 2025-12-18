@@ -1,4 +1,3 @@
-
 import React, { Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,13 +7,20 @@ import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
 import { ConsentSection } from './ConsentSection';
+import { FormProgressIndicator } from './FormProgressIndicator';
 
-export const ApplicationForm = () => {
-  const { formData, handleInputChange, handleSubmit, isSubmitting } = useApplicationForm();
+interface ApplicationFormProps {
+  organizationName?: string | null;
+}
+
+export const ApplicationForm = ({ organizationName }: ApplicationFormProps) => {
+  const { formData, handleInputChange, handleSubmit, isSubmitting, currentStep } = useApplicationForm();
 
   return (
     <Card className="shadow-sm">
       <CardContent className="p-4 sm:p-6">
+        <FormProgressIndicator currentStep={currentStep} />
+        
         <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
           <Suspense fallback={<ApplicationFormSkeleton />}>
             <PersonalInfoSection 
@@ -40,7 +46,8 @@ export const ApplicationForm = () => {
           <Suspense fallback={<ApplicationFormSkeleton />}>
             <ConsentSection 
               formData={formData} 
-              onInputChange={handleInputChange} 
+              onInputChange={handleInputChange}
+              organizationName={organizationName}
             />
           </Suspense>
 
