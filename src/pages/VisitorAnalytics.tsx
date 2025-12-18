@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import AdminPageLayout from "@/features/shared/components/AdminPageLayout";
+import { ActiveUsersIndicator } from "@/components/analytics/ActiveUsersIndicator";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -151,6 +152,35 @@ const VisitorAnalytics = () => {
       actions={timeRangeSelect}
     >
       <div className="space-y-6">
+
+      {/* Real-time Active Users */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <ActiveUsersIndicator showDetails className="md:col-span-1" />
+        <Card className="md:col-span-3">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Real-time Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-2">
+              Live visitor tracking updates automatically every 30 seconds. Users are considered active if they've had activity within the last 5 minutes.
+            </p>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-muted-foreground">Active now</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Monitor className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Desktop users</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Mobile users</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Error State */}
       {error && (
