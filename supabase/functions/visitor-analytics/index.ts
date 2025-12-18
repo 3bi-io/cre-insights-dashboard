@@ -46,14 +46,34 @@ serve(async (req) => {
   }
 
   try {
+    // Use service role to bypass RLS for analytics aggregation
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const url = new URL(req.url);
-    const startdate = url.searchParams.get('startdate');
-    const enddate = url.searchParams.get('enddate');
+    // Parse dates from request body (POST) or query params (GET)
+    let startdate: string | null = null;
+    let enddate: string | null = null;
+
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        startdate = body.startdate || null;
+        enddate = body.enddate || null;
+        console.log('Parsed dates from request body:', { startdate, enddate });
+      } catch (e) {
+        console.log('No JSON body or parse error, falling back to query params');
+      }
+    }
+
+    // Fall back to query params for GET requests or if body parsing failed
+    if (!startdate || !enddate) {
+      const url = new URL(req.url);
+      startdate = url.searchParams.get('startdate') || startdate;
+      enddate = url.searchParams.get('enddate') || enddate;
+      console.log('Using query params:', { startdate, enddate });
+    }
 
     console.log(`Fetching enhanced visitor analytics from ${startdate} to ${enddate}`);
 
