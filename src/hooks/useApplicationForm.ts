@@ -88,7 +88,7 @@ export const useApplicationForm = () => {
       ad_id: getParam('ad_id', 'adId', 'AdID', 'ad'),
       campaign_id: getParam('campaign_id', 'campaignId', 'CampaignID', 'campaign'),
       adset_id: getParam('adset_id', 'adsetId', 'AdsetID', 'adset'),
-      job_listing_id: getParam('job_listing_id', 'jobListingId', 'JobListingID', 'job'),
+      job_listing_id: getParam('job_listing_id', 'jobListingId', 'JobListingID', 'job', 'job_id', 'jobId'),
       job_id: getParam('job_id', 'jobId', 'JobID'),
       org_slug: getParam('org', 'organization', 'org_slug'),
       utm_source: getParam('utm_source', 'utmSource', 'source'),
