@@ -9,6 +9,13 @@ Transform your recruitment process with AI-powered analytics, automated workflow
 
 ## ✨ Features
 
+### 🎙️ AI Voice Recruitment
+- **Instant AI Callbacks** - < 3 minute average response time to applicants
+- **24/7 Voice Agents** - Always-on automated screening with ElevenLabs integration
+- **Voice Apply** - Candidates complete applications via natural voice conversation
+- **Automated Follow-ups** - Smart outbound calls triggered by application submission
+- **Call Transcripts** - Complete conversation history and analysis
+
 ### 🎯 Core Functionality
 - **Smart Candidate Ranking** - AI-powered scoring and ranking system
 - **Application Management** - Comprehensive applicant tracking
@@ -16,14 +23,6 @@ Transform your recruitment process with AI-powered analytics, automated workflow
 - **Interview Scheduling** - Automated scheduling with calendar integration
 - **Document Management** - Resume parsing and document storage
 - **Team Collaboration** - Multi-user access with role-based permissions
-
-### 🤖 AI Integration
-- **AI-Powered Scoring** - Automated candidate evaluation
-- **AI Chatbot Assistant** - Real-time recruitment guidance
-- **Resume Analysis** - Intelligent resume parsing and matching
-- **Bias Detection** - Identify and mitigate hiring bias
-- **Predictive Analytics** - Forecast hiring success
-- **Natural Language Processing** - Semantic job description matching
 
 ### 📊 Analytics & Reporting
 - **Performance Metrics** - Track recruitment KPIs
@@ -124,7 +123,8 @@ Navigate to `http://localhost:8080`
   - Edge Functions
   - Real-time subscriptions
 
-### AI & Analytics
+### Voice & AI
+- **ElevenLabs** - Conversational AI voice agents
 - **Lovable AI Gateway** - AI model integration (Gemini 2.5 Flash)
 - **Recharts** - Data visualization
 - **Custom ML Models** - Candidate scoring algorithms
@@ -246,17 +246,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🗺️ Roadmap
 
-### Completed ✓
-- ✅ Phase 1-10: Core Platform Development
-- ✅ Phase 11: Post-Launch & Scaling (Email, i18n, Mobile, Performance)
-- ✅ Phase 12: Advanced AI Features (Chatbot, Streaming)
+### ✅ Recently Completed
+- AI Voice Recruitment (ElevenLabs integration)
+- Webhook Source Filtering & Bulk Export
+- Enhanced Job Detail Pages with canonical URLs
+- Dynamic XML Feeds (Google Jobs, Indeed, Universal)
+- Landing Page Voice-First Messaging
+- Open Graph Image Optimization
+- Super Admin Cross-Organization Visibility
 
-### Coming Soon
-- 📧 Enhanced email templates with Resend
-- 📅 Advanced calendar features
-- 🌐 Additional language support
-- 📱 Native mobile apps (iOS & Android)
-- 🎥 Video interview integration
+### 🔜 Coming Soon
+- Video Interview Integration
+- Enhanced AI Matching Algorithm
+- Native Mobile Apps (iOS & Android)
+- Advanced Compliance Reporting
+- Custom Branding Themes
 
 ---
 

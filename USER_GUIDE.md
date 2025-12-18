@@ -531,7 +531,7 @@ All desktop features are available on mobile:
 
 - Click the "?" icon in the top right
 - Access contextual help on any page
-- View video tutorials
+- Access our knowledge base
 
 ### Support Channels
 

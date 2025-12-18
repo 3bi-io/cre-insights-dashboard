@@ -11,7 +11,7 @@ const STATIC_ROUTES = [
   { loc: 'https://ats.me/jobs', changefreq: 'daily', priority: 0.9 },
   { loc: 'https://ats.me/features', changefreq: 'weekly', priority: 0.9 },
   { loc: 'https://ats.me/pricing', changefreq: 'monthly', priority: 0.9 },
-  { loc: 'https://ats.me/demo', changefreq: 'weekly', priority: 0.9 },
+  
   { loc: 'https://ats.me/resources', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://ats.me/contact', changefreq: 'monthly', priority: 0.8 },
   { loc: 'https://ats.me/auth', changefreq: 'monthly', priority: 0.6 },

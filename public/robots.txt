@@ -5,7 +5,7 @@ User-agent: *
 Allow: /
 Allow: /auth
 Allow: /pricing
-Allow: /demo
+
 Allow: /features
 Allow: /resources
 Allow: /contact
