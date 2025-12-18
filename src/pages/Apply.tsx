@@ -1,16 +1,30 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
+import { useApplyContext } from '@/hooks/useApplyContext';
 
 const Apply = () => {
+  const { 
+    jobTitle, 
+    organizationName, 
+    location, 
+    logoUrl, 
+    isLoading 
+  } = useApplyContext();
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-2xl mx-auto">
-          <ApplicationHeader />
-          <ApplicationForm />
+          <ApplicationHeader 
+            jobTitle={jobTitle}
+            organizationName={organizationName}
+            location={location}
+            logoUrl={logoUrl}
+            isLoading={isLoading}
+          />
+          <ApplicationForm organizationName={organizationName} />
           <div className="text-center mt-6 pb-6">
             <Link 
               to="/" 

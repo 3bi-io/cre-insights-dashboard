@@ -1,8 +1,60 @@
-
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const US_STATES = [
+  { value: 'AL', label: 'Alabama' },
+  { value: 'AK', label: 'Alaska' },
+  { value: 'AZ', label: 'Arizona' },
+  { value: 'AR', label: 'Arkansas' },
+  { value: 'CA', label: 'California' },
+  { value: 'CO', label: 'Colorado' },
+  { value: 'CT', label: 'Connecticut' },
+  { value: 'DE', label: 'Delaware' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'HI', label: 'Hawaii' },
+  { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'IN', label: 'Indiana' },
+  { value: 'IA', label: 'Iowa' },
+  { value: 'KS', label: 'Kansas' },
+  { value: 'KY', label: 'Kentucky' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'ME', label: 'Maine' },
+  { value: 'MD', label: 'Maryland' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'MI', label: 'Michigan' },
+  { value: 'MN', label: 'Minnesota' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' },
+  { value: 'MT', label: 'Montana' },
+  { value: 'NE', label: 'Nebraska' },
+  { value: 'NV', label: 'Nevada' },
+  { value: 'NH', label: 'New Hampshire' },
+  { value: 'NJ', label: 'New Jersey' },
+  { value: 'NM', label: 'New Mexico' },
+  { value: 'NY', label: 'New York' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'ND', label: 'North Dakota' },
+  { value: 'OH', label: 'Ohio' },
+  { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'RI', label: 'Rhode Island' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'SD', label: 'South Dakota' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'UT', label: 'Utah' },
+  { value: 'VT', label: 'Vermont' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'WA', label: 'Washington' },
+  { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' },
+  { value: 'WY', label: 'Wyoming' },
+];
 
 interface PersonalInfoSectionProps {
   formData: {
@@ -18,7 +70,21 @@ interface PersonalInfoSectionProps {
   onInputChange: (name: string, value: string) => void;
 }
 
+// Format phone number as user types
+const formatPhoneNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 3) return `(${digits}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+};
+
 export const PersonalInfoSection = React.memo(({ formData, onInputChange }: PersonalInfoSectionProps) => {
+  const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    onInputChange('phone', formatted);
+  }, [onInputChange]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <h2 className="text-xl sm:text-2xl font-semibold text-foreground border-b pb-2">
@@ -80,11 +146,12 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             id="phone"
             type="tel"
             value={formData.phone}
-            onChange={(e) => onInputChange('phone', e.target.value)}
+            onChange={handlePhoneChange}
             placeholder="(555) 123-4567"
             required
             aria-required="true"
             className="h-12 sm:h-10 text-base sm:text-sm"
+            maxLength={14}
           />
         </div>
       </div>
@@ -102,13 +169,18 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
         </div>
         <div className="space-y-2">
           <Label htmlFor="state" className="text-sm font-medium">State</Label>
-          <Input
-            id="state"
-            value={formData.state}
-            onChange={(e) => onInputChange('state', e.target.value)}
-            placeholder="Enter your state"
-            className="h-12 sm:h-10 text-base sm:text-sm"
-          />
+          <Select value={formData.state} onValueChange={(value) => onInputChange('state', value)}>
+            <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+              <SelectValue placeholder="Select state..." />
+            </SelectTrigger>
+            <SelectContent className="max-h-[200px]">
+              {US_STATES.map((state) => (
+                <SelectItem key={state.value} value={state.value}>
+                  {state.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="zip" className="text-sm font-medium">
@@ -120,8 +192,9 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('zip', e.target.value)}
             required
             aria-required="true"
-            placeholder="Enter your ZIP code"
+            placeholder="Enter ZIP code"
             className="h-12 sm:h-10 text-base sm:text-sm"
+            maxLength={10}
           />
         </div>
       </div>

@@ -29,6 +29,7 @@ const ApplicationSubmissionSchema = z.object({
   // Job-related fields
   job_listing_id: z.string().uuid('Invalid job listing ID').optional(),
   job_id: z.string().max(50, 'Job ID too long').optional(),
+  org_slug: z.string().max(100, 'Organization slug too long').optional(),
   
   // Application fields with reasonable limits
   cdl: z.string().max(50).optional(),
@@ -228,6 +229,60 @@ async function triggerSourceWebhooks(
   }
 }
 
+/**
+ * Resolve organization ID from various sources
+ * Priority: job_listing_id -> org_slug -> fallback to CR England
+ */
+async function resolveOrganizationId(
+  supabase: any,
+  jobListingId?: string,
+  orgSlug?: string
+): Promise<{ organizationId: string; organizationName: string }> {
+  // Priority 1: Get org from job_listing_id
+  if (jobListingId) {
+    const { data: jobListing, error } = await supabase
+      .from('job_listings')
+      .select('organization_id, organizations(id, name, slug)')
+      .eq('id', jobListingId)
+      .single();
+    
+    if (jobListing?.organization_id) {
+      console.log('Resolved org from job_listing_id:', jobListing.organizations?.name);
+      return {
+        organizationId: jobListing.organization_id,
+        organizationName: jobListing.organizations?.name || 'Unknown'
+      };
+    }
+  }
+  
+  // Priority 2: Get org from org_slug
+  if (orgSlug) {
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('slug', orgSlug)
+      .single();
+    
+    if (org) {
+      console.log('Resolved org from slug:', org.name);
+      return { organizationId: org.id, organizationName: org.name };
+    }
+  }
+  
+  // Fallback: CR England
+  const { data: crEnglandOrg } = await supabase
+    .from('organizations')
+    .select('id, name')
+    .eq('slug', 'cr-england')
+    .single();
+
+  console.log('Falling back to CR England org');
+  return {
+    organizationId: crEnglandOrg?.id || '',
+    organizationName: crEnglandOrg?.name || 'C.R. England'
+  };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -274,12 +329,12 @@ Deno.serve(async (req) => {
     
     const formData = validationResult.data;
 
-    // Get the CR England organization ID
-    const { data: crEnglandOrg } = await supabase
-      .from('organizations')
-      .select('id')
-      .eq('slug', 'cr-england')
-      .single();
+    // CRITICAL: Resolve organization dynamically instead of hardcoding CR England
+    const { organizationId, organizationName } = await resolveOrganizationId(
+      supabase,
+      formData.job_listing_id,
+      formData.org_slug
+    );
 
     // Determine experience level based on months
     const getExperienceLevel = (months: string) => {
@@ -337,7 +392,7 @@ Deno.serve(async (req) => {
       jobListingId: formData.job_listing_id,
       jobId: formData.job_id,
       jobTitle: 'General Application',
-      organizationId: crEnglandOrg?.id || '',
+      organizationId: organizationId,
       clientId: null,
       city,
       state,
@@ -395,8 +450,13 @@ Deno.serve(async (req) => {
       );
     }
 
-// Application submitted successfully - log only non-PII data
-    console.log('Application submitted successfully:', { id: data.id, job_listing_id: data.job_listing_id, status: data.status });
+    // Application submitted successfully - log only non-PII data
+    console.log('Application submitted successfully:', { 
+      id: data.id, 
+      job_listing_id: data.job_listing_id, 
+      organization: organizationName,
+      status: data.status 
+    });
 
     // Trigger webhooks for Direct Application source (non-blocking)
     try {
@@ -405,10 +465,21 @@ Deno.serve(async (req) => {
       console.error('Webhook trigger failed (non-blocking):', webhookError);
     }
 
+    // Check if organization has voice agent for response
+    const { data: voiceAgent } = await supabase
+      .from('voice_agents')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('is_active', true)
+      .eq('is_outbound_enabled', true)
+      .maybeSingle();
+
     return new Response(
       JSON.stringify({ 
         message: 'Application submitted successfully', 
-        applicationId: data.id 
+        applicationId: data.id,
+        organizationName,
+        hasVoiceAgent: !!voiceAgent
       }),
       { 
         status: 200, 

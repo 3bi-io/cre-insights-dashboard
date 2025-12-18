@@ -1,0 +1,114 @@
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ApplyContext {
+  jobTitle: string | null;
+  organizationName: string | null;
+  organizationSlug: string | null;
+  location: string | null;
+  logoUrl: string | null;
+  jobListingId: string | null;
+  isLoading: boolean;
+}
+
+export const useApplyContext = (): ApplyContext => {
+  const [searchParams] = useSearchParams();
+  const [context, setContext] = useState<ApplyContext>({
+    jobTitle: null,
+    organizationName: null,
+    organizationSlug: null,
+    location: null,
+    logoUrl: null,
+    jobListingId: null,
+    isLoading: true,
+  });
+
+  useEffect(() => {
+    const fetchContext = async () => {
+      // Get job_listing_id from various param names
+      const jobListingId = searchParams.get('job_listing_id') || 
+                          searchParams.get('jobListingId') || 
+                          searchParams.get('job') ||
+                          searchParams.get('job_id') ||
+                          searchParams.get('jobId');
+      
+      const orgSlug = searchParams.get('org') || 
+                      searchParams.get('organization') ||
+                      searchParams.get('org_slug');
+
+      if (jobListingId) {
+        // Try to fetch job listing with organization
+        const { data: jobListing } = await supabase
+          .from('job_listings')
+          .select(`
+            id,
+            title,
+            city,
+            state,
+            organizations (
+              id,
+              name,
+              slug,
+              logo_url
+            )
+          `)
+          .eq('id', jobListingId)
+          .maybeSingle();
+
+        if (jobListing) {
+          const org = jobListing.organizations as any;
+          setContext({
+            jobTitle: jobListing.title,
+            organizationName: org?.name || null,
+            organizationSlug: org?.slug || null,
+            location: jobListing.city && jobListing.state 
+              ? `${jobListing.city}, ${jobListing.state}` 
+              : null,
+            logoUrl: org?.logo_url || null,
+            jobListingId: jobListing.id,
+            isLoading: false,
+          });
+          return;
+        }
+      }
+
+      // Try org slug if no job listing found
+      if (orgSlug) {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('id, name, slug, logo_url')
+          .eq('slug', orgSlug)
+          .maybeSingle();
+
+        if (org) {
+          setContext({
+            jobTitle: null,
+            organizationName: org.name,
+            organizationSlug: org.slug,
+            location: null,
+            logoUrl: org.logo_url,
+            jobListingId: null,
+            isLoading: false,
+          });
+          return;
+        }
+      }
+
+      // No context found - generic application
+      setContext({
+        jobTitle: null,
+        organizationName: null,
+        organizationSlug: null,
+        location: null,
+        logoUrl: null,
+        jobListingId: null,
+        isLoading: false,
+      });
+    };
+
+    fetchContext();
+  }, [searchParams]);
+
+  return context;
+};

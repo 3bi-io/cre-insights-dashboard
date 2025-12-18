@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -26,6 +25,7 @@ interface FormData {
   adset_id: string;
   job_listing_id: string;
   job_id: string;
+  org_slug: string;
   utm_source: string;
   utm_medium: string;
   utm_campaign: string;
@@ -53,14 +53,23 @@ const initialFormData: FormData = {
   adset_id: '',
   job_listing_id: '',
   job_id: '',
+  org_slug: '',
   utm_source: '',
   utm_medium: '',
   utm_campaign: '',
   referral_source: '',
 };
 
+interface SubmitResponse {
+  message: string;
+  applicationId: string;
+  organizationName?: string;
+  hasVoiceAgent?: boolean;
+}
+
 export const useApplicationForm = () => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [currentStep, setCurrentStep] = useState(1);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -79,8 +88,9 @@ export const useApplicationForm = () => {
       ad_id: getParam('ad_id', 'adId', 'AdID', 'ad'),
       campaign_id: getParam('campaign_id', 'campaignId', 'CampaignID', 'campaign'),
       adset_id: getParam('adset_id', 'adsetId', 'AdsetID', 'adset'),
-      job_listing_id: getParam('job_listing_id', 'jobListingId', 'JobListingID'),
-      job_id: getParam('job_id', 'jobId', 'JobID', 'job', 'organization'),
+      job_listing_id: getParam('job_listing_id', 'jobListingId', 'JobListingID', 'job'),
+      job_id: getParam('job_id', 'jobId', 'JobID'),
+      org_slug: getParam('org', 'organization', 'org_slug'),
       utm_source: getParam('utm_source', 'utmSource', 'source'),
       utm_medium: getParam('utm_medium', 'utmMedium', 'medium'),
       utm_campaign: getParam('utm_campaign', 'utmCampaign', 'campaign_name'),
@@ -89,6 +99,20 @@ export const useApplicationForm = () => {
 
     setFormData(prev => ({ ...prev, ...urlParams }));
   }, [searchParams]);
+
+  // Calculate current step based on filled fields
+  useEffect(() => {
+    const hasPersonalInfo = formData.firstName && formData.lastName && formData.email && formData.phone && formData.zip && formData.over21;
+    const hasCDLInfo = formData.cdl && formData.experience;
+    const hasBackgroundInfo = formData.drug;
+    const hasConsent = formData.consent && formData.privacy;
+
+    if (hasConsent) setCurrentStep(4);
+    else if (hasBackgroundInfo) setCurrentStep(4);
+    else if (hasCDLInfo) setCurrentStep(3);
+    else if (hasPersonalInfo) setCurrentStep(2);
+    else setCurrentStep(1);
+  }, [formData]);
 
   const getExperienceValue = useCallback((months: string) => {
     if (!months) return '';
@@ -145,7 +169,7 @@ export const useApplicationForm = () => {
   }, [formData]);
 
   const submitApplication = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: FormData): Promise<SubmitResponse> => {
       const formattedData = {
         ...data,
         phone: normalizePhoneNumber(data.phone),
@@ -168,9 +192,14 @@ export const useApplicationForm = () => {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('Application submitted successfully!');
-      navigate('/thank-you');
+      navigate('/thank-you', { 
+        state: { 
+          organizationName: data.organizationName,
+          hasVoiceAgent: data.hasVoiceAgent
+        } 
+      });
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to submit application');
@@ -196,5 +225,6 @@ export const useApplicationForm = () => {
     handleInputChange,
     handleSubmit,
     isSubmitting: submitApplication.isPending,
+    currentStep,
   };
 };
