@@ -11,11 +11,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { 
   BookOpen, 
-  Video, 
   FileText, 
   Download,
   ExternalLink,
-  PlayCircle,
   Code,
   MessageCircle,
   Zap,
@@ -58,28 +56,6 @@ const ResourcesPage = () => {
     }
   ];
 
-  const videoTutorials = [
-    {
-      title: 'Platform Overview (15 min)',
-      thumbnail: '/placeholder.svg',
-      views: '1.2K views'
-    },
-    {
-      title: 'Advanced Analytics Dashboard (12 min)',
-      thumbnail: '/placeholder.svg',
-      views: '856 views'
-    },
-    {
-      title: 'Voice Apply Setup (8 min)',
-      thumbnail: '/placeholder.svg',
-      views: '645 views'
-    },
-    {
-      title: 'Tenstreet Integration (10 min)',
-      thumbnail: '/placeholder.svg',
-      views: '542 views'
-    }
-  ];
 
   const documentation = [
     {
@@ -130,9 +106,9 @@ const ResourcesPage = () => {
   return (
     <div className="min-h-screen py-20">
       <SEO
-        title="Resources & Documentation | Guides & Tutorials"
-        description="Comprehensive knowledge base for ATS.me. Quick start guides, video tutorials, API documentation, implementation checklists, and best practices for recruitment teams."
-        keywords="ATS documentation, recruitment guides, implementation tutorial, API docs, ATS.me resources"
+        title="Resources & Documentation | Guides & Best Practices"
+        description="Comprehensive knowledge base for ATS.me. Quick start guides, API documentation, implementation checklists, and best practices for recruitment teams."
+        keywords="ATS documentation, recruitment guides, implementation guide, API docs, ATS.me resources"
         canonical="https://ats.me/resources"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,7 +131,7 @@ const ResourcesPage = () => {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search documentation, guides, and tutorials..."
+                placeholder="Search documentation, guides, and resources..."
                 className="w-full pl-12 pr-4 py-3 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -196,38 +172,6 @@ const ResourcesPage = () => {
           </div>
         </section>
 
-        {/* Video Tutorials */}
-        <section className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-playfair font-bold text-foreground">
-              Video Tutorials
-            </h2>
-            <Button variant="outline">
-              <Video className="mr-2 h-4 w-4" />
-              View All Videos
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {videoTutorials.map((video, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden">
-                <div className="relative aspect-video bg-muted">
-                  <img 
-                    src={video.thumbnail} 
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <PlayCircle className="h-12 w-12 text-white" />
-                  </div>
-                </div>
-                <CardHeader>
-                  <CardTitle className="text-base">{video.title}</CardTitle>
-                  <CardDescription className="text-xs">{video.views}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </section>
 
         {/* Documentation */}
         <section className="mb-16">

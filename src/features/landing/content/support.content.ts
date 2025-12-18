@@ -27,7 +27,7 @@ export const supportContent = {
         { icon: MessageCircle, text: 'Priority email & chat', detail: '24-hour response time' },
         { icon: Phone, text: 'Phone support', detail: 'Business hours' },
         { icon: CheckCircle, text: 'Onboarding assistance', detail: '2-hour kickoff call' },
-        { icon: BookOpen, text: 'Advanced resources', detail: 'Video tutorials & webinars' }
+        { icon: BookOpen, text: 'Advanced resources', detail: 'Live training sessions' }
       ]
     },
     {

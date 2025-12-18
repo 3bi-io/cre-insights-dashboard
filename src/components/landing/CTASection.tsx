@@ -41,9 +41,9 @@ const CTASection = () => {
             size="lg" 
             variant="outline" 
             className="text-lg px-8 py-6"
-            onClick={() => navigate('/demo')}
+            onClick={() => navigate('/contact')}
           >
-            Watch Demo
+            Contact Sales
           </Button>
         </div>
 

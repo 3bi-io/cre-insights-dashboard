@@ -10,8 +10,7 @@ export const heroContent = {
   subheadline: 'Candidates apply and receive automated voice callbacks within minutes. Our 24/7 AI voice agents screen, qualify, and schedule — so you never miss top talent.',
   cta: {
     primary: 'Start Free Trial',
-    secondary: 'Browse Jobs',
-    tertiary: 'See Voice Demo'
+    secondary: 'Browse Jobs'
   },
   socialProof: {
     rating: '4.8/5 from pilot users',
