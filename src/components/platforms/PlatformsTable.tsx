@@ -140,7 +140,8 @@ const PlatformsTable: React.FC<PlatformsTableProps> = ({ platforms, onRefresh })
                       width={32}
                       height={32}
                       skeleton={false}
-                      priority={index < 3}
+                      priority
+                      instant
                     />
                     <div className="flex flex-col">
                       <span className="font-medium text-foreground">{platform.name}</span>
