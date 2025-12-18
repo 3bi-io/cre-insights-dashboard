@@ -8,16 +8,25 @@ const corsHeaders = {
 
 interface OutboundCallRequest {
   application_id?: string;
-  outbound_call_id?: string; // For processing queued calls
+  outbound_call_id?: string; // For processing a specific queued call
   voice_agent_id?: string;
   phone_number?: string;
   first_message_override?: string;
+  process_queue?: boolean; // Process all queued calls
+  limit?: number; // Max calls to process when process_queue is true
 }
 
 interface ElevenLabsOutboundResponse {
   call_sid: string;
   conversation_id?: string;
   status: string;
+}
+
+interface ProcessQueueResult {
+  processed: number;
+  succeeded: number;
+  failed: number;
+  results: Array<{ call_id: string; status: string; error?: string }>;
 }
 
 serve(async (req) => {
@@ -44,6 +53,109 @@ serve(async (req) => {
     
     console.log('Outbound call request:', JSON.stringify(body));
 
+    // Handle queue processing mode
+    if (body.process_queue) {
+      const limit = Math.min(body.limit || 10, 50); // Max 50 calls per batch
+      console.log(`Processing queued outbound calls (limit: ${limit})`);
+
+      // Fetch queued calls
+      const { data: queuedCalls, error: fetchError } = await supabase
+        .from('outbound_calls')
+        .select('id')
+        .eq('status', 'queued')
+        .order('created_at', { ascending: true })
+        .limit(limit);
+
+      if (fetchError) {
+        console.error('Failed to fetch queued calls:', fetchError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch queued calls', details: fetchError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!queuedCalls || queuedCalls.length === 0) {
+        return new Response(
+          JSON.stringify({ message: 'No queued calls to process', processed: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Found ${queuedCalls.length} queued calls to process`);
+
+      const results: ProcessQueueResult = {
+        processed: queuedCalls.length,
+        succeeded: 0,
+        failed: 0,
+        results: []
+      };
+
+      // Process each call sequentially to avoid rate limiting
+      for (const call of queuedCalls) {
+        try {
+          // Make recursive call to process this specific call
+          const callResponse = await processOutboundCall(
+            supabase,
+            elevenLabsApiKey,
+            { outbound_call_id: call.id }
+          );
+          
+          if (callResponse.success) {
+            results.succeeded++;
+            results.results.push({ call_id: call.id, status: 'success' });
+          } else {
+            results.failed++;
+            results.results.push({ call_id: call.id, status: 'failed', error: callResponse.error });
+          }
+          
+          // Small delay between calls to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`Failed to process call ${call.id}:`, error);
+          results.failed++;
+          results.results.push({ call_id: call.id, status: 'failed', error: error.message });
+        }
+      }
+
+      console.log(`Queue processing complete: ${results.succeeded} succeeded, ${results.failed} failed`);
+
+      return new Response(
+        JSON.stringify(results),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Single call processing
+    const singleCallResult = await processOutboundCall(supabase, elevenLabsApiKey, body);
+    
+    if (!singleCallResult.success) {
+      return new Response(
+        JSON.stringify({ error: singleCallResult.error, details: singleCallResult.details }),
+        { status: singleCallResult.status || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify(singleCallResult.data),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in elevenlabs-outbound-call:', error);
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+
+// Process a single outbound call
+async function processOutboundCall(
+  supabase: ReturnType<typeof createClient>,
+  elevenLabsApiKey: string,
+  body: OutboundCallRequest
+): Promise<{ success: boolean; data?: unknown; error?: string; details?: string; status?: number }> {
+  try {
     let applicationId = body.application_id;
     let voiceAgentId = body.voice_agent_id;
     let phoneNumber = body.phone_number;
@@ -61,10 +173,7 @@ serve(async (req) => {
 
       if (queueError || !queuedCall) {
         console.error('Queued call not found:', queueError);
-        return new Response(
-          JSON.stringify({ error: 'Queued call not found or already processed' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return { success: false, error: 'Queued call not found or already processed', status: 404 };
       }
 
       applicationId = queuedCall.application_id;
@@ -75,10 +184,7 @@ serve(async (req) => {
 
     // Validate required fields
     if (!phoneNumber && !applicationId) {
-      return new Response(
-        JSON.stringify({ error: 'Either phone_number or application_id is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'Either phone_number or application_id is required', status: 400 };
     }
 
     // If we have an application_id but no phone, fetch the application
@@ -92,10 +198,7 @@ serve(async (req) => {
 
       if (appError || !appData) {
         console.error('Application not found:', appError);
-        return new Response(
-          JSON.stringify({ error: 'Application not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return { success: false, error: 'Application not found', status: 404 };
       }
 
       application = appData;
@@ -104,19 +207,13 @@ serve(async (req) => {
     }
 
     if (!phoneNumber) {
-      return new Response(
-        JSON.stringify({ error: 'No phone number available for this application' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'No phone number available for this application', status: 400 };
     }
 
     // Normalize phone number (US format)
     const normalizedPhone = normalizePhoneNumber(phoneNumber);
     if (!normalizedPhone) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid phone number format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'Invalid phone number format', status: 400 };
     }
 
     // Get organization ID from application's job listing
@@ -147,10 +244,7 @@ serve(async (req) => {
     }
 
     if (!voiceAgentId) {
-      return new Response(
-        JSON.stringify({ error: 'No outbound-enabled voice agent found' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'No outbound-enabled voice agent found', status: 400 };
     }
 
     // Fetch voice agent details
@@ -162,17 +256,11 @@ serve(async (req) => {
 
     if (agentError || !voiceAgent) {
       console.error('Voice agent not found:', agentError);
-      return new Response(
-        JSON.stringify({ error: 'Voice agent not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'Voice agent not found', status: 404 };
     }
 
     if (!voiceAgent.agent_phone_number_id) {
-      return new Response(
-        JSON.stringify({ error: 'Voice agent does not have a phone number configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'Voice agent does not have a phone number configured', status: 400 };
     }
 
     // Check rate limiting - max 1 call per application per hour
@@ -186,10 +274,7 @@ serve(async (req) => {
         .neq('status', 'queued');
 
       if (recentCalls && recentCalls.length > 0) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded - only 1 call per application per hour' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return { success: false, error: 'Rate limit exceeded - only 1 call per application per hour', status: 429 };
       }
     }
 
@@ -280,13 +365,7 @@ serve(async (req) => {
           .eq('id', callRecord.id);
       }
 
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to initiate outbound call',
-          details: responseText 
-        }),
-        { status: elevenLabsResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return { success: false, error: 'Failed to initiate outbound call', details: responseText, status: elevenLabsResponse.status };
     }
 
     let elevenLabsData: ElevenLabsOutboundResponse;
@@ -311,26 +390,23 @@ serve(async (req) => {
 
     console.log('Outbound call initiated successfully:', elevenLabsData);
 
-    return new Response(
-      JSON.stringify({
+    return {
+      success: true,
+      data: {
         success: true,
         call_id: callRecord?.id,
         call_sid: elevenLabsData.call_sid,
         conversation_id: elevenLabsData.conversation_id,
         phone_number: normalizedPhone,
         message: 'Outbound call initiated successfully'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      }
+    };
 
   } catch (error) {
-    console.error('Error in elevenlabs-outbound-call:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('Error in processOutboundCall:', error);
+    return { success: false, error: error.message || 'Internal server error', status: 500 };
   }
-});
+}
 
 // Normalize US phone number to 10 digits
 function normalizePhoneNumber(phone: string): string | null {
