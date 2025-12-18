@@ -185,7 +185,7 @@ export const useChatBot = ({ page, context }: UseChatBotProps) => {
       } else {
         const endpoint = selectedModel === 'anthropic' ? 'anthropic-chat' : 'openai-chat';
         response = await supabase.functions.invoke(endpoint, {
-          body: { message: text, systemPrompt, ...(selectedModel === 'anthropic' ? { model: 'claude-3-5-sonnet-20241022' } : { includeAnalytics: false }) }
+          body: { message: text, systemPrompt, ...(selectedModel === 'anthropic' ? { model: 'claude-sonnet-4-5' } : { includeAnalytics: false }) }
         });
       }
 

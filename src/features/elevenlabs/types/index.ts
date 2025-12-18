@@ -129,19 +129,16 @@ export interface AgentOverrides {
 // ============= LLM Model Options =============
 
 export type LLMModel = 
-  | 'gpt-5-2025-08-07'
-  | 'gpt-5-mini-2025-08-07'
-  | 'gpt-5-nano-2025-08-07'
-  | 'gpt-4.1-2025-04-14'
-  | 'o3-2025-04-16'
-  | 'o4-mini-2025-04-16'
-  | 'gpt-4o-mini'
   | 'gpt-4o'
+  | 'gpt-4o-mini'
+  | 'gpt-4-turbo'
+  | 'o1'
+  | 'o1-mini'
   | 'claude-sonnet-4-5'
   | 'claude-opus-4-1-20250805'
-  | 'claude-sonnet-4-20250514'
-  | 'grok-beta'
-  | 'grok-2-latest';
+  | 'claude-3-5-haiku-20241022'
+  | 'grok-2'
+  | 'grok-beta';
 
 export interface LLMModelOption {
   value: LLMModel;
@@ -151,30 +148,21 @@ export interface LLMModelOption {
 }
 
 export const LLM_MODEL_OPTIONS: LLMModelOption[] = [
-  // OpenAI GPT-5 Series
-  { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Latest Flagship)', category: 'openai', description: 'Most capable flagship model' },
-  { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini (Fast & Efficient)', category: 'openai', description: 'Fast and cost-effective' },
-  { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano (Fastest)', category: 'openai', description: 'Fastest for simple tasks' },
-  
-  // OpenAI GPT-4 Series
-  { value: 'gpt-4.1-2025-04-14', label: 'GPT-4.1 (Reliable)', category: 'openai', description: 'Reliable flagship GPT-4' },
-  
-  // OpenAI O Series
-  { value: 'o3-2025-04-16', label: 'O3 (Reasoning)', category: 'openai', description: 'Advanced reasoning model' },
-  { value: 'o4-mini-2025-04-16', label: 'O4 Mini (Fast Reasoning)', category: 'openai', description: 'Fast reasoning model' },
-  
-  // OpenAI Legacy
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Legacy)', category: 'openai', description: 'Legacy fast model' },
-  { value: 'gpt-4o', label: 'GPT-4o (Legacy Vision)', category: 'openai', description: 'Legacy with vision' },
+  // OpenAI Models
+  { value: 'gpt-4o', label: 'GPT-4o (Latest Flagship)', category: 'openai', description: 'Most capable multimodal model' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast)', category: 'openai', description: 'Fast and cost-effective' },
+  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo (Reliable)', category: 'openai', description: 'Reliable with vision support' },
+  { value: 'o1', label: 'O1 (Advanced Reasoning)', category: 'openai', description: 'Best for complex reasoning' },
+  { value: 'o1-mini', label: 'O1 Mini (Fast Reasoning)', category: 'openai', description: 'Fast reasoning model' },
   
   // Anthropic Claude
-  { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5', category: 'anthropic', description: 'Most intelligent Claude' },
+  { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Best)', category: 'anthropic', description: 'Most intelligent Claude' },
   { value: 'claude-opus-4-1-20250805', label: 'Claude Opus 4.1', category: 'anthropic', description: 'Highly intelligent, expensive' },
-  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4', category: 'anthropic', description: 'High performance model' },
+  { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Fast)', category: 'anthropic', description: 'Fastest Claude model' },
   
   // xAI Grok
+  { value: 'grok-2', label: 'Grok 2 (Latest)', category: 'xai', description: 'Latest Grok model' },
   { value: 'grok-beta', label: 'Grok (Beta)', category: 'xai', description: 'Beta version' },
-  { value: 'grok-2-latest', label: 'Grok 2 (Latest)', category: 'xai', description: 'Latest Grok model' },
 ];
 
 // ============= Error Types =============

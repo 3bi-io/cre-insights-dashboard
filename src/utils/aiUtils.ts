@@ -23,14 +23,14 @@ export const buildOpenAIRequest = (
   } = {}
 ): AIRequest => {
   const modelMap = {
-    'fast': 'gpt-4.1-mini-2025-04-14',
-    'smart': 'gpt-4.1-2025-04-14',
-    'reasoning': 'o4-mini-2025-04-16'
+    'fast': 'gpt-4o-mini',
+    'smart': 'gpt-4o',
+    'reasoning': 'o1-mini'
   };
 
   return {
     message,
-    model: options.model ? modelMap[options.model] : 'gpt-4.1-2025-04-14',
+    model: options.model ? modelMap[options.model] : 'gpt-4o',
     systemPrompt: options.systemPrompt,
     includeAnalytics: options.includeAnalytics || false
   };

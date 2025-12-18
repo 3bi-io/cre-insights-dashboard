@@ -100,7 +100,7 @@ export const buildOpenAIRequest = (
 ): OpenAIRequest => {
   return {
     message,
-    model: options.model || 'gpt-5-2025-08-07', // Updated to latest flagship model
+    model: options.model || 'gpt-4o',
     systemPrompt: options.systemPrompt,
     includeAnalytics: options.includeAnalytics || false
   };
