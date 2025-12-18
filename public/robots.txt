@@ -13,12 +13,16 @@ Allow: /privacy-policy
 Allow: /terms-of-service
 Allow: /cookie-policy
 
+# Allow public job pages
+Allow: /jobs
+Allow: /jobs/*
+Allow: /apply
+
 # Disallow admin and private areas
 Disallow: /admin/
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /settings
-Disallow: /jobs
 Disallow: /applications
 Disallow: /platforms
 Disallow: /ai-tools

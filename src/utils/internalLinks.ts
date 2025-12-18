@@ -24,6 +24,13 @@ export const INTERNAL_LINKS: InternalLink[] = [
     priority: 1.0,
   },
   {
+    path: '/jobs',
+    label: 'Jobs',
+    description: 'Browse available positions',
+    category: 'primary',
+    priority: 0.9,
+  },
+  {
     path: '/features',
     label: 'Features',
     description: 'Explore ATS.me features and capabilities',
@@ -82,6 +89,13 @@ export const INTERNAL_LINKS: InternalLink[] = [
     description: 'How we use cookies',
     category: 'legal',
     priority: 0.3,
+  },
+  {
+    path: '/sitemap',
+    label: 'Sitemap',
+    description: 'Site navigation directory',
+    category: 'secondary',
+    priority: 0.5,
   },
 ];
 
