@@ -1,6 +1,6 @@
 /**
  * Stats Section Component
- * Displays key statistics
+ * Displays key statistics with 4-column layout
  */
 
 import React from 'react';
@@ -10,8 +10,8 @@ import { statsContent } from '../../content/stats.content';
 
 const StatsSection = () => {
   return (
-    <SectionWrapper variant="muted" className="py-16">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <SectionWrapper variant="muted" className="py-12 md:py-16">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
         {statsContent.map((stat, index) => (
           <StatCard key={index} value={stat.number} label={stat.label} />
         ))}

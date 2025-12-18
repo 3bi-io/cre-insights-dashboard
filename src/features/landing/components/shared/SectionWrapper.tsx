@@ -1,5 +1,6 @@
 /**
  * Reusable section wrapper with consistent spacing and container
+ * Mobile-optimized with safe area insets
  */
 
 import React from 'react';
@@ -27,8 +28,21 @@ export const SectionWrapper = ({
   };
 
   return (
-    <section id={id} className={cn('py-20', variantClasses[variant], className)}>
-      <div className={cn('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8', containerClassName)}>
+    <section 
+      id={id} 
+      className={cn(
+        'py-12 md:py-20',
+        variantClasses[variant], 
+        className
+      )}
+    >
+      <div className={cn(
+        'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+        // Safe area padding for notched devices
+        'pl-[max(1rem,env(safe-area-inset-left))]',
+        'pr-[max(1rem,env(safe-area-inset-right))]',
+        containerClassName
+      )}>
         {children}
       </div>
     </section>

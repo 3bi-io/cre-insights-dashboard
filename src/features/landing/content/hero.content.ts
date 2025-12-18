@@ -1,20 +1,25 @@
 /**
  * Hero Section Content
+ * Voice-first messaging highlighting automated callbacks
  */
 
 export const heroContent = {
-  badge: '🚀 Now with Advanced AI Analytics',
-  headline: 'Transform Your',
-  headlineAccent: ' Hiring Process',
-  subheadline: 'Revolutionize recruitment with AI-powered analytics, automated workflows, and comprehensive candidate tracking. Find, evaluate, and hire top talent faster than ever before.',
+  badge: '🎙️ AI Voice Technology: Instant Automated Callbacks',
+  headline: 'Hire Faster with',
+  headlineAccent: ' AI Voice Recruitment',
+  subheadline: 'Candidates apply and receive automated voice callbacks within minutes. Our 24/7 AI voice agents screen, qualify, and schedule — so you never miss top talent.',
   cta: {
-    primary: 'Get Started',
+    primary: 'Start Free Trial',
     secondary: 'Browse Jobs',
-    tertiary: 'Watch Demo'
+    tertiary: 'See Voice Demo'
   },
   socialProof: {
-    rating: '4.8/5 from beta users',
+    rating: '4.8/5 from pilot users',
     companies: '50+ companies in our pilot program',
-    pricing: '🚀 Early adopter pricing available'
+    pricing: '< 3 min avg callback time'
+  },
+  voiceHighlight: {
+    icon: 'phone',
+    text: 'AI calls back candidates automatically'
   }
 };
