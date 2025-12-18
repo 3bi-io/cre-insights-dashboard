@@ -138,7 +138,7 @@ serve(async (req) => {
         .select('id')
         .eq('organization_id', organizationId)
         .eq('is_outbound_enabled', true)
-        .eq('status', 'active')
+        .eq('is_active', true)
         .not('agent_phone_number_id', 'is', null)
         .limit(1)
         .single();
