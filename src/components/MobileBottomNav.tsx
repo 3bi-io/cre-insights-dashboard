@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, MoreHorizontal, X, Target, Share2, Bot, Settings, Building, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, MoreHorizontal, X, Target, Share2, Bot, Settings, Building, TrendingUp, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -100,7 +100,8 @@ const MobileBottomNav: React.FC = () => {
       icon: Building,
       items: [
         { icon: Building, label: 'Organizations', path: '/admin/organizations', activePatterns: ['/admin/organizations'] },
-        { icon: Users, label: 'Users', path: '/admin/user-management', activePatterns: ['/admin/user-management'] }
+        { icon: Users, label: 'Users', path: '/admin/user-management', activePatterns: ['/admin/user-management'] },
+        { icon: Image, label: 'Media', path: '/admin/media', activePatterns: ['/admin/media'] }
       ]
     }] : [])
   ];

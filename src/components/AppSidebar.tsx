@@ -9,7 +9,7 @@ import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles, Webhook, Globe, FolderKanban, User, CreditCard, Lock } from 'lucide-react';
+import { LogOut, LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles, Webhook, Globe, FolderKanban, User, CreditCard, Lock, Image } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
@@ -108,7 +108,8 @@ const AppSidebar = () => {
       items: [
         { path: '/admin/organizations', label: 'Organizations', icon: Building },
         { path: '/admin/user-management', label: 'User Management', icon: UserCog },
-        { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss }
+        { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss },
+        { path: '/admin/media', label: 'Media Assets', icon: Image }
       ]
     }] : [])
   ];
@@ -284,14 +285,14 @@ const AppSidebar = () => {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/admin/settings/profile" className="flex items-center">
+                <Link to="/admin/settings?tab=profile" className="flex items-center">
                   <User className="w-4 h-4 mr-2" />
                   Profile Settings
                 </Link>
               </DropdownMenuItem>
               {organization && (
                 <DropdownMenuItem asChild>
-                  <Link to="/admin/settings/organization" className="flex items-center">
+                  <Link to="/admin/settings?tab=organization" className="flex items-center">
                     <Building className="w-4 h-4 mr-2" />
                     Organization Settings
                   </Link>
@@ -306,13 +307,13 @@ const AppSidebar = () => {
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link to="/admin/settings/billing" className="flex items-center">
+                <Link to="/admin/settings?tab=integrations" className="flex items-center">
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Billing
+                  Integrations
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/admin/settings/security" className="flex items-center">
+                <Link to="/admin/settings?tab=privacy" className="flex items-center">
                   <Lock className="w-4 h-4 mr-2" />
                   Security
                 </Link>
