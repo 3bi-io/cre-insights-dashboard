@@ -27,7 +27,7 @@ const ApplicationSubmissionSchema = z.object({
   state: z.string().max(2, 'State must be 2-letter code').optional(),
   
   // Job-related fields
-  job_listing_id: z.string().uuid('Invalid job listing ID').optional(),
+  job_listing_id: z.string().uuid('Invalid job listing ID').optional().or(z.literal('')),
   job_id: z.string().max(50, 'Job ID too long').optional(),
   org_slug: z.string().max(100, 'Organization slug too long').optional(),
   
