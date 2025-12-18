@@ -24,7 +24,7 @@ export const SEO: React.FC<SEOProps> = ({
   description,
   keywords,
   canonical,
-  ogImage = 'https://storage.googleapis.com/gpt-engineer-file-uploads/W1hSv6TZsaSmimtDCBPaJhIlFNp2/social-images/social-1760587249209-IMG_0871.jpeg',
+  ogImage = 'https://ats.me/og-image.png',
   ogType = 'website',
   noindex = false,
   ogImageWidth = 1200,

@@ -57,7 +57,7 @@ export function generateCanonicalUrl(path: string): string {
  * Generate Open Graph image URL with fallback
  */
 export function generateOgImage(customImage?: string): string {
-  return customImage || 'https://storage.googleapis.com/gpt-engineer-file-uploads/LQPr9z5dzLVzw8XP92diy1GjByo1/social-images/social-1762327634633-IMG_1035.jpeg';
+  return customImage || 'https://ats.me/og-image.png';
 }
 
 /**
