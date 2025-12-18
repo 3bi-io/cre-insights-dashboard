@@ -27,25 +27,25 @@ class AIConnectionManager {
   private providerConfigs: Record<AIProvider, AIProviderConfig> = {
     openai: {
       provider: 'openai',
-      model: 'gpt-5-2025-08-07', // Latest flagship model
+      model: 'gpt-4o',
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     },
     anthropic: {
       provider: 'anthropic',
-      model: 'claude-sonnet-4-20250514', // Latest Claude model
+      model: 'claude-sonnet-4-5',
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     },
     elevenlabs: {
       provider: 'elevenlabs',
-      model: 'eleven_multilingual_v2', // Latest ElevenLabs model
+      model: 'eleven_multilingual_v2',
       testMessage: 'Test agent connection',
       timeout: 15000
     },
     grok: {
       provider: 'grok',
-      model: 'grok-4-0709', // Latest Grok 4 model with 256K context
+      model: 'grok-2',
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     }
