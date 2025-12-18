@@ -100,7 +100,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.elevenlabs-outbound-call]
-verify_jwt = true
+verify_jwt = false
 
 [functions.contact-form]
 verify_jwt = false
