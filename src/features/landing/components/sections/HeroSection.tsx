@@ -52,11 +52,11 @@ const HeroSection = () => {
             {heroContent.subheadline}
           </p>
 
-          {/* Voice callback highlight */}
-          <div className="flex items-center justify-center gap-2 mb-6 md:mb-8">
-            <div className="flex items-center gap-2 px-4 py-2 bg-success/10 rounded-full border border-success/20">
-              <Phone className="h-4 w-4 text-success motion-safe:animate-pulse" />
-              <span className="text-sm font-medium text-success">
+          {/* Voice callback highlight - flex-wrap for very small screens */}
+          <div className="flex items-center justify-center gap-2 mb-6 md:mb-8 px-2">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-success/10 rounded-full border border-success/20 flex-wrap justify-center">
+              <Phone className="h-4 w-4 text-success motion-safe:animate-pulse flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-medium text-success text-center">
                 {heroContent.voiceHighlight?.text || 'AI calls back jobseekers automatically'}
               </span>
             </div>
