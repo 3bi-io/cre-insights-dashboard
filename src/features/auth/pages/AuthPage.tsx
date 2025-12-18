@@ -15,8 +15,12 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  // Sign-up state
   const [userType, setUserType] = useState<'organization' | 'jobseeker'>('organization');
   const [showUserTypeSelection, setShowUserTypeSelection] = useState(false);
+  // Sign-in state
+  const [signInUserType, setSignInUserType] = useState<'organization' | 'jobseeker'>('organization');
+  const [showSignInForm, setShowSignInForm] = useState(false);
   
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
@@ -77,58 +81,114 @@ const AuthPage = () => {
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="signin" onClick={() => { setShowSignInForm(false); setError(''); }}>Sign In</TabsTrigger>
+                <TabsTrigger value="signup" onClick={() => { setShowUserTypeSelection(false); setError(''); }}>Sign Up</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                {!showSignInForm ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center mb-4">
+                      Choose your account type to sign in
+                    </p>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-auto py-6 flex flex-col items-center gap-2 hover:bg-accent"
+                        onClick={() => {
+                          setSignInUserType('organization');
+                          setShowSignInForm(true);
+                        }}
+                      >
+                        <Briefcase className="h-8 w-8 text-primary" />
+                        <div>
+                          <div className="font-semibold">Employer</div>
+                          <div className="text-xs text-muted-foreground">Sign in to manage recruitment</div>
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-auto py-6 flex flex-col items-center gap-2 hover:bg-accent"
+                        onClick={() => {
+                          setSignInUserType('jobseeker');
+                          setShowSignInForm(true);
+                        }}
+                      >
+                        <UserCircle className="h-8 w-8 text-primary" />
+                        <div>
+                          <div className="font-semibold">Jobseeker</div>
+                          <div className="text-xs text-muted-foreground">Sign in to track your applications</div>
+                        </div>
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="signin-password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
+                ) : (
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowSignInForm(false)}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        ← Back
                       </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {signInUserType === 'organization' ? 'Employer Account' : 'Jobseeker Account'}
+                      </span>
                     </div>
-                  </div>
 
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-email">Email</Label>
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signin-password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="signin-password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </form>
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? 'Signing in...' : 'Sign In'}
+                    </Button>
+                  </form>
+                )}
               </TabsContent>
               
               <TabsContent value="signup">
