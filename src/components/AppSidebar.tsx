@@ -158,7 +158,7 @@ const AppSidebar = () => {
     : [];
 
   return (
-    <Sidebar>
+    <Sidebar aria-label="Admin sidebar navigation">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 px-4 py-3">
           {organization ? (
@@ -181,14 +181,19 @@ const AppSidebar = () => {
         {mainItems.length > 0 && (
           <SidebarGroup>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu role="menu" aria-label="Main navigation">
                 {mainItems.map(item => {
                   const Icon = item.icon;
                   return (
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                        <Link to={item.path} className="flex items-center gap-3">
-                          <Icon className="w-4 h-4" />
+                        <Link 
+                          to={item.path} 
+                          className="flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset rounded-md"
+                          role="menuitem"
+                          aria-current={isActive(item.path) ? 'page' : undefined}
+                        >
+                          <Icon className="w-4 h-4" aria-hidden="true" />
                           <span>{item.label}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -202,21 +207,26 @@ const AppSidebar = () => {
 
         {/* Regular groups */}
         {regularGroups.map(group => (
-          <SidebarGroup key={group.group}>
-            <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
+          <SidebarGroup key={group.group} role="group" aria-labelledby={`group-${group.group}`}>
+            <SidebarGroupLabel id={`group-${group.group}`}>{group.group}</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu role="menu" aria-label={`${group.group} navigation`}>
                 {group.items.map(item => {
                   const Icon = item.icon;
                   const itemBadge = (item as any).badge;
                   return (
                     <SidebarMenuItem key={item.path}>
                       <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                        <Link to={item.path} className="flex items-center gap-3">
-                          <Icon className="w-4 h-4" />
+                        <Link 
+                          to={item.path} 
+                          className="flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset rounded-md"
+                          role="menuitem"
+                          aria-current={isActive(item.path) ? 'page' : undefined}
+                        >
+                          <Icon className="w-4 h-4" aria-hidden="true" />
                           <span className="flex-1">{item.label}</span>
                           {itemBadge && (
-                            <Badge variant="destructive" className="ml-auto">
+                            <Badge variant="destructive" className="ml-auto" aria-label={`${itemBadge} notifications`}>
                               {itemBadge}
                             </Badge>
                           )}
@@ -235,18 +245,26 @@ const AppSidebar = () => {
           <Accordion type="multiple" defaultValue={defaultExpandedValues}>
             {accordionGroups.map(group => (
               <AccordionItem key={group.group} value={group.group}>
-                <AccordionTrigger className="text-xs font-medium text-sidebar-foreground/70 hover:no-underline py-2">
+                <AccordionTrigger 
+                  className="text-xs font-medium text-sidebar-foreground/70 hover:no-underline py-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset rounded-md"
+                  aria-label={`${group.group} section`}
+                >
                   {group.group}
                 </AccordionTrigger>
                 <AccordionContent className="pb-1">
-                  <SidebarMenu>
+                  <SidebarMenu role="menu" aria-label={`${group.group} navigation`}>
                     {group.items.map(item => {
                       const Icon = item.icon;
                       return (
                         <SidebarMenuItem key={item.path}>
                           <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                            <Link to={item.path} className="flex items-center gap-3">
-                              <Icon className="w-4 h-4" />
+                            <Link 
+                              to={item.path} 
+                              className="flex items-center gap-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset rounded-md"
+                              role="menuitem"
+                              aria-current={isActive(item.path) ? 'page' : undefined}
+                            >
+                              <Icon className="w-4 h-4" aria-hidden="true" />
                               <span>{item.label}</span>
                             </Link>
                           </SidebarMenuButton>
@@ -265,7 +283,12 @@ const AppSidebar = () => {
         <div className="p-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                aria-label="Open account menu"
+                aria-haspopup="menu"
+              >
                 <Avatar className="w-8 h-8 mr-3">
                   <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
                 </Avatar>
