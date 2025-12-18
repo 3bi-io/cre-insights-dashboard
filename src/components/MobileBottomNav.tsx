@@ -121,8 +121,12 @@ const MobileBottomNav: React.FC = () => {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav 
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg"
+      role="navigation"
+      aria-label="Primary mobile navigation"
+    >
+      <div className="flex items-center justify-around h-16 px-2" role="menubar">
         {primaryNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
@@ -131,12 +135,15 @@ const MobileBottomNav: React.FC = () => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
+              role="menuitem"
+              aria-current={active ? 'page' : undefined}
+              aria-label={`Navigate to ${item.label}`}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors rounded-lg",
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("w-5 h-5 transition-transform", active && "scale-110")} />
+              <Icon className={cn("w-5 h-5 transition-transform", active && "scale-110")} aria-hidden="true" />
               <span className={cn("text-xs font-medium", active && "font-semibold")}>
                 {item.label}
               </span>
@@ -148,33 +155,41 @@ const MobileBottomNav: React.FC = () => {
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger asChild>
             <button
+              role="menuitem"
+              aria-label="Open more navigation options"
+              aria-expanded={moreOpen}
+              aria-haspopup="dialog"
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors rounded-lg",
+                "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                 moreOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
               {moreOpen ? (
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               ) : (
-                <MoreHorizontal className="w-5 h-5" />
+                <MoreHorizontal className="w-5 h-5" aria-hidden="true" />
               )}
               <span className="text-xs font-medium">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[70vh] rounded-t-xl">
+          <SheetContent 
+            side="bottom" 
+            className="h-[70vh] rounded-t-xl"
+            aria-label="Additional navigation options"
+          >
             <SheetHeader className="pb-4">
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <ScrollArea className="h-full pb-8">
-              <div className="space-y-6">
+              <div className="space-y-6" role="menu">
                 {moreNavGroups.map((group, idx) => (
-                  <div key={group.title}>
+                  <div key={group.title} role="group" aria-labelledby={`group-${group.title}`}>
                     {idx > 0 && <Separator className="mb-4" />}
-                    <div className="flex items-center gap-2 mb-3">
-                      <group.icon className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 mb-3" id={`group-${group.title}`}>
+                      <group.icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                       <span className="text-sm font-medium text-muted-foreground">{group.title}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2" role="group">
                       {group.items.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item);
@@ -182,14 +197,17 @@ const MobileBottomNav: React.FC = () => {
                           <button
                             key={item.path}
                             onClick={() => handleNavigate(item.path)}
+                            role="menuitem"
+                            aria-current={active ? 'page' : undefined}
+                            aria-label={`Navigate to ${item.label}`}
                             className={cn(
-                              "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors",
+                              "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                               active 
                                 ? "bg-primary/10 border-primary/20 text-primary" 
                                 : "bg-muted/50 border-transparent hover:bg-muted"
                             )}
                           >
-                            <Icon className="w-5 h-5 mb-1" />
+                            <Icon className="w-5 h-5 mb-1" aria-hidden="true" />
                             <span className="text-xs text-center line-clamp-1">{item.label}</span>
                           </button>
                         );

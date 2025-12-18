@@ -89,10 +89,17 @@ const MobileHeader = () => {
   };
 
   return (
-    <header className="h-12 flex items-center justify-between border-b bg-card px-4 shrink-0 sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-card/95 py-2">
+    <header 
+      className="h-12 flex items-center justify-between border-b bg-card px-4 shrink-0 sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-card/95 py-2"
+      role="banner"
+      aria-label="Admin header"
+    >
       <div className="flex items-center gap-3">
         {/* Mobile Menu Toggle */}
-        <SidebarTrigger className="hover:bg-accent hover:text-accent-foreground transition-colors" />
+        <SidebarTrigger 
+          className="hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" 
+          aria-label="Toggle sidebar navigation"
+        />
         
         {/* Logo and Title */}
         <div className="flex items-center gap-3">
@@ -106,14 +113,19 @@ const MobileHeader = () => {
       </div>
 
       {/* Right side - User menu and theme toggle */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" role="group" aria-label="User actions">
         <ThemeToggle />
         
         {/* User Profile Dropdown */}
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+              <Button 
+                variant="ghost" 
+                className="relative h-10 w-10 rounded-full p-0 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                aria-label="Open user menu"
+                aria-haspopup="menu"
+              >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary text-primary-foreground font-medium">
                     {getUserInitials()}
