@@ -24,11 +24,11 @@ const CandidateLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/my-jobs', icon: Home },
-    { name: 'My Applications', href: '/my-jobs/applications', icon: Briefcase },
-    { name: 'Job Search', href: '/my-jobs/search', icon: Search },
-    { name: 'Saved Jobs', href: '/my-jobs/saved', icon: Bookmark },
-    { name: 'Messages', href: '/my-jobs/messages', icon: MessageSquare },
+    { name: 'Applications', href: '/my-jobs/applications', icon: Briefcase },
+    { name: 'Search', href: '/my-jobs/search', icon: Search },
+    { name: 'Saved', href: '/my-jobs/saved', icon: Bookmark },
     { name: 'Profile', href: '/my-jobs/profile', icon: User },
+    { name: 'Messages', href: '/my-jobs/messages', icon: MessageSquare },
   ];
 
   const getUserInitials = () => {
