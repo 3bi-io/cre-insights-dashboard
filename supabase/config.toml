@@ -101,3 +101,15 @@ verify_jwt = true
 
 [functions.elevenlabs-outbound-call]
 verify_jwt = true
+
+[functions.contact-form]
+verify_jwt = false
+
+[functions.openai-chat]
+verify_jwt = true
+
+[functions.anthropic-chat]
+verify_jwt = true
+
+[functions.data-analysis]
+verify_jwt = true
