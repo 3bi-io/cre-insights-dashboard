@@ -15,6 +15,7 @@ import {
   UserPlus, UserCheck, FileText, Laptop
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import AdminPageLayout from "@/features/shared/components/AdminPageLayout";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -78,23 +79,14 @@ const VisitorAnalytics = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Visitor Analytics</h1>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-24"></div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-8 bg-muted rounded w-16 animate-pulse"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      <AdminPageLayout
+        title="Visitor Analytics"
+        description="Comprehensive visitor insights and metrics"
+        requiredRole="super_admin"
+        isLoading={true}
+      >
+        <div />
+      </AdminPageLayout>
     );
   }
 
@@ -137,26 +129,28 @@ const VisitorAnalytics = () => {
 
   const hasData = chartData.length > 0 || totalVisitors > 0;
 
+  const timeRangeSelect = (
+    <Select value={timeRange} onValueChange={setTimeRange}>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Select range" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="24h">Last 24 hours</SelectItem>
+        <SelectItem value="7d">Last 7 days</SelectItem>
+        <SelectItem value="30d">Last 30 days</SelectItem>
+        <SelectItem value="90d">Last 90 days</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Visitor Analytics</h1>
-          <p className="text-muted-foreground">Comprehensive visitor insights and metrics</p>
-        </div>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select range" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h">Last 24 hours</SelectItem>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <AdminPageLayout
+      title="Visitor Analytics"
+      description="Comprehensive visitor insights and metrics"
+      requiredRole="super_admin"
+      actions={timeRangeSelect}
+    >
+      <div className="space-y-6">
 
       {/* Error State */}
       {error && (
@@ -773,7 +767,8 @@ const VisitorAnalytics = () => {
         </TabsContent>
       </Tabs>
       )}
-    </div>
+      </div>
+    </AdminPageLayout>
   );
 };
 

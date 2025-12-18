@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import PageLayout from '@/components/PageLayout';
+import AdminPageLayout from '@/features/shared/components/AdminPageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -405,25 +405,11 @@ const SuperAdminFeeds = () => {
     }
   }, [userRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (userRole !== 'super_admin') {
-    return (
-      <PageLayout title="Access Denied" description="Super admin privileges required">
-        <div className="container mx-auto px-4 py-8">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              You need super administrator permissions to access this page.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </PageLayout>
-    );
-  }
-
   return (
-    <PageLayout 
+    <AdminPageLayout 
       title="Super Admin Feeds Management" 
       description="Import jobs from multiple sources with selective import capabilities"
+      requiredRole="super_admin"
       actions={
         <Button onClick={fetchFeeds} disabled={loading}>
           {loading ? (
@@ -694,7 +680,7 @@ const SuperAdminFeeds = () => {
           </Card>
         )}
       </div>
-    </PageLayout>
+    </AdminPageLayout>
   );
 };
 
