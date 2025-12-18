@@ -16,6 +16,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced reporting dashboard
 - Custom workflow builder
 
+## [1.1.0] - 2025-12-18
+
+### 🎙️ AI Voice Recruitment
+
+#### ElevenLabs Integration
+- **Voice Agents** - Conversational AI for automated applicant screening
+- **Outbound Calls** - Automatic follow-up calls on application submission
+- **Inbound Agents** - Handle incoming applicant inquiries 24/7
+- **Voice Apply** - Complete applications via voice conversation
+- **Call Transcripts** - Full conversation history with AI analysis
+- **Phone Number Management** - Configure agent phone numbers
+
+#### Voice Agent Features
+- Real-time WebRTC voice streaming
+- Natural conversation flow with interruption handling
+- Context-aware responses based on job requirements
+- Automatic transcript generation and storage
+
+### 🔗 Webhook Enhancements
+
+#### Source Filtering
+- **Application Source Filters** - Trigger webhooks by application source
+- **Event Types** - Configure specific events (created, updated, status_changed)
+- **Source Options** - Direct Application, ElevenLabs, Facebook Lead Gen, etc.
+
+#### Bulk Export
+- **Bulk Webhook Export** - Send all matching applications to webhook endpoint
+- **Rate Limiting** - 5 requests per hour per user
+- **Audit Logging** - Complete export history
+
+### 📋 Application Improvements
+
+#### Enhanced Form
+- **State Dropdown** - US state selection instead of free text
+- **Phone Formatting** - Real-time phone number formatting
+- **Progress Indicator** - Visual progress through form sections
+- **Dynamic Context** - Job and organization info throughout form
+
+#### URL Parameter Tracking
+- Campaign tracking (ad_id, campaign_id, adset_id)
+- Referral source capture
+- UTM parameter support
+
+### 🔍 Job Detail Pages
+
+- **Canonical URLs** - /jobs/:id as authoritative job page
+- **Dynamic XML Feeds** - Google Jobs, Indeed, Universal feed formats
+- **Related Jobs** - Similar positions on detail pages
+- **SEO Optimization** - Structured data for job postings
+
+### 🎨 Landing Page Updates
+
+- **Voice-First Messaging** - AI Voice Recruitment as primary differentiator
+- **Updated Stats** - < 3 min callbacks, 24/7 availability
+- **How It Works Section** - Visual flow of candidate journey
+- **Contact Form** - Functional form with database storage
+- **OG Image** - Professional social sharing image
+
+### 🔒 Security Improvements
+
+- **Rate Limiting** - Public edge function protection
+- **Input Validation** - Zod schemas on webhook receivers
+- **RLS Policy Fixes** - Organization-scoped client visibility
+
+### 🛠️ Admin Improvements
+
+- **Super Admin Visibility** - Cross-organization application access
+- **Consolidated Admin Pages** - Unified navigation structure
+- **Voice Agent Dashboard** - ElevenLabs configuration and monitoring
+
 ## [1.0.0] - 2025-01-15
 
 ### 🎉 Production Release

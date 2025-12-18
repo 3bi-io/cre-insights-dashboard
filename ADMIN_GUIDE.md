@@ -203,20 +203,31 @@ Auto-post jobs to job boards:
 
 Send data to external systems:
 
-1. Settings → Integrations → Webhooks
+1. Settings → Integrations → Client Webhooks
 2. Click "Add Webhook"
 3. Configure:
-   - URL endpoint
-   - Events to trigger:
-     - Application received
-     - Status changed
-     - Interview scheduled
-     - Offer extended
-   - Authentication (Bearer token or API key)
+   - **URL endpoint** - HTTPS URL to receive webhook data
+   - **Source Filter** - Select which application sources trigger this webhook:
+     - Direct Application
+     - ElevenLabs (Voice Apply)
+     - Facebook Lead Gen
+     - Tenstreet Import
+   - **Event Types**:
+     - `created` - New application submitted
+     - `updated` - Application data changed
+     - `status_changed` - Status workflow change
+   - **Secret Key** (optional) - For signature verification
 4. Test webhook
 5. Save
 
-Example webhook payload:
+**Webhook Headers:**
+```
+Content-Type: application/json
+X-Webhook-Signature: sha256=<signature> (if secret key configured)
+X-Webhook-Event: application.created
+```
+
+**Example webhook payload:**
 ```json
 {
   "event": "application.created",
@@ -224,11 +235,88 @@ Example webhook payload:
   "data": {
     "applicationId": "uuid",
     "jobId": "uuid",
+    "jobListingId": "uuid",
     "candidateName": "John Doe",
     "candidateEmail": "john@example.com",
-    "status": "pending"
+    "phone": "+15551234567",
+    "status": "pending",
+    "source": "Direct Application",
+    "cdl": "Yes",
+    "experience": "24 months",
+    "city": "Dallas",
+    "state": "TX"
   }
 }
+```
+
+**Bulk Export:**
+- Settings → Integrations → Client Webhooks
+- Click "Bulk Export" on any webhook
+- Sends all matching applications (by source filter) to the webhook
+- Rate limited: 5 exports per hour per user
+
+### Voice Agent Configuration (ElevenLabs)
+
+Configure AI voice agents for automated applicant screening and follow-ups:
+
+1. Settings → Voice Agents
+2. Click "Add Voice Agent"
+3. Configure:
+   - **Agent Name** - Descriptive name (e.g., "Outbound Recruiter")
+   - **ElevenLabs Agent ID** - From your ElevenLabs dashboard
+   - **Phone Number** - Assigned phone number for calls
+   - **Agent Type**:
+     - `outbound` - Makes calls to applicants
+     - `inbound` - Receives incoming calls
+   - **Outbound Enabled** - Enable automatic outbound calls
+   - **Active Status** - Enable/disable the agent
+
+**Setting Up ElevenLabs:**
+1. Create account at [elevenlabs.io](https://elevenlabs.io)
+2. Navigate to Conversational AI → Agents
+3. Create a new agent with your custom persona
+4. Copy the Agent ID
+5. Add ELEVENLABS_API_KEY to project secrets
+
+**Automatic Outbound Calls:**
+When configured, voice agents automatically call new applicants:
+- Triggered when application is submitted via /apply
+- Requires: `is_active = true`, `outbound_enabled = true`, phone number configured
+- Calls are logged to `outbound_calls` table
+
+**Voice Apply (Inbound):**
+Enable candidates to complete applications via voice:
+- Link voice agent to job listings
+- Candidates click "Voice Apply" on job page
+- Agent guides them through application questions
+- Transcript saved to application record
+
+**Managing Transcripts:**
+- View call transcripts in application details
+- Transcripts synced from ElevenLabs automatically
+- Audio recordings available (if enabled in ElevenLabs)
+
+### Super Admin Features
+
+Super Admins have elevated privileges for cross-organization management:
+
+**Cross-Organization Visibility:**
+- View applications across all organizations
+- Access all job listings regardless of organization
+- Manage users across organizations
+
+**Global Dashboard:**
+- System-wide analytics
+- All organization metrics
+- Recent audit activity
+
+**How to Assign Super Admin:**
+1. Settings → Administrators
+2. Select user
+3. Set role to "super_admin"
+4. Save changes
+
+**Note:** Super Admin should be limited to trusted personnel only.
 ```
 
 ## 🔒 Security Settings
@@ -724,7 +812,7 @@ Use to:
 
 **Documentation:**
 - Full documentation at docs.ats.me
-- Video tutorials
+- Knowledge base articles
 - API reference
 - Community forum
 

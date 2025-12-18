@@ -673,6 +673,249 @@ Status reverts to previous value
 
 ---
 
+## 🎙️ Voice Agent Issues (ElevenLabs)
+
+### Outbound Calls Not Triggering
+
+**Symptoms:**
+- New applications don't receive automated calls
+- Voice agent appears inactive
+
+**Solutions:**
+
+1. **Verify voice agent is active**
+   - Go to Settings > Voice Agents
+   - Ensure `is_active = true`
+   - Check agent is linked to correct organization
+
+2. **Confirm phone number configured**
+   - Voice agent must have a valid phone number
+   - Check phone number format (+1XXXXXXXXXX)
+
+3. **Check outbound_enabled flag**
+   - Must be `true` for automatic outbound calls
+   - Can be toggled in voice agent settings
+
+4. **Verify application source**
+   - Some application sources may not trigger calls
+   - Check if source is configured for voice follow-up
+
+### Transcripts Not Loading
+
+**Symptoms:**
+- Transcript tab shows empty
+- "Loading transcripts..." stuck
+
+**Solutions:**
+
+1. **Wait for call completion**
+   - Transcripts only available after call ends
+   - Allow 1-2 minutes after call
+
+2. **Check conversation ID**
+   - Verify conversation exists in database
+   - Check `elevenlabs_conversations` table
+
+3. **Verify ElevenLabs API key**
+   - Check API key is valid in secrets
+   - Test connection in Settings > Integrations
+
+4. **Review edge function logs**
+   - Check `elevenlabs-api` function for errors
+   - Look for authentication failures
+
+### Voice Apply Not Working
+
+**Symptoms:**
+- Microphone button doesn't respond
+- Connection drops immediately
+- "Permission denied" error
+
+**Solutions:**
+
+1. **Check browser permissions**
+   - Microphone access must be granted
+   - Check browser permission settings
+   - HTTPS required for microphone access
+
+2. **Verify agent ID configuration**
+   - Job must have `voiceAgentId` configured
+   - Check job settings for voice agent assignment
+
+3. **Network connectivity**
+   - WebRTC requires stable internet
+   - Check firewall/VPN settings
+   - Try different network
+
+4. **Review console logs**
+   - Open DevTools (F12)
+   - Check for WebSocket errors
+   - Look for connection failures
+
+---
+
+## 🔗 Webhook Issues
+
+### Webhooks Not Firing
+
+**Symptoms:**
+- No webhook delivery attempts
+- Target system not receiving data
+
+**Solutions:**
+
+1. **Check webhook enabled**
+   - Go to Settings > Integrations > Client Webhooks
+   - Ensure `enabled = true`
+
+2. **Verify source filter**
+   - Webhook `source_filter` must include the application source
+   - Common sources: "Direct Application", "ElevenLabs", "Facebook Lead Gen"
+
+3. **Check event types**
+   - `event_types` must include relevant events
+   - Common events: "created", "updated", "status_changed"
+
+4. **Test webhook URL**
+   - Use [webhook.site](https://webhook.site) to test
+   - Verify endpoint is publicly accessible
+   - Check for HTTPS requirement
+
+5. **Review webhook logs**
+   - Check `client_webhook_logs` table
+   - Look for delivery attempts and errors
+
+### Invalid Payload Errors
+
+**Symptoms:**
+- Webhooks fail with validation errors
+- Target server rejects payload
+
+**Solutions:**
+
+1. **Validate webhook URL**
+   - Must be valid HTTPS URL
+   - No localhost or internal IPs
+
+2. **Check secret key**
+   - If configured, receiving server must validate signature
+   - Signature is in `X-Webhook-Signature` header
+
+3. **Review payload format**
+   - Check `client_webhook_logs.request_payload`
+   - Verify target server expects JSON
+
+### Rate Limit Errors (429)
+
+**Symptoms:**
+- Bulk export fails
+- "Too many requests" error
+
+**Solutions:**
+
+1. **Bulk export limit**
+   - Limited to 5 requests per hour per user
+   - Wait and retry after 1 hour
+
+2. **Target server limits**
+   - External servers may have their own limits
+   - Implement backoff strategy
+
+3. **Exponential backoff**
+   - Wait longer between retries
+   - Start with 1 second, double each attempt
+
+---
+
+## 📝 Application Form Issues
+
+### Applications Not Submitting
+
+**Symptoms:**
+- Submit button doesn't respond
+- Form validation errors
+- Network request fails
+
+**Solutions:**
+
+1. **Check required fields**
+   - All required fields must be completed
+   - Look for red error messages
+
+2. **Verify network connection**
+   - Open DevTools Network tab
+   - Check for failed requests
+
+3. **Review validation messages**
+   - Toast messages indicate missing/invalid fields
+   - Fix each validation error
+
+4. **Check organization**
+   - Job listing must have valid organization
+   - Contact administrator if issues persist
+
+### URL Parameters Not Captured
+
+**Symptoms:**
+- Tracking parameters missing in application
+- Attribution data lost
+
+**Solutions:**
+
+1. **Verify parameter names**
+   - Use exact names: `job_listing_id`, `campaign_id`, `ad_id`, `adset_id`
+   - Parameters are case-insensitive
+
+2. **Check URL encoding**
+   - Special characters must be properly encoded
+   - Use `encodeURIComponent()` if building URLs
+
+---
+
+## 📡 XML Feed Issues
+
+### Feed Not Updating
+
+**Symptoms:**
+- New jobs not appearing in feed
+- Stale data in job aggregators
+
+**Solutions:**
+
+1. **Check job status**
+   - Only `active` jobs appear in feeds
+   - Verify job is published and active
+
+2. **Organization filter**
+   - ACME organization jobs excluded from public feeds
+   - Check organization settings
+
+3. **Cache duration**
+   - Feeds cached for 1 hour
+   - Wait for cache expiry or contact admin
+
+### Invalid XML Errors
+
+**Symptoms:**
+- Feed parsing fails
+- Job aggregators reject feed
+
+**Solutions:**
+
+1. **Check job data**
+   - Missing required fields cause errors
+   - Ensure title, description, location are filled
+
+2. **Special characters**
+   - XML special characters must be escaped
+   - Check for `&`, `<`, `>` in text
+
+3. **URL format**
+   - All URLs must be properly formatted
+   - Must be valid https:// URLs
+
+---
+
 **Still stuck?** Don't hesitate to reach out to support. We're here to help!
 
 For more documentation:

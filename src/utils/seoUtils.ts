@@ -17,12 +17,11 @@ export interface PageSEO {
  * Target keywords by page for content optimization
  */
 export const PAGE_KEYWORDS = {
-  home: 'applicant tracking system, ATS software, AI recruitment, pilot program, early adopter',
-  features: 'ATS features, recruitment software features, AI screening, automated workflows, candidate tracking',
+  home: 'applicant tracking system, ATS software, AI recruitment, voice recruitment, AI voice agents',
+  features: 'ATS features, recruitment software features, AI screening, automated workflows, candidate tracking, voice apply',
   pricing: 'ATS pricing, recruitment software cost, ATS plans, affordable ATS',
-  demo: 'ATS demo, recruitment software demo, free trial ATS, test drive ATS',
-  resources: 'recruitment resources, hiring guides, ATS tutorials, HR best practices',
-  contact: 'contact ATS.me, recruitment software support, sales inquiry',
+  resources: 'recruitment resources, hiring guides, ATS knowledge base, HR best practices',
+  contact: 'contact ATS.me, recruitment software support, sales inquiry, schedule demo',
 } as const;
 
 /**
