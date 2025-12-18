@@ -1,6 +1,6 @@
 /**
  * Hero Section Component
- * Voice-first messaging with mobile optimization
+ * Voice-first messaging with animated gradients and workflow illustration
  */
 
 import React from 'react';
@@ -8,44 +8,32 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Star, Search, Phone } from 'lucide-react';
-import heroImage2400 from '@/assets/hero-recruitment-2400.webp';
-import heroImage1200 from '@/assets/hero-recruitment-1200.webp';
-import heroImage600 from '@/assets/hero-recruitment-600.webp';
 import { heroContent } from '../../content/hero.content';
+import VoiceWorkflowIllustration from '@/components/landing/VoiceWorkflowIllustration';
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Hero Image Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <picture>
-          <source 
-            media="(min-width: 1024px)" 
-            srcSet={heroImage2400}
-            type="image/webp" 
-          />
-          <source 
-            media="(min-width: 640px)" 
-            srcSet={heroImage1200}
-            type="image/webp" 
-          />
-          <img
-            src={heroImage600}
-            alt="Modern recruitment platform with AI-powered analytics dashboard showing candidate pipelines and hiring metrics"
-            className="w-full h-full object-cover object-center"
-            loading="eager"
-            width="2400"
-            height="1600"
-          />
-        </picture>
-        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/85"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent"></div>
+    <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center overflow-hidden bg-background">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Primary gradient blob - top left */}
+        <div className="absolute -top-40 -left-40 w-80 sm:w-[500px] h-80 sm:h-[500px] bg-primary/20 rounded-full blur-[100px] motion-safe:animate-[float_8s_ease-in-out_infinite]" />
+        
+        {/* Accent gradient blob - top right */}
+        <div className="absolute -top-20 -right-20 w-60 sm:w-[400px] h-60 sm:h-[400px] bg-accent/15 rounded-full blur-[80px] motion-safe:animate-[float_10s_ease-in-out_infinite_reverse]" />
+        
+        {/* Secondary gradient blob - bottom center */}
+        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-96 sm:w-[600px] h-96 sm:h-[600px] bg-secondary/10 rounded-full blur-[120px] motion-safe:animate-[float_12s_ease-in-out_infinite]" />
+        
+        {/* Success accent - bottom right */}
+        <div className="absolute bottom-20 right-10 w-40 sm:w-64 h-40 sm:h-64 bg-success/10 rounded-full blur-[60px] motion-safe:animate-pulse" />
       </div>
 
-      {/* Background Effects - reduced on mobile for performance */}
-      <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)] z-[1]"></div>
-      <div className="absolute top-20 left-10 md:left-20 w-48 md:w-72 h-48 md:h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse z-[1]"></div>
-      <div className="absolute bottom-20 right-10 md:right-20 w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse delay-1000 z-[1]"></div>
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,white_20%,transparent_70%)]" />
+
+      {/* Subtle radial gradient overlay */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,hsl(var(--background)/0.5)_70%)]" />
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-8">
         <div className="max-w-4xl mx-auto">
@@ -66,10 +54,10 @@ const HeroSection = () => {
 
           {/* Voice callback highlight */}
           <div className="flex items-center justify-center gap-2 mb-6 md:mb-8">
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
-              <Phone className="h-4 w-4 text-primary motion-safe:animate-pulse" />
-              <span className="text-sm font-medium text-primary">
-                {heroContent.voiceHighlight?.text || 'AI calls back candidates automatically'}
+            <div className="flex items-center gap-2 px-4 py-2 bg-success/10 rounded-full border border-success/20">
+              <Phone className="h-4 w-4 text-success motion-safe:animate-pulse" />
+              <span className="text-sm font-medium text-success">
+                {heroContent.voiceHighlight?.text || 'AI calls back jobseekers automatically'}
               </span>
             </div>
           </div>
@@ -79,7 +67,7 @@ const HeroSection = () => {
             <Link to="/auth" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
-                className="w-full sm:w-auto min-h-[48px] bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 text-base sm:text-lg"
+                className="w-full sm:w-auto min-h-[48px] bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {heroContent.cta.primary}
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -89,16 +77,19 @@ const HeroSection = () => {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="w-full sm:w-auto min-h-[48px] px-6 sm:px-8 py-3 text-base sm:text-lg border-primary text-primary hover:bg-primary/10"
+                className="w-full sm:w-auto min-h-[48px] px-6 sm:px-8 py-3 text-base sm:text-lg border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
               >
                 <Search className="mr-2 h-5 w-5" />
                 {heroContent.cta.secondary}
               </Button>
             </Link>
           </div>
+
+          {/* Voice Workflow Illustration */}
+          <VoiceWorkflowIllustration />
           
           {/* Social proof - responsive layout */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-muted-foreground px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-muted-foreground px-4 mt-12">
             <div className="flex items-center gap-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
