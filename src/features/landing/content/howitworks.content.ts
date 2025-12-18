@@ -15,11 +15,11 @@ export interface HowItWorksStep {
 export const howItWorksContent = {
   badge: 'How It Works',
   title: 'From Application to Callback in Minutes',
-  description: 'Our AI-powered voice technology ensures every qualified candidate gets contacted instantly.',
+  description: 'Our AI-powered voice technology ensures every qualified jobseeker gets contacted instantly.',
   steps: [
     {
       icon: FileText,
-      title: 'Candidate Applies',
+      title: 'Jobseeker Applies',
       description: 'Through web, mobile, or Voice Apply',
       highlight: 'Any channel'
     },
@@ -32,7 +32,7 @@ export const howItWorksContent = {
     {
       icon: Phone,
       title: 'Automated Voice Callback',
-      description: 'AI calls the candidate within minutes',
+      description: 'AI calls the jobseeker within minutes',
       highlight: '< 3 min'
     },
     {

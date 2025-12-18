@@ -57,7 +57,7 @@ const HeroSection = () => {
           
           {/* Subheadline */}
           <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-            Revolutionize recruitment with AI-powered analytics, automated workflows, and comprehensive candidate tracking. 
+            Revolutionize recruitment with AI-powered analytics, automated workflows, and comprehensive jobseeker tracking. 
             Find, evaluate, and hire top talent faster than ever before.
           </p>
           
