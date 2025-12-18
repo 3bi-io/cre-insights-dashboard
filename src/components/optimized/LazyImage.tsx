@@ -11,6 +11,7 @@ interface LazyImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>,
   rootMargin?: string;
   quality?: 'low' | 'medium' | 'high';
   priority?: boolean;
+  instant?: boolean;
 }
 
 const LazyImage = React.memo<LazyImageProps>(({
@@ -24,6 +25,7 @@ const LazyImage = React.memo<LazyImageProps>(({
   style,
   priority = false,
   quality = 'medium',
+  instant = false,
   ...props
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -86,11 +88,19 @@ const LazyImage = React.memo<LazyImageProps>(({
   const imageSrc = isError ? fallback : optimizedSrc;
   const showSkeleton = skeleton && !isLoaded && shouldLoad;
   
+  // Skip transition if instant mode or priority without skeleton
+  const skipTransition = instant || (priority && !skeleton);
+  const showImage = skipTransition || isLoaded;
+  
   return (
     <div
       ref={!priority ? observerRef : undefined}
-      className={`relative overflow-hidden ${className || ''}`}
-      style={style}
+      className="relative overflow-hidden"
+      style={{
+        ...style,
+        width: props.width,
+        height: props.height,
+      }}
     >
       {showSkeleton && (
         <Skeleton className="absolute inset-0 w-full h-full" />
@@ -106,14 +116,11 @@ const LazyImage = React.memo<LazyImageProps>(({
           onLoad={handleLoad}
           onError={handleError}
           className={`
-            transition-opacity duration-300
-            ${isLoaded ? 'opacity-100' : 'opacity-0'}
             ${className || ''}
+            ${skipTransition ? '' : 'motion-safe:transition-opacity motion-safe:duration-300'}
+            ${showImage ? 'opacity-100' : 'opacity-0'}
           `}
-          style={{
-            ...style,
-            ...(showSkeleton && { position: 'absolute', inset: 0 }),
-          }}
+          style={showSkeleton ? { position: 'absolute', inset: 0 } : undefined}
         />
       )}
       
