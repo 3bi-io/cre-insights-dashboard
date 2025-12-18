@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from './ThemeToggle';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Settings, Building2, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +49,19 @@ const MobileHeader = () => {
       '/admin/universal-feeds': 'Universal Feeds',
       '/admin/webhook-management': 'Webhooks',
       '/admin/support': 'Support',
+      '/admin/clients': 'Clients',
+      '/admin/routes': 'Routes',
+      '/admin/media': 'Media Assets',
+      '/admin/recruiters': 'Recruiters',
+      '/admin/api-keys': 'API Keys',
+      '/admin/billing': 'Billing',
+      '/admin/integrations': 'Integrations',
+      '/admin/reports': 'Reports',
+      '/admin/analytics': 'Analytics',
+      '/admin/notifications': 'Notifications',
+      '/admin/audit-logs': 'Audit Logs',
+      '/admin/tenstreet': 'Tenstreet',
+      '/admin/profile': 'Profile Settings',
     };
     return routes[path] || 'Dashboard';
   };
@@ -124,6 +137,35 @@ const MobileHeader = () => {
                   )}
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <a href="/admin/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile Settings</span>
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <a href="/admin/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </a>
+              </DropdownMenuItem>
+              {(userRole === 'admin' || userRole === 'super_admin') && (
+                <>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <a href="/admin/organizations">
+                      <Building2 className="mr-2 h-4 w-4" />
+                      <span>Organization</span>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <a href="/admin/user-management">
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Team Members</span>
+                    </a>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />

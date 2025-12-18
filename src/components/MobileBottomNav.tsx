@@ -65,7 +65,7 @@ const MobileBottomNav: React.FC = () => {
       title: 'Integrations',
       icon: Share2,
       items: [
-        { icon: Share2, label: 'ATS Command', path: '/admin/ats-command', activePatterns: ['/admin/ats-command'] },
+        { icon: Share2, label: 'ATS Command Center', path: '/admin/ats-command', activePatterns: ['/admin/ats-command'] },
         { icon: Share2, label: 'Publishers', path: '/admin/publishers', activePatterns: ['/admin/publishers'] },
         ...(isAdmin ? [{ icon: Share2, label: 'Webhooks', path: '/admin/webhook-management', activePatterns: ['/admin/webhook-management'] }] : [])
       ]
@@ -100,8 +100,8 @@ const MobileBottomNav: React.FC = () => {
       icon: Building,
       items: [
         { icon: Building, label: 'Organizations', path: '/admin/organizations', activePatterns: ['/admin/organizations'] },
-        { icon: Users, label: 'Users', path: '/admin/user-management', activePatterns: ['/admin/user-management'] },
-        { icon: Image, label: 'Media', path: '/admin/media', activePatterns: ['/admin/media'] }
+        { icon: Users, label: 'User Management', path: '/admin/user-management', activePatterns: ['/admin/user-management'] },
+        { icon: Image, label: 'Media Assets', path: '/admin/media', activePatterns: ['/admin/media'] }
       ]
     }] : [])
   ];

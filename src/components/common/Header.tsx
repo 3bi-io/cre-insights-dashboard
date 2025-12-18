@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Link>
               <Link to="/auth">
                 <Button size="sm" className="min-h-[44px]">
-                  Get Started
+                  Start Free Trial
                 </Button>
               </Link>
             </div>
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
                       </Link>
                       <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                         <Button className="w-full min-h-[48px]">
-                          Get Started
+                          Start Free Trial
                         </Button>
                       </Link>
                     </div>
