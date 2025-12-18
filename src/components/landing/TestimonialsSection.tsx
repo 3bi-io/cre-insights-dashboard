@@ -21,7 +21,7 @@ const TestimonialsSection = () => {
       verified: true
     },
     {
-      quote: "The automated screening workflows and AI-powered candidate matching have saved our team countless hours. We can finally focus on the human side of hiring.",
+      quote: "The automated screening workflows and AI-powered jobseeker matching have saved our team countless hours. We can finally focus on the human side of hiring.",
       author: "Rachel Kim",
       role: "HR Operations Lead",
       company: "Pilot Customer",

@@ -7,12 +7,12 @@ const FeaturesSection = () => {
     {
       icon: Mic,
       title: "Voice Apply Technology",
-      description: "Revolutionary voice-powered application process that allows candidates to apply using natural speech, reducing application time by 80% and improving accessibility."
+      description: "Revolutionary voice-powered application process that allows jobseekers to apply using natural speech, reducing application time by 80% and improving accessibility."
     },
     {
       icon: Brain,
       title: "AI-Powered Analytics",
-      description: "Track cost-per-hire by source, predict time-to-hire trends, identify candidate drop-off points, and compare publisher ROI with real-time ML predictions."
+      description: "Track cost-per-hire by source, predict time-to-hire trends, identify jobseeker drop-off points, and compare publisher ROI with real-time ML predictions."
     },
     {
       icon: Zap,

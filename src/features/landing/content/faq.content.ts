@@ -23,7 +23,7 @@ export const faqContent = {
     },
     {
       question: 'How does the AI screening work?',
-      answer: 'Our AI analyzes resumes, cover letters, and responses to pre-screening questions. It scores candidates based on job requirements, experience, skills, and cultural fit indicators. The AI learns from your hiring decisions to improve recommendations over time.',
+      answer: 'Our AI analyzes resumes, cover letters, and responses to pre-screening questions. It scores jobseekers based on job requirements, experience, skills, and cultural fit indicators. The AI learns from your hiring decisions to improve recommendations over time.',
     },
     {
       question: 'What integrations are available?',
@@ -35,7 +35,7 @@ export const faqContent = {
     },
     {
       question: 'What is Voice Apply technology?',
-      answer: 'Voice Apply allows candidates to complete applications using voice commands via phone or mobile app. This reduces application time by 80% and significantly improves mobile conversion rates, especially for hourly and driver positions.',
+      answer: 'Voice Apply allows jobseekers to complete applications using voice commands via phone or mobile app. This reduces application time by 80% and significantly improves mobile conversion rates, especially for hourly and driver positions.',
     },
     {
       question: 'Can I try it before committing?',
@@ -47,11 +47,11 @@ export const faqContent = {
     },
     {
       question: 'How does pricing scale as we grow?',
-      answer: 'Our pricing is based on active users and feature tiers, not on the number of jobs or candidates. As you grow, you can easily upgrade to higher tiers. Early adopters receive lifetime grandfathered pricing, meaning your rate stays locked even as we add new features.',
+      answer: 'Our pricing is based on active users and feature tiers, not on the number of jobs or jobseekers. As you grow, you can easily upgrade to higher tiers. Early adopters receive lifetime grandfathered pricing, meaning your rate stays locked even as we add new features.',
     },
     {
       question: 'What happens to my data if I cancel?',
-      answer: 'You maintain full access during your notice period. We provide data export tools in standard formats (CSV, JSON) so you can take all your candidate data, job postings, and analytics with you. Data is retained for 90 days after cancellation for potential reactivation.',
+      answer: 'You maintain full access during your notice period. We provide data export tools in standard formats (CSV, JSON) so you can take all your jobseeker data, job postings, and analytics with you. Data is retained for 90 days after cancellation for potential reactivation.',
     },
   ] as FAQ[]
 };

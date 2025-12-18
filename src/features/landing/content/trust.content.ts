@@ -16,7 +16,7 @@ export const trustContent = {
       icon: Phone,
       value: '2,500+',
       label: 'Voice Calls Handled',
-      description: 'Automated candidate callbacks'
+      description: 'Automated jobseeker callbacks'
     },
     {
       icon: CheckCircle,
@@ -33,7 +33,7 @@ export const trustContent = {
     {
       icon: Award,
       value: '4.8/5',
-      label: 'Candidate Satisfaction',
+      label: 'Jobseeker Satisfaction',
       description: 'Based on post-call surveys'
     }
   ] as TrustStat[]
