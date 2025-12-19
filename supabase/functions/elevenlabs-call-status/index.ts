@@ -237,8 +237,53 @@ serve(async (req) => {
         );
       }
 
-      // If terminal status, trigger webhooks
+      // If terminal status, trigger webhooks and sync conversation
       if (isTerminalStatus) {
+        // Auto-sync conversation to elevenlabs_conversations table
+        if (call.elevenlabs_conversation_id && call.voice_agent_id) {
+          try {
+            // Get voice agent details for the ElevenLabs agent ID
+            const { data: voiceAgent } = await supabase
+              .from("voice_agents")
+              .select("elevenlabs_agent_id, organization_id")
+              .eq("id", call.voice_agent_id)
+              .single();
+
+            if (voiceAgent) {
+              // Upsert conversation record
+              const { error: upsertError } = await supabase
+                .from("elevenlabs_conversations")
+                .upsert({
+                  conversation_id: call.elevenlabs_conversation_id,
+                  agent_id: voiceAgent.elevenlabs_agent_id,
+                  voice_agent_id: call.voice_agent_id,
+                  organization_id: voiceAgent.organization_id,
+                  status: mappedStatus === "completed" ? "done" : mappedStatus,
+                  started_at: call.created_at,
+                  ended_at: new Date().toISOString(),
+                  duration_seconds: statusUpdate.duration || call.duration_seconds,
+                  metadata: {
+                    source: "outbound_call",
+                    outbound_call_id: call.id,
+                    application_id: call.application_id,
+                    phone_number: call.phone_number,
+                  },
+                }, {
+                  onConflict: "conversation_id",
+                  ignoreDuplicates: false,
+                });
+
+              if (upsertError) {
+                console.error("[elevenlabs-call-status] Failed to sync conversation:", upsertError);
+              } else {
+                console.log(`[elevenlabs-call-status] Synced conversation ${call.elevenlabs_conversation_id} to elevenlabs_conversations`);
+              }
+            }
+          } catch (syncError) {
+            console.error("[elevenlabs-call-status] Error syncing conversation:", syncError);
+          }
+        }
+
         // Fetch enabled webhooks for this organization that match the event type
         const { data: webhooks } = await supabase
           .from("call_webhooks")
