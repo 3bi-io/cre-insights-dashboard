@@ -733,6 +733,30 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
+  // ============= JOB CONTEXT INFERENCE =============
+  // These variables help the agent determine which questions to ask
+  vars.job_requires_cdl = inferCDLRequirement(jobListing);
+  vars.job_cdl_class = inferCDLClass(jobListing);
+  vars.job_requires_hazmat = inferHazmatRequirement(jobListing);
+  vars.job_requires_tanker = inferTankerRequirement(jobListing);
+  vars.job_is_entry_level = inferEntryLevel(jobListing);
+  vars.job_is_local = inferLocalRoute(jobListing);
+  vars.job_is_otr = inferOTR(jobListing);
+  vars.job_is_team = inferTeamDriving(jobListing);
+  vars.job_freight_type = inferFreightType(jobListing);
+  
+  console.log('Inferred job requirements:', {
+    requires_cdl: vars.job_requires_cdl,
+    cdl_class: vars.job_cdl_class,
+    requires_hazmat: vars.job_requires_hazmat,
+    requires_tanker: vars.job_requires_tanker,
+    is_entry_level: vars.job_is_entry_level,
+    is_local: vars.job_is_local,
+    is_otr: vars.job_is_otr,
+    is_team: vars.job_is_team,
+    freight_type: vars.job_freight_type
+  });
+  
   return vars;
 }
 
@@ -787,4 +811,142 @@ function formatSalary(jobListing: Record<string, unknown> | null): string {
   }
   
   return 'competitive compensation';
+}
+
+// ============= JOB REQUIREMENT INFERENCE FUNCTIONS =============
+
+// Infer if the job requires a CDL based on title/description keywords
+function inferCDLRequirement(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'unknown';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  // Explicitly requires CDL
+  if (combined.includes('cdl') || combined.includes('commercial driver')) {
+    return 'yes';
+  }
+  // Explicitly does NOT require CDL
+  if (combined.includes('no cdl') || combined.includes('non-cdl') || combined.includes('non cdl') ||
+      combined.includes('warehouse') || combined.includes('mechanic') || combined.includes('dispatcher')) {
+    return 'no';
+  }
+  return 'unknown';
+}
+
+// Infer CDL class from job title
+function inferCDLClass(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return '';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  if (combined.includes('cdl-a') || combined.includes('cdl a') || combined.includes('class a')) return 'A';
+  if (combined.includes('cdl-b') || combined.includes('cdl b') || combined.includes('class b')) return 'B';
+  if (combined.includes('cdl-c') || combined.includes('cdl c') || combined.includes('class c')) return 'C';
+  return '';
+}
+
+// Infer if hazmat endorsement is required
+function inferHazmatRequirement(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'no';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  return (combined.includes('hazmat') || combined.includes('haz-mat') || combined.includes('hazardous')) ? 'yes' : 'no';
+}
+
+// Infer if tanker endorsement is required
+function inferTankerRequirement(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'no';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  return (combined.includes('tanker') || combined.includes('fuel') || combined.includes('liquid bulk')) ? 'yes' : 'no';
+}
+
+// Infer if this is an entry-level/training position
+function inferEntryLevel(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'no';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  if (combined.includes('training') || combined.includes('no experience') || 
+      combined.includes('entry level') || combined.includes('entry-level') ||
+      combined.includes('recent graduate') || combined.includes('new driver') ||
+      combined.includes('will train') || combined.includes('cdl training')) {
+    return 'yes';
+  }
+  return 'no';
+}
+
+// Infer if this is a local/home daily route
+function inferLocalRoute(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'no';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const jobType = (jobListing?.job_type as string || '').toLowerCase();
+  const combined = `${title} ${summary} ${jobType}`;
+  
+  if (combined.includes('local') || combined.includes('home daily') || 
+      combined.includes('home nightly') || combined.includes('day cab') ||
+      combined.includes('no overnight')) {
+    return 'yes';
+  }
+  return 'no';
+}
+
+// Infer if this is an OTR/regional route
+function inferOTR(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'no';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const jobType = (jobListing?.job_type as string || '').toLowerCase();
+  const combined = `${title} ${summary} ${jobType}`;
+  
+  if (combined.includes('otr') || combined.includes('over the road') || 
+      combined.includes('regional') || combined.includes('long haul') ||
+      combined.includes('cross country')) {
+    return 'yes';
+  }
+  return 'no';
+}
+
+// Infer if this is a team driving position
+function inferTeamDriving(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'no';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  return combined.includes('team') ? 'yes' : 'no';
+}
+
+// Infer freight type for contextual questions
+function inferFreightType(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'general';
+  
+  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
+  const summary = (jobListing?.job_summary as string || '').toLowerCase();
+  const combined = `${title} ${summary}`;
+  
+  if (combined.includes('flatbed')) return 'flatbed';
+  if (combined.includes('reefer') || combined.includes('refrigerated')) return 'reefer';
+  if (combined.includes('dry van')) return 'dry van';
+  if (combined.includes('tanker') || combined.includes('fuel') || combined.includes('liquid')) return 'tanker';
+  if (combined.includes('ltl') || combined.includes('less than load')) return 'LTL';
+  if (combined.includes('dedicated')) return 'dedicated';
+  if (combined.includes('intermodal')) return 'intermodal';
+  return 'general';
 }
