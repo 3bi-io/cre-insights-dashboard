@@ -530,17 +530,26 @@ async function processOutboundCall(
     // Make ElevenLabs outbound call API request
     console.log('Initiating ElevenLabs outbound call to:', normalizedPhone);
     
+    // Build conversation_initiation_client_data with dynamic variables and optional overrides
+    const conversationInitData: Record<string, unknown> = {
+      dynamic_variables: dynamicVariables
+    };
+
+    // Add first message override if provided
+    if (firstMessage) {
+      conversationInitData.conversation_config_override = {
+        agent: {
+          first_message: firstMessage
+        }
+      };
+    }
+
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
       to_number: `+1${normalizedPhone}`, // Assuming US numbers
-      // Pass dynamic variables for personalized agent context
-      dynamic_variables: dynamicVariables,
+      conversation_initiation_client_data: conversationInitData
     };
-
-    if (firstMessage) {
-      elevenLabsPayload.first_message = firstMessage;
-    }
 
     const elevenLabsResponse = await fetch(
       'https://api.elevenlabs.io/v1/convai/twilio/outbound_call',
