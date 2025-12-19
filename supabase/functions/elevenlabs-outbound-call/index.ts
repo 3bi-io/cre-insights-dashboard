@@ -315,12 +315,22 @@ async function processOutboundCall(
       return { success: false, error: 'Either phone_number or application_id is required', status: 400 };
     }
 
-    // If we have an application_id but no phone, fetch the application
-    let application = null;
+    // If we have an application_id but no phone, fetch the application with full context
+    let application: Record<string, unknown> | null = null;
+    let jobListing: Record<string, unknown> | null = null;
+    let organization: Record<string, unknown> | null = null;
+    
     if (applicationId) {
+      // Fetch comprehensive applicant data for dynamic context
       const { data: appData, error: appError } = await supabase
         .from('applications')
-        .select('id, phone, first_name, last_name, job_listing_id')
+        .select(`
+          id, phone, first_name, last_name, job_listing_id,
+          city, state, zip, cdl, cdl_class, cdl_endorsements,
+          exp, driving_experience_years, months, over_21,
+          can_pass_drug_test, can_pass_physical, veteran,
+          hazmat_endorsement, twic_card, work_authorization
+        `)
         .eq('id', applicationId)
         .single();
 
@@ -330,8 +340,38 @@ async function processOutboundCall(
       }
 
       application = appData;
-      phoneNumber = phoneNumber || application.phone;
+      phoneNumber = phoneNumber || application.phone as string;
       metadata.applicant_name = `${application.first_name || ''} ${application.last_name || ''}`.trim();
+      
+      // Fetch job listing with organization details
+      if (application.job_listing_id) {
+        const { data: jobData, error: jobError } = await supabase
+          .from('job_listings')
+          .select(`
+            id, title, job_title, job_summary, location, city, state,
+            salary_min, salary_max, salary_type, job_type, experience_required,
+            organization_id
+          `)
+          .eq('id', application.job_listing_id)
+          .single();
+        
+        if (!jobError && jobData) {
+          jobListing = jobData;
+          
+          // Fetch organization details
+          if (jobData.organization_id) {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('id, name, description')
+              .eq('id', jobData.organization_id)
+              .single();
+            
+            if (orgData) {
+              organization = orgData;
+            }
+          }
+        }
+      }
     }
 
     if (!phoneNumber) {
@@ -344,16 +384,19 @@ async function processOutboundCall(
       return { success: false, error: 'Invalid phone number format', status: 400 };
     }
 
-    // Get organization ID from application's job listing
+    // Get organization ID from job listing
     let organizationId: string | null = null;
-    if (application?.job_listing_id) {
-      const { data: jobListing } = await supabase
+    if (jobListing?.organization_id) {
+      organizationId = jobListing.organization_id as string;
+    } else if (application?.job_listing_id) {
+      // Fallback: fetch org ID directly if not already fetched
+      const { data: jl } = await supabase
         .from('job_listings')
         .select('organization_id')
         .eq('id', application.job_listing_id)
         .single();
       
-      organizationId = jobListing?.organization_id || null;
+      organizationId = jl?.organization_id || null;
     }
 
     // Find voice agent if not specified
@@ -482,10 +525,20 @@ async function processOutboundCall(
       }
     }
 
+    // Build dynamic variables for ElevenLabs agent context
+    const dynamicVariables = buildDynamicVariables(application, jobListing, organization, metadata);
+    console.log('Dynamic variables for ElevenLabs:', JSON.stringify(dynamicVariables));
+
     // Build first message with applicant context
     let firstMessage = body.first_message_override;
-    if (!firstMessage && metadata.applicant_name) {
-      firstMessage = `Hello${metadata.applicant_name ? `, ${metadata.applicant_name}` : ''}! This is a follow-up call regarding your recent job application. How are you today?`;
+    if (!firstMessage) {
+      const firstName = (application?.first_name as string) || (metadata.applicant_name as string)?.split(' ')[0] || '';
+      const companyName = (organization?.name as string) || 'our company';
+      const jobTitle = (jobListing?.title as string) || (jobListing?.job_title as string) || 'the driving position';
+      
+      firstMessage = firstName 
+        ? `Hello, ${firstName}! This is a follow-up call from ${companyName} about your application for ${jobTitle}. Is now a good time to chat?`
+        : `Hello! This is a follow-up call regarding your recent job application. Is now a good time to chat?`;
     }
 
     // Make ElevenLabs outbound call API request
@@ -495,6 +548,8 @@ async function processOutboundCall(
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
       to_number: `+1${normalizedPhone}`, // Assuming US numbers
+      // Pass dynamic variables for personalized agent context
+      dynamic_variables: dynamicVariables,
     };
 
     if (firstMessage) {
@@ -588,4 +643,148 @@ function normalizePhoneNumber(phone: string): string | null {
   }
   
   return null;
+}
+
+// Build dynamic variables for ElevenLabs agent personalization
+function buildDynamicVariables(
+  application: Record<string, unknown> | null,
+  jobListing: Record<string, unknown> | null,
+  organization: Record<string, unknown> | null,
+  metadata: Record<string, unknown>
+): Record<string, string> {
+  const vars: Record<string, string> = {};
+  
+  // Applicant info
+  vars.applicant_first_name = (application?.first_name as string) || 'there';
+  vars.applicant_last_name = (application?.last_name as string) || '';
+  vars.applicant_full_name = (metadata.applicant_name as string) || vars.applicant_first_name;
+  
+  // Location
+  const city = application?.city as string;
+  const state = application?.state as string;
+  vars.applicant_location = city && state ? `${city}, ${state}` : (city || state || 'your area');
+  vars.applicant_zip = (application?.zip as string) || '';
+  
+  // CDL status
+  const cdl = application?.cdl as string;
+  const cdlClass = application?.cdl_class as string;
+  if (cdl === 'Yes' || cdl === 'yes' || cdl === 'true' || cdl === '1') {
+    vars.applicant_cdl_status = cdlClass ? `Class ${cdlClass} CDL` : 'CDL holder';
+    vars.has_cdl = 'yes';
+  } else if (cdl === 'No' || cdl === 'no' || cdl === 'false' || cdl === '0') {
+    vars.applicant_cdl_status = 'No CDL';
+    vars.has_cdl = 'no';
+  } else {
+    vars.applicant_cdl_status = 'unknown';
+    vars.has_cdl = 'unknown';
+  }
+  
+  // Endorsements
+  const endorsements = application?.cdl_endorsements as string[];
+  const hasHazmat = application?.hazmat_endorsement as string;
+  const hasTwic = application?.twic_card as string;
+  const endorsementList: string[] = [];
+  if (Array.isArray(endorsements) && endorsements.length > 0) {
+    endorsementList.push(...endorsements);
+  }
+  if (hasHazmat === 'Yes' || hasHazmat === 'yes') {
+    if (!endorsementList.includes('H') && !endorsementList.includes('hazmat')) {
+      endorsementList.push('Hazmat');
+    }
+  }
+  if (hasTwic === 'Yes' || hasTwic === 'yes') {
+    endorsementList.push('TWIC');
+  }
+  vars.applicant_endorsements = endorsementList.length > 0 ? endorsementList.join(', ') : 'none listed';
+  
+  // Experience
+  vars.applicant_experience = formatExperience(application);
+  
+  // Qualifications
+  const over21 = application?.over_21 as string;
+  vars.over_21_status = (over21 === 'Yes' || over21 === 'yes' || over21 === 'true' || over21 === '1') ? 'yes' : 'unknown';
+  
+  const drugTest = application?.can_pass_drug_test as string;
+  vars.drug_test_status = (drugTest === 'Yes' || drugTest === 'yes' || drugTest === 'true' || drugTest === '1') 
+    ? 'willing to pass' 
+    : (drugTest === 'No' || drugTest === 'no' ? 'not willing' : 'unknown');
+  
+  const physical = application?.can_pass_physical as string;
+  vars.physical_status = (physical === 'Yes' || physical === 'yes' || physical === 'true' || physical === '1') 
+    ? 'can pass' 
+    : 'unknown';
+  
+  const veteran = application?.veteran as string;
+  vars.veteran_status = (veteran === 'Yes' || veteran === 'yes' || veteran === 'true' || veteran === '1') ? 'veteran' : 'not specified';
+  
+  // Job info
+  vars.job_title = (jobListing?.title as string) || (jobListing?.job_title as string) || 'the driving position';
+  vars.job_type = (jobListing?.job_type as string) || 'driving';
+  vars.job_location = (jobListing?.location as string) || 
+    ((jobListing?.city as string) && (jobListing?.state as string) 
+      ? `${jobListing.city}, ${jobListing.state}` 
+      : 'various locations');
+  vars.experience_required = (jobListing?.experience_required as string) || 'experience preferred';
+  
+  // Salary
+  vars.salary_range = formatSalary(jobListing);
+  
+  // Company info
+  vars.company_name = (organization?.name as string) || 'our company';
+  vars.company_description = (organization?.description as string) || '';
+  
+  return vars;
+}
+
+// Format experience from various fields
+function formatExperience(application: Record<string, unknown> | null): string {
+  if (!application) return 'unknown';
+  
+  const years = application.driving_experience_years as number;
+  if (years && years > 0) {
+    return years === 1 ? '1 year' : `${years} years`;
+  }
+  
+  const months = application.months as string;
+  if (months) {
+    const monthNum = parseInt(months, 10);
+    if (!isNaN(monthNum)) {
+      if (monthNum >= 12) {
+        const yrs = Math.floor(monthNum / 12);
+        return yrs === 1 ? '1 year' : `${yrs} years`;
+      }
+      return `${monthNum} months`;
+    }
+    return months;
+  }
+  
+  const exp = application.exp as string;
+  if (exp) return exp;
+  
+  return 'unknown';
+}
+
+// Format salary range for voice agent
+function formatSalary(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'competitive compensation';
+  
+  const min = jobListing.salary_min as number;
+  const max = jobListing.salary_max as number;
+  const type = (jobListing.salary_type as string) || 'per year';
+  
+  if (min && max) {
+    const formattedMin = min >= 1000 ? `${Math.round(min / 1000)}K` : min.toString();
+    const formattedMax = max >= 1000 ? `${Math.round(max / 1000)}K` : max.toString();
+    return `$${formattedMin} to $${formattedMax} ${type}`;
+  }
+  if (min) {
+    const formattedMin = min >= 1000 ? `${Math.round(min / 1000)}K` : min.toString();
+    return `starting at $${formattedMin} ${type}`;
+  }
+  if (max) {
+    const formattedMax = max >= 1000 ? `${Math.round(max / 1000)}K` : max.toString();
+    return `up to $${formattedMax} ${type}`;
+  }
+  
+  return 'competitive compensation';
 }
