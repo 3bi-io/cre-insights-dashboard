@@ -7,7 +7,7 @@ import { useSavedJobs } from '../hooks';
 
 interface JobCardProps {
   job: any;
-  onApply?: (jobId: string) => void;
+  onApply?: (jobId: string, orgSlug?: string) => void;
   showSaveButton?: boolean;
 }
 
@@ -95,7 +95,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
 
         <div className="flex gap-2 pt-2">
           {onApply && (
-            <Button onClick={() => onApply(job.id)} className="flex-1">
+            <Button onClick={() => onApply(job.id, job.organizations?.slug)} className="flex-1">
               Apply Now
             </Button>
           )}
