@@ -9,8 +9,11 @@ const SavedJobsPage = () => {
   const navigate = useNavigate();
   const { savedJobs, isLoading } = useSavedJobs();
 
-  const handleApply = (jobId: string) => {
-    navigate(`/apply?job=${jobId}`);
+  const handleApply = (jobId: string, orgSlug?: string) => {
+    const params = new URLSearchParams();
+    params.set('job_id', jobId);
+    if (orgSlug) params.set('org_slug', orgSlug);
+    navigate(`/apply?${params.toString()}`);
   };
 
   return (
