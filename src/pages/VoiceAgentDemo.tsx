@@ -8,12 +8,21 @@ import AudioPlayer from '@/components/voice/demo/AudioPlayer';
 import TranscriptDisplay from '@/components/voice/demo/TranscriptDisplay';
 import DynamicVariablesCard from '@/components/voice/demo/DynamicVariablesCard';
 import HowItWorksSection from '@/components/voice/demo/HowItWorksSection';
+import { SEO } from '@/components/SEO';
 
 const VoiceAgentDemo: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(0);
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="AI Voice Agent Demo - See It In Action"
+        description="Listen to a real AI-powered outbound call demo. Hear how our voice agent verifies applicant information using dynamic variables for personalized conversations."
+        keywords="AI voice agent, outbound call automation, voice AI demo, recruitment automation, applicant verification"
+        canonical="https://ats.me/voice-demo"
+        ogImage="https://ats.me/og-voice-demo.png"
+        ogType="website"
+      />
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4">

@@ -9,6 +9,14 @@
     <priority>1.0</priority>
   </url>
   
+  <!-- Voice Agent Demo -->
+  <url>
+    <loc>https://ats.me/voice-demo</loc>
+    <lastmod>2025-12-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
   <!-- Jobs (Public Listings) -->
   <url>
     <loc>https://ats.me/jobs</loc>
