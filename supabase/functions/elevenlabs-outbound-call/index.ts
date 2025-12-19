@@ -327,8 +327,8 @@ async function processOutboundCall(
         .select(`
           id, phone, first_name, last_name, job_listing_id,
           city, state, zip, cdl, cdl_class, cdl_endorsements,
-          exp, driving_experience_years, months, over_21,
-          can_pass_drug_test, can_pass_physical, veteran,
+          exp, driving_experience_years, months, over_21, age,
+          can_pass_drug_test, drug, can_pass_physical, veteran,
           hazmat_endorsement, twic_card, work_authorization
         `)
         .eq('id', applicationId)
@@ -701,10 +701,12 @@ function buildDynamicVariables(
   vars.applicant_experience = formatExperience(application);
   
   // Qualifications
-  const over21 = application?.over_21 as string;
+  // Check both over_21 and age columns (form may save to either)
+  const over21 = (application?.over_21 as string) || (application?.age as string);
   vars.over_21_status = (over21 === 'Yes' || over21 === 'yes' || over21 === 'true' || over21 === '1') ? 'yes' : 'unknown';
   
-  const drugTest = application?.can_pass_drug_test as string;
+  // Check both drug and can_pass_drug_test columns (form may save to either)
+  const drugTest = (application?.drug as string) || (application?.can_pass_drug_test as string);
   vars.drug_test_status = (drugTest === 'Yes' || drugTest === 'yes' || drugTest === 'true' || drugTest === '1') 
     ? 'willing to pass' 
     : (drugTest === 'No' || drugTest === 'no' ? 'not willing' : 'unknown');
