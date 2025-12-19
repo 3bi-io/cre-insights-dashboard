@@ -45,6 +45,7 @@ const AIAnalytics = React.lazy(() => import("@/features/ai-analytics/pages/AIAna
 const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
 const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ default: m.AIToolsPage })));
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
+const VoiceAgentDemo = React.lazy(() => import("@/pages/VoiceAgentDemo"));
 const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
 
 // Consolidated pages
@@ -141,6 +142,9 @@ const AppRoutes: React.FC = () => {
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />
         <Route path="sitemap" element={<RouteWrapper><SitemapPage /></RouteWrapper>} />
       </Route>
+
+      {/* Voice Agent Demo (public) */}
+      <Route path="/voice-demo" element={<RouteWrapper><VoiceAgentDemo /></RouteWrapper>} />
 
       {/* Application Routes (no auth required) */}
       <Route path="/apply" element={<RouteWrapper><Apply /></RouteWrapper>} />
