@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Phone, Building, AlertTriangle } from 'lucide-react';
+import { Plus, Phone, Building, AlertTriangle, PlayCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
 import VoiceAgentDialog from '@/components/voice/VoiceAgentDialog';
@@ -172,8 +173,18 @@ const VoiceAgent = () => {
       {/* Instructions */}
       <Card className="mt-8">
         <CardHeader>
-          <CardTitle className="text-lg">Getting Started</CardTitle>
-          <CardDescription>How to configure and use voice agents</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Getting Started</CardTitle>
+              <CardDescription>How to configure and use voice agents</CardDescription>
+            </div>
+            <Link to="/voice-demo">
+              <Button variant="outline" size="sm">
+                <PlayCircle className="h-4 w-4 mr-2" />
+                View Demo Call
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
           <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
