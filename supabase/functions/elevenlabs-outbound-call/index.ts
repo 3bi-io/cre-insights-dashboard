@@ -13,6 +13,7 @@ interface OutboundCallRequest {
   phone_number?: string;
   first_message_override?: string;
   process_queue?: boolean; // Process all queued calls
+  sync_initiated?: boolean; // Sync stuck initiated calls with ElevenLabs API
   limit?: number; // Max calls to process when process_queue is true
 }
 
@@ -70,6 +71,114 @@ serve(async (req) => {
         console.log('Queue processing request accepted (internal cron)');
         // Allow the request - cron jobs from pg_cron don't always have proper auth
       }
+    }
+
+    // Handle sync_initiated mode - sync stuck initiated calls with ElevenLabs
+    if (body.sync_initiated) {
+      console.log('Syncing stuck initiated calls with ElevenLabs API');
+      
+      // Find calls stuck in 'initiated' status for more than 10 minutes
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: stuckCalls, error: fetchError } = await supabase
+        .from('outbound_calls')
+        .select('id, elevenlabs_conversation_id, voice_agent_id, created_at')
+        .eq('status', 'initiated')
+        .lt('updated_at', tenMinutesAgo)
+        .not('elevenlabs_conversation_id', 'is', null)
+        .limit(20);
+
+      if (fetchError) {
+        console.error('Failed to fetch stuck calls:', fetchError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch stuck calls', details: fetchError.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!stuckCalls || stuckCalls.length === 0) {
+        return new Response(
+          JSON.stringify({ message: 'No stuck initiated calls to sync', synced: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Found ${stuckCalls.length} stuck initiated calls to sync`);
+
+      let synced = 0;
+      let failed = 0;
+      const syncResults: Array<{ call_id: string; status: string; new_status?: string; error?: string }> = [];
+
+      for (const call of stuckCalls) {
+        try {
+          // Fetch conversation status from ElevenLabs
+          const convResponse = await fetch(
+            `https://api.elevenlabs.io/v1/convai/conversations/${call.elevenlabs_conversation_id}`,
+            {
+              headers: { 'xi-api-key': elevenLabsApiKey },
+            }
+          );
+
+          if (!convResponse.ok) {
+            console.error(`Failed to fetch conversation ${call.elevenlabs_conversation_id}:`, convResponse.status);
+            failed++;
+            syncResults.push({ call_id: call.id, status: 'failed', error: `ElevenLabs API returned ${convResponse.status}` });
+            continue;
+          }
+
+          const convData = await convResponse.json();
+          const elStatus = convData.status || 'unknown';
+          
+          // Map ElevenLabs status to our status
+          let mappedStatus = 'initiated';
+          let durationSeconds = null;
+          
+          if (elStatus === 'done' || elStatus === 'ended') {
+            mappedStatus = 'completed';
+            durationSeconds = convData.metadata?.call_duration_secs || null;
+          } else if (elStatus === 'failed' || elStatus === 'error') {
+            mappedStatus = 'failed';
+          } else if (elStatus === 'no-answer') {
+            mappedStatus = 'no_answer';
+          } else if (elStatus === 'busy') {
+            mappedStatus = 'busy';
+          }
+
+          // Update the call record
+          const { error: updateError } = await supabase
+            .from('outbound_calls')
+            .update({
+              status: mappedStatus,
+              duration_seconds: durationSeconds,
+              completed_at: mappedStatus === 'completed' ? new Date().toISOString() : null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', call.id);
+
+          if (updateError) {
+            console.error(`Failed to update call ${call.id}:`, updateError);
+            failed++;
+            syncResults.push({ call_id: call.id, status: 'failed', error: updateError.message });
+          } else {
+            synced++;
+            syncResults.push({ call_id: call.id, status: 'synced', new_status: mappedStatus });
+            console.log(`Synced call ${call.id}: ${mappedStatus}`);
+          }
+
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (error) {
+          console.error(`Error syncing call ${call.id}:`, error);
+          failed++;
+          syncResults.push({ call_id: call.id, status: 'failed', error: error.message });
+        }
+      }
+
+      console.log(`Sync complete: ${synced} synced, ${failed} failed`);
+
+      return new Response(
+        JSON.stringify({ synced, failed, results: syncResults }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Handle queue processing mode
@@ -315,27 +424,62 @@ async function processOutboundCall(
       }
       callRecord = updated;
     } else {
-      // Create new call record
-      const { data: newCall, error: insertError } = await supabase
-        .from('outbound_calls')
-        .insert({
-          application_id: applicationId,
-          voice_agent_id: voiceAgentId,
-          organization_id: organizationId || voiceAgent.organization_id,
-          phone_number: normalizedPhone,
-          status: 'initiating',
-          metadata: {
-            ...metadata,
-            triggered_by: 'api_call'
-          }
-        })
-        .select()
-        .single();
+      // IMPORTANT: Check if there's an existing queued call for this application first
+      // This prevents duplicate records when both trigger and API call try to create records
+      if (applicationId) {
+        const { data: existingQueued } = await supabase
+          .from('outbound_calls')
+          .select('*')
+          .eq('application_id', applicationId)
+          .eq('status', 'queued')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      if (insertError) {
-        console.error('Failed to create call record:', insertError);
+        if (existingQueued) {
+          console.log(`Found existing queued call ${existingQueued.id} for application ${applicationId}, updating instead of creating new`);
+          const { data: updated, error: updateError } = await supabase
+            .from('outbound_calls')
+            .update({ 
+              status: 'initiating', 
+              voice_agent_id: voiceAgentId,
+              updated_at: new Date().toISOString() 
+            })
+            .eq('id', existingQueued.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('Failed to update existing queued call:', updateError);
+          }
+          callRecord = updated;
+          outboundCallId = existingQueued.id;
+        }
       }
-      callRecord = newCall;
+
+      // Only create new record if we didn't find/update an existing one
+      if (!callRecord) {
+        const { data: newCall, error: insertError } = await supabase
+          .from('outbound_calls')
+          .insert({
+            application_id: applicationId,
+            voice_agent_id: voiceAgentId,
+            organization_id: organizationId || voiceAgent.organization_id,
+            phone_number: normalizedPhone,
+            status: 'initiating',
+            metadata: {
+              ...metadata,
+              triggered_by: 'api_call'
+            }
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Failed to create call record:', insertError);
+        }
+        callRecord = newCall;
+      }
     }
 
     // Build first message with applicant context
