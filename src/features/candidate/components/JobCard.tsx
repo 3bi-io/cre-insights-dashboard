@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, DollarSign, Briefcase, Bookmark, BookmarkCheck } from 'lucide-react';
+import { MapPin, DollarSign, Briefcase, Bookmark, BookmarkCheck, Clock } from 'lucide-react';
 import { useSavedJobs } from '../hooks';
+import { format } from 'date-fns';
 
 interface JobCardProps {
   job: any;
@@ -12,36 +14,55 @@ interface JobCardProps {
 }
 
 export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton = true }) => {
-  const { isJobSaved, saveJob, unsaveJob, isSaving } = useSavedJobs();
+  const { isJobSaved, saveJob, unsaveJob, isSaving, savedJobs } = useSavedJobs();
   const isSaved = isJobSaved(job.id);
 
-  const handleSaveToggle = () => {
-    if (isSaved) {
-      const savedJob = job.candidate_saved_jobs?.[0];
+  const handleSaveToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSaved && savedJobs) {
+      const savedJob = savedJobs.find((s: any) => s.job_listing_id === job.id);
       if (savedJob) unsaveJob(savedJob.id);
     } else {
       saveJob({ jobId: job.id });
     }
   };
 
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onApply) {
+      onApply(job.id, job.organizations?.slug);
+    }
+  };
+
+  const formatSalary = () => {
+    if (!job.salary_min && !job.salary_max) return null;
+    if (job.salary_min && job.salary_max) {
+      return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
+    }
+    if (job.salary_min) return `From $${job.salary_min.toLocaleString()}`;
+    return `Up to $${job.salary_max?.toLocaleString()}`;
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-lg transition-all hover:border-primary/20 group">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               {job.organizations?.logo_url && (
                 <img 
                   src={job.organizations.logo_url} 
                   alt={job.organizations.name}
-                  className="h-8 w-8 rounded object-cover"
+                  className="h-8 w-8 rounded object-cover flex-shrink-0"
                 />
               )}
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground truncate">
                 {job.organizations?.name}
               </span>
             </div>
-            <h3 className="text-xl font-semibold mb-1">
+            <h3 className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">
               {job.title || job.job_title}
             </h3>
           </div>
@@ -51,6 +72,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
               size="icon"
               onClick={handleSaveToggle}
               disabled={isSaving}
+              className="flex-shrink-0"
             >
               {isSaved ? (
                 <BookmarkCheck className="h-5 w-5 text-primary" />
@@ -69,14 +91,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
               {job.city}, {job.state}
             </Badge>
           )}
-          {(job.salary_min || job.salary_max) && (
+          {formatSalary() && (
             <Badge variant="secondary" className="gap-1">
               <DollarSign className="h-3 w-3" />
-              {job.salary_min && job.salary_max
-                ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
-                : job.salary_min
-                ? `From $${job.salary_min.toLocaleString()}`
-                : `Up to $${job.salary_max?.toLocaleString()}`}
+              {formatSalary()}
             </Badge>
           )}
           {job.job_type && (
@@ -88,19 +106,28 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
         </div>
 
         {job.job_summary && (
-          <p className="text-sm text-muted-foreground line-clamp-3">
+          <p className="text-sm text-muted-foreground line-clamp-2">
             {job.job_summary}
+          </p>
+        )}
+
+        {job.created_at && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Posted {format(new Date(job.created_at), 'MMM d, yyyy')}
           </p>
         )}
 
         <div className="flex gap-2 pt-2">
           {onApply && (
-            <Button onClick={() => onApply(job.id, job.organizations?.slug)} className="flex-1">
+            <Button onClick={handleApplyClick} className="flex-1">
               Apply Now
             </Button>
           )}
-          <Button variant="outline" className="flex-1">
-            View Details
+          <Button variant="outline" className="flex-1" asChild>
+            <Link to={`/my-jobs/job/${job.id}`}>
+              View Details
+            </Link>
           </Button>
         </div>
       </CardContent>
