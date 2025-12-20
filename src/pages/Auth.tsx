@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertCircle, Mail, Building2, Briefcase, ArrowLeft, Check, Eye, EyeOff, Github, Loader2 } from 'lucide-react';
+import { AlertCircle, Mail, Building2, Briefcase, ArrowLeft, Check, Eye, EyeOff, Github, Loader2, Linkedin } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,7 @@ import { Brand } from '@/components/common';
 import { cn } from '@/lib/utils';
 
 type UserType = 'organization' | 'jobseeker';
-type OAuthProvider = 'google' | 'github' | 'apple';
+type OAuthProvider = 'google' | 'github' | 'apple' | 'linkedin_oidc';
 
 // Google icon SVG component (Lucide doesn't have Google icon)
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -261,7 +261,13 @@ const Auth = () => {
       
       if (error) throw error;
     } catch (error: any) {
-      const providerName = provider === 'google' ? 'Google' : provider === 'github' ? 'GitHub' : 'Apple';
+      const providerNames: Record<OAuthProvider, string> = {
+        google: 'Google',
+        github: 'GitHub',
+        apple: 'Apple',
+        linkedin_oidc: 'LinkedIn'
+      };
+      const providerName = providerNames[provider];
       if (error.message?.includes('provider is not enabled')) {
         setError(`${providerName} sign-in is not configured. Please contact support or use email/password.`);
       } else {
@@ -296,20 +302,21 @@ const Auth = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={() => handleOAuthSignIn('google')}
           disabled={loading || oauthLoading !== null}
-          className="w-full"
+          className="w-full px-2"
+          title="Continue with Google"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <GoogleIcon className="h-4 w-4" />
           )}
-          <span className="ml-1.5 hidden sm:inline">Google</span>
+          <span className="ml-1.5 hidden lg:inline text-xs">Google</span>
         </Button>
         
         <Button
@@ -317,14 +324,31 @@ const Auth = () => {
           variant="outline"
           onClick={() => handleOAuthSignIn('apple')}
           disabled={loading || oauthLoading !== null}
-          className="w-full"
+          className="w-full px-2"
+          title="Continue with Apple"
         >
           {oauthLoading === 'apple' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <AppleIcon className="h-4 w-4" />
           )}
-          <span className="ml-1.5 hidden sm:inline">Apple</span>
+          <span className="ml-1.5 hidden lg:inline text-xs">Apple</span>
+        </Button>
+        
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleOAuthSignIn('linkedin_oidc')}
+          disabled={loading || oauthLoading !== null}
+          className="w-full px-2"
+          title="Continue with LinkedIn"
+        >
+          {oauthLoading === 'linkedin_oidc' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+          )}
+          <span className="ml-1.5 hidden lg:inline text-xs">LinkedIn</span>
         </Button>
         
         <Button
@@ -332,14 +356,15 @@ const Auth = () => {
           variant="outline"
           onClick={() => handleOAuthSignIn('github')}
           disabled={loading || oauthLoading !== null}
-          className="w-full"
+          className="w-full px-2"
+          title="Continue with GitHub"
         >
           {oauthLoading === 'github' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Github className="h-4 w-4" />
           )}
-          <span className="ml-1.5 hidden sm:inline">GitHub</span>
+          <span className="ml-1.5 hidden lg:inline text-xs">GitHub</span>
         </Button>
       </div>
     </div>
