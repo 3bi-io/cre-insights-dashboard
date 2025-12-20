@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlatformAccess } from '@/hooks/usePlatformAccess';
-import PageLayout from '@/features/shared/components/PageLayout';
+import PageLayout from '@/components/PageLayout';
 import { useApplicationsManagement } from '../hooks/useApplicationsManagement';
 import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
