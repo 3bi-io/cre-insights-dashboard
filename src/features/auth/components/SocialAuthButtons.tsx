@@ -5,7 +5,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Github, Linkedin, Loader2 } from 'lucide-react';
-import { GoogleIcon, AppleIcon, MicrosoftIcon } from './AuthIcons';
+import { GoogleIcon, AppleIcon, MicrosoftIcon, XIcon } from './AuthIcons';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { cn } from '@/lib/utils';
 import type { OAuthProvider } from '../hooks/useAuthForm';
@@ -64,18 +64,24 @@ export function SocialAuthButtons({
       icon: <Github className="h-4 w-4 sm:h-5 sm:w-5" />,
       loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
     },
+    {
+      id: 'twitter',
+      name: 'X',
+      icon: <XIcon className="h-4 w-4 sm:h-5 sm:w-5" />,
+      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
+    },
   ];
 
   const isDisabled = loading || oauthLoading !== null;
 
   // Mobile: 2 columns with labels for accessibility
   // Tablet: 3 columns with labels
-  // Desktop: 5 columns icon-only with tooltips
+  // Desktop: 6 columns icon-only with tooltips
   const gridClasses = cn(
     "grid gap-2",
     isMobile && "grid-cols-2 gap-3",
     isTablet && "grid-cols-3 gap-2",
-    !isMobile && !isTablet && "grid-cols-5 gap-1.5"
+    !isMobile && !isTablet && "grid-cols-6 gap-1.5"
   );
 
   const buttonClasses = cn(
