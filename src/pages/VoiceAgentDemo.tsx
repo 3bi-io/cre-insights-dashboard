@@ -31,10 +31,10 @@ const VoiceAgentDemo: React.FC = () => {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/voice-agent">
+              <Link to="/">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Voice Agents
+                  Back to ATS.me
                 </Button>
               </Link>
             </div>
