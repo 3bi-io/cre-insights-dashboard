@@ -1,5 +1,9 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Home, Search, ArrowLeft, FileQuestion } from "lucide-react";
+import { Brand } from "@/components/common";
 
 const NotFound = () => {
   const location = useLocation();
@@ -12,14 +16,51 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
-        </a>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md text-center animate-fade-in">
+        <CardHeader className="pb-2">
+          <div className="mx-auto mb-4">
+            <Brand variant="horizontal" size="md" showAsLink={false} />
+          </div>
+          <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+            <FileQuestion className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <CardTitle className="text-4xl font-bold">404</CardTitle>
+          <CardDescription className="text-lg">
+            Page not found
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <p className="text-muted-foreground">
+            The page you're looking for doesn't exist or has been moved.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild variant="default">
+              <Link to="/">
+                <Home className="w-4 h-4 mr-2" />
+                Go Home
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/jobs">
+                <Search className="w-4 h-4 mr-2" />
+                Browse Jobs
+              </Link>
+            </Button>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="text-muted-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Go back
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };

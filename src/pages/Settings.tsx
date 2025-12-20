@@ -30,15 +30,17 @@ const Settings = () => {
       description="Manage your account and application preferences"
     >
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="documentation">API Docs</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
-          {isAdmin && <TabsTrigger value="administrators">Team</TabsTrigger>}
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <TabsList className={`inline-flex w-max sm:w-full ${isAdmin ? 'sm:grid sm:grid-cols-7' : 'sm:grid sm:grid-cols-6'} min-w-max`}>
+            <TabsTrigger value="profile" className="whitespace-nowrap">Profile</TabsTrigger>
+            <TabsTrigger value="integrations" className="whitespace-nowrap">Integrations</TabsTrigger>
+            <TabsTrigger value="webhooks" className="whitespace-nowrap">Webhooks</TabsTrigger>
+            <TabsTrigger value="documentation" className="whitespace-nowrap">API Docs</TabsTrigger>
+            <TabsTrigger value="notifications" className="whitespace-nowrap">Notifications</TabsTrigger>
+            <TabsTrigger value="privacy" className="whitespace-nowrap">Privacy</TabsTrigger>
+            {isAdmin && <TabsTrigger value="administrators" className="whitespace-nowrap">Team</TabsTrigger>}
+          </TabsList>
+        </div>
 
         <TabsContent value="profile" className="space-y-6">
           <ProfileSettingsTab />
