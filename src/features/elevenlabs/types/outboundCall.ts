@@ -43,7 +43,6 @@ export interface InitiateOutboundCallRequest {
   outbound_call_id?: string;
   voice_agent_id?: string;
   phone_number?: string;
-  first_message_override?: string;
 }
 
 export interface InitiateOutboundCallResponse {
