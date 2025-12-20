@@ -11,7 +11,6 @@ interface OutboundCallRequest {
   outbound_call_id?: string; // For processing a specific queued call
   voice_agent_id?: string;
   phone_number?: string;
-  first_message_override?: string;
   process_queue?: boolean; // Process all queued calls
   sync_initiated?: boolean; // Sync stuck initiated calls with ElevenLabs API
   limit?: number; // Max calls to process when process_queue is true
@@ -515,34 +514,14 @@ async function processOutboundCall(
     const dynamicVariables = buildDynamicVariables(application, jobListing, organization, metadata);
     console.log('Dynamic variables for ElevenLabs:', JSON.stringify(dynamicVariables));
 
-    // Build first message with applicant context
-    let firstMessage = body.first_message_override;
-    if (!firstMessage) {
-      const firstName = (application?.first_name as string) || (metadata.applicant_name as string)?.split(' ')[0] || '';
-      const companyName = (organization?.name as string) || 'our company';
-      const jobTitle = (jobListing?.title as string) || (jobListing?.job_title as string) || 'the driving position';
-      
-      firstMessage = firstName 
-        ? `Hello, ${firstName}! This is a follow-up call from ${companyName} about your application for ${jobTitle}. Is now a good time to chat?`
-        : `Hello! This is a follow-up call regarding your recent job application. Is now a good time to chat?`;
-    }
-
     // Make ElevenLabs outbound call API request
     console.log('Initiating ElevenLabs outbound call to:', normalizedPhone);
     
-    // Build conversation_initiation_client_data with dynamic variables and optional overrides
+    // Build conversation_initiation_client_data with dynamic variables only
+    // First message is configured in ElevenLabs dashboard and can use placeholders like {{applicant_first_name}}
     const conversationInitData: Record<string, unknown> = {
       dynamic_variables: dynamicVariables
     };
-
-    // Add first message override if provided
-    if (firstMessage) {
-      conversationInitData.conversation_config_override = {
-        agent: {
-          first_message: firstMessage
-        }
-      };
-    }
 
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
