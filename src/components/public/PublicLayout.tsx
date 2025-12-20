@@ -88,16 +88,6 @@ const PublicLayout = () => {
                     Contact
                   </a>
                 </li>
-                <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    Blog
-                  </a>
-                </li>
               </ul>
             </div>
           </div>
