@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export type UserType = 'organization' | 'jobseeker';
-export type OAuthProvider = 'google' | 'github' | 'apple' | 'linkedin_oidc' | 'azure';
+export type OAuthProvider = 'google' | 'github' | 'apple' | 'linkedin_oidc' | 'azure' | 'twitter';
 
 export interface UseAuthFormReturn {
   // State
@@ -290,7 +290,8 @@ export function useAuthForm(): UseAuthFormReturn {
         github: 'GitHub',
         apple: 'Apple',
         linkedin_oidc: 'LinkedIn',
-        azure: 'Microsoft'
+        azure: 'Microsoft',
+        twitter: 'X'
       };
       const providerName = providerNames[provider];
       if (error.message?.includes('provider is not enabled')) {
