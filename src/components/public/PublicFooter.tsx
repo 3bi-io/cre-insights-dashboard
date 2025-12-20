@@ -104,7 +104,7 @@ const PublicFooter = () => {
               </a>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 ATS.me. All rights reserved.
+              © 2025 ATS.me. All rights reserved.
             </p>
           </div>
         </div>
