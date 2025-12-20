@@ -3,22 +3,25 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Phone, CheckCircle, Headphones } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Phone, CheckCircle, Headphones, MessageSquare, Voicemail } from 'lucide-react';
 import AudioPlayer from '@/components/voice/demo/AudioPlayer';
 import TranscriptDisplay from '@/components/voice/demo/TranscriptDisplay';
 import DynamicVariablesCard from '@/components/voice/demo/DynamicVariablesCard';
 import HowItWorksSection from '@/components/voice/demo/HowItWorksSection';
+import { liveCallTranscript, voicemailTranscript } from '@/components/voice/demo/transcriptData';
 import { SEO } from '@/components/SEO';
 
 const VoiceAgentDemo: React.FC = () => {
-  const [currentTime, setCurrentTime] = useState(0);
+  const [liveCallTime, setLiveCallTime] = useState(0);
+  const [voicemailTime, setVoicemailTime] = useState(0);
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
         title="AI Voice Agent Demo - See It In Action"
-        description="Listen to a real AI-powered outbound call demo. Hear how our voice agent verifies applicant information using dynamic variables for personalized conversations."
-        keywords="AI voice agent, outbound call automation, voice AI demo, recruitment automation, applicant verification"
+        description="Listen to real AI-powered outbound call demos. Hear how our voice agent verifies applicant information and handles voicemail scenarios using dynamic variables."
+        keywords="AI voice agent, outbound call automation, voice AI demo, recruitment automation, applicant verification, AI voicemail"
         canonical="https://ats.me/voice-demo"
         ogImage="https://ats.me/og-voice-demo.png"
         ogType="website"
@@ -37,7 +40,7 @@ const VoiceAgentDemo: React.FC = () => {
             </div>
             <Badge variant="secondary" className="gap-1">
               <CheckCircle className="h-3 w-3" />
-              Successful Demo Call
+              Demo Calls
             </Badge>
           </div>
         </div>
@@ -52,47 +55,126 @@ const VoiceAgentDemo: React.FC = () => {
           </div>
           <h1 className="text-4xl font-bold text-foreground">Voice Agent Demo</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Listen to a real outbound call where our AI agent verifies applicant information 
-            using dynamic variables extracted from their application.
+            Listen to real outbound calls where our AI agent verifies applicant information 
+            and handles different scenarios including live conversations and voicemail.
           </p>
         </div>
 
-        {/* Audio Player & Transcript */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5 text-primary" />
-                Call Recording
-              </CardTitle>
-              <CardDescription>
-                A 60-second outbound call to verify applicant details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <AudioPlayer 
-                src="/audio/example-outbound-call.mp3" 
-                onTimeUpdate={setCurrentTime}
-              />
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Badge variant="outline">Duration: ~60 seconds</Badge>
-                <Badge variant="outline">Outbound Call</Badge>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Tabbed Demo Examples */}
+        <Tabs defaultValue="live-call" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-6">
+            <TabsTrigger value="live-call" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Live Applicant Call
+            </TabsTrigger>
+            <TabsTrigger value="voicemail" className="gap-2">
+              <Voicemail className="h-4 w-4" />
+              Voicemail Scenario
+            </TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Transcript</CardTitle>
-              <CardDescription>
-                Follow along as the conversation plays
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TranscriptDisplay currentTime={currentTime} />
-            </CardContent>
-          </Card>
-        </div>
+          {/* Live Call Tab */}
+          <TabsContent value="live-call" className="space-y-6">
+            <div className="flex justify-center mb-4">
+              <Badge variant="outline" className="gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+                <CheckCircle className="h-3 w-3" />
+                Live Conversation
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-primary" />
+                    Call Recording
+                  </CardTitle>
+                  <CardDescription>
+                    AI agent verifies applicant details in a direct conversation
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <AudioPlayer 
+                    src="/audio/example-outbound-call.mp3" 
+                    onTimeUpdate={setLiveCallTime}
+                  />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="outline">Duration: ~60 seconds</Badge>
+                    <Badge variant="outline">Outbound Call</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live Transcript</CardTitle>
+                  <CardDescription>
+                    Follow along as the conversation plays
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TranscriptDisplay 
+                    currentTime={liveCallTime} 
+                    transcriptData={liveCallTranscript}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Voicemail Tab */}
+          <TabsContent value="voicemail" className="space-y-6">
+            <div className="flex justify-center mb-4">
+              <Badge variant="outline" className="gap-1 bg-blue-500/10 text-blue-600 border-blue-500/20">
+                <Voicemail className="h-3 w-3" />
+                AI-to-AI Call
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Voicemail className="h-5 w-5 text-primary" />
+                    Voicemail Recording
+                  </CardTitle>
+                  <CardDescription>
+                    AI agent leaves a message with the applicant's voicemail assistant
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <AudioPlayer 
+                    src="/audio/example-voicemail-call.mp3" 
+                    onTimeUpdate={setVoicemailTime}
+                  />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Badge variant="outline">Duration: ~2 minutes</Badge>
+                    <Badge variant="outline">Voicemail</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live Transcript</CardTitle>
+                  <CardDescription>
+                    Watch the AI-to-AI conversation unfold
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TranscriptDisplay 
+                    currentTime={voicemailTime} 
+                    transcriptData={voicemailTranscript}
+                    speakerLabels={{
+                      agent: 'Outbound AI',
+                      applicant: 'Voicemail AI'
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Dynamic Variables */}
         <DynamicVariablesCard />
