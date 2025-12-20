@@ -144,7 +144,7 @@ const VoiceAgentDemo: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <AudioPlayer 
-                    src="/audio/example-voicemail-call.mp3" 
+                    src="/audio/example-voicemail-call.m4a" 
                     onTimeUpdate={setVoicemailTime}
                   />
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
