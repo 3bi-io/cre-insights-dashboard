@@ -1,52 +1,89 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Bell, Mail, MessageSquare, Briefcase, Star } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Bell, Mail, Star, Loader2 } from 'lucide-react';
+import { useNotificationPreferences, NotificationPreferences } from '../hooks/useNotificationPreferences';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const NotificationsPage = () => {
-  const { toast } = useToast();
-  const [settings, setSettings] = useState({
-    emailApplicationUpdates: true,
-    emailNewJobs: true,
-    emailMessages: true,
-    emailMarketing: false,
-    pushApplicationUpdates: true,
-    pushNewJobs: false,
-    pushMessages: true
-  });
-
-  const handleSave = () => {
-    // In a real implementation, save to database
-    toast({
-      title: 'Settings saved',
-      description: 'Your notification preferences have been updated'
-    });
-  };
+  const {
+    preferences,
+    isLoading,
+    isSaving,
+    hasChanges,
+    updatePreference,
+    enableAll,
+    disableAll,
+    save,
+  } = useNotificationPreferences();
 
   const notificationGroups = [
     {
       title: 'Email Notifications',
       icon: Mail,
       settings: [
-        { key: 'emailApplicationUpdates', label: 'Application Updates', description: 'Get notified when there are updates to your applications' },
-        { key: 'emailNewJobs', label: 'New Job Matches', description: 'Receive alerts for new jobs matching your preferences' },
-        { key: 'emailMessages', label: 'Messages', description: 'Get notified when recruiters send you messages' },
-        { key: 'emailMarketing', label: 'Tips & Updates', description: 'Receive career tips and platform updates' }
-      ]
+        { 
+          key: 'emailApplicationUpdates' as keyof NotificationPreferences, 
+          label: 'Application Updates', 
+          description: 'Get notified when there are updates to your applications' 
+        },
+        { 
+          key: 'emailNewJobs' as keyof NotificationPreferences, 
+          label: 'New Job Matches', 
+          description: 'Receive alerts for new jobs matching your preferences' 
+        },
+        { 
+          key: 'emailMessages' as keyof NotificationPreferences, 
+          label: 'Messages', 
+          description: 'Get notified when recruiters send you messages' 
+        },
+        { 
+          key: 'emailMarketing' as keyof NotificationPreferences, 
+          label: 'Tips & Updates', 
+          description: 'Receive career tips and platform updates' 
+        },
+      ],
     },
     {
       title: 'Push Notifications',
       icon: Bell,
       settings: [
-        { key: 'pushApplicationUpdates', label: 'Application Updates', description: 'Real-time alerts for application status changes' },
-        { key: 'pushNewJobs', label: 'New Job Matches', description: 'Instant alerts for relevant new jobs' },
-        { key: 'pushMessages', label: 'Messages', description: 'Real-time message notifications' }
-      ]
-    }
+        { 
+          key: 'pushApplicationUpdates' as keyof NotificationPreferences, 
+          label: 'Application Updates', 
+          description: 'Real-time alerts for application status changes' 
+        },
+        { 
+          key: 'pushNewJobs' as keyof NotificationPreferences, 
+          label: 'New Job Matches', 
+          description: 'Instant alerts for relevant new jobs' 
+        },
+        { 
+          key: 'pushMessages' as keyof NotificationPreferences, 
+          label: 'Messages', 
+          description: 'Real-time message notifications' 
+        },
+      ],
+    },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="container max-w-2xl py-8 px-4 pb-24 md:pb-8">
+        <div className="mb-8">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <div className="space-y-6">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-64 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-2xl py-8 px-4 pb-24 md:pb-8">
@@ -69,15 +106,13 @@ const NotificationsPage = () => {
               <CardContent className="space-y-4">
                 {group.settings.map((setting) => (
                   <div key={setting.key} className="flex items-center justify-between py-2">
-                    <div>
+                    <div className="space-y-0.5">
                       <Label className="font-medium">{setting.label}</Label>
                       <p className="text-sm text-muted-foreground">{setting.description}</p>
                     </div>
                     <Switch
-                      checked={settings[setting.key as keyof typeof settings]}
-                      onCheckedChange={(checked) => 
-                        setSettings({ ...settings, [setting.key]: checked })
-                      }
+                      checked={preferences[setting.key]}
+                      onCheckedChange={(checked) => updatePreference(setting.key, checked)}
                     />
                   </div>
                 ))}
@@ -97,28 +132,35 @@ const NotificationsPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setSettings(prev => 
-                Object.fromEntries(Object.keys(prev).map(k => [k, true])) as typeof settings
-              )}
-            >
+            <Button variant="outline" onClick={enableAll}>
               Enable All
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setSettings(prev => 
-                Object.fromEntries(Object.keys(prev).map(k => [k, false])) as typeof settings
-              )}
-            >
+            <Button variant="outline" onClick={disableAll}>
               Disable All
             </Button>
           </CardContent>
         </Card>
 
-        <Button onClick={handleSave} className="w-full">
-          Save Notification Preferences
+        <Button 
+          onClick={save} 
+          className="w-full" 
+          disabled={isSaving || !hasChanges}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Notification Preferences'
+          )}
         </Button>
+        
+        {hasChanges && (
+          <p className="text-center text-sm text-muted-foreground">
+            You have unsaved changes
+          </p>
+        )}
       </div>
     </div>
   );
