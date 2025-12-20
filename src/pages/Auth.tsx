@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle, Mail, Building2, Briefcase, ArrowLeft, Check, Eye, EyeOff, Github, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -53,6 +54,10 @@ const Auth = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [userTypeSelection, setUserTypeSelection] = useState<UserType | null>(null);
   const [showUserTypeStep, setShowUserTypeStep] = useState(true);
+  const [rememberMe, setRememberMe] = useState(() => {
+    // Check if user previously selected "remember me"
+    return localStorage.getItem('rememberMe') === 'true';
+  });
 
   React.useEffect(() => {
     if (!authLoading && user) {
@@ -75,6 +80,10 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Store remember me preference
+    localStorage.setItem('rememberMe', rememberMe.toString());
+    
     const { error } = await signIn(email, password);
     if (error) {
       const errorMessage = error.message.toLowerCase();
@@ -88,6 +97,38 @@ const Auth = () => {
     }
     setLoading(false);
   };
+
+  // Handle session cleanup when browser closes if "Remember me" is not checked
+  React.useEffect(() => {
+    const handleBeforeUnload = () => {
+      const shouldRemember = localStorage.getItem('rememberMe') === 'true';
+      if (!shouldRemember) {
+        // Clear session storage flag to trigger sign out on next visit
+        sessionStorage.setItem('sessionActive', 'true');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Check if we should clear session (user closed browser without "remember me")
+    const sessionActive = sessionStorage.getItem('sessionActive');
+    const shouldRemember = localStorage.getItem('rememberMe') === 'true';
+    
+    if (!sessionActive && !shouldRemember && !authLoading) {
+      // Session was not active (new browser session) and remember me is off
+      // Sign out if there's a user
+      if (user) {
+        supabase.auth.signOut();
+      }
+    }
+    
+    // Mark session as active
+    sessionStorage.setItem('sessionActive', 'true');
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user, authLoading]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -575,6 +616,21 @@ const Auth = () => {
                         </Button>
                       </div>
                     </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="rememberMe" 
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <Label 
+                        htmlFor="rememberMe" 
+                        className="text-sm font-normal text-muted-foreground cursor-pointer"
+                      >
+                        Remember me
+                      </Label>
+                    </div>
+                    
                     <Button type="submit" className="w-full" disabled={loading || oauthLoading !== null}>
                       {loading ? 'Signing in...' : 'Sign In'}
                     </Button>
