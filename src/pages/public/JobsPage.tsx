@@ -169,12 +169,12 @@ const JobsPage = () => {
                 />
               </div>
               
-              <Select value={clientFilter} onValueChange={setClientFilter}>
+              <Select value={clientFilter || "all"} onValueChange={(val) => setClientFilter(val === "all" ? "" : val)}>
                 <SelectTrigger className="w-full sm:w-56">
                   <SelectValue placeholder="All Companies" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="__ALL__">All Companies</SelectItem>
+                  <SelectItem value="all">All Companies</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
@@ -185,12 +185,12 @@ const JobsPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <Select value={locationFilter || "all"} onValueChange={(val) => setLocationFilter(val === "all" ? "" : val)}>
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="__ALL__">All Locations</SelectItem>
+                  <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((location) => (
                     <SelectItem key={location} value={location}>
                       {location}

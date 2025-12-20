@@ -97,6 +97,14 @@ const LayoutContent = () => {
   
   return (
     <div className="min-h-screen flex w-full">
+      {/* Skip Links for Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none"
+      >
+        Skip to main content
+      </a>
+      
       <AppSidebar />
       
       <div className="flex-1 flex flex-col min-w-0">
@@ -167,7 +175,7 @@ const LayoutContent = () => {
           enabled={isMobile}
           className="flex-1 flex flex-col pb-16 md:pb-0"
         >
-          <main className="flex-1">
+          <main id="main-content" className="flex-1" tabIndex={-1}>
             <Outlet />
           </main>
         </PullToRefresh>

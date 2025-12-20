@@ -67,7 +67,7 @@ const Onboarding = () => {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Building2 className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Welcome to RecruiterPro</CardTitle>
+            <CardTitle className="text-2xl">Welcome to ATS.me</CardTitle>
             <CardDescription>
               Let's set up your organization to get started
             </CardDescription>

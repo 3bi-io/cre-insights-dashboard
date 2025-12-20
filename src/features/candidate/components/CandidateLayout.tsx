@@ -73,6 +73,14 @@ const CandidateLayout = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Skip Links for Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none"
+      >
+        Skip to main content
+      </a>
+      
       {/* Header */}
       <header 
         className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
@@ -215,7 +223,7 @@ const CandidateLayout = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto">
+        <main id="main-content" className="flex-1 overflow-auto" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
