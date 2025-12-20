@@ -16,7 +16,7 @@ import { Brand } from '@/components/common';
 import { cn } from '@/lib/utils';
 
 type UserType = 'organization' | 'jobseeker';
-type OAuthProvider = 'google' | 'github' | 'apple' | 'linkedin_oidc';
+type OAuthProvider = 'google' | 'github' | 'apple' | 'linkedin_oidc' | 'azure';
 
 // Google icon SVG component (Lucide doesn't have Google icon)
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -32,6 +32,16 @@ const GoogleIcon = ({ className }: { className?: string }) => (
 const AppleIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+  </svg>
+);
+
+// Microsoft icon SVG component
+const MicrosoftIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24">
+    <path fill="#F25022" d="M1 1h10v10H1z"/>
+    <path fill="#00A4EF" d="M1 13h10v10H1z"/>
+    <path fill="#7FBA00" d="M13 1h10v10H13z"/>
+    <path fill="#FFB900" d="M13 13h10v10H13z"/>
   </svg>
 );
 
@@ -265,7 +275,8 @@ const Auth = () => {
         google: 'Google',
         github: 'GitHub',
         apple: 'Apple',
-        linkedin_oidc: 'LinkedIn'
+        linkedin_oidc: 'LinkedIn',
+        azure: 'Microsoft'
       };
       const providerName = providerNames[provider];
       if (error.message?.includes('provider is not enabled')) {
@@ -302,13 +313,13 @@ const Auth = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-1.5">
         <Button
           type="button"
           variant="outline"
           onClick={() => handleOAuthSignIn('google')}
           disabled={loading || oauthLoading !== null}
-          className="w-full px-2"
+          className="w-full px-1.5"
           title="Continue with Google"
         >
           {oauthLoading === 'google' ? (
@@ -316,7 +327,21 @@ const Auth = () => {
           ) : (
             <GoogleIcon className="h-4 w-4" />
           )}
-          <span className="ml-1.5 hidden lg:inline text-xs">Google</span>
+        </Button>
+        
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleOAuthSignIn('azure')}
+          disabled={loading || oauthLoading !== null}
+          className="w-full px-1.5"
+          title="Continue with Microsoft"
+        >
+          {oauthLoading === 'azure' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <MicrosoftIcon className="h-4 w-4" />
+          )}
         </Button>
         
         <Button
@@ -324,7 +349,7 @@ const Auth = () => {
           variant="outline"
           onClick={() => handleOAuthSignIn('apple')}
           disabled={loading || oauthLoading !== null}
-          className="w-full px-2"
+          className="w-full px-1.5"
           title="Continue with Apple"
         >
           {oauthLoading === 'apple' ? (
@@ -332,7 +357,6 @@ const Auth = () => {
           ) : (
             <AppleIcon className="h-4 w-4" />
           )}
-          <span className="ml-1.5 hidden lg:inline text-xs">Apple</span>
         </Button>
         
         <Button
@@ -340,7 +364,7 @@ const Auth = () => {
           variant="outline"
           onClick={() => handleOAuthSignIn('linkedin_oidc')}
           disabled={loading || oauthLoading !== null}
-          className="w-full px-2"
+          className="w-full px-1.5"
           title="Continue with LinkedIn"
         >
           {oauthLoading === 'linkedin_oidc' ? (
@@ -348,7 +372,6 @@ const Auth = () => {
           ) : (
             <Linkedin className="h-4 w-4 text-[#0A66C2]" />
           )}
-          <span className="ml-1.5 hidden lg:inline text-xs">LinkedIn</span>
         </Button>
         
         <Button
@@ -356,7 +379,7 @@ const Auth = () => {
           variant="outline"
           onClick={() => handleOAuthSignIn('github')}
           disabled={loading || oauthLoading !== null}
-          className="w-full px-2"
+          className="w-full px-1.5"
           title="Continue with GitHub"
         >
           {oauthLoading === 'github' ? (
@@ -364,7 +387,6 @@ const Auth = () => {
           ) : (
             <Github className="h-4 w-4" />
           )}
-          <span className="ml-1.5 hidden lg:inline text-xs">GitHub</span>
         </Button>
       </div>
     </div>
