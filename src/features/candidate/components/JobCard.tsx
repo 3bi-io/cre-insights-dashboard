@@ -20,9 +20,10 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
   const handleSaveToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isSaved && savedJobs) {
-      const savedJob = savedJobs.find((s: any) => s.job_listing_id === job.id);
-      if (savedJob) unsaveJob(savedJob.id);
+    if (isSaved && Array.isArray(savedJobs)) {
+      const jobs = savedJobs as any[];
+      const savedJob = jobs.find((s) => s.job_listing_id === job.id);
+      if (savedJob?.id) unsaveJob(savedJob.id);
     } else {
       saveJob({ jobId: job.id });
     }
