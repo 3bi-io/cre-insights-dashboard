@@ -35,6 +35,7 @@ const JobSearchPage = React.lazy(() => import("@/features/candidate").then(m => 
 const SavedJobsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.SavedJobsPage })));
 const MessagesPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MessagesPage })));
 const ProfilePage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.ProfilePage })));
+const JobDetailPage = React.lazy(() => import("@/features/candidate/pages/JobDetailPage"));
 const GrokChatPage = React.lazy(() => import("@/features/ai-chat").then(m => ({ default: m.GrokChatPage })));
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
 const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
@@ -174,6 +175,7 @@ const AppRoutes: React.FC = () => {
         <Route path="saved" element={<RouteWrapper><SavedJobsPage /></RouteWrapper>} />
         <Route path="messages" element={<RouteWrapper><MessagesPage /></RouteWrapper>} />
         <Route path="profile" element={<RouteWrapper><ProfilePage /></RouteWrapper>} />
+        <Route path="job/:jobId" element={<RouteWrapper><JobDetailPage /></RouteWrapper>} />
         <Route path="settings" element={<RouteWrapper><CandidateAccountSettings /></RouteWrapper>} />
         <Route path="notifications" element={<RouteWrapper><CandidateNotifications /></RouteWrapper>} />
       </Route>
