@@ -24,6 +24,8 @@ const Onboarding = React.lazy(() => import("@/pages/Onboarding"));
 const Apply = React.lazy(() => import("@/pages/Apply"));
 const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
+const XApply = React.lazy(() => import("@/pages/XApply"));
+const ShortLinkRedirect = React.lazy(() => import("@/pages/ShortLinkRedirect"));
 
 // Main application pages
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -151,6 +153,13 @@ const AppRoutes: React.FC = () => {
       <Route path="/apply" element={<RouteWrapper><Apply /></RouteWrapper>} />
       <Route path="/apply/detailed" element={<RouteWrapper><DetailedApply /></RouteWrapper>} />
       <Route path="/thank-you" element={<RouteWrapper><ThankYou /></RouteWrapper>} />
+      
+      {/* X Hiring Platform Route - cleaner URL for X */}
+      <Route path="/x/apply/:jobId" element={<RouteWrapper><XApply /></RouteWrapper>} />
+      
+      {/* Short Link Redirect */}
+      <Route path="/j/:shortCode" element={<RouteWrapper><ShortLinkRedirect /></RouteWrapper>} />
+      
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
       <Route path="/onboarding" element={<ProtectedRouteWrapper><Onboarding /></ProtectedRouteWrapper>} />
 

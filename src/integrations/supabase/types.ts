@@ -2983,6 +2983,76 @@ export type Database = {
           },
         ]
       }
+      job_short_links: {
+        Row: {
+          click_count: number | null
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          job_listing_id: string
+          organization_id: string | null
+          short_code: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          click_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_listing_id: string
+          organization_id?: string | null
+          short_code: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          click_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          job_listing_id?: string
+          organization_id?: string | null
+          short_code?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_short_links_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_short_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_short_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meta_ad_accounts: {
         Row: {
           account_id: string
@@ -5332,6 +5402,7 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      generate_short_code: { Args: { length?: number }; Returns: string }
       get_application_basic_data: {
         Args: { application_id: string }
         Returns: {
@@ -5494,6 +5565,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_short_link_click: {
+        Args: { p_short_code: string }
+        Returns: undefined
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       normalize_phone_number: { Args: { phone_input: string }; Returns: string }
