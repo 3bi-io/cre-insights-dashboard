@@ -173,7 +173,7 @@ const JobsPage = () => {
                 <SelectTrigger className="w-full sm:w-56">
                   <SelectValue placeholder="All Companies" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
+                <SelectContent className="bg-popover border shadow-md z-50">
                   <SelectItem value="all">All Companies</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
@@ -189,7 +189,7 @@ const JobsPage = () => {
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
+                <SelectContent className="bg-popover border shadow-md z-50">
                   <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((location) => (
                     <SelectItem key={location} value={location}>
@@ -203,7 +203,7 @@ const JobsPage = () => {
                 <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
+                <SelectContent className="bg-popover border shadow-md z-50">
                   <SelectItem value="recent">Most Recent</SelectItem>
                   <SelectItem value="title">Title (A-Z)</SelectItem>
                   <SelectItem value="salary-high">Salary (High to Low)</SelectItem>
