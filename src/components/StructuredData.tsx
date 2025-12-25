@@ -49,16 +49,19 @@ export const buildFAQSchema = (faqs: Array<{ question: string; answer: string }>
   })),
 });
 
+// Base URL for structured data - can be overridden via environment variable
+const BASE_URL = import.meta.env.VITE_SITE_URL || 'https://ats.me';
+
 export const buildWebSiteSchema = () => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "ATS.me",
-  "url": "https://ats.me",
+  "url": BASE_URL,
   "potentialAction": {
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://ats.me/search?q={search_term_string}"
+      "urlTemplate": `${BASE_URL}/search?q={search_term_string}`
     },
     "query-input": "required name=search_term_string"
   }
@@ -139,7 +142,7 @@ export const buildArticleSchema = (article: {
     "name": article.publisher,
     "logo": {
       "@type": "ImageObject",
-      "url": "https://ats.me/logo.png",
+      "url": `${BASE_URL}/logo.png`,
     },
   },
 });
