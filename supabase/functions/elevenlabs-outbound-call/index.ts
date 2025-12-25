@@ -1,20 +1,29 @@
+/**
+ * ElevenLabs Outbound Call Edge Function
+ * Handles outbound voice calls using ElevenLabs Conversational AI
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { successResponse, errorResponse } from "../_shared/response.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const logger = createLogger('elevenlabs-outbound-call');
 
-interface OutboundCallRequest {
-  application_id?: string;
-  outbound_call_id?: string; // For processing a specific queued call
-  voice_agent_id?: string;
-  phone_number?: string;
-  process_queue?: boolean; // Process all queued calls
-  sync_initiated?: boolean; // Sync stuck initiated calls with ElevenLabs API
-  limit?: number; // Max calls to process when process_queue is true
-}
+// Request validation schema
+const OutboundCallRequestSchema = z.object({
+  application_id: z.string().uuid().optional(),
+  outbound_call_id: z.string().uuid().optional(),
+  voice_agent_id: z.string().uuid().optional(),
+  phone_number: z.string().optional(),
+  process_queue: z.boolean().optional(),
+  sync_initiated: z.boolean().optional(),
+  limit: z.number().min(1).max(50).optional(),
+});
+
+type OutboundCallRequest = z.infer<typeof OutboundCallRequestSchema>;
 
 interface ElevenLabsOutboundResponse {
   call_sid: string;
@@ -30,6 +39,9 @@ interface ProcessQueueResult {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin') || '*';
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -41,42 +53,27 @@ serve(async (req) => {
     const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
 
     if (!elevenLabsApiKey) {
-      console.error('ELEVENLABS_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'ElevenLabs API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logger.error('ELEVENLABS_API_KEY not configured');
+      return errorResponse('ElevenLabs API key not configured', 500, undefined, origin);
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const body: OutboundCallRequest = await req.json();
+    const rawBody = await req.json();
     
-    console.log('Outbound call request:', JSON.stringify(body));
-
-    // Validate request authorization
-    // For queue processing (cron jobs), validate using internal secret or service role
-    // For single calls, accept authenticated users via Authorization header
-    const authHeader = req.headers.get('authorization');
-    const isServiceRole = authHeader?.includes(supabaseServiceKey);
-    const isInternalCron = body.process_queue === true;
-    
-    if (isInternalCron && !isServiceRole) {
-      // For cron/queue processing, also accept requests from Supabase infrastructure
-      // Check if this is a valid internal request by verifying the anon key is present
-      const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-      const hasValidKey = authHeader?.includes(anonKey || '') || authHeader?.includes('Bearer');
-      
-      if (!hasValidKey && !authHeader) {
-        console.log('Queue processing request accepted (internal cron)');
-        // Allow the request - cron jobs from pg_cron don't always have proper auth
-      }
+    // Validate request body
+    const parseResult = OutboundCallRequestSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      logger.warn('Invalid request body', { errors: parseResult.error.errors });
+      return errorResponse('Invalid request body', 400, { errors: parseResult.error.errors }, origin);
     }
+    
+    const body = parseResult.data;
+    logger.info('Outbound call request', { body });
 
     // Handle sync_initiated mode - sync stuck initiated calls with ElevenLabs
     if (body.sync_initiated) {
-      console.log('Syncing stuck initiated calls with ElevenLabs API');
+      logger.info('Syncing stuck initiated calls with ElevenLabs API');
       
-      // Find calls stuck in 'initiated' status for more than 10 minutes
       const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { data: stuckCalls, error: fetchError } = await supabase
         .from('outbound_calls')
@@ -87,21 +84,15 @@ serve(async (req) => {
         .limit(20);
 
       if (fetchError) {
-        console.error('Failed to fetch stuck calls:', fetchError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to fetch stuck calls', details: fetchError.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        logger.error('Failed to fetch stuck calls', { error: fetchError });
+        return errorResponse('Failed to fetch stuck calls', 500, { details: fetchError.message }, origin);
       }
 
       if (!stuckCalls || stuckCalls.length === 0) {
-        return new Response(
-          JSON.stringify({ message: 'No stuck initiated calls to sync', synced: 0 }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({ message: 'No stuck initiated calls to sync', synced: 0 }, undefined, undefined, origin);
       }
 
-      console.log(`Found ${stuckCalls.length} stuck initiated calls to sync`);
+      logger.info(`Found ${stuckCalls.length} stuck initiated calls to sync`);
 
       let synced = 0;
       let failed = 0;
@@ -109,16 +100,13 @@ serve(async (req) => {
 
       for (const call of stuckCalls) {
         try {
-          // Fetch conversation status from ElevenLabs
           const convResponse = await fetch(
             `https://api.elevenlabs.io/v1/convai/conversations/${call.elevenlabs_conversation_id}`,
-            {
-              headers: { 'xi-api-key': elevenLabsApiKey },
-            }
+            { headers: { 'xi-api-key': elevenLabsApiKey } }
           );
 
           if (!convResponse.ok) {
-            console.error(`Failed to fetch conversation ${call.elevenlabs_conversation_id}:`, convResponse.status);
+            logger.error(`Failed to fetch conversation ${call.elevenlabs_conversation_id}`, { status: convResponse.status });
             failed++;
             syncResults.push({ call_id: call.id, status: 'failed', error: `ElevenLabs API returned ${convResponse.status}` });
             continue;
@@ -127,7 +115,6 @@ serve(async (req) => {
           const convData = await convResponse.json();
           const elStatus = convData.status || 'unknown';
           
-          // Map ElevenLabs status to our status
           let mappedStatus = 'initiated';
           let durationSeconds = null;
           
@@ -142,7 +129,6 @@ serve(async (req) => {
             mappedStatus = 'busy';
           }
 
-          // Update the call record
           const { error: updateError } = await supabase
             .from('outbound_calls')
             .update({
@@ -154,38 +140,32 @@ serve(async (req) => {
             .eq('id', call.id);
 
           if (updateError) {
-            console.error(`Failed to update call ${call.id}:`, updateError);
+            logger.error(`Failed to update call ${call.id}`, { error: updateError });
             failed++;
             syncResults.push({ call_id: call.id, status: 'failed', error: updateError.message });
           } else {
             synced++;
             syncResults.push({ call_id: call.id, status: 'synced', new_status: mappedStatus });
-            console.log(`Synced call ${call.id}: ${mappedStatus}`);
+            logger.info(`Synced call ${call.id}`, { new_status: mappedStatus });
           }
 
-          // Small delay to avoid rate limiting
           await new Promise(resolve => setTimeout(resolve, 200));
         } catch (error) {
-          console.error(`Error syncing call ${call.id}:`, error);
+          logger.error(`Error syncing call ${call.id}`, { error });
           failed++;
-          syncResults.push({ call_id: call.id, status: 'failed', error: error.message });
+          syncResults.push({ call_id: call.id, status: 'failed', error: (error as Error).message });
         }
       }
 
-      console.log(`Sync complete: ${synced} synced, ${failed} failed`);
-
-      return new Response(
-        JSON.stringify({ synced, failed, results: syncResults }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logger.info('Sync complete', { synced, failed });
+      return successResponse({ synced, failed, results: syncResults }, undefined, undefined, origin);
     }
 
     // Handle queue processing mode
     if (body.process_queue) {
-      const limit = Math.min(body.limit || 10, 50); // Max 50 calls per batch
-      console.log(`Processing queued outbound calls (limit: ${limit})`);
+      const limit = Math.min(body.limit || 10, 50);
+      logger.info(`Processing queued outbound calls (limit: ${limit})`);
 
-      // Fetch queued calls
       const { data: queuedCalls, error: fetchError } = await supabase
         .from('outbound_calls')
         .select('id')
@@ -194,21 +174,15 @@ serve(async (req) => {
         .limit(limit);
 
       if (fetchError) {
-        console.error('Failed to fetch queued calls:', fetchError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to fetch queued calls', details: fetchError.message }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        logger.error('Failed to fetch queued calls', { error: fetchError });
+        return errorResponse('Failed to fetch queued calls', 500, { details: fetchError.message }, origin);
       }
 
       if (!queuedCalls || queuedCalls.length === 0) {
-        return new Response(
-          JSON.stringify({ message: 'No queued calls to process', processed: 0 }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return successResponse({ message: 'No queued calls to process', processed: 0 }, undefined, undefined, origin);
       }
 
-      console.log(`Found ${queuedCalls.length} queued calls to process`);
+      logger.info(`Found ${queuedCalls.length} queued calls to process`);
 
       const results: ProcessQueueResult = {
         processed: queuedCalls.length,
@@ -217,10 +191,8 @@ serve(async (req) => {
         results: []
       };
 
-      // Process each call sequentially to avoid rate limiting
       for (const call of queuedCalls) {
         try {
-          // Make recursive call to process this specific call
           const callResponse = await processOutboundCall(
             supabase,
             elevenLabsApiKey,
@@ -235,44 +207,35 @@ serve(async (req) => {
             results.results.push({ call_id: call.id, status: 'failed', error: callResponse.error });
           }
           
-          // Small delay between calls to avoid rate limiting
           await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
-          console.error(`Failed to process call ${call.id}:`, error);
+          logger.error(`Failed to process call ${call.id}`, { error });
           results.failed++;
-          results.results.push({ call_id: call.id, status: 'failed', error: error.message });
+          results.results.push({ call_id: call.id, status: 'failed', error: (error as Error).message });
         }
       }
 
-      console.log(`Queue processing complete: ${results.succeeded} succeeded, ${results.failed} failed`);
-
-      return new Response(
-        JSON.stringify(results),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logger.info('Queue processing complete', { succeeded: results.succeeded, failed: results.failed });
+      return successResponse(results, undefined, undefined, origin);
     }
 
     // Single call processing
     const singleCallResult = await processOutboundCall(supabase, elevenLabsApiKey, body);
     
     if (!singleCallResult.success) {
-      return new Response(
-        JSON.stringify({ error: singleCallResult.error, details: singleCallResult.details }),
-        { status: singleCallResult.status || 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return errorResponse(
+        singleCallResult.error || 'Unknown error',
+        singleCallResult.status || 500,
+        singleCallResult.details ? { details: singleCallResult.details } : undefined,
+        origin
       );
     }
 
-    return new Response(
-      JSON.stringify(singleCallResult.data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return successResponse(singleCallResult.data, undefined, undefined, origin);
 
   } catch (error) {
-    console.error('Error in elevenlabs-outbound-call:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    logger.error('Error in elevenlabs-outbound-call', { error });
+    return errorResponse((error as Error).message || 'Internal server error', 500, undefined, origin);
   }
 });
 
@@ -299,7 +262,7 @@ async function processOutboundCall(
         .single();
 
       if (queueError || !queuedCall) {
-        console.error('Queued call not found:', queueError);
+        logger.error('Queued call not found', { error: queueError });
         return { success: false, error: 'Queued call not found or already processed', status: 404 };
       }
 
@@ -314,13 +277,12 @@ async function processOutboundCall(
       return { success: false, error: 'Either phone_number or application_id is required', status: 400 };
     }
 
-    // If we have an application_id but no phone, fetch the application with full context
+    // Fetch application with full context if we have an application_id
     let application: Record<string, unknown> | null = null;
     let jobListing: Record<string, unknown> | null = null;
     let organization: Record<string, unknown> | null = null;
     
     if (applicationId) {
-      // Fetch comprehensive applicant data for dynamic context
       const { data: appData, error: appError } = await supabase
         .from('applications')
         .select(`
@@ -334,7 +296,7 @@ async function processOutboundCall(
         .single();
 
       if (appError || !appData) {
-        console.error('Application not found:', appError);
+        logger.error('Application not found', { error: appError });
         return { success: false, error: 'Application not found', status: 404 };
       }
 
@@ -342,7 +304,6 @@ async function processOutboundCall(
       phoneNumber = phoneNumber || application.phone as string;
       metadata.applicant_name = `${application.first_name || ''} ${application.last_name || ''}`.trim();
       
-      // Fetch job listing with organization details
       if (application.job_listing_id) {
         const { data: jobData, error: jobError } = await supabase
           .from('job_listings')
@@ -357,7 +318,6 @@ async function processOutboundCall(
         if (!jobError && jobData) {
           jobListing = jobData;
           
-          // Fetch organization details
           if (jobData.organization_id) {
             const { data: orgData } = await supabase
               .from('organizations')
@@ -388,7 +348,6 @@ async function processOutboundCall(
     if (jobListing?.organization_id) {
       organizationId = jobListing.organization_id as string;
     } else if (application?.job_listing_id) {
-      // Fallback: fetch org ID directly if not already fetched
       const { data: jl } = await supabase
         .from('job_listings')
         .select('organization_id')
@@ -425,7 +384,7 @@ async function processOutboundCall(
       .single();
 
     if (agentError || !voiceAgent) {
-      console.error('Voice agent not found:', agentError);
+      logger.error('Voice agent not found', { error: agentError });
       return { success: false, error: 'Voice agent not found', status: 404 };
     }
 
@@ -433,13 +392,9 @@ async function processOutboundCall(
       return { success: false, error: 'Voice agent does not have a phone number configured', status: 400 };
     }
 
-    // Note: Application-level rate limiting removed to allow jobseekers to apply to multiple jobs
-    // Duplicate queued call prevention is still in place below
-
     // Create or update outbound call record
     let callRecord;
     if (outboundCallId) {
-      // Update existing queued call
       const { data: updated, error: updateError } = await supabase
         .from('outbound_calls')
         .update({ status: 'initiating', updated_at: new Date().toISOString() })
@@ -448,12 +403,11 @@ async function processOutboundCall(
         .single();
 
       if (updateError) {
-        console.error('Failed to update call record:', updateError);
+        logger.error('Failed to update call record', { error: updateError });
       }
       callRecord = updated;
     } else {
-      // IMPORTANT: Check if there's an existing queued call for this application first
-      // This prevents duplicate records when both trigger and API call try to create records
+      // Check for existing queued call for this application
       if (applicationId) {
         const { data: existingQueued } = await supabase
           .from('outbound_calls')
@@ -465,7 +419,7 @@ async function processOutboundCall(
           .single();
 
         if (existingQueued) {
-          console.log(`Found existing queued call ${existingQueued.id} for application ${applicationId}, updating instead of creating new`);
+          logger.info(`Found existing queued call ${existingQueued.id} for application ${applicationId}, updating instead`);
           const { data: updated, error: updateError } = await supabase
             .from('outbound_calls')
             .update({ 
@@ -478,7 +432,7 @@ async function processOutboundCall(
             .single();
 
           if (updateError) {
-            console.error('Failed to update existing queued call:', updateError);
+            logger.error('Failed to update existing queued call', { error: updateError });
           }
           callRecord = updated;
           outboundCallId = existingQueued.id;
@@ -504,7 +458,7 @@ async function processOutboundCall(
           .single();
 
         if (insertError) {
-          console.error('Failed to create call record:', insertError);
+          logger.error('Failed to create call record', { error: insertError });
         }
         callRecord = newCall;
       }
@@ -512,13 +466,11 @@ async function processOutboundCall(
 
     // Build dynamic variables for ElevenLabs agent context
     const dynamicVariables = buildDynamicVariables(application, jobListing, organization, metadata);
-    console.log('Dynamic variables for ElevenLabs:', JSON.stringify(dynamicVariables));
+    logger.info('Dynamic variables for ElevenLabs', { variables: dynamicVariables });
 
     // Make ElevenLabs outbound call API request
-    console.log('Initiating ElevenLabs outbound call to:', normalizedPhone);
+    logger.info('Initiating ElevenLabs outbound call', { phone: normalizedPhone });
     
-    // Build conversation_initiation_client_data with dynamic variables only
-    // First message is configured in ElevenLabs dashboard and can use placeholders like {{applicant_first_name}}
     const conversationInitData: Record<string, unknown> = {
       dynamic_variables: dynamicVariables
     };
@@ -526,7 +478,7 @@ async function processOutboundCall(
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
-      to_number: `+1${normalizedPhone}`, // Assuming US numbers
+      to_number: `+1${normalizedPhone}`,
       conversation_initiation_client_data: conversationInitData
     };
 
@@ -543,11 +495,9 @@ async function processOutboundCall(
     );
 
     const responseText = await elevenLabsResponse.text();
-    console.log('ElevenLabs response status:', elevenLabsResponse.status);
-    console.log('ElevenLabs response:', responseText);
+    logger.info('ElevenLabs response', { status: elevenLabsResponse.status, body: responseText });
 
     if (!elevenLabsResponse.ok) {
-      // Update call record with failure
       if (callRecord) {
         await supabase
           .from('outbound_calls')
@@ -582,7 +532,7 @@ async function processOutboundCall(
         .eq('id', callRecord.id);
     }
 
-    console.log('Outbound call initiated successfully:', elevenLabsData);
+    logger.info('Outbound call initiated successfully', { call_sid: elevenLabsData.call_sid });
 
     return {
       success: true,
@@ -597,8 +547,8 @@ async function processOutboundCall(
     };
 
   } catch (error) {
-    console.error('Error in processOutboundCall:', error);
-    return { success: false, error: error.message || 'Internal server error', status: 500 };
+    logger.error('Error in processOutboundCall', { error });
+    return { success: false, error: (error as Error).message || 'Internal server error', status: 500 };
   }
 }
 
@@ -606,12 +556,10 @@ async function processOutboundCall(
 function normalizePhoneNumber(phone: string): string | null {
   const digits = phone.replace(/\D/g, '');
   
-  // Handle 11-digit numbers starting with 1
   if (digits.length === 11 && digits.startsWith('1')) {
     return digits.substring(1);
   }
   
-  // Valid 10-digit US number
   if (digits.length === 10) {
     return digits;
   }
@@ -675,11 +623,9 @@ function buildDynamicVariables(
   vars.applicant_experience = formatExperience(application);
   
   // Qualifications
-  // Check both over_21 and age columns (form may save to either)
   const over21 = (application?.over_21 as string) || (application?.age as string);
   vars.over_21_status = (over21 === 'Yes' || over21 === 'yes' || over21 === 'true' || over21 === '1') ? 'yes' : 'unknown';
   
-  // Check both drug and can_pass_drug_test columns (form may save to either)
   const drugTest = (application?.drug as string) || (application?.can_pass_drug_test as string);
   vars.drug_test_status = (drugTest === 'Yes' || drugTest === 'yes' || drugTest === 'true' || drugTest === '1') 
     ? 'willing to pass' 
@@ -709,8 +655,7 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
-  // ============= JOB CONTEXT INFERENCE =============
-  // These variables help the agent determine which questions to ask
+  // Job context inference
   vars.job_requires_cdl = inferCDLRequirement(jobListing);
   vars.job_cdl_class = inferCDLClass(jobListing);
   vars.job_requires_hazmat = inferHazmatRequirement(jobListing);
@@ -720,18 +665,6 @@ function buildDynamicVariables(
   vars.job_is_otr = inferOTR(jobListing);
   vars.job_is_team = inferTeamDriving(jobListing);
   vars.job_freight_type = inferFreightType(jobListing);
-  
-  console.log('Inferred job requirements:', {
-    requires_cdl: vars.job_requires_cdl,
-    cdl_class: vars.job_cdl_class,
-    requires_hazmat: vars.job_requires_hazmat,
-    requires_tanker: vars.job_requires_tanker,
-    is_entry_level: vars.job_is_entry_level,
-    is_local: vars.job_is_local,
-    is_otr: vars.job_is_otr,
-    is_team: vars.job_is_team,
-    freight_type: vars.job_freight_type
-  });
   
   return vars;
 }
@@ -789,139 +722,75 @@ function formatSalary(jobListing: Record<string, unknown> | null): string {
   return 'competitive compensation';
 }
 
-// ============= JOB REQUIREMENT INFERENCE FUNCTIONS =============
-
-// Infer if the job requires a CDL based on title/description keywords
+// Job requirement inference functions
 function inferCDLRequirement(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'unknown';
-  
   const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
   const summary = (jobListing?.job_summary as string || '').toLowerCase();
   const combined = `${title} ${summary}`;
-  
-  // Explicitly requires CDL
-  if (combined.includes('cdl') || combined.includes('commercial driver')) {
-    return 'yes';
-  }
-  // Explicitly does NOT require CDL
-  if (combined.includes('no cdl') || combined.includes('non-cdl') || combined.includes('non cdl') ||
-      combined.includes('warehouse') || combined.includes('mechanic') || combined.includes('dispatcher')) {
-    return 'no';
-  }
+  if (combined.includes('cdl') || combined.includes('commercial driver')) return 'yes';
+  if (combined.includes('no cdl') || combined.includes('non-cdl') || combined.includes('non cdl')) return 'no';
   return 'unknown';
 }
 
-// Infer CDL class from job title
 function inferCDLClass(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return '';
-  
   const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
   const summary = (jobListing?.job_summary as string || '').toLowerCase();
   const combined = `${title} ${summary}`;
-  
   if (combined.includes('cdl-a') || combined.includes('cdl a') || combined.includes('class a')) return 'A';
   if (combined.includes('cdl-b') || combined.includes('cdl b') || combined.includes('class b')) return 'B';
   if (combined.includes('cdl-c') || combined.includes('cdl c') || combined.includes('class c')) return 'C';
   return '';
 }
 
-// Infer if hazmat endorsement is required
 function inferHazmatRequirement(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'no';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const combined = `${title} ${summary}`;
-  
-  return (combined.includes('hazmat') || combined.includes('haz-mat') || combined.includes('hazardous')) ? 'yes' : 'no';
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
+  return (combined.includes('hazmat') || combined.includes('hazardous')) ? 'yes' : 'no';
 }
 
-// Infer if tanker endorsement is required
 function inferTankerRequirement(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'no';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const combined = `${title} ${summary}`;
-  
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
   return (combined.includes('tanker') || combined.includes('fuel') || combined.includes('liquid bulk')) ? 'yes' : 'no';
 }
 
-// Infer if this is an entry-level/training position
 function inferEntryLevel(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'no';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const combined = `${title} ${summary}`;
-  
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
   if (combined.includes('training') || combined.includes('no experience') || 
       combined.includes('entry level') || combined.includes('entry-level') ||
-      combined.includes('recent graduate') || combined.includes('new driver') ||
-      combined.includes('will train') || combined.includes('cdl training')) {
-    return 'yes';
-  }
+      combined.includes('will train')) return 'yes';
   return 'no';
 }
 
-// Infer if this is a local/home daily route
 function inferLocalRoute(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'no';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const jobType = (jobListing?.job_type as string || '').toLowerCase();
-  const combined = `${title} ${summary} ${jobType}`;
-  
-  if (combined.includes('local') || combined.includes('home daily') || 
-      combined.includes('home nightly') || combined.includes('day cab') ||
-      combined.includes('no overnight')) {
-    return 'yes';
-  }
-  return 'no';
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''} ${jobListing?.job_type || ''}`.toLowerCase();
+  return (combined.includes('local') || combined.includes('home daily')) ? 'yes' : 'no';
 }
 
-// Infer if this is an OTR/regional route
 function inferOTR(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'no';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const jobType = (jobListing?.job_type as string || '').toLowerCase();
-  const combined = `${title} ${summary} ${jobType}`;
-  
-  if (combined.includes('otr') || combined.includes('over the road') || 
-      combined.includes('regional') || combined.includes('long haul') ||
-      combined.includes('cross country')) {
-    return 'yes';
-  }
-  return 'no';
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''} ${jobListing?.job_type || ''}`.toLowerCase();
+  return (combined.includes('otr') || combined.includes('over the road') || combined.includes('regional')) ? 'yes' : 'no';
 }
 
-// Infer if this is a team driving position
 function inferTeamDriving(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'no';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const combined = `${title} ${summary}`;
-  
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
   return combined.includes('team') ? 'yes' : 'no';
 }
 
-// Infer freight type for contextual questions
 function inferFreightType(jobListing: Record<string, unknown> | null): string {
   if (!jobListing) return 'general';
-  
-  const title = ((jobListing?.title || jobListing?.job_title) as string || '').toLowerCase();
-  const summary = (jobListing?.job_summary as string || '').toLowerCase();
-  const combined = `${title} ${summary}`;
-  
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
   if (combined.includes('flatbed')) return 'flatbed';
   if (combined.includes('reefer') || combined.includes('refrigerated')) return 'reefer';
   if (combined.includes('dry van')) return 'dry van';
-  if (combined.includes('tanker') || combined.includes('fuel') || combined.includes('liquid')) return 'tanker';
-  if (combined.includes('ltl') || combined.includes('less than load')) return 'LTL';
+  if (combined.includes('tanker') || combined.includes('fuel')) return 'tanker';
+  if (combined.includes('ltl')) return 'LTL';
   if (combined.includes('dedicated')) return 'dedicated';
   if (combined.includes('intermodal')) return 'intermodal';
   return 'general';
