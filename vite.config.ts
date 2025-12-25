@@ -30,11 +30,25 @@ export default defineConfig(({ mode }) => ({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo-icon.png', 'robots.txt', 'sitemap.xml', 'og-social.png', 'twitter-card.png'],
+      includeAssets: [
+        'logo.png',
+        'logo-white.png',
+        'logo-icon.png',
+        'favicon-16x16.png',
+        'favicon-32x32.png',
+        'apple-touch-icon.png',
+        'icon-192.png',
+        'icon-512.png',
+        'icon-maskable.png',
+        'robots.txt',
+        'sitemap.xml',
+        'og-image.png',
+        'twitter-card.png'
+      ],
       manifest: {
         name: 'ATS.me - AI-Powered Recruitment Platform',
         short_name: 'ATS.me',
-        description: 'Transform your recruitment with AI-powered analytics, automated workflows, and intelligent candidate ranking. Join our pilot program.',
+        description: 'Transform your recruitment with AI-powered analytics, automated workflows, and intelligent candidate ranking.',
         theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',
@@ -43,15 +57,31 @@ export default defineConfig(({ mode }) => ({
         start_url: '/',
         icons: [
           {
-            src: '/logo-icon.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
+            src: '/favicon-32x32.png',
+            sizes: '32x32',
+            type: 'image/png'
           },
           {
-            src: '/logo-icon.png',
+            src: '/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png'
+          },
+          {
+            src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png'
+          },
+          {
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/icon-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         categories: ['business', 'productivity', 'utilities'],
