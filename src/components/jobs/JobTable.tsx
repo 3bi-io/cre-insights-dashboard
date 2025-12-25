@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic } from 'lucide-react';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2 } from 'lucide-react';
+import { CopyApplyLinkButton } from './CopyApplyLinkButton';
 
 interface JobTableProps {
   jobs: any[] | undefined;
@@ -292,6 +293,12 @@ const JobTable: React.FC<JobTableProps> = ({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <CopyApplyLinkButton 
+                          jobId={job.id} 
+                          jobTitle={job.title || job.job_title}
+                          organizationId={job.organization_id}
+                        />
+                        
                         <Button 
                           variant="outline" 
                           size="sm"
