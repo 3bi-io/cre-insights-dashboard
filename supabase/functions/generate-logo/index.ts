@@ -94,8 +94,70 @@ Key visual messages:
 - Modern, trustworthy, enterprise-ready platform
 
 Style: Ultra-modern SaaS marketing material with premium tech aesthetic. Clean but visually striking.`;
+    } else if (type === 'premium-soundwave') {
+      prompt = `Create a premium horizontal logo for "ats.me" - an AI-powered voice recruitment platform.
+
+CRITICAL DESIGN - Replicate this exact premium style:
+- Soundwave icon on the left: 5-7 vertical bars of varying heights forming an elegant audio waveform, emerald/teal green color (#10b981 to #14b8a6)
+- Text "ats.me" in LOWERCASE next to the icon - clean, modern sans-serif font (Inter or Montserrat style), pure white color
+- Tagline "AI Powered Voice Recruitment" below the main text in smaller, lighter weight font
+- Dark navy/teal gradient background (approximately #0a1628 flowing to #0d3d38)
+- Premium particle flow effect in background with glowing dots/particles
+- Elegant luminous wave curve flowing through the background creating depth
+- Bokeh-style glowing orbs scattered in the background for premium feel
+
+Typography specifications:
+- "ats.me" - lowercase, white (#ffffff), bold modern sans-serif weight
+- Tagline - smaller size, lighter weight, same font family, slightly muted white
+
+Color palette:
+- Primary icon: Emerald/teal green (#10b981 to #14b8a6)
+- Background: Deep dark navy to teal gradient (#0a1628 to #0d4d40)
+- Text: Pure white (#ffffff)
+- Particle accents: Glowing teal and blue particles with soft glow
+
+Dimensions: 16:9 aspect ratio, suitable for hero sections and marketing
+
+Style: Ultra-premium, modern SaaS branding. High-end tech company aesthetic like Vercel, Linear, or Stripe. Clean but with stunning depth and sophistication.`;
+    } else if (type === 'premium-icon') {
+      prompt = `Create a premium square icon for "ats.me" - an AI-powered voice recruitment platform.
+
+Design requirements:
+- Square format, perfect for favicon and app icons
+- Soundwave/audio waveform design: 5-7 vertical bars of varying heights
+- Colors: Emerald/teal green (#10b981 to #14b8a6) bars
+- Dark navy background (#0a1628) with subtle gradient
+- Optional: Subtle glow effect around the soundwave bars
+- Clean, minimal, instantly recognizable at small sizes (32px)
+- No text, icon only
+- Modern, premium tech aesthetic
+
+Style: Minimalist tech icon like Linear, Vercel, or Notion. Clean geometry with premium feel.`;
+    } else if (type === 'premium-og') {
+      prompt = `Create a stunning premium social media preview image (Open Graph) for "ats.me" - an AI-powered voice recruitment platform.
+
+CRITICAL DESIGN - Match the premium soundwave branding:
+- Dimensions: 1200x630 pixels (16:9 landscape)
+- Left side: Soundwave icon (5-7 vertical bars, emerald green #10b981) + "ats.me" text in lowercase white
+- Tagline: "AI Powered Voice Recruitment" below the logo
+- Background: Premium dark navy to teal gradient (#0a1628 to #0d4d40)
+- Include flowing particle effects and luminous wave curves in background
+- Bokeh-style glowing orbs for depth and premium feel
+- Subtle soundwave visualization elements flowing across the design
+
+Visual elements to include:
+- Glowing particles flowing from left to right
+- Elegant curved luminous lines
+- Soft depth-of-field bokeh effects
+- Abstract neural network nodes (subtle, in background)
+
+Typography:
+- "ats.me" - large, lowercase, bold white sans-serif
+- Tagline - smaller, lighter weight, white
+
+Style: Ultra-premium tech marketing. Dark, sophisticated, modern. Like Vercel, Linear, or high-end SaaS company marketing materials.`;
     } else {
-      throw new Error('Invalid logo type. Use: icon, horizontal, horizontal-white, or og-image');
+      throw new Error('Invalid logo type. Use: icon, horizontal, horizontal-white, og-image, premium-soundwave, premium-icon, or premium-og');
     }
 
     console.log(`Generating ${type} logo...`);
