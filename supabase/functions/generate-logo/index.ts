@@ -69,20 +69,31 @@ Design requirements:
 
 Style: Modern SaaS logo lockup for dark mode. Clean white typography, balanced spacing.`;
     } else if (type === 'og-image') {
-      prompt = `Create a professional social media preview image (Open Graph) for "ATS.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a stunning, premium social media preview image (Open Graph) for "ATS.me" - an AI-powered voice recruitment platform.
+
+CRITICAL SPELLING: The brand name is "ATS.me" (capital A, T, S, period, lowercase m, e). NO extra period at the end. Just "ATS.me"
 
 Design requirements:
-- 1200x630 pixels aspect ratio
-- Feature the ATS.me logo prominently in the center-left
-- Tagline: "AI-Powered Voice Recruitment"
-- Modern, gradient background with vibrant blue (#3b82f6) to emerald green (#10b981)
-- Include subtle visual elements representing: AI, voice/audio waves, recruitment/hiring
-- Professional, corporate aesthetic
-- Correct spelling: "ATS.me" with the period before "me"
-- Clean, uncluttered design
-- Text should be large and readable when scaled down
+- Exact dimensions: 1200x630 pixels aspect ratio (16:9 landscape)
+- Layout: Clean left-aligned logo area with "ATS.me" text prominently displayed
+- Tagline below logo: "AI-Powered Voice Recruitment"
+- Background: Stunning premium gradient flowing from vibrant blue (#3b82f6) on left to emerald green (#10b981) on right, with subtle dark overlay for depth
+- Include elegant visual elements representing platform capabilities:
+  • Stylized soundwave/audio visualization (voice technology)
+  • Abstract neural network connections/nodes (AI intelligence)
+  • Subtle speed lines or motion blur (instant 24/7 callbacks)
+  • Modern geometric shapes for tech aesthetic
+- Typography: Bold, clean sans-serif font (like Inter or SF Pro), white text, highly readable at thumbnail size
+- Add subtle glow effects, gradient overlays, and depth without clutter
+- Professional enterprise SaaS feel - premium like Salesforce, Slack, or HubSpot
 
-Style: Modern SaaS marketing material. Premium feel.`;
+Key visual messages:
+- Speed and instant response capability
+- AI intelligence and smart automation
+- Voice/communication technology
+- Modern, trustworthy, enterprise-ready platform
+
+Style: Ultra-modern SaaS marketing material with premium tech aesthetic. Clean but visually striking.`;
     } else {
       throw new Error('Invalid logo type. Use: icon, horizontal, horizontal-white, or og-image');
     }
