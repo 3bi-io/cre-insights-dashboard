@@ -1,80 +1,65 @@
-// @ts-nocheck
+/**
+ * Inbound Applications Webhook Edge Function
+ * Handles incoming application webhooks from external sources
+ */
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { successResponse, errorResponse, validationErrorResponse } from "../_shared/response.ts";
+import { createLogger } from "../_shared/logger.ts";
 import { 
   normalizePhone, 
   findOrCreateJobListing, 
   findClientByIdentifier,
   insertApplication 
 } from "../_shared/application-processor.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-webhook-signature',
-};
+const logger = createLogger('inbound-applications');
 
-interface InboundApplicationData {
-  // Applicant Information
-  first_name?: string;
-  last_name?: string;
-  full_name?: string;
-  applicant_email?: string;
-  email?: string;
-  phone?: string;
-  
-  // Location
-  city?: string;
-  state?: string;
-  zip?: string;
-  address_1?: string;
-  address_2?: string;
-  country?: string;
-  
-  // Job Details
-  job_listing_id?: string;
-  job_id?: string;
-  job_title?: string;
-  
-  // CDL & Experience
-  cdl?: string;
-  cdl_class?: string;
-  cdl_state?: string;
-  cdl_endorsements?: string[];
-  exp?: string;
-  experience_years?: string;
-  
-  // Demographics
-  age?: string;
-  veteran?: string;
-  education_level?: string;
-  work_authorization?: string;
-  
-  // Screening
-  consent?: string;
-  drug?: string;
-  privacy?: string;
-  convicted_felony?: string;
-  
-  // Source tracking
-  source?: string;
-  ad_id?: string;
-  campaign_id?: string;
-  adset_id?: string;
-  
-  // Organization
-  organization_id?: string;
-  organization_slug?: string;
-  
-  // Client routing
-  client_name?: string;
-  client_slug?: string;
-  client_company?: string;
-  
-  // Additional fields
-  notes?: string;
-  status?: string;
-  [key: string]: any;
-}
+// Input validation schema
+const InboundApplicationSchema = z.object({
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  full_name: z.string().optional(),
+  applicant_email: z.string().email().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  address_1: z.string().optional(),
+  address_2: z.string().optional(),
+  country: z.string().optional(),
+  job_listing_id: z.string().uuid().optional(),
+  job_id: z.string().optional(),
+  job_title: z.string().optional(),
+  cdl: z.string().optional(),
+  cdl_class: z.string().optional(),
+  cdl_state: z.string().optional(),
+  cdl_endorsements: z.union([z.array(z.string()), z.string()]).optional(),
+  exp: z.string().optional(),
+  age: z.string().optional(),
+  veteran: z.string().optional(),
+  education_level: z.string().optional(),
+  work_authorization: z.string().optional(),
+  consent: z.string().optional(),
+  drug: z.string().optional(),
+  privacy: z.string().optional(),
+  convicted_felony: z.string().optional(),
+  source: z.string().optional(),
+  ad_id: z.string().optional(),
+  campaign_id: z.string().optional(),
+  adset_id: z.string().optional(),
+  organization_id: z.string().uuid().optional(),
+  organization_slug: z.string().optional(),
+  client_name: z.string().optional(),
+  client_slug: z.string().optional(),
+  client_company: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.string().optional(),
+}).passthrough();
 
 /**
  * Verify webhook signature for security using Web Crypto API
@@ -108,7 +93,7 @@ const verifyWebhookSignature = async (
     
     return signature === expectedSignature;
   } catch (error) {
-    console.error('Signature verification error:', error);
+    logger.error('Signature verification error', { error });
     return false;
   }
 };
@@ -116,7 +101,7 @@ const verifyWebhookSignature = async (
 /**
  * Extract value from multiple possible field names
  */
-const extractValue = (data: any, fieldNames: string[]): string | undefined => {
+const extractValue = (data: Record<string, unknown>, fieldNames: string[]): string | undefined => {
   for (const fieldName of fieldNames) {
     if (data[fieldName] !== undefined && data[fieldName] !== null) {
       const value = String(data[fieldName]).trim();
@@ -127,79 +112,45 @@ const extractValue = (data: any, fieldNames: string[]): string | undefined => {
 };
 
 /**
- * Validate required fields
- */
-const validateApplicationData = (data: InboundApplicationData): { valid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-  
-  // Email is required
-  const email = data.applicant_email || data.email;
-  if (!email) {
-    errors.push('Email is required');
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.push('Invalid email format');
-  }
-  
-  // At least first name or full name required
-  if (!data.first_name && !data.full_name) {
-    errors.push('First name or full name is required');
-  }
-  
-  // Phone validation (if provided)
-  if (data.phone) {
-    const phoneDigits = data.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10) {
-      errors.push('Phone number must be at least 10 digits');
-    }
-  }
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-};
-
-/**
  * Trigger webhooks for applications matching the source filter
  */
 async function triggerSourceWebhooks(
-  supabase: any, 
+  supabase: ReturnType<typeof createClient>, 
   applicationId: string, 
   source: string
 ): Promise<void> {
-  console.log('Triggering webhooks for application:', applicationId, 'source:', source);
+  logger.info('Triggering webhooks', { applicationId, source });
   
-  // Find all enabled webhooks that match this source
   const { data: webhooks, error: webhookError } = await supabase
     .from('client_webhooks')
     .select('id, webhook_url, event_types, source_filter, secret_key')
     .eq('enabled', true);
 
   if (webhookError) {
-    console.error('Error fetching webhooks:', webhookError);
+    logger.error('Error fetching webhooks', { error: webhookError });
     return;
   }
 
   if (!webhooks || webhooks.length === 0) {
-    console.log('No enabled webhooks found');
+    logger.info('No enabled webhooks found');
     return;
   }
 
-  // Filter webhooks that have this source in their source_filter AND 'created' in event_types
-  const matchingWebhooks = webhooks.filter((webhook: any) => {
-    const hasMatchingSource = webhook.source_filter && webhook.source_filter.includes(source);
-    const hasCreatedEvent = !webhook.event_types || webhook.event_types.length === 0 || webhook.event_types.includes('created');
+  const matchingWebhooks = webhooks.filter((webhook: Record<string, unknown>) => {
+    const sourceFilter = webhook.source_filter as string[] | null;
+    const eventTypes = webhook.event_types as string[] | null;
+    const hasMatchingSource = sourceFilter && sourceFilter.includes(source);
+    const hasCreatedEvent = !eventTypes || eventTypes.length === 0 || eventTypes.includes('created');
     return hasMatchingSource && hasCreatedEvent;
   });
 
   if (matchingWebhooks.length === 0) {
-    console.log('No webhooks match source filter:', source);
+    logger.info('No webhooks match source filter', { source });
     return;
   }
 
-  console.log(`Found ${matchingWebhooks.length} matching webhooks for source: ${source}`);
+  logger.info(`Found ${matchingWebhooks.length} matching webhooks for source: ${source}`);
 
-  // Fetch full application data
   const { data: application, error: appError } = await supabase
     .from('applications')
     .select(`
@@ -213,11 +164,10 @@ async function triggerSourceWebhooks(
     .single();
 
   if (appError || !application) {
-    console.error('Error fetching application for webhook:', appError);
+    logger.error('Error fetching application for webhook', { error: appError });
     return;
   }
 
-  // Send to each matching webhook
   for (const webhook of matchingWebhooks) {
     const startTime = Date.now();
     let responseStatus: number | null = null;
@@ -225,7 +175,6 @@ async function triggerSourceWebhooks(
     let errorMessage: string | null = null;
 
     try {
-      // Build payload
       const payload = {
         event_type: 'created',
         timestamp: new Date().toISOString(),
@@ -264,12 +213,11 @@ async function triggerSourceWebhooks(
         'Content-Type': 'application/json',
       };
 
-      // Sign payload if secret key is present
       if (webhook.secret_key) {
         const encoder = new TextEncoder();
         const key = await crypto.subtle.importKey(
           "raw",
-          encoder.encode(webhook.secret_key),
+          encoder.encode(webhook.secret_key as string),
           { name: "HMAC", hash: "SHA-256" },
           false,
           ["sign"]
@@ -285,11 +233,10 @@ async function triggerSourceWebhooks(
         headers['X-Webhook-Signature'] = signature;
       }
 
-      // Send webhook
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(webhook.webhook_url, {
+      const response = await fetch(webhook.webhook_url as string, {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
@@ -300,10 +247,9 @@ async function triggerSourceWebhooks(
       responseStatus = response.status;
       responseBody = await response.text().catch(() => null);
 
-      console.log(`Webhook ${webhook.id} response: ${responseStatus}`);
+      logger.info(`Webhook ${webhook.id} response`, { status: responseStatus });
 
-      // Update webhook status
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         last_triggered_at: new Date().toISOString(),
       };
 
@@ -321,7 +267,7 @@ async function triggerSourceWebhooks(
 
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Webhook ${webhook.id} failed:`, errorMessage);
+      logger.error(`Webhook ${webhook.id} failed`, { error: errorMessage });
 
       await supabase
         .from('client_webhooks')
@@ -332,7 +278,6 @@ async function triggerSourceWebhooks(
         .eq('id', webhook.id);
     }
 
-    // Log webhook attempt
     const durationMs = Date.now() - startTime;
     await supabase.from('client_webhook_logs').insert({
       webhook_id: webhook.id,
@@ -346,15 +291,16 @@ async function triggerSourceWebhooks(
     });
   }
 
-  console.log('Webhook triggering complete');
+  logger.info('Webhook triggering complete');
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('=== INBOUND APPLICATION WEBHOOK ===', {
+  const origin = req.headers.get('origin') || '*';
+  const corsHeaders = getCorsHeaders(origin);
+
+  logger.info('Inbound application webhook received', {
     method: req.method,
-    timestamp: new Date().toISOString(),
     url: req.url,
-    headers: Object.fromEntries(req.headers)
   });
 
   // Handle CORS preflight
@@ -363,13 +309,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed', allowed_methods: ['POST'] }),
-      { 
-        status: 405,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      }
-    );
+    return errorResponse('Method not allowed', 405, { allowed_methods: ['POST'] }, origin);
   }
 
   try {
@@ -381,10 +321,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Parse request body
     const rawBody = await req.text();
     const contentType = req.headers.get('content-type') || '';
-    let body: any = {};
+    let body: Record<string, unknown> = {};
 
-    console.log('Content-Type:', contentType);
-    console.log('Raw body preview:', rawBody.substring(0, 500));
+    logger.info('Content-Type', { contentType });
 
     if (contentType.includes('application/json')) {
       body = JSON.parse(rawBody);
@@ -392,7 +331,6 @@ const handler = async (req: Request): Promise<Response> => {
       const params = new URLSearchParams(rawBody);
       body = Object.fromEntries(params);
     } else {
-      // Try JSON first, fallback to form data
       try {
         body = JSON.parse(rawBody);
       } catch {
@@ -401,19 +339,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log('Parsed webhook data:', JSON.stringify(body, null, 2));
-
-    // DETAILED PAYLOAD LOGGING for debugging field mapping
-    console.log('=== PAYLOAD STRUCTURE DEBUG ===');
-    console.log('All payload keys:', Object.keys(body));
-    console.log('Payload key-value pairs (first 1000 chars):', JSON.stringify(body, null, 2).substring(0, 1000));
-    console.log('Sample values for common fields:', {
-      possible_first_name: body.first_name || body.firstName || body.fname || body.Firstname || body.FirstName,
-      possible_last_name: body.last_name || body.lastName || body.lname || body.Lastname || body.LastName,
-      possible_email: body.applicant_email || body.email || body.emailAddress || body.Email,
-      possible_phone: body.phone || body.phone_number || body.phoneNumber || body.Phone,
-    });
-    console.log('=== END PAYLOAD DEBUG ===');
+    logger.info('Parsed webhook data', { keys: Object.keys(body) });
 
     // Optional: Verify webhook signature if provided
     const signature = req.headers.get('x-webhook-signature');
@@ -422,20 +348,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (webhookSecret && signature) {
       const isValid = await verifyWebhookSignature(rawBody, signature, webhookSecret);
       if (!isValid) {
-        console.error('Invalid webhook signature');
-        return new Response(
-          JSON.stringify({ error: 'Invalid webhook signature' }),
-          {
-            status: 401,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders }
-          }
-        );
+        logger.error('Invalid webhook signature');
+        return errorResponse('Invalid webhook signature', 401, undefined, origin);
       }
-      console.log('Webhook signature verified');
+      logger.info('Webhook signature verified');
     }
 
     // Extract application data with flexible field mapping
-    const applicationData: InboundApplicationData = {
+    const applicationData = {
       first_name: extractValue(body, ['first_name', 'firstName', 'fname', 'givenName']),
       last_name: extractValue(body, ['last_name', 'lastName', 'lname', 'familyName']),
       full_name: extractValue(body, ['full_name', 'fullName', 'name', 'applicant_name']),
@@ -482,32 +402,42 @@ const handler = async (req: Request): Promise<Response> => {
       
       notes: extractValue(body, ['notes', 'comments', 'message']),
       status: extractValue(body, ['status']) || 'pending',
+      cdl_endorsements: undefined as string[] | undefined,
     };
 
     // Parse CDL endorsements if provided
     if (body.cdl_endorsements) {
       if (Array.isArray(body.cdl_endorsements)) {
-        applicationData.cdl_endorsements = body.cdl_endorsements;
+        applicationData.cdl_endorsements = body.cdl_endorsements as string[];
       } else if (typeof body.cdl_endorsements === 'string') {
-        applicationData.cdl_endorsements = body.cdl_endorsements.split(',').map(e => e.trim());
+        applicationData.cdl_endorsements = (body.cdl_endorsements as string).split(',').map(e => e.trim());
       }
     }
 
-    // Validate application data
-    const validation = validateApplicationData(applicationData);
-    if (!validation.valid) {
-      console.error('Validation errors:', validation.errors);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Validation failed',
-          errors: validation.errors,
-          received_data: Object.keys(body)
-        }),
-        { 
-          status: 400,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
+    // Validate required fields
+    const email = applicationData.applicant_email;
+    const validationErrors: string[] = [];
+    
+    if (!email) {
+      validationErrors.push('Email is required');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      validationErrors.push('Invalid email format');
+    }
+    
+    if (!applicationData.first_name && !applicationData.full_name) {
+      validationErrors.push('First name or full name is required');
+    }
+    
+    if (applicationData.phone) {
+      const phoneDigits = applicationData.phone.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        validationErrors.push('Phone number must be at least 10 digits');
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      logger.warn('Validation errors', { errors: validationErrors });
+      return validationErrorResponse(validationErrors.join(', '), origin);
     }
 
     // Determine organization - use Hayes as default if not specified
@@ -547,10 +477,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (!jobListingId) {
-      return new Response(
-        JSON.stringify({ error: 'Unable to create job listing' }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders }}
-      );
+      return errorResponse('Unable to create job listing', 500, undefined, origin);
     }
 
     // Prepare application record
@@ -601,26 +528,17 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: application, error: insertError } = await insertApplication(supabase, applicationRecord);
 
     if (insertError) {
-      console.error('Error inserting application:', insertError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to create application',
-          details: insertError.message
-        }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        }
-      );
+      logger.error('Error inserting application', { error: insertError });
+      return errorResponse('Failed to create application', 500, { details: insertError.message }, origin);
     }
 
-    console.log('Application created successfully:', application.id);
+    logger.info('Application created successfully', { id: application.id });
 
     // Trigger webhooks for this source (non-blocking)
     try {
       await triggerSourceWebhooks(supabase, application.id, applicationData.source || 'CDL Job Cast');
     } catch (webhookError) {
-      console.error('Webhook trigger failed (non-blocking):', webhookError);
+      logger.error('Webhook trigger failed (non-blocking)', { error: webhookError });
     }
 
     return new Response(
@@ -639,17 +557,12 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Webhook error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      }
+    logger.error('Webhook error', { error });
+    return errorResponse(
+      error instanceof Error ? error.message : 'Internal server error',
+      500,
+      undefined,
+      origin
     );
   }
 };
