@@ -82,7 +82,7 @@ const FeaturesPage = () => {
     {
       icon: Globe,
       title: "Multi-Platform Job Distribution",
-      description: "Post jobs to 100+ job boards and platforms with one click"
+      description: "Post jobs to multiple job boards and platforms with one click"
     },
     {
       icon: MessageSquare,
@@ -141,17 +141,17 @@ const FeaturesPage = () => {
     }
   ];
 
+  // Updated integrations list - removed competitor ATS names
   const integrations = [
     "Slack", "Microsoft Teams", "Google Workspace", "LinkedIn", "Indeed", 
-    "Glassdoor", "ZipRecruiter", "Workday", "BambooHR", "Greenhouse", 
-    "Lever", "SmartRecruiters"
+    "Glassdoor", "ZipRecruiter", "Tenstreet", "BambooHR", "Workday"
   ];
 
   return (
     <div className="min-h-screen">
       <SEO
         title="Features | AI Screening, Voice Apply & Integrations"
-        description="Explore ATS.me's powerful features: Voice Apply (80% faster applications), Tenstreet sync, AI-powered screening, 100+ job board distribution, predictive analytics, automated workflows."
+        description="Explore ATS.me's powerful features: Voice Apply (faster applications), Tenstreet sync, AI-powered screening, job board distribution, predictive analytics, automated workflows."
         keywords="ATS features, Voice Apply technology, AI screening, job board integration, Tenstreet integration, recruitment automation"
         canonical="https://ats.me/features"
       />
@@ -271,7 +271,7 @@ const FeaturesPage = () => {
             Connect with the tools you already use and love
           </p>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {integrations.map((integration, index) => (
               <div key={index} className="p-4 border border-muted rounded-lg hover:border-primary/20 transition-colors">
                 <span className="text-sm font-medium text-muted-foreground">{integration}</span>
