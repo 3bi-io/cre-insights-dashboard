@@ -1,32 +1,32 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Users, Zap, Award } from 'lucide-react';
+import { Shield, Users, Zap, Rocket } from 'lucide-react';
 
 const TrustSection = () => {
   const stats = [
     {
       icon: Users,
-      value: '50+',
-      label: 'Pilot Program Companies',
-      description: 'Testing in production'
+      value: 'Growing',
+      label: 'Pilot Program',
+      description: 'Early adopters testing in production'
     },
     {
       icon: Zap,
-      value: '75%',
-      label: 'Avg. Time Savings',
-      description: 'Reported by early adopters'
+      value: 'Designed for',
+      label: 'Efficiency',
+      description: 'Automation-first architecture'
     },
     {
       icon: Shield,
-      value: '100%',
-      label: 'GDPR & EEO Compliant',
-      description: 'Built-in from day one'
+      value: 'Built-in',
+      label: 'GDPR & EEO Compliance',
+      description: 'Privacy and fairness by design'
     },
     {
-      icon: Award,
-      value: '4.8/5',
-      label: 'Beta User Rating',
-      description: 'Based on pilot feedback'
+      icon: Rocket,
+      value: 'Active',
+      label: 'Development',
+      description: 'New features shipping weekly'
     }
   ];
 
@@ -35,14 +35,14 @@ const TrustSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-            New to Market - Join Our Pilot Program
+            Now Accepting Beta Users
           </Badge>
           <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
             Built on Proven Technology, Designed for Modern Recruiting
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            While we're new to market, our platform is built on enterprise-grade infrastructure with 
-            real integrations to Tenstreet, major job boards, and leading HR systems.
+            Our platform is built on enterprise-grade infrastructure with 
+            integrations to Tenstreet, major job boards, and leading HR systems.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ const TrustSection = () => {
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
                   <Icon className="h-6 w-6 text-primary" />
                 </div>
-                <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
+                <div className="text-xl font-bold text-foreground mb-1">{stat.value}</div>
                 <div className="font-semibold text-foreground mb-1">{stat.label}</div>
                 <div className="text-sm text-muted-foreground">{stat.description}</div>
               </div>
@@ -64,7 +64,7 @@ const TrustSection = () => {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground">
-            🎯 <strong>Early Adopter Benefits:</strong> Priority support, feature voting rights, and special pricing for pilot program participants
+            <strong>Early Adopter Benefits:</strong> Priority support, feature voting rights, and special pricing for pilot program participants
           </p>
         </div>
       </div>

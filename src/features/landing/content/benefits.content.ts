@@ -6,7 +6,7 @@ export const benefitsContent = {
   title: 'Why Organizations Choose ATS.me',
   ctaText: 'Explore All Features',
   benefits: [
-    "Reduce time-to-hire by up to 95% with intelligent automation and voice-powered applications",
+    "Reduce time-to-hire significantly with intelligent automation and voice-powered applications",
     "Lower cost-per-hire with real-time spend tracking and publisher ROI analysis across all channels",
     "Improve jobseeker quality with AI-powered screening, predictive analytics, and automated background checks",
     "Scale your recruiting operations without increasing headcount using automated workflows and team collaboration tools",

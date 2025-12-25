@@ -25,7 +25,7 @@ const CTASection = () => {
         </h2>
         
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Join 50+ companies in our pilot program. Get 50% off for 6 months, lifetime grandfathered pricing, and direct access to our product team.
+          Join our growing pilot program. Get special early adopter pricing, lifetime grandfathered rates, and direct access to our product team.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -64,7 +64,7 @@ const CTASection = () => {
 
         <div className="mt-12 pt-8 border-t border-border/50">
           <p className="text-sm text-muted-foreground">
-            No long-term contracts • Cancel anytime • GDPR compliant • SOC 2 certified
+            No long-term contracts • Cancel anytime • GDPR compliant
           </p>
         </div>
       </div>
