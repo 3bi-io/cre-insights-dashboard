@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { 
@@ -7,6 +5,12 @@ import {
   findOrCreateJobListing, 
   insertApplication 
 } from "../_shared/application-processor.ts";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
+import { createLogger } from '../_shared/logger.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+
+const logger = createLogger('submit-application');
 
 // Zod validation schema for application submissions
 const ApplicationSubmissionSchema = z.object({
@@ -58,13 +62,8 @@ const ApplicationSubmissionSchema = z.object({
   { message: 'First name, last name, and email are required' }
 );
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
 // Build comprehensive payload for Zapier/webhooks
-function buildZapierPayload(app: any) {
+function buildZapierPayload(app: Record<string, unknown>) {
   return {
     // Event metadata
     event_type: 'created',
@@ -117,7 +116,7 @@ function buildZapierPayload(app: any) {
 
 // Trigger webhooks for applications matching the source filter
 async function triggerSourceWebhooks(
-  supabase: any, 
+  supabase: ReturnType<typeof createClient>, 
   applicationId: string, 
   source: string
 ): Promise<void> {
@@ -128,18 +127,19 @@ async function triggerSourceWebhooks(
     .eq('enabled', true);
 
   if (webhookError) {
-    console.error('Error fetching webhooks:', webhookError);
+    logger.error('Error fetching webhooks', webhookError);
     return;
   }
 
   // Filter webhooks that have this source in their source_filter
-  const matchingWebhooks = (webhooks || []).filter((webhook: any) => {
-    if (!webhook.source_filter || webhook.source_filter.length === 0) return false;
-    return webhook.source_filter.includes(source);
+  const matchingWebhooks = (webhooks || []).filter((webhook: Record<string, unknown>) => {
+    const sourceFilter = webhook.source_filter as string[] | null;
+    if (!sourceFilter || sourceFilter.length === 0) return false;
+    return sourceFilter.includes(source);
   });
 
   if (matchingWebhooks.length === 0) {
-    console.log('No webhooks configured for source:', source);
+    logger.info('No webhooks configured for source', { source });
     return;
   }
 
@@ -151,15 +151,16 @@ async function triggerSourceWebhooks(
     .single();
 
   if (appError || !application) {
-    console.error('Error fetching application for webhook:', appError);
+    logger.error('Error fetching application for webhook', appError);
     return;
   }
 
   // Send to each matching webhook
   for (const webhook of matchingWebhooks) {
+    const eventTypes = webhook.event_types as string[] | null;
     // Check if 'created' event type is enabled (or if no event_types specified, default to all)
-    if (webhook.event_types && webhook.event_types.length > 0 && !webhook.event_types.includes('created')) {
-      console.log(`Webhook ${webhook.id} skipped: 'created' not in event_types`);
+    if (eventTypes && eventTypes.length > 0 && !eventTypes.includes('created')) {
+      logger.debug('Webhook skipped: created not in event_types', { webhook_id: webhook.id });
       continue;
     }
 
@@ -167,7 +168,7 @@ async function triggerSourceWebhooks(
     const startTime = Date.now();
     
     try {
-      const response = await fetch(webhook.webhook_url, {
+      const response = await fetch(webhook.webhook_url as string, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -176,7 +177,11 @@ async function triggerSourceWebhooks(
       const durationMs = Date.now() - startTime;
       const responseText = await response.text().catch(() => '');
       
-      console.log(`Webhook ${webhook.id} sent: status=${response.status}, duration=${durationMs}ms`);
+      logger.info('Webhook sent', { 
+        webhook_id: webhook.id, 
+        status: response.status, 
+        duration_ms: durationMs 
+      });
       
       // Log the webhook call
       await supabase.from('client_webhook_logs').insert({
@@ -190,7 +195,7 @@ async function triggerSourceWebhooks(
       });
       
       // Update last triggered timestamp
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         last_triggered_at: new Date().toISOString(),
       };
       if (response.ok) {
@@ -205,8 +210,9 @@ async function triggerSourceWebhooks(
         .eq('id', webhook.id);
       
     } catch (err) {
+      const error = err as Error;
       const durationMs = Date.now() - startTime;
-      console.error(`Webhook ${webhook.id} failed:`, err);
+      logger.error('Webhook failed', error, { webhook_id: webhook.id });
       
       // Log the failed attempt
       await supabase.from('client_webhook_logs').insert({
@@ -214,7 +220,7 @@ async function triggerSourceWebhooks(
         application_id: applicationId,
         event_type: 'created',
         request_payload: payload,
-        error_message: err.message || 'Unknown error',
+        error_message: error.message || 'Unknown error',
         duration_ms: durationMs,
       });
       
@@ -222,7 +228,7 @@ async function triggerSourceWebhooks(
       await supabase.from('client_webhooks')
         .update({
           last_triggered_at: new Date().toISOString(),
-          last_error: err.message || 'Unknown error',
+          last_error: error.message || 'Unknown error',
         })
         .eq('id', webhook.id);
     }
@@ -234,23 +240,24 @@ async function triggerSourceWebhooks(
  * Priority: job_listing_id -> org_slug -> fallback to CR England
  */
 async function resolveOrganizationId(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   jobListingId?: string,
   orgSlug?: string
 ): Promise<{ organizationId: string; organizationName: string }> {
   // Priority 1: Get org from job_listing_id
   if (jobListingId) {
-    const { data: jobListing, error } = await supabase
+    const { data: jobListing } = await supabase
       .from('job_listings')
       .select('organization_id, organizations(id, name, slug)')
       .eq('id', jobListingId)
       .single();
     
     if (jobListing?.organization_id) {
-      console.log('Resolved org from job_listing_id:', jobListing.organizations?.name);
+      const org = jobListing.organizations as { id: string; name: string; slug: string } | null;
+      logger.info('Resolved org from job_listing_id', { org_name: org?.name });
       return {
         organizationId: jobListing.organization_id,
-        organizationName: jobListing.organizations?.name || 'Unknown'
+        organizationName: org?.name || 'Unknown'
       };
     }
   }
@@ -264,7 +271,7 @@ async function resolveOrganizationId(
       .single();
     
     if (org) {
-      console.log('Resolved org from slug:', org.name);
+      logger.info('Resolved org from slug', { org_name: org.name });
       return { organizationId: org.id, organizationName: org.name };
     }
   }
@@ -276,7 +283,7 @@ async function resolveOrganizationId(
     .eq('slug', 'cr-england')
     .single();
 
-  console.log('Falling back to CR England org');
+  logger.info('Falling back to CR England org');
   return {
     organizationId: crEnglandOrg?.id || '',
     organizationName: crEnglandOrg?.name || 'C.R. England'
@@ -284,25 +291,49 @@ async function resolveOrganizationId(
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Rate limiting based on IP
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+    const rateLimitResult = await checkRateLimit(`submit-app:${ip}`, {
+      maxRequests: 20,
+      windowMs: 60000, // 20 requests per minute per IP
+    });
+    
+    if (!rateLimitResult.allowed) {
+      logger.warn('Rate limit exceeded', { ip, retry_after: rateLimitResult.retryAfter });
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Too many requests. Please try again later.',
+          retryAfter: rateLimitResult.retryAfter 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateLimitResult.retryAfter || 60)
+          }
+        }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    );
 
     if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ error: 'Method not allowed' }),
-        { 
-          status: 405, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return errorResponse('Method not allowed', 405, undefined, origin || undefined);
     }
 
     const rawData = await req.json();
@@ -311,25 +342,17 @@ Deno.serve(async (req) => {
     const validationResult = ApplicationSubmissionSchema.safeParse(rawData);
     
     if (!validationResult.success) {
-      console.error('Validation failed:', validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`));
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid input data', 
-          details: validationResult.error.issues.map(issue => ({
-            field: issue.path.join('.'),
-            message: issue.message
-          }))
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      const errors = validationResult.error.issues.map(i => ({
+        field: i.path.join('.'),
+        message: i.message
+      }));
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors, origin || undefined);
     }
     
     const formData = validationResult.data;
 
-    // CRITICAL: Resolve organization dynamically instead of hardcoding CR England
+    // Resolve organization dynamically
     const { organizationId, organizationName } = await resolveOrganizationId(
       supabase,
       formData.job_listing_id,
@@ -339,13 +362,8 @@ Deno.serve(async (req) => {
     // Determine experience level based on months
     const getExperienceLevel = (months: string) => {
       if (!months) return '';
-      
       const monthsNum = parseInt(months);
-      if (monthsNum < 3) {
-        return 'Less than 3 months experience';
-      } else {
-        return 'More than 3 months experience';
-      }
+      return monthsNum < 3 ? 'Less than 3 months experience' : 'More than 3 months experience';
     };
 
     // Lookup city/state from zip code for consistency
@@ -364,7 +382,6 @@ Deno.serve(async (req) => {
         const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
         
         if (!response.ok) {
-          console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
           return { city: formData.city || '', state: formData.state || '' };
         }
 
@@ -379,13 +396,12 @@ Deno.serve(async (req) => {
         }
         
         return { city: formData.city || '', state: formData.state || '' };
-      } catch (error) {
-        console.error(`Error looking up zip code ${cleanZip}:`, error);
+      } catch {
         return { city: formData.city || '', state: formData.state || '' };
       }
     };
 
-    const { city, state } = await lookupCityState(formData.zip);
+    const { city, state } = await lookupCityState(formData.zip || '');
 
     // Get or create a job listing for the application using shared processor
     const jobListingId = await findOrCreateJobListing(supabase, {
@@ -400,7 +416,6 @@ Deno.serve(async (req) => {
     });
 
     // Map form data to applications table schema
-    // Support both camelCase and snake_case field names
     const firstName = formData.firstName || formData.first_name || '';
     const lastName = formData.lastName || formData.last_name || '';
     
@@ -410,13 +425,13 @@ Deno.serve(async (req) => {
       last_name: lastName,
       full_name: `${firstName} ${lastName}`.trim() || null,
       applicant_email: formData.email || formData.applicant_email,
-      phone: normalizePhone(formData.phone),
+      phone: normalizePhone(formData.phone || ''),
       city: city,
       state: state,
       zip: formData.zip,
       age: formData.over21,
       cdl: formData.cdl,
-      exp: formData.exp || getExperienceLevel(formData.experience),
+      exp: formData.exp || getExperienceLevel(formData.experience || ''),
       drug: formData.drug,
       veteran: formData.veteran,
       employment_history: formData.employmentHistory,
@@ -440,18 +455,12 @@ Deno.serve(async (req) => {
     const { data, error } = await insertApplication(supabase, applicationData);
 
     if (error) {
-      console.error('Error inserting application:', error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to submit application', details: error.message }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      logger.error('Error inserting application', error);
+      return errorResponse('Failed to submit application', 500, { details: error.message }, origin || undefined);
     }
 
-    // Application submitted successfully - log only non-PII data
-    console.log('Application submitted successfully:', { 
+    // Log success (only non-PII data)
+    logger.info('Application submitted successfully', { 
       id: data.id, 
       job_listing_id: data.job_listing_id, 
       organization: organizationName,
@@ -462,7 +471,7 @@ Deno.serve(async (req) => {
     try {
       await triggerSourceWebhooks(supabase, data.id, 'Direct Application');
     } catch (webhookError) {
-      console.error('Webhook trigger failed (non-blocking):', webhookError);
+      logger.error('Webhook trigger failed (non-blocking)', webhookError as Error);
     }
 
     // Check if organization has voice agent for response
@@ -474,27 +483,20 @@ Deno.serve(async (req) => {
       .eq('is_outbound_enabled', true)
       .maybeSingle();
 
-    return new Response(
-      JSON.stringify({ 
-        message: 'Application submitted successfully', 
+    return successResponse(
+      { 
         applicationId: data.id,
         organizationName,
         hasVoiceAgent: !!voiceAgent
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      },
+      'Application submitted successfully',
+      undefined,
+      origin || undefined
     );
 
   } catch (error) {
-    console.error('Error processing application:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    const err = error as Error;
+    logger.error('Error processing application', err);
+    return errorResponse('Internal server error', 500, { details: err.message }, req.headers.get('origin') || undefined);
   }
 });
