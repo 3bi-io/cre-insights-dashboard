@@ -54,13 +54,13 @@ export function usePaginatedPublicJobs({
         query = query.or(`title.ilike.%${searchTerm}%,job_title.ilike.%${searchTerm}%,job_summary.ilike.%${searchTerm}%`);
       }
 
-      // Apply location filter
-      if (locationFilter && locationFilter !== '__ALL__') {
+      // Apply location filter (empty string means "all")
+      if (locationFilter) {
         query = query.or(`city.ilike.%${locationFilter}%,state.ilike.%${locationFilter}%,location.ilike.%${locationFilter}%`);
       }
 
-      // Apply client filter
-      if (clientFilter && clientFilter !== '__ALL__') {
+      // Apply client filter (empty string means "all")
+      if (clientFilter) {
         query = query.eq('client_id', clientFilter);
       }
 
