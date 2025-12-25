@@ -46,18 +46,35 @@ const JobsPage = () => {
   const { data: allClients } = useQuery({
     queryKey: ['public-clients'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get the ACME organization ID to exclude
+      const { data: acmeOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', 'acme')
+        .single();
+      
+      const acmeOrgId = acmeOrg?.id;
+      
+      // Fetch clients, excluding those from ACME organization
+      let query = supabase
         .from('clients')
-        .select('id, name')
+        .select('id, name, organization_id')
         .order('name');
+      
+      if (acmeOrgId) {
+        query = query.neq('organization_id', acmeOrgId);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       
-      // Filter to only clients that have at least one job listing
+      // Filter to only clients that have at least one active job listing
       const clientIds = data?.map(client => client.id) || [];
       const { data: jobCounts } = await supabase
         .from('job_listings')
         .select('client_id')
+        .eq('status', 'active')
         .in('client_id', clientIds);
       
       const clientsWithJobs = new Set(jobCounts?.map(j => j.client_id).filter(Boolean));
