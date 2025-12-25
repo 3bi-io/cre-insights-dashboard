@@ -1,8 +1,25 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { successResponse, errorResponse, validationErrorResponse, rateLimitResponse } from '../_shared/response.ts';
+import { createLogger } from '../_shared/logger.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { verifyUser } from '../_shared/auth.ts';
 
-function validatePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
+const logger = createLogger('send-sms');
+
+// Zod schema for SMS request validation
+const smsRequestSchema = z.object({
+  to: z.string().min(10, 'Phone number must be at least 10 digits'),
+  message: z.string().min(1, 'Message is required').max(1600, 'Message too long'),
+  conversationId: z.string().uuid('Invalid conversation ID'),
+  messageId: z.string().uuid('Invalid message ID'),
+});
+
+type SMSRequest = z.infer<typeof smsRequestSchema>;
+
+function normalizePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
   const digitsOnly = phone.replace(/[^\d]/g, '');
   
   if (digitsOnly.length < 10 || digitsOnly.length > 11) {
@@ -20,13 +37,6 @@ function validatePhoneNumber(phone: string): { valid: boolean; error?: string; n
   return { valid: true, normalized };
 }
 
-interface SendSmsRequest {
-  to: string;
-  message: string;
-  conversationId: string;
-  messageId: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -37,19 +47,49 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, message, conversationId, messageId }: SendSmsRequest = await req.json();
+    // Verify user is authenticated
+    let user;
+    try {
+      user = await verifyUser(req);
+      logger.info('User authenticated', { user_id: user.id });
+    } catch (authError) {
+      logger.warn('Authentication failed', { error: (authError as Error).message });
+      return errorResponse('Authentication required', 401, undefined, origin || undefined);
+    }
 
-    if (!to || !message) {
-      throw new Error('Phone number and message are required');
+    // Rate limiting - 30 SMS per minute per user
+    const rateLimitResult = await checkRateLimit(`sms:${user.id}`, {
+      maxRequests: 30,
+      windowMs: 60000,
+    });
+
+    if (!rateLimitResult.allowed) {
+      logger.warn('Rate limit exceeded', { user_id: user.id });
+      return rateLimitResponse(rateLimitResult.retryAfter, origin || undefined);
+    }
+
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validationResult = smsRequestSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.issues.map(issue => ({
+        field: issue.path.join('.'),
+        message: issue.message,
+      }));
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors, origin || undefined);
+    }
+
+    const { to, message, conversationId, messageId }: SMSRequest = validationResult.data;
+
+    // Validate and normalize phone number
+    const phoneValidation = normalizePhoneNumber(to);
+    if (!phoneValidation.valid) {
+      return validationErrorResponse(phoneValidation.error || 'Invalid phone number', origin || undefined);
     }
     
-    // Validate phone number
-    const validation = validatePhoneNumber(to);
-    if (!validation.valid) {
-      throw new Error(validation.error || 'Invalid phone number');
-    }
-    
-    const normalizedPhone = validation.normalized!;
+    const normalizedPhone = phoneValidation.normalized!;
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -62,7 +102,8 @@ const handler = async (req: Request): Promise<Response> => {
     const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-      throw new Error('Twilio credentials not configured');
+      logger.error('Twilio credentials not configured');
+      return errorResponse('SMS service not configured', 500, undefined, origin || undefined);
     }
 
     // Send SMS via Twilio
@@ -73,6 +114,12 @@ const handler = async (req: Request): Promise<Response> => {
     formData.append('From', twilioPhoneNumber);
     formData.append('Body', message);
 
+    logger.info('Sending SMS', { 
+      to: normalizedPhone.slice(0, -4) + '****', // Mask phone for logging
+      conversation_id: conversationId 
+    });
+
+    const startTime = Date.now();
     const twilioResponse = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
@@ -81,11 +128,16 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: formData,
     });
+    const duration = Date.now() - startTime;
 
     const twilioResult = await twilioResponse.json();
 
     if (!twilioResponse.ok) {
-      console.error('Twilio error:', twilioResult);
+      logger.error('Twilio error', undefined, { 
+        status: twilioResponse.status, 
+        error_code: twilioResult.code,
+        duration_ms: duration 
+      });
       
       // Update message status to failed
       await supabase
@@ -96,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
         })
         .eq('id', messageId);
 
-      throw new Error(twilioResult.message || 'Failed to send SMS');
+      return errorResponse(twilioResult.message || 'Failed to send SMS', 500, undefined, origin || undefined);
     }
 
     // Update message with Twilio SID and delivered status
@@ -109,38 +161,28 @@ const handler = async (req: Request): Promise<Response> => {
       .eq('id', messageId);
 
     if (updateError) {
-      console.error('Failed to update message status:', updateError);
+      logger.warn('Failed to update message status', { error: updateError.message });
     }
 
-    console.log('SMS sent successfully:', twilioResult.sid);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      twilioSid: twilioResult.sid,
-      messageId 
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
+    logger.info('SMS sent successfully', { 
+      twilio_sid: twilioResult.sid, 
+      duration_ms: duration 
     });
 
-  } catch (error: any) {
-    console.error('Error in send-sms function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false 
-      }),
-      {
-        status: 500,
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...corsHeaders 
-        },
-      }
+    return successResponse(
+      { 
+        twilioSid: twilioResult.sid,
+        messageId 
+      },
+      'SMS sent successfully',
+      { duration_ms: duration },
+      origin || undefined
     );
+
+  } catch (error) {
+    const err = error as Error;
+    logger.error('Error in send-sms function', err);
+    return errorResponse(err.message || 'Internal server error', 500, undefined, origin || undefined);
   }
 };
 

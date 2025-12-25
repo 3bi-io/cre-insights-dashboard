@@ -1,6 +1,36 @@
-// @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts'
+import { createLogger } from '../_shared/logger.ts'
+import { checkRateLimit } from '../_shared/rate-limiter.ts'
+
+const logger = createLogger('tenstreet-integration');
+
+// Validation schemas
+const tenstreetActionSchema = z.enum(['send_application', 'test_connection', 'sync_applicant']);
+
+const tenstreetConfigSchema = z.object({
+  clientId: z.string().min(1, 'Client ID is required'),
+  password: z.string().min(1, 'Password is required'),
+  mode: z.enum(['PROD', 'TEST']),
+  service: z.string().optional(),
+  source: z.string().optional(),
+  companyId: z.string().optional(),
+  companyName: z.string().optional(),
+  appReferrer: z.string().optional(),
+  jobId: z.string().optional(),
+  statusTag: z.string().optional(),
+  driverId: z.string().optional(),
+});
+
+const tenstreetRequestSchema = z.object({
+  action: tenstreetActionSchema,
+  config: tenstreetConfigSchema.optional(),
+  applicationData: z.record(z.any()).optional(),
+  mappings: z.record(z.any()).optional(),
+  phone: z.string().optional(),
+});
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -12,159 +42,185 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limiting
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+    const rateLimitResult = await checkRateLimit(`tenstreet:${ip}`, {
+      maxRequests: 30,
+      windowMs: 60000,
+    });
+
+    if (!rateLimitResult.allowed) {
+      logger.warn('Rate limit exceeded', { ip });
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    );
 
-    const { action, ...data } = await req.json()
+    const rawBody = await req.json();
+    
+    // Validate request
+    const validationResult = tenstreetRequestSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      const errors = validationResult.error.issues.map(i => ({
+        field: i.path.join('.'),
+        message: i.message
+      }));
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors, origin || undefined);
+    }
+
+    const { action, ...data } = validationResult.data;
+    logger.info('Processing action', { action });
 
     switch (action) {
       case 'send_application':
-        return await handleSendApplication(data, corsHeaders)
+        return await handleSendApplication(data, corsHeaders, origin);
       case 'test_connection':
-        return await handleTestConnection(data, corsHeaders)
+        return await handleTestConnection(data, corsHeaders, origin);
       case 'sync_applicant':
-        return await handleSyncApplicant(data, corsHeaders)
+        return await handleSyncApplicant(data, corsHeaders, origin);
       default:
-        return new Response(
-          JSON.stringify({ error: 'Invalid action' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
+        return errorResponse('Invalid action', 400, undefined, origin || undefined);
     }
   } catch (error) {
-    console.error('Error in tenstreet-integration function:', error)
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    const err = error as Error;
+    logger.error('Error in tenstreet-integration function', err);
+    return errorResponse('Internal server error', 500, undefined, req.headers.get('origin') || undefined);
   }
-})
+});
 
-async function handleSendApplication(data: any, corsHeaders: Record<string, string>) {
+async function handleSendApplication(
+  data: Record<string, unknown>, 
+  corsHeaders: Record<string, string>,
+  origin: string | null
+) {
   try {
-    const { applicationData, mappings, config } = data
+    const { applicationData, mappings, config } = data as {
+      applicationData: Record<string, unknown>;
+      mappings: Record<string, unknown>;
+      config: Record<string, unknown>;
+    };
+
+    if (!config || !applicationData) {
+      return errorResponse('Missing config or applicationData', 400, undefined, origin || undefined);
+    }
 
     // Build Tenstreet XML payload
-    const xmlPayload = buildTenstreetXML(applicationData, mappings, config)
+    const xmlPayload = buildTenstreetXML(applicationData, mappings, config);
 
-    console.log('Sending application to Tenstreet for:', applicationData.applicant_email)
+    logger.info('Sending application to Tenstreet', { 
+      email: (applicationData.applicant_email as string)?.slice(0, 3) + '***' 
+    });
 
     // Send to Tenstreet API
+    const startTime = Date.now();
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/xml',
-      },
+      headers: { 'Content-Type': 'application/xml' },
       body: xmlPayload
-    })
+    });
 
-    const responseText = await response.text()
-    console.log('Tenstreet response status:', response.status)
+    const responseText = await response.text();
+    const duration = Date.now() - startTime;
+    
+    logger.info('Tenstreet response', { status: response.status, duration_ms: duration });
 
     if (!response.ok) {
-      throw new Error(`Tenstreet API error: ${response.status} - ${responseText}`)
+      return errorResponse(`Tenstreet API error: ${response.status}`, response.status, { response: responseText }, origin || undefined);
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Application sent to Tenstreet successfully',
-        response: responseText 
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return successResponse(
+      { response: responseText },
+      'Application sent to Tenstreet successfully',
+      { duration_ms: duration },
+      origin || undefined
+    );
   } catch (error) {
-    console.error('Error sending to Tenstreet:', error)
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    const err = error as Error;
+    logger.error('Error sending to Tenstreet', err);
+    return errorResponse(err.message, 500, undefined, origin || undefined);
   }
 }
 
-async function handleTestConnection(data: any, corsHeaders: Record<string, string>) {
+async function handleTestConnection(
+  data: Record<string, unknown>, 
+  corsHeaders: Record<string, string>,
+  origin: string | null
+) {
   try {
-    const { config } = data
-    const TIMEOUT_MS = 10000; // 10 second timeout
+    const { config } = data as { config: Record<string, string> };
+    const TIMEOUT_MS = 10000;
 
-    // Validate config
-    if (!config.clientId || !config.password || !config.mode) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Missing required configuration: clientId, password, or mode' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    if (!config?.clientId || !config?.password || !config?.mode) {
+      return validationErrorResponse('Missing required configuration: clientId, password, or mode', origin || undefined);
     }
 
-    const testXML = buildTestXML(config)
-    console.log('[Tenstreet] Testing connection for client:', config.clientId)
+    const testXML = buildTestXML(config);
+    logger.info('Testing Tenstreet connection', { client_id: config.clientId });
 
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+    const startTime = Date.now();
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/xml' },
       body: testXML,
       signal: controller.signal
-    })
+    });
 
-    clearTimeout(timeoutId)
-    const responseText = await response.text()
+    clearTimeout(timeoutId);
+    const responseText = await response.text();
+    const duration = Date.now() - startTime;
     
-    console.log('[Tenstreet] Test response:', { status: response.status, success: response.ok })
+    logger.info('Tenstreet test response', { status: response.status, success: response.ok, duration_ms: duration });
 
-    return new Response(
-      JSON.stringify({ 
+    return successResponse(
+      { 
         success: response.ok, 
         status: response.status,
-        message: response.ok ? 'Connection successful' : 'Connection failed',
         response: responseText 
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      },
+      response.ok ? 'Connection successful' : 'Connection failed',
+      { duration_ms: duration },
+      origin || undefined
+    );
   } catch (error) {
-    console.error('[Tenstreet] Connection test failed:', {
-      error: error.message,
-      isTimeout: error.name === 'AbortError'
-    })
+    const err = error as Error;
+    const isTimeout = err.name === 'AbortError';
     
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.name === 'AbortError' 
-          ? 'Connection timeout - Tenstreet API did not respond within 10 seconds'
-          : error.message 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    logger.error('Connection test failed', err, { isTimeout });
+    
+    const message = isTimeout 
+      ? 'Connection timeout - Tenstreet API did not respond within 10 seconds'
+      : err.message;
+      
+    return errorResponse(message, 500, undefined, origin || undefined);
   }
 }
 
-async function handleSyncApplicant(data: any, corsHeaders: Record<string, string>) {
+async function handleSyncApplicant(
+  data: Record<string, unknown>, 
+  corsHeaders: Record<string, string>,
+  origin: string | null
+) {
   try {
-    const { phone } = data
+    const { phone } = data as { phone: string };
+    
+    if (!phone) {
+      return validationErrorResponse('Phone number is required', origin || undefined);
+    }
+
+    logger.info('Syncing applicant', { phone: phone.slice(0, -4) + '****' });
 
     // Mock sync functionality - in real implementation, this would query Tenstreet API
-    // For now, return mock data
     const mockData = {
       found: true,
       applicantData: {
@@ -177,99 +233,85 @@ async function handleSyncApplicant(data: any, corsHeaders: Record<string, string
         experienceMonths: '24',
         veteranStatus: 'No'
       }
-    }
+    };
 
-    return new Response(
-      JSON.stringify(mockData),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return successResponse(mockData, 'Applicant synced', undefined, origin || undefined);
   } catch (error) {
-    console.error('Error syncing applicant:', error)
-    return new Response(
-      JSON.stringify({ 
-        found: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    const err = error as Error;
+    logger.error('Error syncing applicant', err);
+    return errorResponse(err.message, 500, undefined, origin || undefined);
   }
 }
 
 // Helper function to safely get field value from application data
-function getFieldValue(applicationData: any, fieldName: string): string {
-  if (!fieldName || !applicationData) return ''
+function getFieldValue(applicationData: Record<string, unknown>, fieldName: string): string {
+  if (!fieldName || !applicationData) return '';
   
   // Handle nested field access
   if (fieldName.includes('.')) {
-    const parts = fieldName.split('.')
-    let value = applicationData
+    const parts = fieldName.split('.');
+    let value: unknown = applicationData;
     for (const part of parts) {
-      value = value?.[part]
-      if (value === undefined || value === null) return ''
+      value = (value as Record<string, unknown>)?.[part];
+      if (value === undefined || value === null) return '';
     }
-    return String(value)
+    return String(value);
   }
   
-  const value = applicationData[fieldName]
-  if (value === undefined || value === null) return ''
-  return String(value)
+  const value = applicationData[fieldName];
+  if (value === undefined || value === null) return '';
+  return String(value);
 }
 
 // Helper function to format phone number
 function formatPhoneNumber(phone: string): string {
-  if (!phone) return ''
-  const digits = phone.replace(/\D/g, '')
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
   if (digits.length === 10) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
-  return phone
+  return phone;
 }
 
 // Helper function to format date
 function formatDate(dateValue: string): string {
-  if (!dateValue) return ''
+  if (!dateValue) return '';
   try {
-    const date = new Date(dateValue)
-    if (isNaN(date.getTime())) return dateValue
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const day = date.getDate().toString().padStart(2, '0')
-    const year = date.getFullYear()
-    return `${month}/${day}/${year}`
-  } catch (error) {
-    return dateValue
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return dateValue;
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  } catch {
+    return dateValue;
   }
 }
 
 // Helper function to format SSN
 function formatSSN(ssn: string): string {
-  if (!ssn) return ''
-  const digits = ssn.replace(/\D/g, '')
+  if (!ssn) return '';
+  const digits = ssn.replace(/\D/g, '');
   if (digits.length === 9) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`
+    return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
   }
-  return ssn
+  return ssn;
 }
 
 // Helper function to escape XML special characters
 function escapeXML(str: string): string {
-  if (!str) return ''
+  if (!str) return '';
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
+    .replace(/'/g, '&apos;');
 }
 
 // Build comprehensive test XML
-function buildTestXML(config: any): string {
-  console.log('Building test XML with config:', JSON.stringify(config))
+function buildTestXML(config: Record<string, string>): string {
+  logger.debug('Building test XML', { client_id: config.clientId });
   
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
@@ -279,9 +321,9 @@ function buildTestXML(config: any): string {
         <Service>${escapeXML(config.service || 'subject_upload')}</Service>
     </Authentication>
     <Mode>${escapeXML(config.mode || 'PROD')}</Mode>
-    <Source>${escapeXML(config.source)}</Source>
-    <CompanyId>${escapeXML(config.companyId)}</CompanyId>
-    <CompanyName>${escapeXML(config.companyName)}</CompanyName>
+    <Source>${escapeXML(config.source || '')}</Source>
+    <CompanyId>${escapeXML(config.companyId || '')}</CompanyId>
+    <CompanyName>${escapeXML(config.companyName || '')}</CompanyName>
     <DriverId>TEST123456</DriverId>
     <PersonalData>
         <PersonName>
@@ -309,12 +351,18 @@ function buildTestXML(config: any): string {
             <SecondaryPhone>555-987-6543</SecondaryPhone>
         </ContactData>
     </PersonalData>
-</TenstreetData>`
+</TenstreetData>`;
 }
 
 // Build comprehensive Tenstreet XML with all supported fields
-function buildTenstreetXML(applicationData: any, mappings: any, config: any): string {
-  const { personalData, customQuestions, displayFields } = mappings
+function buildTenstreetXML(
+  applicationData: Record<string, unknown>, 
+  mappings: Record<string, unknown>, 
+  config: Record<string, unknown>
+): string {
+  const personalData = (mappings?.personalData || {}) as Record<string, string>;
+  const customQuestions = mappings?.customQuestions as Array<{ mapping: string; questionId: string; question: string }> | undefined;
+  const displayFields = mappings?.displayFields as Array<{ mapping: string; displayPrompt: string }> | undefined;
 
   // Build PersonName section
   const personNameXML = `
@@ -324,7 +372,7 @@ function buildTenstreetXML(applicationData: any, mappings: any, config: any): st
             <MiddleName>${getFieldValue(applicationData, personalData?.middleName || '')}</MiddleName>
             <FamilyName>${getFieldValue(applicationData, personalData?.familyName || personalData?.lastName || '')}</FamilyName>
             <Affix>${getFieldValue(applicationData, personalData?.affix || '')}</Affix>
-        </PersonName>`
+        </PersonName>`;
 
   // Build PostalAddress section
   const postalAddressXML = `
@@ -335,95 +383,95 @@ function buildTenstreetXML(applicationData: any, mappings: any, config: any): st
             <PostalCode>${getFieldValue(applicationData, personalData?.postalCode || personalData?.zipCode || '')}</PostalCode>
             <Address1>${getFieldValue(applicationData, personalData?.address1 || personalData?.address || '')}</Address1>
             <Address2>${getFieldValue(applicationData, personalData?.address2 || '')}</Address2>
-        </PostalAddress>`
+        </PostalAddress>`;
 
   // Build GovernmentID section (optional)
-  const governmentIdValue = getFieldValue(applicationData, personalData?.governmentId || personalData?.ssn || '')
+  const governmentIdValue = getFieldValue(applicationData, personalData?.governmentId || personalData?.ssn || '');
   const governmentIdXML = governmentIdValue ? `
         <GovernmentID countryCode="${getFieldValue(applicationData, personalData?.governmentIdCountryCode || '') || 'US'}" 
                       issuingAuthority="${getFieldValue(applicationData, personalData?.governmentIdIssuingAuthority || '') || 'SSA'}" 
                       documentType="${getFieldValue(applicationData, personalData?.governmentIdDocumentType || '') || 'SSN'}">
             ${formatSSN(governmentIdValue)}
-        </GovernmentID>` : ''
+        </GovernmentID>` : '';
 
   // Build DateOfBirth section (optional)
-  const dateOfBirth = formatDate(getFieldValue(applicationData, personalData?.dateOfBirth || ''))
+  const dateOfBirth = formatDate(getFieldValue(applicationData, personalData?.dateOfBirth || ''));
   const dateOfBirthXML = dateOfBirth ? `
-        <DateOfBirth>${dateOfBirth}</DateOfBirth>` : ''
+        <DateOfBirth>${dateOfBirth}</DateOfBirth>` : '';
 
   // Build ContactData section
-  const primaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.primaryPhone || personalData?.phone || ''))
-  const secondaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.secondaryPhone || ''))
-  const preferredMethod = getFieldValue(applicationData, personalData?.preferredMethod || '') || 'PrimaryPhone'
+  const primaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.primaryPhone || personalData?.phone || ''));
+  const secondaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.secondaryPhone || ''));
+  const preferredMethod = getFieldValue(applicationData, personalData?.preferredMethod || '') || 'PrimaryPhone';
   
   const contactDataXML = `
         <ContactData PreferredMethod="${preferredMethod}">
             <InternetEmailAddress>${getFieldValue(applicationData, personalData?.internetEmailAddress || personalData?.email || '')}</InternetEmailAddress>
             ${primaryPhone ? `<PrimaryPhone>${primaryPhone}</PrimaryPhone>` : ''}
             ${secondaryPhone ? `<SecondaryPhone>${secondaryPhone}</SecondaryPhone>` : ''}
-        </ContactData>`
+        </ContactData>`;
 
   // Build custom questions XML
   const customQuestionsXML = customQuestions && Array.isArray(customQuestions)
     ? customQuestions
-        .filter((q: any) => q.mapping && q.questionId && getFieldValue(applicationData, q.mapping))
-        .map((q: any) => `
+        .filter((q) => q.mapping && q.questionId && getFieldValue(applicationData, q.mapping))
+        .map((q) => `
             <CustomQuestion>
                 <QuestionId>${q.questionId}</QuestionId>
                 <Question>${q.question || ''}</Question>
                 <Answer>${getFieldValue(applicationData, q.mapping)}</Answer>
             </CustomQuestion>`)
         .join('')
-    : ''
+    : '';
 
   // Build display fields XML
   const displayFieldsXML = displayFields && Array.isArray(displayFields)
     ? displayFields
-        .filter((f: any) => f.mapping && f.displayPrompt && getFieldValue(applicationData, f.mapping))
-        .map((f: any) => `
+        .filter((f) => f.mapping && f.displayPrompt && getFieldValue(applicationData, f.mapping))
+        .map((f) => `
         <DisplayField>
             <DisplayPrompt>${f.displayPrompt}</DisplayPrompt>
             <DisplayValue>${getFieldValue(applicationData, f.mapping)}</DisplayValue>
         </DisplayField>`)
         .join('')
-    : ''
+    : '';
 
   // Build optional DriverId section
-  const driverId = config.driverId || getFieldValue(applicationData, 'driver_id') || getFieldValue(applicationData, 'id')
+  const driverId = (config.driverId as string) || getFieldValue(applicationData, 'driver_id') || getFieldValue(applicationData, 'id');
   const driverIdXML = driverId ? `
-    <DriverId>${driverId}</DriverId>` : ''
+    <DriverId>${driverId}</DriverId>` : '';
 
   // Build optional Job section
   const jobXML = config.jobId ? `
     <Job>
         <JobId>${config.jobId}</JobId>
-    </Job>` : ''
+    </Job>` : '';
 
   // Build optional Tags section
   const tagsXML = config.statusTag ? `
     <Tags>
         <Tag>${config.statusTag}</Tag>
-    </Tags>` : ''
+    </Tags>` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
-        <ClientId>${escapeXML(config.clientId)}</ClientId>
+        <ClientId>${escapeXML(config.clientId as string)}</ClientId>
         <Password><![CDATA[${config.password}]]></Password>
-        <Service>${escapeXML(config.service || 'subject_upload')}</Service>
+        <Service>${escapeXML((config.service as string) || 'subject_upload')}</Service>
     </Authentication>
-    <Mode>${escapeXML(config.mode || 'PROD')}</Mode>
-    <Source>${escapeXML(config.source)}</Source>
-    <CompanyId>${escapeXML(config.companyId)}</CompanyId>
-    <CompanyName>${escapeXML(config.companyName)}</CompanyName>${driverIdXML}${jobXML}${tagsXML}
+    <Mode>${escapeXML((config.mode as string) || 'PROD')}</Mode>
+    <Source>${escapeXML((config.source as string) || '')}</Source>
+    <CompanyId>${escapeXML((config.companyId as string) || '')}</CompanyId>
+    <CompanyName>${escapeXML((config.companyName as string) || '')}</CompanyName>${driverIdXML}${jobXML}${tagsXML}
     <PersonalData>${personNameXML}${postalAddressXML}${governmentIdXML}${dateOfBirthXML}${contactDataXML}
     </PersonalData>
     <ApplicationData>
-        <AppReferrer>${config.appReferrer || '3BI'}</AppReferrer>
+        <AppReferrer>${(config.appReferrer as string) || '3BI'}</AppReferrer>
         <CustomQuestions>${customQuestionsXML}
         </CustomQuestions>
         <DisplayFields>${displayFieldsXML}
         </DisplayFields>
     </ApplicationData>
-</TenstreetData>`
+</TenstreetData>`;
 }
