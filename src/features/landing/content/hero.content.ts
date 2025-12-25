@@ -13,9 +13,9 @@ export const heroContent = {
     secondary: 'Browse Jobs'
   },
   socialProof: {
-    rating: '4.8/5 from pilot users',
-    companies: '50+ companies in our pilot program',
-    pricing: '< 3 min avg callback time'
+    rating: 'Now in Beta',
+    companies: 'Join our growing pilot program',
+    pricing: 'Fast automated callbacks'
   },
   voiceHighlight: {
     icon: 'phone',

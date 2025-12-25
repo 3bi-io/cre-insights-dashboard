@@ -1,40 +1,40 @@
 /**
  * Trust Section Content
- * Voice-specific metrics
+ * Honest capability-focused messaging for early-stage product
  */
 
-import { Shield, Phone, CheckCircle, Award } from 'lucide-react';
+import { Shield, Phone, CheckCircle, Rocket } from 'lucide-react';
 import { TrustStat } from './types';
 
 export const trustContent = {
-  badge: 'New to Market - Join Our Pilot Program',
+  badge: 'Now Accepting Beta Users',
   title: 'Built on Proven Technology, Designed for Modern Recruiting',
-  description: 'While we are new to market, our platform is built on enterprise-grade infrastructure with real integrations to Tenstreet, major job boards, and leading HR systems.',
+  description: 'Our platform is built on enterprise-grade infrastructure with integrations to Tenstreet, major job boards, and leading HR systems.',
   footer: 'Early Adopter Benefits: Priority support, feature voting rights, and special pricing for pilot program participants',
   stats: [
     {
       icon: Phone,
-      value: '2,500+',
-      label: 'Voice Calls Handled',
+      value: 'AI Voice',
+      label: 'Technology',
       description: 'Automated jobseeker callbacks'
     },
     {
       icon: CheckCircle,
-      value: '< 3 min',
-      label: 'Average Callback Time',
-      description: 'From application to contact'
+      value: 'Fast',
+      label: 'Response Times',
+      description: 'Quick application-to-contact'
     },
     {
       icon: Shield,
-      value: '95%',
-      label: 'Call Completion Rate',
-      description: 'Successful AI conversations'
+      value: 'Built-in',
+      label: 'Compliance',
+      description: 'GDPR and EEO ready'
     },
     {
-      icon: Award,
-      value: '4.8/5',
-      label: 'Jobseeker Satisfaction',
-      description: 'Based on post-call surveys'
+      icon: Rocket,
+      value: 'Active',
+      label: 'Development',
+      description: 'New features shipping weekly'
     }
   ] as TrustStat[]
 };
