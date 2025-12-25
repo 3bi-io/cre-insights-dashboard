@@ -67,7 +67,7 @@ const PricingPage = () => {
         'Dedicated account manager',
         'Custom integrations & API access',
         'White-label options',
-        'All job boards (100+)',
+        'All job boards',
         'Advanced security & compliance',
         'Custom SLAs',
         'On-site training',
@@ -189,8 +189,8 @@ const PricingPage = () => {
               <p className="text-sm text-muted-foreground">Full data protection</p>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">99.9% Uptime</h3>
-              <p className="text-sm text-muted-foreground">Guaranteed availability</p>
+              <h3 className="font-semibold mb-2">High Availability</h3>
+              <p className="text-sm text-muted-foreground">Reliable infrastructure</p>
             </div>
             <div>
               <h3 className="font-semibold mb-2">Cancel Anytime</h3>

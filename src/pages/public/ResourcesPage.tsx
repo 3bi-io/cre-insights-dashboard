@@ -3,7 +3,7 @@
  * Knowledge base, guides, and training resources
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SEO } from '@/components/SEO';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,18 +19,22 @@ import {
   Zap,
   Users,
   Settings,
-  BarChart3,
-  Search
+  BarChart3
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { generateFeatureGuidePDF, generateImplementationChecklistPDF, generateBestPracticesPDF } from '@/utils/resourcesPdfGenerator';
+import { generateRoiCalculatorXLSX } from '@/utils/roiCalculatorGenerator';
 
 const ResourcesPage = () => {
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   const gettingStarted = [
     {
       icon: Zap,
       title: 'Quick Start Guide',
       description: 'Get up and running in 15 minutes',
       duration: '5 min read',
-      link: '#',
+      link: '/features',
       badge: 'Popular'
     },
     {
@@ -38,70 +42,94 @@ const ResourcesPage = () => {
       title: 'Creating Your First Job',
       description: 'Step-by-step job posting walkthrough',
       duration: '8 min read',
-      link: '#'
+      link: '/features'
     },
     {
       icon: Settings,
       title: 'Account Setup & Configuration',
       description: 'Configure your organization settings',
       duration: '10 min read',
-      link: '#'
+      link: '/contact'
     },
     {
       icon: Code,
       title: 'Integration Setup',
       description: 'Connect Tenstreet, job boards, and HRIS',
       duration: '12 min read',
-      link: '#'
+      link: '/contact'
     }
   ];
-
 
   const documentation = [
     {
       icon: FileText,
       title: 'API Documentation',
-      description: 'Complete API reference and integration guides'
+      description: 'Complete API reference and integration guides',
+      link: '/contact'
     },
     {
       icon: Code,
       title: 'Webhook Integration',
-      description: 'Set up real-time event notifications'
+      description: 'Set up real-time event notifications',
+      link: '/contact'
     },
     {
       icon: BarChart3,
       title: 'Analytics Guide',
-      description: 'Understanding your data and metrics'
+      description: 'Understanding your data and metrics',
+      link: '/features'
     },
     {
       icon: Settings,
       title: 'Admin Configuration',
-      description: 'Advanced settings and customization'
+      description: 'Advanced settings and customization',
+      link: '/contact'
     }
   ];
 
   const downloads = [
     {
+      id: 'feature-guide',
       title: 'ATS Intel Feature Guide',
-      size: '2.4 MB',
-      format: 'PDF'
+      size: '~50 KB',
+      format: 'PDF',
+      generator: generateFeatureGuidePDF
     },
     {
+      id: 'implementation',
       title: 'Implementation Checklist',
-      size: '856 KB',
-      format: 'PDF'
+      size: '~45 KB',
+      format: 'PDF',
+      generator: generateImplementationChecklistPDF
     },
     {
+      id: 'roi-calculator',
       title: 'ROI Calculator Template',
-      size: '1.2 MB',
-      format: 'XLSX'
+      size: '~20 KB',
+      format: 'XLSX',
+      generator: generateRoiCalculatorXLSX
     },
     {
+      id: 'best-practices',
       title: 'Best Practices Guide',
-      size: '3.1 MB',
-      format: 'PDF'
+      size: '~55 KB',
+      format: 'PDF',
+      generator: generateBestPracticesPDF
     }
   ];
+
+  const handleDownload = async (downloadId: string, generator: () => void, title: string) => {
+    try {
+      setDownloadingId(downloadId);
+      generator();
+      toast.success(`${title} downloaded successfully`);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to generate download. Please try again.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen py-20">
@@ -121,21 +149,9 @@ const ResourcesPage = () => {
           <h1 className="text-4xl md:text-5xl font-playfair font-bold text-foreground mb-6">
             Resources & Documentation
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Everything you need to succeed with ATS Intel - guides, tutorials, documentation, and best practices
           </p>
-          
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search documentation, guides, and resources..."
-                className="w-full pl-12 pr-4 py-3 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-          </div>
         </div>
 
         {/* Getting Started */}
@@ -147,31 +163,32 @@ const ResourcesPage = () => {
             {gettingStarted.map((guide, index) => {
               const Icon = guide.icon;
               return (
-                <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-2">
-                        <Icon className="h-6 w-6 text-primary" />
+                <Link key={index} to={guide.link}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-2">
+                          <Icon className="h-6 w-6 text-primary" />
+                        </div>
+                        {guide.badge && (
+                          <Badge className="bg-primary text-primary-foreground">{guide.badge}</Badge>
+                        )}
                       </div>
-                      {guide.badge && (
-                        <Badge className="bg-primary text-primary-foreground">{guide.badge}</Badge>
-                      )}
-                    </div>
-                    <CardTitle className="flex items-center justify-between">
-                      {guide.title}
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    </CardTitle>
-                    <CardDescription>{guide.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{guide.duration}</p>
-                  </CardContent>
-                </Card>
+                      <CardTitle className="flex items-center justify-between">
+                        {guide.title}
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      </CardTitle>
+                      <CardDescription>{guide.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{guide.duration}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
               );
             })}
           </div>
         </section>
-
 
         {/* Documentation */}
         <section className="mb-16">
@@ -182,15 +199,17 @@ const ResourcesPage = () => {
             {documentation.map((doc, index) => {
               const Icon = doc.icon;
               return (
-                <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
-                  <CardHeader>
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
-                      <Icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <CardTitle className="text-base">{doc.title}</CardTitle>
-                    <CardDescription>{doc.description}</CardDescription>
-                  </CardHeader>
-                </Card>
+                <Link key={index} to={doc.link}>
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                    <CardHeader>
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <CardTitle className="text-base">{doc.title}</CardTitle>
+                      <CardDescription>{doc.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                </Link>
               );
             })}
           </div>
@@ -202,8 +221,8 @@ const ResourcesPage = () => {
             Downloadable Resources
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {downloads.map((download, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow cursor-pointer">
+            {downloads.map((download) => (
+              <Card key={download.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -217,8 +236,13 @@ const ResourcesPage = () => {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Download
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={downloadingId === download.id}
+                      onClick={() => handleDownload(download.id, download.generator, download.title)}
+                    >
+                      {downloadingId === download.id ? 'Generating...' : 'Download'}
                     </Button>
                   </div>
                 </CardContent>
