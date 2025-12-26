@@ -1,6 +1,7 @@
 /**
  * REST JSON Adapter
  * For ATS systems that use REST APIs with JSON (e.g., Greenhouse, Lever, DriverReach)
+ * Enhanced with retry logic and better error handling
  */
 
 import { BaseATSAdapter } from './base-adapter.ts';
@@ -19,14 +20,17 @@ export class RESTJSONAdapter extends BaseATSAdapter {
       
       this.log('info', 'Testing connection', { endpoint: url });
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      const response = await this.executeWithRetry(
+        async () => {
+          const res = await fetch(url, { method: 'GET', headers });
+          return res;
+        },
+        'testConnection'
+      );
 
       const duration = Date.now() - startTime;
       
-      if (!response.ok) {
+      if (!response.ok && response.status !== 401) {
         const errorText = await response.text();
         return {
           success: false,
@@ -36,7 +40,11 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         };
       }
 
-      const data = await response.json();
+      if (response.status === 401) {
+        return this.createErrorResponse('Invalid API credentials', 'INVALID_CREDENTIALS');
+      }
+
+      const data = await response.json().catch(() => ({}));
 
       return {
         success: true,
@@ -45,12 +53,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         duration_ms: duration,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        error_code: 'CONNECTION_FAILED',
-        duration_ms: Date.now() - startTime,
-      };
+      return this.createErrorResponse(error as Error, 'CONNECTION_FAILED');
     }
   }
 
@@ -61,6 +64,15 @@ export class RESTJSONAdapter extends BaseATSAdapter {
       // Apply field mappings
       const mappedData = this.applyFieldMappings(application, this.config.fieldMapping);
       
+      // Validate required fields
+      const validation = this.validateRequiredFields(application, ['first_name', 'last_name']);
+      if (!validation.valid) {
+        return this.createErrorResponse(
+          `Missing required fields: ${validation.missingFields.join(', ')}`,
+          'VALIDATION_ERROR'
+        );
+      }
+      
       // Build request based on ATS type
       const { url, headers, body } = this.buildApplicationRequest(mappedData as ApplicationData);
       
@@ -69,11 +81,17 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         endpoint: url 
       });
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      });
+      const response = await this.executeWithRetry(
+        async () => {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+          });
+          return res;
+        },
+        'sendApplication'
+      );
 
       const duration = Date.now() - startTime;
       const responseData = await response.json().catch(() => ({}));
@@ -91,6 +109,11 @@ export class RESTJSONAdapter extends BaseATSAdapter {
       // Extract external ID based on ATS type
       const externalId = this.extractExternalId(responseData);
 
+      this.log('info', 'Application sent successfully', {
+        external_id: externalId,
+        duration_ms: duration
+      });
+
       return {
         success: true,
         message: 'Application sent successfully',
@@ -99,16 +122,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         duration_ms: duration,
       };
     } catch (error) {
-      this.log('error', 'Failed to send application', { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
-      
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        error_code: 'SEND_FAILED',
-        duration_ms: Date.now() - startTime,
-      };
+      return this.createErrorResponse(error as Error, 'SEND_FAILED');
     }
   }
 
@@ -126,10 +140,13 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         };
       }
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      const response = await this.executeWithRetry(
+        async () => {
+          const res = await fetch(url, { method: 'GET', headers });
+          return res;
+        },
+        'getJobs'
+      );
 
       const duration = Date.now() - startTime;
       const data = await response.json();
@@ -149,18 +166,57 @@ export class RESTJSONAdapter extends BaseATSAdapter {
         duration_ms: duration,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        error_code: 'FETCH_FAILED',
-        duration_ms: Date.now() - startTime,
-      };
+      return this.createErrorResponse(error as Error, 'FETCH_FAILED');
     }
   }
 
-  /**
-   * Build test request based on ATS type
-   */
+  async syncStatus(externalId: string): Promise<ATSResponse> {
+    const startTime = Date.now();
+    
+    try {
+      const { url, headers } = this.buildStatusRequest(externalId);
+      
+      if (!url) {
+        return {
+          success: false,
+          error: 'Status sync not supported for this ATS',
+          error_code: 'NOT_SUPPORTED',
+        };
+      }
+
+      const response = await this.executeWithRetry(
+        async () => {
+          const res = await fetch(url, { method: 'GET', headers });
+          return res;
+        },
+        'syncStatus'
+      );
+
+      const data = await response.json();
+      const duration = Date.now() - startTime;
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || `HTTP ${response.status}`,
+          error_code: `HTTP_${response.status}`,
+          duration_ms: duration,
+        };
+      }
+
+      return {
+        success: true,
+        data,
+        external_id: externalId,
+        duration_ms: duration,
+      };
+    } catch (error) {
+      return this.createErrorResponse(error as Error, 'SYNC_FAILED');
+    }
+  }
+
+  // ============ Request Builders ============
+
   protected buildTestRequest(): { url: string; headers: Record<string, string> } {
     const slug = this.config.system.slug;
     const creds = this.credentials;
@@ -186,14 +242,8 @@ export class RESTJSONAdapter extends BaseATSAdapter {
 
       case 'workable':
         return {
-          url: `https://${creds.subdomain}.workable.com/spi/v3/accounts`,
+          url: `https://www.workable.com/spi/v3/accounts/${creds.subdomain}`,
           headers: this.buildWorkableHeaders(),
-        };
-
-      case 'jazzhr':
-        return {
-          url: `https://api.resumatorapi.com/v1/applicants?apikey=${creds.api_key}`,
-          headers: { 'Content-Type': 'application/json' },
         };
 
       case 'bamboohr':
@@ -202,10 +252,22 @@ export class RESTJSONAdapter extends BaseATSAdapter {
           headers: this.buildBambooHRHeaders(),
         };
 
+      case 'smartrecruiters':
+        return {
+          url: 'https://api.smartrecruiters.com/configuration/company',
+          headers: this.buildSmartRecruitersHeaders(),
+        };
+
       case 'icims':
         return {
-          url: `https://api.icims.com/customers/${creds.customer_id}/jobs`,
+          url: `https://api.icims.com/customers/${creds.customer_id}/applicantworkflows?$top=1`,
           headers: this.buildICIMSHeaders(),
+        };
+
+      case 'jobvite':
+        return {
+          url: `https://api.jobvite.com/v2/candidate?count=1`,
+          headers: this.buildJobviteHeaders(),
         };
 
       default:
@@ -216,9 +278,6 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     }
   }
 
-  /**
-   * Build application request based on ATS type
-   */
   protected buildApplicationRequest(application: ApplicationData): { 
     url: string; 
     headers: Record<string, string>; 
@@ -251,73 +310,78 @@ export class RESTJSONAdapter extends BaseATSAdapter {
 
       case 'workable':
         return {
-          url: `https://${creds.subdomain}.workable.com/spi/v3/candidates`,
+          url: `https://www.workable.com/spi/v3/accounts/${creds.subdomain}/candidates`,
           headers: this.buildWorkableHeaders(),
           body: this.buildWorkablePayload(application),
         };
 
-      case 'jazzhr':
+      case 'smartrecruiters':
         return {
-          url: `https://api.resumatorapi.com/v1/applicants?apikey=${creds.api_key}`,
-          headers: { 'Content-Type': 'application/json' },
-          body: this.buildJazzHRPayload(application),
+          url: `https://api.smartrecruiters.com/jobs/${application.job_id || 'default'}/candidates`,
+          headers: this.buildSmartRecruitersHeaders(),
+          body: this.buildSmartRecruitersPayload(application),
+        };
+
+      case 'bamboohr':
+        return {
+          url: `https://api.bamboohr.com/api/gateway.php/${creds.subdomain}/v1/applicant_tracking/applications`,
+          headers: this.buildBambooHRHeaders(),
+          body: this.buildBambooHRPayload(application),
         };
 
       default:
         return {
           url: this.baseEndpoint || '',
           headers: { 'Content-Type': 'application/json' },
-          body: application as Record<string, unknown>,
+          body: this.buildGenericPayload(application),
         };
     }
   }
 
-  /**
-   * Build jobs request
-   */
   protected buildJobsRequest(): { url: string; headers: Record<string, string> } {
     const slug = this.config.system.slug;
     const creds = this.credentials;
 
     switch (slug) {
       case 'greenhouse':
-        return {
-          url: 'https://harvest.greenhouse.io/v1/jobs',
-          headers: this.buildGreenhouseHeaders(),
-        };
-
+        return { url: 'https://harvest.greenhouse.io/v1/jobs', headers: this.buildGreenhouseHeaders() };
       case 'lever':
-        return {
-          url: 'https://api.lever.co/v1/postings',
-          headers: this.buildLeverHeaders(),
-        };
-
+        return { url: 'https://api.lever.co/v1/postings', headers: this.buildLeverHeaders() };
       case 'workable':
-        return {
-          url: `https://${creds.subdomain}.workable.com/spi/v3/jobs`,
-          headers: this.buildWorkableHeaders(),
-        };
-
+        return { url: `https://www.workable.com/spi/v3/accounts/${creds.subdomain}/jobs`, headers: this.buildWorkableHeaders() };
       default:
         return { url: '', headers: {} };
     }
   }
 
-  // === Header Builders ===
+  protected buildStatusRequest(externalId: string): { url: string; headers: Record<string, string> } {
+    const slug = this.config.system.slug;
+    
+    switch (slug) {
+      case 'greenhouse':
+        return { url: `https://harvest.greenhouse.io/v1/candidates/${externalId}`, headers: this.buildGreenhouseHeaders() };
+      case 'lever':
+        return { url: `https://api.lever.co/v1/opportunities/${externalId}`, headers: this.buildLeverHeaders() };
+      case 'driverreach':
+        return { url: `https://api.driverreach.com/v1/applicants/${externalId}`, headers: this.buildDriverReachHeaders() };
+      default:
+        return { url: '', headers: {} };
+    }
+  }
+
+  // ============ Header Builders ============
 
   protected buildGreenhouseHeaders(): Record<string, string> {
-    const apiKey = this.credentials.api_key as string;
+    const apiKey = String(this.credentials.api_key || this.credentials.apiKey || '');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Basic ${btoa(apiKey + ':')}`,
-      ...(this.credentials.on_behalf_of && {
-        'On-Behalf-Of': String(this.credentials.on_behalf_of)
-      }),
+      ...(this.credentials.on_behalf_of && { 'On-Behalf-Of': String(this.credentials.on_behalf_of) }),
     };
   }
 
   protected buildLeverHeaders(): Record<string, string> {
-    const apiKey = this.credentials.api_key as string;
+    const apiKey = String(this.credentials.api_key || this.credentials.apiKey || '');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Basic ${btoa(apiKey + ':')}`,
@@ -339,7 +403,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
   }
 
   protected buildBambooHRHeaders(): Record<string, string> {
-    const apiKey = this.credentials.api_key as string;
+    const apiKey = String(this.credentials.api_key || '');
     return {
       'Content-Type': 'application/json',
       'Authorization': `Basic ${btoa(apiKey + ':x')}`,
@@ -347,36 +411,49 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     };
   }
 
-  protected buildICIMSHeaders(): Record<string, string> {
+  protected buildSmartRecruitersHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.credentials.api_key}`,
+      'X-SmartToken': String(this.credentials.api_key || ''),
     };
   }
 
-  // === Payload Builders ===
+  protected buildICIMSHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.credentials.access_token || this.credentials.api_key}`,
+      'x-api-key': String(this.credentials.api_key || ''),
+    };
+  }
+
+  protected buildJobviteHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'Api-Key': String(this.credentials.api_key || ''),
+      'Api-Secret': String(this.credentials.api_secret || ''),
+    };
+  }
+
+  // ============ Payload Builders ============
 
   protected buildGreenhousePayload(app: ApplicationData): Record<string, unknown> {
     return {
       first_name: app.first_name,
       last_name: app.last_name,
-      email_addresses: [{ value: app.applicant_email, type: 'personal' }],
+      email_addresses: [{ value: app.applicant_email || app.email, type: 'personal' }],
       phone_numbers: app.phone ? [{ value: this.formatPhone(app.phone), type: 'mobile' }] : [],
       addresses: app.city ? [{
         value: [app.address_1, app.city, app.state, app.zip].filter(Boolean).join(', '),
         type: 'home',
       }] : [],
-      applications: [{
-        source_id: null,
-        referrer: { type: 'other', value: app.source || 'API' },
-      }],
+      applications: [{ source_id: null, referrer: { type: 'other', value: app.source || 'API' } }],
     };
   }
 
   protected buildLeverPayload(app: ApplicationData): Record<string, unknown> {
     return {
       name: this.buildFullName(app),
-      email: app.applicant_email,
+      email: app.applicant_email || app.email,
       phones: app.phone ? [{ type: 'mobile', value: this.formatPhone(app.phone) }] : [],
       location: app.city && app.state ? `${app.city}, ${app.state}` : undefined,
       origin: app.source || 'API',
@@ -388,7 +465,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     return {
       first_name: app.first_name,
       last_name: app.last_name,
-      email: app.applicant_email,
+      email: app.applicant_email || app.email,
       phone: this.formatPhone(app.phone),
       address: app.address_1,
       city: app.city,
@@ -407,7 +484,7 @@ export class RESTJSONAdapter extends BaseATSAdapter {
       name: this.buildFullName(app),
       firstname: app.first_name,
       lastname: app.last_name,
-      email: app.applicant_email,
+      email: app.applicant_email || app.email,
       phone: this.formatPhone(app.phone),
       address: app.address_1,
       city: app.city,
@@ -417,31 +494,63 @@ export class RESTJSONAdapter extends BaseATSAdapter {
     };
   }
 
-  protected buildJazzHRPayload(app: ApplicationData): Record<string, unknown> {
+  protected buildSmartRecruitersPayload(app: ApplicationData): Record<string, unknown> {
     return {
-      first_name: app.first_name,
-      last_name: app.last_name,
-      email: app.applicant_email,
-      phone: this.formatPhone(app.phone),
-      address: app.address_1,
-      city: app.city,
-      state: app.state,
-      zip: app.zip,
+      firstName: app.first_name,
+      lastName: app.last_name,
+      email: app.applicant_email || app.email,
+      phoneNumber: this.formatPhone(app.phone),
+      location: { city: app.city, region: app.state, postalCode: app.zip, country: app.country || 'US' },
+      source: { type: 'API', name: app.source || 'Direct' },
+      consent: { privacy: true },
     };
   }
 
-  /**
-   * Extract external ID from response
-   */
+  protected buildBambooHRPayload(app: ApplicationData): Record<string, unknown> {
+    return {
+      firstName: app.first_name,
+      lastName: app.last_name,
+      email: app.applicant_email || app.email,
+      phoneNumber: this.formatPhone(app.phone),
+      address: { streetAddress: app.address_1, city: app.city, state: app.state, zipCode: app.zip, country: app.country || 'US' },
+      source: app.source || 'API',
+      jobId: app.job_id,
+    };
+  }
+
+  protected buildGenericPayload(app: ApplicationData): Record<string, unknown> {
+    return {
+      reference_id: app.id,
+      first_name: app.first_name,
+      last_name: app.last_name,
+      email: app.applicant_email || app.email,
+      phone: this.formatPhone(app.phone),
+      address: { street: app.address_1, city: app.city, state: app.state, zip: app.zip, country: app.country || 'US' },
+      source: app.source || 'API',
+      status: app.status || 'new',
+    };
+  }
+
+  // ============ Response Parsing ============
+
   protected extractExternalId(response: Record<string, unknown>): string | undefined {
-    // Try common ID field names
-    return String(
-      response.id || 
-      response.candidate_id || 
-      response.application_id || 
-      response.opportunity_id ||
-      response.external_id ||
-      ''
-    ) || undefined;
+    const idFields = ['id', 'candidate_id', 'candidateId', 'application_id', 'applicationId', 
+                      'opportunity_id', 'opportunityId', 'external_id', 'externalId', 'applicant_id'];
+    
+    for (const field of idFields) {
+      if (response[field]) {
+        return String(response[field]);
+      }
+    }
+
+    // Check nested structures
+    if (response.data && typeof response.data === 'object') {
+      return this.extractExternalId(response.data as Record<string, unknown>);
+    }
+    if (response.candidate && typeof response.candidate === 'object') {
+      return this.extractExternalId(response.candidate as Record<string, unknown>);
+    }
+
+    return undefined;
   }
 }
