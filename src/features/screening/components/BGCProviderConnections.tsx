@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Settings, Trash2, CheckCircle, XCircle, Loader2, ExternalLink, Shield } from 'lucide-react';
+import { Plus, Settings, Trash2, CheckCircle, XCircle, Loader2, ExternalLink, Shield, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 import {
   useBackgroundCheckProviders,
   useBackgroundCheckConnections,
@@ -47,6 +48,7 @@ const PROVIDER_CREDENTIAL_FIELDS: Record<string, { key: string; label: string; t
 };
 
 export function BGCProviderConnections({ organizationId }: BGCProviderConnectionsProps) {
+  const { userRole } = useAuth();
   const { data: providers, isLoading: loadingProviders } = useBackgroundCheckProviders();
   const { data: connections, isLoading: loadingConnections } = useBackgroundCheckConnections(organizationId);
   const createConnection = useCreateBGCConnection();
@@ -59,6 +61,9 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [isDefault, setIsDefault] = useState(false);
   const [testingConnectionId, setTestingConnectionId] = useState<string | null>(null);
+
+  // Check if user has admin privileges (admin or super_admin)
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
   // Get providers that don't have a connection yet
   const availableProviders = providers?.filter(
@@ -154,9 +159,10 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
         </div>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button disabled={availableProviders.length === 0}>
+            <Button disabled={availableProviders.length === 0 || !isAdmin}>
               <Plus className="h-4 w-4 mr-2" />
               Add Provider
+              {!isAdmin && <Lock className="h-3 w-3 ml-2" />}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
@@ -286,7 +292,7 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
                     variant="ghost"
                     size="sm"
                     onClick={() => handleTestConnection(connection.id)}
-                    disabled={testingConnectionId === connection.id}
+                    disabled={testingConnectionId === connection.id || !isAdmin}
                   >
                     {testingConnectionId === connection.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -300,6 +306,7 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
                     variant="ghost"
                     size="sm"
                     onClick={() => handleToggleEnabled(connection)}
+                    disabled={!isAdmin}
                   >
                     {connection.is_enabled ? (
                       <XCircle className="h-4 w-4" />
@@ -314,20 +321,23 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
                       variant="ghost"
                       size="sm"
                       onClick={() => handleSetDefault(connection)}
+                      disabled={!isAdmin}
                     >
                       <Settings className="h-4 w-4" />
                       <span className="ml-1">Set Default</span>
                     </Button>
                   )}
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-auto text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteConnection(connection.id, connection.provider?.name || 'Provider')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteConnection(connection.id, connection.provider?.name || 'Provider')}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -338,17 +348,21 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
           <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h4 className="font-medium mb-2">No providers connected</h4>
           <p className="text-sm text-muted-foreground mb-4">
-            Connect a background check provider to start running checks directly through their API
+            {isAdmin 
+              ? 'Connect a background check provider to start running checks directly through their API'
+              : 'No background check providers are configured. Contact your administrator to set up a provider.'}
           </p>
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Connect Your First Provider
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Connect Your First Provider
+            </Button>
+          )}
         </Card>
       )}
 
-      {/* Available Providers Reference */}
-      {availableProviders.length > 0 && connections && connections.length > 0 && (
+      {/* Available Providers Reference - only show for admins */}
+      {isAdmin && availableProviders.length > 0 && connections && connections.length > 0 && (
         <div className="mt-8">
           <h4 className="text-sm font-medium text-muted-foreground mb-3">Available to Connect</h4>
           <div className="flex flex-wrap gap-2">
