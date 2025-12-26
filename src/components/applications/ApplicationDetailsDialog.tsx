@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown } from 'lucide-react';
+import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield } from 'lucide-react';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
-
+import { ApplicationBackgroundChecks } from '@/features/screening';
 interface ApplicationDetailsDialogProps {
   application: any;
   trigger?: React.ReactNode;
@@ -18,6 +18,7 @@ interface ApplicationDetailsDialogProps {
 
 const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
   const [isCallHistoryOpen, setIsCallHistoryOpen] = useState(false);
+  const [isBGCHistoryOpen, setIsBGCHistoryOpen] = useState(false);
   // Use zip code lookup for city and state display
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
 
@@ -343,6 +344,27 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                 applicationId={application.id}
                 showTitle={false}
                 maxHeight="300px"
+              />
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator />
+
+          {/* Background Checks */}
+          <Collapsible open={isBGCHistoryOpen} onOpenChange={setIsBGCHistoryOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
+                <span className="flex items-center gap-2 text-lg font-semibold">
+                  <Shield className="w-4 h-4" />
+                  Background Checks
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isBGCHistoryOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <ApplicationBackgroundChecks
+                applicationId={application.id}
+                showTitle={false}
               />
             </CollapsibleContent>
           </Collapsible>
