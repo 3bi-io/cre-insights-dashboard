@@ -905,6 +905,265 @@ export type Database = {
           },
         ]
       }
+      ats_connections: {
+        Row: {
+          ats_system_id: string
+          auto_post_on_status: string[] | null
+          client_id: string | null
+          created_at: string | null
+          credentials: Json
+          id: string
+          is_auto_post_enabled: boolean | null
+          last_error: string | null
+          last_sync_at: string | null
+          metadata: Json | null
+          mode: string
+          name: string
+          organization_id: string
+          status: string
+          sync_stats: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          ats_system_id: string
+          auto_post_on_status?: string[] | null
+          client_id?: string | null
+          created_at?: string | null
+          credentials?: Json
+          id?: string
+          is_auto_post_enabled?: boolean | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          metadata?: Json | null
+          mode?: string
+          name: string
+          organization_id: string
+          status?: string
+          sync_stats?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          ats_system_id?: string
+          auto_post_on_status?: string[] | null
+          client_id?: string | null
+          created_at?: string | null
+          credentials?: Json
+          id?: string
+          is_auto_post_enabled?: boolean | null
+          last_error?: string | null
+          last_sync_at?: string | null
+          metadata?: Json | null
+          mode?: string
+          name?: string
+          organization_id?: string
+          status?: string
+          sync_stats?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_connections_ats_system_id_fkey"
+            columns: ["ats_system_id"]
+            isOneToOne: false
+            referencedRelation: "ats_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_connections_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_field_mappings: {
+        Row: {
+          ats_connection_id: string
+          created_at: string | null
+          field_mappings: Json
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          transform_rules: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          ats_connection_id: string
+          created_at?: string | null
+          field_mappings?: Json
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          transform_rules?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          ats_connection_id?: string
+          created_at?: string | null
+          field_mappings?: Json
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          transform_rules?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_field_mappings_ats_connection_id_fkey"
+            columns: ["ats_connection_id"]
+            isOneToOne: false
+            referencedRelation: "ats_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_sync_logs: {
+        Row: {
+          action: string
+          application_id: string | null
+          ats_connection_id: string
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          request_payload: Json | null
+          response_data: Json | null
+          retry_count: number | null
+          status: string
+        }
+        Insert: {
+          action: string
+          application_id?: string | null
+          ats_connection_id: string
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          request_payload?: Json | null
+          response_data?: Json | null
+          retry_count?: number | null
+          status: string
+        }
+        Update: {
+          action?: string
+          application_id?: string | null
+          ats_connection_id?: string
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          request_payload?: Json | null
+          response_data?: Json | null
+          retry_count?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_sync_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_sync_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_sync_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_sync_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_sync_logs_ats_connection_id_fkey"
+            columns: ["ats_connection_id"]
+            isOneToOne: false
+            referencedRelation: "ats_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ats_systems: {
+        Row: {
+          api_type: string
+          base_endpoint: string | null
+          category: string | null
+          created_at: string | null
+          credential_schema: Json
+          documentation_url: string | null
+          field_schema: Json | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          slug: string
+          supports_test_mode: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_type: string
+          base_endpoint?: string | null
+          category?: string | null
+          created_at?: string | null
+          credential_schema?: Json
+          documentation_url?: string | null
+          field_schema?: Json | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          slug: string
+          supports_test_mode?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_type?: string
+          base_endpoint?: string | null
+          category?: string | null
+          created_at?: string | null
+          credential_schema?: Json
+          documentation_url?: string | null
+          field_schema?: Json | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          supports_test_mode?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string

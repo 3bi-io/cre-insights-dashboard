@@ -119,3 +119,6 @@ verify_jwt = false
 
 [functions.driverreach-integration]
 verify_jwt = true
+
+[functions.ats-integration]
+verify_jwt = true
