@@ -10,8 +10,9 @@ import type { BGCRequest } from '../services/BackgroundCheckService';
 
 interface ApplicationBackgroundChecksProps {
   applicationId: string;
-  applicantName: string;
-  organizationId: string;
+  applicantName?: string;
+  organizationId?: string;
+  showTitle?: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -31,8 +32,9 @@ const RESULT_BADGES: Record<string, { variant: 'default' | 'secondary' | 'destru
 
 export function ApplicationBackgroundChecks({
   applicationId,
-  applicantName,
-  organizationId
+  applicantName = 'Applicant',
+  organizationId,
+  showTitle = true
 }: ApplicationBackgroundChecksProps) {
   const { data: requests, isLoading } = useApplicationBackgroundChecks(applicationId);
   const [showInitiateDialog, setShowInitiateDialog] = useState(false);
@@ -68,18 +70,28 @@ export function ApplicationBackgroundChecks({
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Background Checks
-          </CardTitle>
-          <Button size="sm" onClick={() => setShowInitiateDialog(true)}>
-            <Plus className="h-4 w-4 mr-1" />
-            New Check
-          </Button>
-        </CardHeader>
-        <CardContent>
+      <Card className={!showTitle ? 'border-0 shadow-none' : ''}>
+        {showTitle && (
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Background Checks
+            </CardTitle>
+            <Button size="sm" onClick={() => setShowInitiateDialog(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              New Check
+            </Button>
+          </CardHeader>
+        )}
+        <CardContent className={!showTitle ? 'p-0' : ''}>
+          {!showTitle && (
+            <div className="flex justify-end mb-3">
+              <Button size="sm" onClick={() => setShowInitiateDialog(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                New Check
+              </Button>
+            </div>
+          )}
           {requests && requests.length > 0 ? (
             <div className="space-y-3">
               {requests.map(request => {
