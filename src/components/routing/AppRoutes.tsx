@@ -68,6 +68,7 @@ const Media = React.lazy(() => import("@/pages/Media"));
 const UserManagement = React.lazy(() => import("@/pages/UserManagement"));
 const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
+const ActiveJobIds = React.lazy(() => import("@/pages/ActiveJobIds"));
 const EdgeFunctionsTest = React.lazy(() => import("@/pages/EdgeFunctionsTest"));
 const HayesDataPopulation = React.lazy(() => import("@/pages/HayesDataPopulation"));
 const Support = React.lazy(() => import("@/pages/Support"));
@@ -234,6 +235,7 @@ const AppRoutes: React.FC = () => {
         <Route path="user-management" element={<ProtectedRouteWrapper><UserManagement /></ProtectedRouteWrapper>} />
         <Route path="super-admin-feeds" element={<ProtectedRouteWrapper><SuperAdminFeeds /></ProtectedRouteWrapper>} />
         <Route path="webhook-management" element={<ProtectedRouteWrapper><WebhookManagement /></ProtectedRouteWrapper>} />
+        <Route path="active-job-ids" element={<ProtectedRouteWrapper><ActiveJobIds /></ProtectedRouteWrapper>} />
         <Route path="hayes-data" element={<ProtectedRouteWrapper><HayesDataPopulation /></ProtectedRouteWrapper>} />
         <Route path="visitor-analytics" element={<ProtectedRouteWrapper><VisitorAnalytics /></ProtectedRouteWrapper>} />
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
