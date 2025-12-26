@@ -10,6 +10,7 @@ const Apply = () => {
     organizationName, 
     location, 
     logoUrl, 
+    source,
     isLoading 
   } = useApplyContext();
 
@@ -22,6 +23,7 @@ const Apply = () => {
             organizationName={organizationName}
             location={location}
             logoUrl={logoUrl}
+            source={source}
             isLoading={isLoading}
           />
           <ApplicationForm organizationName={organizationName} />
