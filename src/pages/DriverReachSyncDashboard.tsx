@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, CheckCircle, XCircle, Clock, RefreshCw, Send, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
-import { useOrganization } from '@/hooks/useOrganization';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ApplicationSyncData {
   id: string;
@@ -24,7 +24,7 @@ interface ApplicationSyncData {
 
 const DriverReachSyncDashboard = () => {
   const queryClient = useQueryClient();
-  const { organization } = useOrganization();
+  const { organization } = useAuth();
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
 
   // Fetch applications with DriverReach sync data
