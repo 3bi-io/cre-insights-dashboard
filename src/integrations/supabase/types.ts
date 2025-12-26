@@ -1232,6 +1232,180 @@ export type Database = {
           },
         ]
       }
+      background_check_providers: {
+        Row: {
+          api_type: string
+          auth_type: string
+          base_url: string
+          created_at: string | null
+          documentation_url: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          pricing: Json | null
+          slug: string
+          supported_checks: Json
+          updated_at: string | null
+          webhook_config: Json | null
+        }
+        Insert: {
+          api_type?: string
+          auth_type?: string
+          base_url: string
+          created_at?: string | null
+          documentation_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          pricing?: Json | null
+          slug: string
+          supported_checks?: Json
+          updated_at?: string | null
+          webhook_config?: Json | null
+        }
+        Update: {
+          api_type?: string
+          auth_type?: string
+          base_url?: string
+          created_at?: string | null
+          documentation_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          pricing?: Json | null
+          slug?: string
+          supported_checks?: Json
+          updated_at?: string | null
+          webhook_config?: Json | null
+        }
+        Relationships: []
+      }
+      background_check_requests: {
+        Row: {
+          application_id: string | null
+          candidate_id: string | null
+          candidate_portal_url: string | null
+          check_type: string
+          completed_at: string | null
+          connection_id: string | null
+          cost_cents: number | null
+          created_at: string | null
+          external_id: string | null
+          id: string
+          initiated_by: string | null
+          organization_id: string
+          package_name: string | null
+          provider_id: string
+          report_url: string | null
+          result: string | null
+          result_data: Json | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          candidate_id?: string | null
+          candidate_portal_url?: string | null
+          check_type: string
+          completed_at?: string | null
+          connection_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          initiated_by?: string | null
+          organization_id: string
+          package_name?: string | null
+          provider_id: string
+          report_url?: string | null
+          result?: string | null
+          result_data?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          candidate_id?: string | null
+          candidate_portal_url?: string | null
+          check_type?: string
+          completed_at?: string | null
+          connection_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          initiated_by?: string | null
+          organization_id?: string
+          package_name?: string | null
+          provider_id?: string
+          report_url?: string | null
+          result?: string | null
+          result_data?: Json | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_check_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "organization_bgc_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_requests_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "background_check_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       background_tasks: {
         Row: {
           created_at: string
@@ -3862,6 +4036,73 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_bgc_connections: {
+        Row: {
+          created_at: string | null
+          credentials: Json
+          id: string
+          is_default: boolean | null
+          is_enabled: boolean | null
+          last_used_at: string | null
+          mode: string
+          organization_id: string
+          package_mappings: Json | null
+          provider_id: string
+          updated_at: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credentials?: Json
+          id?: string
+          is_default?: boolean | null
+          is_enabled?: boolean | null
+          last_used_at?: string | null
+          mode?: string
+          organization_id: string
+          package_mappings?: Json | null
+          provider_id: string
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credentials?: Json
+          id?: string
+          is_default?: boolean | null
+          is_enabled?: boolean | null
+          last_used_at?: string | null
+          mode?: string
+          organization_id?: string
+          package_mappings?: Json | null
+          provider_id?: string
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_bgc_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_bgc_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_bgc_connections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "background_check_providers"
             referencedColumns: ["id"]
           },
         ]
