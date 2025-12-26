@@ -122,3 +122,9 @@ verify_jwt = true
 
 [functions.ats-integration]
 verify_jwt = true
+
+[functions.background-check]
+verify_jwt = true
+
+[functions.background-check-webhook]
+verify_jwt = false
