@@ -10,18 +10,22 @@ import {
   CheckCircle, 
   Settings,
   RefreshCw,
-  TestTube
+  TestTube,
+  Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlatforms } from '@/hooks/usePlatforms';
+import { useAuth } from '@/hooks/useAuth';
 import ClientWebhookManager from '@/components/integrations/ClientWebhookManager';
 import { CallWebhookManager } from '@/components/voice/CallWebhookManager';
+import { BGCProviderConnections } from '@/features/screening';
 
 const IntegrationsTab = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { platforms, refetch } = usePlatforms();
+  const { organization } = useAuth();
 
   const xPlatform = platforms?.find(p => 
     p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')
@@ -216,6 +220,27 @@ const IntegrationsTab = () => {
           Receive notifications when outbound voice calls complete, fail, or go unanswered
         </p>
         <CallWebhookManager />
+      </div>
+
+      <Separator className="my-8" />
+
+      {/* Background Check Providers */}
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="w-6 h-6 text-blue-500" />
+          <h2 className="text-2xl font-bold">Background Check Providers</h2>
+        </div>
+        <p className="text-muted-foreground mb-6">
+          Connect to background check providers like Checkr, Sterling, HireRight, GoodHire, and Accurate Background for direct API integrations
+        </p>
+        {organization?.id ? (
+          <BGCProviderConnections organizationId={organization.id} />
+        ) : (
+          <Card className="p-6 text-center">
+            <AlertCircle className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">Organization required to manage background check providers</p>
+          </Card>
+        )}
       </div>
 
       <Separator className="my-8" />
