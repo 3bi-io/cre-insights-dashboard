@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Check, Search, ClipboardList } from 'lucide-react';
+import { Copy, Check, Search, ClipboardList, FileSpreadsheet } from 'lucide-react';
 
 const ActiveJobIds: React.FC = () => {
   const { userRole, organization } = useAuth();
@@ -126,6 +126,28 @@ const ActiveJobIds: React.FC = () => {
     });
   };
 
+  const copyAsCSV = async () => {
+    const baseUrl = getBaseUrl();
+    const headers = ['Job Title', 'Organization', 'Job ID', 'X Apply Link', 'Standard Link'];
+    const rows = filteredJobs.map(job => {
+      const orgName = (job.organizations as { name: string } | null)?.name || 'N/A';
+      const title = (job.title || job.job_title || 'Untitled').replace(/"/g, '""');
+      return [
+        `"${title}"`,
+        `"${orgName}"`,
+        job.id,
+        `${baseUrl}/x/apply/${job.id}`,
+        `${baseUrl}/apply?job_id=${job.id}`,
+      ].join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    await navigator.clipboard.writeText(csv);
+    toast({
+      title: 'CSV Copied!',
+      description: `${filteredJobs.length} jobs copied as CSV to clipboard`,
+    });
+  };
+
   const isCopied = (id: string, type: string) => copiedId === id && copiedType === type;
 
   return (
@@ -146,6 +168,10 @@ const ActiveJobIds: React.FC = () => {
           <Button variant="outline" size="sm" onClick={copyAllStandardLinks}>
             <Copy className="h-4 w-4 mr-2" />
             Copy All Standard Links
+          </Button>
+          <Button variant="outline" size="sm" onClick={copyAsCSV}>
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Copy as CSV
           </Button>
         </div>
       }
