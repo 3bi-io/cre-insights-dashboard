@@ -1033,6 +1033,13 @@ export type Database = {
             referencedRelation: "ats_connections"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ats_field_mappings_ats_connection_id_fkey"
+            columns: ["ats_connection_id"]
+            isOneToOne: false
+            referencedRelation: "ats_sync_overview"
+            referencedColumns: ["connection_id"]
+          },
         ]
       }
       ats_sync_logs: {
@@ -1110,6 +1117,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ats_connections"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_sync_logs_ats_connection_id_fkey"
+            columns: ["ats_connection_id"]
+            isOneToOne: false
+            referencedRelation: "ats_sync_overview"
+            referencedColumns: ["connection_id"]
           },
         ]
       }
@@ -5846,6 +5860,42 @@ export type Database = {
           },
         ]
       }
+      ats_sync_overview: {
+        Row: {
+          ats_name: string | null
+          ats_slug: string | null
+          connection_id: string | null
+          connection_name: string | null
+          created_at: string | null
+          failed_syncs: number | null
+          is_auto_post_enabled: boolean | null
+          last_error: string | null
+          last_sync_at: string | null
+          mode: string | null
+          organization_id: string | null
+          organization_name: string | null
+          status: string | null
+          successful_syncs: number | null
+          total_syncs: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ats_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_organization_info: {
         Row: {
           id: string | null
@@ -5900,6 +5950,21 @@ export type Database = {
         Returns: undefined
       }
       generate_short_code: { Args: { length?: number }; Returns: string }
+      get_active_ats_connections: {
+        Args: { p_client_id?: string; p_organization_id: string }
+        Returns: {
+          api_type: string
+          ats_name: string
+          ats_slug: string
+          ats_system_id: string
+          auto_post_on_status: string[]
+          base_endpoint: string
+          connection_id: string
+          credentials: Json
+          is_auto_post_enabled: boolean
+          mode: string
+        }[]
+      }
       get_application_basic_data: {
         Args: { application_id: string }
         Returns: {
@@ -6049,6 +6114,18 @@ export type Database = {
         }[]
       }
       get_platform_breakdown_data: { Args: never; Returns: Json }
+      get_publisher_feed_config: {
+        Args: { p_organization_id: string; p_publisher_slug: string }
+        Returns: {
+          api_credentials: Json
+          feed_format: string
+          feed_url: string
+          is_enabled: boolean
+          publisher_id: string
+          publisher_name: string
+          publisher_slug: string
+        }[]
+      }
       get_spend_chart_data: { Args: never; Returns: Json }
       get_user_organization_id: { Args: never; Returns: string }
       get_user_platform_access: {
@@ -6062,6 +6139,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ats_sync_stats: {
+        Args: { p_connection_id: string; p_success: boolean }
+        Returns: undefined
       }
       increment_short_link_click: {
         Args: { p_short_code: string }
