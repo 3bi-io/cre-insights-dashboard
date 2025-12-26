@@ -39,7 +39,7 @@ const ActiveJobIds: React.FC = () => {
     queryFn: async () => {
       let query = supabase
         .from('job_listings')
-        .select('id, title, job_title, organization_id, organizations:organization_id(name)')
+        .select('id, title, job_title, location, organization_id, organizations:organization_id(name)')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -128,12 +128,14 @@ const ActiveJobIds: React.FC = () => {
 
   const copyAsCSV = async () => {
     const baseUrl = getBaseUrl();
-    const headers = ['Job Title', 'Organization', 'Job ID', 'X Apply Link', 'Standard Link'];
+    const headers = ['Job Title', 'Location', 'Organization', 'Job ID', 'X Apply Link', 'Standard Link'];
     const rows = filteredJobs.map(job => {
       const orgName = (job.organizations as { name: string } | null)?.name || 'N/A';
       const title = (job.title || job.job_title || 'Untitled').replace(/"/g, '""');
+      const location = (job.location || 'N/A').replace(/"/g, '""');
       return [
         `"${title}"`,
+        `"${location}"`,
         `"${orgName}"`,
         job.id,
         `${baseUrl}/x/apply/${job.id}`,
@@ -214,6 +216,7 @@ const ActiveJobIds: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Job Title</TableHead>
+                <TableHead>Location</TableHead>
                 {isSuperAdmin && <TableHead>Organization</TableHead>}
                 <TableHead>Job ID</TableHead>
                 <TableHead>X Apply Link</TableHead>
@@ -231,6 +234,9 @@ const ActiveJobIds: React.FC = () => {
                   <TableRow key={job.id}>
                     <TableCell className="font-medium">
                       {job.title || job.job_title || 'Untitled'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {job.location || 'N/A'}
                     </TableCell>
                     {isSuperAdmin && (
                       <TableCell className="text-muted-foreground">
@@ -299,7 +305,7 @@ const ActiveJobIds: React.FC = () => {
               })}
               {filteredJobs.length === 0 && !isLoading && (
                 <TableRow>
-                  <TableCell colSpan={isSuperAdmin ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={isSuperAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
                     No active jobs found
                   </TableCell>
                 </TableRow>
