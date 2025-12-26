@@ -35,16 +35,23 @@ interface JobListing {
 
 // Supported feed formats
 const VALID_FORMATS = [
-  'indeed',      // Indeed XML format
-  'google',      // Google Jobs sitemap format
-  'generic',     // Generic XML format
-  'talent',      // Talent.com (Neuvoo) format
-  'careerjet',   // CareerJet format
-  'trovit',      // Trovit format
-  'adzuna',      // Adzuna format
-  'dice',        // Dice format (tech jobs)
-  'simplyhired', // SimplyHired (uses Indeed format)
-  'jooble',      // Jooble format
+  'indeed',       // Indeed XML format
+  'google',       // Google Jobs sitemap format
+  'generic',      // Generic XML format
+  'talent',       // Talent.com (Neuvoo) format
+  'careerjet',    // CareerJet format
+  'trovit',       // Trovit format
+  'adzuna',       // Adzuna format
+  'dice',         // Dice format (tech jobs)
+  'simplyhired',  // SimplyHired (uses Indeed format)
+  'jooble',       // Jooble format
+  'hcareers',     // Hcareers (hospitality)
+  'snagajob',     // Snagajob (hourly/retail)
+  'healthecareers', // Health eCareers (healthcare)
+  'nurse',        // Nurse.com (nursing)
+  'wellfound',    // Wellfound (tech/startup)
+  'jobrapido',    // JobRapido
+  'recruitnet',   // Recruit.net
 ];
 
 Deno.serve(async (req) => {
@@ -222,6 +229,27 @@ Deno.serve(async (req) => {
         break;
       case 'jooble':
         xmlContent = generateJoobleXML(transformedJobs);
+        break;
+      case 'hcareers':
+        xmlContent = generateHcareersXML(transformedJobs);
+        break;
+      case 'snagajob':
+        xmlContent = generateSnagajobXML(transformedJobs);
+        break;
+      case 'healthecareers':
+        xmlContent = generateHealthEcareersXML(transformedJobs);
+        break;
+      case 'nurse':
+        xmlContent = generateNurseXML(transformedJobs);
+        break;
+      case 'wellfound':
+        xmlContent = generateWellfoundXML(transformedJobs);
+        break;
+      case 'jobrapido':
+        xmlContent = generateJobRapidoXML(transformedJobs);
+        break;
+      case 'recruitnet':
+        xmlContent = generateRecruitNetXML(transformedJobs);
         break;
       default:
         xmlContent = generateGenericXML(transformedJobs);
@@ -549,6 +577,115 @@ ${jobsXML}
 </jobs>`;
 }
 
+// ============ ADDITIONAL FEED GENERATORS ============
+
+function generateHcareersXML(jobs: JobListing[]): string {
+  const jobsXML = jobs.map(job => {
+    const company = escapeXML(job.company || job.client_name || 'Company');
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    return `  <job>
+    <id>${escapeXML(job.id)}</id>
+    <title>${escapeXML(job.title)}</title>
+    <company>${company}</company>
+    <location>${escapeXML(formatLocation(job.location, job.city, job.state))}</location>
+    <description><![CDATA[${job.description || ''}]]></description>
+    <url>${jobUrl}</url>
+    <posted>${new Date(job.created_at).toISOString().split('T')[0]}</posted>
+    ${job.job_type ? `<type>${escapeXML(mapJobType(job.job_type))}</type>` : ''}
+    <industry>hospitality</industry>
+  </job>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <publisher>ATS.me</publisher>\n${jobsXML}\n</jobs>`;
+}
+
+function generateSnagajobXML(jobs: JobListing[]): string {
+  const jobsXML = jobs.map(job => {
+    const company = escapeXML(job.company || job.client_name || 'Company');
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
+    return `  <job>
+    <id>${escapeXML(job.id)}</id>
+    <title>${escapeXML(job.title)}</title>
+    <company>${company}</company>
+    <city>${escapeXML(job.city || '')}</city>
+    <state>${escapeXML(job.state || '')}</state>
+    <zip>${escapeXML(job.zip_code || '')}</zip>
+    <description><![CDATA[${job.description || ''}]]></description>
+    <url>${jobUrl}</url>
+    <posted>${new Date(job.created_at).toISOString()}</posted>
+    ${salary ? `<pay>${escapeXML(salary)}</pay>` : ''}
+    ${job.job_type ? `<schedule>${escapeXML(job.job_type)}</schedule>` : ''}
+  </job>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>ATS.me</source>\n${jobsXML}\n</jobs>`;
+}
+
+function generateHealthEcareersXML(jobs: JobListing[]): string {
+  const jobsXML = jobs.map(job => {
+    const company = escapeXML(job.company || job.client_name || 'Company');
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    return `  <position>
+    <id>${escapeXML(job.id)}</id>
+    <title>${escapeXML(job.title)}</title>
+    <facility>${company}</facility>
+    <city>${escapeXML(job.city || '')}</city>
+    <state>${escapeXML(job.state || '')}</state>
+    <description><![CDATA[${job.description || ''}]]></description>
+    <apply_url>${jobUrl}</apply_url>
+    <date_posted>${new Date(job.created_at).toISOString().split('T')[0]}</date_posted>
+    ${job.job_type ? `<employment_type>${escapeXML(job.job_type)}</employment_type>` : ''}
+    <specialty>${escapeXML(job.category_name || 'General')}</specialty>
+  </position>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<positions>\n${jobsXML}\n</positions>`;
+}
+
+function generateNurseXML(jobs: JobListing[]): string {
+  return generateHealthEcareersXML(jobs); // Similar format
+}
+
+function generateWellfoundXML(jobs: JobListing[]): string {
+  const jobsXML = jobs.map(job => {
+    const company = escapeXML(job.company || job.client_name || 'Company');
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    return `  <job>
+    <id>${escapeXML(job.id)}</id>
+    <title>${escapeXML(job.title)}</title>
+    <company_name>${company}</company_name>
+    <location>${escapeXML(formatLocation(job.location, job.city, job.state))}</location>
+    <remote>${job.remote_type === 'remote' ? 'true' : 'false'}</remote>
+    <description><![CDATA[${job.description || ''}]]></description>
+    <url>${jobUrl}</url>
+    <posted_at>${new Date(job.created_at).toISOString()}</posted_at>
+    ${job.salary_min ? `<salary_min>${job.salary_min}</salary_min>` : ''}
+    ${job.salary_max ? `<salary_max>${job.salary_max}</salary_max>` : ''}
+  </job>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>ATS.me</source>\n${jobsXML}\n</jobs>`;
+}
+
+function generateJobRapidoXML(jobs: JobListing[]): string {
+  const jobsXML = jobs.map(job => {
+    const company = escapeXML(job.company || job.client_name || 'Company');
+    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    return `  <job>
+    <id>${escapeXML(job.id)}</id>
+    <title>${escapeXML(job.title)}</title>
+    <company>${company}</company>
+    <location>${escapeXML(formatLocation(job.location, job.city, job.state))}</location>
+    <country>${escapeXML(job.country || 'US')}</country>
+    <description><![CDATA[${job.description || ''}]]></description>
+    <url>${jobUrl}</url>
+    <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
+  </job>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n${jobsXML}\n</jobs>`;
+}
+
+function generateRecruitNetXML(jobs: JobListing[]): string {
+  return generateJobRapidoXML(jobs); // Similar format
+}
+
 function generateErrorXML(message: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <error>
@@ -561,20 +698,13 @@ function generateErrorXML(message: string): string {
 
 function escapeXML(str: string): string {
   if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
 function formatLocation(location?: string, city?: string, state?: string): string {
   if (location) return location;
   if (city && state) return `${city}, ${state}`;
-  if (city) return city;
-  if (state) return state;
-  return 'Remote';
+  return city || state || 'Remote';
 }
 
 function formatSalary(min?: number, max?: number, type?: string): string {
@@ -587,23 +717,10 @@ function formatSalary(min?: number, max?: number, type?: string): string {
 }
 
 function mapJobType(jobType: string): string {
-  // Normalize job types for different platforms
   const mapping: Record<string, string> = {
-    'full-time': 'fulltime',
-    'full_time': 'fulltime',
-    'fulltime': 'fulltime',
-    'part-time': 'parttime',
-    'part_time': 'parttime',
-    'parttime': 'parttime',
-    'contract': 'contract',
-    'contractor': 'contract',
-    'temporary': 'temporary',
-    'temp': 'temporary',
-    'internship': 'internship',
-    'intern': 'internship',
-    'per-diem': 'perdiem',
-    'per_diem': 'perdiem',
+    'full-time': 'fulltime', 'full_time': 'fulltime', 'fulltime': 'fulltime',
+    'part-time': 'parttime', 'part_time': 'parttime', 'parttime': 'parttime',
+    'contract': 'contract', 'temporary': 'temporary', 'internship': 'internship',
   };
-  
   return mapping[jobType.toLowerCase()] || jobType;
 }
