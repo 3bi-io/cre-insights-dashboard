@@ -588,6 +588,9 @@ export type Database = {
           display_fields: Json | null
           dot_physical_date: string | null
           driver_id: string | null
+          driverreach_applied_via: string | null
+          driverreach_last_sync: string | null
+          driverreach_sync_status: string | null
           driving_experience_years: number | null
           drug: string | null
           education_level: string | null
@@ -676,6 +679,9 @@ export type Database = {
           display_fields?: Json | null
           dot_physical_date?: string | null
           driver_id?: string | null
+          driverreach_applied_via?: string | null
+          driverreach_last_sync?: string | null
+          driverreach_sync_status?: string | null
           driving_experience_years?: number | null
           drug?: string | null
           education_level?: string | null
@@ -764,6 +770,9 @@ export type Database = {
           display_fields?: Json | null
           dot_physical_date?: string | null
           driver_id?: string | null
+          driverreach_applied_via?: string | null
+          driverreach_last_sync?: string | null
+          driverreach_sync_status?: string | null
           driving_experience_years?: number | null
           drug?: string | null
           education_level?: string | null
@@ -2297,6 +2306,108 @@ export type Database = {
             columns: ["job_listing_id"]
             isOneToOne: false
             referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driverreach_credentials: {
+        Row: {
+          api_endpoint: string
+          api_key: string
+          company_id: string
+          company_name: string | null
+          created_at: string
+          id: string
+          mode: string
+          organization_id: string
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          api_endpoint?: string
+          api_key: string
+          company_id: string
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          organization_id: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          api_endpoint?: string
+          api_key?: string
+          company_id?: string
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          organization_id?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driverreach_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driverreach_credentials_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driverreach_field_mappings: {
+        Row: {
+          created_at: string
+          field_mappings: Json
+          id: string
+          is_default: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          field_mappings?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          field_mappings?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driverreach_field_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driverreach_field_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
