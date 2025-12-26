@@ -9,6 +9,7 @@ interface ApplyContext {
   location: string | null;
   logoUrl: string | null;
   jobListingId: string | null;
+  source: string | null;
   isLoading: boolean;
 }
 
@@ -21,6 +22,7 @@ export const useApplyContext = (): ApplyContext => {
     location: null,
     logoUrl: null,
     jobListingId: null,
+    source: null,
     isLoading: true,
   });
 
@@ -36,6 +38,11 @@ export const useApplyContext = (): ApplyContext => {
       const orgSlug = searchParams.get('org') || 
                       searchParams.get('organization') ||
                       searchParams.get('org_slug');
+
+      // Get source from utm_source parameter
+      const utmSource = searchParams.get('utm_source') || 
+                        searchParams.get('utmSource') || 
+                        searchParams.get('source');
 
       if (jobListingId) {
         // Try to fetch job listing with organization
@@ -67,6 +74,7 @@ export const useApplyContext = (): ApplyContext => {
               : null,
             logoUrl: org?.logo_url || null,
             jobListingId: jobListing.id,
+            source: utmSource,
             isLoading: false,
           });
           return;
@@ -89,6 +97,7 @@ export const useApplyContext = (): ApplyContext => {
             location: null,
             logoUrl: org.logo_url,
             jobListingId: null,
+            source: utmSource,
             isLoading: false,
           });
           return;
@@ -103,6 +112,7 @@ export const useApplyContext = (): ApplyContext => {
         location: null,
         logoUrl: null,
         jobListingId: null,
+        source: utmSource,
         isLoading: false,
       });
     };

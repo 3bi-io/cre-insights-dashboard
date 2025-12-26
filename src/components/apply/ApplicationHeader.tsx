@@ -1,20 +1,39 @@
 import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Building2 } from 'lucide-react';
+import { MapPin, Building2, Share2 } from 'lucide-react';
 
 interface ApplicationHeaderProps {
   jobTitle?: string | null;
   organizationName?: string | null;
   location?: string | null;
   logoUrl?: string | null;
+  source?: string | null;
   isLoading?: boolean;
 }
+
+// Format source for display (e.g., 'x' -> 'X', 'facebook' -> 'Facebook')
+const formatSource = (source: string): string => {
+  const sourceMap: Record<string, string> = {
+    'x': 'X',
+    'twitter': 'X',
+    'facebook': 'Facebook',
+    'fb': 'Facebook',
+    'instagram': 'Instagram',
+    'ig': 'Instagram',
+    'linkedin': 'LinkedIn',
+    'indeed': 'Indeed',
+    'google': 'Google',
+    'craigslist': 'Craigslist',
+  };
+  return sourceMap[source.toLowerCase()] || source.charAt(0).toUpperCase() + source.slice(1);
+};
 
 export const ApplicationHeader = ({ 
   jobTitle, 
   organizationName, 
   location, 
   logoUrl,
+  source,
   isLoading = false 
 }: ApplicationHeaderProps) => {
   if (isLoading) {
@@ -55,6 +74,12 @@ export const ApplicationHeader = ({
             <span className="inline-flex items-center gap-1">
               <MapPin className="h-4 w-4" />
               {location}
+            </span>
+          )}
+          {source && (
+            <span className="inline-flex items-center gap-1">
+              <Share2 className="h-4 w-4" />
+              via {formatSource(source)}
             </span>
           )}
         </div>
