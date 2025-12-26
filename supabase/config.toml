@@ -116,3 +116,6 @@ verify_jwt = true
 
 [functions.elevenlabs-call-status]
 verify_jwt = false
+
+[functions.driverreach-integration]
+verify_jwt = true

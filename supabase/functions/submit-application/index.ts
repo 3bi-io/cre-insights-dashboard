@@ -414,6 +414,146 @@ async function autoPostToTenstreet(
 }
 
 /**
+ * Auto-post application to DriverReach for organizations with driverreach_access enabled
+ * Runs as a background task (non-blocking)
+ */
+async function autoPostToDriverReach(
+  supabase: ReturnType<typeof createClient>,
+  organizationId: string,
+  applicationId: string,
+  applicationData: Record<string, unknown>
+): Promise<void> {
+  try {
+    // Check if organization has DriverReach access enabled
+    const { data: feature } = await supabase
+      .from('organization_features')
+      .select('enabled')
+      .eq('organization_id', organizationId)
+      .eq('feature_name', 'driverreach_access')
+      .single();
+    
+    if (!feature?.enabled) {
+      logger.info('DriverReach auto-post skipped - feature not enabled', { organization_id: organizationId });
+      return;
+    }
+    
+    // Get DriverReach credentials
+    const { data: credentials } = await supabase
+      .from('driverreach_credentials')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .single();
+    
+    if (!credentials) {
+      logger.info('DriverReach auto-post skipped - no active credentials', { organization_id: organizationId });
+      return;
+    }
+    
+    // Get field mappings (prefer default mapping)
+    const { data: mappings } = await supabase
+      .from('driverreach_field_mappings')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('is_default', true)
+      .single();
+    
+    if (!mappings) {
+      logger.info('DriverReach auto-post skipped - no field mappings configured', { organization_id: organizationId });
+      return;
+    }
+    
+    logger.info('Starting DriverReach auto-post', { 
+      application_id: applicationId,
+      organization_id: organizationId,
+      company_id: credentials.company_id 
+    });
+    
+    // Build the DriverReach payload
+    const fieldMappings = mappings.field_mappings as Record<string, unknown>;
+    const personalData = (fieldMappings?.personalData || {}) as Record<string, string>;
+    
+    const getFieldValue = (data: Record<string, unknown>, field: string): string => {
+      if (!field) return '';
+      const value = data[field];
+      return value !== null && value !== undefined ? String(value) : '';
+    };
+    
+    const payload = {
+      source: credentials.source || '3BI',
+      company_id: credentials.company_id,
+      driver: {
+        first_name: getFieldValue(applicationData, personalData?.givenName || 'first_name'),
+        last_name: getFieldValue(applicationData, personalData?.familyName || 'last_name'),
+        email: getFieldValue(applicationData, personalData?.internetEmailAddress || 'applicant_email'),
+        phone: getFieldValue(applicationData, personalData?.primaryPhone || 'phone'),
+        city: getFieldValue(applicationData, personalData?.municipality || 'city'),
+        state: getFieldValue(applicationData, personalData?.region || 'state'),
+        zip: getFieldValue(applicationData, personalData?.postalCode || 'zip'),
+        address: getFieldValue(applicationData, personalData?.address1 || 'address_1'),
+      },
+      application: {
+        external_id: applicationId,
+        applied_at: new Date().toISOString(),
+      }
+    };
+    
+    // Send to DriverReach
+    const startTime = Date.now();
+    const response = await fetch(`${credentials.api_endpoint}/drivers`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${credentials.api_key}`,
+        'X-Company-Id': credentials.company_id
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const responseText = await response.text();
+    const duration = Date.now() - startTime;
+    
+    // Update application with sync status
+    const syncStatus = response.ok ? 'synced' : 'failed';
+    await supabase
+      .from('applications')
+      .update({
+        driverreach_sync_status: syncStatus,
+        driverreach_last_sync: new Date().toISOString(),
+        driverreach_applied_via: 'auto_post'
+      })
+      .eq('id', applicationId);
+    
+    if (response.ok) {
+      logger.info('DriverReach auto-post successful', { 
+        application_id: applicationId,
+        duration_ms: duration,
+        status: response.status 
+      });
+    } else {
+      logger.error('DriverReach auto-post failed', new Error(responseText.substring(0, 500)), { 
+        application_id: applicationId,
+        status: response.status,
+        duration_ms: duration 
+      });
+    }
+    
+  } catch (error) {
+    const err = error as Error;
+    logger.error('DriverReach auto-post error', err, { application_id: applicationId });
+    
+    // Mark application as failed sync
+    await supabase
+      .from('applications')
+      .update({
+        driverreach_sync_status: 'failed',
+        driverreach_last_sync: new Date().toISOString()
+      })
+      .eq('id', applicationId);
+  }
+}
+
+/**
  * Build Tenstreet XML payload for auto-posting
  */
 function buildTenstreetAutoPostXML(
@@ -718,6 +858,11 @@ Deno.serve(async (req) => {
     // Auto-post to Tenstreet for enabled organizations (non-blocking background task)
     EdgeRuntime.waitUntil(
       autoPostToTenstreet(supabase, organizationId, data.id, applicationData)
+    );
+
+    // Auto-post to DriverReach for enabled organizations (non-blocking background task)
+    EdgeRuntime.waitUntil(
+      autoPostToDriverReach(supabase, organizationId, data.id, applicationData)
     );
 
     // Check if organization has voice agent for response
