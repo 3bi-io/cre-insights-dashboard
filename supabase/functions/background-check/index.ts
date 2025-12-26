@@ -23,15 +23,96 @@ serve(async (req) => {
   console.log(`[${correlationId}] Background check request received`);
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { applicationId, providerId, checkTypes, packageName } = await req.json();
+    // Get user from auth header if present
+    let userId: string | null = null;
+    const authHeader = req.headers.get("authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id || null;
+    }
 
+    const body = await req.json();
+    const { 
+      action = "initiate",
+      applicationId, 
+      connectionId,
+      providerId, 
+      checkType,
+      checkTypes,
+      packageName 
+    } = body;
+
+    console.log(`[${correlationId}] Action: ${action}, ApplicationId: ${applicationId}, ConnectionId: ${connectionId}`);
+
+    // Handle test connection action
+    if (action === "test") {
+      if (!connectionId) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "connectionId is required for test action" 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get connection and provider
+      const { data: conn, error: connError } = await supabase
+        .from("organization_bgc_connections")
+        .select("*, background_check_providers(*)")
+        .eq("id", connectionId)
+        .single();
+
+      if (connError || !conn) {
+        console.error(`[${correlationId}] Connection not found:`, connError);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "Connection not found" 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const connection = conn as unknown as BGCConnection;
+      const provider = conn.background_check_providers as unknown as BGCProvider;
+
+      // Test the connection
+      try {
+        const adapter = createBGCAdapter({ provider, connection, correlationId });
+        const testResult = await adapter.testConnection();
+        
+        console.log(`[${correlationId}] Test connection result:`, testResult);
+        
+        return new Response(JSON.stringify({
+          success: testResult.status === "success",
+          message: testResult.message || (testResult.status === "success" ? "Connection successful" : "Connection failed"),
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (testError) {
+        console.error(`[${correlationId}] Test connection error:`, testError);
+        return new Response(JSON.stringify({
+          success: false,
+          message: (testError as Error).message || "Connection test failed",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Handle initiate action
     if (!applicationId) {
-      return new Response(JSON.stringify({ error: "applicationId is required" }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "applicationId is required" 
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -46,7 +127,10 @@ serve(async (req) => {
 
     if (appError || !application) {
       console.error(`[${correlationId}] Application not found:`, appError);
-      return new Response(JSON.stringify({ error: "Application not found" }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Application not found" 
+      }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -58,11 +142,26 @@ serve(async (req) => {
     let connection: BGCConnection | null = null;
     let provider: BGCProvider | null = null;
 
-    if (providerId) {
+    if (connectionId) {
+      // Use specific connection
       const { data: conn } = await supabase
         .from("organization_bgc_connections")
         .select("*, background_check_providers(*)")
-        .eq("id", providerId)
+        .eq("id", connectionId)
+        .eq("is_enabled", true)
+        .single();
+      
+      if (conn) {
+        connection = conn as unknown as BGCConnection;
+        provider = conn.background_check_providers as unknown as BGCProvider;
+      }
+    } else if (providerId) {
+      // Find connection by provider_id
+      const { data: conn } = await supabase
+        .from("organization_bgc_connections")
+        .select("*, background_check_providers(*)")
+        .eq("organization_id", organizationId)
+        .eq("provider_id", providerId)
         .eq("is_enabled", true)
         .single();
       
@@ -87,7 +186,10 @@ serve(async (req) => {
     }
 
     if (!provider || !connection) {
-      return new Response(JSON.stringify({ error: "No BGC provider configured" }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "No BGC provider configured" 
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -96,11 +198,19 @@ serve(async (req) => {
     // Map application to candidate data
     const candidate = mapApplicationToCandidate(application);
     
-    // Determine check types
-    const checks: CheckType[] = checkTypes || getDefaultCheckTypes(
-      !!application.driver_license_number || !!application.cdl,
-      !!application.ssn
-    );
+    // Determine check types - accept both checkType (string) and checkTypes (array)
+    let checks: CheckType[];
+    if (checkTypes && Array.isArray(checkTypes)) {
+      checks = checkTypes;
+    } else if (checkType && typeof checkType === "string") {
+      // Handle comma-separated string
+      checks = checkType.split(",").map(t => t.trim()) as CheckType[];
+    } else {
+      checks = getDefaultCheckTypes(
+        !!application.driver_license_number || !!application.cdl,
+        !!application.ssn
+      );
+    }
 
     // Create adapter and initiate check
     const adapter = createBGCAdapter({ provider, connection, correlationId });
@@ -111,27 +221,47 @@ serve(async (req) => {
     });
 
     // Record the request
-    await supabase.from("background_check_requests").insert({
-      organization_id: organizationId,
-      application_id: applicationId,
-      provider_id: provider.id,
-      connection_id: connection.id,
-      external_id: result.external_id,
-      candidate_id: result.candidate_id,
-      check_type: checks.join(","),
-      package_name: packageName,
-      status: result.status,
-      candidate_portal_url: result.candidate_portal_url,
-    });
+    const { data: insertedRequest, error: insertError } = await supabase
+      .from("background_check_requests")
+      .insert({
+        organization_id: organizationId,
+        application_id: applicationId,
+        provider_id: provider.id,
+        connection_id: connection.id,
+        external_id: result.external_id,
+        candidate_id: result.candidate_id,
+        check_type: checks.join(","),
+        package_name: packageName,
+        status: result.status,
+        candidate_portal_url: result.candidate_portal_url,
+        initiated_by: userId,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error(`[${correlationId}] Error recording request:`, insertError);
+    }
 
     console.log(`[${correlationId}] Background check initiated:`, result.external_id);
 
-    return new Response(JSON.stringify(result), {
+    // Return consistent response shape
+    return new Response(JSON.stringify({
+      success: true,
+      requestId: insertedRequest?.id || null,
+      externalId: result.external_id,
+      candidateId: result.candidate_id,
+      candidatePortalUrl: result.candidate_portal_url,
+      status: result.status,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error(`[${correlationId}] Error:`, error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: (error as Error).message 
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

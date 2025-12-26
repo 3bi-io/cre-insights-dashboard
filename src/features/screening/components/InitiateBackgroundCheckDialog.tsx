@@ -71,7 +71,7 @@ export function InitiateBackgroundCheckDialog({
       const result = await initiateCheck.mutateAsync({
         applicationId,
         checkType: selectedCheckTypes.join(','),
-        providerId: selectedConnection?.provider_id
+        connectionId: selectedConnectionId
       });
 
       toast.success('Background check initiated', {
