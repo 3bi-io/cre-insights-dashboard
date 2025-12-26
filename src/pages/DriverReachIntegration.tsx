@@ -12,12 +12,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Save, Settings, MapPin, User, TestTube, Loader2, CheckCircle, XCircle, Phone } from 'lucide-react';
 import { AVAILABLE_FIELD_TYPES } from '@/types/tenstreet';
-import { useOrganization } from '@/hooks/useOrganization';
+import { useAuth } from '@/hooks/useAuth';
 
 const DriverReachIntegration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { organization } = useOrganization();
+  const { organization } = useAuth();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   
   // DriverReach Configuration
