@@ -1,5 +1,5 @@
 import { FeatureConfig, FeatureKey } from '../types/features.types';
-import { Bot, Megaphone, Share2, BarChart3, Mic, Zap, Brain } from 'lucide-react';
+import { Bot, Megaphone, Share2, BarChart3, Mic, Zap, Brain, Shield } from 'lucide-react';
 
 /**
  * Centralized feature configuration
@@ -71,6 +71,14 @@ export const ORGANIZATION_FEATURES: Record<FeatureKey, FeatureConfig> = {
     category: 'Analytics',
     premium: true,
   },
+  background_check_access: {
+    key: 'background_check_access',
+    name: 'background_check_access',
+    label: 'Background Check Integration',
+    description: 'Access to background check providers (Checkr, Sterling, etc.) for applicant screening',
+    category: 'Screening',
+    premium: true,
+  },
 };
 
 /**
@@ -128,6 +136,8 @@ export const getFeatureIcon = (featureName: FeatureKey) => {
       return Mic;
     case 'elevenlabs_access':
       return Zap;
+    case 'background_check_access':
+      return Shield;
     default:
       return Bot;
   }
@@ -146,6 +156,8 @@ export const getCategoryColor = (category: string) => {
       return 'bg-green-100 text-green-800 border-green-200';
     case 'Analytics':
       return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'Screening':
+      return 'bg-cyan-100 text-cyan-800 border-cyan-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
