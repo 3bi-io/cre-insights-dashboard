@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Users,
   Activity,
-  Loader2
+  Loader2,
+  Send
 } from 'lucide-react';
 import { formatDistanceToNow, format, subDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -46,6 +47,8 @@ interface SyncMetrics {
 }
 
 const TenstreetSyncDashboard = () => {
+  const queryClient = useQueryClient();
+  
   // Fetch CR England applications with Tenstreet sync status
   const { data: applications, isLoading, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['cr-england-tenstreet-sync'],
@@ -137,6 +140,75 @@ const TenstreetSyncDashboard = () => {
   const handleRefresh = () => {
     refetch();
     toast.success('Refreshing sync data...');
+  };
+
+  // Manual sync mutation for unsyced applications
+  const syncMutation = useMutation({
+    mutationFn: async (applicationId: string) => {
+      // Get application data
+      const { data: app, error: appError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', applicationId)
+        .single();
+      
+      if (appError || !app) throw new Error('Application not found');
+      
+      // Call tenstreet-integration edge function
+      const { data, error } = await supabase.functions.invoke('tenstreet-integration', {
+        body: {
+          action: 'send_application',
+          applicationData: app,
+          config: {
+            clientId: credentials?.client_id,
+            password: credentials?.password,
+            mode: credentials?.mode || 'PROD',
+            service: 'subject_upload',
+            source: '3BI',
+            companyId: credentials?.company_ids?.[0]?.toString() || '',
+            companyName: credentials?.account_name || '',
+            appReferrer: '3BI',
+            driverId: applicationId,
+          },
+          mappings: {
+            personalData: {
+              givenName: 'first_name',
+              familyName: 'last_name',
+              internetEmailAddress: 'applicant_email',
+              primaryPhone: 'phone',
+              municipality: 'city',
+              region: 'state',
+              postalCode: 'zip',
+            }
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Update sync status
+      await supabase
+        .from('applications')
+        .update({
+          tenstreet_sync_status: 'synced',
+          tenstreet_last_sync: new Date().toISOString(),
+          tenstreet_applied_via: 'manual_sync'
+        })
+        .eq('id', applicationId);
+      
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Application synced to Tenstreet');
+      queryClient.invalidateQueries({ queryKey: ['cr-england-tenstreet-sync'] });
+    },
+    onError: (error) => {
+      toast.error(`Sync failed: ${error.message}`);
+    }
+  });
+
+  const handleManualSync = (applicationId: string) => {
+    syncMutation.mutate(applicationId);
   };
 
   const getSyncStatusBadge = (status: string | null) => {
@@ -333,6 +405,7 @@ const TenstreetSyncDashboard = () => {
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Applied</th>
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Sync Status</th>
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Last Sync</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -357,6 +430,25 @@ const TenstreetSyncDashboard = () => {
                         ? formatDistanceToNow(new Date(app.tenstreet_last_sync), { addSuffix: true })
                         : 'Never'
                       }
+                    </td>
+                    <td className="py-3 px-2">
+                      {app.tenstreet_sync_status !== 'synced' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleManualSync(app.id)}
+                          disabled={syncMutation.isPending}
+                        >
+                          {syncMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Send className="h-3 w-3 mr-1" />
+                              Sync
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
