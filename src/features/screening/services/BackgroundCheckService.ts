@@ -45,6 +45,7 @@ export interface BGCRequest {
 export interface InitiateCheckParams {
   applicationId: string;
   checkType: string;
+  connectionId?: string;
   providerId?: string;
   packageName?: string;
 }
@@ -240,6 +241,7 @@ export class BackgroundCheckService {
         action: 'initiate',
         applicationId: params.applicationId,
         checkType: params.checkType,
+        connectionId: params.connectionId,
         providerId: params.providerId,
         packageName: params.packageName
       }

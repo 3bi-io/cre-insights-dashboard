@@ -364,6 +364,8 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
             <CollapsibleContent className="pt-2">
               <ApplicationBackgroundChecks
                 applicationId={application.id}
+                applicantName={getApplicantName(application)}
+                organizationId={application.job_listings?.organization_id}
                 showTitle={false}
               />
             </CollapsibleContent>
