@@ -290,6 +290,247 @@ async function resolveOrganizationId(
   };
 }
 
+/**
+ * Auto-post application to Tenstreet for organizations with tenstreet_access enabled
+ * Runs as a background task (non-blocking)
+ */
+async function autoPostToTenstreet(
+  supabase: ReturnType<typeof createClient>,
+  organizationId: string,
+  applicationId: string,
+  applicationData: Record<string, unknown>
+): Promise<void> {
+  try {
+    // Check if organization has Tenstreet access enabled
+    const { data: feature } = await supabase
+      .from('organization_features')
+      .select('enabled')
+      .eq('organization_id', organizationId)
+      .eq('feature_name', 'tenstreet_access')
+      .single();
+    
+    if (!feature?.enabled) {
+      logger.info('Tenstreet auto-post skipped - feature not enabled', { organization_id: organizationId });
+      return;
+    }
+    
+    // Get Tenstreet credentials
+    const { data: credentials } = await supabase
+      .from('tenstreet_credentials')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .single();
+    
+    if (!credentials) {
+      logger.info('Tenstreet auto-post skipped - no active credentials', { organization_id: organizationId });
+      return;
+    }
+    
+    // Get field mappings (prefer default mapping)
+    const { data: mappings } = await supabase
+      .from('tenstreet_field_mappings')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('is_default', true)
+      .single();
+    
+    if (!mappings) {
+      logger.info('Tenstreet auto-post skipped - no field mappings configured', { organization_id: organizationId });
+      return;
+    }
+    
+    logger.info('Starting Tenstreet auto-post', { 
+      application_id: applicationId,
+      organization_id: organizationId,
+      client_id: credentials.client_id 
+    });
+    
+    // Build the Tenstreet config
+    const config = {
+      clientId: credentials.client_id,
+      password: credentials.password,
+      mode: credentials.mode || 'PROD',
+      service: 'subject_upload',
+      source: credentials.source || '3BI',
+      companyId: credentials.company_ids?.[0]?.toString() || '',
+      companyName: credentials.account_name || '',
+      appReferrer: '3BI',
+      driverId: applicationId,
+    };
+    
+    // Build XML payload
+    const xmlPayload = buildTenstreetAutoPostXML(applicationData, mappings.field_mappings, config);
+    
+    // Send to Tenstreet
+    const startTime = Date.now();
+    const response = await fetch('https://dashboard.tenstreet.com/post/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/xml' },
+      body: xmlPayload
+    });
+    
+    const responseText = await response.text();
+    const duration = Date.now() - startTime;
+    
+    // Update application with sync status
+    const syncStatus = response.ok ? 'synced' : 'failed';
+    await supabase
+      .from('applications')
+      .update({
+        tenstreet_sync_status: syncStatus,
+        tenstreet_last_sync: new Date().toISOString(),
+        tenstreet_applied_via: 'auto_post'
+      })
+      .eq('id', applicationId);
+    
+    if (response.ok) {
+      logger.info('Tenstreet auto-post successful', { 
+        application_id: applicationId,
+        duration_ms: duration,
+        status: response.status 
+      });
+    } else {
+      logger.error('Tenstreet auto-post failed', new Error(responseText.substring(0, 500)), { 
+        application_id: applicationId,
+        status: response.status,
+        duration_ms: duration 
+      });
+    }
+    
+  } catch (error) {
+    const err = error as Error;
+    logger.error('Tenstreet auto-post error', err, { application_id: applicationId });
+    
+    // Mark application as failed sync
+    await supabase
+      .from('applications')
+      .update({
+        tenstreet_sync_status: 'failed',
+        tenstreet_last_sync: new Date().toISOString()
+      })
+      .eq('id', applicationId);
+  }
+}
+
+/**
+ * Build Tenstreet XML payload for auto-posting
+ */
+function buildTenstreetAutoPostXML(
+  applicationData: Record<string, unknown>,
+  fieldMappings: Record<string, unknown>,
+  config: Record<string, string>
+): string {
+  const personalData = (fieldMappings?.personalData || {}) as Record<string, string>;
+  const customQuestions = fieldMappings?.customQuestions as Array<{ mapping: string; questionId: string; question: string }> | undefined;
+  const displayFields = fieldMappings?.displayFields as Array<{ mapping: string; displayPrompt: string }> | undefined;
+  
+  // Helper function to get field value
+  const getFieldValue = (data: Record<string, unknown>, field: string): string => {
+    if (!field) return '';
+    const value = data[field];
+    return value !== null && value !== undefined ? String(value) : '';
+  };
+  
+  // Helper function to escape XML
+  const escapeXML = (str: string): string => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+  
+  // Helper function to format phone number
+  const formatPhoneNumber = (phone: string): string => {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}`;
+    }
+    if (digits.length === 11 && digits.startsWith('1')) {
+      return `${digits.substring(1, 4)}-${digits.substring(4, 7)}-${digits.substring(7)}`;
+    }
+    return phone;
+  };
+
+  // Build PersonName section
+  const personNameXML = `
+        <PersonName>
+            <GivenName>${escapeXML(getFieldValue(applicationData, personalData?.givenName || 'first_name'))}</GivenName>
+            <MiddleName>${escapeXML(getFieldValue(applicationData, personalData?.middleName || ''))}</MiddleName>
+            <FamilyName>${escapeXML(getFieldValue(applicationData, personalData?.familyName || 'last_name'))}</FamilyName>
+        </PersonName>`;
+
+  // Build PostalAddress section
+  const postalAddressXML = `
+        <PostalAddress>
+            <CountryCode>US</CountryCode>
+            <Municipality>${escapeXML(getFieldValue(applicationData, personalData?.municipality || 'city'))}</Municipality>
+            <Region>${escapeXML(getFieldValue(applicationData, personalData?.region || 'state'))}</Region>
+            <PostalCode>${escapeXML(getFieldValue(applicationData, personalData?.postalCode || 'zip'))}</PostalCode>
+            <Address1>${escapeXML(getFieldValue(applicationData, personalData?.address1 || 'address_1'))}</Address1>
+            <Address2>${escapeXML(getFieldValue(applicationData, personalData?.address2 || ''))}</Address2>
+        </PostalAddress>`;
+
+  // Build ContactData section
+  const primaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.primaryPhone || 'phone'));
+  const contactDataXML = `
+        <ContactData PreferredMethod="PrimaryPhone">
+            <InternetEmailAddress>${escapeXML(getFieldValue(applicationData, personalData?.internetEmailAddress || 'applicant_email'))}</InternetEmailAddress>
+            ${primaryPhone ? `<PrimaryPhone>${primaryPhone}</PrimaryPhone>` : ''}
+        </ContactData>`;
+
+  // Build custom questions XML
+  const customQuestionsXML = customQuestions && Array.isArray(customQuestions)
+    ? customQuestions
+        .filter((q) => q.mapping && q.questionId && getFieldValue(applicationData, q.mapping))
+        .map((q) => `
+            <CustomQuestion>
+                <QuestionId>${escapeXML(q.questionId)}</QuestionId>
+                <Question>${escapeXML(q.question || '')}</Question>
+                <Answer>${escapeXML(getFieldValue(applicationData, q.mapping))}</Answer>
+            </CustomQuestion>`)
+        .join('')
+    : '';
+
+  // Build display fields XML
+  const displayFieldsXML = displayFields && Array.isArray(displayFields)
+    ? displayFields
+        .filter((f) => f.mapping && f.displayPrompt && getFieldValue(applicationData, f.mapping))
+        .map((f) => `
+        <DisplayField>
+            <DisplayPrompt>${escapeXML(f.displayPrompt)}</DisplayPrompt>
+            <DisplayValue>${escapeXML(getFieldValue(applicationData, f.mapping))}</DisplayValue>
+        </DisplayField>`)
+        .join('')
+    : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<TenstreetData>
+    <Authentication>
+        <ClientId>${escapeXML(config.clientId)}</ClientId>
+        <Password><![CDATA[${config.password}]]></Password>
+        <Service>subject_upload</Service>
+    </Authentication>
+    <Mode>${escapeXML(config.mode)}</Mode>
+    <Source>${escapeXML(config.source)}</Source>
+    <CompanyId>${escapeXML(config.companyId)}</CompanyId>
+    <CompanyName>${escapeXML(config.companyName)}</CompanyName>
+    <DriverId>${escapeXML(config.driverId)}</DriverId>
+    <PersonalData>${personNameXML}${postalAddressXML}${contactDataXML}
+    </PersonalData>
+    <ApplicationData>
+        <AppReferrer>${escapeXML(config.appReferrer)}</AppReferrer>
+        <CustomQuestions>${customQuestionsXML}
+        </CustomQuestions>
+        <DisplayFields>${displayFieldsXML}
+        </DisplayFields>
+    </ApplicationData>
+</TenstreetData>`;
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -473,6 +714,11 @@ Deno.serve(async (req) => {
     } catch (webhookError) {
       logger.error('Webhook trigger failed (non-blocking)', webhookError as Error);
     }
+
+    // Auto-post to Tenstreet for enabled organizations (non-blocking background task)
+    EdgeRuntime.waitUntil(
+      autoPostToTenstreet(supabase, organizationId, data.id, applicationData)
+    );
 
     // Check if organization has voice agent for response
     const { data: voiceAgent } = await supabase
