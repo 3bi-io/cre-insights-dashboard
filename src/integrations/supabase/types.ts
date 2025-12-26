@@ -3353,6 +3353,69 @@ export type Database = {
           },
         ]
       }
+      job_publishers: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          documentation_url: string | null
+          feed_format: string | null
+          feed_schema: Json | null
+          feed_url_template: string | null
+          id: string
+          industries: string[] | null
+          integration_type: string
+          is_active: boolean | null
+          is_premium: boolean | null
+          logo_url: string | null
+          name: string
+          notes: string | null
+          requires_partnership: boolean | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          feed_format?: string | null
+          feed_schema?: Json | null
+          feed_url_template?: string | null
+          id?: string
+          industries?: string[] | null
+          integration_type: string
+          is_active?: boolean | null
+          is_premium?: boolean | null
+          logo_url?: string | null
+          name: string
+          notes?: string | null
+          requires_partnership?: boolean | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          documentation_url?: string | null
+          feed_format?: string | null
+          feed_schema?: Json | null
+          feed_url_template?: string | null
+          id?: string
+          industries?: string[] | null
+          integration_type?: string
+          is_active?: boolean | null
+          is_premium?: boolean | null
+          logo_url?: string | null
+          name?: string
+          notes?: string | null
+          requires_partnership?: boolean | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       job_short_links: {
         Row: {
           click_count: number | null
@@ -3872,6 +3935,70 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_publisher_access: {
+        Row: {
+          api_credentials: Json | null
+          created_at: string | null
+          feed_url: string | null
+          id: string
+          is_enabled: boolean | null
+          last_sync_at: string | null
+          organization_id: string
+          publisher_id: string
+          sync_error: string | null
+          sync_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          api_credentials?: Json | null
+          created_at?: string | null
+          feed_url?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          last_sync_at?: string | null
+          organization_id: string
+          publisher_id: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          api_credentials?: Json | null
+          created_at?: string | null
+          feed_url?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          last_sync_at?: string | null
+          organization_id?: string
+          publisher_id?: string
+          sync_error?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_publisher_access_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_publisher_access_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_publisher_access_publisher_id_fkey"
+            columns: ["publisher_id"]
+            isOneToOne: false
+            referencedRelation: "job_publishers"
             referencedColumns: ["id"]
           },
         ]
