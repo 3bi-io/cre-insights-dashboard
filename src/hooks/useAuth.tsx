@@ -162,12 +162,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper to clear all auth state
+  const clearAuthState = () => {
+    setSession(null);
+    setUser(null);
+    setUserRole(null);
+    setUserType(null);
+    setOrganization(null);
+    setCandidateProfile(null);
+  };
+
+  // Helper to check if error is session expired
+  const isSessionExpiredError = (error: Error | null) => {
+    if (!error) return false;
+    const message = error.message?.toLowerCase() || '';
+    return message.includes('session_expired') || 
+           message.includes('invalid refresh token') ||
+           message.includes('refresh_token_not_found');
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         logger.debug('Auth state changed', { event, hasSession: !!session });
         console.log('[AUTH] Auth state changed:', { event, hasSession: !!session });
+        
+        // Handle token refresh failure
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.log('[AUTH] Token refresh failed, clearing state');
+          clearAuthState();
+          setLoading(false);
+          return;
+        }
+
+        // Handle sign out event
+        if (event === 'SIGNED_OUT') {
+          console.log('[AUTH] User signed out, clearing state');
+          clearAuthState();
+          setLoading(false);
+          return;
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -189,8 +225,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[AUTH] Initial session check:', { hasSession: !!session });
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('[AUTH] Initial session check:', { hasSession: !!session, hasError: !!error });
+      
+      // Handle session expired errors gracefully
+      if (error && isSessionExpiredError(error)) {
+        console.log('[AUTH] Session expired on initial check, clearing state');
+        logger.info('Session expired, user needs to re-authenticate');
+        clearAuthState();
+        setLoading(false);
+        return;
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -207,12 +253,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Session heartbeat - refresh every 7 hours (before 8-hour expiry)
     const refreshInterval = setInterval(async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (session && !error) {
+      try {
+        const { data: { session }, error: getError } = await supabase.auth.getSession();
+        
+        // If no session or error getting session, sign out
+        if (getError || !session) {
+          console.log('[AUTH] Session invalid during refresh check, signing out');
+          logger.info('Session expired during heartbeat, signing out');
+          await supabase.auth.signOut();
+          return;
+        }
+        
         console.log('[AUTH] Refreshing session (7-hour heartbeat)');
         logger.info('Automatic session refresh triggered');
-        await supabase.auth.refreshSession();
-        console.log('[AUTH] Session refreshed successfully');
+        
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.log('[AUTH] Session refresh failed:', refreshError.message);
+          if (isSessionExpiredError(refreshError)) {
+            console.log('[AUTH] Session expired, signing out');
+            await supabase.auth.signOut();
+          }
+        } else {
+          console.log('[AUTH] Session refreshed successfully');
+        }
+      } catch (err) {
+        console.error('[AUTH] Error during session refresh:', err);
       }
     }, 7 * 60 * 60 * 1000); // 7 hours in milliseconds
 
