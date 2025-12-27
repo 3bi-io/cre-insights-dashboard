@@ -10,19 +10,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { parseVoiceAgentError, getErrorTitle, getUserFriendlyErrorMessage } from '../utils/errorHandling';
 import { checkBrowserCompatibility } from '../utils/browserCompatibility';
-import { SignedUrlResponse } from '../types';
+import { SignedUrlResponse, LiveTranscriptMessage } from '../types';
 
 interface UseVoiceAgentConnectionOptions {
   onConnect?: () => void;
   onDisconnect?: () => void;
   onError?: (error: any) => void;
+  onTranscript?: (message: LiveTranscriptMessage) => void;
   agentOverrides?: any;
 }
 
 export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [transcripts, setTranscripts] = useState<LiveTranscriptMessage[]>([]);
+  const [pendingUserTranscript, setPendingUserTranscript] = useState<string>('');
   const { toast } = useToast();
+
+  const clearTranscripts = useCallback(() => {
+    setTranscripts([]);
+    setPendingUserTranscript('');
+  }, []);
 
   const conversation = useConversation({
     overrides: options.agentOverrides,
@@ -30,6 +38,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
       logger.info('Voice agent connected', undefined, 'VoiceAgentConnection');
       setIsConnected(true);
       setIsConnecting(false);
+      clearTranscripts();
       options.onConnect?.();
     },
     onDisconnect: () => {
@@ -38,8 +47,69 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
       setIsConnecting(false);
       options.onDisconnect?.();
     },
-    onMessage: (message) => {
+    onMessage: (message: any) => {
       logger.debug('Voice agent message', { message }, 'VoiceAgentConnection');
+      
+      // Handle user transcriptions
+      if (message.type === 'user_transcript') {
+        const transcript = message.user_transcription_event;
+        if (transcript?.is_final) {
+          const newMessage: LiveTranscriptMessage = {
+            id: crypto.randomUUID(),
+            speaker: 'user',
+            text: transcript.user_transcript,
+            timestamp: new Date(),
+            isFinal: true
+          };
+          setTranscripts(prev => [...prev, newMessage]);
+          setPendingUserTranscript('');
+          options.onTranscript?.(newMessage);
+        } else if (transcript?.user_transcript) {
+          setPendingUserTranscript(transcript.user_transcript);
+        }
+      }
+      
+      // Handle agent responses
+      if (message.type === 'agent_response') {
+        const agentResponse = message.agent_response_event;
+        if (agentResponse?.agent_response) {
+          const newMessage: LiveTranscriptMessage = {
+            id: crypto.randomUUID(),
+            speaker: 'agent',
+            text: agentResponse.agent_response,
+            timestamp: new Date(),
+            isFinal: true
+          };
+          setTranscripts(prev => [...prev, newMessage]);
+          options.onTranscript?.(newMessage);
+        }
+      }
+
+      // Handle agent response corrections (when user interrupts)
+      if (message.type === 'agent_response_correction') {
+        const correction = message.agent_response_correction_event;
+        if (correction?.corrected_agent_response) {
+          // Update the last agent message with corrected text
+          setTranscripts(prev => {
+            const updated = [...prev];
+            // Find last agent message index
+            let lastAgentIdx = -1;
+            for (let i = updated.length - 1; i >= 0; i--) {
+              if (updated[i].speaker === 'agent') {
+                lastAgentIdx = i;
+                break;
+              }
+            }
+            if (lastAgentIdx >= 0) {
+              updated[lastAgentIdx] = {
+                ...updated[lastAgentIdx],
+                text: correction.corrected_agent_response
+              };
+            }
+            return updated;
+          });
+        }
+      }
     },
     onError: (error) => {
       logger.error('Voice agent error', error, 'VoiceAgentConnection');
@@ -154,6 +224,9 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     isConnected,
     isConnecting,
     isSpeaking: conversation.isSpeaking,
+    transcripts,
+    pendingUserTranscript,
+    clearTranscripts,
     connect,
     disconnect,
     conversation
