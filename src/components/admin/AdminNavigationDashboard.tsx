@@ -116,7 +116,7 @@ export function AdminNavigationDashboard() {
       title: 'Publishers',
       description: 'Job board integrations and feed management',
       icon: Radio,
-      path: '/admin/platforms',
+      path: '/admin/publishers',
       status: platformLoading ? 'loading' : platformCount && platformCount > 0 ? 'healthy' : 'warning',
       statusText: platformCount && platformCount > 0 ? 'Platforms active' : 'No active platforms',
       metric: platformCount,

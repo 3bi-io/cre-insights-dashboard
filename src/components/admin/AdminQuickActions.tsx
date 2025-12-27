@@ -47,7 +47,7 @@ export function AdminQuickActions() {
       icon: FileText,
       label: 'Publishers',
       description: 'Manage job board integrations',
-      path: '/admin/platforms',
+      path: '/admin/publishers',
       color: 'text-pink-600'
     },
     {
