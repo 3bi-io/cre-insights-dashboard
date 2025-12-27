@@ -189,6 +189,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/tenstreet': 'Tenstreet',
   '/admin/profile': 'Profile Settings',
   '/admin/super-admin-feeds': 'Feed Management',
+  '/admin/platforms': 'Publishers', // Redirect alias
 };
 
 export const getRouteTitle = (pathname: string): string => {
