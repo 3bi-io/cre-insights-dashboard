@@ -13,6 +13,7 @@ import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { OrganizationPlatformAccessDialog } from '@/components/admin';
 import PlanBadge from '@/components/PlanBadge';
 import AdminPageLayout from '@/features/shared/components/AdminPageLayout';
+import { AdminNavigationDashboard } from '@/components/admin/AdminNavigationDashboard';
 
 const Organizations = () => {
   const { data: organizations, isLoading } = useOrganizationsData();
@@ -32,6 +33,10 @@ const Organizations = () => {
       actions={<CreateOrganizationDialog />}
     >
       <div className="space-y-6">
+        {/* Admin Navigation Dashboard */}
+        <AdminNavigationDashboard />
+
+        {/* Organizations List */}
         {isLoading ? (
           <div className="grid gap-4">
             {[1, 2, 3].map((i) => (
