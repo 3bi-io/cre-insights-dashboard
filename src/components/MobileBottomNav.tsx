@@ -1,36 +1,36 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Briefcase, MoreHorizontal, X, Target, Share2, Bot, Settings, Building, TrendingUp, Image } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
+import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { getNavigationGroups } from '@/config/navigationConfig';
 
-interface NavItem {
+interface PrimaryNavItem {
   icon: React.ElementType;
   label: string;
   path: string;
   activePatterns: string[];
 }
 
-interface NavGroup {
-  title: string;
-  icon: React.ElementType;
-  items: NavItem[];
-}
-
 const MobileBottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userRole } = useAuth();
+  const { userRole, organization } = useAuth();
+  const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
+  const { counts: tenstreetCounts } = useTenstreetNotifications();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isSuperAdmin = userRole === 'super_admin';
   const isAdmin = userRole === 'admin' || isSuperAdmin;
 
-  // Primary nav items (always visible)
-  const primaryNavItems: NavItem[] = [
+  // Primary nav items (always visible in bottom bar)
+  const primaryNavItems: PrimaryNavItem[] = [
     {
       icon: LayoutDashboard,
       label: 'Dashboard',
@@ -51,63 +51,34 @@ const MobileBottomNav: React.FC = () => {
     }
   ];
 
-  // Extended nav groups for "More" menu
-  const moreNavGroups: NavGroup[] = [
-    {
-      title: 'Campaigns',
-      icon: Target,
-      items: [
-        { icon: Target, label: 'Campaigns', path: '/admin/campaigns', activePatterns: ['/admin/campaigns'] },
-        { icon: Briefcase, label: 'Job Groups', path: '/admin/job-groups', activePatterns: ['/admin/job-groups'] }
-      ]
-    },
-    {
-      title: 'Integrations',
-      icon: Share2,
-      items: [
-        { icon: Share2, label: 'ATS Command Center', path: '/admin/ats-command', activePatterns: ['/admin/ats-command'] },
-        { icon: Share2, label: 'Publishers', path: '/admin/publishers', activePatterns: ['/admin/publishers'] },
-        ...(isAdmin ? [{ icon: Share2, label: 'Webhooks', path: '/admin/webhook-management', activePatterns: ['/admin/webhook-management'] }] : [])
-      ]
-    },
-    {
-      title: 'AI Platform',
-      icon: Bot,
-      items: [
-        { icon: Bot, label: 'AI Assistant', path: '/admin/grok', activePatterns: ['/admin/grok'] },
-        { icon: Bot, label: 'AI Tools', path: '/admin/ai-tools', activePatterns: ['/admin/ai-tools'] },
-        { icon: TrendingUp, label: 'AI Analytics', path: '/admin/ai-analytics', activePatterns: ['/admin/ai-analytics'] }
-      ]
-    },
-    ...(isSuperAdmin ? [{
-      title: 'Analytics',
-      icon: TrendingUp,
-      items: [
-        { icon: TrendingUp, label: 'Visitor Analytics', path: '/admin/visitor-analytics', activePatterns: ['/admin/visitor-analytics'] },
-        { icon: TrendingUp, label: 'Meta Analytics', path: '/admin/meta-analytics', activePatterns: ['/admin/meta-analytics'] }
-      ]
-    }] : []),
-    {
-      title: 'Settings',
-      icon: Settings,
-      items: [
-        { icon: Settings, label: 'AI Configuration', path: '/admin/ai-configuration', activePatterns: ['/admin/ai-configuration'] },
-        { icon: Settings, label: 'Support', path: '/admin/support', activePatterns: ['/admin/support'] }
-      ]
-    },
-    ...(isSuperAdmin ? [{
-      title: 'Administration',
-      icon: Building,
-      items: [
-        { icon: Building, label: 'Organizations', path: '/admin/organizations', activePatterns: ['/admin/organizations'] },
-        { icon: Users, label: 'User Management', path: '/admin/user-management', activePatterns: ['/admin/user-management'] },
-        { icon: Image, label: 'Media Assets', path: '/admin/media', activePatterns: ['/admin/media'] }
-      ]
-    }] : [])
-  ];
+  // Get navigation groups from centralized config
+  const navigationGroups = getNavigationGroups({
+    isSuperAdmin,
+    isAdmin,
+    hasVoiceAgent: hasVoiceAgent(),
+    hasTenstreetAccess: hasTenstreetAccess(),
+    organizationSlug: organization?.slug,
+    tenstreetNotificationCount: tenstreetCounts.totalNotifications
+  });
 
-  const isActive = (item: NavItem) => {
-    return item.activePatterns.some(pattern => {
+  // Filter out Recruitment group from "More" menu since Applications/Jobs are in primary nav
+  const moreNavGroups = navigationGroups.map(group => {
+    if (group.group === "Recruitment") {
+      // Exclude Applications and Job Listings as they're in primary nav
+      return {
+        ...group,
+        items: group.items.filter(item => 
+          item.path !== '/admin/applications' && 
+          item.path !== '/admin/jobs'
+        )
+      };
+    }
+    return group;
+  }).filter(group => group.items.length > 0);
+
+  const isActive = (path: string, patterns?: string[]) => {
+    const checkPatterns = patterns || [path];
+    return checkPatterns.some(pattern => {
       if (pattern === '/dashboard') {
         return location.pathname === pattern;
       }
@@ -129,7 +100,7 @@ const MobileBottomNav: React.FC = () => {
       <div className="flex items-center justify-around h-16 px-2" role="menubar">
         {primaryNavItems.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item);
+          const active = isActive(item.path, item.activePatterns);
           
           return (
             <button
@@ -182,39 +153,52 @@ const MobileBottomNav: React.FC = () => {
             </SheetHeader>
             <ScrollArea className="h-full pb-8">
               <div className="space-y-6" role="menu">
-                {moreNavGroups.map((group, idx) => (
-                  <div key={group.title} role="group" aria-labelledby={`group-${group.title}`}>
-                    {idx > 0 && <Separator className="mb-4" />}
-                    <div className="flex items-center gap-2 mb-3" id={`group-${group.title}`}>
-                      <group.icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                      <span className="text-sm font-medium text-muted-foreground">{group.title}</span>
+                {moreNavGroups.map((group, idx) => {
+                  const GroupIcon = group.icon;
+                  return (
+                    <div key={group.group} role="group" aria-labelledby={`group-${group.group}`}>
+                      {idx > 0 && <Separator className="mb-4" />}
+                      <div className="flex items-center gap-2 mb-3" id={`group-${group.group}`}>
+                        <GroupIcon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                        <span className="text-sm font-medium text-muted-foreground">{group.group}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2" role="group">
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const active = isActive(item.path);
+                          const badge = item.badge;
+                          return (
+                            <button
+                              key={item.path}
+                              onClick={() => handleNavigate(item.path)}
+                              role="menuitem"
+                              aria-current={active ? 'page' : undefined}
+                              aria-label={`Navigate to ${item.label}${badge ? ` (${badge} notifications)` : ''}`}
+                              className={cn(
+                                "relative flex flex-col items-center justify-center p-3 rounded-lg border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+                                active 
+                                  ? "bg-primary/10 border-primary/20 text-primary" 
+                                  : "bg-muted/50 border-transparent hover:bg-muted"
+                              )}
+                            >
+                              <Icon className="w-5 h-5 mb-1" aria-hidden="true" />
+                              <span className="text-xs text-center line-clamp-1">{item.label}</span>
+                              {badge && badge > 0 && (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="absolute -top-1 -right-1 h-5 min-w-5 text-xs px-1"
+                                  aria-label={`${badge} notifications`}
+                                >
+                                  {badge > 99 ? '99+' : badge}
+                                </Badge>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2" role="group">
-                      {group.items.map((item) => {
-                        const Icon = item.icon;
-                        const active = isActive(item);
-                        return (
-                          <button
-                            key={item.path}
-                            onClick={() => handleNavigate(item.path)}
-                            role="menuitem"
-                            aria-current={active ? 'page' : undefined}
-                            aria-label={`Navigate to ${item.label}`}
-                            className={cn(
-                              "flex flex-col items-center justify-center p-3 rounded-lg border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
-                              active 
-                                ? "bg-primary/10 border-primary/20 text-primary" 
-                                : "bg-muted/50 border-transparent hover:bg-muted"
-                            )}
-                          >
-                            <Icon className="w-5 h-5 mb-1" aria-hidden="true" />
-                            <span className="text-xs text-center line-clamp-1">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </ScrollArea>
           </SheetContent>

@@ -9,10 +9,11 @@ import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, LayoutDashboard, BriefcaseIcon, Users, Settings, Building, MessageSquare, Share2, Shield, Zap, Bot, UserCog, BarChart3, MapPin, UserCheck, Rss, HelpCircle, Target, TrendingUp, Sparkles, Webhook, Globe, FolderKanban, User, CreditCard, Lock, Image } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building, User, CreditCard, Lock, UserCog } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
+import { getNavigationGroups, mainNavItems } from '@/config/navigationConfig';
 
 const AppSidebar = () => {
   const location = useLocation();
@@ -26,93 +27,18 @@ const AppSidebar = () => {
   const isSuperAdmin = userRole === 'super_admin';
   const isAdmin = userRole === 'admin' || isSuperAdmin;
 
-  // Main standalone items
-  const mainItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
-  ];
+  // Main standalone items from centralized config
+  const mainItems = mainNavItems;
 
-  // Restructured navigation with logical groupings
-  const navigationItems = [
-    {
-      group: "Recruitment",
-      icon: Users,
-      items: [
-        { path: '/admin/applications', label: 'Applications', icon: Users },
-        { path: '/admin/jobs', label: 'Job Listings', icon: BriefcaseIcon },
-        ...(organization?.slug !== 'acme' ? [
-          { path: '/admin/clients', label: 'Clients', icon: UserCheck }
-        ] : []),
-        { path: '/admin/routes', label: 'Routes', icon: MapPin },
-        ...(hasVoiceAgent() && isAdmin ? [
-          { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: MessageSquare }
-        ] : [])
-      ]
-    },
-    {
-      group: "Campaigns",
-      icon: Target,
-      items: [
-        { path: '/admin/campaigns', label: 'Campaigns', icon: Target },
-        { path: '/admin/job-groups', label: 'Job Groups', icon: FolderKanban }
-      ]
-    },
-    {
-      group: "Integrations",
-      icon: Share2,
-      items: [
-        ...(hasTenstreetAccess() ? [{
-          path: '/admin/ats-command',
-          label: 'ATS Command Center',
-          icon: Share2,
-          badge: tenstreetCounts.totalNotifications > 0 ? tenstreetCounts.totalNotifications : undefined
-        }] : []),
-        { path: '/admin/publishers', label: 'Publishers', icon: Globe },
-        ...(isAdmin ? [
-          { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
-        ] : []),
-        ...(isSuperAdmin ? [
-          { path: '/admin/universal-feeds', label: 'Universal Feeds', icon: Rss }
-        ] : [])
-      ]
-    },
-    {
-      group: "AI Platform",
-      icon: Bot,
-      items: [
-        { path: '/admin/grok', label: 'AI Assistant', icon: Sparkles },
-        { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
-        { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
-        { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap }
-      ]
-    },
-    ...(isSuperAdmin ? [{
-      group: "Analytics",
-      icon: TrendingUp,
-      items: [
-        { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
-        { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: TrendingUp }
-      ]
-    }] : []),
-    {
-      group: "Settings",
-      icon: Settings,
-      items: [
-        { path: '/admin/settings', label: 'General Settings', icon: Settings },
-        { path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings },
-        { path: '/admin/support', label: 'Support', icon: HelpCircle }
-      ]
-    },
-    ...(isSuperAdmin ? [{
-      group: "Administration",
-      icon: Building,
-      items: [
-        { path: '/admin/organizations', label: 'Organizations', icon: Building },
-        { path: '/admin/user-management', label: 'User Management', icon: UserCog },
-        { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss },
-        { path: '/admin/media', label: 'Media Assets', icon: Image }
-      ]
-    }] : [])
-  ];
+  // Get navigation groups from centralized config
+  const navigationItems = getNavigationGroups({
+    isSuperAdmin,
+    isAdmin,
+    hasVoiceAgent: hasVoiceAgent(),
+    hasTenstreetAccess: hasTenstreetAccess(),
+    organizationSlug: organization?.slug,
+    tenstreetNotificationCount: tenstreetCounts.totalNotifications
+  });
 
   const isActive = (path: string) => {
     if (path === '/dashboard') {
