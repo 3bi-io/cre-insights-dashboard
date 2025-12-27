@@ -14,7 +14,15 @@ export const useElevenLabsVoice = () => {
     return selectedJob ? createAgentOverrides(selectedJob) : undefined;
   }, [selectedJob]);
 
-  const { isConnected, isSpeaking, connect, disconnect } = useVoiceAgentConnection({
+  const { 
+    isConnected, 
+    isSpeaking, 
+    transcripts, 
+    pendingUserTranscript,
+    clearTranscripts,
+    connect, 
+    disconnect 
+  } = useVoiceAgentConnection({
     agentOverrides,
     onConnect: () => {
       toast({
@@ -82,6 +90,9 @@ export const useElevenLabsVoice = () => {
     isConnected,
     selectedJob,
     isSpeaking,
+    transcripts,
+    pendingUserTranscript,
+    clearTranscripts,
     startVoiceApplication,
     endVoiceApplication,
   };

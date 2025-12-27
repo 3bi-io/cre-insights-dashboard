@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import VoiceAgentDialog from './VoiceAgentDialog';
-import { useVoiceAgentConnection, VoiceConnectionStatus, VoiceAgent } from '@/features/elevenlabs';
+import { useVoiceAgentConnection, VoiceConnectionStatus, LiveTranscriptPanel, VoiceAgent } from '@/features/elevenlabs';
 import { checkBrowserCompatibility, SUPPORTED_BROWSERS } from '@/features/elevenlabs/utils/browserCompatibility';
 
 interface VoiceAgentCardProps {
@@ -47,7 +47,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
     }
   }, []);
 
-  const { isConnected, isConnecting, isSpeaking, connect, disconnect } = useVoiceAgentConnection({
+  const { isConnected, isConnecting, isSpeaking, transcripts, pendingUserTranscript, connect, disconnect } = useVoiceAgentConnection({
     onConnect: () => {
       toast({
         title: "Connected",
@@ -204,6 +204,14 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
         <VoiceConnectionStatus 
           isConnected={isConnected} 
           isSpeaking={isSpeaking}
+        />
+
+        {/* Live Transcript Panel */}
+        <LiveTranscriptPanel
+          transcripts={transcripts}
+          pendingUserTranscript={pendingUserTranscript}
+          isSpeaking={isSpeaking}
+          isConnected={isConnected}
         />
 
         {/* Controls */}

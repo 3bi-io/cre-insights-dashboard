@@ -178,6 +178,16 @@ export const LLM_MODEL_OPTIONS: LLMModelOption[] = [
   { value: 'grok-3-mini', label: 'Grok 3 Mini', category: 'xai', description: 'Fast and efficient' },
 ];
 
+// ============= Live Transcript Types =============
+
+export interface LiveTranscriptMessage {
+  id: string;
+  speaker: 'user' | 'agent';
+  text: string;
+  timestamp: Date;
+  isFinal: boolean;
+}
+
 // ============= Error Types =============
 
 export interface VoiceAgentError {
