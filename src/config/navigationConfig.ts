@@ -88,14 +88,14 @@ export const getNavigationGroups = (options: {
       icon: Target,
       items: [
         { path: '/admin/campaigns', label: 'Campaigns', icon: Target },
-        { path: '/admin/job-groups', label: 'Job Groups', icon: FolderKanban }
+        ...(isAdmin ? [{ path: '/admin/job-groups', label: 'Job Groups', icon: FolderKanban }] : [])
       ]
     },
     {
       group: "Integrations",
       icon: Share2,
       items: [
-        ...(hasTenstreetAccess ? [{
+        ...(hasTenstreetAccess && isAdmin ? [{
           path: '/admin/ats-command',
           label: 'ATS Command Center',
           icon: Share2,
@@ -133,7 +133,7 @@ export const getNavigationGroups = (options: {
       icon: Settings,
       items: [
         { path: '/admin/settings', label: 'General Settings', icon: Settings },
-        { path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings },
+        ...(isAdmin ? [{ path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings }] : []),
         { path: '/admin/support', label: 'Support', icon: HelpCircle }
       ]
     },

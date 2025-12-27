@@ -19,7 +19,7 @@ const requestSchema = z.object({
     role: z.enum(['system', 'user', 'assistant']),
     content: z.string()
   })),
-  model: z.string().default('grok-2'),
+  model: z.string().default('grok-3'),
   stream: z.boolean().default(true)
 });
 
@@ -53,7 +53,7 @@ const handler = wrapHandler(async (req: Request) => {
     : [
         { 
           role: 'system', 
-          content: 'You are Grok 2, xAI\'s advanced AI assistant. You excel at reasoning, analysis, creative tasks, and real-time information. Be witty, helpful, and direct.' 
+          content: 'You are Grok 3, xAI\'s advanced AI assistant. You excel at reasoning, analysis, creative tasks, and real-time information. Be witty, helpful, and direct.' 
         },
         ...messages
       ];
