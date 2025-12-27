@@ -1,0 +1,2 @@
+-- Remove the duplicate policy (keep the shorter-named one that was created in the previous migration)
+DROP POLICY IF EXISTS "Super admins can manage all organization features" ON public.organization_features;
