@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useToast } from './use-toast';
 import { OrganizationFeaturesService } from '@/features/organizations/services/organizationFeaturesService';
 import {
@@ -76,8 +77,8 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
     },
   });
 
-  // Get available features from centralized config
-  const availableFeatures = getAllFeatures();
+  // Memoize available features to prevent infinite re-renders
+  const availableFeatures = useMemo(() => getAllFeatures(), []);
 
   return {
     // Data

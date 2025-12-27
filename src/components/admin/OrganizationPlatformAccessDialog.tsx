@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -34,20 +34,29 @@ const OrganizationPlatformAccessDialog: React.FC<OrganizationPlatformAccessDialo
   organization
 }) => {
   const [platformStates, setPlatformStates] = useState<Record<string, boolean>>({});
+  const isInitialized = useRef(false);
 
   const { platforms, availablePlatforms, isLoading, updatePlatforms, isUpdating } = usePlatformAccess(organization?.id);
 
+  // Reset initialization when dialog closes
   useEffect(() => {
-    // Initialize all available platforms with their current state from DB or default to true (enabled)
-    if (availablePlatforms.length > 0) {
+    if (!open) {
+      isInitialized.current = false;
+    }
+  }, [open]);
+
+  // Initialize platform states only once when data is ready
+  useEffect(() => {
+    if (open && !isInitialized.current && availablePlatforms.length > 0 && !isLoading) {
       const states = availablePlatforms.reduce((acc, platform) => {
         const existingPlatform = platforms.find(p => p.platform_name === platform.key);
         acc[platform.key] = existingPlatform ? existingPlatform.enabled : true;
         return acc;
       }, {} as Record<string, boolean>);
       setPlatformStates(states);
+      isInitialized.current = true;
     }
-  }, [platforms, availablePlatforms, open]);
+  }, [open, platforms, availablePlatforms, isLoading]);
 
   const handlePlatformToggle = (platformName: string, enabled: boolean) => {
     setPlatformStates(prev => ({ ...prev, [platformName]: enabled }));
