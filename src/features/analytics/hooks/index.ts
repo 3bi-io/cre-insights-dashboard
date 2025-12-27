@@ -6,3 +6,4 @@ export { useJobVolumeData } from './useJobVolumeData';
 export { useMetaSpendAnalytics } from './useMetaSpendAnalytics';
 export { useCategoryBreakdown } from './useCategoryBreakdown';
 export { useDashboardMetrics } from './useDashboardMetrics';
+export { useApplyPageAnalytics } from './useApplyPageAnalytics';

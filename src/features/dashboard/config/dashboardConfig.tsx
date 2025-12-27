@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Users } from 'lucide-react';
+import { Bot, Users, FileText } from 'lucide-react';
 import { OrganizationOverview } from '@/components/dashboard/organization/OrganizationOverview';
 import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
@@ -9,6 +9,7 @@ import { FeatureGuard } from '@/components/FeatureGuard';
 import AIImpactDashboard from '@/pages/AIImpactDashboard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import { OrganizationApplicationsTab } from '@/components/dashboard/organization/OrganizationApplicationsTab';
+import { ApplyPageAnalyticsPage } from '@/features/analytics';
 
 export interface DashboardTab {
   id: string;
@@ -65,5 +66,11 @@ export const dashboardTabs: DashboardTab[] = [
       feature: 'advanced_analytics',
       featureName: 'Advanced Analytics',
     },
+  },
+  {
+    id: 'apply-analytics',
+    label: 'Apply Analytics',
+    icon: FileText,
+    component: ApplyPageAnalyticsPage,
   },
 ];
