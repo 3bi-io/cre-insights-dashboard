@@ -59,7 +59,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, model = 'gpt-4o', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
+    const { message, model = 'gpt-4.1-2025-04-14', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
 
     console.log('Received chat request:', { message, model, includeAnalytics });
 

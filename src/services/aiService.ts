@@ -215,7 +215,7 @@ class AIService {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
         systemPrompt: this.buildSystemPrompt(parameters),
-        model: 'claude-sonnet-4-5'
+        model: 'claude-sonnet-4-20250514'
       }
     });
 
@@ -225,7 +225,7 @@ class AIService {
       content: response.data.generatedText,
       processingType: 'ai',
       confidence: 0.90,
-      explanation: 'Generated using Anthropic Claude Sonnet 4.5 with enhanced reasoning capabilities'
+      explanation: 'Generated using Anthropic Claude Sonnet 4 with superior reasoning capabilities'
     };
   }
 
@@ -234,7 +234,7 @@ class AIService {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
         systemPrompt: this.buildSystemPrompt(parameters),
-        model: 'gpt-4o'
+        model: 'gpt-4.1-2025-04-14'
       }
     });
 
@@ -243,8 +243,8 @@ class AIService {
     return {
       content: response.data.generatedText,
       processingType: 'ai',
-      confidence: 0.85,
-      explanation: 'Generated using OpenAI GPT-4o with advanced reasoning capabilities'
+      confidence: 0.90,
+      explanation: 'Generated using OpenAI GPT-4.1 with advanced reasoning capabilities'
     };
   }
 
@@ -253,7 +253,7 @@ class AIService {
       body: {
         message: this.buildPrompt(prompt, data, parameters),
         systemPrompt: this.buildSystemPrompt(parameters),
-        model: 'grok-2'
+        model: 'grok-3'
       }
     });
 
@@ -262,8 +262,8 @@ class AIService {
     return {
       content: response.data.generatedText,
       processingType: 'ai',
-      confidence: 0.88,
-      explanation: 'Generated using xAI Grok 2 with real-time knowledge and conversational reasoning'
+      confidence: 0.90,
+      explanation: 'Generated using xAI Grok 3 with real-time knowledge and advanced reasoning'
     };
   }
 
@@ -420,7 +420,7 @@ Provide only the corrected content that maintains the original intent while fixi
         body: {
           message: correctionPrompt,
           systemPrompt: 'You are a content corrector. Provide only the corrected content without explanations.',
-          model: 'claude-sonnet-4-5'
+          model: 'claude-sonnet-4-20250514'
         }
       });
 
@@ -435,11 +435,11 @@ Provide only the corrected content that maintains the original intent while fixi
   private getModelForProvider(provider: AIProvider): string {
     switch (provider) {
       case 'openai':
-        return 'gpt-4o';
+        return 'gpt-4.1-2025-04-14';
       case 'anthropic':
-        return 'claude-sonnet-4-5';
+        return 'claude-sonnet-4-20250514';
       case 'grok':
-        return 'grok-2';
+        return 'grok-3';
       default:
         return 'rule-based';
     }

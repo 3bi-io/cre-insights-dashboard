@@ -10,9 +10,10 @@ import { Loader2, Play, Download, Volume2, StopCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 const TTS_MODELS = [
+  { id: 'eleven_flash_v2_5', name: 'Flash v2.5 (Fastest)', description: 'Ultra-low latency, newest' },
   { id: 'eleven_multilingual_v2', name: 'Multilingual v2', description: 'Most life-like, 29 languages' },
   { id: 'eleven_turbo_v2_5', name: 'Turbo v2.5', description: 'Low latency, 32 languages' },
-  { id: 'eleven_turbo_v2', name: 'Turbo v2', description: 'English only, fastest' },
+  { id: 'eleven_turbo_v2', name: 'Turbo v2', description: 'English only, fast' },
   { id: 'eleven_monolingual_v1', name: 'English v1', description: 'Legacy English model' },
 ];
 
