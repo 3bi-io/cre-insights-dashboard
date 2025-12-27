@@ -105,3 +105,6 @@ export interface AnalyticsFilters {
   jobListingId?: string;
   platform?: string;
 }
+
+// Apply Page Analytics Types
+export * from './applyAnalytics';
