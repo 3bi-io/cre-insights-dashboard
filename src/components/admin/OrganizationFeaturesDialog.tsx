@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -28,20 +28,29 @@ interface OrganizationFeaturesDialogProps {
 export const OrganizationFeaturesDialog = ({ organization, trigger }: OrganizationFeaturesDialogProps) => {
   const [open, setOpen] = useState(false);
   const [featureStates, setFeatureStates] = useState<Record<string, boolean>>({});
+  const isInitialized = useRef(false);
 
   const { features, availableFeatures, isLoading, updateFeatures, isUpdating } = useOrganizationFeaturesAdmin(organization.id);
 
+  // Reset initialization when dialog closes
   useEffect(() => {
-    // Initialize all available features with their current state from DB or default to false
-    if (availableFeatures.length > 0) {
+    if (!open) {
+      isInitialized.current = false;
+    }
+  }, [open]);
+
+  // Initialize feature states only once when data is ready
+  useEffect(() => {
+    if (open && !isInitialized.current && availableFeatures.length > 0 && !isLoading) {
       const states = availableFeatures.reduce((acc, feature) => {
         const existingFeature = features.find(f => f.feature_name === feature.key);
         acc[feature.key] = existingFeature ? existingFeature.enabled : false;
         return acc;
       }, {} as Record<string, boolean>);
       setFeatureStates(states);
+      isInitialized.current = true;
     }
-  }, [features, availableFeatures, open]);
+  }, [open, features, availableFeatures, isLoading]);
 
   const handleFeatureToggle = (featureName: string, enabled: boolean) => {
     setFeatureStates(prev => ({ ...prev, [featureName]: enabled }));

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { OrganizationPlatformsService } from '@/features/organizations/services/organizationPlatformsService';
 import {
@@ -75,8 +76,8 @@ export const usePlatformAccess = (organizationId?: string) => {
     },
   });
 
-  // Get available platforms from centralized config
-  const availablePlatforms = getAllPlatforms();
+  // Memoize available platforms to prevent infinite re-renders
+  const availablePlatforms = useMemo(() => getAllPlatforms(), []);
 
   // Check if a platform is enabled (utility function)
   const checkPlatformAccess = async (platformName: string): Promise<boolean> => {
