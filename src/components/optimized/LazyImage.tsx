@@ -28,7 +28,25 @@ const LazyImage = React.memo<LazyImageProps>(({
   instant = false,
   ...props
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+  // Early return for priority + instant images - skip all lazy loading complexity
+  if (priority && instant) {
+    return (
+      <img
+        {...props}
+        src={src}
+        alt={alt}
+        loading="eager"
+        decoding="sync"
+        className={className}
+        style={style}
+        onError={(e) => {
+          e.currentTarget.src = fallback;
+        }}
+      />
+    );
+  }
+
+  const [isLoaded, setIsLoaded] = useState(priority);
   const [isError, setIsError] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(priority);
 
@@ -60,37 +78,16 @@ const LazyImage = React.memo<LazyImageProps>(({
     setIsLoaded(true);
   }, []);
 
-  // Optimized image source with quality parameters
+  // Use src directly for local images, skip quality optimization for external
   const optimizedSrc = useMemo(() => {
     if (!shouldLoad) return '';
-    
-    // For local images or if quality optimization isn't needed
-    if (src.startsWith('/') || src.startsWith('data:') || quality === 'high') {
-      return src;
-    }
-
-    // Add quality parameters for external images if supported
-    const url = new URL(src);
-    const qualityMap = {
-      low: '60',
-      medium: '80',
-      high: '95',
-    };
-    
-    // Common image optimization parameters
-    url.searchParams.set('q', qualityMap[quality]);
-    url.searchParams.set('auto', 'format');
-    
-    return url.toString();
-  }, [src, shouldLoad, quality]);
+    return src;
+  }, [src, shouldLoad]);
 
   // Determine what to display
   const imageSrc = isError ? fallback : optimizedSrc;
   const showSkeleton = skeleton && !isLoaded && shouldLoad;
-  
-  // Skip transition if instant mode or priority without skeleton
-  const skipTransition = instant || (priority && !skeleton);
-  const showImage = skipTransition || isLoaded;
+  const showImage = instant || isLoaded;
   
   return (
     <div
@@ -112,12 +109,12 @@ const LazyImage = React.memo<LazyImageProps>(({
           src={imageSrc}
           alt={alt}
           loading={priority ? 'eager' : 'lazy'}
-          decoding="async"
+          decoding={priority ? 'sync' : 'async'}
           onLoad={handleLoad}
           onError={handleError}
           className={`
             ${className || ''}
-            ${skipTransition ? '' : 'motion-safe:transition-opacity motion-safe:duration-300'}
+            ${instant ? '' : 'motion-safe:transition-opacity motion-safe:duration-300'}
             ${showImage ? 'opacity-100' : 'opacity-0'}
           `}
           style={showSkeleton ? { position: 'absolute', inset: 0 } : undefined}
