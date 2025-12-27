@@ -35,13 +35,9 @@ const LayoutContent = () => {
   const hasShownWelcome = useRef(false);
   
   // Handle pull-to-refresh
-  const handleRefresh = useCallback(async () => {
-    await queryClient.invalidateQueries();
-    toast({
-      description: "Content refreshed",
-      duration: 2000,
-    });
-  }, [queryClient, toast]);
+  const handleRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
   
   // Show welcome balloon for admins
   useEffect(() => {
