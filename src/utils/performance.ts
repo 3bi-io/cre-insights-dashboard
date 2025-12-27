@@ -129,36 +129,41 @@ export const useVirtualScrolling = (
 };
 
 /**
- * Intersection Observer hook for lazy loading
+ * Hook for intersection observer (lazy loading)
+ * Fixed to properly manage observer lifecycle and prevent memory leaks
  */
 export const useIntersectionObserver = (
   callback: () => void,
   options?: IntersectionObserverInit
 ) => {
+  const callbackRef = useRef(callback);
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const elementRef = useRef<HTMLElement | null>(null);
   
-  const observerCallback = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [entry] = entries;
-    if (entry.isIntersecting) {
-      callback();
-    }
-  }, [callback]);
-  
+  callbackRef.current = callback;
+
   const setRef = useCallback((element: HTMLElement | null) => {
-    if (elementRef.current) {
-      // Disconnect from previous element
-      const observer = new IntersectionObserver(observerCallback, options);
-      observer.unobserve(elementRef.current);
+    // Disconnect previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
     }
-    
+
     elementRef.current = element;
-    
+
     if (element) {
-      const observer = new IntersectionObserver(observerCallback, options);
-      observer.observe(element);
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0]?.isIntersecting) {
+          callbackRef.current();
+          observerRef.current?.disconnect();
+          observerRef.current = null;
+        }
+      }, options);
+
+      observerRef.current.observe(element);
     }
-  }, [observerCallback, options]);
-  
+  }, [options]);
+
   return setRef;
 };
 
