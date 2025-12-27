@@ -1,0 +1,196 @@
+import { 
+  LayoutDashboard, 
+  BriefcaseIcon, 
+  Users, 
+  Settings, 
+  Building, 
+  MessageSquare, 
+  Share2, 
+  Zap, 
+  Bot, 
+  UserCog, 
+  BarChart3, 
+  MapPin, 
+  UserCheck, 
+  Rss, 
+  HelpCircle, 
+  Target, 
+  TrendingUp, 
+  Sparkles, 
+  Webhook, 
+  Globe, 
+  FolderKanban, 
+  Image,
+  LucideIcon
+} from 'lucide-react';
+
+export interface NavItem {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+  badge?: number;
+  // Feature/role requirements
+  requiresAdmin?: boolean;
+  requiresSuperAdmin?: boolean;
+  requiresVoiceAgent?: boolean;
+  requiresTenstreet?: boolean;
+  excludeOrganization?: string; // e.g., 'acme'
+}
+
+export interface NavGroup {
+  group: string;
+  icon: LucideIcon;
+  items: NavItem[];
+  requiresSuperAdmin?: boolean;
+}
+
+// Main standalone items
+export const mainNavItems: NavItem[] = [
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
+];
+
+// All navigation groups - source of truth for both desktop and mobile
+export const getNavigationGroups = (options: {
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
+  hasVoiceAgent: boolean;
+  hasTenstreetAccess: boolean;
+  organizationSlug?: string;
+  tenstreetNotificationCount?: number;
+}): NavGroup[] => {
+  const { 
+    isSuperAdmin, 
+    isAdmin, 
+    hasVoiceAgent, 
+    hasTenstreetAccess, 
+    organizationSlug,
+    tenstreetNotificationCount = 0
+  } = options;
+
+  return [
+    {
+      group: "Recruitment",
+      icon: Users,
+      items: [
+        { path: '/admin/applications', label: 'Applications', icon: Users },
+        { path: '/admin/jobs', label: 'Job Listings', icon: BriefcaseIcon },
+        ...(organizationSlug !== 'acme' ? [
+          { path: '/admin/clients', label: 'Clients', icon: UserCheck }
+        ] : []),
+        { path: '/admin/routes', label: 'Routes', icon: MapPin },
+        ...(hasVoiceAgent && isAdmin ? [
+          { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: MessageSquare }
+        ] : [])
+      ]
+    },
+    {
+      group: "Campaigns",
+      icon: Target,
+      items: [
+        { path: '/admin/campaigns', label: 'Campaigns', icon: Target },
+        { path: '/admin/job-groups', label: 'Job Groups', icon: FolderKanban }
+      ]
+    },
+    {
+      group: "Integrations",
+      icon: Share2,
+      items: [
+        ...(hasTenstreetAccess ? [{
+          path: '/admin/ats-command',
+          label: 'ATS Command Center',
+          icon: Share2,
+          badge: tenstreetNotificationCount > 0 ? tenstreetNotificationCount : undefined
+        }] : []),
+        { path: '/admin/publishers', label: 'Publishers', icon: Globe },
+        ...(isAdmin ? [
+          { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
+        ] : []),
+        ...(isSuperAdmin ? [
+          { path: '/admin/universal-feeds', label: 'Universal Feeds', icon: Rss }
+        ] : [])
+      ]
+    },
+    {
+      group: "AI Platform",
+      icon: Bot,
+      items: [
+        { path: '/admin/grok', label: 'AI Assistant', icon: Sparkles },
+        { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
+        { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
+        { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap }
+      ]
+    },
+    ...(isSuperAdmin ? [{
+      group: "Analytics",
+      icon: TrendingUp,
+      items: [
+        { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
+        { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: TrendingUp }
+      ]
+    }] : []),
+    {
+      group: "Settings",
+      icon: Settings,
+      items: [
+        { path: '/admin/settings', label: 'General Settings', icon: Settings },
+        { path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings },
+        { path: '/admin/support', label: 'Support', icon: HelpCircle }
+      ]
+    },
+    ...(isSuperAdmin ? [{
+      group: "Administration",
+      icon: Building,
+      items: [
+        { path: '/admin/organizations', label: 'Organizations', icon: Building },
+        { path: '/admin/user-management', label: 'User Management', icon: UserCog },
+        { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss },
+        { path: '/admin/media', label: 'Media Assets', icon: Image }
+      ]
+    }] : [])
+  ];
+};
+
+// Route title mapping for headers
+export const routeTitles: Record<string, string> = {
+  '/': 'Home',
+  '/dashboard': 'Admin Dashboard',
+  '/admin/jobs': 'Job Listings',
+  '/admin/applications': 'Applications',
+  '/admin/campaigns': 'Campaigns',
+  '/admin/job-groups': 'Job Groups',
+  '/admin/ai-impact': 'AI Impact',
+  '/admin/voice-agent': 'Voice Agent',
+  '/admin/ats-command': 'ATS Command Center',
+  '/admin/meta-analytics': 'Meta Analytics',
+  '/admin/ai-configuration': 'AI Configuration',
+  '/admin/grok': 'AI Assistant',
+  '/admin/elevenlabs-admin': 'Voice Agents',
+  '/admin/ai-tools': 'AI Tools',
+  '/admin/ai-analytics': 'AI Analytics',
+  '/admin/visitor-analytics': 'Visitor Analytics',
+  '/admin/publishers': 'Publishers',
+  '/admin/organizations': 'Organizations',
+  '/admin/settings': 'Settings',
+  '/admin/user-management': 'User Management',
+  '/admin/universal-feeds': 'Universal Feeds',
+  '/admin/webhook-management': 'Webhooks',
+  '/admin/support': 'Support',
+  '/admin/clients': 'Clients',
+  '/admin/routes': 'Routes',
+  '/admin/media': 'Media Assets',
+  '/admin/recruiters': 'Recruiters',
+  '/admin/api-keys': 'API Keys',
+  '/admin/billing': 'Billing',
+  '/admin/integrations': 'Integrations',
+  '/admin/reports': 'Reports',
+  '/admin/analytics': 'Analytics',
+  '/admin/notifications': 'Notifications',
+  '/admin/audit-logs': 'Audit Logs',
+  '/admin/tenstreet': 'Tenstreet',
+  '/admin/profile': 'Profile Settings',
+  '/admin/super-admin-feeds': 'Feed Management',
+};
+
+export const getRouteTitle = (pathname: string): string => {
+  return routeTitles[pathname] || 'Dashboard';
+};

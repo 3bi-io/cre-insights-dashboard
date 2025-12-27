@@ -16,55 +16,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Brand } from '@/components/common';
+import { getRouteTitle } from '@/config/navigationConfig';
 
 const MobileHeader = () => {
   const location = useLocation();
   const { user, userRole, signOut } = useAuth();
   const { state } = useSidebar();
-
-  // Get page title from current route
-  const getPageTitle = () => {
-    const path = location.pathname;
-    const routes: Record<string, string> = {
-      '/': 'Home',
-      '/dashboard': 'Admin Dashboard',
-      '/admin/jobs': 'Job Listings',
-      '/admin/applications': 'Applications',
-      '/admin/campaigns': 'Campaigns',
-      '/admin/job-groups': 'Job Groups',
-      '/admin/ai-impact': 'AI Impact',
-      '/admin/voice-agent': 'Voice Agent',
-      '/admin/ats-command': 'ATS Command Center',
-      '/admin/meta-analytics': 'Meta Analytics',
-      '/admin/ai-configuration': 'AI Configuration',
-      '/admin/grok': 'AI Assistant',
-      '/admin/elevenlabs-admin': 'Voice Agents',
-      '/admin/ai-tools': 'AI Tools',
-      '/admin/ai-analytics': 'AI Analytics',
-      '/admin/visitor-analytics': 'Visitor Analytics',
-      '/admin/publishers': 'Publishers',
-      '/admin/organizations': 'Organizations',
-      '/admin/settings': 'Settings',
-      '/admin/user-management': 'User Management',
-      '/admin/universal-feeds': 'Universal Feeds',
-      '/admin/webhook-management': 'Webhooks',
-      '/admin/support': 'Support',
-      '/admin/clients': 'Clients',
-      '/admin/routes': 'Routes',
-      '/admin/media': 'Media Assets',
-      '/admin/recruiters': 'Recruiters',
-      '/admin/api-keys': 'API Keys',
-      '/admin/billing': 'Billing',
-      '/admin/integrations': 'Integrations',
-      '/admin/reports': 'Reports',
-      '/admin/analytics': 'Analytics',
-      '/admin/notifications': 'Notifications',
-      '/admin/audit-logs': 'Audit Logs',
-      '/admin/tenstreet': 'Tenstreet',
-      '/admin/profile': 'Profile Settings',
-    };
-    return routes[path] || 'Dashboard';
-  };
 
   const getRoleBadgeColor = (role: string | null) => {
     switch (role) {
@@ -106,7 +63,7 @@ const MobileHeader = () => {
           <Brand variant="icon" size="sm" showAsLink={false} priority={true} />
           <div className="flex flex-col">
             <h1 className="text-lg font-semibold leading-none text-foreground">
-              {getPageTitle()}
+              {getRouteTitle(location.pathname)}
             </h1>
           </div>
         </div>
