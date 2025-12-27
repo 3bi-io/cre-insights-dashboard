@@ -52,7 +52,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   // Trucking-Specific Free Platforms
   {
     name: 'Truck Driver Jobs 411',
-    logo: 'https://cdn-icons-png.flaticon.com/512/1149/1149168.png',
+    logo: '/logos/truck-driver-jobs-411-logo.png',
     status: 'CDL Ready',
     description: 'Free Trucking Job Board - CDL Focused',
     created: '1/13/2025',
@@ -60,7 +60,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   },
   {
     name: 'NewJobs4You',
-    logo: 'https://cdn-icons-png.flaticon.com/512/2917/2917995.png',
+    logo: '/logos/newjobs4you-logo.png',
     status: 'CDL Ready',
     description: 'Free Transportation Jobs Board',
     created: '1/13/2025',
@@ -69,7 +69,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   // General Free Platforms
   {
     name: 'Craigslist',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Craigslist.svg/128px-Craigslist.svg.png',
+    logo: '/logos/craigslist-logo.ico',
     status: 'RSS Feed Ready',
     description: 'Free Job Board with Local Focus',
     created: '1/12/2025',
@@ -77,7 +77,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   },
   {
     name: 'SimplyHired',
-    logo: 'https://www.simplyhired.com/favicon.ico',
+    logo: '/logos/simplyhired-logo.png',
     status: 'XML Feed Ready',
     description: 'Free Job Aggregator Network',
     created: '1/12/2025',
@@ -85,7 +85,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   },
   {
     name: 'Glassdoor',
-    logo: 'https://www.glassdoor.com/static/img/api/glassdoor_logo_80.png',
+    logo: '/logos/glassdoor-logo.png',
     status: 'API Ready',
     description: 'Company Reviews & Jobs Platform',
     created: '1/12/2025',
@@ -93,7 +93,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   },
   {
     name: 'Dice',
-    logo: 'https://www.dice.com/favicon.ico',
+    logo: '/logos/dice-logo.png',
     status: 'Tech Jobs Ready',
     description: 'Technology Job Marketplace',
     created: '1/12/2025',
@@ -101,7 +101,7 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
   },
   {
     name: 'FlexJobs',
-    logo: 'https://www.flexjobs.com/favicon.ico',
+    logo: '/logos/flexjobs-logo.png',
     status: 'Remote Ready',
     description: 'Remote & Flexible Job Board',
     created: '1/12/2025',
