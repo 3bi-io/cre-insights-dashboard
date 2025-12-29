@@ -6,9 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, AlertCircle, Briefcase, UserCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Eye, EyeOff, AlertCircle, Briefcase, UserCircle, AudioWaveform } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Brand } from '@/components/common/Brand';
+import { SocialAuthButtons } from '../components/SocialAuthButtons';
+import type { OAuthProvider } from '../hooks/useAuthForm';
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +19,9 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
+  
   // Sign-up state
   const [userType, setUserType] = useState<'organization' | 'jobseeker'>('organization');
   const [showUserTypeSelection, setShowUserTypeSelection] = useState(false);
@@ -59,19 +65,44 @@ const AuthPage = () => {
     setIsLoading(false);
   };
 
+  const handleOAuthSignIn = async (provider: OAuthProvider) => {
+    setOauthLoading(provider);
+    setError('');
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth`,
+        },
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      setError(error.message || `Failed to sign in with ${provider}`);
+      setOauthLoading(null);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
+        {/* Logo Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">ATS.me</h1>
-          <p className="text-muted-foreground">Sign in to your account or create a new one</p>
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center gap-2 bg-slate-800 rounded-lg px-4 py-2">
+              <AudioWaveform className="h-6 w-6 text-white" />
+              <span className="text-white font-semibold text-lg">ATS.me</span>
+            </div>
+          </div>
+          <p className="text-muted-foreground">Next-Generation Applicant Tracking System</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Authentication</CardTitle>
+            <CardTitle>Welcome Back</CardTitle>
             <CardDescription>
-              Access your recruitment dashboard
+              Sign in to your account to access the dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -173,6 +204,18 @@ const AuthPage = () => {
                       </div>
                     </div>
 
+                    {/* Remember Me */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remember-me"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <Label htmlFor="remember-me" className="text-sm font-normal cursor-pointer">
+                        Remember me
+                      </Label>
+                    </div>
+
                     {error && (
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
@@ -183,6 +226,32 @@ const AuthPage = () => {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
+
+                    {/* Social Auth */}
+                    <SocialAuthButtons
+                      onOAuthSignIn={handleOAuthSignIn}
+                      loading={isLoading}
+                      oauthLoading={oauthLoading}
+                    />
+
+                    {/* Footer Links */}
+                    <div className="flex items-center justify-center gap-4 text-sm pt-2">
+                      <Link to="/auth?reset=true" className="text-primary hover:underline">
+                        Forgot password?
+                      </Link>
+                      <span className="text-muted-foreground">|</span>
+                      <button
+                        type="button"
+                        className="text-primary hover:underline"
+                        onClick={() => {
+                          setShowSignInForm(false);
+                          const signupTab = document.querySelector('[value="signup"]') as HTMLButtonElement;
+                          signupTab?.click();
+                        }}
+                      >
+                        Sign up
+                      </button>
+                    </div>
                   </form>
                 )}
               </TabsContent>
@@ -289,6 +358,13 @@ const AuthPage = () => {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? 'Creating account...' : 'Create Account'}
                     </Button>
+
+                    {/* Social Auth */}
+                    <SocialAuthButtons
+                      onOAuthSignIn={handleOAuthSignIn}
+                      loading={isLoading}
+                      oauthLoading={oauthLoading}
+                    />
                   </form>
                 )}
               </TabsContent>
