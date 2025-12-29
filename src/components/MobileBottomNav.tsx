@@ -82,6 +82,12 @@ const MobileBottomNav: React.FC = () => {
       if (pattern === '/dashboard') {
         return location.pathname === pattern;
       }
+      // Handle paths with query parameters and hash fragments
+      if (pattern.includes('?')) {
+        const patternWithoutHash = pattern.split('#')[0];
+        const [basePath, query] = patternWithoutHash.split('?');
+        return location.pathname === basePath && location.search === `?${query}`;
+      }
       return location.pathname.startsWith(pattern);
     });
   };
