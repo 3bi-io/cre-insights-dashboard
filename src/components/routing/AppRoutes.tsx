@@ -21,6 +21,7 @@ const SitemapPage = React.lazy(() => import("@/pages/public/SitemapPage"));
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
 const Onboarding = React.lazy(() => import("@/pages/Onboarding"));
+const ChooseAccountType = React.lazy(() => import("@/pages/ChooseAccountType"));
 const Apply = React.lazy(() => import("@/pages/Apply"));
 const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
@@ -165,6 +166,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/j/:shortCode" element={<RouteWrapper><ShortLinkRedirect /></RouteWrapper>} />
       
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
+      <Route path="/choose-account-type" element={<ProtectedRouteWrapper><ChooseAccountType /></ProtectedRouteWrapper>} />
       <Route path="/onboarding" element={<ProtectedRouteWrapper><Onboarding /></ProtectedRouteWrapper>} />
 
       {/* Dashboard Routes */}
