@@ -15,7 +15,8 @@ import {
   AlertCircle,
   TrendingUp,
   Users,
-  Download
+  Download,
+  Link2
 } from 'lucide-react';
 import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ const RealTimeStatusMonitor = lazy(() => import('@/components/tenstreet/RealTime
 const ApplicationTrendsChart = lazy(() => import('@/components/charts/ApplicationTrendsChart'));
 const SourcePerformanceChart = lazy(() => import('@/components/charts/SourcePerformanceChart'));
 const ConversionFunnelChart = lazy(() => import('@/components/charts/ConversionFunnelChart'));
+const ATSConnectionsDashboard = lazy(() => import('../components/ATSConnectionsDashboard').then(m => ({ default: m.ATSConnectionsDashboard })));
 
 const TabLoader = () => (
   <div className="py-8">
@@ -189,10 +191,14 @@ const ATSCommandCenterPage = () => {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="connections" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              Connections
             </TabsTrigger>
             <TabsTrigger value="explorer" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
@@ -215,6 +221,21 @@ const ATSCommandCenterPage = () => {
               Settings
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="connections" className="space-y-4">
+            <Suspense fallback={<TabLoader />}>
+              {userProfile?.organization_id ? (
+                <ATSConnectionsDashboard organizationId={userProfile.organization_id} />
+              ) : (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Organization not found. Please contact support.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </Suspense>
+          </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-4">
             <Suspense fallback={<TabLoader />}>
