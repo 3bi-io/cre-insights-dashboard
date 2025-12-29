@@ -4,8 +4,8 @@
  */
 
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Loader2 } from 'lucide-react';
-import { GoogleIcon, AppleIcon, MicrosoftIcon, XIcon } from './AuthIcons';
+import { Loader2 } from 'lucide-react';
+import { GoogleIcon, MicrosoftIcon } from './AuthIcons';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { cn } from '@/lib/utils';
 import type { OAuthProvider } from '../hooks/useAuthForm';
@@ -44,30 +44,6 @@ export function SocialAuthButtons({
       id: 'azure',
       name: 'Microsoft',
       icon: <MicrosoftIcon className="h-4 w-4 sm:h-5 sm:w-5" />,
-      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
-    },
-    {
-      id: 'apple',
-      name: 'Apple',
-      icon: <AppleIcon className="h-4 w-4 sm:h-5 sm:w-5" />,
-      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
-    },
-    {
-      id: 'linkedin_oidc',
-      name: 'LinkedIn',
-      icon: <Linkedin className="h-4 w-4 sm:h-5 sm:w-5 text-[#0A66C2]" />,
-      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
-    },
-    {
-      id: 'github',
-      name: 'GitHub',
-      icon: <Github className="h-4 w-4 sm:h-5 sm:w-5" />,
-      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
-    },
-    {
-      id: 'twitter',
-      name: 'X',
-      icon: <XIcon className="h-4 w-4 sm:h-5 sm:w-5" />,
       loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
     },
   ];
