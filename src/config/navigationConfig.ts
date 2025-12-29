@@ -103,7 +103,7 @@ export const getNavigationGroups = (options: {
           badge: tenstreetNotificationCount > 0 ? tenstreetNotificationCount : undefined
         }] : []),
         ...(isAdmin ? [{
-          path: '/admin/settings?tab=integrations#verifications',
+          path: '/admin/settings?tab=integrations',
           label: 'Verifications',
           icon: Shield
         }] : []),
