@@ -1,12 +1,11 @@
 /**
  * Social Auth Buttons
- * Responsive OAuth provider buttons with device-optimized layouts
+ * Full-width OAuth provider buttons with consistent sizing
  */
 
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { GoogleIcon, MicrosoftIcon } from './AuthIcons';
-import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { cn } from '@/lib/utils';
 import type { OAuthProvider } from '../hooks/useAuthForm';
 
@@ -22,7 +21,6 @@ interface ProviderConfig {
   name: string;
   icon: React.ReactNode;
   loadingIcon: React.ReactNode;
-  className?: string;
 }
 
 export function SocialAuthButtons({
@@ -31,44 +29,22 @@ export function SocialAuthButtons({
   oauthLoading,
   className,
 }: SocialAuthButtonsProps) {
-  const { isMobile, isTablet } = useResponsiveLayout();
-
   const providers: ProviderConfig[] = [
     {
       id: 'google',
       name: 'Google',
-      icon: <GoogleIcon className="h-4 w-4 sm:h-5 sm:w-5" />,
-      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
+      icon: <GoogleIcon className="h-5 w-5" />,
+      loadingIcon: <Loader2 className="h-5 w-5 animate-spin" />,
     },
     {
       id: 'azure',
       name: 'Microsoft',
-      icon: <MicrosoftIcon className="h-4 w-4 sm:h-5 sm:w-5" />,
-      loadingIcon: <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />,
+      icon: <MicrosoftIcon className="h-5 w-5" />,
+      loadingIcon: <Loader2 className="h-5 w-5 animate-spin" />,
     },
   ];
 
   const isDisabled = loading || oauthLoading !== null;
-
-  // Mobile: 2 columns with labels for accessibility
-  // Tablet: 3 columns with labels
-  // Desktop: 6 columns icon-only with tooltips
-  const gridClasses = cn(
-    "grid gap-2",
-    isMobile && "grid-cols-2 gap-3",
-    isTablet && "grid-cols-3 gap-2",
-    !isMobile && !isTablet && "grid-cols-6 gap-1.5"
-  );
-
-  const buttonClasses = cn(
-    "w-full touch-manipulation transition-all",
-    // Mobile: larger touch targets (min 44px), show labels
-    isMobile && "min-h-[48px] px-3 py-3",
-    // Tablet: medium size with labels
-    isTablet && "min-h-[44px] px-2 py-2",
-    // Desktop: compact icon-only
-    !isMobile && !isTablet && "min-h-[40px] px-1.5"
-  );
 
   return (
     <div className={cn("space-y-3", className)}>
@@ -82,8 +58,8 @@ export function SocialAuthButtons({
         </div>
       </div>
       
-      {/* Provider buttons grid */}
-      <div className={gridClasses}>
+      {/* Provider buttons grid - 2 columns, full width */}
+      <div className="grid grid-cols-2 gap-3">
         {providers.map((provider) => (
           <Button
             key={provider.id}
@@ -91,17 +67,14 @@ export function SocialAuthButtons({
             variant="outline"
             onClick={() => onOAuthSignIn(provider.id)}
             disabled={isDisabled}
-            className={cn(buttonClasses, provider.className)}
+            className="w-full min-h-[44px] px-4 py-3 touch-manipulation"
             title={`Continue with ${provider.name}`}
             aria-label={`Continue with ${provider.name}`}
           >
             {oauthLoading === provider.id ? provider.loadingIcon : provider.icon}
-            {/* Show labels on mobile and tablet for better accessibility */}
-            {(isMobile || isTablet) && (
-              <span className="ml-2 text-sm font-medium truncate">
-                {provider.name}
-              </span>
-            )}
+            <span className="ml-2 text-sm font-medium">
+              {provider.name}
+            </span>
           </Button>
         ))}
       </div>
