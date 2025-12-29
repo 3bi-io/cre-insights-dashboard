@@ -63,10 +63,7 @@ const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <Brand variant="horizontal" size="lg" showAsLink={false} priority />
-          </div>
-          <h1 className="text-2xl font-bold">Welcome to ATS.me</h1>
+          <h1 className="text-4xl font-bold text-primary mb-2">ATS.me</h1>
           <p className="text-muted-foreground">Sign in to your account or create a new one</p>
         </div>
 
