@@ -85,7 +85,7 @@ const IntegrationsTab = () => {
   return (
     <div className="space-y-6">
       {/* X Platform Integration */}
-      <Card>
+      <Card id="x-platform">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <img 
@@ -204,7 +204,7 @@ const IntegrationsTab = () => {
       <Separator className="my-8" />
 
       {/* Client Webhooks */}
-      <div>
+      <div id="webhooks">
         <h2 className="text-2xl font-bold mb-2">Client Webhooks</h2>
         <p className="text-muted-foreground mb-6">
           Configure outbound webhooks to automatically send application data to your clients' systems
@@ -231,7 +231,7 @@ const IntegrationsTab = () => {
         featureName="Background Check Integration"
         showUpgrade={true}
       >
-        <div>
+        <div id="verifications">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="w-6 h-6 text-blue-500" />
             <h2 className="text-2xl font-bold">Background Check Providers</h2>
@@ -253,64 +253,70 @@ const IntegrationsTab = () => {
       <Separator className="my-8" />
 
       {/* Tenstreet Integration */}
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">Tenstreet Integration</h2>
-          <p className="text-muted-foreground mb-4">
-            Full suite of Tenstreet tools for managing applicants, analytics, and bulk operations
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Xchange Manager</CardTitle>
-              <CardDescription>
-                Background checks, MVR, drug tests, and verifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/admin/ats-command?tab=xchange">
-                  Open Xchange
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+      <FeatureGuard 
+        feature="tenstreet_access" 
+        featureName="Tenstreet Integration"
+        showUpgrade={true}
+      >
+        <div id="tenstreet" className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Tenstreet Integration</h2>
+            <p className="text-muted-foreground mb-4">
+              Full suite of Tenstreet tools for managing applicants, analytics, and bulk operations
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Xchange Manager</CardTitle>
+                <CardDescription>
+                  Background checks, MVR, drug tests, and verifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" size="sm" asChild className="w-full">
+                  <Link to="/admin/ats-command?tab=xchange">
+                    Open Xchange
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Focus Analytics</CardTitle>
-              <CardDescription>
-                Application metrics, trends, and source performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/admin/ats-command?tab=focus">
-                  View Analytics
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Focus Analytics</CardTitle>
+                <CardDescription>
+                  Application metrics, trends, and source performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" size="sm" asChild className="w-full">
+                  <Link to="/admin/ats-command?tab=focus">
+                    View Analytics
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Bulk Operations</CardTitle>
-              <CardDescription>
-                Import, export, and sync applicant data in bulk
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" size="sm" asChild className="w-full">
-                <Link to="/admin/ats-command?tab=bulk">
-                  Manage Data
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Bulk Operations</CardTitle>
+                <CardDescription>
+                  Import, export, and sync applicant data in bulk
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" size="sm" asChild className="w-full">
+                  <Link to="/admin/ats-command?tab=bulk">
+                    Manage Data
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </FeatureGuard>
     </div>
   );
 };

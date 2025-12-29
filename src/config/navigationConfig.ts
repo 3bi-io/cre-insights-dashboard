@@ -21,6 +21,7 @@ import {
   Globe, 
   FolderKanban, 
   Image,
+  Shield,
   LucideIcon
 } from 'lucide-react';
 
@@ -101,6 +102,11 @@ export const getNavigationGroups = (options: {
           icon: Share2,
           badge: tenstreetNotificationCount > 0 ? tenstreetNotificationCount : undefined
         }] : []),
+        ...(isAdmin ? [{
+          path: '/admin/settings?tab=integrations#verifications',
+          label: 'Verifications',
+          icon: Shield
+        }] : []),
         { path: '/admin/publishers', label: 'Publishers', icon: Globe },
         ...(isAdmin ? [
           { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
@@ -133,7 +139,10 @@ export const getNavigationGroups = (options: {
       icon: Settings,
       items: [
         { path: '/admin/settings', label: 'General Settings', icon: Settings },
-        ...(isAdmin ? [{ path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings }] : []),
+        ...(isAdmin ? [
+          { path: '/admin/settings/organization', label: 'Organization', icon: Building },
+          { path: '/admin/ai-configuration', label: 'AI Configuration', icon: Settings }
+        ] : []),
         { path: '/admin/support', label: 'Support', icon: HelpCircle }
       ]
     },
@@ -190,6 +199,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/profile': 'Profile Settings',
   '/admin/super-admin-feeds': 'Feed Management',
   '/admin/platforms': 'Publishers', // Redirect alias
+  '/admin/settings/organization': 'Organization Settings',
 };
 
 export const getRouteTitle = (pathname: string): string => {
