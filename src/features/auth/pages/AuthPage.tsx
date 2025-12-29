@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, EyeOff, AlertCircle, Briefcase, UserCircle, AudioWaveform } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Briefcase, UserCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import type { OAuthProvider } from '../hooks/useAuthForm';
@@ -89,12 +89,7 @@ const AuthPage = () => {
       <div className="w-full max-w-md">
         {/* Logo Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 bg-slate-800 rounded-lg px-4 py-2">
-              <AudioWaveform className="h-6 w-6 text-white" />
-              <span className="text-white font-semibold text-lg">ATS.me</span>
-            </div>
-          </div>
+          <h1 className="text-4xl font-bold text-primary mb-2">ATS.me</h1>
           <p className="text-muted-foreground">Next-Generation Applicant Tracking System</p>
         </div>
 
