@@ -7,7 +7,8 @@ import {
   ClientsSummary,
   ClientsLoading,
   CreateClientDialog,
-  EditClientDialog
+  EditClientDialog,
+  BulkTenstreetAssignmentDialog
 } from '../components';
 import { useClientsService } from '../hooks';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +17,7 @@ import type { Client, ClientFilters } from '../types/client.types';
 const ClientsPage = () => {
   const [filters, setFilters] = useState<ClientFilters>({});
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showBulkTenstreetDialog, setShowBulkTenstreetDialog] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   
   const { userRole, organization } = useAuth();
@@ -138,6 +140,8 @@ const ClientsPage = () => {
         <ClientsHeader 
           clientsCount={filteredClients.length} 
           onCreateClient={handleCreateClient}
+          onBulkTenstreet={() => setShowBulkTenstreetDialog(true)}
+          showBulkTenstreet={!!organization?.id}
         />
         <div className="mt-6 space-y-6">
           <ClientsSearch 
@@ -170,6 +174,15 @@ const ClientsPage = () => {
         client={editingClient}
         isLoading={isUpdating}
       />
+
+      {organization?.id && (
+        <BulkTenstreetAssignmentDialog
+          open={showBulkTenstreetDialog}
+          onOpenChange={setShowBulkTenstreetDialog}
+          organizationId={organization.id}
+          clients={clients || []}
+        />
+      )}
     </PageLayout>
   );
 };

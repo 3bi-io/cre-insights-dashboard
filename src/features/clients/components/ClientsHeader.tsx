@@ -1,15 +1,19 @@
 import React from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ClientsHeaderProps {
   clientsCount: number;
   onCreateClient?: () => void;
+  onBulkTenstreet?: () => void;
+  showBulkTenstreet?: boolean;
 }
 
 const ClientsHeader: React.FC<ClientsHeaderProps> = ({
   clientsCount,
-  onCreateClient
+  onCreateClient,
+  onBulkTenstreet,
+  showBulkTenstreet = false,
 }) => {
   return (
     <div className="bg-card border-b border-border shadow-sm">
@@ -25,6 +29,12 @@ const ClientsHeader: React.FC<ClientsHeaderProps> = ({
           </div>
           
           <div className="flex items-center gap-3">
+            {showBulkTenstreet && onBulkTenstreet && (
+              <Button variant="outline" onClick={onBulkTenstreet} className="gap-2">
+                <Truck className="w-4 h-4" />
+                Bulk Tenstreet
+              </Button>
+            )}
             <Button onClick={onCreateClient} className="gap-2">
               <Plus className="w-4 h-4" />
               Add Client
