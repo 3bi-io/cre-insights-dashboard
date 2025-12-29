@@ -7,3 +7,4 @@ export { default as ClientsTable } from './ClientsTable';
 export { default as CreateClientDialog } from './CreateClientDialog';
 export { default as EditClientDialog } from './EditClientDialog';
 export { ClientLogoUpload } from './ClientLogoUpload';
+export { BulkTenstreetAssignmentDialog } from './BulkTenstreetAssignmentDialog';
