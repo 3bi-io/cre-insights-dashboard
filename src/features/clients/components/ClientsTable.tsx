@@ -1,25 +1,36 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2, Truck } from 'lucide-react';
+import { ATSConnectionDialog } from '@/features/ats/components/ATSConnectionDialog';
+import { useATSSystems } from '@/hooks/useATSConnections';
 import type { Client, ConsolidatedClient } from '../types/client.types';
 
 interface ClientsTableProps {
   clients: Client[];
+  organizationId?: string;
   onEditClient?: (client: Client) => void;
   onDeleteClient?: (clientId: string) => void;
 }
 
 const ClientsTable: React.FC<ClientsTableProps> = ({ 
   clients, 
+  organizationId,
   onEditClient,
   onDeleteClient 
 }) => {
   const navigate = useNavigate();
+  const { data: atsSystems } = useATSSystems();
+  
+  // Quick Add Tenstreet dialog state
+  const [quickAddClient, setQuickAddClient] = useState<{ id: string; name: string } | null>(null);
+  
+  // Find Tenstreet system ID
+  const tenstreetSystem = atsSystems?.find(s => s.slug === 'tenstreet');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -36,7 +47,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
   // Consolidate clients by name to avoid duplicates
   const consolidatedClients = useMemo(() => {
-    const clientMap = new Map<string, ConsolidatedClient>();
+    const clientMap = new Map<string, ConsolidatedClient & { clientId: string }>();
 
     clients.forEach(client => {
       const key = client.name;
@@ -44,6 +55,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
       if (!clientMap.has(key)) {
         clientMap.set(key, {
           name: client.name,
+          clientId: client.id, // Store the first client ID for quick actions
           locations: [],
           totalLocations: 0,
           status: client.status,
@@ -86,6 +98,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     );
   }, [clients]);
 
+  const handleQuickAddTenstreet = (clientId: string, clientName: string) => {
+    setQuickAddClient({ id: clientId, name: clientName });
+  };
+
   const handleViewJobs = (clientName: string) => {
     // Navigate to jobs page with client filter
     navigate(`/admin/jobs?client=${encodeURIComponent(clientName)}`);
@@ -122,6 +138,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
   }
 
   return (
+    <>
     <Card>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -214,6 +231,14 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {organizationId && tenstreetSystem && (
+                            <DropdownMenuItem 
+                              onClick={() => handleQuickAddTenstreet(client.clientId, client.name)}
+                            >
+                              <Truck className="w-4 h-4 mr-2" />
+                              Quick Add Tenstreet
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Client
@@ -236,6 +261,20 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         </div>
       </CardContent>
     </Card>
+    
+    {/* Quick Add Tenstreet Dialog */}
+    {organizationId && (
+      <ATSConnectionDialog
+        open={!!quickAddClient}
+        onOpenChange={(open) => !open && setQuickAddClient(null)}
+        organizationId={organizationId}
+        clientId={quickAddClient?.id}
+        clientName={quickAddClient?.name}
+        connection={null}
+        mode="create"
+      />
+    )}
+    </>
   );
 };
 

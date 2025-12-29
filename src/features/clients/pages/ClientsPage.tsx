@@ -147,6 +147,7 @@ const ClientsPage = () => {
           />
           <ClientsTable 
             clients={filteredClients}
+            organizationId={organization?.id}
             onEditClient={handleEditClient}
             onDeleteClient={handleDeleteClient}
           />
