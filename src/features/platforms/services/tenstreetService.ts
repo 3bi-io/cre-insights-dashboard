@@ -308,8 +308,20 @@ export class TenstreetService {
     try {
       logger.info(`TenstreetService: Calling ${functionName}`, { action: payload.action });
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        return {
+          success: false,
+          error: 'Unauthorized: please sign in again',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: payload
+        body: payload,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {

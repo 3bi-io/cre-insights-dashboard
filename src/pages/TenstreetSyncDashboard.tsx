@@ -155,6 +155,11 @@ const TenstreetSyncDashboard = () => {
       if (appError || !app) throw new Error('Application not found');
       
       // Call tenstreet-integration edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Unauthorized: please sign in again');
+      }
+
       const { data, error } = await supabase.functions.invoke('tenstreet-integration', {
         body: {
           action: 'send_application',
@@ -181,7 +186,10 @@ const TenstreetSyncDashboard = () => {
               postalCode: 'zip',
             }
           }
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
       
       if (error) throw error;

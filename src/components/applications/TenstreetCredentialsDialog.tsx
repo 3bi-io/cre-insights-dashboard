@@ -193,6 +193,11 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Unauthorized: please sign in again');
+      }
+
       const { data, error} = await supabase.functions.invoke('tenstreet-integration', {
         body: {
           action: 'test_connection',
@@ -205,7 +210,10 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
             companyName: config.company_name,
             appReferrer: config.app_referrer
           }
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;

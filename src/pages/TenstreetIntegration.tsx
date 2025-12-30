@@ -117,11 +117,24 @@ const TenstreetIntegration = () => {
   const handleTestConnection = async () => {
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to test the Tenstreet connection.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('tenstreet-integration', {
         body: {
           action: 'test_connection',
           config
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;

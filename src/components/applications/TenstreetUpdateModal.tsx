@@ -163,13 +163,26 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
         displayFields: []
       };
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Sign in required",
+          description: "Please sign in to send updates to Tenstreet.",
+          variant: "destructive",
+        });
+        throw new Error('Unauthorized');
+      }
+
       const { data, error } = await supabase.functions.invoke('tenstreet-integration', {
         body: {
           action: 'send_application',
           applicationData,
           config,
           mappings
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
