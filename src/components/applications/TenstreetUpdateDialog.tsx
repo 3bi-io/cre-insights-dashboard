@@ -277,6 +277,9 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
 
       const { data: result, error } = await supabase.functions.invoke('tenstreet-integration', {
         body: payload,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) {
