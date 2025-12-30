@@ -5,6 +5,9 @@ export interface ZipCodeData {
   stateAbbr: string;
 }
 
+// Module-level cache for failed lookups to avoid repeated requests
+const failedLookups = new Set<string>();
+
 // Free zip code lookup using Zippopotam.us API with retry logic
 export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null> => {
   if (!zipCode || zipCode.length < 5) {
@@ -18,9 +21,6 @@ export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null
     return null;
   }
 
-  // Cache for failed lookups to avoid repeated requests
-  const failedLookups = new Set<string>();
-  
   if (failedLookups.has(cleanZip)) {
     return null;
   }
@@ -58,11 +58,12 @@ export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null
     }
     
     return null;
-  } catch (error) {
-    if (error.name === 'AbortError') {
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.name === 'AbortError') {
       console.warn(`Zip code lookup timed out for ${cleanZip}`);
     } else {
-      console.warn(`Zip code lookup failed for ${cleanZip}:`, error.message);
+      console.warn(`Zip code lookup failed for ${cleanZip}:`, err.message);
     }
     failedLookups.add(cleanZip);
     return null;
