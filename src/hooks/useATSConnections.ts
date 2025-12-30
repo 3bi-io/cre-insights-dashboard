@@ -97,7 +97,12 @@ export function useCreateATSConnection() {
       toast.success('ATS connection created successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create connection: ${error.message}`);
+      // Check for unique constraint violation
+      if (error.message?.includes('duplicate key') || error.message?.includes('unique constraint')) {
+        toast.error('A connection already exists for this ATS system and mode. Please edit the existing connection instead.');
+      } else {
+        toast.error(`Failed to create connection: ${error.message}`);
+      }
     },
   });
 }

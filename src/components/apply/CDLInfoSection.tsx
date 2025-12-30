@@ -36,7 +36,7 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange }: CDLInfoSe
           Do you have a CDL-A license? <span className="text-destructive">*</span>
         </Label>
         <Select value={formData.cdl} onValueChange={(value) => onInputChange('cdl', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
+          <SelectTrigger id="cdl" name="cdl" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select CDL status..." />
           </SelectTrigger>
           <SelectContent>
@@ -53,7 +53,7 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange }: CDLInfoSe
           CDL-A driving experience? <span className="text-destructive">*</span>
         </Label>
         <Select value={formData.experience} onValueChange={(value) => onInputChange('experience', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
+          <SelectTrigger id="experience" name="experience" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select your experience level..." />
           </SelectTrigger>
           <SelectContent className="max-h-[200px]">

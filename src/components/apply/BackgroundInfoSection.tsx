@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,7 +22,7 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange }: Ba
           Can you pass a drug test? <span className="text-destructive">*</span>
         </Label>
         <Select value={formData.drug} onValueChange={(value) => onInputChange('drug', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
+          <SelectTrigger id="drug" name="drug" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
@@ -36,7 +35,7 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange }: Ba
       <div className="space-y-2">
         <Label htmlFor="veteran" className="text-sm font-medium">Are you a veteran?</Label>
         <Select value={formData.veteran} onValueChange={(value) => onInputChange('veteran', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+          <SelectTrigger id="veteran" name="veteran" className="h-12 sm:h-10 text-base sm:text-sm">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>

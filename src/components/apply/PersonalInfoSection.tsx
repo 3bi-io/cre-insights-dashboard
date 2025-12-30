@@ -98,6 +98,8 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           </Label>
           <Input
             id="firstName"
+            name="firstName"
+            autoComplete="given-name"
             value={formData.firstName}
             onChange={(e) => onInputChange('firstName', e.target.value)}
             required
@@ -112,6 +114,8 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           </Label>
           <Input
             id="lastName"
+            name="lastName"
+            autoComplete="family-name"
             value={formData.lastName}
             onChange={(e) => onInputChange('lastName', e.target.value)}
             required
@@ -129,7 +133,9 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           </Label>
           <Input
             id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={formData.email}
             onChange={(e) => onInputChange('email', e.target.value)}
             required
@@ -144,7 +150,9 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           </Label>
           <Input
             id="phone"
+            name="phone"
             type="tel"
+            autoComplete="tel"
             value={formData.phone}
             onChange={handlePhoneChange}
             placeholder="(555) 123-4567"
@@ -161,6 +169,8 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           <Label htmlFor="city" className="text-sm font-medium">City</Label>
           <Input
             id="city"
+            name="city"
+            autoComplete="address-level2"
             value={formData.city}
             onChange={(e) => onInputChange('city', e.target.value)}
             placeholder="Enter your city"
@@ -170,7 +180,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
         <div className="space-y-2">
           <Label htmlFor="state" className="text-sm font-medium">State</Label>
           <Select value={formData.state} onValueChange={(value) => onInputChange('state', value)}>
-            <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm">
+            <SelectTrigger id="state" name="state" className="h-12 sm:h-10 text-base sm:text-sm">
               <SelectValue placeholder="Select state..." />
             </SelectTrigger>
             <SelectContent className="max-h-[200px]">
@@ -188,6 +198,8 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           </Label>
           <Input
             id="zip"
+            name="zip"
+            autoComplete="postal-code"
             value={formData.zip}
             onChange={(e) => onInputChange('zip', e.target.value)}
             required
@@ -204,7 +216,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
           Are you over 21? <span className="text-destructive">*</span>
         </Label>
         <Select value={formData.over21} onValueChange={(value) => onInputChange('over21', value)}>
-          <SelectTrigger className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
+          <SelectTrigger id="over21" name="over21" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
             <SelectValue placeholder="Select your age status..." />
           </SelectTrigger>
           <SelectContent>
