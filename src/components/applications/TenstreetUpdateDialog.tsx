@@ -178,8 +178,8 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
     
     try {
       // Check if user is authenticated before calling edge function
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      if (!existingSession) {
         toast({
           title: "Sign in required",
           description: "Please sign in to send updates to Tenstreet.",
@@ -188,6 +188,10 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
         setIsLoading(false);
         return;
       }
+
+      // Ensure we have a fresh access token
+      const { data: refreshData } = await supabase.auth.refreshSession();
+      const session = refreshData.session ?? existingSession;
       // Prepare the payload for Tenstreet integration
       const payload = {
         action: 'send_application',
