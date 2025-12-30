@@ -128,3 +128,6 @@ verify_jwt = true
 
 [functions.background-check-webhook]
 verify_jwt = false
+
+[functions.tenstreet-integration]
+verify_jwt = true
