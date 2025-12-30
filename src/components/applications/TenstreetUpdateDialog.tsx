@@ -25,6 +25,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const updateSchema = z.object({
   status: z.string().min(1, 'Status is required'),
@@ -263,18 +264,12 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
         }
       };
 
-      const response = await fetch('/functions/v1/tenstreet-integration', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      const { data: result, error } = await supabase.functions.invoke('tenstreet-integration', {
+        body: payload,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send update to Tenstreet');
+      if (error) {
+        throw new Error(error.message || 'Failed to send update to Tenstreet');
       }
 
       toast({
