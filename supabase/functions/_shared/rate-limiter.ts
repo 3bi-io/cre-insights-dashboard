@@ -1,6 +1,7 @@
 /**
  * Rate Limiting Utilities for Edge Functions
- * Provides flexible rate limiting using Deno KV
+ * Provides flexible rate limiting using in-memory Map
+ * Note: Deno KV is not available in Supabase Edge Functions
  */
 
 import { RateLimitError } from './error-handler.ts';
@@ -18,6 +19,20 @@ export interface RateLimitResult {
   retryAfter?: number;
 }
 
+// In-memory rate limit store
+// Note: This resets when the function cold starts, but provides basic protection
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+// Cleanup old entries periodically to prevent memory leaks
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  for (const [key, data] of rateLimitStore.entries()) {
+    if (data.resetAt < now) {
+      rateLimitStore.delete(key);
+    }
+  }
+}
+
 /**
  * Check rate limit for an identifier
  */
@@ -29,18 +44,20 @@ export async function checkRateLimit(
   const key = `${keyPrefix}:${identifier}`;
 
   try {
-    const kv = await Deno.openKv();
     const now = Date.now();
-    const windowStart = now - windowMs;
+    
+    // Cleanup expired entries occasionally (1% chance per request)
+    if (Math.random() < 0.01) {
+      cleanupExpiredEntries();
+    }
 
     // Get current count
-    const result = await kv.get([key]);
-    const data = result.value as { count: number; resetAt: number } | null;
+    const data = rateLimitStore.get(key);
 
-    // Reset if window expired
+    // Reset if window expired or no data
     if (!data || data.resetAt < now) {
       const resetAt = now + windowMs;
-      await kv.set([key], { count: 1, resetAt }, { expireIn: windowMs });
+      rateLimitStore.set(key, { count: 1, resetAt });
 
       return {
         allowed: true,
@@ -62,9 +79,7 @@ export async function checkRateLimit(
     }
 
     // Increment counter
-    await kv.set([key], { count: data.count + 1, resetAt: data.resetAt }, { 
-      expireIn: data.resetAt - now 
-    });
+    rateLimitStore.set(key, { count: data.count + 1, resetAt: data.resetAt });
 
     return {
       allowed: true,

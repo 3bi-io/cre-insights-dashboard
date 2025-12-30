@@ -213,6 +213,40 @@ class ATSConnectionsService {
   }
 
   /**
+   * Check if a connection already exists for the given combination
+   */
+  async checkExistingConnection(
+    organizationId: string,
+    clientId: string | null,
+    atsSystemId: string,
+    mode: 'test' | 'production'
+  ): Promise<ATSConnection | null> {
+    let query = supabase
+      .from('ats_connections')
+      .select(`
+        *,
+        ats_system:ats_systems(*),
+        client:clients(id, name)
+      `)
+      .eq('organization_id', organizationId)
+      .eq('ats_system_id', atsSystemId)
+      .eq('mode', mode);
+
+    if (clientId) {
+      query = query.eq('client_id', clientId);
+    } else {
+      query = query.is('client_id', null);
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
+    
+    return this.transformConnections([data])[0];
+  }
+
+  /**
    * Create a new ATS connection
    */
   async createConnection(data: CreateATSConnectionData): Promise<ATSConnection> {
