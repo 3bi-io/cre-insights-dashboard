@@ -13,14 +13,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireSubscription = true 
 }) => {
   const location = useLocation();
-  const { user, loading: authLoading, userRole } = useAuth();
+  const { user, loading: authLoading, userRole, organization } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
 
-  // Wait for auth data to load - only wait for subscription if it's required
-  const isLoading = authLoading || (user && userRole === null) || (requireSubscription && subLoading);
+  // Wait for auth data to load - also wait for organization when subscription is required (non-super-admin)
+  // This prevents race condition where subscription check runs before organization data is loaded
+  const needsOrgData = requireSubscription && user && userRole !== 'super_admin' && organization === undefined;
+  const isLoading = authLoading || (user && userRole === null) || (requireSubscription && subLoading) || needsOrgData;
   
   if (isLoading) {
-    console.log('[PROTECTED] Still loading:', { authLoading, subLoading, user: !!user, userRole, requireSubscription });
+    console.log('[PROTECTED] Still loading:', { authLoading, subLoading, user: !!user, userRole, requireSubscription, hasOrg: !!organization });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
