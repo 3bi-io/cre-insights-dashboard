@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { OrganizationPlatformsService } from '@/features/organizations/services/organizationPlatformsService';
 import {
@@ -79,14 +79,14 @@ export const usePlatformAccess = (organizationId?: string) => {
   // Memoize available platforms to prevent infinite re-renders
   const availablePlatforms = useMemo(() => getAllPlatforms(), []);
 
-  // Check if a platform is enabled (utility function)
-  const checkPlatformAccess = async (platformName: string): Promise<boolean> => {
+  // Check if a platform is enabled (utility function) - memoized to prevent infinite loops in useEffect
+  const checkPlatformAccess = useCallback(async (platformName: string): Promise<boolean> => {
     // Default to true if no organization - aligns with DB default behavior
     if (!organizationId) return true;
     
     const platformsMap = await OrganizationPlatformsService.fetchOrganizationPlatformsMap(organizationId);
     return platformsMap[platformName as any] ?? true; // Default to true if not found
-  };
+  }, [organizationId]);
 
   return {
     // Data

@@ -18,7 +18,7 @@ export const useSubscription = (): SubscriptionStatus => {
   });
 
   useEffect(() => {
-    console.log('[SUBSCRIPTION] Checking subscription status:', { authLoading, hasOrg: !!organization });
+    console.log('[SUBSCRIPTION] Checking subscription status:', { authLoading, hasOrg: !!organization, organization: organization?.name });
     
     // Wait for auth to finish loading
     if (authLoading) {
@@ -26,14 +26,15 @@ export const useSubscription = (): SubscriptionStatus => {
       return;
     }
 
-    // If no organization, user has no subscription
+    // If no organization yet but user exists, keep loading - organization may still be fetching
+    // This prevents premature "no subscription" determination before org data arrives
     if (!organization) {
-      console.log('[SUBSCRIPTION] No organization found - no subscription');
+      console.log('[SUBSCRIPTION] No organization found yet - may still be loading');
       setStatus({
         hasActiveSubscription: false,
         subscriptionStatus: null,
         isTrialing: false,
-        loading: false,
+        loading: false, // Let ProtectedRoute handle the org loading check
       });
       return;
     }
