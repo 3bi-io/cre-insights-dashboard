@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,7 +33,16 @@ const ApplicationCard = ({
   onScreeningOpen,
 }: ApplicationCardProps) => {
   const isMobile = useIsMobile();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
+
+  // Close dropdown first, then execute action to prevent aria-hidden focus conflict
+  const handleDropdownAction = (action: () => void) => {
+    setDropdownOpen(false);
+    requestAnimationFrame(() => {
+      action();
+    });
+  };
   
   const applicantName = getApplicantName(application);
   const applicantEmail = getApplicantEmail(application);
@@ -209,28 +219,28 @@ const ApplicationCard = ({
                   </Button>
                 </div>
               ) : (
-                <DropdownMenu>
+                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">
                       <MoreVertical className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => onDetailsView(application)}>
+                    <DropdownMenuItem onClick={() => handleDropdownAction(() => onDetailsView(application))}>
                       <Eye className="w-4 h-4 mr-2" />
                       View Details
                     </DropdownMenuItem>
                     {application.phone && (
-                      <DropdownMenuItem onClick={() => onSmsOpen(application)}>
+                      <DropdownMenuItem onClick={() => handleDropdownAction(() => onSmsOpen(application))}>
                         <MessageCircle className="w-4 h-4 mr-2" />
                         SMS
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => onScreeningOpen(application)}>
+                    <DropdownMenuItem onClick={() => handleDropdownAction(() => onScreeningOpen(application))}>
                       <FileCheck className="w-4 h-4 mr-2" />
                       Screening Requests
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onTenstreetUpdate(application)}>
+                    <DropdownMenuItem onClick={() => handleDropdownAction(() => onTenstreetUpdate(application))}>
                       <Upload className="w-4 h-4 mr-2" />
                       Post to Tenstreet
                     </DropdownMenuItem>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Eye, MessageCircle, Upload, FileCheck, MoreVertical, Mail } from 'lucide-react';
@@ -21,22 +21,31 @@ export const ApplicationActions: React.FC<ApplicationActionsProps> = ({
   onScreeningOpen,
   isMobile = false,
 }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const applicantEmail = application.applicant_email;
+
+  // Close dropdown first, then execute action to prevent aria-hidden focus conflict
+  const handleAction = (action: () => void) => {
+    setDropdownOpen(false);
+    requestAnimationFrame(() => {
+      action();
+    });
+  };
 
   if (isMobile) {
     return (
-      <DropdownMenu>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-sm border-border/50">
-          <DropdownMenuItem onClick={() => onDetailsView(application)}>
+          <DropdownMenuItem onClick={() => handleAction(() => onDetailsView(application))}>
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onSmsOpen(application)}>
+          <DropdownMenuItem onClick={() => handleAction(() => onSmsOpen(application))}>
             <MessageCircle className="h-4 w-4 mr-2" />
             Send SMS
           </DropdownMenuItem>
@@ -48,11 +57,11 @@ export const ApplicationActions: React.FC<ApplicationActionsProps> = ({
               </a>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={() => onTenstreetUpdate(application)}>
+          <DropdownMenuItem onClick={() => handleAction(() => onTenstreetUpdate(application))}>
             <Upload className="h-4 w-4 mr-2" />
             Post to Tenstreet
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onScreeningOpen(application)}>
+          <DropdownMenuItem onClick={() => handleAction(() => onScreeningOpen(application))}>
             <FileCheck className="h-4 w-4 mr-2" />
             Screening Requests
           </DropdownMenuItem>
