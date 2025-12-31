@@ -1,10 +1,7 @@
 import React, { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { DashboardMetrics } from './DashboardMetrics';
 import { DashboardTabsComponent } from './DashboardTabs';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
@@ -14,7 +11,6 @@ import { OrganizationUserManagement } from '@/components/dashboard/organization/
 import { useDashboardTabs } from '../hooks/useDashboardTabs';
 import AIImpactDashboard from '@/pages/AIImpactDashboard';
 import { PageLayout } from '@/features/shared';
-import { Lock, CreditCard } from 'lucide-react';
 
 interface DashboardLayoutProps {
   organizationName?: string;
@@ -23,8 +19,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   organizationName 
 }) => {
-  const { organization, userRole } = useAuth();
-  const { hasActiveSubscription, subscriptionStatus, isTrialing } = useSubscription();
+  const { organization } = useAuth();
   const { setActiveTab } = useDashboardTabs();
   const [searchParams] = useSearchParams();
   const displayName = organizationName || organization?.name || 'Organization';
@@ -71,40 +66,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     >
       <div className="p-6 max-w-7xl mx-auto">
         <div className="space-y-6">
-          {/* Subscription Status Banner - Super admins bypass */}
-          {userRole !== 'super_admin' && !hasActiveSubscription && (
-            <Alert variant="destructive">
-              <Lock className="h-4 w-4" />
-              <AlertTitle>Subscription Required</AlertTitle>
-              <AlertDescription className="flex items-center justify-between">
-                <span>
-                  {subscriptionStatus === 'inactive' 
-                    ? 'Your organization needs an active subscription to access all features.'
-                    : 'Your subscription has expired. Renew to continue using all features.'}
-                </span>
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/pricing">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    View Plans
-                  </Link>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {/* Trial Status Banner */}
-          {userRole !== 'super_admin' && isTrialing && (
-            <Alert>
-              <AlertDescription className="flex items-center justify-between">
-                <span>You're currently on a trial. Upgrade to continue using all features after your trial ends.</span>
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/pricing">Upgrade Now</Link>
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Content Section */}
           {renderTabContent()}
         </div>
       </div>

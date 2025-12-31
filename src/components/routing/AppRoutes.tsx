@@ -171,7 +171,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Dashboard Routes */}
       <Route path="/dashboard" element={
-        <ProtectedRoute requireSubscription={false}>
+        <ProtectedRoute>
           <Layout />
         </ProtectedRoute>
       }>
@@ -180,7 +180,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Candidate Routes */}
       <Route path="/my-jobs" element={
-        <ProtectedRoute requireSubscription={false}>
+        <ProtectedRoute>
           <RouteWrapper><CandidateLayout /></RouteWrapper>
         </ProtectedRoute>
       }>
