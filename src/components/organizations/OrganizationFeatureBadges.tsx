@@ -6,7 +6,7 @@ import {
   Share2, 
   BarChart3, 
   Zap,
-  Crown 
+  Sparkles 
 } from 'lucide-react';
 
 interface OrganizationFeatureBadgesProps {
@@ -27,43 +27,36 @@ const FEATURE_CONFIG = {
     label: 'Tenstreet',
     icon: Share2,
     variant: 'default' as const,
-    premium: true
   },
   openai_access: {
     label: 'OpenAI',
     icon: Bot,
     variant: 'secondary' as const,
-    premium: true
   },
   anthropic_access: {
     label: 'Anthropic',
     icon: Zap,
     variant: 'secondary' as const,
-    premium: true
   },
   elevenlabs_access: {
     label: 'ElevenLabs',
     icon: Phone,
     variant: 'secondary' as const,
-    premium: true
   },
   meta_integration: {
     label: 'Meta Ads',
     icon: Share2,
     variant: 'outline' as const,
-    premium: false
   },
   voice_agent: {
     label: 'Voice Agent',
     icon: Phone,
     variant: 'default' as const,
-    premium: true
   },
   advanced_analytics: {
     label: 'Analytics',
     icon: BarChart3,
     variant: 'outline' as const,
-    premium: false
   }
 };
 
@@ -79,7 +72,8 @@ export const OrganizationFeatureBadges = ({
   if (enabledFeatures.length === 0 && !showAll) {
     return (
       <Badge variant="outline" className="text-xs">
-        Basic Plan
+        <Sparkles className="w-3 h-3 mr-1" />
+        Standard
       </Badge>
     );
   }
@@ -109,9 +103,6 @@ export const OrganizationFeatureBadges = ({
           >
             <Icon className="w-3 h-3 mr-1" />
             {config.label}
-            {config.premium && isEnabled && (
-              <Crown className="w-2 h-2 ml-1" />
-            )}
           </Badge>
         );
       })}

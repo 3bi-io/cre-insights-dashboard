@@ -24,6 +24,37 @@ interface CandidateApplication {
   };
 }
 
+async function fetchCandidateApplications(userId: string): Promise<CandidateApplication[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from('applications')
+    .select(`
+      id,
+      status,
+      applied_at,
+      candidate_withdrawn_at,
+      candidate_withdraw_reason,
+      job_listings!inner(
+        id,
+        title,
+        location,
+        city,
+        state,
+        salary_min,
+        salary_max,
+        organizations!inner(
+          name,
+          logo_url
+        )
+      )
+    `)
+    .eq('candidate_user_id', userId)
+    .order('applied_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as CandidateApplication[];
+}
+
 export const useCandidateApplications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,38 +62,7 @@ export const useCandidateApplications = () => {
 
   const { data: applications, isLoading, error } = useQuery({
     queryKey: ['candidate-applications', user?.id],
-    queryFn: async (): Promise<CandidateApplication[]> => {
-      if (!user?.id) return [];
-
-      // Use type assertion to work around complex nested query types
-      const { data, error } = await (supabase
-        .from('applications')
-        .select(`
-          id,
-          status,
-          applied_at,
-          candidate_withdrawn_at,
-          candidate_withdraw_reason,
-          job_listings!inner(
-            id,
-            title,
-            location,
-            city,
-            state,
-            salary_min,
-            salary_max,
-            organizations!inner(
-              name,
-              logo_url
-            )
-          )
-        `)
-        .eq('candidate_user_id', user.id)
-        .order('applied_at', { ascending: false }) as Promise<{ data: CandidateApplication[] | null; error: Error | null }>);
-
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchCandidateApplications(user!.id),
     enabled: !!user?.id,
   });
 

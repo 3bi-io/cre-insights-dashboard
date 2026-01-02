@@ -1,3 +1,9 @@
+/**
+ * FeatureGuard Component
+ * Guards features based on organization feature flags
+ * Note: All features are now available to all users - this guards specific integrations
+ */
+
 import React from 'react';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,11 +48,11 @@ const FeatureGuard: React.FC<FeatureGuardProps> = ({
           <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
             <Lock className="w-6 h-6 text-muted-foreground" />
           </div>
-          <CardTitle>Feature Not Available</CardTitle>
+          <CardTitle>Feature Not Enabled</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-muted-foreground">
-            This feature is not available in your current plan.
+            This integration needs to be enabled for your organization. Contact your administrator.
           </p>
         </CardContent>
       </Card>
