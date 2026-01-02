@@ -19,7 +19,7 @@ export const faqContent = {
     },
     {
       question: 'Do I need to sign a long-term contract?',
-      answer: 'No. All our plans are month-to-month with no long-term commitment. You can cancel anytime. Early adopters receive special grandfathered pricing that locks in your rate even if standard pricing increases.',
+      answer: 'No. All our plans are month-to-month with no long-term commitment. You can cancel anytime.',
     },
     {
       question: 'How does the AI screening work?',
@@ -27,11 +27,11 @@ export const faqContent = {
     },
     {
       question: 'What integrations are available?',
-      answer: 'We integrate with 100+ job boards (Indeed, LinkedIn, Glassdoor, Tenstreet, etc.), major HRIS systems, calendar tools (Google Calendar, Outlook), background check providers, and communication platforms. Custom API integrations are available on Enterprise plans.',
+      answer: 'We integrate with 100+ job boards (Indeed, LinkedIn, Glassdoor, Tenstreet, etc.), major HRIS systems, calendar tools (Google Calendar, Outlook), background check providers, and communication platforms. Custom API integrations are available for enterprise needs.',
     },
     {
       question: 'Is my data secure and compliant?',
-      answer: 'Yes. We are GDPR and EEO compliant with SOC 2 Type II certification in progress. All data is encrypted at rest and in transit. We maintain detailed audit trails and offer role-based access controls. Data residency options are available for Enterprise customers.',
+      answer: 'Yes. We are GDPR and EEO compliant with SOC 2 Type II certification in progress. All data is encrypted at rest and in transit. We maintain detailed audit trails and offer role-based access controls. Data residency options are available for enterprise customers.',
     },
     {
       question: 'What is Voice Apply technology?',
@@ -39,15 +39,15 @@ export const faqContent = {
     },
     {
       question: 'Can I try it before committing?',
-      answer: 'Absolutely! We offer a 30-day free trial with full access to all features in your chosen plan. No credit card required to start. Schedule a demo to see the platform in action.',
+      answer: 'Yes! Contact our team for a personalized demo to see the platform in action and discuss your specific needs.',
     },
     {
       question: 'What kind of support do you provide?',
-      answer: 'Starter plans include email support with 24-hour response times. Professional plans add priority chat support. Enterprise customers receive a dedicated account manager, phone support, and custom SLAs with response times as fast as 1 hour for critical issues.',
+      answer: 'All customers receive email and chat support. Enterprise customers receive a dedicated account manager, phone support, and custom SLAs.',
     },
     {
-      question: 'How does pricing scale as we grow?',
-      answer: 'Our pricing is based on active users and feature tiers, not on the number of jobs or jobseekers. As you grow, you can easily upgrade to higher tiers. Early adopters receive lifetime grandfathered pricing, meaning your rate stays locked even as we add new features.',
+      question: 'How does pricing work?',
+      answer: 'Our pricing is based on your organization size and needs. Contact our sales team for a custom quote tailored to your requirements.',
     },
     {
       question: 'What happens to my data if I cancel?',
