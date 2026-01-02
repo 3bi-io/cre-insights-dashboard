@@ -211,7 +211,7 @@ const ApplicationsPage = () => {
       }
       actions={pageActions}
     >
-      <div className={`${isMobile ? 'p-4' : 'p-6'} max-w-7xl mx-auto`}>
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto pb-20 md:pb-6">
         <div className="space-y-6">
           <Card className="border-border/40 bg-card/50 backdrop-blur-sm animate-fade-in">
             <CardContent className="p-6">
@@ -237,7 +237,10 @@ const ApplicationsPage = () => {
             />
           </div>
           
-          <KeyboardShortcutsHint />
+          {/* Hide keyboard shortcuts on mobile */}
+          <div className="hidden md:block">
+            <KeyboardShortcutsHint />
+          </div>
 
           <ApplicationsBulkProgress bulkProgress={bulkProgress} />
 
