@@ -66,6 +66,7 @@ const ClientsPage = React.lazy(() => import("@/features/clients").then(m => ({ d
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
 const Settings = React.lazy(() => import("@/pages/Settings"));
 const Media = React.lazy(() => import("@/pages/Media"));
+const BrandAssets = React.lazy(() => import("@/pages/BrandAssets"));
 const UserManagement = React.lazy(() => import("@/pages/UserManagement"));
 const SuperAdminFeeds = React.lazy(() => import("@/pages/SuperAdminFeeds"));
 const WebhookManagement = React.lazy(() => import("@/pages/WebhookManagement"));
@@ -237,6 +238,7 @@ const AppRoutes: React.FC = () => {
         <Route path="organizations" element={<ProtectedRouteWrapper><Organizations /></ProtectedRouteWrapper>} />
         <Route path="settings" element={<ProtectedRouteWrapper><Settings /></ProtectedRouteWrapper>} />
         <Route path="media" element={<ProtectedRouteWrapper><Media /></ProtectedRouteWrapper>} />
+        <Route path="brand-assets" element={<ProtectedRouteWrapper><BrandAssets /></ProtectedRouteWrapper>} />
         <Route path="user-management" element={<ProtectedRouteWrapper><UserManagement /></ProtectedRouteWrapper>} />
         <Route path="super-admin-feeds" element={<ProtectedRouteWrapper><SuperAdminFeeds /></ProtectedRouteWrapper>} />
         <Route path="webhook-management" element={<ProtectedRouteWrapper><WebhookManagement /></ProtectedRouteWrapper>} />
