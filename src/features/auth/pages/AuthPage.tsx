@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { SocialAuthButtons } from '../components/SocialAuthButtons';
 import type { OAuthProvider } from '../hooks/useAuthForm';
 import { supabase } from '@/integrations/supabase/client';
+import { Brand } from '@/components/common/Brand';
 
 const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -88,9 +89,9 @@ const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         {/* Logo Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">ATS.me</h1>
-          <p className="text-muted-foreground">Next-Generation Applicant Tracking System</p>
+        <div className="flex flex-col items-center mb-8">
+          <Brand variant="horizontal" size="xl" priority showAsLink={false} />
+          <p className="text-muted-foreground mt-2">AI-Powered Recruitment Platform</p>
         </div>
 
         <Card>
