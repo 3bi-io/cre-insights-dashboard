@@ -81,10 +81,7 @@ const Organizations = () => {
                         <CardDescription>{org.slug}</CardDescription>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <PlanBadge planType={org.plan_type || 'enterprise'} />
-                        <Badge variant={org.subscription_status === 'active' ? 'secondary' : 'outline'}>
-                          {org.subscription_status}
-                        </Badge>
+                        <PlanBadge />
                         <OrganizationFeaturesDialog organization={org} />
                         <Button 
                           size="sm" 
