@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CreateJobGroupData, UpdateJobGroupData, JobGroup } from '../services/JobGroupsService';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlatforms } from '@/hooks/usePlatforms';
-import { useJobs } from '@/hooks/useJobs';
+import { useJobs } from '@/features/jobs/hooks';
 import { X } from 'lucide-react';
 
 interface JobGroupDialogProps {

@@ -29,7 +29,7 @@ export interface FeatureConfig {
   description: string;
   category: FeatureCategory;
   premium?: boolean;
-  requiresSubscription?: boolean;
+  // Note: requiresSubscription removed - all features available to all users
 }
 
 /**

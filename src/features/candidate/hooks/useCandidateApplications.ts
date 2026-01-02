@@ -3,6 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+interface CandidateApplication {
+  id: string;
+  status: string;
+  applied_at: string;
+  candidate_withdrawn_at?: string;
+  candidate_withdraw_reason?: string;
+  job_listings: {
+    id: string;
+    title: string;
+    location?: string;
+    city?: string;
+    state?: string;
+    salary_min?: number;
+    salary_max?: number;
+    organizations: {
+      name: string;
+      logo_url?: string;
+    };
+  };
+}
+
 export const useCandidateApplications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -10,13 +31,18 @@ export const useCandidateApplications = () => {
 
   const { data: applications, isLoading, error } = useQuery({
     queryKey: ['candidate-applications', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<CandidateApplication[]> => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
-        .from('applications' as any)
+      // Use type assertion to work around complex nested query types
+      const { data, error } = await (supabase
+        .from('applications')
         .select(`
-          *,
+          id,
+          status,
+          applied_at,
+          candidate_withdrawn_at,
+          candidate_withdraw_reason,
           job_listings!inner(
             id,
             title,
@@ -32,7 +58,7 @@ export const useCandidateApplications = () => {
           )
         `)
         .eq('candidate_user_id', user.id)
-        .order('applied_at', { ascending: false });
+        .order('applied_at', { ascending: false }) as Promise<{ data: CandidateApplication[] | null; error: Error | null }>);
 
       if (error) throw error;
       return data || [];
@@ -43,7 +69,7 @@ export const useCandidateApplications = () => {
   const withdrawApplication = useMutation({
     mutationFn: async ({ applicationId, reason }: { applicationId: string; reason?: string }) => {
       const { error } = await supabase
-        .from('applications' as any)
+        .from('applications')
         .update({
           candidate_withdrawn_at: new Date().toISOString(),
           candidate_withdraw_reason: reason,
@@ -60,7 +86,7 @@ export const useCandidateApplications = () => {
         description: 'Your application has been withdrawn successfully.',
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: 'Error',
         description: 'Failed to withdraw application. Please try again.',
