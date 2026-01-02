@@ -64,8 +64,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       description={hideHeader ? undefined : "Organization management and analytics"}
       actions={pageActions}
     >
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="space-y-6">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto pb-20 md:pb-6">
+        <div className="space-y-4 sm:space-y-6">
           {renderTabContent()}
         </div>
       </div>

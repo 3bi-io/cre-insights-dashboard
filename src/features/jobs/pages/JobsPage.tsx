@@ -214,7 +214,7 @@ const JobsPage = () => {
       description="Manage and monitor your job listings across all platforms"
       actions={pageActions}
     >
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto pb-20 md:pb-6">
         {/* Stats */}
         <div className="mb-6">
           <p className="text-muted-foreground">
@@ -248,7 +248,7 @@ const JobsPage = () => {
         )}
 
         {/* Search and Filters */}
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
           <JobsSearch
             searchTerm={searchTerm}
             organizationFilter={organizationFilter}
@@ -258,24 +258,24 @@ const JobsPage = () => {
             organizations={organizations}
           />
           
-          <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
+          <div className="flex items-center gap-1 sm:gap-2 bg-muted p-1 rounded-lg w-fit">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('grid')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3"
             >
               <Grid3X3 className="w-4 h-4" />
-              Grid
+              <span className="hidden sm:inline">Grid</span>
             </Button>
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setViewMode('table')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3"
             >
               <Table className="w-4 h-4" />
-              Table
+              <span className="hidden sm:inline">Table</span>
             </Button>
           </div>
         </div>
