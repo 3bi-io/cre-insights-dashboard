@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+} from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -9,6 +15,7 @@ import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
 import { ApplicationBackgroundChecks } from '@/features/screening';
+
 interface ApplicationDetailsDialogProps {
   application: any;
   trigger?: React.ReactNode;
@@ -67,17 +74,17 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
     : {};
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
+    <ResponsiveModal open={isOpen ?? false} onOpenChange={(open) => !open && onClose?.()}>
+      <ResponsiveModalContent className="max-w-2xl" maxHeight="80vh">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="flex items-center gap-3">
             <User className="w-5 h-5" />
             Application Details
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription>
             Detailed information about the job application including applicant information, job details, and application status.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
         
         <div className="space-y-6">
           {/* Applicant Information */}
@@ -452,8 +459,8 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
             </>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 };
 

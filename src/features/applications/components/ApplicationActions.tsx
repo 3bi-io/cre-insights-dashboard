@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
 import { Eye, MessageCircle, Upload, FileCheck, MoreVertical, Mail } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Application } from '@/types/common.types';
 
 interface ApplicationActionsProps {
@@ -19,57 +21,99 @@ export const ApplicationActions: React.FC<ApplicationActionsProps> = ({
   onDetailsView,
   onTenstreetUpdate,
   onScreeningOpen,
-  isMobile = false,
+  isMobile: isMobileProp = false,
 }) => {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const isMobileDevice = useIsMobile();
+  const showMobileLayout = isMobileProp || isMobileDevice;
   const applicantEmail = application.applicant_email;
 
-  // Close dropdown first, then execute action to prevent aria-hidden focus conflict
+  // Close menu first, then execute action
   const handleAction = (action: () => void) => {
-    setDropdownOpen(false);
+    setOpen(false);
     requestAnimationFrame(() => {
       action();
     });
   };
 
-  if (isMobile) {
+  const actionItems = [
+    {
+      icon: Eye,
+      label: 'View Details',
+      onClick: () => handleAction(() => onDetailsView(application)),
+    },
+    {
+      icon: MessageCircle,
+      label: 'Send SMS',
+      onClick: () => handleAction(() => onSmsOpen(application)),
+    },
+    ...(applicantEmail ? [{
+      icon: Mail,
+      label: 'Send Email',
+      href: `mailto:${applicantEmail}`,
+    }] : []),
+    {
+      icon: Upload,
+      label: 'Post to Tenstreet',
+      onClick: () => handleAction(() => onTenstreetUpdate(application)),
+    },
+    {
+      icon: FileCheck,
+      label: 'Screening Requests',
+      onClick: () => handleAction(() => onScreeningOpen(application)),
+    },
+  ];
+
+  // Mobile: Use Drawer (bottom sheet) for better touch UX
+  if (showMobileLayout) {
     return (
-      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>
+          <Button variant="outline" size="sm" className="touch-target">
             <MoreVertical className="h-4 w-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-sm border-border/50">
-          <DropdownMenuItem onClick={() => handleAction(() => onDetailsView(application))}>
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleAction(() => onSmsOpen(application))}>
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Send SMS
-          </DropdownMenuItem>
-          {applicantEmail && (
-            <DropdownMenuItem asChild>
-              <a href={`mailto:${applicantEmail}`}>
-                <Mail className="h-4 w-4 mr-2" />
-                Send Email
-              </a>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem onClick={() => handleAction(() => onTenstreetUpdate(application))}>
-            <Upload className="h-4 w-4 mr-2" />
-            Post to Tenstreet
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleAction(() => onScreeningOpen(application))}>
-            <FileCheck className="h-4 w-4 mr-2" />
-            Screening Requests
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Actions</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex flex-col gap-2 p-4 pb-8">
+            {actionItems.map((item, index) => {
+              const Icon = item.icon;
+              if ('href' in item && item.href) {
+                return (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="w-full justify-start min-h-[48px] text-base"
+                    asChild
+                  >
+                    <a href={item.href}>
+                      <Icon className="h-5 w-5 mr-3" />
+                      {item.label}
+                    </a>
+                  </Button>
+                );
+              }
+              return (
+                <Button
+                  key={index}
+                  variant="outline"
+                  className="w-full justify-start min-h-[48px] text-base"
+                  onClick={item.onClick}
+                >
+                  <Icon className="h-5 w-5 mr-3" />
+                  {item.label}
+                </Button>
+              );
+            })}
+          </div>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
+  // Desktop: Use dropdown menu
   return (
     <div className="flex flex-wrap gap-2">
       <Button
