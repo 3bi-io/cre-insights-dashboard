@@ -3,6 +3,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
+interface SavedJob {
+  id: string;
+  job_listing_id: string;
+  notes?: string;
+  created_at: string;
+  job_listings: {
+    id: string;
+    title: string;
+    location?: string;
+    city?: string;
+    state?: string;
+    salary_min?: number;
+    salary_max?: number;
+    organizations: {
+      name: string;
+      logo_url?: string;
+    };
+  };
+}
+
+interface PostgresError {
+  code?: string;
+  message?: string;
+}
+
 export const useSavedJobs = () => {
   const { candidateProfile } = useAuth();
   const { toast } = useToast();
@@ -10,15 +35,25 @@ export const useSavedJobs = () => {
 
   const { data: savedJobs, isLoading } = useQuery({
     queryKey: ['saved-jobs', candidateProfile?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<SavedJob[]> => {
       if (!candidateProfile?.id) return [];
 
-      const { data, error } = await supabase
-        .from('candidate_saved_jobs' as any)
+      // Use RPC or direct query with type assertion
+      const { data, error } = await (supabase
+        .from('candidate_saved_jobs' as 'applications')
         .select(`
-          *,
+          id,
+          job_listing_id,
+          notes,
+          created_at,
           job_listings!inner(
-            *,
+            id,
+            title,
+            location,
+            city,
+            state,
+            salary_min,
+            salary_max,
             organizations!inner(
               name,
               logo_url
@@ -26,7 +61,7 @@ export const useSavedJobs = () => {
           )
         `)
         .eq('candidate_profile_id', candidateProfile.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as unknown as Promise<{ data: SavedJob[] | null; error: Error | null }>);
 
       if (error) throw error;
       return data || [];
@@ -38,13 +73,13 @@ export const useSavedJobs = () => {
     mutationFn: async ({ jobId, notes }: { jobId: string; notes?: string }) => {
       if (!candidateProfile?.id) throw new Error('No candidate profile');
 
-      const { error } = await supabase
-        .from('candidate_saved_jobs' as any)
+      const { error } = await (supabase
+        .from('candidate_saved_jobs' as 'applications')
         .insert({
           candidate_profile_id: candidateProfile.id,
           job_listing_id: jobId,
           notes,
-        });
+        } as never) as unknown as Promise<{ error: Error | null }>);
 
       if (error) throw error;
     },
@@ -55,7 +90,7 @@ export const useSavedJobs = () => {
         description: 'Job has been added to your saved list.',
       });
     },
-    onError: (error: any) => {
+    onError: (error: PostgresError) => {
       if (error.code === '23505') {
         toast({
           title: 'Already saved',
@@ -74,10 +109,10 @@ export const useSavedJobs = () => {
 
   const unsaveJob = useMutation({
     mutationFn: async (savedJobId: string) => {
-      const { error } = await supabase
-        .from('candidate_saved_jobs' as any)
+      const { error } = await (supabase
+        .from('candidate_saved_jobs' as 'applications')
         .delete()
-        .eq('id', savedJobId);
+        .eq('id', savedJobId) as unknown as Promise<{ error: Error | null }>);
 
       if (error) throw error;
     },
@@ -90,8 +125,8 @@ export const useSavedJobs = () => {
     },
   });
 
-  const isJobSaved = (jobId: string) => {
-    return savedJobs?.some((saved: any) => saved.job_listing_id === jobId);
+  const isJobSaved = (jobId: string): boolean => {
+    return savedJobs?.some((saved) => saved.job_listing_id === jobId) ?? false;
   };
 
   return {

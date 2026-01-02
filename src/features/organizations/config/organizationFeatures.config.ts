@@ -12,8 +12,7 @@ export const ORGANIZATION_FEATURES: Record<FeatureKey, FeatureConfig> = {
     label: 'Meta Integration',
     description: 'Enable Meta/Facebook advertising integration for job postings',
     category: 'Advertising',
-    premium: true,
-    requiresSubscription: true,
+    premium: false,
   },
   openai_access: {
     key: 'openai_access',

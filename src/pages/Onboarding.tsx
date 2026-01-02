@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowRight, Building2 } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle } from 'lucide-react';
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -43,6 +43,7 @@ const Onboarding = () => {
         description: 'Your organization has been set up successfully.',
       });
 
+      // Go to success step then redirect
       setStep(2);
     } catch (error: any) {
       toast({
@@ -55,8 +56,8 @@ const Onboarding = () => {
     }
   };
 
-  const handleSkipToPricing = () => {
-    navigate('/pricing');
+  const handleContinueToDashboard = () => {
+    navigate('/dashboard');
   };
 
   if (step === 1) {
@@ -111,22 +112,25 @@ const Onboarding = () => {
     );
   }
 
-  // Step 2: Choose pricing
+  // Step 2: Success - go to dashboard
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Choose Your Plan</CardTitle>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+            <CheckCircle className="h-6 w-6 text-green-600" />
+          </div>
+          <CardTitle className="text-2xl">You're All Set!</CardTitle>
           <CardDescription>
-            Select a pricing plan to activate your organization and start recruiting
+            Your organization has been created with full access to all features
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-center text-sm text-muted-foreground">
-            You'll be redirected to our pricing page to select and activate your subscription.
+            Start by exploring your dashboard to create job listings, manage applications, and configure integrations.
           </p>
-          <Button onClick={handleSkipToPricing} className="w-full">
-            View Pricing Plans
+          <Button onClick={handleContinueToDashboard} className="w-full">
+            Go to Dashboard
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>

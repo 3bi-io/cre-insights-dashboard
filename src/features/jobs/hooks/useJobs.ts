@@ -1,4 +1,7 @@
-
+/**
+ * useJobs hook - consolidated into the jobs feature module
+ * Provides job listings with search, filtering, and URL-based parameters
+ */
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, useLocation } from 'react-router-dom';
@@ -72,12 +75,11 @@ export const useJobs = () => {
       }
       
       console.log('Job listings fetched successfully:', data?.length || 0);
-      console.log('Sample job listing:', data?.[0]);
       return data || [];
     },
     retry: 2,
     retryDelay: 1000,
-    enabled: showAllOrganizations || !!organization?.id, // Run for super admins or when organization is available
+    enabled: showAllOrganizations || !!organization?.id,
   });
 
   const filteredJobs = jobListings?.filter(job => {
@@ -87,7 +89,6 @@ export const useJobs = () => {
       job.title?.toLowerCase().includes(searchLower) ||
       job.job_title?.toLowerCase().includes(searchLower) ||
       job.job_summary?.toLowerCase().includes(searchLower) ||
-      
       job.location?.toLowerCase().includes(searchLower) ||
       job.city?.toLowerCase().includes(searchLower) ||
       job.state?.toLowerCase().includes(searchLower) ||
