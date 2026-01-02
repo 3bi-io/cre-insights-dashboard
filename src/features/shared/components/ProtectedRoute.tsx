@@ -4,12 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireSubscription?: boolean; // Kept for backwards compatibility, but ignored
 }
 
 /**
  * ProtectedRoute - ensures user is authenticated
- * Subscription checks have been removed from the pricing model
+ * Simply checks authentication - all features are available to authenticated users
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading: authLoading, userRole } = useAuth();

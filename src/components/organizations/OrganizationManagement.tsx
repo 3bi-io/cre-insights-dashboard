@@ -240,9 +240,7 @@ const OrganizationManagement = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <Badge variant={org.subscription_status === 'active' ? 'default' : 'secondary'}>
-                          {org.subscription_status}
-                        </Badge>
+                        <Badge variant="default">Active</Badge>
                       </TableCell>
                       <TableCell>{new Date(org.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">

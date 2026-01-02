@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit } from 'lucide-react';
 import { useSuperAdminOrganizations } from '@/hooks/useSuperAdminOrganizations';
 
@@ -11,7 +10,6 @@ interface Organization {
   id: string;
   name: string;
   slug: string;
-  subscription_status: string;
   settings?: Record<string, unknown>;
 }
 
@@ -25,7 +23,6 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
   const [formData, setFormData] = useState({
     name: organization.name,
     slug: organization.slug,
-    subscription_status: organization.subscription_status,
   });
 
   const { updateOrganization, isUpdating } = useSuperAdminOrganizations();
@@ -35,7 +32,6 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
       setFormData({
         name: organization.name,
         slug: organization.slug,
-        subscription_status: organization.subscription_status,
       });
     }
   }, [open, organization]);
@@ -55,10 +51,6 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
     
     if (formData.slug !== organization.slug) {
       updates.slug = formData.slug.trim().toLowerCase().replace(/\s+/g, '-');
-    }
-    
-    if (formData.subscription_status !== organization.subscription_status) {
-      updates.subscription_status = formData.subscription_status;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -108,24 +100,6 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
             <p className="text-xs text-muted-foreground">
               Used in URLs. Only lowercase letters, numbers, and hyphens.
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Subscription Status</Label>
-            <Select
-              value={formData.subscription_status}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, subscription_status: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                <SelectItem value="trial">Trial</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

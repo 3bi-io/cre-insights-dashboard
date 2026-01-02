@@ -583,7 +583,7 @@ const Support = () => {
                 <strong>Live Chat:</strong> Available during business hours (Mon-Fri, 9am-5pm EST)
               </p>
               <p>
-                <strong>Phone Support:</strong> Premium plan members can call for immediate assistance
+                <strong>Phone Support:</strong> Available for immediate assistance
               </p>
             </div>
           </CardContent>
