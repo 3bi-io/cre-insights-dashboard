@@ -46,14 +46,14 @@ const MyApplicationsPage = () => {
       </div>
 
       <Tabs value={statusFilter} onValueChange={setStatusFilter} className="mb-6">
-        <TabsList>
-          <TabsTrigger value="all">
+        <TabsList className="flex w-full overflow-x-auto scrollbar-hide">
+          <TabsTrigger value="all" className="flex-1 min-w-fit">
             All ({statusCounts.all})
           </TabsTrigger>
-          <TabsTrigger value="active">
+          <TabsTrigger value="active" className="flex-1 min-w-fit">
             Active ({statusCounts.active})
           </TabsTrigger>
-          <TabsTrigger value="completed">
+          <TabsTrigger value="completed" className="flex-1 min-w-fit">
             Completed ({statusCounts.completed})
           </TabsTrigger>
         </TabsList>

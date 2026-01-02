@@ -450,6 +450,25 @@
            pr-[max(1rem,env(safe-area-inset-right))];
   }
 
+  /* Safe area utilities for bottom navigation */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .mobile-nav-padding {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0));
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Performance optimizations */
   .gpu-accelerated {
     @apply transform translate-z-0 will-change-transform;
@@ -467,6 +486,17 @@
 
   .img-lazy {
     @apply bg-muted animate-pulse;
+  }
+
+  /* Touch-friendly spacing for lists */
+  .touch-list > * {
+    @apply min-h-[48px] flex items-center;
+  }
+
+  /* Responsive table container */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

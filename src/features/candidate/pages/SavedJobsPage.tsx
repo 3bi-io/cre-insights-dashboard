@@ -73,14 +73,14 @@ const SavedJobsPage = () => {
 
       {/* Sort controls */}
       {savedJobs && savedJobs.length > 0 && (
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <p className="text-sm text-muted-foreground">
             {savedJobs.length} saved {savedJobs.length === 1 ? 'job' : 'jobs'}
           </p>
-          <div className="flex items-center gap-2">
-            <SortAsc className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <SortAsc className="h-4 w-4 text-muted-foreground hidden sm:block" />
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-full sm:w-[160px] min-h-[44px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
