@@ -3,14 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, DollarSign, Building2, Clock, Mic, MicOff, Loader2 } from 'lucide-react';
+import { Search, Building2, Loader2 } from 'lucide-react';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import { VoiceConnectionStatus } from '@/features/elevenlabs';
+import { VoiceApplicationPanel } from '@/features/elevenlabs';
 import { usePaginatedPublicJobs } from '@/hooks/usePaginatedPublicJobs';
 
 const JobsPage = () => {
@@ -24,6 +23,8 @@ const JobsPage = () => {
     isConnected,
     selectedJob,
     isSpeaking,
+    transcripts,
+    pendingUserTranscript,
     startVoiceApplication,
     endVoiceApplication,
   } = useElevenLabsVoice();
@@ -285,35 +286,15 @@ const JobsPage = () => {
           </>
         )}
         
-        {/* Voice Application Status */}
-        {isConnected && selectedJob && (
-          <Card className="fixed bottom-8 right-8 w-80 shadow-xl border-2">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Voice Application</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={endVoiceApplication}
-                >
-                  <MicOff className="w-4 h-4" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <div className="text-sm font-medium">{selectedJob.jobTitle}</div>
-                  <div className="text-xs text-muted-foreground">{selectedJob.company}</div>
-                </div>
-                <VoiceConnectionStatus 
-                  isConnected={isConnected}
-                  isSpeaking={isSpeaking}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Voice Application Panel with Transcripts */}
+        <VoiceApplicationPanel
+          isConnected={isConnected}
+          isSpeaking={isSpeaking}
+          selectedJob={selectedJob}
+          transcripts={transcripts}
+          pendingUserTranscript={pendingUserTranscript}
+          onEnd={endVoiceApplication}
+        />
       </div>
     </div>
   );
