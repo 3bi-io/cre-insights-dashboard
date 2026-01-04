@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Building2, Loader2 } from 'lucide-react';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
+import { MobileFilterSheet } from '@/components/public/MobileFilterSheet';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { VoiceApplicationPanel } from '@/features/elevenlabs';
 import { usePaginatedPublicJobs } from '@/hooks/usePaginatedPublicJobs';
@@ -137,12 +138,12 @@ const JobsPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <Skeleton className="h-10 w-64 mb-4" />
-            <Skeleton className="h-6 w-96" />
+        <div className="container mx-auto px-4 py-6 lg:py-8">
+          <div className="mb-6 lg:mb-8">
+            <Skeleton className="h-8 lg:h-10 w-48 lg:w-64 mb-3 lg:mb-4" />
+            <Skeleton className="h-5 lg:h-6 w-64 lg:w-96" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i}>
                 <CardHeader>
@@ -164,76 +165,93 @@ const JobsPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 lg:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4">
             Find Your Next Opportunity
           </h1>
-          <p className="text-xl text-muted-foreground mb-6">
-            Discover job openings from top companies across all industries
+          <p className="text-base lg:text-xl text-muted-foreground mb-4 lg:mb-6">
+            Discover job openings from top companies
           </p>
           
-          {/* Search and Filters */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Search jobs by title, company, or keywords..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          {/* Mobile Filter Sheet */}
+          <MobileFilterSheet
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            locationFilter={locationFilter}
+            setLocationFilter={setLocationFilter}
+            clientFilter={clientFilter}
+            setClientFilter={setClientFilter}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            locations={locations}
+            clients={clients}
+            totalCount={totalCount}
+          />
+
+          {/* Desktop Filters */}
+          <div className="hidden lg:block">
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search jobs by title, company, or keywords..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Select value={clientFilter || "all"} onValueChange={(val) => setClientFilter(val === "all" ? "" : val)}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="All Companies" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-md z-50">
+                    <SelectItem value="all">All Companies</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <Select value={clientFilter || "all"} onValueChange={(val) => setClientFilter(val === "all" ? "" : val)}>
-                <SelectTrigger className="w-full sm:w-56">
-                  <SelectValue placeholder="All Companies" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-md z-50">
-                  <SelectItem value="all">All Companies</SelectItem>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Select value={locationFilter || "all"} onValueChange={(val) => setLocationFilter(val === "all" ? "" : val)}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Locations" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-md z-50">
-                  <SelectItem value="all">All Locations</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-4">
+                <Select value={locationFilter || "all"} onValueChange={(val) => setLocationFilter(val === "all" ? "" : val)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All Locations" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-md z-50">
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {locations.map((location) => (
+                      <SelectItem key={location} value={location}>
+                        {location}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover border shadow-md z-50">
-                  <SelectItem value="recent">Most Recent</SelectItem>
-                  <SelectItem value="title">Title (A-Z)</SelectItem>
-                  <SelectItem value="salary-high">Salary (High to Low)</SelectItem>
-                  <SelectItem value="salary-low">Salary (Low to High)</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-md z-50">
+                    <SelectItem value="recent">Most Recent</SelectItem>
+                    <SelectItem value="title">Title (A-Z)</SelectItem>
+                    <SelectItem value="salary-high">Salary (High to Low)</SelectItem>
+                    <SelectItem value="salary-low">Salary (Low to High)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* Results Count */}
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">
+          <div className="flex items-center justify-between mt-4 lg:mt-0">
+            <p className="text-sm lg:text-base text-muted-foreground">
               Showing {filteredJobs.length} of {totalCount} job{totalCount !== 1 ? 's' : ''}
             </p>
           </div>
@@ -243,16 +261,16 @@ const JobsPage = () => {
         {filteredJobs.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <Building2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-xl font-semibold mb-2">No Jobs Found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search criteria or check back later for new opportunities.
+              <Building2 className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg lg:text-xl font-semibold mb-2">No Jobs Found</h3>
+              <p className="text-sm lg:text-base text-muted-foreground">
+                Try adjusting your search criteria or check back later.
               </p>
             </CardContent>
           </Card>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
               {filteredJobs.map((job) => (
                 <PublicJobCard 
                   key={job.id} 
@@ -265,17 +283,18 @@ const JobsPage = () => {
             
             {/* Load More Button */}
             {hasMore && (
-              <div className="flex justify-center mt-8">
+              <div className="flex justify-center mt-6 lg:mt-8 pb-6">
                 <Button
                   onClick={loadMore}
                   disabled={isFetchingMore}
                   variant="outline"
                   size="lg"
+                  className="w-full sm:w-auto min-h-[48px]"
                 >
                   {isFetchingMore ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Loading more jobs...
+                      Loading...
                     </>
                   ) : (
                     <>Load More Jobs</>

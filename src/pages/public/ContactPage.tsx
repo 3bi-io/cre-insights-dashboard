@@ -1,6 +1,7 @@
 /**
  * Contact Page Component
  * Contact form with functional submission and company information
+ * Mobile-first with accordion FAQ section
  */
 
 import React, { useState } from 'react';
@@ -9,13 +10,20 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { 
   MessageSquare,
   Users,
   Headphones,
   Send,
   Loader2,
-  CheckCircle
+  CheckCircle,
+  HelpCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -167,7 +175,7 @@ const ContactPage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-12 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
@@ -177,56 +185,56 @@ const ContactPage = () => {
         <div className="absolute bottom-20 right-10 md:right-20 w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse delay-1000"></div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 md:mb-6">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-3 md:mb-6">
             Get in
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Touch</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
-            Ready to transform your hiring process? We're here to help you get started 
-            and answer any questions you might have.
+          <p className="text-base md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
+            Ready to transform your hiring process? We're here to help you get started.
           </p>
         </div>
       </section>
 
-      {/* Contact Methods */}
-      <section className="py-12 md:py-20">
+      {/* Contact Methods - Click entire card on mobile */}
+      <section className="py-10 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12 md:mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-10 md:mb-16">
             {contactMethods.map((method, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow text-center">
-                <CardContent className="p-6 md:p-8">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <method.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">
-                    {method.title}
-                  </h3>
-                  <p className="text-muted-foreground mb-4 text-sm md:text-base">
-                    {method.description}
-                  </p>
-                  <a href={`mailto:${method.contact}`} className="text-primary font-medium mb-4 block hover:underline">
-                    {method.contact}
-                  </a>
-                  <a href={`mailto:${method.contact}`}>
-                    <Button className="bg-primary hover:bg-primary/90 min-h-[44px]">
-                      {method.action}
-                    </Button>
-                  </a>
-                </CardContent>
-              </Card>
+              <a 
+                key={index} 
+                href={`mailto:${method.contact}`}
+                className="block"
+              >
+                <Card className="hover:shadow-lg transition-all hover:border-primary/50 h-full cursor-pointer active:scale-[0.98]">
+                  <CardContent className="p-5 md:p-8 text-center">
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4">
+                      <method.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg md:text-xl font-bold text-foreground mb-1 md:mb-2">
+                      {method.title}
+                    </h3>
+                    <p className="text-muted-foreground mb-2 md:mb-4 text-sm md:text-base">
+                      {method.description}
+                    </p>
+                    <span className="text-primary font-medium text-sm md:text-base">
+                      {method.contact}
+                    </span>
+                  </CardContent>
+                </Card>
+              </a>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Contact Form & Info */}
-      <section className="py-12 md:py-20 bg-muted/30">
+      {/* Contact Form & FAQ */}
+      <section className="py-10 md:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
             {/* Contact Form */}
             <div>
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-4">
                   <CardTitle className="text-xl md:text-2xl font-bold">Send us a message</CardTitle>
                   <p className="text-muted-foreground text-sm md:text-base">
                     Fill out the form below and we'll get back to you within 24 hours.
@@ -234,21 +242,21 @@ const ContactPage = () => {
                 </CardHeader>
                 <CardContent>
                   {isSubmitted ? (
-                    <div className="text-center py-12">
-                      <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Message Sent!</h3>
-                      <p className="text-muted-foreground mb-6">
+                    <div className="text-center py-8 md:py-12">
+                      <CheckCircle className="h-14 w-14 md:h-16 md:w-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">Message Sent!</h3>
+                      <p className="text-muted-foreground mb-6 text-sm md:text-base">
                         Thank you for reaching out. We'll get back to you within 24 hours.
                       </p>
-                      <Button onClick={() => setIsSubmitted(false)} variant="outline">
+                      <Button onClick={() => setIsSubmitted(false)} variant="outline" className="min-h-[44px]">
                         Send Another Message
                       </Button>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-2 block">
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">
                             First Name *
                           </label>
                           <Input
@@ -256,13 +264,14 @@ const ContactPage = () => {
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
                             className={`min-h-[44px] ${errors.firstName ? 'border-destructive' : ''}`}
                             required
+                            autoComplete="given-name"
                           />
                           {errors.firstName && (
                             <p className="text-destructive text-xs mt-1">{errors.firstName}</p>
                           )}
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-2 block">
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">
                             Last Name *
                           </label>
                           <Input
@@ -270,6 +279,7 @@ const ContactPage = () => {
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
                             className={`min-h-[44px] ${errors.lastName ? 'border-destructive' : ''}`}
                             required
+                            autoComplete="family-name"
                           />
                           {errors.lastName && (
                             <p className="text-destructive text-xs mt-1">{errors.lastName}</p>
@@ -278,7 +288,7 @@ const ContactPage = () => {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Email Address *
                         </label>
                         <Input
@@ -287,15 +297,17 @@ const ContactPage = () => {
                           onChange={(e) => handleInputChange('email', e.target.value)}
                           className={`min-h-[44px] ${errors.email ? 'border-destructive' : ''}`}
                           required
+                          autoComplete="email"
+                          inputMode="email"
                         />
                         {errors.email && (
                           <p className="text-destructive text-xs mt-1">{errors.email}</p>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-2 block">
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">
                             Company *
                           </label>
                           <Input
@@ -303,25 +315,27 @@ const ContactPage = () => {
                             onChange={(e) => handleInputChange('company', e.target.value)}
                             className={`min-h-[44px] ${errors.company ? 'border-destructive' : ''}`}
                             required
+                            autoComplete="organization"
                           />
                           {errors.company && (
                             <p className="text-destructive text-xs mt-1">{errors.company}</p>
                           )}
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-2 block">
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">
                             Job Title
                           </label>
                           <Input
                             value={formData.jobTitle}
                             onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                             className="min-h-[44px]"
+                            autoComplete="organization-title"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Company Size
                         </label>
                         <Select onValueChange={(value) => handleInputChange('companySize', value)}>
@@ -339,7 +353,7 @@ const ContactPage = () => {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Subject *
                         </label>
                         <Select onValueChange={(value) => handleInputChange('subject', value)}>
@@ -362,14 +376,14 @@ const ContactPage = () => {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-foreground mb-2 block">
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Message *
                         </label>
                         <Textarea
                           value={formData.message}
                           onChange={(e) => handleInputChange('message', e.target.value)}
                           placeholder="Tell us more about your requirements..."
-                          className={`min-h-[120px] ${errors.message ? 'border-destructive' : ''}`}
+                          className={`min-h-[100px] md:min-h-[120px] ${errors.message ? 'border-destructive' : ''}`}
                           required
                         />
                         {errors.message && (
@@ -379,7 +393,7 @@ const ContactPage = () => {
 
                       <Button 
                         type="submit" 
-                        className="w-full bg-primary hover:bg-primary/90 min-h-[48px]"
+                        className="w-full bg-primary hover:bg-primary/90 min-h-[48px] text-base"
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
@@ -400,25 +414,54 @@ const ContactPage = () => {
               </Card>
             </div>
 
-            {/* FAQ Section */}
+            {/* FAQ Section with Accordion */}
             <div>
-              <h3 className="text-xl md:text-2xl font-bold text-foreground mb-6">
-                Frequently Asked Questions
-              </h3>
-              <div className="space-y-4">
-                {faqs.map((faq, index) => (
-                  <Card key={index}>
-                    <CardContent className="p-4 md:p-6">
-                      <h4 className="font-semibold text-foreground mb-2">
-                        {faq.question}
-                      </h4>
-                      <p className="text-muted-foreground text-sm">
-                        {faq.answer}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="flex items-center gap-2 mb-4 md:mb-6">
+                <HelpCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  Frequently Asked Questions
+                </h3>
               </div>
+              <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base">
+                Find quick answers to common questions about our platform.
+              </p>
+              
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqs.map((faq, index) => (
+                  <AccordionItem 
+                    key={index} 
+                    value={`faq-${index}`}
+                    className="border rounded-lg px-4 bg-background"
+                  >
+                    <AccordionTrigger className="text-left py-4 hover:no-underline">
+                      <span className="font-semibold text-foreground text-sm md:text-base pr-4">
+                        {faq.question}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground pb-4 text-sm md:text-base">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+
+              {/* Additional Help Card */}
+              <Card className="mt-6 bg-primary/5 border-primary/20">
+                <CardContent className="p-4 md:p-6">
+                  <h4 className="font-semibold text-foreground mb-2 text-sm md:text-base">
+                    Still have questions?
+                  </h4>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    Can't find what you're looking for? Our support team is happy to help.
+                  </p>
+                  <a href="mailto:support@ats.me">
+                    <Button variant="outline" className="w-full sm:w-auto min-h-[44px]">
+                      <Headphones className="mr-2 h-4 w-4" />
+                      Contact Support
+                    </Button>
+                  </a>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

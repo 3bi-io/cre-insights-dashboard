@@ -13,6 +13,7 @@ import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
+import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { VoiceApplicationPanel } from '@/features/elevenlabs';
 
@@ -34,16 +35,16 @@ const JobDetailsPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <Skeleton className="h-6 w-32 mb-6" />
+        <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
+          <Skeleton className="h-5 w-32 mb-4 lg:mb-6" />
           <Card>
-            <CardContent className="p-8">
-              <Skeleton className="h-10 w-3/4 mb-4" />
-              <Skeleton className="h-6 w-1/2 mb-6" />
+            <CardContent className="p-6 lg:p-8">
+              <Skeleton className="h-8 lg:h-10 w-3/4 mb-3 lg:mb-4" />
+              <Skeleton className="h-5 lg:h-6 w-1/2 mb-4 lg:mb-6" />
               <Skeleton className="h-4 w-full mb-2" />
               <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-2/3 mb-8" />
-              <Skeleton className="h-12 w-48" />
+              <Skeleton className="h-4 w-2/3 mb-6 lg:mb-8" />
+              <Skeleton className="h-12 w-full lg:w-48" />
             </CardContent>
           </Card>
         </div>
@@ -59,13 +60,13 @@ const JobDetailsPage: React.FC = () => {
           description="The job listing you're looking for is no longer available."
           noindex
         />
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
           <Card>
-            <CardContent className="p-8 text-center">
-              <Building2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-              <h1 className="text-2xl font-bold mb-2">Job Not Found</h1>
-              <p className="text-muted-foreground mb-6">
-                This job listing is no longer available or may have been removed.
+            <CardContent className="p-6 lg:p-8 text-center">
+              <Building2 className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <h1 className="text-xl lg:text-2xl font-bold mb-2">Job Not Found</h1>
+              <p className="text-sm lg:text-base text-muted-foreground mb-6">
+                This job listing is no longer available.
               </p>
               <Button onClick={() => navigate('/jobs')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -151,7 +152,7 @@ const JobDetailsPage: React.FC = () => {
   ]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24 lg:pb-0">
       <SEO
         title={`${displayTitle} at ${companyName}`}
         description={displayDescription?.substring(0, 160) || `Apply for ${displayTitle} at ${companyName}. ${displayLocation ? `Location: ${displayLocation}.` : ''}`}
@@ -163,23 +164,23 @@ const JobDetailsPage: React.FC = () => {
       />
       <StructuredData data={[jobPostingSchema, breadcrumbSchema]} />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-          <span>/</span>
-          <Link to="/jobs" className="hover:text-foreground transition-colors">Jobs</Link>
-          <span>/</span>
-          <span className="text-foreground line-clamp-1">{displayTitle}</span>
+      <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
+        {/* Breadcrumb - Horizontally scrollable on mobile */}
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 lg:mb-6 overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
+          <Link to="/" className="hover:text-foreground transition-colors shrink-0">Home</Link>
+          <span className="shrink-0">/</span>
+          <Link to="/jobs" className="hover:text-foreground transition-colors shrink-0">Jobs</Link>
+          <span className="shrink-0">/</span>
+          <span className="text-foreground truncate max-w-[200px] lg:max-w-none">{displayTitle}</span>
         </nav>
 
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Main Job Card */}
           <Card>
-            <CardContent className="p-6 md:p-8">
+            <CardContent className="p-4 sm:p-6 lg:p-8">
               {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-start gap-4 mb-6">
-                <Avatar className="h-16 w-16 border">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4 lg:mb-6">
+                <Avatar className="h-14 w-14 lg:h-16 lg:w-16 border shrink-0">
                   {job.clients?.logo_url ? (
                     <AvatarImage 
                       src={job.clients.logo_url} 
@@ -188,72 +189,83 @@ const JobDetailsPage: React.FC = () => {
                     />
                   ) : null}
                   <AvatarFallback className="bg-muted">
-                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                    <Building2 className="h-6 w-6 lg:h-8 lg:w-8 text-muted-foreground" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <h1 className="text-2xl md:text-3xl font-bold mb-2">{displayTitle}</h1>
-                  <p className="text-lg text-muted-foreground mb-3">{companyName}</p>
-                  <div className="flex flex-wrap gap-2">
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 lg:mb-2 leading-tight">{displayTitle}</h1>
+                  <p className="text-base lg:text-lg text-muted-foreground mb-2 lg:mb-3">{companyName}</p>
+                  {/* Horizontally scrollable badges on mobile */}
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
                     {job.job_categories?.name && (
-                      <Badge variant="secondary">{job.job_categories.name}</Badge>
+                      <Badge variant="secondary" className="shrink-0">{job.job_categories.name}</Badge>
                     )}
                     {job.job_type && (
-                      <Badge variant="outline">{job.job_type}</Badge>
+                      <Badge variant="outline" className="shrink-0">{job.job_type}</Badge>
                     )}
                     {job.experience_level && (
-                      <Badge variant="outline">{job.experience_level}</Badge>
+                      <Badge variant="outline" className="shrink-0">{job.experience_level}</Badge>
                     )}
                   </div>
                 </div>
-                <Button variant="outline" size="icon" onClick={handleShare}>
+                <Button variant="outline" size="icon" onClick={handleShare} className="shrink-0 hidden sm:flex">
                   <Share2 className="h-4 w-4" />
                 </Button>
               </div>
 
-              {/* Job Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
+              {/* Job Details - Grid with better mobile spacing */}
+              <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6 p-3 lg:p-4 bg-muted/50 rounded-lg">
                 {displayLocation && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Location</p>
-                      <p className="font-medium">{displayLocation}</p>
+                  <div className="flex items-start gap-2 lg:gap-3">
+                    <MapPin className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs lg:text-sm text-muted-foreground">Location</p>
+                      <p className="font-medium text-sm lg:text-base truncate">{displayLocation}</p>
                     </div>
                   </div>
                 )}
                 {salary && (
-                  <div className="flex items-center gap-3">
-                    <DollarSign className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Salary</p>
-                      <p className="font-medium">{salary}</p>
+                  <div className="flex items-start gap-2 lg:gap-3">
+                    <DollarSign className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs lg:text-sm text-muted-foreground">Salary</p>
+                      <p className="font-medium text-sm lg:text-base truncate">{salary}</p>
                     </div>
                   </div>
                 )}
                 {job.job_type && (
-                  <div className="flex items-center gap-3">
-                    <Briefcase className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Job Type</p>
-                      <p className="font-medium">{job.job_type}</p>
+                  <div className="flex items-start gap-2 lg:gap-3">
+                    <Briefcase className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs lg:text-sm text-muted-foreground">Job Type</p>
+                      <p className="font-medium text-sm lg:text-base">{job.job_type}</p>
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Posted</p>
-                    <p className="font-medium">{new Date(job.created_at).toLocaleDateString()}</p>
+                <div className="flex items-start gap-2 lg:gap-3">
+                  <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs lg:text-sm text-muted-foreground">Posted</p>
+                    <p className="font-medium text-sm lg:text-base">{new Date(job.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
 
+              {/* Mobile Share Button */}
+              <Button 
+                variant="outline" 
+                className="w-full mb-4 sm:hidden" 
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share Job
+              </Button>
+
               {/* Route Info */}
               {job.dest_city && job.dest_state && (
-                <div className="mb-6 p-4 border rounded-lg">
-                  <h3 className="font-semibold mb-2">Route Information</h3>
-                  <p className="text-muted-foreground">
+                <div className="mb-4 lg:mb-6 p-3 lg:p-4 border rounded-lg">
+                  <h3 className="font-semibold text-sm lg:text-base mb-1 lg:mb-2">Route Information</h3>
+                  <p className="text-sm lg:text-base text-muted-foreground">
                     <span className="font-medium text-foreground">Destination:</span> {job.dest_city}, {job.dest_state}
                   </p>
                 </div>
@@ -261,16 +273,16 @@ const JobDetailsPage: React.FC = () => {
 
               {/* Description */}
               {displayDescription && (
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-                  <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap">
+                <div className="mb-6 lg:mb-8">
+                  <h2 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4">Job Description</h2>
+                  <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap text-sm lg:text-base">
                     {displayDescription}
                   </div>
                 </div>
               )}
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+              {/* Desktop CTA Buttons */}
+              <div className="hidden lg:flex gap-3 pt-4 border-t">
                 <Link to={applyUrl} className="flex-1">
                   <Button className="w-full" size="lg">
                     Apply Now
@@ -300,15 +312,23 @@ const JobDetailsPage: React.FC = () => {
           />
 
           {/* Back to Jobs */}
-          <div className="text-center">
+          <div className="text-center pb-4">
             <Link to="/jobs">
-              <Button variant="ghost">
+              <Button variant="ghost" className="min-h-[44px]">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to All Jobs
               </Button>
             </Link>
           </div>
         </div>
+
+        {/* Sticky Mobile CTA */}
+        <StickyApplyCTA
+          applyUrl={applyUrl}
+          onVoiceApply={handleVoiceApply}
+          isVoiceConnected={isConnected}
+          jobTitle={displayTitle}
+        />
 
         {/* Voice Application Panel with Transcripts */}
         <VoiceApplicationPanel
