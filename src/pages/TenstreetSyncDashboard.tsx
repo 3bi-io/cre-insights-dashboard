@@ -15,10 +15,13 @@ import {
   Users,
   Activity,
   Loader2,
-  Send
+  Send,
+  Briefcase,
+  Calendar
 } from 'lucide-react';
 import { formatDistanceToNow, format, subDays } from 'date-fns';
 import { toast } from 'sonner';
+import { ResponsiveTableWrapper, ResponsiveCardWrapper } from '@/components/ui/responsive-data-display';
 
 // CR England Organization ID
 const CR_ENGLAND_ORG_ID = '682af95c-e95a-4e21-8753-ddef7f8c1749';
@@ -404,65 +407,125 @@ const TenstreetSyncDashboard = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Applicant</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Job</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Applied</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Sync Status</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Last Sync</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications?.slice(0, 20).map((app) => (
-                  <tr key={app.id} className="border-b hover:bg-muted/50 transition-colors">
-                    <td className="py-3 px-2">
-                      <span className="font-medium">
+          {/* Mobile Card View */}
+          <ResponsiveCardWrapper className="space-y-3">
+            {applications?.slice(0, 20).map((app) => (
+              <Card key={app.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-foreground">
                         {app.first_name} {app.last_name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground truncate">{app.job_title}</p>
+                    </div>
+                    {getSyncStatusBadge(app.tenstreet_sync_status)}
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>
+                        {app.created_at ? format(new Date(app.created_at), 'MMM d, h:mm a') : 'N/A'}
                       </span>
-                    </td>
-                    <td className="py-3 px-2 text-sm text-muted-foreground max-w-[200px] truncate">
-                      {app.job_title}
-                    </td>
-                    <td className="py-3 px-2 text-sm">
-                      {app.created_at ? format(new Date(app.created_at), 'MMM d, h:mm a') : 'N/A'}
-                    </td>
-                    <td className="py-3 px-2">
-                      {getSyncStatusBadge(app.tenstreet_sync_status)}
-                    </td>
-                    <td className="py-3 px-2 text-sm text-muted-foreground">
-                      {app.tenstreet_last_sync 
-                        ? formatDistanceToNow(new Date(app.tenstreet_last_sync), { addSuffix: true })
-                        : 'Never'
-                      }
-                    </td>
-                    <td className="py-3 px-2">
-                      {app.tenstreet_sync_status !== 'synced' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleManualSync(app.id)}
-                          disabled={syncMutation.isPending}
-                        >
-                          {syncMutation.isPending ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <>
-                              <Send className="h-3 w-3 mr-1" />
-                              Sync
-                            </>
-                          )}
-                        </Button>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>
+                        {app.tenstreet_last_sync 
+                          ? formatDistanceToNow(new Date(app.tenstreet_last_sync), { addSuffix: true })
+                          : 'Never synced'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {app.tenstreet_sync_status !== 'synced' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleManualSync(app.id)}
+                      disabled={syncMutation.isPending}
+                      className="w-full h-10"
+                    >
+                      {syncMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Sync to Tenstreet
+                        </>
                       )}
-                    </td>
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </ResponsiveCardWrapper>
+
+          {/* Desktop Table View */}
+          <ResponsiveTableWrapper>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Applicant</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Job</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Applied</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Sync Status</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Last Sync</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {applications?.slice(0, 20).map((app) => (
+                    <tr key={app.id} className="border-b hover:bg-muted/50 transition-colors">
+                      <td className="py-3 px-2">
+                        <span className="font-medium">
+                          {app.first_name} {app.last_name}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-sm text-muted-foreground max-w-[200px] truncate">
+                        {app.job_title}
+                      </td>
+                      <td className="py-3 px-2 text-sm">
+                        {app.created_at ? format(new Date(app.created_at), 'MMM d, h:mm a') : 'N/A'}
+                      </td>
+                      <td className="py-3 px-2">
+                        {getSyncStatusBadge(app.tenstreet_sync_status)}
+                      </td>
+                      <td className="py-3 px-2 text-sm text-muted-foreground">
+                        {app.tenstreet_last_sync 
+                          ? formatDistanceToNow(new Date(app.tenstreet_last_sync), { addSuffix: true })
+                          : 'Never'
+                        }
+                      </td>
+                      <td className="py-3 px-2">
+                        {app.tenstreet_sync_status !== 'synced' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleManualSync(app.id)}
+                            disabled={syncMutation.isPending}
+                            className="h-9"
+                          >
+                            {syncMutation.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <>
+                                <Send className="h-3 w-3 mr-1" />
+                                Sync
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ResponsiveTableWrapper>
           
           {applications && applications.length > 20 && (
             <div className="mt-4 text-center text-sm text-muted-foreground">
