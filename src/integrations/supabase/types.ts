@@ -5873,64 +5873,52 @@ export type Database = {
     Views: {
       applications_basic: {
         Row: {
-          applicant_email: string | null
           applied_at: string | null
-          cdl: string | null
-          cdl_class: string | null
-          cdl_state: string | null
+          city: string | null
           created_at: string | null
-          education_level: string | null
-          exp: string | null
           first_name: string | null
+          full_name: string | null
           id: string | null
           job_listing_id: string | null
           last_name: string | null
-          notes: string | null
           recruiter_id: string | null
           source: string | null
+          state: string | null
           status: string | null
           updated_at: string | null
-          work_authorization: string | null
+          zip: string | null
         }
         Insert: {
-          applicant_email?: string | null
           applied_at?: string | null
-          cdl?: string | null
-          cdl_class?: string | null
-          cdl_state?: string | null
+          city?: string | null
           created_at?: string | null
-          education_level?: string | null
-          exp?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
-          notes?: string | null
           recruiter_id?: string | null
           source?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
-          work_authorization?: string | null
+          zip?: string | null
         }
         Update: {
-          applicant_email?: string | null
           applied_at?: string | null
-          cdl?: string | null
-          cdl_class?: string | null
-          cdl_state?: string | null
+          city?: string | null
           created_at?: string | null
-          education_level?: string | null
-          exp?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
-          notes?: string | null
           recruiter_id?: string | null
           source?: string | null
+          state?: string | null
           status?: string | null
           updated_at?: string | null
-          work_authorization?: string | null
+          zip?: string | null
         }
         Relationships: [
           {
@@ -5954,75 +5942,51 @@ export type Database = {
           address_1: string | null
           address_2: string | null
           applicant_email: string | null
-          applied_at: string | null
-          cdl: string | null
           city: string | null
-          created_at: string | null
-          education_level: string | null
-          exp: string | null
+          country: string | null
           first_name: string | null
+          full_name: string | null
           id: string | null
           job_listing_id: string | null
           last_name: string | null
-          notes: string | null
           phone: string | null
-          recruiter_id: string | null
+          preferred_contact_method: string | null
           secondary_phone: string | null
-          source: string | null
           state: string | null
-          status: string | null
-          updated_at: string | null
-          work_authorization: string | null
           zip: string | null
         }
         Insert: {
           address_1?: string | null
           address_2?: string | null
           applicant_email?: string | null
-          applied_at?: string | null
-          cdl?: string | null
           city?: string | null
-          created_at?: string | null
-          education_level?: string | null
-          exp?: string | null
+          country?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
-          notes?: string | null
           phone?: string | null
-          recruiter_id?: string | null
+          preferred_contact_method?: string | null
           secondary_phone?: string | null
-          source?: string | null
           state?: string | null
-          status?: string | null
-          updated_at?: string | null
-          work_authorization?: string | null
           zip?: string | null
         }
         Update: {
           address_1?: string | null
           address_2?: string | null
           applicant_email?: string | null
-          applied_at?: string | null
-          cdl?: string | null
           city?: string | null
-          created_at?: string | null
-          education_level?: string | null
-          exp?: string | null
+          country?: string | null
           first_name?: string | null
+          full_name?: string | null
           id?: string | null
           job_listing_id?: string | null
           last_name?: string | null
-          notes?: string | null
           phone?: string | null
-          recruiter_id?: string | null
+          preferred_contact_method?: string | null
           secondary_phone?: string | null
-          source?: string | null
           state?: string | null
-          status?: string | null
-          updated_at?: string | null
-          work_authorization?: string | null
           zip?: string | null
         }
         Relationships: [
@@ -6033,61 +5997,42 @@ export type Database = {
             referencedRelation: "job_listings"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "applications_recruiter_id_fkey"
-            columns: ["recruiter_id"]
-            isOneToOne: false
-            referencedRelation: "recruiters"
-            referencedColumns: ["id"]
-          },
         ]
       }
       applications_sensitive: {
         Row: {
           accident_history: string | null
-          applicant_email: string | null
           convicted_felony: string | null
-          created_at: string | null
           date_of_birth: string | null
           felony_details: string | null
-          first_name: string | null
           government_id: string | null
           government_id_type: string | null
           id: string | null
           job_listing_id: string | null
-          last_name: string | null
           ssn: string | null
           violation_history: string | null
         }
         Insert: {
           accident_history?: string | null
-          applicant_email?: string | null
           convicted_felony?: string | null
-          created_at?: string | null
           date_of_birth?: string | null
           felony_details?: string | null
-          first_name?: string | null
           government_id?: string | null
           government_id_type?: string | null
           id?: string | null
           job_listing_id?: string | null
-          last_name?: string | null
           ssn?: string | null
           violation_history?: string | null
         }
         Update: {
           accident_history?: string | null
-          applicant_email?: string | null
           convicted_felony?: string | null
-          created_at?: string | null
           date_of_birth?: string | null
           felony_details?: string | null
-          first_name?: string | null
           government_id?: string | null
           government_id_type?: string | null
           id?: string | null
           job_listing_id?: string | null
-          last_name?: string | null
           ssn?: string | null
           violation_history?: string | null
         }
@@ -6160,6 +6105,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_sensitive_applicant_data: {
+        Args: { app_job_listing_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           _endpoint: string
