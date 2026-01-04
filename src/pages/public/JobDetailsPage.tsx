@@ -14,7 +14,7 @@ import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema } from '@/
 import { useJobDetails } from '@/hooks/useJobDetails';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import { VoiceConnectionStatus } from '@/features/elevenlabs';
+import { VoiceApplicationPanel } from '@/features/elevenlabs';
 
 const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +25,8 @@ const JobDetailsPage: React.FC = () => {
     isConnected,
     selectedJob,
     isSpeaking,
+    transcripts,
+    pendingUserTranscript,
     startVoiceApplication,
     endVoiceApplication,
   } = useElevenLabsVoice();
@@ -308,21 +310,15 @@ const JobDetailsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Voice Application Status */}
-        {isConnected && selectedJob && (
-          <Card className="fixed bottom-8 right-8 w-80 shadow-xl border-2 z-50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-semibold">Voice Application</span>
-                <Button variant="ghost" size="sm" onClick={endVoiceApplication}>
-                  End
-                </Button>
-              </div>
-              <div className="text-sm mb-2">{selectedJob.jobTitle}</div>
-              <VoiceConnectionStatus isConnected={isConnected} isSpeaking={isSpeaking} />
-            </CardContent>
-          </Card>
-        )}
+        {/* Voice Application Panel with Transcripts */}
+        <VoiceApplicationPanel
+          isConnected={isConnected}
+          isSpeaking={isSpeaking}
+          selectedJob={selectedJob}
+          transcripts={transcripts}
+          pendingUserTranscript={pendingUserTranscript}
+          onEnd={endVoiceApplication}
+        />
       </div>
     </div>
   );
