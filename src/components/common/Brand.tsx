@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { LazyImage } from '@/components/optimized/LazyImage';
+import { LogoIcon } from './LogoIcon';
 
 interface BrandProps {
   variant?: 'horizontal' | 'icon' | 'text' | 'auto';
@@ -16,22 +17,20 @@ interface BrandProps {
   organizationName?: string;
 }
 
-const sizeMap = {
-  xs: { height: 'h-4', width: 'w-auto', pixels: 16 },
-  sm: { height: 'h-6', width: 'w-auto', pixels: 24 },
-  md: { height: 'h-8', width: 'w-auto', pixels: 32 },
-  lg: { height: 'h-10', width: 'w-auto', pixels: 40 },
-  xl: { height: 'h-12', width: 'w-auto', pixels: 48 },
-  auto: { height: 'h-auto', width: 'w-auto', pixels: 32 }
+const textSizeMap = {
+  xs: 'text-sm',
+  sm: 'text-base',
+  md: 'text-lg',
+  lg: 'text-xl',
+  xl: 'text-2xl',
 };
 
 const iconSizeMap = {
-  xs: { height: 'h-4', width: 'w-4', pixels: 16 },
-  sm: { height: 'h-6', width: 'w-6', pixels: 24 },
-  md: { height: 'h-8', width: 'w-8', pixels: 32 },
-  lg: { height: 'h-10', width: 'w-10', pixels: 40 },
-  xl: { height: 'h-12', width: 'w-12', pixels: 48 },
-  auto: { height: 'h-auto', width: 'w-auto', pixels: 32 }
+  xs: 'xs' as const,
+  sm: 'sm' as const,
+  md: 'md' as const,
+  lg: 'lg' as const,
+  xl: 'xl' as const,
 };
 
 export const Brand: React.FC<BrandProps> = ({ 
@@ -45,7 +44,7 @@ export const Brand: React.FC<BrandProps> = ({
   customLogoUrl,
   organizationName = 'ATS.me'
 }) => {
-  const { isMobile, isTablet, isDesktop } = useResponsiveLayout();
+  const { isMobile, isTablet } = useResponsiveLayout();
   const [imageError, setImageError] = useState(false);
 
   // Auto-responsive variant and size
@@ -57,148 +56,55 @@ export const Brand: React.FC<BrandProps> = ({
     ? (isMobile ? 'sm' : isTablet ? 'md' : 'lg')
     : propSize;
 
-  const sizeClasses = variant === 'icon' ? iconSizeMap[size] : sizeMap[size];
-  const pixelSize = sizeClasses.pixels;
+  const iconSize = iconSizeMap[size] || 'md';
+  const textSize = textSizeMap[size] || 'text-lg';
 
-  // Handle custom organization logo
+  // Handle custom organization logo (keep PNG support for custom logos)
   if (customLogoUrl && !imageError) {
     const logoAlt = `${organizationName} logo`;
+    const pixelSize = { xs: 16, sm: 24, md: 32, lg: 40, xl: 48 }[size] || 32;
     
     return (
       <div className={cn("flex items-center", className)}>
-        {priority ? (
-          <picture>
-            <source 
-              type="image/webp" 
-              srcSet={`${customLogoUrl}?format=webp&w=${pixelSize * 2} 2x, ${customLogoUrl}?format=webp&w=${pixelSize} 1x`}
-            />
-            <img
-              src={customLogoUrl}
-              alt={logoAlt}
-              width={pixelSize}
-              height={pixelSize}
-              loading="eager"
-              decoding="async"
-              onError={() => setImageError(true)}
-              className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
-            />
-          </picture>
-        ) : (
-          <LazyImage
-            src={customLogoUrl}
-            alt={logoAlt}
-            width={pixelSize}
-            height={pixelSize}
-            priority={priority}
-            skeleton={false}
-            className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
-            onError={() => setImageError(true)}
-          />
-        )}
+        <LazyImage
+          src={customLogoUrl}
+          alt={logoAlt}
+          width={pixelSize}
+          height={pixelSize}
+          priority={priority}
+          skeleton={false}
+          className="h-auto w-auto object-contain"
+          onError={() => setImageError(true)}
+        />
       </div>
     );
   }
   
   const getLogo = () => {
-    // Text-only fallback
-    if (variant === 'text' || imageError) {
+    // Text-only variant
+    if (variant === 'text') {
       return (
-        <span className={cn(
-          "font-bold text-primary",
-          size === 'xs' && "text-sm",
-          size === 'sm' && "text-base",
-          size === 'md' && "text-lg",
-          size === 'lg' && "text-xl",
-          size === 'xl' && "text-2xl"
-        )}>
-          ATS.me
+        <span className={cn("font-logo font-bold tracking-tight", textSize)}>
+          <span className="text-primary">ATS</span>
+          <span className="text-muted-foreground">.me</span>
         </span>
       );
     }
 
-    // Icon variant
+    // Icon-only variant
     if (variant === 'icon') {
-      return priority ? (
-        <img 
-          src="/logo-icon.png" 
-          alt="ATS.me" 
-          width={pixelSize}
-          height={pixelSize}
-          loading="eager"
-          decoding="async"
-          onError={() => setImageError(true)}
-          className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
-        />
-      ) : (
-        <LazyImage
-          src="/logo-icon.png"
-          alt="ATS.me"
-          width={pixelSize}
-          height={pixelSize}
-          priority={priority}
-          skeleton={false}
-          onError={() => setImageError(true)}
-          className={cn(sizeClasses.height, sizeClasses.width, "object-contain")}
-        />
-      );
+      return <LogoIcon size={iconSize} />;
     }
 
-    // Horizontal logo with dark mode support
-    const lightLogo = priority ? (
-      <img 
-        src="/logo.png"
-        alt="ATS.me" 
-        width={pixelSize * 3}
-        height={pixelSize}
-        loading="eager"
-        decoding="async"
-        onError={() => setImageError(true)}
-        className={cn(sizeClasses.height, sizeClasses.width, "object-contain dark:hidden")}
-      />
-    ) : (
-      <LazyImage
-        src="/logo.png"
-        alt="ATS.me"
-        width={pixelSize * 3}
-        height={pixelSize}
-        priority={priority}
-        skeleton={false}
-        onError={() => setImageError(true)}
-        className={cn(sizeClasses.height, sizeClasses.width, "object-contain dark:hidden")}
-      />
-    );
-
-    const darkLogo = theme === 'auto' && (
-      priority ? (
-        <img 
-          src="/logo-white.png"
-          alt="ATS.me" 
-          width={pixelSize * 3}
-          height={pixelSize}
-          loading="eager"
-          decoding="async"
-          onError={() => setImageError(true)}
-          className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
-        />
-      ) : (
-        <LazyImage
-          src="/logo-white.png"
-          alt="ATS.me"
-          width={pixelSize * 3}
-          height={pixelSize}
-          priority={priority}
-          skeleton={false}
-          onError={() => setImageError(true)}
-          className={cn(sizeClasses.height, sizeClasses.width, "object-contain hidden dark:block")}
-        />
-      )
-    );
-
+    // Horizontal variant: icon + text
     return (
-      <>
-        {lightLogo}
-        {darkLogo}
-      </>
+      <div className="flex items-center gap-2">
+        <LogoIcon size={iconSize} />
+        <span className={cn("font-logo font-bold tracking-tight", textSize)}>
+          <span className="text-primary">ATS</span>
+          <span className="text-muted-foreground">.me</span>
+        </span>
+      </div>
     );
   };
 

@@ -26,6 +26,7 @@ export default {
         'inter': ['Inter', 'system-ui', 'sans-serif'],
         'playfair': ['Playfair Display', 'serif'],
         'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'logo': ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: 'hsl(var(--border))',
