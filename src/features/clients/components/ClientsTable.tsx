@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2, Truck } from 'lucide-react';
 import { ATSConnectionDialog } from '@/features/ats/components/ATSConnectionDialog';
 import { useATSSystems } from '@/hooks/useATSConnections';
+import { ResponsiveTableWrapper, ResponsiveCardWrapper } from '@/components/ui/responsive-data-display';
 import type { Client, ConsolidatedClient } from '../types/client.types';
 
 interface ClientsTableProps {
@@ -137,130 +138,235 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     );
   }
 
-  return (
-    <>
-    <Card>
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client Name</TableHead>
-                <TableHead>Locations</TableHead>
-                <TableHead>Contact Info</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Latest Activity</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {consolidatedClients.map((client) => (
-                <TableRow key={client.name} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-foreground">{client.name}</span>
-                      {client.totalLocations > 1 && (
-                        <span className="text-sm text-muted-foreground">
-                          {client.totalLocations} locations
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      {client.locations.slice(0, 3).map((location, index) => (
-                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <MapPin className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate max-w-[200px]">{location}</span>
-                        </div>
-                      ))}
-                      {client.locations.length > 3 && (
-                        <span className="text-xs text-muted-foreground ml-4">
-                          +{client.locations.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      {client.emails.slice(0, 2).map((email, index) => (
-                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Mail className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate max-w-[150px]">{email}</span>
-                        </div>
-                      ))}
-                      {client.phones.slice(0, 2).map((phone, index) => (
-                        <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Phone className="w-3 h-3 flex-shrink-0" />
-                          <span>{phone}</span>
-                        </div>
-                      ))}
-                      {(client.emails.length > 2 || client.phones.length > 2) && (
-                        <span className="text-xs text-muted-foreground">
-                          +{Math.max(0, client.emails.length - 2) + Math.max(0, client.phones.length - 2)} more
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(client.status)}>
-                      {client.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(client.latestDate).toLocaleDateString()}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewJobs(client.name)}
-                        className="gap-2"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View Jobs
-                      </Button>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {organizationId && tenstreetSystem && (
-                            <DropdownMenuItem 
-                              onClick={() => handleQuickAddTenstreet(client.clientId, client.name)}
-                            >
-                              <Truck className="w-4 h-4 mr-2" />
-                              Quick Add Tenstreet
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Client
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteClient(client.name)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Client
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+  // Mobile card for each client
+  const ClientCard = ({ client }: { client: typeof consolidatedClients[0] }) => (
+    <Card className="overflow-hidden">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-foreground">{client.name}</h4>
+            {client.totalLocations > 1 && (
+              <span className="text-sm text-muted-foreground">
+                {client.totalLocations} locations
+              </span>
+            )}
+          </div>
+          <Badge className={getStatusColor(client.status)}>
+            {client.status}
+          </Badge>
+        </div>
+        
+        {/* Location */}
+        {client.locations.length > 0 && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{client.locations[0]}</span>
+            {client.locations.length > 1 && (
+              <span className="text-xs">+{client.locations.length - 1}</span>
+            )}
+          </div>
+        )}
+        
+        {/* Contact */}
+        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-3">
+          {client.emails[0] && (
+            <div className="flex items-center gap-1">
+              <Mail className="w-3 h-3" />
+              <span className="truncate max-w-[140px]">{client.emails[0]}</span>
+            </div>
+          )}
+          {client.phones[0] && (
+            <div className="flex items-center gap-1">
+              <Phone className="w-3 h-3" />
+              <span>{client.phones[0]}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-border">
+          <span className="text-xs text-muted-foreground">
+            {new Date(client.latestDate).toLocaleDateString()}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleViewJobs(client.name)}
+              className="h-9 gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Jobs
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {organizationId && tenstreetSystem && (
+                  <DropdownMenuItem 
+                    onClick={() => handleQuickAddTenstreet(client.clientId, client.name)}
+                  >
+                    <Truck className="w-4 h-4 mr-2" />
+                    Quick Add Tenstreet
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleDeleteClient(client.name)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardContent>
     </Card>
+  );
+
+  return (
+    <>
+    {/* Mobile Card View */}
+    <ResponsiveCardWrapper className="space-y-3">
+      {consolidatedClients.map((client) => (
+        <ClientCard key={client.name} client={client} />
+      ))}
+    </ResponsiveCardWrapper>
+
+    {/* Desktop Table View */}
+    <ResponsiveTableWrapper>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead>Locations</TableHead>
+                  <TableHead>Contact Info</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Latest Activity</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {consolidatedClients.map((client) => (
+                  <TableRow key={client.name} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{client.name}</span>
+                        {client.totalLocations > 1 && (
+                          <span className="text-sm text-muted-foreground">
+                            {client.totalLocations} locations
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {client.locations.slice(0, 3).map((location, index) => (
+                          <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate max-w-[200px]">{location}</span>
+                          </div>
+                        ))}
+                        {client.locations.length > 3 && (
+                          <span className="text-xs text-muted-foreground ml-4">
+                            +{client.locations.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {client.emails.slice(0, 2).map((email, index) => (
+                          <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Mail className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate max-w-[150px]">{email}</span>
+                          </div>
+                        ))}
+                        {client.phones.slice(0, 2).map((phone, index) => (
+                          <div key={index} className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Phone className="w-3 h-3 flex-shrink-0" />
+                            <span>{phone}</span>
+                          </div>
+                        ))}
+                        {(client.emails.length > 2 || client.phones.length > 2) && (
+                          <span className="text-xs text-muted-foreground">
+                            +{Math.max(0, client.emails.length - 2) + Math.max(0, client.phones.length - 2)} more
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(client.status)}>
+                        {client.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(client.latestDate).toLocaleDateString()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewJobs(client.name)}
+                          className="gap-2 h-9"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Jobs
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {organizationId && tenstreetSystem && (
+                              <DropdownMenuItem 
+                                onClick={() => handleQuickAddTenstreet(client.clientId, client.name)}
+                              >
+                                <Truck className="w-4 h-4 mr-2" />
+                                Quick Add Tenstreet
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => handleEditClient(client.name)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit Client
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteClient(client.name)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Client
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </ResponsiveTableWrapper>
     
     {/* Quick Add Tenstreet Dialog */}
     {organizationId && (
