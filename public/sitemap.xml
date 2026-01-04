@@ -4,7 +4,7 @@
   <!-- Homepage -->
   <url>
     <loc>https://ats.me/</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -12,7 +12,7 @@
   <!-- Voice Agent Demo -->
   <url>
     <loc>https://ats.me/voice-demo</loc>
-    <lastmod>2025-12-19</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -20,7 +20,7 @@
   <!-- Jobs (Public Listings) -->
   <url>
     <loc>https://ats.me/jobs</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -28,7 +28,7 @@
   <!-- Apply -->
   <url>
     <loc>https://ats.me/apply</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -36,7 +36,7 @@
   <!-- Features -->
   <url>
     <loc>https://ats.me/features</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -44,7 +44,7 @@
   <!-- Pricing -->
   <url>
     <loc>https://ats.me/pricing</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -52,7 +52,7 @@
   <!-- Resources -->
   <url>
     <loc>https://ats.me/resources</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -60,7 +60,7 @@
   <!-- Contact -->
   <url>
     <loc>https://ats.me/contact</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -68,7 +68,7 @@
   <!-- Authentication -->
   <url>
     <loc>https://ats.me/auth</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -76,21 +76,21 @@
   <!-- Legal Pages -->
   <url>
     <loc>https://ats.me/privacy-policy</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
     <loc>https://ats.me/terms-of-service</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
     <loc>https://ats.me/cookie-policy</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -98,7 +98,7 @@
   <!-- Sitemap -->
   <url>
     <loc>https://ats.me/sitemap</loc>
-    <lastmod>2025-12-18</lastmod>
+    <lastmod>2026-01-04</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
