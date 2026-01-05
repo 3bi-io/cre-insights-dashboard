@@ -1,4 +1,4 @@
-import { TenstreetData, PersonalData, CustomQuestion, DisplayField } from '@/types/tenstreet';
+import { TenstreetData, PersonalData, CustomQuestion, DisplayField, License, TenstreetEndorsement } from '@/types/tenstreet';
 
 // Helper function to safely get field value from application data
 export const getFieldValue = (applicationData: any, fieldName: string): string => {
@@ -21,51 +21,104 @@ export const getFieldValue = (applicationData: any, fieldName: string): string =
   return String(value);
 };
 
-// Helper function to format phone number
+// Helper function to format phone number (XXX-XXX-XXXX format per Tenstreet)
 export const formatPhoneNumber = (phone: string): string => {
   if (!phone) return '';
-  // Remove all non-digit characters
   const digits = phone.replace(/\D/g, '');
-  
-  // Format as XXX-XXX-XXXX if it's a 10-digit US number
   if (digits.length === 10) {
     return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
-  
-  return phone; // Return original if not standard format
+  return phone;
 };
 
-// Helper function to format date
+// Helper function to format date (MM/DD/YYYY for PersonalData)
 export const formatDate = (dateValue: string): string => {
   if (!dateValue) return '';
-  
   try {
     const date = new Date(dateValue);
-    if (isNaN(date.getTime())) return dateValue; // Return original if invalid
-    
-    // Format as MM/DD/YYYY
+    if (isNaN(date.getTime())) return dateValue;
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const year = date.getFullYear();
-    
     return `${month}/${day}/${year}`;
   } catch (error) {
-    return dateValue; // Return original if parsing fails
+    return dateValue;
   }
 };
 
-// Helper function to format SSN
+// Helper function to format date (YYYY-MM-DD for Licenses)
+export const formatDateISO = (dateValue: string): string => {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return dateValue;
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    return dateValue;
+  }
+};
+
+// Helper function to format SSN (XXX-XX-XXXX format)
 export const formatSSN = (ssn: string): string => {
   if (!ssn) return '';
-  // Remove all non-digit characters
   const digits = ssn.replace(/\D/g, '');
-  
-  // Format as XXX-XX-XXXX if it's 9 digits
   if (digits.length === 9) {
     return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
   }
+  return ssn;
+};
+
+// Helper function to format email with mailto: prefix per Tenstreet schema
+export const formatEmail = (email: string): string => {
+  if (!email) return '';
+  const cleanEmail = email.trim().toLowerCase();
+  if (cleanEmail.startsWith('mailto:')) return cleanEmail;
+  return `mailto:${cleanEmail}`;
+};
+
+// Helper to normalize yes/no values
+export const normalizeYesNo = (value: string): 'y' | 'n' => {
+  if (!value) return 'n';
+  const lower = value.toLowerCase().trim();
+  return ['yes', 'y', 'true', '1'].includes(lower) ? 'y' : 'n';
+};
+
+// Map CDL endorsements to Tenstreet format
+export const mapEndorsements = (endorsements: any): TenstreetEndorsement[] => {
+  if (!endorsements) return [];
   
-  return ssn; // Return original if not standard format
+  const endorsementList = Array.isArray(endorsements) 
+    ? endorsements 
+    : typeof endorsements === 'string' 
+      ? endorsements.split(',').map(e => e.trim())
+      : [];
+  
+  const endorsementMap: Record<string, TenstreetEndorsement> = {
+    't': 'tanker',
+    'tanker': 'tanker',
+    'n': 'tanker',
+    'x': 'xendorsement',
+    'xendorsement': 'xendorsement',
+    'combination': 'xendorsement',
+    'h': 'hazmat',
+    'hazmat': 'hazmat',
+    'doubles': 'doublestriples',
+    'triples': 'doublestriples',
+    'doublestriples': 'doublestriples',
+    'doubles/triples': 'doublestriples',
+    'p': 'passenger',
+    'passenger': 'passenger',
+    's': 'schoolbus',
+    'schoolbus': 'schoolbus',
+    'school bus': 'schoolbus',
+  };
+  
+  return endorsementList
+    .map(e => endorsementMap[String(e).toLowerCase()] || 'other')
+    .filter((e, i, arr) => arr.indexOf(e) === i) as TenstreetEndorsement[];
 };
 
 // Build PersonalData section from application data and mappings
@@ -74,43 +127,55 @@ export const buildPersonalData = (applicationData: any, mappings: any): Personal
   
   return {
     personName: {
-      prefix: getFieldValue(applicationData, personalDataMappings.prefix),
-      givenName: getFieldValue(applicationData, personalDataMappings.givenName) || 
-                 getFieldValue(applicationData, personalDataMappings.firstName), // fallback
-      middleName: getFieldValue(applicationData, personalDataMappings.middleName),
-      familyName: getFieldValue(applicationData, personalDataMappings.familyName) || 
-                  getFieldValue(applicationData, personalDataMappings.lastName), // fallback
-      affix: getFieldValue(applicationData, personalDataMappings.affix)
+      prefix: getFieldValue(applicationData, personalDataMappings.prefix || 'prefix'),
+      givenName: getFieldValue(applicationData, personalDataMappings.givenName || 'first_name'),
+      middleName: getFieldValue(applicationData, personalDataMappings.middleName || 'middle_name'),
+      familyName: getFieldValue(applicationData, personalDataMappings.familyName || 'last_name'),
+      affix: getFieldValue(applicationData, personalDataMappings.affix || 'suffix')
     },
     postalAddress: {
-      countryCode: getFieldValue(applicationData, personalDataMappings.countryCode) || 'US',
-      municipality: getFieldValue(applicationData, personalDataMappings.municipality) || 
-                    getFieldValue(applicationData, personalDataMappings.city), // fallback
-      region: getFieldValue(applicationData, personalDataMappings.region) || 
-              getFieldValue(applicationData, personalDataMappings.state), // fallback
-      postalCode: getFieldValue(applicationData, personalDataMappings.postalCode) || 
-                  getFieldValue(applicationData, personalDataMappings.zipCode), // fallback
-      address1: getFieldValue(applicationData, personalDataMappings.address1) || 
-                getFieldValue(applicationData, personalDataMappings.address), // fallback
-      address2: getFieldValue(applicationData, personalDataMappings.address2)
+      countryCode: getFieldValue(applicationData, personalDataMappings.countryCode || 'country') || 'US',
+      municipality: getFieldValue(applicationData, personalDataMappings.municipality || 'city'),
+      region: getFieldValue(applicationData, personalDataMappings.region || 'state'),
+      postalCode: getFieldValue(applicationData, personalDataMappings.postalCode || 'zip'),
+      address1: getFieldValue(applicationData, personalDataMappings.address1 || 'address_1'),
+      address2: getFieldValue(applicationData, personalDataMappings.address2 || 'address_2')
     },
     governmentID: personalDataMappings.governmentId ? {
-      value: formatSSN(getFieldValue(applicationData, personalDataMappings.governmentId)),
-      countryCode: getFieldValue(applicationData, personalDataMappings.governmentIdCountryCode) || 'US',
-      issuingAuthority: getFieldValue(applicationData, personalDataMappings.governmentIdIssuingAuthority) || 'SSA',
-      documentType: getFieldValue(applicationData, personalDataMappings.governmentIdDocumentType) || 'SSN'
+      value: formatSSN(getFieldValue(applicationData, personalDataMappings.governmentId || 'ssn')),
+      countryCode: 'US',
+      issuingAuthority: 'SSA',
+      documentType: 'SSN'
     } : undefined,
-    dateOfBirth: formatDate(getFieldValue(applicationData, personalDataMappings.dateOfBirth)),
+    dateOfBirth: formatDate(getFieldValue(applicationData, personalDataMappings.dateOfBirth || 'date_of_birth')),
     contactData: {
-      internetEmailAddress: getFieldValue(applicationData, personalDataMappings.internetEmailAddress) || 
-                           getFieldValue(applicationData, personalDataMappings.email), // fallback
-      primaryPhone: formatPhoneNumber(getFieldValue(applicationData, personalDataMappings.primaryPhone) || 
-                                     getFieldValue(applicationData, personalDataMappings.phone)), // fallback
-      secondaryPhone: formatPhoneNumber(getFieldValue(applicationData, personalDataMappings.secondaryPhone)),
-      preferredMethod: (['PrimaryPhone', 'SecondaryPhone', 'Email'].includes(getFieldValue(applicationData, personalDataMappings.preferredMethod)) 
-        ? getFieldValue(applicationData, personalDataMappings.preferredMethod) 
-        : 'PrimaryPhone') as 'PrimaryPhone' | 'SecondaryPhone' | 'Email'
+      internetEmailAddress: formatEmail(getFieldValue(applicationData, personalDataMappings.internetEmailAddress || 'applicant_email')),
+      primaryPhone: formatPhoneNumber(getFieldValue(applicationData, personalDataMappings.primaryPhone || 'phone')),
+      secondaryPhone: formatPhoneNumber(getFieldValue(applicationData, personalDataMappings.secondaryPhone || 'secondary_phone')),
+      preferredMethod: 'PrimaryPhone'
     }
+  };
+};
+
+// Build License section from application data and mappings
+export const buildLicense = (applicationData: any, mappings: any): License | undefined => {
+  const licenseMappings = mappings.license || {};
+  
+  const hasCDL = normalizeYesNo(getFieldValue(applicationData, licenseMappings.commercialDriversLicense || 'cdl'));
+  const cdlClass = getFieldValue(applicationData, licenseMappings.licenseClass || 'cdl_class');
+  
+  // Only build license if there's CDL data
+  if (hasCDL === 'n' && !cdlClass) return undefined;
+  
+  return {
+    currentLicense: hasCDL,
+    licenseNumber: getFieldValue(applicationData, licenseMappings.licenseNumber || ''),
+    expirationDate: formatDateISO(getFieldValue(applicationData, licenseMappings.expirationDate || 'cdl_expiration_date')),
+    region: getFieldValue(applicationData, licenseMappings.region || 'cdl_state'),
+    countryCode: 'US',
+    commercialDriversLicense: hasCDL,
+    licenseClass: cdlClass,
+    endorsements: mapEndorsements(applicationData[licenseMappings.endorsements || 'cdl_endorsements'])
   };
 };
 
@@ -125,7 +190,7 @@ export const buildCustomQuestions = (applicationData: any, customQuestions: any[
       question: q.question,
       answer: getFieldValue(applicationData, q.mapping)
     }))
-    .filter(q => q.answer); // Only include questions with answers
+    .filter(q => q.answer);
 };
 
 // Build DisplayFields section
@@ -138,25 +203,28 @@ export const buildDisplayFields = (applicationData: any, displayFields: any[]): 
       displayPrompt: f.displayPrompt,
       displayValue: getFieldValue(applicationData, f.mapping)
     }))
-    .filter(f => f.displayValue); // Only include fields with values
+    .filter(f => f.displayValue);
 };
 
-// Main function to build complete Tenstreet XML data structure
+// Main function to build complete Tenstreet data structure
 export const buildTenstreetData = (applicationData: any, mappings: any, config: any): TenstreetData => {
+  const license = buildLicense(applicationData, mappings);
+  
   return {
     authentication: {
       clientId: config.clientId,
       password: config.password,
       service: config.service || 'subject_upload'
     },
-    mode: config.mode || 'PROD',
+    mode: config.mode || 'DEV',
     source: config.source,
     companyId: config.companyId,
     companyName: config.companyName,
     driverId: config.driverId || getFieldValue(applicationData, 'driver_id'),
     personalData: buildPersonalData(applicationData, mappings),
     applicationData: {
-      appReferrer: config.appReferrer || '3BI',
+      appReferrer: config.appReferrer || '',
+      licenses: license ? [license] : undefined,
       customQuestions: buildCustomQuestions(applicationData, mappings.customQuestions),
       displayFields: buildDisplayFields(applicationData, mappings.displayFields)
     }

@@ -72,8 +72,30 @@ export interface DisplayField {
   displayValue: string;
 }
 
+// Endorsement types per Tenstreet schema
+export type TenstreetEndorsement = 
+  | 'tanker'
+  | 'xendorsement'
+  | 'hazmat'
+  | 'doublestriples'
+  | 'passenger'
+  | 'schoolbus'
+  | 'other';
+
+export interface License {
+  currentLicense: 'y' | 'n';
+  licenseNumber?: string;
+  expirationDate?: string; // Format: YYYY-MM-DD
+  region?: string; // State code (e.g., 'OK', 'TX')
+  countryCode?: string; // Default 'US'
+  commercialDriversLicense: 'y' | 'n';
+  licenseClass?: string; // 'Class A', 'Class B', 'Class C'
+  endorsements?: TenstreetEndorsement[];
+}
+
 export interface ApplicationData {
   appReferrer?: string;
+  licenses?: License[];
   customQuestions?: CustomQuestion[];
   displayFields?: DisplayField[];
 }
@@ -90,6 +112,17 @@ export interface TenstreetData {
 }
 
 // Field mapping configuration interfaces
+export interface LicenseMappings {
+  currentLicense: string;
+  licenseNumber: string;
+  expirationDate: string;
+  region: string;
+  countryCode: string;
+  commercialDriversLicense: string;
+  licenseClass: string;
+  endorsements: string;
+}
+
 export interface PersonalDataMappings {
   // PersonName mappings
   prefix: string;
@@ -122,6 +155,7 @@ export interface PersonalDataMappings {
 
 export interface TenstreetFieldMappings {
   personalData: PersonalDataMappings;
+  license?: LicenseMappings;
   customQuestions: CustomQuestion[];
   displayFields: DisplayField[];
 }
@@ -134,6 +168,7 @@ export const AVAILABLE_FIELD_TYPES = [
   'email',
   'applicant_email',
   'phone',
+  'secondary_phone',
   
   // Address fields
   'address',
@@ -141,6 +176,7 @@ export const AVAILABLE_FIELD_TYPES = [
   'address_2', 
   'city',
   'state',
+  'zip',
   'zip_code',
   'postal_code',
   'country',
@@ -153,13 +189,22 @@ export const AVAILABLE_FIELD_TYPES = [
   'ssn',
   'government_id',
   
+  // CDL/License fields
+  'cdl',
+  'cdl_class',
+  'cdl_state',
+  'cdl_endorsements',
+  'cdl_expiration_date',
+  
   // Application-specific fields
   'job_id',
   'driver_id',
   'experience_months',
-  'cdl_class',
+  'months',
+  'exp',
+  'driving_experience_years',
   'veteran_status',
-  'cdl_experience',
+  'veteran',
   'over_21',
   'can_pass_drug_test',
   'agree_privacy_policy',
