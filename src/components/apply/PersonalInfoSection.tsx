@@ -1,7 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' },
@@ -80,6 +82,26 @@ const formatPhoneNumber = (value: string): string => {
 };
 
 export const PersonalInfoSection = React.memo(({ formData, onInputChange }: PersonalInfoSectionProps) => {
+  // ZIP code auto-lookup for city/state
+  const { city: lookupCity, state: lookupState, isLoading: isZipLoading } = useZipCodeLookup(formData.zip);
+  const [wasAutoFilled, setWasAutoFilled] = useState(false);
+
+  // Auto-fill city and state when ZIP lookup returns data
+  useEffect(() => {
+    if (lookupCity && lookupState) {
+      onInputChange('city', lookupCity);
+      onInputChange('state', lookupState);
+      setWasAutoFilled(true);
+    }
+  }, [lookupCity, lookupState, onInputChange]);
+
+  // Reset auto-fill indicator when zip changes
+  useEffect(() => {
+    if (!formData.zip || formData.zip.length < 5) {
+      setWasAutoFilled(false);
+    }
+  }, [formData.zip]);
+
   const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhoneNumber(e.target.value);
     onInputChange('phone', formatted);
@@ -166,20 +188,60 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <div className="space-y-2">
-          <Label htmlFor="city" className="text-sm font-medium">City</Label>
+          <Label htmlFor="zip" className="text-sm font-medium">
+            ZIP Code <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <Input
+              id="zip"
+              name="zip"
+              autoComplete="postal-code"
+              value={formData.zip}
+              onChange={(e) => onInputChange('zip', e.target.value)}
+              required
+              aria-required="true"
+              placeholder="Enter ZIP code"
+              className="h-12 sm:h-10 text-base sm:text-sm pr-10"
+              maxLength={10}
+            />
+            {isZipLoading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+            {wasAutoFilled && !isZipLoading && (
+              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+            )}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="city" className="text-sm font-medium flex items-center gap-2">
+            City
+            {wasAutoFilled && <span className="text-xs text-muted-foreground">(auto-filled)</span>}
+          </Label>
           <Input
             id="city"
             name="city"
             autoComplete="address-level2"
             value={formData.city}
-            onChange={(e) => onInputChange('city', e.target.value)}
+            onChange={(e) => {
+              onInputChange('city', e.target.value);
+              setWasAutoFilled(false);
+            }}
             placeholder="Enter your city"
             className="h-12 sm:h-10 text-base sm:text-sm"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="state" className="text-sm font-medium">State</Label>
-          <Select value={formData.state} onValueChange={(value) => onInputChange('state', value)}>
+          <Label htmlFor="state" className="text-sm font-medium flex items-center gap-2">
+            State
+            {wasAutoFilled && <span className="text-xs text-muted-foreground">(auto-filled)</span>}
+          </Label>
+          <Select 
+            value={formData.state} 
+            onValueChange={(value) => {
+              onInputChange('state', value);
+              setWasAutoFilled(false);
+            }}
+          >
             <SelectTrigger id="state" name="state" className="h-12 sm:h-10 text-base sm:text-sm">
               <SelectValue placeholder="Select state..." />
             </SelectTrigger>
@@ -191,23 +253,6 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="zip" className="text-sm font-medium">
-            ZIP Code <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="zip"
-            name="zip"
-            autoComplete="postal-code"
-            value={formData.zip}
-            onChange={(e) => onInputChange('zip', e.target.value)}
-            required
-            aria-required="true"
-            placeholder="Enter ZIP code"
-            className="h-12 sm:h-10 text-base sm:text-sm"
-            maxLength={10}
-          />
         </div>
       </div>
 

@@ -170,11 +170,16 @@ export const useApplicationForm = () => {
 
   const submitApplication = useMutation({
     mutationFn: async (data: FormData): Promise<SubmitResponse> => {
+      // Calculate driving experience years from months
+      const monthsNum = parseInt(data.experience) || 0;
+      const drivingExperienceYears = Math.floor(monthsNum / 12);
+
       const formattedData = {
         ...data,
         phone: normalizePhoneNumber(data.phone),
-        months: data.experience,
+        months: data.experience, // Store as numeric string
         exp: getExperienceValue(data.experience),
+        driving_experience_years: drivingExperienceYears,
       };
 
       const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application', {
@@ -187,13 +192,19 @@ export const useApplicationForm = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle duplicate application (409 Conflict)
+        if (response.status === 409) {
+          throw new Error(errorData.error || 'You have already applied to this position recently.');
+        }
+        
         throw new Error(errorData.error || 'Failed to submit application');
       }
 
       return response.json();
     },
     onSuccess: (data) => {
-      toast.success('Application submitted successfully!');
+      toast.success('Application submitted successfully! Check your email for confirmation.');
       navigate('/thank-you', { 
         state: { 
           organizationName: data.organizationName,
