@@ -263,7 +263,7 @@ function getFieldValue(applicationData: Record<string, unknown>, fieldName: stri
   return String(value);
 }
 
-// Helper function to format phone number
+// Helper function to format phone number (XXX-XXX-XXXX format)
 function formatPhoneNumber(phone: string): string {
   if (!phone) return '';
   const digits = phone.replace(/\D/g, '');
@@ -273,8 +273,8 @@ function formatPhoneNumber(phone: string): string {
   return phone;
 }
 
-// Helper function to format date
-function formatDate(dateValue: string): string {
+// Helper function to format date (MM/DD/YYYY format for PersonalData)
+function formatDateMMDDYYYY(dateValue: string): string {
   if (!dateValue) return '';
   try {
     const date = new Date(dateValue);
@@ -288,7 +288,22 @@ function formatDate(dateValue: string): string {
   }
 }
 
-// Helper function to format SSN
+// Helper function to format date (YYYY-MM-DD format for Licenses)
+function formatDateYYYYMMDD(dateValue: string): string {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return dateValue;
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch {
+    return dateValue;
+  }
+}
+
+// Helper function to format SSN (XXX-XX-XXXX format)
 function formatSSN(ssn: string): string {
   if (!ssn) return '';
   const digits = ssn.replace(/\D/g, '');
@@ -309,7 +324,59 @@ function escapeXML(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
-// Build comprehensive test XML
+// Helper function to format email with mailto: prefix per Tenstreet schema
+function formatEmail(email: string): string {
+  if (!email) return '';
+  const cleanEmail = email.trim().toLowerCase();
+  if (cleanEmail.startsWith('mailto:')) return cleanEmail;
+  return `mailto:${cleanEmail}`;
+}
+
+// Helper function to normalize yes/no values
+function normalizeYesNo(value: string): 'y' | 'n' {
+  if (!value) return 'n';
+  const lower = value.toLowerCase().trim();
+  return ['yes', 'y', 'true', '1'].includes(lower) ? 'y' : 'n';
+}
+
+// Map CDL endorsements from application data to Tenstreet endorsement format
+function mapEndorsements(endorsements: unknown): string[] {
+  if (!endorsements) return [];
+  
+  // Handle array of endorsements
+  const endorsementList = Array.isArray(endorsements) 
+    ? endorsements 
+    : typeof endorsements === 'string' 
+      ? endorsements.split(',').map(e => e.trim())
+      : [];
+  
+  // Map to Tenstreet endorsement names
+  const endorsementMap: Record<string, string> = {
+    't': 'tanker',
+    'tanker': 'tanker',
+    'n': 'tanker',
+    'x': 'xendorsement',
+    'xendorsement': 'xendorsement',
+    'combination': 'xendorsement',
+    'h': 'hazmat',
+    'hazmat': 'hazmat',
+    'doubles': 'doublestriples',
+    'triples': 'doublestriples',
+    'doublestriples': 'doublestriples',
+    'doubles/triples': 'doublestriples',
+    'p': 'passenger',
+    'passenger': 'passenger',
+    's': 'schoolbus',
+    'schoolbus': 'schoolbus',
+    'school bus': 'schoolbus',
+  };
+  
+  return endorsementList
+    .map(e => endorsementMap[String(e).toLowerCase()] || 'other')
+    .filter((e, i, arr) => arr.indexOf(e) === i); // Deduplicate
+}
+
+// Build comprehensive test XML matching official Tenstreet schema
 function buildTestXML(config: Record<string, string>): string {
   logger.debug('Building test XML', { client_id: config.clientId });
   
@@ -320,139 +387,185 @@ function buildTestXML(config: Record<string, string>): string {
         <Password><![CDATA[${config.password}]]></Password>
         <Service>${escapeXML(config.service || 'subject_upload')}</Service>
     </Authentication>
-    <Mode>${escapeXML(config.mode || 'PROD')}</Mode>
+    <Mode>${escapeXML(config.mode || 'DEV')}</Mode>
     <Source>${escapeXML(config.source || '')}</Source>
     <CompanyId>${escapeXML(config.companyId || '')}</CompanyId>
     <CompanyName>${escapeXML(config.companyName || '')}</CompanyName>
     <DriverId>TEST123456</DriverId>
     <PersonalData>
         <PersonName>
-            <Prefix>Mr.</Prefix>
+            <Prefix></Prefix>
             <GivenName>Test</GivenName>
             <MiddleName>Q</MiddleName>
             <FamilyName>Connection</FamilyName>
-            <Affix>Jr.</Affix>
+            <Affix></Affix>
         </PersonName>
         <PostalAddress>
             <CountryCode>US</CountryCode>
-            <Municipality>Test City</Municipality>
-            <Region>TX</Region>
-            <PostalCode>12345</PostalCode>
+            <Municipality>Tulsa</Municipality>
+            <Region>OK</Region>
+            <PostalCode>74135</PostalCode>
             <Address1>123 Test Street</Address1>
-            <Address2>Apt 456</Address2>
+            <Address2></Address2>
         </PostalAddress>
-        <GovernmentID countryCode="US" issuingAuthority="SSA" documentType="SSN">
-            123-45-6789
-        </GovernmentID>
+        <GovernmentID countryCode="US" issuingAuthority="SSA" documentType="SSN">123-45-6789</GovernmentID>
         <DateOfBirth>01/01/1990</DateOfBirth>
         <ContactData PreferredMethod="PrimaryPhone">
-            <InternetEmailAddress>test@example.com</InternetEmailAddress>
-            <PrimaryPhone>555-123-4567</PrimaryPhone>
-            <SecondaryPhone>555-987-6543</SecondaryPhone>
+            <InternetEmailAddress>mailto:test@example.com</InternetEmailAddress>
+            <PrimaryPhone>918-123-4567</PrimaryPhone>
+            <SecondaryPhone>918-555-9876</SecondaryPhone>
         </ContactData>
     </PersonalData>
+    <ApplicationData>
+        <AppReferrer>${escapeXML(config.appReferrer || 'TestConnection')}</AppReferrer>
+        <Licenses>
+            <License>
+                <CurrentLicense>y</CurrentLicense>
+                <LicenseNumber>TEST123</LicenseNumber>
+                <ExpirationDate>2025-12-31</ExpirationDate>
+                <Region>OK</Region>
+                <CountryCode>US</CountryCode>
+                <CommercialDriversLicense>y</CommercialDriversLicense>
+                <LicenseClass>Class A</LicenseClass>
+                <Endorsements>
+                    <Endorsement>tanker</Endorsement>
+                    <Endorsement>hazmat</Endorsement>
+                </Endorsements>
+            </License>
+        </Licenses>
+        <DisplayFields>
+            <DisplayField>
+                <DisplayPrompt>Test Field</DisplayPrompt>
+                <DisplayValue>Test Value</DisplayValue>
+            </DisplayField>
+        </DisplayFields>
+    </ApplicationData>
 </TenstreetData>`;
 }
 
-// Build comprehensive Tenstreet XML with all supported fields
+// Build comprehensive Tenstreet XML matching official schema
 function buildTenstreetXML(
   applicationData: Record<string, unknown>, 
   mappings: Record<string, unknown>, 
   config: Record<string, unknown>
 ): string {
   const personalData = (mappings?.personalData || {}) as Record<string, string>;
-  const customQuestions = mappings?.customQuestions as Array<{ mapping: string; questionId: string; question: string }> | undefined;
+  const licenseMappings = (mappings?.license || {}) as Record<string, string>;
   const displayFields = mappings?.displayFields as Array<{ mapping: string; displayPrompt: string }> | undefined;
 
-  // Build PersonName section
+  // === PersonName Section ===
+  const prefix = escapeXML(getFieldValue(applicationData, personalData?.prefix || 'prefix'));
+  const givenName = escapeXML(getFieldValue(applicationData, personalData?.givenName || 'first_name'));
+  const middleName = escapeXML(getFieldValue(applicationData, personalData?.middleName || 'middle_name'));
+  const familyName = escapeXML(getFieldValue(applicationData, personalData?.familyName || 'last_name'));
+  const affix = escapeXML(getFieldValue(applicationData, personalData?.affix || 'suffix'));
+
   const personNameXML = `
         <PersonName>
-            <Prefix>${getFieldValue(applicationData, personalData?.prefix || '')}</Prefix>
-            <GivenName>${getFieldValue(applicationData, personalData?.givenName || personalData?.firstName || '')}</GivenName>
-            <MiddleName>${getFieldValue(applicationData, personalData?.middleName || '')}</MiddleName>
-            <FamilyName>${getFieldValue(applicationData, personalData?.familyName || personalData?.lastName || '')}</FamilyName>
-            <Affix>${getFieldValue(applicationData, personalData?.affix || '')}</Affix>
+            <Prefix>${prefix}</Prefix>
+            <GivenName>${givenName}</GivenName>
+            <MiddleName>${middleName}</MiddleName>
+            <FamilyName>${familyName}</FamilyName>
+            <Affix>${affix}</Affix>
         </PersonName>`;
 
-  // Build PostalAddress section
+  // === PostalAddress Section ===
+  const countryCode = escapeXML(getFieldValue(applicationData, personalData?.countryCode || 'country')) || 'US';
+  const municipality = escapeXML(getFieldValue(applicationData, personalData?.municipality || 'city'));
+  const region = escapeXML(getFieldValue(applicationData, personalData?.region || 'state'));
+  const postalCode = escapeXML(getFieldValue(applicationData, personalData?.postalCode || 'zip'));
+  const address1 = escapeXML(getFieldValue(applicationData, personalData?.address1 || 'address_1'));
+  const address2 = escapeXML(getFieldValue(applicationData, personalData?.address2 || 'address_2'));
+
   const postalAddressXML = `
         <PostalAddress>
-            <CountryCode>${getFieldValue(applicationData, personalData?.countryCode || '') || 'US'}</CountryCode>
-            <Municipality>${getFieldValue(applicationData, personalData?.municipality || personalData?.city || '')}</Municipality>
-            <Region>${getFieldValue(applicationData, personalData?.region || personalData?.state || '')}</Region>
-            <PostalCode>${getFieldValue(applicationData, personalData?.postalCode || personalData?.zipCode || '')}</PostalCode>
-            <Address1>${getFieldValue(applicationData, personalData?.address1 || personalData?.address || '')}</Address1>
-            <Address2>${getFieldValue(applicationData, personalData?.address2 || '')}</Address2>
+            <CountryCode>${countryCode}</CountryCode>
+            <Municipality>${municipality}</Municipality>
+            <Region>${region}</Region>
+            <PostalCode>${postalCode}</PostalCode>
+            <Address1>${address1}</Address1>
+            <Address2>${address2}</Address2>
         </PostalAddress>`;
 
-  // Build GovernmentID section (optional)
-  const governmentIdValue = getFieldValue(applicationData, personalData?.governmentId || personalData?.ssn || '');
-  const governmentIdXML = governmentIdValue ? `
-        <GovernmentID countryCode="${getFieldValue(applicationData, personalData?.governmentIdCountryCode || '') || 'US'}" 
-                      issuingAuthority="${getFieldValue(applicationData, personalData?.governmentIdIssuingAuthority || '') || 'SSA'}" 
-                      documentType="${getFieldValue(applicationData, personalData?.governmentIdDocumentType || '') || 'SSN'}">
-            ${formatSSN(governmentIdValue)}
-        </GovernmentID>` : '';
-
-  // Build DateOfBirth section (optional)
-  const dateOfBirth = formatDate(getFieldValue(applicationData, personalData?.dateOfBirth || ''));
-  const dateOfBirthXML = dateOfBirth ? `
-        <DateOfBirth>${dateOfBirth}</DateOfBirth>` : '';
-
-  // Build ContactData section
-  const primaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.primaryPhone || personalData?.phone || ''));
-  const secondaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.secondaryPhone || ''));
-  const preferredMethod = getFieldValue(applicationData, personalData?.preferredMethod || '') || 'PrimaryPhone';
-  
-  const contactDataXML = `
-        <ContactData PreferredMethod="${preferredMethod}">
-            <InternetEmailAddress>${getFieldValue(applicationData, personalData?.internetEmailAddress || personalData?.email || '')}</InternetEmailAddress>
-            ${primaryPhone ? `<PrimaryPhone>${primaryPhone}</PrimaryPhone>` : ''}
-            ${secondaryPhone ? `<SecondaryPhone>${secondaryPhone}</SecondaryPhone>` : ''}
-        </ContactData>`;
-
-  // Build custom questions XML
-  const customQuestionsXML = customQuestions && Array.isArray(customQuestions)
-    ? customQuestions
-        .filter((q) => q.mapping && q.questionId && getFieldValue(applicationData, q.mapping))
-        .map((q) => `
-            <CustomQuestion>
-                <QuestionId>${q.questionId}</QuestionId>
-                <Question>${q.question || ''}</Question>
-                <Answer>${getFieldValue(applicationData, q.mapping)}</Answer>
-            </CustomQuestion>`)
-        .join('')
+  // === GovernmentID Section (optional) ===
+  const governmentIdValue = getFieldValue(applicationData, personalData?.governmentId || 'ssn');
+  const governmentIdXML = governmentIdValue 
+    ? `
+        <GovernmentID countryCode="US" issuingAuthority="SSA" documentType="SSN">${formatSSN(governmentIdValue)}</GovernmentID>` 
     : '';
 
-  // Build display fields XML
+  // === DateOfBirth Section (optional) ===
+  const dateOfBirth = formatDateMMDDYYYY(getFieldValue(applicationData, personalData?.dateOfBirth || 'date_of_birth'));
+  const dateOfBirthXML = dateOfBirth 
+    ? `
+        <DateOfBirth>${dateOfBirth}</DateOfBirth>` 
+    : '';
+
+  // === ContactData Section ===
+  const email = formatEmail(getFieldValue(applicationData, personalData?.internetEmailAddress || 'applicant_email'));
+  const primaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.primaryPhone || 'phone'));
+  const secondaryPhone = formatPhoneNumber(getFieldValue(applicationData, personalData?.secondaryPhone || 'secondary_phone'));
+  const preferredMethod = getFieldValue(applicationData, personalData?.preferredMethod || 'preferred_contact_method') || 'PrimaryPhone';
+  
+  const contactDataXML = `
+        <ContactData PreferredMethod="${escapeXML(preferredMethod)}">
+            <InternetEmailAddress>${escapeXML(email)}</InternetEmailAddress>
+            <PrimaryPhone>${primaryPhone}</PrimaryPhone>
+            <SecondaryPhone>${secondaryPhone}</SecondaryPhone>
+        </ContactData>`;
+
+  // === Licenses Section (NEW - per official schema) ===
+  const hasCDL = normalizeYesNo(getFieldValue(applicationData, licenseMappings?.commercialDriversLicense || 'cdl'));
+  const cdlClass = escapeXML(getFieldValue(applicationData, licenseMappings?.licenseClass || 'cdl_class'));
+  const cdlState = escapeXML(getFieldValue(applicationData, licenseMappings?.region || 'cdl_state'));
+  const cdlExpiration = formatDateYYYYMMDD(getFieldValue(applicationData, licenseMappings?.expirationDate || 'cdl_expiration_date'));
+  const cdlNumber = escapeXML(getFieldValue(applicationData, licenseMappings?.licenseNumber || ''));
+  const endorsements = mapEndorsements(applicationData[licenseMappings?.endorsements || 'cdl_endorsements']);
+
+  // Build endorsements XML
+  const endorsementsXML = endorsements.length > 0 
+    ? `
+                <Endorsements>
+${endorsements.map(e => `                    <Endorsement>${e}</Endorsement>`).join('\n')}
+                </Endorsements>`
+    : '';
+
+  // Build license XML (only if CDL info exists)
+  const licensesXML = hasCDL === 'y' || cdlClass 
+    ? `
+        <Licenses>
+            <License>
+                <CurrentLicense>${hasCDL}</CurrentLicense>
+                ${cdlNumber ? `<LicenseNumber>${cdlNumber}</LicenseNumber>` : ''}
+                ${cdlExpiration ? `<ExpirationDate>${cdlExpiration}</ExpirationDate>` : ''}
+                <Region>${cdlState || region}</Region>
+                <CountryCode>US</CountryCode>
+                <CommercialDriversLicense>${hasCDL}</CommercialDriversLicense>
+                ${cdlClass ? `<LicenseClass>${cdlClass}</LicenseClass>` : ''}${endorsementsXML}
+            </License>
+        </Licenses>`
+    : '';
+
+  // === DisplayFields Section ===
   const displayFieldsXML = displayFields && Array.isArray(displayFields)
     ? displayFields
         .filter((f) => f.mapping && f.displayPrompt && getFieldValue(applicationData, f.mapping))
         .map((f) => `
-        <DisplayField>
-            <DisplayPrompt>${f.displayPrompt}</DisplayPrompt>
-            <DisplayValue>${getFieldValue(applicationData, f.mapping)}</DisplayValue>
-        </DisplayField>`)
+            <DisplayField>
+                <DisplayPrompt>${escapeXML(f.displayPrompt)}</DisplayPrompt>
+                <DisplayValue>${escapeXML(getFieldValue(applicationData, f.mapping))}</DisplayValue>
+            </DisplayField>`)
         .join('')
     : '';
 
-  // Build optional DriverId section
+  // === Build DriverId ===
   const driverId = (config.driverId as string) || getFieldValue(applicationData, 'driver_id') || getFieldValue(applicationData, 'id');
-  const driverIdXML = driverId ? `
-    <DriverId>${driverId}</DriverId>` : '';
+  const driverIdXML = driverId 
+    ? `
+    <DriverId>${escapeXML(driverId)}</DriverId>` 
+    : '';
 
-  // Build optional Job section
-  const jobXML = config.jobId ? `
-    <Job>
-        <JobId>${config.jobId}</JobId>
-    </Job>` : '';
-
-  // Build optional Tags section
-  const tagsXML = config.statusTag ? `
-    <Tags>
-        <Tag>${config.statusTag}</Tag>
-    </Tags>` : '';
-
+  // === Final XML Assembly (matching official Tenstreet schema) ===
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
     <Authentication>
@@ -460,16 +573,14 @@ function buildTenstreetXML(
         <Password><![CDATA[${config.password}]]></Password>
         <Service>${escapeXML((config.service as string) || 'subject_upload')}</Service>
     </Authentication>
-    <Mode>${escapeXML((config.mode as string) || 'PROD')}</Mode>
+    <Mode>${escapeXML((config.mode as string) || 'DEV')}</Mode>
     <Source>${escapeXML((config.source as string) || '')}</Source>
     <CompanyId>${escapeXML((config.companyId as string) || '')}</CompanyId>
-    <CompanyName>${escapeXML((config.companyName as string) || '')}</CompanyName>${driverIdXML}${jobXML}${tagsXML}
+    <CompanyName>${escapeXML((config.companyName as string) || '')}</CompanyName>${driverIdXML}
     <PersonalData>${personNameXML}${postalAddressXML}${governmentIdXML}${dateOfBirthXML}${contactDataXML}
     </PersonalData>
     <ApplicationData>
-        <AppReferrer>${(config.appReferrer as string) || '3BI'}</AppReferrer>
-        <CustomQuestions>${customQuestionsXML}
-        </CustomQuestions>
+        <AppReferrer>${escapeXML((config.appReferrer as string) || '')}</AppReferrer>${licensesXML}
         <DisplayFields>${displayFieldsXML}
         </DisplayFields>
     </ApplicationData>
