@@ -41,6 +41,7 @@ const ApplicationSubmissionSchema = z.object({
   experience: z.string().max(50).optional(),
   months: z.string().max(10).optional(),
   exp: z.string().max(100).optional(),
+  driving_experience_years: z.number().int().min(0).max(99).optional(),
   over21: z.string().max(10).optional(),
   drug: z.string().max(50).optional(),
   veteran: z.string().max(50).optional(),
@@ -237,28 +238,30 @@ async function triggerSourceWebhooks(
 }
 
 /**
- * Resolve organization ID from various sources
+ * Resolve organization ID and job details from various sources
  * Priority: job_listing_id -> org_slug -> fallback to CR England
  */
-async function resolveOrganizationId(
+async function resolveOrganizationAndJob(
   supabase: ReturnType<typeof createClient>,
   jobListingId?: string,
   orgSlug?: string
-): Promise<{ organizationId: string; organizationName: string }> {
+): Promise<{ organizationId: string; organizationName: string; externalJobId: string | null; jobTitle: string | null }> {
   // Priority 1: Get org from job_listing_id
   if (jobListingId) {
     const { data: jobListing } = await supabase
       .from('job_listings')
-      .select('organization_id, organizations(id, name, slug)')
+      .select('organization_id, external_job_id, title, organizations(id, name, slug)')
       .eq('id', jobListingId)
       .single();
     
     if (jobListing?.organization_id) {
       const org = jobListing.organizations as { id: string; name: string; slug: string } | null;
-      logger.info('Resolved org from job_listing_id', { org_name: org?.name });
+      logger.info('Resolved org from job_listing_id', { org_name: org?.name, external_job_id: jobListing.external_job_id });
       return {
         organizationId: jobListing.organization_id,
-        organizationName: org?.name || 'Unknown'
+        organizationName: org?.name || 'Unknown',
+        externalJobId: jobListing.external_job_id || null,
+        jobTitle: jobListing.title || null
       };
     }
   }
@@ -273,7 +276,7 @@ async function resolveOrganizationId(
     
     if (org) {
       logger.info('Resolved org from slug', { org_name: org.name });
-      return { organizationId: org.id, organizationName: org.name };
+      return { organizationId: org.id, organizationName: org.name, externalJobId: null, jobTitle: null };
     }
   }
   
@@ -287,8 +290,86 @@ async function resolveOrganizationId(
   logger.info('Falling back to CR England org');
   return {
     organizationId: crEnglandOrg?.id || '',
-    organizationName: crEnglandOrg?.name || 'C.R. England'
+    organizationName: crEnglandOrg?.name || 'C.R. England',
+    externalJobId: null,
+    jobTitle: null
   };
+}
+
+/**
+ * Check for duplicate applications within the last 30 days
+ */
+async function checkDuplicateApplication(
+  supabase: ReturnType<typeof createClient>,
+  email: string,
+  jobListingId: string | null
+): Promise<{ isDuplicate: boolean; existingApplicationDate?: string }> {
+  if (!email) return { isDuplicate: false };
+  
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  let query = supabase
+    .from('applications')
+    .select('id, applied_at')
+    .eq('applicant_email', email.toLowerCase())
+    .gte('applied_at', thirtyDaysAgo.toISOString())
+    .limit(1);
+  
+  // If we have a job listing ID, check for exact match
+  if (jobListingId) {
+    query = query.eq('job_listing_id', jobListingId);
+  }
+  
+  const { data: existingApp } = await query.maybeSingle();
+  
+  if (existingApp) {
+    logger.info('Duplicate application detected', { email_hash: email.substring(0, 3) + '***' });
+    return { 
+      isDuplicate: true, 
+      existingApplicationDate: existingApp.applied_at 
+    };
+  }
+  
+  return { isDuplicate: false };
+}
+
+/**
+ * Send application confirmation email (non-blocking)
+ */
+async function sendConfirmationEmail(
+  applicantEmail: string,
+  firstName: string,
+  lastName: string,
+  jobTitle: string | null,
+  organizationName: string
+): Promise<void> {
+  try {
+    const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-application-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+      },
+      body: JSON.stringify({
+        to: applicantEmail,
+        subject: `Application Received${jobTitle ? ` - ${jobTitle}` : ''}`,
+        candidateName: `${firstName} ${lastName}`.trim(),
+        jobTitle: jobTitle || 'Driver Position',
+        companyName: organizationName,
+        type: 'application_received'
+      })
+    });
+    
+    if (response.ok) {
+      logger.info('Confirmation email sent', { email_hash: applicantEmail.substring(0, 3) + '***' });
+    } else {
+      const errorText = await response.text();
+      logger.warn('Failed to send confirmation email', { status: response.status, error: errorText });
+    }
+  } catch (err) {
+    logger.error('Error sending confirmation email', err as Error);
+  }
 }
 
 // Legacy auto-post functions removed - now using generic autoPostToATS from ats-adapters
@@ -354,13 +435,41 @@ Deno.serve(async (req) => {
     }
     
     const formData = validationResult.data;
+    
+    const applicantEmail = (formData.email || formData.applicant_email || '').toLowerCase();
 
-    // Resolve organization dynamically
-    const { organizationId, organizationName } = await resolveOrganizationId(
+    // Resolve organization and job details dynamically
+    const { organizationId, organizationName, externalJobId, jobTitle } = await resolveOrganizationAndJob(
       supabase,
       formData.job_listing_id,
       formData.org_slug
     );
+
+    // Check for duplicate applications within 30 days
+    const { isDuplicate, existingApplicationDate } = await checkDuplicateApplication(
+      supabase,
+      applicantEmail,
+      formData.job_listing_id || null
+    );
+
+    if (isDuplicate) {
+      const appliedDate = existingApplicationDate 
+        ? new Date(existingApplicationDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        : 'recently';
+      
+      logger.info('Duplicate application rejected', { email_hash: applicantEmail.substring(0, 3) + '***' });
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `You already applied to this position on ${appliedDate}. Check your email for updates on your application status.`
+        }),
+        { 
+          status: 409, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     // Determine experience level based on months
     const getExperienceLevel = (months: string) => {
@@ -422,12 +531,18 @@ Deno.serve(async (req) => {
     const firstName = formData.firstName || formData.first_name || '';
     const lastName = formData.lastName || formData.last_name || '';
     
+    // Calculate driving experience years from months
+    const monthsValue = formData.months || formData.experience || '0';
+    const monthsNum = parseInt(monthsValue) || 0;
+    const drivingExperienceYears = formData.driving_experience_years ?? Math.floor(monthsNum / 12);
+    
     const applicationData = {
       job_listing_id: jobListingId,
+      job_id: externalJobId || formData.job_id || null, // Populate from external_job_id
       first_name: firstName,
       last_name: lastName,
       full_name: `${firstName} ${lastName}`.trim() || null,
-      applicant_email: formData.email || formData.applicant_email,
+      applicant_email: applicantEmail,
       phone: normalizePhone(formData.phone || ''),
       city: city,
       state: state,
@@ -435,12 +550,13 @@ Deno.serve(async (req) => {
       age: formData.over21,
       cdl: formData.cdl,
       exp: formData.exp || getExperienceLevel(formData.experience || ''),
+      driving_experience_years: drivingExperienceYears,
       drug: formData.drug,
       veteran: formData.veteran,
       employment_history: formData.employmentHistory,
       consent: formData.consent,
       privacy: formData.privacy,
-      months: formData.months || formData.experience,
+      months: monthsValue, // Store numeric string
       // URL tracking parameters
       ad_id: formData.ad_id || null,
       campaign_id: formData.campaign_id || null,
@@ -476,6 +592,11 @@ Deno.serve(async (req) => {
     } catch (webhookError) {
       logger.error('Webhook trigger failed (non-blocking)', webhookError as Error);
     }
+
+    // Send confirmation email to applicant (non-blocking background task)
+    EdgeRuntime.waitUntil(
+      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, organizationName)
+    );
 
     // Auto-post to ALL configured ATS systems (Tenstreet, DriverReach, etc.)
     // Uses generic ATS adapter pattern - non-blocking background task
