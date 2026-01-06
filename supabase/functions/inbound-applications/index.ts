@@ -318,6 +318,17 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Parse URL query parameters FIRST
+    const url = new URL(req.url);
+    const queryParams: Record<string, string> = {};
+    url.searchParams.forEach((value, key) => {
+      queryParams[key] = value;
+    });
+
+    if (Object.keys(queryParams).length > 0) {
+      logger.info('URL query parameters', { params: queryParams });
+    }
+
     // Parse request body
     const rawBody = await req.text();
     const contentType = req.headers.get('content-type') || '';
@@ -339,7 +350,13 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    logger.info('Parsed webhook data', { keys: Object.keys(body) });
+    // Merge query parameters with body (body takes precedence for security)
+    body = { ...queryParams, ...body };
+
+    logger.info('Parsed webhook data', { 
+      keys: Object.keys(body),
+      hasQueryParams: Object.keys(queryParams).length > 0
+    });
 
     // Optional: Verify webhook signature if provided
     const signature = req.headers.get('x-webhook-signature');
@@ -440,8 +457,13 @@ const handler = async (req: Request): Promise<Response> => {
       return validationErrorResponse(validationErrors.join(', '), origin);
     }
 
-    // Determine organization - use Hayes as default if not specified
+    // Determine organization - check query params first, then body fields
     let organizationId = applicationData.organization_id;
+    
+    logger.info('Organization resolution', {
+      fromExtraction: applicationData.organization_id,
+      fromOrganizationSlug: applicationData.organization_slug,
+    });
     
     if (!organizationId && applicationData.organization_slug) {
       const { data: org } = await supabase
@@ -451,11 +473,17 @@ const handler = async (req: Request): Promise<Response> => {
         .single();
       
       organizationId = org?.id;
+      if (organizationId) {
+        logger.info('Resolved organization from slug', { slug: applicationData.organization_slug, id: organizationId });
+      }
     }
     
     // Default to Hayes Recruiting Solutions
     if (!organizationId) {
       organizationId = '84214b48-7b51-45bc-ad7f-723bcf50466c';
+      logger.info('Using default organization', { id: organizationId });
+    } else {
+      logger.info('Organization resolved', { id: organizationId });
     }
 
     // Look up client by name or slug
