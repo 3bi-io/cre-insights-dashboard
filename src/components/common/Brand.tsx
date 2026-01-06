@@ -85,7 +85,7 @@ export const Brand: React.FC<BrandProps> = ({
         <LogoIcon size={iconSize} />
         <span className={cn("font-logo font-bold tracking-tight", textSize)}>
           <span className="text-primary font-serif">ATS</span>
-          <span className="text-muted-foreground">.me</span>
+          <span className="text-muted-foreground font-serif">.me</span>
         </span>
       </div>;
   };
