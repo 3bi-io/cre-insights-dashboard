@@ -123,6 +123,7 @@ const JobDetailsPage: React.FC = () => {
       company: companyName,
       location: displayLocation || 'Various locations',
       salary: salary || 'Competitive salary',
+      voiceAgentId: job.voiceAgent?.agent_id,
     });
   };
 
