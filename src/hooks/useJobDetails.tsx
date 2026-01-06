@@ -1,6 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface VoiceAgent {
+  id: string;
+  agent_id: string;
+  organization_id: string;
+  is_active: boolean;
+}
+
 interface JobDetails {
   id: string;
   title: string;
@@ -38,6 +45,7 @@ interface JobDetails {
     id: string;
     name: string;
   } | null;
+  voiceAgent?: VoiceAgent | null;
 }
 
 export const useJobDetails = (jobId: string | undefined) => {
@@ -59,7 +67,25 @@ export const useJobDetails = (jobId: string | undefined) => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as unknown as JobDetails | null;
+      if (!data) return null;
+
+      // Fetch voice agent for the organization
+      let voiceAgent: VoiceAgent | null = null;
+      if (data.organization_id) {
+        const { data: va } = await supabase
+          .from('voice_agents')
+          .select('id, agent_id, organization_id, is_active')
+          .eq('organization_id', data.organization_id)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        voiceAgent = va;
+      }
+
+      return {
+        ...data,
+        voiceAgent
+      } as unknown as JobDetails;
     },
     enabled: !!jobId,
     staleTime: 5 * 60 * 1000, // 5 minutes
