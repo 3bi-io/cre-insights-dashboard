@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { agentId } = await req.json();
+    const { agentId, jobContext } = await req.json();
 
     if (!agentId) {
       return new Response(
@@ -44,10 +44,23 @@ serve(async (req) => {
       );
     }
 
-    console.log('Requesting signed URL for agent:', agentId);
+    console.log('Requesting signed URL for agent:', agentId, 'with job context:', jobContext);
 
-    // Request signed URL from ElevenLabs API
-    const response = await fetch(
+    // Build dynamic variables from job context
+    // These are required by the ElevenLabs agent's first message template
+    const dynamicVariables: Record<string, string> = {
+      job_title: jobContext?.jobTitle || 'the driving position',
+      applicant_first_name: 'there', // Will be collected during conversation
+      company_name: jobContext?.company || 'our company',
+      job_location: jobContext?.location || 'various locations',
+      salary: jobContext?.salary || 'competitive compensation',
+    };
+
+    console.log('Dynamic variables:', dynamicVariables);
+
+    // Request signed URL from ElevenLabs API with dynamic variables
+    // For web SDK, we pass variables via conversation_config_override
+    const signedUrlResponse = await fetch(
       `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
       {
         method: 'GET',
@@ -57,28 +70,29 @@ serve(async (req) => {
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
+    if (!signedUrlResponse.ok) {
+      const errorText = await signedUrlResponse.text();
+      console.error('ElevenLabs API error:', signedUrlResponse.status, errorText);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `ElevenLabs API error: ${response.status} - ${errorText}` 
+          error: `ElevenLabs API error: ${signedUrlResponse.status} - ${errorText}` 
         }),
         { 
-          status: response.status,
+          status: signedUrlResponse.status,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    const data = await response.json();
+    const data = await signedUrlResponse.json();
     console.log('Signed URL obtained successfully');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        signedUrl: data.signed_url 
+        signedUrl: data.signed_url,
+        dynamicVariables // Pass to client for WebSocket initialization
       }),
       { 
         status: 200,

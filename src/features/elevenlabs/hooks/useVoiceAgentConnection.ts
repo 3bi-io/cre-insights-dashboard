@@ -137,12 +137,12 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     }
   }, [toast]);
 
-  const getSignedUrl = useCallback(async (agentId: string, context?: any): Promise<SignedUrlResponse> => {
+  const getSignedUrl = useCallback(async (agentId: string, context?: any): Promise<{ signedUrl: string; dynamicVariables?: Record<string, string> }> => {
     try {
-      logger.debug('Requesting signed URL', { agentId }, 'VoiceAgentConnection');
+      logger.debug('Requesting signed URL', { agentId, context }, 'VoiceAgentConnection');
       
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: { agentId, ...context }
+        body: { agentId, jobContext: context?.jobContext }
       });
 
       if (error) {
@@ -154,7 +154,10 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
         throw new Error(data?.error || 'No signed URL received from edge function');
       }
 
-      return data as SignedUrlResponse;
+      return { 
+        signedUrl: data.signedUrl,
+        dynamicVariables: data.dynamicVariables 
+      };
     } catch (error) {
       logger.error('Failed to get signed URL', error, 'VoiceAgentConnection');
       throw error;
@@ -178,13 +181,14 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
         return;
       }
 
-      // Get signed URL
-      const urlResponse = await getSignedUrl(agentId, context);
+      // Get signed URL and dynamic variables
+      const { signedUrl, dynamicVariables } = await getSignedUrl(agentId, context);
 
-      // Start conversation
-      logger.info('Starting conversation', { agentId }, 'VoiceAgentConnection');
+      // Start conversation with dynamic variables
+      logger.info('Starting conversation', { agentId, dynamicVariables }, 'VoiceAgentConnection');
       const conversationId = await conversation.startSession({
-        signedUrl: urlResponse.signedUrl!
+        signedUrl,
+        dynamicVariables
       });
       logger.info('Conversation started', { conversationId }, 'VoiceAgentConnection');
 
