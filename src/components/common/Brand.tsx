@@ -84,7 +84,7 @@ export const Brand: React.FC<BrandProps> = ({
     return <div className="flex items-center gap-2">
         <LogoIcon size={iconSize} />
         <span className={cn("font-logo font-bold tracking-tight", textSize)}>
-          <span className="text-primary">ᴀᴛs
+          <span className="text-primary">ATS
 
 
         </span>
