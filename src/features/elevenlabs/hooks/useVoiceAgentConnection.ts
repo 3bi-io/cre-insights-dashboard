@@ -3,7 +3,7 @@
  * Manages connection state and lifecycle for ElevenLabs voice agents
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useConversation } from '@11labs/react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +26,14 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   const [transcripts, setTranscripts] = useState<LiveTranscriptMessage[]>([]);
   const [pendingUserTranscript, setPendingUserTranscript] = useState<string>('');
   const { toast } = useToast();
+  
+  // Ref to track connection state for cleanup (avoids stale closure issues)
+  const isConnectedRef = useRef(false);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    isConnectedRef.current = isConnected;
+  }, [isConnected]);
 
   const clearTranscripts = useCallback(() => {
     setTranscripts([]);
@@ -211,12 +219,34 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     }
   }, [conversation, requestMicrophoneAccess, getSignedUrl, toast]);
 
+  // Cleanup on unmount - end session gracefully
+  useEffect(() => {
+    return () => {
+      if (isConnectedRef.current) {
+        logger.debug('Component unmounting, ending voice session', undefined, 'VoiceAgentConnection');
+        conversation.endSession().catch(() => {
+          // Silently handle cleanup errors - component is already unmounting
+        });
+      }
+    };
+  }, [conversation]);
+
   const disconnect = useCallback(async (): Promise<void> => {
     try {
+      // Check if already disconnected to avoid WebSocket warnings
+      if (conversation.status === 'disconnected') {
+        logger.debug('Already disconnected, skipping', undefined, 'VoiceAgentConnection');
+        return;
+      }
       await conversation.endSession();
     } catch (error) {
-      logger.error('Failed to disconnect', error, 'VoiceAgentConnection');
-      throw error;
+      // Only log/throw if it's not an expected "already closed" error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('CLOSING') && !errorMessage.includes('CLOSED')) {
+        logger.error('Failed to disconnect', error, 'VoiceAgentConnection');
+        throw error;
+      }
+      logger.debug('WebSocket already closed during disconnect', undefined, 'VoiceAgentConnection');
     }
   }, [conversation]);
 
