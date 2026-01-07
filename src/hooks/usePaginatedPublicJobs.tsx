@@ -74,7 +74,8 @@ export function usePaginatedPublicJobs({
           .from('voice_agents')
           .select('*')
           .in('organization_id', orgIds)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('is_outbound_enabled', false);
 
         // Attach voice agents to jobs
         const jobsWithVoiceAgents = data.map(job => ({
