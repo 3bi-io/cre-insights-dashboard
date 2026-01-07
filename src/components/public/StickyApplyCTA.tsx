@@ -11,9 +11,10 @@ import { cn } from '@/lib/utils';
 
 interface StickyApplyCTAProps {
   applyUrl: string;
-  onVoiceApply: () => void;
+  onVoiceApply?: () => void;
   isVoiceConnected: boolean;
   jobTitle: string;
+  showVoiceButton?: boolean;
 }
 
 export const StickyApplyCTA: React.FC<StickyApplyCTAProps> = ({
@@ -21,6 +22,7 @@ export const StickyApplyCTA: React.FC<StickyApplyCTAProps> = ({
   onVoiceApply,
   isVoiceConnected,
   jobTitle,
+  showVoiceButton = true,
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -66,15 +68,17 @@ export const StickyApplyCTA: React.FC<StickyApplyCTAProps> = ({
               <ExternalLink className="w-4 h-4 ml-2" />
             </Button>
           </Link>
-          <Button 
-            variant="outline" 
-            className="h-12 px-4"
-            onClick={onVoiceApply}
-            disabled={isVoiceConnected}
-            aria-label={`Apply to ${jobTitle} with voice`}
-          >
-            <Mic className="w-5 h-5" />
-          </Button>
+          {showVoiceButton && onVoiceApply && (
+            <Button 
+              variant="outline" 
+              className="h-12 px-4"
+              onClick={onVoiceApply}
+              disabled={isVoiceConnected}
+              aria-label={`Apply to ${jobTitle} with voice`}
+            >
+              <Mic className="w-5 h-5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

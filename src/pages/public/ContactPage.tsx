@@ -17,8 +17,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { 
-  MessageSquare,
-  Users,
   Headphones,
   Send,
   Loader2,
@@ -129,29 +127,6 @@ const ContactPage = () => {
     }
   };
 
-  const contactMethods = [
-    {
-      icon: MessageSquare,
-      title: "Sales Inquiries",
-      description: "Questions about pricing, features, or demos",
-      contact: "sales@ats.me",
-      action: "Contact Sales"
-    },
-    {
-      icon: Headphones,
-      title: "Customer Support",
-      description: "Technical support for existing customers",
-      contact: "support@ats.me",
-      action: "Get Support"
-    },
-    {
-      icon: Users,
-      title: "Partnerships",
-      description: "Integration partnerships and collaborations",
-      contact: "partners@ats.me",
-      action: "Partner With Us"
-    }
-  ];
 
   const faqs = [
     {
@@ -195,37 +170,6 @@ const ContactPage = () => {
         </div>
       </section>
 
-      {/* Contact Methods - Click entire card on mobile */}
-      <section className="py-10 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 mb-10 md:mb-16">
-            {contactMethods.map((method, index) => (
-              <a 
-                key={index} 
-                href={`mailto:${method.contact}`}
-                className="block"
-              >
-                <Card className="hover:shadow-lg transition-all hover:border-primary/50 h-full cursor-pointer active:scale-[0.98]">
-                  <CardContent className="p-5 md:p-8 text-center">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4">
-                      <method.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="text-lg md:text-xl font-bold text-foreground mb-1 md:mb-2">
-                      {method.title}
-                    </h3>
-                    <p className="text-muted-foreground mb-2 md:mb-4 text-sm md:text-base">
-                      {method.description}
-                    </p>
-                    <span className="text-primary font-medium text-sm md:text-base">
-                      {method.contact}
-                    </span>
-                  </CardContent>
-                </Card>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Contact Form & FAQ */}
       <section className="py-10 md:py-20 bg-muted/30">

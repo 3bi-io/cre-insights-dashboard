@@ -16,10 +16,13 @@ import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { VoiceApplicationPanel } from '@/features/elevenlabs';
+import { useToast } from '@/hooks/use-toast';
+import { sanitizers } from '@/utils/validation';
 
 const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { data: job, isLoading, error } = useJobDetails(id);
   
   const {
@@ -116,6 +119,15 @@ const JobDetailsPage: React.FC = () => {
   };
 
   const handleVoiceApply = () => {
+    if (!job.voiceAgent?.agent_id) {
+      toast({
+        title: "Voice Agent Unavailable",
+        description: "Voice applications are not available for this job.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     startVoiceApplication({
       jobId: job.id,
       jobTitle: displayTitle,
@@ -123,6 +135,7 @@ const JobDetailsPage: React.FC = () => {
       company: companyName,
       location: displayLocation || 'Various locations',
       salary: salary || 'Competitive salary',
+      voiceAgentId: job.voiceAgent.agent_id,
     });
   };
 
@@ -275,9 +288,10 @@ const JobDetailsPage: React.FC = () => {
               {displayDescription && (
                 <div className="mb-6 lg:mb-8">
                   <h2 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4">Job Description</h2>
-                  <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-wrap text-sm lg:text-base">
-                    {displayDescription}
-                  </div>
+                  <div 
+                    className="prose prose-sm max-w-none text-muted-foreground text-sm lg:text-base"
+                    dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
+                  />
                 </div>
               )}
 
@@ -289,16 +303,18 @@ const JobDetailsPage: React.FC = () => {
                     <ExternalLink className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={handleVoiceApply}
-                  disabled={isConnected}
-                  className="flex-1"
-                >
-                  <Mic className="w-4 h-4 mr-2" />
-                  Apply with Voice
-                </Button>
+                {job.voiceAgent && (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={handleVoiceApply}
+                    disabled={isConnected}
+                    className="flex-1"
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    Apply with Voice
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -328,6 +344,7 @@ const JobDetailsPage: React.FC = () => {
           onVoiceApply={handleVoiceApply}
           isVoiceConnected={isConnected}
           jobTitle={displayTitle}
+          showVoiceButton={!!job.voiceAgent}
         />
 
         {/* Voice Application Panel with Transcripts */}
