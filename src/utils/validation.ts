@@ -326,9 +326,13 @@ export const sanitizers = {
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, ''),
   sanitizeHtml: (html: string): string => {
-    // Basic HTML sanitization - in production, use a proper HTML sanitizer like DOMPurify
-    return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-               .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-               .replace(/on\w+="[^"]*"/gi, '');
+    // Enhanced HTML sanitization
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
+      .replace(/javascript:/gi, '');
   }
 };

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { JobContext } from '@/features/elevenlabs';
+import { sanitizers } from '@/utils/validation';
 
 interface PublicJobCardProps {
   job: any;
@@ -97,9 +98,10 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
 
       <CardContent className="space-y-4">
         {displayDescription && (
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {displayDescription}
-          </p>
+          <div 
+            className="text-sm text-muted-foreground line-clamp-3"
+            dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
+          />
         )}
 
         <div className="space-y-2">
