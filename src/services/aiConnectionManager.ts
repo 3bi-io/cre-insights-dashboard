@@ -17,6 +17,7 @@ export interface AIProviderConfig {
   model: string;
   testMessage: string;
   timeout: number;
+  discontinued?: boolean;
 }
 
 class AIConnectionManager {
@@ -45,9 +46,10 @@ class AIConnectionManager {
     },
     grok: {
       provider: 'grok',
-      model: 'grok-2',
+      model: 'grok-3',
       testMessage: 'Test connection - respond with "OK"',
-      timeout: 10000
+      timeout: 10000,
+      discontinued: true
     }
   };
 
