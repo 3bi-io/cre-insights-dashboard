@@ -189,10 +189,20 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
       // Get signed URL
       const urlResponse = await getSignedUrl(agentId, context);
 
-      // Start conversation
-      logger.info('Starting conversation', { agentId }, 'VoiceAgentConnection');
+      // Build dynamic variables from job context
+      const dynamicVariables: Record<string, string> = {
+        job_title: context?.jobContext?.jobTitle || 'the driving position',
+        company_name: context?.jobContext?.company || 'our company',
+        candidate_name: 'there', // Default for inbound calls where we don't know the name yet
+        job_location: context?.jobContext?.location || 'various locations',
+        salary_range: context?.jobContext?.salary || 'competitive salary'
+      };
+
+      // Start conversation with dynamic variables
+      logger.info('Starting conversation', { agentId, dynamicVariables }, 'VoiceAgentConnection');
       const conversationId = await conversation.startSession({
-        signedUrl: urlResponse.signedUrl!
+        signedUrl: urlResponse.signedUrl!,
+        dynamicVariables
       });
       logger.info('Conversation started', { conversationId }, 'VoiceAgentConnection');
 
