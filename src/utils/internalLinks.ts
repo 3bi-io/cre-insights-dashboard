@@ -38,13 +38,6 @@ export const INTERNAL_LINKS: InternalLink[] = [
     priority: 0.9,
   },
   {
-    path: '/pricing',
-    label: 'Pricing',
-    description: 'View pricing plans and early adopter offers',
-    category: 'primary',
-    priority: 0.9,
-  },
-  {
     path: '/resources',
     label: 'Resources',
     description: 'Recruitment guides and best practices',
@@ -146,13 +139,13 @@ export function getContextualLinks(currentPath: string): InternalLink[] {
  * Related content suggestions based on keywords
  */
 export const RELATED_CONTENT: Record<string, string[]> = {
-  'AI recruitment': ['/features', '/contact', '/pricing'],
+  'AI recruitment': ['/features', '/contact'],
   'Voice Apply': ['/features', '/contact'],
   'Tenstreet': ['/features', '/resources'],
   'analytics': ['/features', '/contact'],
-  'job boards': ['/features', '/pricing'],
+  'job boards': ['/features', '/contact'],
   'screening': ['/features', '/contact'],
-  'ATS software': ['/', '/features', '/pricing'],
+  'ATS software': ['/', '/features', '/contact'],
 };
 
 /**

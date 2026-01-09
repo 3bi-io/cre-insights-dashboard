@@ -347,9 +347,9 @@ const FeaturesPage = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/pricing">
+            <Link to="/contact">
               <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 py-3 text-base md:text-lg border-white text-white hover:bg-white/10 min-h-[48px]">
-                View Pricing Plans
+                Contact Sales
               </Button>
             </Link>
           </div>
