@@ -72,10 +72,8 @@ export const useElevenLabsVoice = () => {
 
       setSelectedJob(jobContext);
       
-      // Delay to ensure overrides are applied
-      setTimeout(() => {
-        connect(job.voiceAgentId!, { jobContext });
-      }, 0);
+      // Connect directly - cleanup effect no longer triggers on conversation object changes
+      await connect(job.voiceAgentId!, { jobContext });
       
     } catch (error: any) {
       toast({
