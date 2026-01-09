@@ -10,7 +10,7 @@ import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
 import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/lib/logger";
 import AppRoutes from "@/components/routing/AppRoutes";
-import CountryBlockWrapper from "@/components/CountryBlockWrapper";
+
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 
@@ -69,11 +69,11 @@ const AppContent = () => {
   usePageTracking();
   
   return (
-    <CountryBlockWrapper>
+    <>
       <AppRoutes />
       <PWAInstallPrompt />
       <PWAUpdater />
-    </CountryBlockWrapper>
+    </>
   );
 };
 
