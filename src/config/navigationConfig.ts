@@ -107,7 +107,8 @@ export const getNavigationGroups = (options: {
           label: 'Verifications',
           icon: Shield
         }] : []),
-        { path: '/admin/publishers', label: 'Publishers', icon: Globe },
+        { path: '/admin/ad-networks', label: 'Ad Networks', icon: Globe },
+        { path: '/admin/job-boards', label: 'Job Boards', icon: Rss },
         ...(isAdmin ? [
           { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
         ] : []),
@@ -177,7 +178,9 @@ export const routeTitles: Record<string, string> = {
   '/admin/ai-tools': 'AI Tools',
   '/admin/ai-analytics': 'AI Analytics',
   '/admin/visitor-analytics': 'Visitor Analytics',
-  '/admin/publishers': 'Publishers',
+  '/admin/publishers': 'Ad Networks',
+  '/admin/ad-networks': 'Ad Networks',
+  '/admin/job-boards': 'Job Boards',
   '/admin/organizations': 'Organizations',
   '/admin/settings': 'Settings',
   '/admin/user-management': 'User Management',
@@ -198,7 +201,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/tenstreet': 'Tenstreet',
   '/admin/profile': 'Profile Settings',
   '/admin/super-admin-feeds': 'Feed Management',
-  '/admin/platforms': 'Publishers',
+  '/admin/platforms': 'Ad Networks',
   '/admin/settings/organization': 'Organization Settings',
   '/admin/brand-assets': 'Brand Assets',
   '/admin/active-job-ids': 'Active Job IDs',
