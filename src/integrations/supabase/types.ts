@@ -588,6 +588,7 @@ export type Database = {
           display_fields: Json | null
           dot_physical_date: string | null
           driver_id: string | null
+          driver_type: string | null
           driverreach_applied_via: string | null
           driverreach_last_sync: string | null
           driverreach_sync_status: string | null
@@ -679,6 +680,7 @@ export type Database = {
           display_fields?: Json | null
           dot_physical_date?: string | null
           driver_id?: string | null
+          driver_type?: string | null
           driverreach_applied_via?: string | null
           driverreach_last_sync?: string | null
           driverreach_sync_status?: string | null
@@ -770,6 +772,7 @@ export type Database = {
           display_fields?: Json | null
           dot_physical_date?: string | null
           driver_id?: string | null
+          driver_type?: string | null
           driverreach_applied_via?: string | null
           driverreach_last_sync?: string | null
           driverreach_sync_status?: string | null
