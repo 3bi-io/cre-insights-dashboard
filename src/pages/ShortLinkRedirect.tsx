@@ -31,16 +31,8 @@ const ShortLinkRedirect: React.FC = () => {
           return;
         }
 
-        // Increment click count - using raw SQL increment via update
-        // Note: This is a fire-and-forget operation
-        fetch(`https://auwhcdpppldjlcaxzsme.supabase.co/rest/v1/rpc/increment_short_link_click`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1d2hjZHBwcGxkamxjYXh6c21lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NDg1NjAsImV4cCI6MjA2NTMyNDU2MH0._K3Se_I9Y5dGmV-42V4MJvj4AqSWouXRTXVArOVASdU',
-          },
-          body: JSON.stringify({ p_short_code: shortCode }),
-        }).catch(() => {});
+        // Increment click count - fire-and-forget via Supabase RPC
+        void supabase.rpc('increment_short_link_click', { p_short_code: shortCode });
 
         // Build redirect URL with UTM params
         const params = new URLSearchParams();
