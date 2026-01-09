@@ -1,0 +1,261 @@
+import React, { useRef, useEffect } from 'react';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Briefcase, Calendar as CalendarIcon, GraduationCap, Medal, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { SelectionButtonGroup } from '../SelectionButton';
+import type { DetailedFormData } from '@/hooks/useDetailedApplicationForm';
+
+interface DetailedExperienceSectionProps {
+  formData: DetailedFormData;
+  onInputChange: (field: string, value: unknown) => void;
+  isActive?: boolean;
+}
+
+const EDUCATION_OPTIONS = [
+  { value: 'less_than_high_school', label: 'Less than High School' },
+  { value: 'high_school', label: 'High School/GED' },
+  { value: 'some_college', label: 'Some College' },
+  { value: 'associates', label: "Associate's Degree" },
+  { value: 'bachelors', label: "Bachelor's Degree" },
+  { value: 'masters', label: "Master's Degree" },
+  { value: 'doctorate', label: 'Doctorate' },
+];
+
+const WORK_AUTH_OPTIONS = [
+  { value: 'us_citizen', label: 'US Citizen', description: 'Born or naturalized citizen' },
+  { value: 'permanent_resident', label: 'Permanent Resident', description: 'Green card holder' },
+  { value: 'work_visa', label: 'Work Visa', description: 'H-1B, L-1, etc.' },
+  { value: 'other', label: 'Other' },
+];
+
+const MILITARY_OPTIONS = [
+  { value: 'yes', label: 'Yes, I served', description: 'Thank you for your service!', icon: <Medal className="h-5 w-5" /> },
+  { value: 'no', label: 'No military service' },
+];
+
+const VETERAN_OPTIONS = [
+  { value: 'yes', label: 'Yes, I am a veteran', icon: <Medal className="h-5 w-5" /> },
+  { value: 'no', label: 'No' },
+];
+
+const MILITARY_BRANCHES = [
+  { value: 'army', label: 'Army' },
+  { value: 'navy', label: 'Navy' },
+  { value: 'air_force', label: 'Air Force' },
+  { value: 'marines', label: 'Marines' },
+  { value: 'coast_guard', label: 'Coast Guard' },
+  { value: 'space_force', label: 'Space Force' },
+];
+
+export const DetailedExperienceSection = React.memo(({ 
+  formData, 
+  onInputChange,
+  isActive 
+}: DetailedExperienceSectionProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isActive && containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [isActive]);
+
+  return (
+    <div ref={containerRef} className="space-y-6">
+      {/* Section Header */}
+      <div className="text-center pb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
+          <Briefcase className="h-6 w-6" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
+          Experience & Background
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          Share your work history and qualifications
+        </p>
+      </div>
+
+      {/* Employment History */}
+      <div className="space-y-2">
+        <Label htmlFor="employmentHistory" className="text-sm font-medium">
+          Previous Employment
+        </Label>
+        <Textarea
+          id="employmentHistory"
+          value={formData.employmentHistory}
+          onChange={(e) => onInputChange('employmentHistory', e.target.value)}
+          placeholder="Please describe your previous employment history, including company names, positions held, dates of employment, and reasons for leaving."
+          rows={5}
+          className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none"
+        />
+        <p className="text-xs text-muted-foreground">
+          Include your most recent employment first
+        </p>
+      </div>
+
+      {/* Education Level */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          Education Level
+        </Label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {EDUCATION_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onInputChange('educationLevel', option.value)}
+              className={cn(
+                "p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation text-center",
+                formData.educationLevel === option.value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background hover:border-primary/50"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Work Authorization */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Work Authorization Status</Label>
+        <SelectionButtonGroup
+          options={WORK_AUTH_OPTIONS}
+          value={formData.workAuthorization}
+          onChange={(value) => onInputChange('workAuthorization', value)}
+          columns={2}
+        />
+      </div>
+
+      {/* Military Service Section */}
+      <div className="space-y-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Medal className="h-4 w-4" />
+          <span className="text-sm font-medium">Military Service</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Have you served in the military?</Label>
+            <SelectionButtonGroup
+              options={MILITARY_OPTIONS}
+              value={formData.militaryService}
+              onChange={(value) => onInputChange('militaryService', value)}
+              columns={1}
+            />
+          </div>
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Veteran Status</Label>
+            <SelectionButtonGroup
+              options={VETERAN_OPTIONS}
+              value={formData.veteranStatus}
+              onChange={(value) => onInputChange('veteranStatus', value)}
+              columns={1}
+            />
+          </div>
+        </div>
+
+        {/* Military Details (shown only if served) */}
+        {formData.militaryService === 'yes' && (
+          <div className="space-y-4 pt-4 animate-in slide-in-from-top-2 duration-300">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Branch of Service</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {MILITARY_BRANCHES.map((branch) => (
+                  <button
+                    key={branch.value}
+                    type="button"
+                    onClick={() => onInputChange('militaryBranch', branch.value)}
+                    className={cn(
+                      "p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation",
+                      formData.militaryBranch === branch.value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background hover:border-primary/50"
+                    )}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      {formData.militaryBranch === branch.value && (
+                        <CheckCircle className="h-4 w-4" />
+                      )}
+                      {branch.label}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Service Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
+                        !formData.militaryStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.militaryStartDate ? format(formData.militaryStartDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.militaryStartDate || undefined}
+                      onSelect={(date) => onInputChange('militaryStartDate', date || null)}
+                      className="pointer-events-auto"
+                      initialFocus
+                      captionLayout="dropdown-buttons"
+                      fromYear={1970}
+                      toYear={new Date().getFullYear()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Service End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
+                        !formData.militaryEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.militaryEndDate ? format(formData.militaryEndDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.militaryEndDate || undefined}
+                      onSelect={(date) => onInputChange('militaryEndDate', date || null)}
+                      className="pointer-events-auto"
+                      initialFocus
+                      captionLayout="dropdown-buttons"
+                      fromYear={1970}
+                      toYear={new Date().getFullYear()}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+DetailedExperienceSection.displayName = 'DetailedExperienceSection';
