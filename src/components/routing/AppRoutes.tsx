@@ -61,6 +61,8 @@ const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
+const AdNetworks = React.lazy(() => import("@/pages/AdNetworks"));
+const JobBoards = React.lazy(() => import("@/pages/JobBoards"));
 const FeedsManagement = React.lazy(() => import("@/pages/FeedsManagement"));
 const ClientsPage = React.lazy(() => import("@/features/clients").then(m => ({ default: m.ClientsPage })));
 const Organizations = React.lazy(() => import("@/pages/Organizations"));
@@ -234,8 +236,10 @@ const AppRoutes: React.FC = () => {
         {/* Remaining routes */}
         <Route path="tenstreet-integration" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
         <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
-        <Route path="platforms" element={<Navigate to="/admin/publishers" replace />} />
-        <Route path="publishers" element={<ProtectedRouteWrapper><Platforms /></ProtectedRouteWrapper>} />
+        <Route path="platforms" element={<Navigate to="/admin/ad-networks" replace />} />
+        <Route path="publishers" element={<Navigate to="/admin/ad-networks" replace />} />
+        <Route path="ad-networks" element={<ProtectedRouteWrapper><AdNetworks /></ProtectedRouteWrapper>} />
+        <Route path="job-boards" element={<ProtectedRouteWrapper><JobBoards /></ProtectedRouteWrapper>} />
         <Route path="feeds" element={<ProtectedRouteWrapper><FeedsManagement /></ProtectedRouteWrapper>} />
         <Route path="universal-feeds" element={<ProtectedRouteWrapper><UniversalFeeds /></ProtectedRouteWrapper>} />
         <Route path="clients" element={<ProtectedRouteWrapper><ClientsPage /></ProtectedRouteWrapper>} />
