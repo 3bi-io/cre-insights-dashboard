@@ -198,8 +198,14 @@ export const routeTitles: Record<string, string> = {
   '/admin/tenstreet': 'Tenstreet',
   '/admin/profile': 'Profile Settings',
   '/admin/super-admin-feeds': 'Feed Management',
-  '/admin/platforms': 'Publishers', // Redirect alias
+  '/admin/platforms': 'Publishers',
   '/admin/settings/organization': 'Organization Settings',
+  '/admin/brand-assets': 'Brand Assets',
+  '/admin/active-job-ids': 'Active Job IDs',
+  '/admin/hayes-data': 'Hayes Data Population',
+  '/admin/tenstreet-sync': 'Tenstreet Sync Dashboard',
+  '/admin/driverreach-integration': 'DriverReach Integration',
+  '/admin/driverreach-sync': 'DriverReach Sync Dashboard',
 };
 
 export const getRouteTitle = (pathname: string): string => {

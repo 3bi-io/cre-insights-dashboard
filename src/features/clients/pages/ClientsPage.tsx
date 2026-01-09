@@ -13,12 +13,15 @@ import {
 import { useClientsService } from '../hooks';
 import { useAuth } from '@/hooks/useAuth';
 import type { Client, ClientFilters } from '../types/client.types';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 const ClientsPage = () => {
   const [filters, setFilters] = useState<ClientFilters>({});
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkTenstreetDialog, setShowBulkTenstreetDialog] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   
   const { userRole, organization } = useAuth();
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
@@ -80,10 +83,17 @@ const ClientsPage = () => {
     setEditingClient(client);
   };
 
-  const handleDeleteClient = (clientId: string) => {
-    if (confirm('Are you sure you want to delete this client?')) {
-      deleteClient(clientId);
+  const handleDeleteClick = (clientId: string) => {
+    setClientToDelete(clientId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (clientToDelete) {
+      deleteClient(clientToDelete);
     }
+    setDeleteDialogOpen(false);
+    setClientToDelete(null);
   };
 
   const handleCreateSubmit = (data: any) => {
@@ -153,9 +163,20 @@ const ClientsPage = () => {
             clients={filteredClients}
             organizationId={organization?.id}
             onEditClient={handleEditClient}
-            onDeleteClient={handleDeleteClient}
+            onDeleteClient={handleDeleteClick}
           />
           <ClientsSummary clients={filteredClients} />
+
+          <ConfirmationDialog
+            open={deleteDialogOpen}
+            onOpenChange={setDeleteDialogOpen}
+            title="Delete Client"
+            description="Are you sure you want to delete this client?"
+            confirmLabel="Delete"
+            variant="destructive"
+            onConfirm={handleConfirmDelete}
+            isLoading={isDeleting}
+          />
         </div>
       </div>
 

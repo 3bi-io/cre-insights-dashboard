@@ -15,6 +15,7 @@ import { OrganizationSettings } from './OrganizationSettings';
 import { OrganizationFeatureManagement } from './OrganizationFeatureManagement';
 import { OrganizationFeatureBadges } from './OrganizationFeatureBadges';
 import QuickDomainActions from './QuickDomainActions';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 interface OrganizationFormData {
   name: string;
@@ -30,6 +31,8 @@ const OrganizationManagement = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingOrg, setEditingOrg] = useState<any>(null);
   const [selectedOrgForSettings, setSelectedOrgForSettings] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orgToDelete, setOrgToDelete] = useState<any>(null);
   const [formData, setFormData] = useState<OrganizationFormData>({
     name: '',
     slug: '',
@@ -92,10 +95,17 @@ const OrganizationManagement = () => {
     setShowCreateDialog(true);
   };
 
-  const handleDelete = (orgId: string) => {
-    if (window.confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
-      deleteOrganization(orgId);
+  const handleDeleteClick = (org: any) => {
+    setOrgToDelete(org);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (orgToDelete) {
+      deleteOrganization(orgToDelete.id);
     }
+    setDeleteDialogOpen(false);
+    setOrgToDelete(null);
   };
 
   const resetForm = () => {
@@ -266,7 +276,7 @@ const OrganizationManagement = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDelete(org.id)}
+                            onClick={() => handleDeleteClick(org)}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -289,6 +299,16 @@ const OrganizationManagement = () => {
       </Card>
 
       {/* Organization Settings Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Organization"
+        description={`Are you sure you want to delete "${orgToDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+      />
+
       {selectedOrgForSettings && (
         <Dialog open={!!selectedOrgForSettings} onOpenChange={() => setSelectedOrgForSettings(null)}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">

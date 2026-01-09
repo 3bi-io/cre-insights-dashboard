@@ -20,6 +20,7 @@ import {
   useTestBGCConnection
 } from '../hooks/useBackgroundChecks';
 import type { BGCProvider, BGCConnection } from '../services/BackgroundCheckService';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 interface BGCProviderConnectionsProps {
   organizationId: string;
@@ -61,6 +62,8 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [isDefault, setIsDefault] = useState(false);
   const [testingConnectionId, setTestingConnectionId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [connectionToDelete, setConnectionToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Check if user has admin privileges (admin or super_admin)
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
@@ -112,11 +115,17 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
     }
   };
 
-  const handleDeleteConnection = async (connectionId: string, providerName: string) => {
-    if (!confirm(`Are you sure you want to remove the ${providerName} connection?`)) {
-      return;
+  const handleDeleteClick = (connectionId: string, providerName: string) => {
+    setConnectionToDelete({ id: connectionId, name: providerName });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (connectionToDelete) {
+      await deleteConnection.mutateAsync(connectionToDelete.id);
     }
-    await deleteConnection.mutateAsync(connectionId);
+    setDeleteDialogOpen(false);
+    setConnectionToDelete(null);
   };
 
   const handleToggleEnabled = async (connection: BGCConnection) => {
@@ -329,11 +338,11 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
                   )}
 
                   {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ml-auto text-destructive hover:text-destructive"
-                      onClick={() => handleDeleteConnection(connection.id, connection.provider?.name || 'Provider')}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteClick(connection.id, connection.provider?.name || 'Provider')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -383,6 +392,17 @@ export function BGCProviderConnections({ organizationId }: BGCProviderConnection
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Remove Connection"
+        description={`Are you sure you want to remove the ${connectionToDelete?.name || 'provider'} connection?`}
+        confirmLabel="Remove"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteConnection.isPending}
+      />
     </div>
   );
 }

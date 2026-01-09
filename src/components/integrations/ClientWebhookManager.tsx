@@ -26,6 +26,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Edit, TestTube, Eye, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 interface ClientWebhook {
   id: string;
@@ -75,6 +76,8 @@ export default function ClientWebhookManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<ClientWebhook | null>(null);
   const [formData, setFormData] = useState<WebhookFormData>(initialFormData);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [webhookToDelete, setWebhookToDelete] = useState<ClientWebhook | null>(null);
 
   // Fetch clients
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
@@ -475,9 +478,8 @@ export default function ClientWebhookManager() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    if (confirm('Are you sure you want to delete this webhook?')) {
-                      deleteWebhookMutation.mutate(webhook.id);
-                    }
+                    setWebhookToDelete(webhook);
+                    setDeleteDialogOpen(true);
                   }}
                   disabled={deleteWebhookMutation.isPending}
                 >
@@ -489,6 +491,28 @@ export default function ClientWebhookManager() {
           ))}
         </div>
       )}
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialogOpen(false);
+            setWebhookToDelete(null);
+          }
+        }}
+        title="Delete Webhook"
+        description="Are you sure you want to delete this webhook?"
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => {
+          if (webhookToDelete) {
+            deleteWebhookMutation.mutate(webhookToDelete.id);
+          }
+          setDeleteDialogOpen(false);
+          setWebhookToDelete(null);
+        }}
+        isLoading={deleteWebhookMutation.isPending}
+      />
     </div>
   );
 }

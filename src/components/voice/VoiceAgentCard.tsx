@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import VoiceAgentDialog from './VoiceAgentDialog';
 import { useVoiceAgentConnection, VoiceConnectionStatus, LiveTranscriptPanel, VoiceAgent } from '@/features/elevenlabs';
 import { checkBrowserCompatibility, SUPPORTED_BROWSERS } from '@/features/elevenlabs/utils/browserCompatibility';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 interface VoiceAgentCardProps {
   agent: VoiceAgent;
@@ -37,6 +38,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
   const { toast } = useToast();
   const [browserWarning, setBrowserWarning] = useState<string | null>(null);
   const [browserCompatible, setBrowserCompatible] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Check browser compatibility on mount
   useEffect(() => {
@@ -85,10 +87,13 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete "${agent.agent_name}"? This action cannot be undone.`)) {
-      onDelete(agent.id);
-    }
+  const handleDeleteClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(agent.id);
+    setDeleteDialogOpen(false);
   };
 
   return (
@@ -136,7 +141,7 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
                   />
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   disabled={isDeleting}
                   className="text-destructive"
                 >
@@ -245,6 +250,17 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
           </Alert>
         )}
       </CardContent>
+
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Voice Agent"
+        description={`Are you sure you want to delete "${agent.agent_name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </Card>
   );
 };

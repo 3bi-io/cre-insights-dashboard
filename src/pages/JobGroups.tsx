@@ -12,6 +12,7 @@ import { useJobGroups } from '@/features/job-groups/hooks/useJobGroups';
 import { JobGroupDialog } from '@/features/job-groups/components/JobGroupDialog';
 import { JobAssignmentDialog } from '@/features/job-groups/components/JobAssignmentDialog';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,6 +26,8 @@ const JobGroups = () => {
   const [editingJobGroup, setEditingJobGroup] = useState(null);
   const [assigningJobGroup, setAssigningJobGroup] = useState(null);
   const [currentAssignments, setCurrentAssignments] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [jobGroupToDelete, setJobGroupToDelete] = useState<any>(null);
 
   // Fetch campaigns for filter
   const { data: campaigns = [] } = useQuery({
@@ -82,14 +85,21 @@ const JobGroups = () => {
     }
   };
 
-  const handleDeleteJobGroup = (jobGroup) => {
-    if (confirm(`Are you sure you want to delete "${jobGroup.name}"?`)) {
-      deleteJobGroup(jobGroup.id);
+  const handleDeleteClick = (jobGroup: any) => {
+    setJobGroupToDelete(jobGroup);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (jobGroupToDelete) {
+      deleteJobGroup(jobGroupToDelete.id);
       toast({
         title: "Job group deleted",
         description: "Your job group has been deleted successfully."
       });
     }
+    setDeleteDialogOpen(false);
+    setJobGroupToDelete(null);
   };
 
   const handleAssignJobs = async (jobListingIds: string[]) => {
@@ -351,12 +361,28 @@ const JobGroups = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleDeleteJobGroup(jobGroup)}
+                      onClick={() => handleDeleteClick(jobGroup)}
                     >
                       <Trash2 className="w-3 h-3 mr-1" />
                       Delete
                     </Button>
                   </div>
+
+                  <ConfirmationDialog
+                    open={deleteDialogOpen && jobGroupToDelete?.id === jobGroup.id}
+                    onOpenChange={(open) => {
+                      if (!open) {
+                        setDeleteDialogOpen(false);
+                        setJobGroupToDelete(null);
+                      }
+                    }}
+                    title="Delete Job Group"
+                    description={`Are you sure you want to delete "${jobGroup.name}"?`}
+                    confirmLabel="Delete"
+                    variant="destructive"
+                    onConfirm={handleConfirmDelete}
+                    isLoading={isDeleting}
+                  />
                 </CardContent>
               </Card>
             ))}

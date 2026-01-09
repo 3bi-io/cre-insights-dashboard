@@ -11,6 +11,7 @@ import { Globe, CheckCircle, XCircle, Clock, AlertTriangle, Copy, RefreshCw, Set
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 interface DomainManagementProps {
   organization: any;
@@ -24,6 +25,8 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
   const [isVerifying, setIsVerifying] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
   const [showDNSInstructions, setShowDNSInstructions] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 
   const getDomainStatusColor = (status: string) => {
     switch (status) {
@@ -170,10 +173,7 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
   };
 
   const handleRemoveDomain = async () => {
-    if (!confirm('Are you sure you want to remove this domain configuration? This action cannot be undone.')) {
-      return;
-    }
-
+    setIsRemoving(true);
     try {
       await supabase.functions.invoke('domain-configuration', {
         body: {
@@ -203,6 +203,9 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
         description: "Failed to remove domain configuration.",
         variant: "destructive",
       });
+    } finally {
+      setIsRemoving(false);
+      setRemoveDialogOpen(false);
     }
   };
 
@@ -369,10 +372,21 @@ const DomainManagement: React.FC<DomainManagementProps> = ({ organization, onUpd
                     </div>
                   </DialogContent>
                 </Dialog>
-                <Button variant="outline" size="sm" onClick={handleRemoveDomain} className="text-destructive">
+                <Button variant="outline" size="sm" onClick={() => setRemoveDialogOpen(true)} className="text-destructive">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
+
+              <ConfirmationDialog
+                open={removeDialogOpen}
+                onOpenChange={setRemoveDialogOpen}
+                title="Remove Domain"
+                description="Are you sure you want to remove this domain configuration? This action cannot be undone."
+                confirmLabel="Remove"
+                variant="destructive"
+                onConfirm={handleRemoveDomain}
+                isLoading={isRemoving}
+              />
             </div>
 
             {organization.domain_status === 'active' && organization.domain_deployed_at && (

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useSecureApplicationData } from '@/hooks/useSecureApplicationData';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface SecureApplicationViewProps {
   applicationId: string;
@@ -34,6 +35,7 @@ const SecureApplicationView: React.FC<SecureApplicationViewProps> = ({
   const [sensitiveAccessReason, setSensitiveAccessReason] = useState('');
   const [showSensitiveData, setShowSensitiveData] = useState(false);
   const { userRole } = useAuth();
+  const { toast } = useToast();
   
   const {
     useBasicApplicationData,
@@ -53,7 +55,11 @@ const SecureApplicationView: React.FC<SecureApplicationViewProps> = ({
 
   const handleAccessSensitiveData = () => {
     if (!sensitiveAccessReason.trim()) {
-      alert('Please provide a reason for accessing sensitive data');
+      toast({
+        title: "Reason Required",
+        description: "Please provide a reason for accessing sensitive data",
+        variant: "destructive"
+      });
       return;
     }
     setShowSensitiveData(true);
