@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -164,7 +165,14 @@ const JobsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEO
+        title="Browse Jobs | Find Your Next Career Opportunity"
+        description="Explore open positions from top companies. Filter by location, company, and category. Apply instantly with Voice Apply technology."
+        keywords="jobs, careers, job listings, job search, employment opportunities, hiring, open positions"
+        canonical="https://ats.me/jobs"
+      />
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 lg:py-8">
         {/* Header */}
         <div className="mb-6 lg:mb-8">
@@ -317,7 +325,8 @@ const JobsPage = () => {
           onEnd={endVoiceApplication}
         />
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

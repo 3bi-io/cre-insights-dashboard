@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -148,7 +149,14 @@ const ContactPage = () => {
   ];
 
   return (
-    <div className="min-h-screen">
+    <>
+      <SEO
+        title="Contact Us | Get in Touch with ATS.me"
+        description="Have questions about ATS.me? Contact our team for demos, support, or partnership inquiries. We're here to help you transform your recruitment process."
+        keywords="contact ATS.me, recruitment support, demo request, ATS inquiry, customer service"
+        canonical="https://ats.me/contact"
+      />
+      <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}
@@ -422,7 +430,8 @@ const ContactPage = () => {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 };
 
