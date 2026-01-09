@@ -156,8 +156,8 @@ const AppRoutes: React.FC = () => {
         <Route path="demo" element={<RouteWrapper><DemoPage /></RouteWrapper>} />
       </Route>
 
-      {/* Voice Agent Demo (public) */}
-      <Route path="/voice-demo" element={<RouteWrapper><VoiceAgentDemo /></RouteWrapper>} />
+      {/* Voice Agent Demo - redirect to consolidated demo page */}
+      <Route path="/voice-demo" element={<Navigate to="/demo" replace />} />
 
       {/* Application Routes (no auth required) */}
       <Route path="/apply" element={<RouteWrapper><Apply /></RouteWrapper>} />

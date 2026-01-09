@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+import { StructuredData, buildHowToSchema } from '@/components/StructuredData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,7 @@ const DemoPage: React.FC = () => {
   const [liveCallTime, setLiveCallTime] = useState(0);
   const [voicemailTime, setVoicemailTime] = useState(0);
 
-  const structuredData = {
+  const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "ATS.me",
@@ -47,6 +48,18 @@ const DemoPage: React.FC = () => {
       "ratingCount": "150"
     }
   };
+
+  const howToSchema = buildHowToSchema({
+    name: 'How AI Voice Agents Work for Recruitment',
+    description: 'Learn how AI voice technology automates candidate verification and outreach.',
+    totalTime: 'PT5M',
+    steps: [
+      { name: 'Listen to Demo Calls', text: 'Play sample recordings to hear AI agent conversations with candidates.' },
+      { name: 'Review Dynamic Variables', text: 'See how applicant data is dynamically inserted into conversations.' },
+      { name: 'Understand the Workflow', text: 'Follow the process from application submission to callback.' },
+      { name: 'Explore Platform Features', text: 'Discover the full platform capabilities and integrations.' }
+    ]
+  });
 
   const featureCards = [
     {
@@ -95,22 +108,15 @@ const DemoPage: React.FC = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Interactive Demo | ATS.me AI Recruitment Platform</title>
-        <meta 
-          name="description" 
-          content="Experience ATS.me with interactive voice demos, platform walkthroughs, and see how AI-powered recruitment can transform your hiring process." 
-        />
-        <meta name="keywords" content="ATS demo, recruitment software demo, AI hiring demo, voice agent demo, trucking recruitment" />
-        <link rel="canonical" href="https://ats.me/demo" />
-        <meta property="og:title" content="Interactive Demo | ATS.me" />
-        <meta property="og:description" content="See ATS.me in action with interactive voice demos and platform walkthroughs." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ats.me/demo" />
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-      </Helmet>
+      <SEO
+        title="Interactive Demo | ATS.me AI Recruitment Platform"
+        description="Experience ATS.me with interactive voice demos, platform walkthroughs, and see how AI-powered recruitment can transform your hiring process."
+        keywords="ATS demo, recruitment software demo, AI hiring demo, voice agent demo, trucking recruitment"
+        canonical="https://ats.me/demo"
+        ogType="website"
+      />
+      <StructuredData data={softwareAppSchema} />
+      <StructuredData data={howToSchema} />
 
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
@@ -129,8 +135,8 @@ const DemoPage: React.FC = () => {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" asChild>
-                <Link to="/auth">
-                  Start Free Trial
+                <Link to="/contact">
+                  Schedule a Demo
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -191,7 +197,7 @@ const DemoPage: React.FC = () => {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <AudioPlayer
-                          src="/audio/live-call-demo.mp3"
+                          src="/audio/example-outbound-call.mp3"
                           onTimeUpdate={setLiveCallTime}
                         />
                         <div className="text-xs text-muted-foreground text-center">
@@ -231,7 +237,7 @@ const DemoPage: React.FC = () => {
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <AudioPlayer
-                          src="/audio/voicemail-demo.mp3"
+                          src="/audio/example-voicemail-call.m4a"
                           onTimeUpdate={setVoicemailTime}
                         />
                         <div className="text-xs text-muted-foreground text-center">
@@ -396,8 +402,8 @@ const DemoPage: React.FC = () => {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" asChild>
-                <Link to="/auth">
-                  Start Free Trial
+                <Link to="/contact">
+                  Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
