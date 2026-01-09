@@ -19,7 +19,6 @@ const PublicFooter = () => {
   const productLinks = [
     { to: '/jobs', label: 'Jobs' },
     { to: '/features', label: 'Features' },
-    { to: '/pricing', label: 'Pricing' },
     { to: '/resources', label: 'Resources' },
   ];
 
