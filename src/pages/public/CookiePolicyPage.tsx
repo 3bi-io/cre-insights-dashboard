@@ -31,7 +31,7 @@ const CookiePolicyPage = () => {
             Cookie Policy
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Last updated: December 2024
+            Last updated: January 2026
           </p>
         </div>
       </section>
@@ -44,8 +44,8 @@ const CookiePolicyPage = () => {
             <Alert>
               <Cookie className="h-4 w-4" />
               <AlertDescription>
-                This Cookie Policy explains how ATS Intel uses cookies and similar technologies 
-                to recognize you when you visit our platform.
+                    This Cookie Policy explains how ATS.me uses cookies and similar technologies
+                    to recognize you when you visit our platform.
               </AlertDescription>
             </Alert>
 
