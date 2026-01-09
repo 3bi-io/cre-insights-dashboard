@@ -29,7 +29,7 @@ const TermsOfServicePage = () => {
             Terms of Service
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
-            Last updated: December 2024
+            Last updated: January 2026
           </p>
         </div>
       </section>
@@ -42,7 +42,7 @@ const TermsOfServicePage = () => {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                By accessing and using ATS Intel, you agree to be bound by these Terms of Service. 
+                By accessing and using ATS.me, you agree to be bound by these Terms of Service. 
                 Please read them carefully.
               </AlertDescription>
             </Alert>
@@ -53,7 +53,7 @@ const TermsOfServicePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  By accessing or using ATS Intel (the "Service"), you agree to be bound by these 
+                  By accessing or using ATS.me (the "Service"), you agree to be bound by these 
                   Terms of Service ("Terms"). If you disagree with any part of these terms, then 
                   you may not access the Service. These Terms apply to all visitors, users, and 
                   others who access or use the Service.
@@ -67,7 +67,7 @@ const TermsOfServicePage = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
-                  ATS Intel is an applicant tracking system that provides:
+                  ATS.me is an applicant tracking system that provides:
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-start space-x-3">
@@ -180,7 +180,7 @@ const TermsOfServicePage = () => {
               <CardContent>
                 <p className="text-muted-foreground">
                   The Service and its original content, features, and functionality are and will 
-                  remain the exclusive property of ATS Intel and its licensors. The Service is 
+                  remain the exclusive property of ATS.me and its licensors. The Service is 
                   protected by copyright, trademark, and other laws. Our trademarks and trade 
                   dress may not be used in connection with any product or service without our 
                   prior written consent.
@@ -220,7 +220,7 @@ const TermsOfServicePage = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  In no event shall ATS Intel, nor its directors, employees, partners, agents, 
+                  In no event shall ATS.me, nor its directors, employees, partners, agents, 
                   suppliers, or affiliates, be liable for any indirect, incidental, special, 
                   consequential, or punitive damages, including without limitation, loss of profits, 
                   data, use, goodwill, or other intangible losses, resulting from your use of the Service.
@@ -252,7 +252,7 @@ const TermsOfServicePage = () => {
                 </p>
                 <div className="space-y-2">
                   <p className="text-foreground font-medium">Email: legal@ats.me</p>
-                  <p className="text-foreground font-medium">Address: ATS Intel Legal Department</p>
+                  <p className="text-foreground font-medium">Address: ATS.me Legal Department</p>
                 </div>
               </CardContent>
             </Card>
