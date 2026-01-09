@@ -12,128 +12,98 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowRight, 
-  Brain,
   Zap,
   Shield,
   BarChart3,
   Users,
   Globe,
-  Clock,
   CheckCircle,
-  MessageSquare,
-  FileText,
-  Search,
-  Workflow,
-  Target,
   TrendingUp,
-  Settings,
-  Database,
-  Smartphone
+  Smartphone,
+  Phone,
+  Bot,
+  Mic,
+  Sparkles
 } from 'lucide-react';
 
 const FeaturesPage = () => {
   const coreFeatures = [
     {
-      icon: Brain,
-      title: "AI-Powered Candidate Matching",
-      description: "Our advanced machine learning algorithms analyze resumes, job requirements, and historical hiring data to identify the best-fit candidates automatically.",
+      icon: Phone,
+      title: "Instant AI Callbacks",
+      description: "Applications trigger automated voice calls within minutes. Never let a hot lead go cold — our AI reaches out before competitors even see the resume.",
       features: [
-        "Smart resume parsing and data extraction",
-        "Predictive candidate scoring",
-        "Bias-free screening recommendations",
-        "Skills gap analysis and suggestions"
+        "< 3 minute callback time",
+        "Automated qualification questions",
+        "Real-time lead scoring",
+        "Seamless handoff to recruiters"
       ]
     },
     {
-      icon: Zap,
-      title: "Automated Workflow Management",
-      description: "Streamline your entire hiring process with intelligent automation that adapts to your organization's unique requirements.",
+      icon: Bot,
+      title: "24/7 AI Voice Agents",
+      description: "Inbound and outbound voice agents that never sleep. Screen jobseekers, answer questions, and schedule interviews around the clock.",
       features: [
-        "Customizable workflow templates",
-        "Automated candidate communications",
-        "Interview scheduling automation",
-        "Approval process management"
+        "Natural conversational AI",
+        "Inbound call handling",
+        "Outbound screening calls",
+        "Multi-language support"
+      ]
+    },
+    {
+      icon: Mic,
+      title: "Voice Apply Technology",
+      description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80%.",
+      features: [
+        "80% faster applications",
+        "Improved accessibility",
+        "Higher completion rates",
+        "Mobile-optimized experience"
       ]
     },
     {
       icon: BarChart3,
-      title: "Advanced Analytics Dashboard",
-      description: "Get deep insights into your recruitment performance with comprehensive analytics and real-time reporting.",
+      title: "AI-Powered Analytics",
+      description: "Track cost-per-hire by source, predict time-to-hire trends, identify jobseeker drop-off points, and compare publisher ROI.",
       features: [
         "Real-time hiring metrics",
-        "Custom report builder",
         "Predictive analytics",
-        "ROI tracking and optimization"
-      ]
-    },
-    {
-      icon: Users,
-      title: "Team Collaboration Tools",
-      description: "Keep your entire hiring team aligned with powerful collaboration features designed for modern recruitment.",
-      features: [
-        "Shared candidate pools",
-        "Collaborative interview feedback",
-        "Team performance tracking",
-        "Role-based access control"
+        "Source ROI tracking",
+        "Custom report builder"
       ]
     }
   ];
 
   const additionalFeatures = [
     {
-      icon: Globe,
-      title: "Multi-Platform Job Distribution",
-      description: "Post jobs to multiple job boards and platforms with one click"
-    },
-    {
-      icon: MessageSquare,
-      title: "Integrated Communication Hub",
-      description: "Centralized messaging system for all candidate interactions"
-    },
-    {
-      icon: FileText,
-      title: "Document Management System",
-      description: "Secure storage and organization of all hiring documents"
-    },
-    {
-      icon: Search,
-      title: "Advanced Candidate Search",
-      description: "Powerful search and filtering capabilities across your talent pool"
-    },
-    {
-      icon: Workflow,
-      title: "Custom Pipeline Builder",
-      description: "Create tailored hiring pipelines for different roles and departments"
-    },
-    {
-      icon: Target,
-      title: "Goal Setting & Tracking",
-      description: "Set and monitor hiring goals with automated progress tracking"
-    },
-    {
-      icon: Clock,
-      title: "Time-to-Hire Optimization",
-      description: "Identify bottlenecks and optimize your hiring timeline"
-    },
-    {
-      icon: TrendingUp,
-      title: "Performance Benchmarking",
-      description: "Compare your metrics against industry standards"
-    },
-    {
-      icon: Settings,
-      title: "Custom Integrations",
-      description: "Connect with your existing HR tools and systems"
-    },
-    {
-      icon: Database,
-      title: "Talent Pool Management",
-      description: "Build and nurture relationships with potential candidates"
+      icon: Zap,
+      title: "Automated Workflows",
+      description: "Smart interview scheduling and status updates"
     },
     {
       icon: Shield,
-      title: "Compliance Management",
-      description: "Built-in GDPR, EEO, and industry compliance tools"
+      title: "Enterprise Security",
+      description: "SOC 2 compliant with role-based access controls"
+    },
+    {
+      icon: Users,
+      title: "Team Collaboration",
+      description: "Real-time collaboration with notes and @mentions"
+    },
+    {
+      icon: Globe,
+      title: "Multi-Platform Distribution",
+      description: "One-click posting to 100+ job boards"
+    },
+    {
+      icon: Sparkles,
+      title: "AI Writing Assistant",
+      description: "Generate compelling job descriptions instantly"
+    },
+    {
+      icon: TrendingUp,
+      title: "Performance Insights",
+      description: "Track recruiter productivity and outcomes"
     },
     {
       icon: Smartphone,
@@ -142,10 +112,10 @@ const FeaturesPage = () => {
     }
   ];
 
-  // Updated integrations list - removed competitor ATS names
   const integrations = [
-    "Slack", "Microsoft Teams", "Google Workspace", "LinkedIn", "Indeed", 
-    "Glassdoor", "ZipRecruiter", "Tenstreet", "BambooHR", "Workday"
+    "Tenstreet", "Indeed", "Glassdoor", "ZipRecruiter", "Adzuna", "Talroo",
+    "LinkedIn", "Slack", "Microsoft Teams", "Google Workspace",
+    "BambooHR", "Workday", "ADP", "Paylocity"
   ];
 
   // Build SoftwareApplication structured data
@@ -207,7 +177,7 @@ const FeaturesPage = () => {
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Modern Recruiting</span>
           </h1>
           <p className="text-base md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
-            Discover all the tools and capabilities that make ATS Intel the most comprehensive 
+            Discover all the tools and capabilities that make ATS.me the most comprehensive 
             applicant tracking system for forward-thinking organizations.
           </p>
           <Link to="/auth">
@@ -338,7 +308,7 @@ const FeaturesPage = () => {
             Experience All Features Risk-Free
           </h2>
           <p className="text-base md:text-xl text-white/90 mb-6 md:mb-8 max-w-2xl mx-auto">
-            Get started and see how ATS Intel can transform your hiring process.
+            Get started and see how ATS.me can transform your hiring process.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
             <Link to="/auth">
