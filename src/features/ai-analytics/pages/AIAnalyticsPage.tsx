@@ -46,34 +46,37 @@ const AIAnalyticsPage = () => {
         </Badge>
       }
     >
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 pb-20 md:pb-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
-            <TabsTrigger value="performance" className="flex items-center gap-2 py-3">
-              <Brain className="w-4 h-4" />
-              <span className="hidden sm:inline">Performance</span>
-            </TabsTrigger>
-            <TabsTrigger value="predictions" className="flex items-center gap-2 py-3">
-              <TrendingUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Predictions</span>
-            </TabsTrigger>
-            <TabsTrigger value="comparison" className="flex items-center gap-2 py-3">
-              <GitCompare className="w-4 h-4" />
-              <span className="hidden sm:inline">Comparison</span>
-            </TabsTrigger>
-            <TabsTrigger value="bias" className="flex items-center gap-2 py-3">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Bias Analysis</span>
-            </TabsTrigger>
-            <TabsTrigger value="insights" className="flex items-center gap-2 py-3">
-              <Lightbulb className="w-4 h-4" />
-              <span className="hidden sm:inline">Insights</span>
-            </TabsTrigger>
-            <TabsTrigger value="export" className="flex items-center gap-2 py-3">
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Mobile: Horizontal scroll, Desktop: Grid */}
+          <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-1">
+            <div className="inline-flex h-auto items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground min-w-max md:min-w-0 md:w-full md:grid md:grid-cols-6">
+              <TabsTrigger value="performance" className="flex items-center gap-2 py-3 px-3 whitespace-nowrap min-h-[44px]">
+                <Brain className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Performance</span>
+              </TabsTrigger>
+              <TabsTrigger value="predictions" className="flex items-center gap-2 py-3 px-3 whitespace-nowrap min-h-[44px]">
+                <TrendingUp className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Predictions</span>
+              </TabsTrigger>
+              <TabsTrigger value="comparison" className="flex items-center gap-2 py-3 px-3 whitespace-nowrap min-h-[44px]">
+                <GitCompare className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Comparison</span>
+              </TabsTrigger>
+              <TabsTrigger value="bias" className="flex items-center gap-2 py-3 px-3 whitespace-nowrap min-h-[44px]">
+                <Shield className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Bias Analysis</span>
+              </TabsTrigger>
+              <TabsTrigger value="insights" className="flex items-center gap-2 py-3 px-3 whitespace-nowrap min-h-[44px]">
+                <Lightbulb className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Insights</span>
+              </TabsTrigger>
+              <TabsTrigger value="export" className="flex items-center gap-2 py-3 px-3 whitespace-nowrap min-h-[44px]">
+                <Download className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">Export</span>
+              </TabsTrigger>
+            </div>
+          </div>
 
           <TabsContent value="performance" className="mt-6 animate-fade-in">
             <AIPerformanceMetrics data={performanceData} />

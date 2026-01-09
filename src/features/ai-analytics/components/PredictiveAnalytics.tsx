@@ -71,12 +71,15 @@ export const PredictiveAnalytics: React.FC = () => {
       </div>
 
       <Tabs defaultValue="hiring" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="hiring">Hiring Forecast</TabsTrigger>
-          <TabsTrigger value="flow">Candidate Flow</TabsTrigger>
-          <TabsTrigger value="trends">Weekly Trends</TabsTrigger>
-          <TabsTrigger value="costs">Cost Prediction</TabsTrigger>
-        </TabsList>
+        {/* Mobile: Horizontal scroll, Desktop: Grid */}
+        <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-1">
+          <div className="inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground min-w-max md:min-w-0 md:w-full md:grid md:grid-cols-4">
+            <TabsTrigger value="hiring" className="whitespace-nowrap px-3 py-1.5 min-h-[36px]">Hiring Forecast</TabsTrigger>
+            <TabsTrigger value="flow" className="whitespace-nowrap px-3 py-1.5 min-h-[36px]">Candidate Flow</TabsTrigger>
+            <TabsTrigger value="trends" className="whitespace-nowrap px-3 py-1.5 min-h-[36px]">Weekly Trends</TabsTrigger>
+            <TabsTrigger value="costs" className="whitespace-nowrap px-3 py-1.5 min-h-[36px]">Cost Prediction</TabsTrigger>
+          </div>
+        </div>
 
         <TabsContent value="hiring" className="space-y-4">
           <Card>
