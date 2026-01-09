@@ -20,7 +20,23 @@ const WebhookManagement = () => {
   const [testing, setTesting] = useState(false);
 
   const webhookUrl = 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/inbound-applications';
-  const organizationId = organization?.id || '84214b48-7b51-45bc-ad7f-723bcf50466c';
+  const organizationId = organization?.id;
+
+  // Guard: require organization context
+  if (!organizationId) {
+    return (
+      <PageLayout title="Webhook Management" description="Configure and test inbound application webhooks">
+        <div className="container mx-auto px-4 py-8">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No organization context available. Please select an organization to manage webhooks.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </PageLayout>
+    );
+  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
