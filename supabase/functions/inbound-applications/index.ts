@@ -48,6 +48,7 @@ const InboundApplicationSchema = z.object({
   drug: z.string().optional(),
   privacy: z.string().optional(),
   convicted_felony: z.string().optional(),
+  driver_type: z.string().optional(), // Company Driver or Owner-Operator
   source: z.string().optional(),
   ad_id: z.string().optional(),
   campaign_id: z.string().optional(),
@@ -507,6 +508,7 @@ const handler = async (req: Request): Promise<Response> => {
       
       notes: extractValue(body, ['notes', 'comments', 'message']),
       status: extractValue(body, ['status']) || 'pending',
+      driver_type: extractValue(body, ['driver_type', 'driverType', 'DriverType']),
       cdl_endorsements: undefined as string[] | undefined,
       elevenlabs_call_transcript: undefined as string | undefined,
     };
@@ -519,12 +521,88 @@ const handler = async (req: Request): Promise<Response> => {
       logger.info('ElevenLabs agent ID detected', { agentId: elevenLabsAgentId });
     }
 
-    // Extract ElevenLabs transcript data if present
+    // Extract ElevenLabs transcript and structured data if present
     const elevenLabsData = body.data as Record<string, unknown> | undefined;
     if (elevenLabsData) {
       const transcript = elevenLabsData.transcript as Array<{ role: string; message: string }> | undefined;
       const analysis = elevenLabsData.analysis as Record<string, unknown> | undefined;
       const transcriptSummary = analysis?.transcript_summary as string | undefined;
+      
+      // ============================================================
+      // CRITICAL: Extract structured data from data_collection_results
+      // This is where ElevenLabs stores collected applicant fields
+      // ============================================================
+      const dataCollectionResults = analysis?.data_collection_results as Record<string, unknown> | undefined;
+      
+      if (dataCollectionResults) {
+        logger.info('ElevenLabs data_collection_results found', { 
+          fields: Object.keys(dataCollectionResults),
+          values: dataCollectionResults
+        });
+        
+        // Map ElevenLabs collected fields to application data
+        // Priority: data_collection_results > top-level body fields
+        
+        // GivenName (First Name)
+        if (!applicationData.first_name) {
+          applicationData.first_name = extractValue(dataCollectionResults, ['GivenName', 'givenName', 'first_name', 'firstName']);
+        }
+        
+        // FamilyName (Last Name)
+        if (!applicationData.last_name) {
+          applicationData.last_name = extractValue(dataCollectionResults, ['FamilyName', 'familyName', 'last_name', 'lastName']);
+        }
+        
+        // PostalCode (5-digit Zip)
+        if (!applicationData.zip) {
+          applicationData.zip = extractValue(dataCollectionResults, ['PostalCode', 'postalCode', 'zip', 'zipcode']);
+        }
+        
+        // Class_A_CDL (Boolean: Yes/No)
+        if (!applicationData.cdl) {
+          applicationData.cdl = extractValue(dataCollectionResults, ['Class_A_CDL', 'class_a_cdl', 'cdl', 'has_cdl']);
+        }
+        
+        // Class_A_CDL_Experience (String: e.g., "2 years")
+        if (!applicationData.exp) {
+          applicationData.exp = extractValue(dataCollectionResults, ['Class_A_CDL_Experience', 'experience', 'exp', 'years_experience']);
+        }
+        
+        // DriverType (Enum: "Company Driver" or "Owner-Operator")
+        if (!applicationData.driver_type) {
+          applicationData.driver_type = extractValue(dataCollectionResults, ['DriverType', 'driver_type', 'driverType']);
+        }
+        
+        // PrimaryPhone (Validated phone number)
+        if (!applicationData.phone) {
+          applicationData.phone = extractValue(dataCollectionResults, ['PrimaryPhone', 'phone', 'phoneNumber', 'primary_phone']);
+        }
+        
+        // InternetEmailAddress (Validated email)
+        if (!applicationData.applicant_email) {
+          applicationData.applicant_email = extractValue(dataCollectionResults, ['InternetEmailAddress', 'email', 'emailAddress', 'internet_email_address']);
+        }
+        
+        // CanPassDrug (Boolean: Yes/No)
+        if (!applicationData.drug) {
+          applicationData.drug = extractValue(dataCollectionResults, ['CanPassDrug', 'can_pass_drug_test', 'drug', 'canPassDrug']);
+        }
+        
+        // Veteran_Status (Boolean: Yes/No)
+        if (!applicationData.veteran) {
+          applicationData.veteran = extractValue(dataCollectionResults, ['Veteran_Status', 'veteran', 'is_veteran', 'veteranStatus']);
+        }
+        
+        // consentGiven (Boolean: Yes/No - MUST be explicit)
+        if (!applicationData.consent) {
+          applicationData.consent = extractValue(dataCollectionResults, ['consentGiven', 'consent', 'agree', 'consent_given']);
+        }
+      } else {
+        logger.info('No data_collection_results in ElevenLabs payload', {
+          hasAnalysis: !!analysis,
+          analysisKeys: analysis ? Object.keys(analysis) : []
+        });
+      }
       
       // Extract additional call metadata
       const callDuration = elevenLabsData.call_duration_secs as number | undefined;
@@ -745,6 +823,7 @@ const handler = async (req: Request): Promise<Response> => {
       ad_id: applicationData.ad_id,
       campaign_id: applicationData.campaign_id,
       adset_id: applicationData.adset_id,
+      driver_type: applicationData.driver_type,
       
       notes: applicationData.notes,
       status: applicationData.status,

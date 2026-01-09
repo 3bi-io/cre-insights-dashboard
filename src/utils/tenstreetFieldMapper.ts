@@ -195,15 +195,31 @@ export const buildCustomQuestions = (applicationData: any, customQuestions: any[
 
 // Build DisplayFields section
 export const buildDisplayFields = (applicationData: any, displayFields: any[]): DisplayField[] => {
-  if (!displayFields || !Array.isArray(displayFields)) return [];
+  const result: DisplayField[] = [];
   
-  return displayFields
-    .filter(f => f.displayPrompt && f.mapping)
-    .map(f => ({
-      displayPrompt: f.displayPrompt,
-      displayValue: getFieldValue(applicationData, f.mapping)
-    }))
-    .filter(f => f.displayValue);
+  // Add driver_type as a display field if present
+  const driverType = getFieldValue(applicationData, 'driver_type');
+  if (driverType) {
+    result.push({
+      displayPrompt: 'Driver Type',
+      displayValue: driverType
+    });
+  }
+  
+  // Add configured display fields
+  if (displayFields && Array.isArray(displayFields)) {
+    const configuredFields = displayFields
+      .filter(f => f.displayPrompt && f.mapping)
+      .map(f => ({
+        displayPrompt: f.displayPrompt,
+        displayValue: getFieldValue(applicationData, f.mapping)
+      }))
+      .filter(f => f.displayValue);
+    
+    result.push(...configuredFields);
+  }
+  
+  return result;
 };
 
 // Main function to build complete Tenstreet data structure
