@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Mail, ArrowLeft } from 'lucide-react';
 import { Brand } from '@/components/common';
+import { SEO } from '@/components/SEO';
 import {
   AuthContainer,
   SocialAuthButtons,
@@ -80,6 +81,12 @@ const Auth = () => {
 
   return (
     <AuthContainer>
+      <SEO
+        title={signUpMode ? "Sign Up | Create Your Account" : "Sign In | Access Your Dashboard"}
+        description="Sign in to ATS.me to manage recruitment, track applications, and access AI-powered hiring tools. Create an account to get started."
+        keywords="ATS login, recruiter sign in, candidate portal, recruitment dashboard, job seeker account"
+        canonical="https://ats.me/auth"
+      />
       {/* Header */}
       <div className="text-center">
         <div className="flex items-center justify-center mb-4 sm:mb-6">

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SEO } from '@/components/SEO';
+import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import { 
   Globe, 
   Shield, 
@@ -208,8 +210,20 @@ const SitemapPage = () => {
     },
   ];
 
+  const breadcrumbData = buildBreadcrumbSchema([
+    { name: 'Home', url: 'https://ats.me/' },
+    { name: 'Sitemap', url: 'https://ats.me/sitemap' },
+  ]);
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Sitemap - Navigate ATS.me"
+        description="Complete directory of ATS.me pages. Find job listings, features, pricing, resources, and platform documentation. Navigate to any section quickly."
+        keywords="sitemap, ATS.me pages, navigation, site directory, job board, recruitment platform"
+        canonical="https://ats.me/sitemap"
+      />
+      <StructuredData data={breadcrumbData} />
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="container-wide py-12">

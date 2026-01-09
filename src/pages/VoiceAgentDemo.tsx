@@ -11,10 +11,23 @@ import DynamicVariablesCard from '@/components/voice/demo/DynamicVariablesCard';
 import HowItWorksSection from '@/components/voice/demo/HowItWorksSection';
 import { liveCallTranscript, voicemailTranscript } from '@/components/voice/demo/transcriptData';
 import { SEO } from '@/components/SEO';
+import { StructuredData, buildHowToSchema } from '@/components/StructuredData';
 
 const VoiceAgentDemo: React.FC = () => {
   const [liveCallTime, setLiveCallTime] = useState(0);
   const [voicemailTime, setVoicemailTime] = useState(0);
+
+  const howToSchema = buildHowToSchema({
+    name: 'How AI Voice Agents Work for Recruitment',
+    description: 'Learn how AI voice technology automates candidate verification and outreach, reducing time-to-hire and improving applicant experience.',
+    totalTime: 'PT5M',
+    steps: [
+      { name: 'Listen to Demo Calls', text: 'Play the sample recordings to hear how the AI agent conducts live applicant verification and handles voicemail scenarios.' },
+      { name: 'Review Dynamic Variables', text: 'See how applicant name, job title, and company information are dynamically inserted into conversations.' },
+      { name: 'Understand the Workflow', text: 'Follow the process from application submission to automated callback and qualification verification.' },
+      { name: 'Configure Your Voice Agent', text: 'Set up custom prompts, voice selection, and trigger conditions for your recruitment workflow.' }
+    ]
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -26,6 +39,7 @@ const VoiceAgentDemo: React.FC = () => {
         ogImage="https://ats.me/og-voice-demo.png"
         ogType="website"
       />
+      <StructuredData data={howToSchema} />
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4">

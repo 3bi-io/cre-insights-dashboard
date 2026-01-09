@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Phone, Clock, ArrowLeft } from "lucide-react";
-
+import { SEO } from '@/components/SEO';
 interface ThankYouState {
   organizationName?: string;
   hasVoiceAgent?: boolean;
@@ -18,6 +18,11 @@ const ThankYou = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Application Submitted Successfully"
+        description="Thank you for your application. We've received your information and will be in touch shortly."
+        noindex={true}
+      />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <Card className="text-center">

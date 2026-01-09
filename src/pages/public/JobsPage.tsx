@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -164,14 +165,42 @@ const JobsPage = () => {
     );
   }
 
+  // Build ItemList structured data for job listings
+  const jobListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Job Listings on ATS.me",
+    "description": "Browse open positions from top companies",
+    "numberOfItems": totalCount || 0,
+    "itemListElement": (filteredJobs || []).slice(0, 10).map((job, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "JobPosting",
+        "title": job.title || job.job_title,
+        "datePosted": job.created_at,
+        "hiringOrganization": {
+          "@type": "Organization",
+          "name": job.clients?.name || "Company"
+        },
+        "jobLocation": {
+          "@type": "Place",
+          "address": job.location || "Multiple Locations"
+        },
+        "url": `https://ats.me/jobs/${job.id}`
+      }
+    }))
+  };
+
   return (
     <>
       <SEO
         title="Browse Jobs | Find Your Next Career Opportunity"
-        description="Explore open positions from top companies. Filter by location, company, and category. Apply instantly with Voice Apply technology."
-        keywords="jobs, careers, job listings, job search, employment opportunities, hiring, open positions"
+        description={`Explore ${totalCount || 200}+ open positions from top companies. Filter by location, company, and category. Apply instantly with Voice Apply technology.`}
+        keywords="jobs, careers, job listings, job search, employment opportunities, hiring, open positions, CDL jobs, driver jobs"
         canonical="https://ats.me/jobs"
       />
+      <StructuredData data={jobListSchema} />
       <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 lg:py-8">
         {/* Header */}

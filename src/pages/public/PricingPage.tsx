@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +97,49 @@ const PricingPage = () => {
     { title: 'Cancel Anytime', description: 'No long-term contracts', icon: XIcon },
   ];
 
+  // Build pricing offers structured data
+  const pricingSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "ATS.me Recruitment Platform",
+    "description": "AI-powered applicant tracking system with Voice Apply technology",
+    "brand": {
+      "@type": "Brand",
+      "name": "ATS.me"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Starter Plan",
+        "price": "299",
+        "priceCurrency": "USD",
+        "priceValidUntil": "2026-12-31",
+        "availability": "https://schema.org/InStock",
+        "description": "Perfect for small teams getting started"
+      },
+      {
+        "@type": "Offer",
+        "name": "Professional Plan",
+        "price": "599",
+        "priceCurrency": "USD",
+        "priceValidUntil": "2026-12-31",
+        "availability": "https://schema.org/InStock",
+        "description": "Most popular for growing businesses"
+      },
+      {
+        "@type": "Offer",
+        "name": "Enterprise Plan",
+        "priceSpecification": {
+          "@type": "PriceSpecification",
+          "price": "Custom",
+          "priceCurrency": "USD"
+        },
+        "availability": "https://schema.org/InStock",
+        "description": "Tailored solutions for large organizations"
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen py-8 lg:py-16 px-4">
       <SEO
@@ -104,6 +148,7 @@ const PricingPage = () => {
         keywords="ATS pricing, recruitment software cost, early adopter pricing, pilot program discount, ATS.me plans"
         canonical="https://ats.me/pricing"
       />
+      <StructuredData data={pricingSchema} />
       <div className="container mx-auto max-w-7xl">
         {/* Hero Section */}
         <div className="text-center mb-8 lg:mb-16">
