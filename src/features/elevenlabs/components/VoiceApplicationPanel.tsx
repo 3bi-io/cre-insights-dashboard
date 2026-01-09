@@ -18,6 +18,7 @@ interface VoiceApplicationPanelProps {
   selectedJob: JobContext | null;
   transcripts: LiveTranscriptMessage[];
   pendingUserTranscript?: string;
+  pendingAgentTranscript?: string;
   onEnd: () => void;
 }
 
@@ -27,6 +28,7 @@ export const VoiceApplicationPanel: React.FC<VoiceApplicationPanelProps> = ({
   selectedJob,
   transcripts,
   pendingUserTranscript,
+  pendingAgentTranscript,
   onEnd,
 }) => {
   if (!isConnected || !selectedJob) return null;
@@ -98,6 +100,7 @@ export const VoiceApplicationPanel: React.FC<VoiceApplicationPanelProps> = ({
           <LiveTranscriptPanel
             transcripts={transcripts}
             pendingUserTranscript={pendingUserTranscript}
+            pendingAgentTranscript={pendingAgentTranscript}
             isSpeaking={isSpeaking}
             isConnected={isConnected}
             fullscreen

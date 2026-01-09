@@ -19,6 +19,7 @@ export const useElevenLabsVoice = () => {
     isSpeaking, 
     transcripts, 
     pendingUserTranscript,
+    pendingAgentTranscript,
     clearTranscripts,
     connect, 
     disconnect 
@@ -94,6 +95,7 @@ export const useElevenLabsVoice = () => {
     isSpeaking,
     transcripts,
     pendingUserTranscript,
+    pendingAgentTranscript,
     clearTranscripts,
     startVoiceApplication,
     endVoiceApplication,

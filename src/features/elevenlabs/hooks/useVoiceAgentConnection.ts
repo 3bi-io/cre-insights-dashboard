@@ -25,6 +25,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   const [isConnecting, setIsConnecting] = useState(false);
   const [transcripts, setTranscripts] = useState<LiveTranscriptMessage[]>([]);
   const [pendingUserTranscript, setPendingUserTranscript] = useState<string>('');
+  const [pendingAgentTranscript, setPendingAgentTranscript] = useState<string>('');
   const { toast } = useToast();
   
   // Refs to track state for cleanup (avoids stale closure issues)
@@ -39,6 +40,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   const clearTranscripts = useCallback(() => {
     setTranscripts([]);
     setPendingUserTranscript('');
+    setPendingAgentTranscript('');
   }, []);
 
   const conversation = useConversation({
@@ -78,10 +80,22 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
         }
       }
       
-      // Handle agent responses
+      // Handle interim/streaming agent responses (real-time text as agent speaks)
+      if (message.type === 'interim_agent_response' || message.type === 'agent_transcript') {
+        const interimText = message.interim_agent_response_event?.interim_agent_response 
+          || message.agent_transcript_event?.agent_transcript
+          || '';
+        if (interimText) {
+          setPendingAgentTranscript(interimText);
+        }
+      }
+
+      // Handle final agent responses
       if (message.type === 'agent_response') {
         const agentResponse = message.agent_response_event;
         if (agentResponse?.agent_response) {
+          // Clear pending and add final message
+          setPendingAgentTranscript('');
           const newMessage: LiveTranscriptMessage = {
             id: crypto.randomUUID(),
             speaker: 'agent',
@@ -280,6 +294,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     isSpeaking: conversation.isSpeaking,
     transcripts,
     pendingUserTranscript,
+    pendingAgentTranscript,
     clearTranscripts,
     connect,
     disconnect,
