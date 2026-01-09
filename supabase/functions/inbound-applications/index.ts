@@ -511,12 +511,25 @@ const handler = async (req: Request): Promise<Response> => {
       elevenlabs_call_transcript: undefined as string | undefined,
     };
 
+    // Extract ElevenLabs agent ID for organization resolution
+    const elevenLabsAgentId = extractValue(body, ['agent_id', 'agentId']) || 
+                              (body.data as Record<string, unknown> | undefined)?.agent_id as string | undefined;
+    
+    if (elevenLabsAgentId) {
+      logger.info('ElevenLabs agent ID detected', { agentId: elevenLabsAgentId });
+    }
+
     // Extract ElevenLabs transcript data if present
     const elevenLabsData = body.data as Record<string, unknown> | undefined;
     if (elevenLabsData) {
       const transcript = elevenLabsData.transcript as Array<{ role: string; message: string }> | undefined;
       const analysis = elevenLabsData.analysis as Record<string, unknown> | undefined;
       const transcriptSummary = analysis?.transcript_summary as string | undefined;
+      
+      // Extract additional call metadata
+      const callDuration = elevenLabsData.call_duration_secs as number | undefined;
+      const callStatus = elevenLabsData.status as string | undefined;
+      const conversationId = elevenLabsData.conversation_id as string | undefined;
       
       if (transcript && Array.isArray(transcript)) {
         // Format transcript as readable text
@@ -536,6 +549,19 @@ const handler = async (req: Request): Promise<Response> => {
           messageCount: transcript.length,
           hasSummary: !!transcriptSummary 
         });
+      }
+      
+      // Add call metadata to notes
+      const callMetadata: string[] = [];
+      if (conversationId) callMetadata.push(`Conversation ID: ${conversationId}`);
+      if (callDuration) callMetadata.push(`Call Duration: ${Math.floor(callDuration / 60)}m ${Math.round(callDuration % 60)}s`);
+      if (callStatus) callMetadata.push(`Call Status: ${callStatus}`);
+      
+      if (callMetadata.length > 0) {
+        const metadataNote = `--- ElevenLabs Call Info ---\n${callMetadata.join('\n')}`;
+        applicationData.notes = applicationData.notes 
+          ? `${applicationData.notes}\n\n${metadataNote}`
+          : metadataNote;
       }
       
       // If source not explicitly set but this is ElevenLabs data, set source
@@ -579,14 +605,43 @@ const handler = async (req: Request): Promise<Response> => {
       return validationErrorResponse(validationErrors.join(', '), origin);
     }
 
-    // Determine organization - check query params first, then body fields
+    // Determine organization - priority order:
+    // 1. Explicit org_id in query params or body
+    // 2. Resolve from ElevenLabs agent_id via voice_agents table
+    // 3. Resolve from organization_slug
+    // 4. Return error if no organization can be determined
     let organizationId = applicationData.organization_id;
+    let resolvedClientId: string | null = null;
+    let resolvedFrom = 'explicit';
     
-    logger.info('Organization resolution', {
-      fromExtraction: applicationData.organization_id,
-      fromOrganizationSlug: applicationData.organization_slug,
+    logger.info('Organization resolution starting', {
+      hasExplicitOrgId: !!applicationData.organization_id,
+      hasElevenLabsAgentId: !!elevenLabsAgentId,
+      hasOrganizationSlug: !!applicationData.organization_slug,
     });
     
+    // Try to resolve from ElevenLabs agent ID via voice_agents table
+    if (!organizationId && elevenLabsAgentId) {
+      const { data: voiceAgent } = await supabase
+        .from('voice_agents')
+        .select('organization_id, client_id')
+        .or(`agent_id.eq.${elevenLabsAgentId},elevenlabs_agent_id.eq.${elevenLabsAgentId}`)
+        .eq('is_active', true)
+        .single();
+      
+      if (voiceAgent?.organization_id) {
+        organizationId = voiceAgent.organization_id;
+        resolvedClientId = voiceAgent.client_id;
+        resolvedFrom = 'agent_lookup';
+        logger.info('Resolved organization from ElevenLabs agent', {
+          agentId: elevenLabsAgentId,
+          organizationId,
+          clientId: resolvedClientId
+        });
+      }
+    }
+    
+    // Try to resolve from organization slug
     if (!organizationId && applicationData.organization_slug) {
       const { data: org } = await supabase
         .from('organizations')
@@ -594,25 +649,47 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('slug', applicationData.organization_slug)
         .single();
       
-      organizationId = org?.id;
-      if (organizationId) {
+      if (org?.id) {
+        organizationId = org.id;
+        resolvedFrom = 'slug_lookup';
         logger.info('Resolved organization from slug', { slug: applicationData.organization_slug, id: organizationId });
       }
     }
     
-    // Default to Hayes Recruiting Solutions
+    // If still no organization, return error instead of defaulting
     if (!organizationId) {
-      organizationId = '84214b48-7b51-45bc-ad7f-723bcf50466c';
-      logger.info('Using default organization', { id: organizationId });
-    } else {
-      logger.info('Organization resolved', { id: organizationId });
+      logger.error('Could not determine organization for application', {
+        hasAgentId: !!elevenLabsAgentId,
+        hasOrgSlug: !!applicationData.organization_slug,
+        source: applicationData.source
+      });
+      return errorResponse(
+        'Organization could not be determined. Please include org_id in webhook URL or configure agent in voice_agents table.',
+        400,
+        { 
+          hint: 'Add organization_id to your webhook payload or configure the voice agent with an organization.',
+          receivedAgentId: elevenLabsAgentId 
+        },
+        origin
+      );
     }
+    
+    logger.info('Application routing resolved', {
+      source: applicationData.source,
+      organizationId,
+      clientId: resolvedClientId,
+      resolvedFrom,
+      elevenLabsAgentId: elevenLabsAgentId || null
+    });
 
-    // Look up client by name or slug
-    const clientIdentifier = applicationData.client_name || 
-                             applicationData.client_slug || 
-                             applicationData.client_company;
-    const clientId = await findClientByIdentifier(supabase, organizationId, clientIdentifier);
+    // Look up client - prefer resolved from agent, then by identifier
+    let clientId = resolvedClientId;
+    if (!clientId) {
+      const clientIdentifier = applicationData.client_name || 
+                               applicationData.client_slug || 
+                               applicationData.client_company;
+      clientId = await findClientByIdentifier(supabase, organizationId, clientIdentifier);
+    }
 
     // Find or create job listing using shared processor
     const jobListingId = await findOrCreateJobListing(supabase, {
