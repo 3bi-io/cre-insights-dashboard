@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Truck } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
@@ -17,6 +17,22 @@ import { DetailedConsentSection } from './DetailedConsentSection';
 import { DraftBanner, AutoSaveIndicator } from '@/components/shared/DraftBanner';
 
 const TOTAL_STEPS = 6;
+
+// Step configuration for rendering
+interface StepConfig {
+  id: number;
+  Component: React.ComponentType<any>;
+  hasEndorsementToggle?: boolean;
+}
+
+const STEP_SECTIONS: StepConfig[] = [
+  { id: 1, Component: DetailedPersonalSection },
+  { id: 2, Component: DetailedContactSection },
+  { id: 3, Component: DetailedCDLSection, hasEndorsementToggle: true },
+  { id: 4, Component: DetailedExperienceSection },
+  { id: 5, Component: DetailedBackgroundSection },
+  { id: 6, Component: DetailedConsentSection },
+];
 
 export const DetailedApplicationForm = () => {
   const {
@@ -53,13 +69,24 @@ export const DetailedApplicationForm = () => {
     }
   };
 
-  const canProceed = validateStep(activeStep);
+  const handleDraftRestore = () => {
+    restoreDraft();
+    setDraftBannerDismissed(true);
+  };
 
-  const breadcrumbData = buildBreadcrumbSchema([
+  const handleDraftDiscard = () => {
+    discardDraft();
+    setDraftBannerDismissed(true);
+  };
+
+  const canProceed = validateStep(activeStep);
+  const showDraftBanner = hasDraft && !draftBannerDismissed;
+
+  const breadcrumbData = useMemo(() => buildBreadcrumbSchema([
     { name: 'Home', url: 'https://ats.me/' },
     { name: 'Jobs', url: 'https://ats.me/jobs' },
     { name: 'Detailed Application', url: 'https://ats.me/apply/detailed' },
-  ]);
+  ]), []);
 
   return (
     <>
@@ -70,112 +97,71 @@ export const DetailedApplicationForm = () => {
         canonical="https://ats.me/apply/detailed"
       />
       <StructuredData data={breadcrumbData} />
+      
       <div className="min-h-screen bg-gradient-to-br from-background to-muted py-6 sm:py-8 px-4">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-6 sm:mb-8">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Truck className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Complete Application</h1>
+          <header className="text-center mb-6 sm:mb-8">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Truck className="w-7 h-7 sm:w-8 sm:h-8 text-primary" aria-hidden="true" />
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                Complete Application
+              </h1>
+            </div>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Please complete all sections to submit your comprehensive application
+            </p>
+          </header>
+
+          {/* Draft Restoration Banner */}
+          {showDraftBanner && (
+            <DraftBanner
+              lastSaved={lastSaved}
+              onRestore={handleDraftRestore}
+              onDiscard={handleDraftDiscard}
+              className="mb-6"
+            />
+          )}
+
+          {/* Progress Indicator */}
+          <nav aria-label="Application progress" className="mb-4">
+            <DetailedFormProgressIndicator
+              activeStep={activeStep}
+              completedSteps={completedSteps}
+              onStepClick={goToStep}
+              canGoToStep={canGoToStep}
+            />
+          </nav>
+
+          {/* Auto-save indicator */}
+          <div className="flex justify-end mb-2">
+            <AutoSaveIndicator lastSaved={lastSaved} />
           </div>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Please complete all sections to submit your comprehensive application
-          </p>
-        </div>
 
-        {/* Draft Restoration Banner */}
-        {hasDraft && !draftBannerDismissed && (
-          <DraftBanner
-            lastSaved={lastSaved}
-            onRestore={() => {
-              restoreDraft();
-              setDraftBannerDismissed(true);
-            }}
-            onDiscard={() => {
-              discardDraft();
-              setDraftBannerDismissed(true);
-            }}
-            className="mb-6"
-          />
-        )}
+          {/* Step Content */}
+          <main className="bg-card rounded-2xl border border-border shadow-sm p-5 sm:p-8 mb-6">
+            {STEP_SECTIONS.map(({ id, Component, hasEndorsementToggle }) => (
+              <StepContainer key={id} direction={direction} isActive={activeStep === id}>
+                <Component
+                  formData={formData}
+                  onInputChange={handleInputChange}
+                  isActive={activeStep === id}
+                  {...(hasEndorsementToggle && { onEndorsementToggle: handleEndorsementToggle })}
+                />
+              </StepContainer>
+            ))}
 
-        {/* Progress Indicator */}
-        <div className="flex items-center justify-between mb-4">
-          <DetailedFormProgressIndicator
-            activeStep={activeStep}
-            completedSteps={completedSteps}
-            onStepClick={goToStep}
-            canGoToStep={canGoToStep}
-          />
-        </div>
-        
-        {/* Auto-save indicator */}
-        <div className="flex justify-end mb-2">
-          <AutoSaveIndicator lastSaved={lastSaved} />
-        </div>
-
-        {/* Step Content */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm p-5 sm:p-8 mb-6">
-          <StepContainer direction={direction} isActive={activeStep === 1}>
-            <DetailedPersonalSection
-              formData={formData}
-              onInputChange={handleInputChange}
-              isActive={activeStep === 1}
+            {/* Navigation */}
+            <StepNavigation
+              onBack={prevStep}
+              onNext={handleNext}
+              onSubmit={handleSubmit}
+              isFirstStep={isFirstStep}
+              isLastStep={isLastStep}
+              isSubmitting={isSubmitting}
+              canProceed={canProceed}
             />
-          </StepContainer>
-
-          <StepContainer direction={direction} isActive={activeStep === 2}>
-            <DetailedContactSection
-              formData={formData}
-              onInputChange={handleInputChange}
-              isActive={activeStep === 2}
-            />
-          </StepContainer>
-
-          <StepContainer direction={direction} isActive={activeStep === 3}>
-            <DetailedCDLSection
-              formData={formData}
-              onInputChange={handleInputChange}
-              onEndorsementToggle={handleEndorsementToggle}
-              isActive={activeStep === 3}
-            />
-          </StepContainer>
-
-          <StepContainer direction={direction} isActive={activeStep === 4}>
-            <DetailedExperienceSection
-              formData={formData}
-              onInputChange={handleInputChange}
-              isActive={activeStep === 4}
-            />
-          </StepContainer>
-
-          <StepContainer direction={direction} isActive={activeStep === 5}>
-            <DetailedBackgroundSection
-              formData={formData}
-              onInputChange={handleInputChange}
-              isActive={activeStep === 5}
-            />
-          </StepContainer>
-
-          <StepContainer direction={direction} isActive={activeStep === 6}>
-            <DetailedConsentSection
-              formData={formData}
-              onInputChange={handleInputChange}
-              isActive={activeStep === 6}
-            />
-          </StepContainer>
-
-          {/* Navigation */}
-          <StepNavigation
-            onBack={prevStep}
-            onNext={handleNext}
-            onSubmit={handleSubmit}
-            isFirstStep={isFirstStep}
-            isLastStep={isLastStep}
-            isSubmitting={isSubmitting}
-            canProceed={canProceed}
-          />
-        </div>
+          </main>
 
           {/* Celebration Feedback */}
           <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
