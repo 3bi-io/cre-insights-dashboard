@@ -27,10 +27,11 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   const [pendingUserTranscript, setPendingUserTranscript] = useState<string>('');
   const { toast } = useToast();
   
-  // Ref to track connection state for cleanup (avoids stale closure issues)
+  // Refs to track state for cleanup (avoids stale closure issues)
   const isConnectedRef = useRef(false);
+  const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
   
-  // Keep ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => {
     isConnectedRef.current = isConnected;
   }, [isConnected]);
@@ -237,17 +238,22 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     }
   }, [conversation, requestMicrophoneAccess, getSignedUrl, toast]);
 
-  // Cleanup on unmount - end session gracefully
+  // Keep conversation ref in sync (needed for cleanup without causing re-runs)
+  useEffect(() => {
+    conversationRef.current = conversation;
+  }, [conversation]);
+
+  // Cleanup on unmount only - empty deps prevents cleanup on conversation object changes
   useEffect(() => {
     return () => {
-      if (isConnectedRef.current) {
+      if (isConnectedRef.current && conversationRef.current) {
         logger.debug('Component unmounting, ending voice session', undefined, 'VoiceAgentConnection');
-        conversation.endSession().catch(() => {
+        conversationRef.current.endSession().catch(() => {
           // Silently handle cleanup errors - component is already unmounting
         });
       }
     };
-  }, [conversation]);
+  }, []);
 
   const disconnect = useCallback(async (): Promise<void> => {
     try {
