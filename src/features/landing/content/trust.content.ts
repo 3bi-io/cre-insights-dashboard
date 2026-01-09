@@ -10,7 +10,7 @@ export const trustContent = {
   badge: 'Now Accepting Beta Users',
   title: 'Built on Proven Technology, Designed for Modern Recruiting',
   description: 'Our platform is built on enterprise-grade infrastructure with integrations to Tenstreet, major job boards, and leading HR systems.',
-  footer: 'Early Adopter Benefits: Priority support, feature voting rights, and special pricing for pilot program participants',
+  footer: 'Early Adopter Benefits: Priority support, feature voting rights, and exclusive access for pilot program participants',
   stats: [
     {
       icon: Phone,

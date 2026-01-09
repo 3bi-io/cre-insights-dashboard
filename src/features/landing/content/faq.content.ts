@@ -46,10 +46,6 @@ export const faqContent = {
       answer: 'All customers receive email and chat support. Enterprise customers receive a dedicated account manager, phone support, and custom SLAs.',
     },
     {
-      question: 'How does pricing work?',
-      answer: 'Our pricing is based on your organization size and needs. Contact our sales team for a custom quote tailored to your requirements.',
-    },
-    {
       question: 'What happens to my data if I cancel?',
       answer: 'You maintain full access during your notice period. We provide data export tools in standard formats (CSV, JSON) so you can take all your jobseeker data, job postings, and analytics with you. Data is retained for 90 days after cancellation for potential reactivation.',
     },
