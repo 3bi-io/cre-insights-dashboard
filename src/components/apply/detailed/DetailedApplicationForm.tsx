@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Truck } from 'lucide-react';
+import { SEO } from '@/components/SEO';
+import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import { useStepWizard } from '@/hooks/useStepWizard';
 import { useDetailedApplicationForm } from '@/hooks/useDetailedApplicationForm';
 import { StepContainer } from '../StepContainer';
@@ -53,11 +55,25 @@ export const DetailedApplicationForm = () => {
 
   const canProceed = validateStep(activeStep);
 
+  const breadcrumbData = buildBreadcrumbSchema([
+    { name: 'Home', url: 'https://ats.me/' },
+    { name: 'Jobs', url: 'https://ats.me/jobs' },
+    { name: 'Detailed Application', url: 'https://ats.me/apply/detailed' },
+  ]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted py-6 sm:py-8 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
+    <>
+      <SEO
+        title="Complete Driver Application | CDL Driver Application Form"
+        description="Submit your comprehensive driver application with CDL verification, employment history, and background information. Get matched with top trucking companies."
+        keywords="CDL application, driver application form, trucking job application, complete driver application, employment verification"
+        canonical="https://ats.me/apply/detailed"
+      />
+      <StructuredData data={breadcrumbData} />
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted py-6 sm:py-8 px-4">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Truck className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Complete Application</h1>
@@ -161,9 +177,10 @@ export const DetailedApplicationForm = () => {
           />
         </div>
 
-        {/* Celebration Feedback */}
-        <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
+          {/* Celebration Feedback */}
+          <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
+        </div>
       </div>
-    </div>
+    </>
   );
 };

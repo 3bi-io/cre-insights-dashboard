@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { SEO } from '@/components/SEO';
+import { StructuredData, buildFAQSchema } from '@/components/StructuredData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -148,6 +149,35 @@ const ContactPage = () => {
     }
   ];
 
+  // Build FAQ schema for structured data
+  const faqSchemaData = buildFAQSchema(faqs);
+
+  // Contact page schema for AI search
+  const contactPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact ATS.me",
+    "description": "Get in touch with ATS.me for demos, support, or partnership inquiries",
+    "url": "https://ats.me/contact",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "ATS.me",
+      "email": "support@ats.me",
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "Sales",
+          "email": "sales@ats.me"
+        },
+        {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@ats.me"
+        }
+      ]
+    }
+  };
+
   return (
     <>
       <SEO
@@ -156,6 +186,7 @@ const ContactPage = () => {
         keywords="contact ATS.me, recruitment support, demo request, ATS inquiry, customer service"
         canonical="https://ats.me/contact"
       />
+      <StructuredData data={[contactPageSchema, faqSchemaData]} />
       <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
