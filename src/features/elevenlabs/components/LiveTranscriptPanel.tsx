@@ -14,13 +14,16 @@ interface LiveTranscriptPanelProps {
   pendingUserTranscript?: string;
   isSpeaking: boolean;
   isConnected: boolean;
+  /** When true, expands to fill available height */
+  fullscreen?: boolean;
 }
 
 export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
   transcripts,
   pendingUserTranscript,
   isSpeaking,
-  isConnected
+  isConnected,
+  fullscreen = false
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -34,8 +37,11 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
   if (!isConnected) return null;
 
   return (
-    <div className="border rounded-lg bg-muted/30">
-      <div className="px-3 py-2 border-b bg-muted/50 flex items-center justify-between">
+    <div className={cn(
+      "border rounded-lg bg-muted/30 flex flex-col",
+      fullscreen && "h-full"
+    )}>
+      <div className="px-3 py-2 border-b bg-muted/50 flex items-center justify-between shrink-0">
         <span className="text-sm font-medium">Live Transcript</span>
         {isSpeaking && (
           <span className="text-xs text-primary flex items-center gap-1">
@@ -45,10 +51,21 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
         )}
       </div>
       
-      <ScrollArea className="h-48" ref={scrollRef}>
-        <div className="p-3 space-y-3">
+      <ScrollArea 
+        className={cn(
+          fullscreen ? "flex-1" : "h-48"
+        )} 
+        ref={scrollRef}
+      >
+        <div className={cn(
+          "p-3 space-y-3",
+          fullscreen && "sm:p-4 sm:space-y-4"
+        )}>
           {transcripts.length === 0 && !pendingUserTranscript && (
-            <div className="text-center py-4">
+            <div className={cn(
+              "text-center py-4",
+              fullscreen && "py-8"
+            )}>
               {isSpeaking ? (
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex gap-1">
@@ -71,8 +88,11 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
           {/* Pending agent indicator - shows while agent is speaking before transcript arrives */}
           {isSpeaking && transcripts.length > 0 && transcripts[transcripts.length - 1]?.speaker === 'user' && (
             <div className="flex gap-2 items-start">
-              <div className="w-6 h-6 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0">
-                <Bot className="w-3 h-3" />
+              <div className={cn(
+                "rounded-full bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0",
+                fullscreen ? "w-8 h-8" : "w-6 h-6"
+              )}>
+                <Bot className={cn(fullscreen ? "w-4 h-4" : "w-3 h-3")} />
               </div>
               <div className="flex-1 p-2 rounded-lg text-sm bg-secondary/30 border border-dashed border-secondary/50">
                 <div className="flex gap-1">
@@ -89,22 +109,25 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
               key={message.id}
               className={cn(
                 "flex gap-2 items-start",
+                fullscreen && "gap-3",
                 message.speaker === 'user' ? 'flex-row-reverse' : ''
               )}
             >
               <div className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
+                "rounded-full flex items-center justify-center flex-shrink-0",
+                fullscreen ? "w-8 h-8" : "w-6 h-6",
                 message.speaker === 'user' 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-secondary text-secondary-foreground'
               )}>
                 {message.speaker === 'user' 
-                  ? <User className="w-3 h-3" /> 
-                  : <Bot className="w-3 h-3" />
+                  ? <User className={cn(fullscreen ? "w-4 h-4" : "w-3 h-3")} /> 
+                  : <Bot className={cn(fullscreen ? "w-4 h-4" : "w-3 h-3")} />
                 }
               </div>
               <div className={cn(
-                "flex-1 p-2 rounded-lg text-sm",
+                "flex-1 p-2 rounded-lg",
+                fullscreen ? "p-3 text-base" : "text-sm",
                 message.speaker === 'user' 
                   ? 'bg-primary/10 text-right' 
                   : 'bg-secondary/50'
@@ -119,11 +142,20 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
 
           {/* Pending user transcript (what they're currently saying) */}
           {pendingUserTranscript && (
-            <div className="flex gap-2 items-start flex-row-reverse">
-              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
-                <User className="w-3 h-3" />
+            <div className={cn(
+              "flex gap-2 items-start flex-row-reverse",
+              fullscreen && "gap-3"
+            )}>
+              <div className={cn(
+                "rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0",
+                fullscreen ? "w-8 h-8" : "w-6 h-6"
+              )}>
+                <User className={cn(fullscreen ? "w-4 h-4" : "w-3 h-3")} />
               </div>
-              <div className="flex-1 p-2 rounded-lg text-sm bg-primary/5 text-right border border-dashed border-primary/30">
+              <div className={cn(
+                "flex-1 p-2 rounded-lg bg-primary/5 text-right border border-dashed border-primary/30",
+                fullscreen ? "p-3 text-base" : "text-sm"
+              )}>
                 <p className="italic text-muted-foreground">{pendingUserTranscript}</p>
                 <span className="text-xs text-muted-foreground mt-1 block">speaking...</span>
               </div>
