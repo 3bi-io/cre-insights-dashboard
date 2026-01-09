@@ -5,6 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Base URL for job pages - configurable via environment variable
+const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://ats.me';
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -20,43 +23,39 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user_id from query params or auth header
+    // Get user_id from query params
     const url = new URL(req.url);
     const userId = url.searchParams.get('user_id');
+    const organizationId = url.searchParams.get('organization_id');
     
-    if (!userId) {
-      return new Response('Missing user_id parameter', { 
+    if (!userId && !organizationId) {
+      return new Response('Missing user_id or organization_id parameter', { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
       });
     }
 
-    console.log('Generating Google Jobs XML feed for user:', userId);
+    console.log('Generating Google Jobs XML sitemap for:', { userId, organizationId });
 
-    // Fetch active job listings for the user
-    const { data: jobListings, error } = await supabase
+    // Build query based on parameters
+    let query = supabase
       .from('job_listings')
       .select(`
         id,
-        title,
-        job_summary,
-        location,
-        city,
-        state,
-        salary_min,
-        salary_max,
-        salary_type,
-        job_type,
-        experience_level,
-        apply_url,
-        created_at,
         updated_at,
-        status,
-        client
+        created_at,
+        status
       `)
-      .eq('user_id', userId)
       .eq('status', 'active')
       .order('created_at', { ascending: false });
+
+    if (organizationId) {
+      query = query.eq('organization_id', organizationId);
+    } else if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data: jobListings, error } = await query;
 
     if (error) {
       console.error('Error fetching job listings:', error);
@@ -68,27 +67,27 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${jobListings?.length || 0} active job listings`);
 
-    // Generate XML feed
-    const xmlContent = generateGoogleJobsXML(jobListings || [], userId);
+    // Generate XML sitemap
+    const xmlContent = generateGoogleJobsSitemap(jobListings || []);
 
     const responseTime = Date.now() - startTime;
 
-    // Get organization_id for the user
-    let organizationId = null;
-    if (userId) {
+    // Get organization_id for logging
+    let orgId = organizationId;
+    if (!orgId && userId) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('organization_id')
         .eq('id', userId)
         .single();
-      organizationId = profile?.organization_id;
+      orgId = profile?.organization_id;
     }
 
     // Log feed access (non-blocking)
     supabase.from('feed_access_logs').insert({
-      organization_id: organizationId,
+      organization_id: orgId,
       user_id: userId,
-      feed_type: 'google-jobs-xml',
+      feed_type: 'google-jobs-sitemap',
       platform: 'google',
       request_ip: requestIp,
       user_agent: userAgent,
@@ -113,17 +112,23 @@ Deno.serve(async (req) => {
   }
 });
 
-function generateGoogleJobsXML(jobListings: any[], userId: string): string {
-  const currentDate = new Date().toISOString();
-  
-  // Google Jobs requires JSON-LD structured data, not RSS/XML feeds
-  // This generates a sitemap that points to job pages with JSON-LD structured data
+/**
+ * Generates a Google-compliant XML Sitemap for job listings
+ * Each URL points to a job detail page that contains JobPosting JSON-LD
+ */
+function generateGoogleJobsSitemap(jobListings: Array<{ id: string; updated_at: string; created_at: string }>): string {
   let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- Google Jobs Sitemap - Generated: ${new Date().toISOString()} -->
+<!-- Total Jobs: ${jobListings.length} -->
+<!-- Each URL contains JobPosting JSON-LD structured data -->
 `;
 
   jobListings.forEach(job => {
-    const jobUrl = `https://ats.me/jobs/${job.id}`;
+    const jobUrl = `${BASE_URL}/jobs/${job.id}`;
     const lastMod = new Date(job.updated_at || job.created_at).toISOString().split('T')[0];
 
     xml += `  <url>
@@ -148,75 +153,4 @@ function escapeXML(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function formatLocation(location?: string, city?: string, state?: string): string {
-  if (location) return location;
-  if (city && state) return `${city}, ${state}`;
-  if (city) return city;
-  if (state) return state;
-  return 'Location TBD';
-}
-
-function formatSalary(min?: number, max?: number, type?: string): string {
-  if (!min && !max) return '';
-  
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const period = type === 'hourly' ? ' per hour' : type === 'weekly' ? ' per week' : ' per year';
-  
-  if (min && max) {
-    return `${formatAmount(min)} - ${formatAmount(max)}${period}`;
-  } else if (min) {
-    return `${formatAmount(min)}+${period}`;
-  } else if (max) {
-    return `Up to ${formatAmount(max)}${period}`;
-  }
-  
-  return '';
-}
-
-function formatJobType(jobType?: string): string {
-  if (!jobType) return 'FULL_TIME';
-  
-  const typeMap: { [key: string]: string } = {
-    'full-time': 'FULL_TIME',
-    'part-time': 'PART_TIME',
-    'contract': 'CONTRACTOR',
-    'temporary': 'TEMPORARY',
-    'internship': 'INTERN',
-    'volunteer': 'VOLUNTEER'
-  };
-  
-  return typeMap[jobType.toLowerCase()] || 'FULL_TIME';
-}
-
-function formatExperienceLevel(experienceLevel?: string): string {
-  if (!experienceLevel) return 'ENTRY_LEVEL';
-  
-  const levelMap: { [key: string]: string } = {
-    'entry': 'ENTRY_LEVEL',
-    'entry-level': 'ENTRY_LEVEL',
-    'mid': 'MID_LEVEL',
-    'mid-level': 'MID_LEVEL',
-    'senior': 'SENIOR_LEVEL',
-    'senior-level': 'SENIOR_LEVEL',
-    'executive': 'EXECUTIVE',
-    'director': 'DIRECTOR'
-  };
-  
-  return levelMap[experienceLevel.toLowerCase()] || 'ENTRY_LEVEL';
-}
-
-function getValidThroughDate(createdAt: string): string {
-  const created = new Date(createdAt);
-  const validThrough = new Date(created.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days from creation
-  return validThrough.toISOString();
 }

@@ -5,7 +5,6 @@ export { default as DateRangeFilter } from '@/components/platforms/DateRangeFilt
 export { default as GlassdoorPlatformActions } from '@/components/platforms/GlassdoorPlatformActions';
 export { default as GoogleJobsFeedValidator } from '@/components/platforms/GoogleJobsFeedValidator';
 export { default as GoogleJobsPlatformActions } from '@/components/platforms/GoogleJobsPlatformActions';
-export { default as GoogleJobsSetup } from '@/components/platforms/GoogleJobsSetup';
 export { default as IndeedPlatformActions } from '@/components/platforms/IndeedPlatformActions';
 export { default as MetaPlatformActions } from '@/components/platforms/MetaPlatformActions';
 export { default as MetaSpendMetrics } from '@/components/platforms/MetaSpendMetrics';
