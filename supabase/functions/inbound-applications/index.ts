@@ -508,7 +508,41 @@ const handler = async (req: Request): Promise<Response> => {
       notes: extractValue(body, ['notes', 'comments', 'message']),
       status: extractValue(body, ['status']) || 'pending',
       cdl_endorsements: undefined as string[] | undefined,
+      elevenlabs_call_transcript: undefined as string | undefined,
     };
+
+    // Extract ElevenLabs transcript data if present
+    const elevenLabsData = body.data as Record<string, unknown> | undefined;
+    if (elevenLabsData) {
+      const transcript = elevenLabsData.transcript as Array<{ role: string; message: string }> | undefined;
+      const analysis = elevenLabsData.analysis as Record<string, unknown> | undefined;
+      const transcriptSummary = analysis?.transcript_summary as string | undefined;
+      
+      if (transcript && Array.isArray(transcript)) {
+        // Format transcript as readable text
+        const formattedTranscript = transcript
+          .map(entry => `${entry.role === 'agent' ? 'Agent' : 'Caller'}: ${entry.message}`)
+          .join('\n');
+        
+        // Combine summary and full transcript
+        const transcriptParts: string[] = [];
+        if (transcriptSummary) {
+          transcriptParts.push(`=== Summary ===\n${transcriptSummary}`);
+        }
+        transcriptParts.push(`=== Full Transcript ===\n${formattedTranscript}`);
+        
+        applicationData.elevenlabs_call_transcript = transcriptParts.join('\n\n');
+        logger.info('ElevenLabs transcript captured', { 
+          messageCount: transcript.length,
+          hasSummary: !!transcriptSummary 
+        });
+      }
+      
+      // If source not explicitly set but this is ElevenLabs data, set source
+      if (!applicationData.source || applicationData.source === 'CDL Job Cast') {
+        applicationData.source = 'ElevenLabs';
+      }
+    }
 
     // Parse CDL endorsements if provided
     if (body.cdl_endorsements) {
@@ -638,6 +672,7 @@ const handler = async (req: Request): Promise<Response> => {
       notes: applicationData.notes,
       status: applicationData.status,
       applied_at: new Date().toISOString(),
+      elevenlabs_call_transcript: applicationData.elevenlabs_call_transcript,
     };
 
     // Insert application using shared processor
