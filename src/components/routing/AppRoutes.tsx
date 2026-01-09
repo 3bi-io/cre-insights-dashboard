@@ -167,6 +167,10 @@ const AppRoutes: React.FC = () => {
       <Route path="/j/:shortCode" element={<RouteWrapper><ShortLinkRedirect /></RouteWrapper>} />
       
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
+      
+      {/* Legacy auth route redirects for backward compatibility */}
+      <Route path="/login" element={<Navigate to="/auth" replace />} />
+      <Route path="/register" element={<Navigate to="/auth?signup=true" replace />} />
       <Route path="/choose-account-type" element={<ProtectedRouteWrapper><ChooseAccountType /></ProtectedRouteWrapper>} />
       <Route path="/onboarding" element={<ProtectedRouteWrapper><Onboarding /></ProtectedRouteWrapper>} />
 
