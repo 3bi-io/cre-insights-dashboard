@@ -19,12 +19,15 @@ import { useCampaigns } from '../hooks/useCampaigns';
 import { CreateCampaignDialog } from '../components/CreateCampaignDialog';
 import { CampaignCard } from '../components/CampaignCard';
 import { Database } from '@/integrations/supabase/types';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
 type Campaign = Database['public']['Tables']['campaigns']['Row'];
 
 const CampaignsPage = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   
   const {
     campaigns,
@@ -57,10 +60,17 @@ const CampaignsPage = () => {
     });
   };
 
-  const handleDeleteCampaign = (campaign: Campaign) => {
-    if (confirm(`Are you sure you want to delete "${campaign.name}"?`)) {
-      deleteCampaign(campaign.id);
+  const handleDeleteClick = (campaign: Campaign) => {
+    setCampaignToDelete(campaign);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (campaignToDelete) {
+      deleteCampaign(campaignToDelete.id);
     }
+    setDeleteDialogOpen(false);
+    setCampaignToDelete(null);
   };
 
   // Filter campaigns based on search term
@@ -205,38 +215,50 @@ const CampaignsPage = () => {
 
         {/* Campaigns List */}
         {!isLoading && !isError && (
-          <div className="space-y-4">
-            {filteredCampaigns.length === 0 ? (
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    {searchTerm ? 'No campaigns found' : 'No campaigns yet'}
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm
-                      ? 'Try adjusting your search terms'
-                      : 'Create your first campaign to get started'}
-                  </p>
-                  {!searchTerm && (
-                    <Button onClick={() => setShowCreateDialog(true)}>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Campaign
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              filteredCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  onToggleStatus={handleToggleStatus}
-                  onDelete={handleDeleteCampaign}
-                />
-              ))
-            )}
-          </div>
+          <>
+            <div className="space-y-4">
+              {filteredCampaigns.length === 0 ? (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      {searchTerm ? 'No campaigns found' : 'No campaigns yet'}
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchTerm
+                        ? 'Try adjusting your search terms'
+                        : 'Create your first campaign to get started'}
+                    </p>
+                    {!searchTerm && (
+                      <Button onClick={() => setShowCreateDialog(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Campaign
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredCampaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onToggleStatus={handleToggleStatus}
+                    onDelete={handleDeleteClick}
+                  />
+                ))
+              )}
+            </div>
+
+            <ConfirmationDialog
+              open={deleteDialogOpen}
+              onOpenChange={setDeleteDialogOpen}
+              title="Delete Campaign"
+              description={`Are you sure you want to delete "${campaignToDelete?.name}"?`}
+              confirmLabel="Delete"
+              variant="destructive"
+              onConfirm={handleConfirmDelete}
+            />
+          </>
         )}
       </div>
 

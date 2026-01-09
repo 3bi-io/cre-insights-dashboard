@@ -80,12 +80,15 @@ export const usePlatformAccess = (organizationId?: string) => {
   const availablePlatforms = useMemo(() => getAllPlatforms(), []);
 
   // Check if a platform is enabled (utility function) - memoized to prevent infinite loops in useEffect
-  const checkPlatformAccess = useCallback(async (platformName: string): Promise<boolean> => {
-    // Default to true if no organization - aligns with DB default behavior
-    if (!organizationId) return true;
+  const checkPlatformAccess = useCallback(async (platformName: string, userRole?: string): Promise<boolean> => {
+    // Super admins always have access
+    if (userRole === 'super_admin') return true;
+    
+    // Default to false if no organization - restrictive by default
+    if (!organizationId) return false;
     
     const platformsMap = await OrganizationPlatformsService.fetchOrganizationPlatformsMap(organizationId);
-    return platformsMap[platformName as any] ?? true; // Default to true if not found
+    return platformsMap[platformName as any] ?? false; // Default to false if not found (restrictive)
   }, [organizationId]);
 
   return {
