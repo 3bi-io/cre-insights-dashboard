@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx';
 interface ROIRow {
   Metric: string;
   'Current State': string | number;
-  'With ATS Intel': string | number;
+  'With ATS.me': string | number;
   'Improvement': string;
 }
 
@@ -19,11 +19,11 @@ export const generateRoiCalculatorXLSX = (): void => {
 
   // Instructions sheet
   const instructionsData = [
-    ['ATS Intel ROI Calculator'],
+    ['ATS.me ROI Calculator'],
     [''],
     ['Instructions:'],
     ['1. Enter your current metrics in the "Current State" column on the Calculator sheet'],
-    ['2. Review the projected improvements with ATS Intel'],
+    ['2. Review the projected improvements with ATS.me'],
     ['3. Calculate your potential annual savings and ROI'],
     [''],
     ['Note: Improvement estimates are based on typical customer results.'],
@@ -37,26 +37,26 @@ export const generateRoiCalculatorXLSX = (): void => {
 
   // Calculator sheet
   const calculatorData: ROIRow[] = [
-    { Metric: 'HIRING VOLUME', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'Monthly Hires', 'Current State': 10, 'With ATS Intel': 12, 'Improvement': '+20%' },
-    { Metric: 'Monthly Applications', 'Current State': 500, 'With ATS Intel': 650, 'Improvement': '+30%' },
-    { Metric: 'Open Positions', 'Current State': 25, 'With ATS Intel': 25, 'Improvement': '-' },
-    { Metric: '', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'TIME METRICS', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'Time to Hire (days)', 'Current State': 45, 'With ATS Intel': 28, 'Improvement': '-38%' },
-    { Metric: 'Time to First Response (hours)', 'Current State': 48, 'With ATS Intel': 4, 'Improvement': '-92%' },
-    { Metric: 'Application Completion Rate (%)', 'Current State': 45, 'With ATS Intel': 80, 'Improvement': '+78%' },
-    { Metric: 'Recruiter Hours per Hire', 'Current State': 20, 'With ATS Intel': 8, 'Improvement': '-60%' },
-    { Metric: '', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'COST METRICS', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'Cost per Hire ($)', 'Current State': 4500, 'With ATS Intel': 2700, 'Improvement': '-40%' },
-    { Metric: 'Monthly Job Board Spend ($)', 'Current State': 5000, 'With ATS Intel': 3500, 'Improvement': '-30%' },
-    { Metric: 'Monthly Recruiter Costs ($)', 'Current State': 15000, 'With ATS Intel': 15000, 'Improvement': '-' },
-    { Metric: '', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'QUALITY METRICS', 'Current State': '', 'With ATS Intel': '', 'Improvement': '' },
-    { Metric: 'Quality of Hire Score (1-10)', 'Current State': 6.5, 'With ATS Intel': 8.2, 'Improvement': '+26%' },
-    { Metric: '90-Day Retention Rate (%)', 'Current State': 75, 'With ATS Intel': 88, 'Improvement': '+17%' },
-    { Metric: 'Candidate Satisfaction (%)', 'Current State': 65, 'With ATS Intel': 92, 'Improvement': '+42%' }
+    { Metric: 'HIRING VOLUME', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'Monthly Hires', 'Current State': 10, 'With ATS.me': 12, 'Improvement': '+20%' },
+    { Metric: 'Monthly Applications', 'Current State': 500, 'With ATS.me': 650, 'Improvement': '+30%' },
+    { Metric: 'Open Positions', 'Current State': 25, 'With ATS.me': 25, 'Improvement': '-' },
+    { Metric: '', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'TIME METRICS', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'Time to Hire (days)', 'Current State': 45, 'With ATS.me': 28, 'Improvement': '-38%' },
+    { Metric: 'Time to First Response (hours)', 'Current State': 48, 'With ATS.me': 4, 'Improvement': '-92%' },
+    { Metric: 'Application Completion Rate (%)', 'Current State': 45, 'With ATS.me': 80, 'Improvement': '+78%' },
+    { Metric: 'Recruiter Hours per Hire', 'Current State': 20, 'With ATS.me': 8, 'Improvement': '-60%' },
+    { Metric: '', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'COST METRICS', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'Cost per Hire ($)', 'Current State': 4500, 'With ATS.me': 2700, 'Improvement': '-40%' },
+    { Metric: 'Monthly Job Board Spend ($)', 'Current State': 5000, 'With ATS.me': 3500, 'Improvement': '-30%' },
+    { Metric: 'Monthly Recruiter Costs ($)', 'Current State': 15000, 'With ATS.me': 15000, 'Improvement': '-' },
+    { Metric: '', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'QUALITY METRICS', 'Current State': '', 'With ATS.me': '', 'Improvement': '' },
+    { Metric: 'Quality of Hire Score (1-10)', 'Current State': 6.5, 'With ATS.me': 8.2, 'Improvement': '+26%' },
+    { Metric: '90-Day Retention Rate (%)', 'Current State': 75, 'With ATS.me': 88, 'Improvement': '+17%' },
+    { Metric: 'Candidate Satisfaction (%)', 'Current State': 65, 'With ATS.me': 92, 'Improvement': '+42%' }
   ];
 
   const wsCalculator = XLSX.utils.json_to_sheet(calculatorData);
@@ -78,7 +78,7 @@ export const generateRoiCalculatorXLSX = (): void => {
     ['Additional Hires Enabled', '=(Calculator!C2-Calculator!B2)*12'],
     [''],
     ['Your Investment', ''],
-    ['ATS Intel Professional Plan ($/month)', 599],
+    ['ATS.me Professional Plan ($/month)', 599],
     ['Annual Cost', 7188],
     [''],
     ['Estimated Annual ROI', ''],
@@ -92,5 +92,5 @@ export const generateRoiCalculatorXLSX = (): void => {
   XLSX.utils.book_append_sheet(wb, wsSummary, 'ROI Summary');
 
   // Save file
-  XLSX.writeFile(wb, 'ats-intel-roi-calculator.xlsx');
+  XLSX.writeFile(wb, 'ats-me-roi-calculator.xlsx');
 };

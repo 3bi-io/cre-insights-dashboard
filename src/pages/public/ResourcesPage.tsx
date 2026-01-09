@@ -44,7 +44,7 @@ const ResourcesPage = () => {
       title: 'Creating Your First Job',
       description: 'Step-by-step job posting walkthrough',
       duration: '8 min read',
-      link: '/features',
+      link: '/demo',
       step: 2
     },
     {
@@ -52,7 +52,7 @@ const ResourcesPage = () => {
       title: 'Account Setup & Configuration',
       description: 'Configure your organization settings',
       duration: '10 min read',
-      link: '/contact',
+      link: '/demo',
       step: 3
     },
     {
@@ -60,7 +60,7 @@ const ResourcesPage = () => {
       title: 'Integration Setup',
       description: 'Connect Tenstreet, job boards, and HRIS',
       duration: '12 min read',
-      link: '/contact',
+      link: '/features',
       step: 4
     }
   ];
@@ -70,32 +70,34 @@ const ResourcesPage = () => {
       icon: FileText,
       title: 'API Documentation',
       description: 'Complete API reference and integration guides',
-      link: '/contact'
+      link: '/contact',
+      badge: 'Contact Us'
     },
     {
       icon: Code,
       title: 'Webhook Integration',
       description: 'Set up real-time event notifications',
-      link: '/contact'
+      link: '/contact',
+      badge: 'Contact Us'
     },
     {
       icon: BarChart3,
       title: 'Analytics Guide',
       description: 'Understanding your data and metrics',
-      link: '/features'
+      link: '/demo'
     },
     {
       icon: Settings,
       title: 'Admin Configuration',
       description: 'Advanced settings and customization',
-      link: '/contact'
+      link: '/demo'
     }
   ];
 
   const downloads = [
     {
       id: 'feature-guide',
-      title: 'ATS Intel Feature Guide',
+      title: 'ATS.me Feature Guide',
       size: '~50 KB',
       format: 'PDF',
       generator: generateFeatureGuidePDF
@@ -155,7 +157,7 @@ const ResourcesPage = () => {
             Resources & Documentation
           </h1>
           <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
-            Everything you need to succeed with ATS Intel - guides, tutorials, documentation, and best practices
+            Everything you need to succeed with ATS.me - guides, tutorials, documentation, and best practices
           </p>
         </div>
 
@@ -215,8 +217,13 @@ const ResourcesPage = () => {
                 <Link key={index} to={doc.link}>
                   <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                     <CardHeader className="pb-2">
-                      <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg mb-3 md:mb-4">
-                        <Icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                      <div className="flex items-start justify-between">
+                        <div className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-lg mb-3 md:mb-4">
+                          <Icon className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                        </div>
+                        {doc.badge && (
+                          <Badge variant="outline" className="text-xs">{doc.badge}</Badge>
+                        )}
                       </div>
                       <CardTitle className="text-sm md:text-base">{doc.title}</CardTitle>
                       <CardDescription className="text-xs md:text-sm">{doc.description}</CardDescription>
