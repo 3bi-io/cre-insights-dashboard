@@ -136,11 +136,21 @@ export const useJobShortLinks = () => {
     return url;
   };
 
+  const buildLinkedInApplyUrl = (jobId: string, utmCampaign?: string): string => {
+    const baseUrl = window.location.origin;
+    let url = `${baseUrl}/in/apply/${jobId}`;
+    if (utmCampaign) {
+      url += `?utm_campaign=${encodeURIComponent(utmCampaign)}`;
+    }
+    return url;
+  };
+
   return {
     createShortLink,
     getShortLinksForJob,
     buildApplyUrl,
     buildXApplyUrl,
+    buildLinkedInApplyUrl,
     isCreating,
   };
 };
