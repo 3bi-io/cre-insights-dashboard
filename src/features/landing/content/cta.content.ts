@@ -5,9 +5,9 @@
 import { CTAStat } from './types';
 
 export const ctaContent = {
-  badge: 'Now Accepting Pilot Partners',
+  badge: 'Start Your Free Trial',
   title: 'Ready to Transform Your Hiring Process?',
-  description: 'Join 50+ companies in our pilot program. Get direct access to our product team, priority support, and exclusive early adopter benefits.',
+  description: 'Join 50+ companies transforming their hiring. Get instant automated callbacks, 24/7 AI voice agents, and dedicated onboarding support.',
   cta: {
     primary: 'Start Free Trial',
     secondary: 'Contact Sales'

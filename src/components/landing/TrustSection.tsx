@@ -6,9 +6,9 @@ const TrustSection = () => {
   const stats = [
     {
       icon: Users,
-      value: 'Growing',
-      label: 'Pilot Program',
-      description: 'Early adopters testing in production'
+      value: '50+',
+      label: 'Active Companies',
+      description: 'Transforming their hiring process'
     },
     {
       icon: Zap,
@@ -35,7 +35,7 @@ const TrustSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-            Now Accepting Beta Users
+            Trusted by Growing Companies
           </Badge>
           <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
             Built on Proven Technology, Designed for Modern Recruiting
@@ -64,7 +64,7 @@ const TrustSection = () => {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground">
-            <strong>Early Adopter Benefits:</strong> Priority support, feature voting rights, and special pricing for pilot program participants
+            <strong>All Plans Include:</strong> Priority support, dedicated onboarding, and direct access to our product team
           </p>
         </div>
       </div>

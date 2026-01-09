@@ -26,7 +26,7 @@ const LandingPage = () => {
     <main className="min-h-screen">
       <SEO
         title="AI Voice Recruitment Platform | Instant Automated Callbacks | ATS.me"
-        description="Hire faster with AI voice technology. Jobseekers receive automated callbacks within minutes. 24/7 AI voice agents, Voice Apply technology, 100+ job board integrations. Join 50+ pilot companies."
+        description="Hire faster with AI voice technology. Jobseekers receive automated callbacks within minutes. 24/7 AI voice agents, Voice Apply technology, 100+ job board integrations. Trusted by 50+ companies."
         keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, ATS software, Tenstreet integration, recruitment automation, instant callback"
         canonical="https://ats.me/"
       />

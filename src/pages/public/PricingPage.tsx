@@ -1,6 +1,6 @@
 /**
  * Pricing Page Component
- * Mobile-first pricing tiers with collapsible features and early adopter benefits
+ * Mobile-first pricing tiers with collapsible features
  */
 
 import React from 'react';
@@ -81,13 +81,13 @@ const PricingPage = () => {
     },
   ];
 
-  const earlyAdopterBenefits = [
-    { text: '50% off for first 6 months', icon: Zap },
-    { text: 'Lifetime grandfathered pricing', icon: Shield },
+  const planBenefits = [
+    { text: '30-day free trial', icon: Zap },
+    { text: 'Dedicated onboarding support', icon: Shield },
     { text: 'Priority feature requests', icon: Clock },
     { text: 'Direct access to product team', icon: CreditCard },
-    { text: 'Extended onboarding support', icon: Check },
     { text: 'Free data migration', icon: Check },
+    { text: 'Cancel anytime', icon: Check },
   ];
 
   const allPlansInclude = [
@@ -143,9 +143,9 @@ const PricingPage = () => {
   return (
     <div className="min-h-screen py-8 lg:py-16 px-4">
       <SEO
-        title="Pricing & Plans | Early Adopter Discounts Available"
-        description="Simple, transparent pricing starting at $299/month. Join our pilot program for 50% off first 6 months + lifetime grandfathered pricing. Starter, Professional & Enterprise plans."
-        keywords="ATS pricing, recruitment software cost, early adopter pricing, pilot program discount, ATS.me plans"
+        title="Pricing & Plans | Simple, Transparent Pricing"
+        description="Simple, transparent pricing starting at $299/month. 30-day free trial, no credit card required. Starter, Professional & Enterprise plans with full features."
+        keywords="ATS pricing, recruitment software cost, ATS software pricing, ATS.me plans, applicant tracking system pricing"
         canonical="https://ats.me/pricing"
       />
       <StructuredData data={pricingSchema} />
@@ -154,30 +154,30 @@ const PricingPage = () => {
         <div className="text-center mb-8 lg:mb-16">
           <Badge className="mb-3 lg:mb-4">
             <Zap className="h-3 w-3 mr-1" />
-            Early Adopter Pricing Available
+            All Plans Include Free Trial
           </Badge>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 lg:mb-4 px-2">
             Simple, Transparent Pricing
           </h1>
           <p className="text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
-            Join our pilot program and get exclusive early adopter benefits. No hidden fees, cancel anytime.
+            Start with a 30-day free trial. No credit card required. No hidden fees, cancel anytime.
           </p>
         </div>
 
-        {/* Early Adopter Benefits */}
+        {/* Plan Benefits */}
         <Card className="mb-8 lg:mb-12 border-primary/50 bg-primary/5">
           <CardHeader className="pb-2 lg:pb-4">
             <CardTitle className="flex items-center gap-2 text-lg lg:text-xl">
               <Zap className="h-5 w-5 text-primary" />
-              Early Adopter Benefits
+              What's Included
             </CardTitle>
             <CardDescription className="text-sm lg:text-base">
-              Be part of our pilot program and get exclusive lifetime benefits
+              Every plan comes with these benefits
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-              {earlyAdopterBenefits.map((benefit, index) => (
+              {planBenefits.map((benefit, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-background/50">
                   <benefit.icon className="h-4 w-4 lg:h-5 lg:w-5 text-primary shrink-0" />
                   <span className="text-sm lg:text-base">{benefit.text}</span>

@@ -1,6 +1,6 @@
 /**
  * Call-to-Action Section Component
- * Final conversion section with early adopter messaging
+ * Final conversion section for the landing page
  */
 
 import React from 'react';
@@ -17,7 +17,7 @@ const CTASection = () => {
       <div className="container mx-auto max-w-4xl text-center">
         <Badge className="mb-6 text-sm px-4 py-2">
           <Zap className="h-4 w-4 mr-2" />
-          Limited Time: Early Adopter Program
+          Start Your Free Trial Today
         </Badge>
 
         <h2 className="text-4xl md:text-5xl font-bold mb-6">
@@ -25,7 +25,7 @@ const CTASection = () => {
         </h2>
         
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Join our growing pilot program. Get special early adopter pricing, lifetime grandfathered rates, and direct access to our product team.
+          Join 50+ companies transforming their hiring. Get instant automated callbacks, 24/7 AI voice agents, and dedicated onboarding support.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -57,8 +57,8 @@ const CTASection = () => {
             <div className="text-muted-foreground">Average go-live time</div>
           </div>
           <div>
-            <div className="text-3xl font-bold mb-2">50% Off</div>
-            <div className="text-muted-foreground">First 6 months for early adopters</div>
+            <div className="text-3xl font-bold mb-2">Priority</div>
+            <div className="text-muted-foreground">Dedicated onboarding support</div>
           </div>
         </div>
 

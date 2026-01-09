@@ -27,7 +27,7 @@ const TestimonialsSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-            Now in Beta
+            Customer Success
           </Badge>
           <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
             Built for Modern Recruiting Challenges
@@ -60,7 +60,7 @@ const TestimonialsSection = () => {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground">
-            Join our pilot program and help shape the future of AI-powered recruiting
+            See how ATS.me is transforming recruitment for companies like yours
           </p>
         </div>
       </div>
