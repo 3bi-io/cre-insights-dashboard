@@ -3,10 +3,16 @@ import { ShieldX, Home, Mail, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/common";
+import { SEO } from '@/components/SEO';
 
 const AccessDenied = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <SEO
+        title="Access Denied"
+        description="You don't have permission to access this page. Please contact support if you believe this is an error."
+        noindex={true}
+      />
       <Card className="w-full max-w-md text-center animate-fade-in">
         <CardHeader className="pb-2">
           <div className="mx-auto mb-4">

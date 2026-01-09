@@ -5,13 +5,14 @@ User-agent: *
 Allow: /
 Allow: /auth
 Allow: /pricing
-
 Allow: /features
 Allow: /resources
 Allow: /contact
 Allow: /privacy-policy
 Allow: /terms-of-service
 Allow: /cookie-policy
+Allow: /voice-demo
+Allow: /sitemap
 
 # Allow public job pages
 Allow: /jobs
@@ -27,6 +28,7 @@ Disallow: /applications
 Disallow: /platforms
 Disallow: /ai-tools
 Disallow: /organizations
+Disallow: /my-jobs
 
 # Sitemap (dynamic generation via edge function)
 Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/generate-sitemap
@@ -36,7 +38,7 @@ Sitemap: https://ats.me/sitemap.xml
 # Crawl-delay for all bots
 Crawl-delay: 1
 
-# Specific bot rules
+# Specific bot rules - Search Engines
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 1
@@ -49,13 +51,81 @@ User-agent: Slurp
 Allow: /
 Crawl-delay: 1
 
+# Social Media Bots
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-# Block bad bots
+User-agent: LinkedInBot
+Allow: /
+
+# AI Search Engine Crawlers (Generative AI)
+# These crawlers power AI assistants and search features
+User-agent: GPTBot
+Allow: /
+Allow: /jobs
+Allow: /features
+Allow: /pricing
+Allow: /resources
+Allow: /voice-demo
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /my-jobs
+Crawl-delay: 2
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /jobs
+Allow: /features
+Allow: /pricing
+Disallow: /admin/
+Disallow: /dashboard
+Crawl-delay: 2
+
+User-agent: Claude-Web
+Allow: /
+Allow: /jobs
+Allow: /features
+Allow: /pricing
+Allow: /resources
+Disallow: /admin/
+Disallow: /dashboard
+Crawl-delay: 2
+
+User-agent: Anthropic-AI
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+Crawl-delay: 2
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /jobs
+Allow: /features
+Allow: /pricing
+Allow: /resources
+Allow: /voice-demo
+Disallow: /admin/
+Disallow: /dashboard
+Crawl-delay: 2
+
+User-agent: Cohere-ai
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard
+Crawl-delay: 2
+
+User-agent: Google-Extended
+Allow: /
+Allow: /jobs
+Allow: /features
+Disallow: /admin/
+Disallow: /dashboard
+Crawl-delay: 2
+
+# Block bad/aggressive bots
 User-agent: AhrefsBot
 Disallow: /
 
@@ -63,4 +133,10 @@ User-agent: SemrushBot
 Disallow: /
 
 User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: BLEXBot
 Disallow: /

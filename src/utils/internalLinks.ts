@@ -48,8 +48,15 @@ export const INTERNAL_LINKS: InternalLink[] = [
     path: '/resources',
     label: 'Resources',
     description: 'Recruitment guides and best practices',
+    category: 'resource',
+    priority: 0.8,
+  },
+  {
+    path: '/voice-demo',
+    label: 'Voice Agent Demo',
+    description: 'Listen to AI voice agent call recordings',
     category: 'primary',
-    priority: 0.7,
+    priority: 0.8,
   },
   {
     path: '/contact',

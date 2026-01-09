@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -147,6 +148,37 @@ const FeaturesPage = () => {
     "Glassdoor", "ZipRecruiter", "Tenstreet", "BambooHR", "Workday"
   ];
 
+  // Build SoftwareApplication structured data
+  const softwareAppSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ATS.me",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "299",
+      "priceCurrency": "USD",
+      "priceValidUntil": "2026-12-31"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "50"
+    },
+    "featureList": [
+      "AI-Powered Candidate Matching",
+      "Automated Workflow Management", 
+      "Voice Apply Technology",
+      "Advanced Analytics Dashboard",
+      "Team Collaboration Tools",
+      "100+ Job Board Integrations",
+      "Tenstreet Integration"
+    ],
+    "description": "AI-powered applicant tracking system with Voice Apply technology, automated candidate screening, and instant callback features.",
+    "url": "https://ats.me/features"
+  };
+
   return (
     <div className="min-h-screen">
       <SEO
@@ -155,6 +187,7 @@ const FeaturesPage = () => {
         keywords="ATS features, Voice Apply technology, AI screening, job board integration, Tenstreet integration, recruitment automation"
         canonical="https://ats.me/features"
       />
+      <StructuredData data={softwareAppSchema} />
       {/* Hero Section */}
       <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
         {/* Background Effects */}

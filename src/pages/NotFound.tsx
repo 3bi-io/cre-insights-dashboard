@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Home, Search, ArrowLeft, FileQuestion } from "lucide-react";
 import { Brand } from "@/components/common";
+import { SEO } from '@/components/SEO';
 
 const NotFound = () => {
   const location = useLocation();
@@ -17,6 +18,11 @@ const NotFound = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <SEO
+        title="Page Not Found"
+        description="The page you're looking for doesn't exist or has been moved. Browse our job listings or return to the homepage."
+        noindex={true}
+      />
       <Card className="w-full max-w-md text-center animate-fade-in">
         <CardHeader className="pb-2">
           <div className="mx-auto mb-4">
