@@ -28,6 +28,7 @@ const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
 const XApply = React.lazy(() => import("@/pages/XApply"));
 const LinkedInApply = React.lazy(() => import("@/pages/LinkedInApply"));
+const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
 const ShortLinkRedirect = React.lazy(() => import("@/pages/ShortLinkRedirect"));
 
 // Main application pages
@@ -168,6 +169,7 @@ const AppRoutes: React.FC = () => {
       {/* Social Platform Apply Routes - cleaner URLs with tracking */}
       <Route path="/x/apply/:jobId" element={<RouteWrapper><XApply /></RouteWrapper>} />
       <Route path="/in/apply/:jobId" element={<RouteWrapper><LinkedInApply /></RouteWrapper>} />
+      <Route path="/s/:platform/apply/:jobId" element={<RouteWrapper><SocialApply /></RouteWrapper>} />
       
       {/* Short Link Redirect */}
       <Route path="/j/:shortCode" element={<RouteWrapper><ShortLinkRedirect /></RouteWrapper>} />

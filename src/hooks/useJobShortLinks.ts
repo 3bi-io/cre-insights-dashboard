@@ -145,12 +145,31 @@ export const useJobShortLinks = () => {
     return url;
   };
 
+  /**
+   * Build a platform-agnostic social apply URL
+   * Uses /s/:platform/apply/:jobId pattern for any supported platform
+   */
+  const buildSocialApplyUrl = (
+    jobId: string, 
+    platform: string, 
+    utmCampaign?: string
+  ): string => {
+    const baseUrl = window.location.origin;
+    const normalizedPlatform = platform.toLowerCase().trim();
+    let url = `${baseUrl}/s/${normalizedPlatform}/apply/${jobId}`;
+    if (utmCampaign) {
+      url += `?utm_campaign=${encodeURIComponent(utmCampaign)}`;
+    }
+    return url;
+  };
+
   return {
     createShortLink,
     getShortLinksForJob,
     buildApplyUrl,
     buildXApplyUrl,
     buildLinkedInApplyUrl,
+    buildSocialApplyUrl,
     isCreating,
   };
 };
