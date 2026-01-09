@@ -1,6 +1,7 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Truck, GraduationCap, Clock, Award } from 'lucide-react';
+import { SelectionButtonGroup } from './SelectionButton';
 
 interface CDLInfoSectionProps {
   formData: {
@@ -8,63 +9,68 @@ interface CDLInfoSectionProps {
     experience: string;
   };
   onInputChange: (name: string, value: string) => void;
+  isActive?: boolean;
 }
 
-const EXPERIENCE_OPTIONS = [
-  { value: '0', label: 'No experience (0 months)' },
-  { value: '1', label: '1 month' },
-  { value: '2', label: '2 months' },
-  { value: '3', label: '3 months' },
-  { value: '6', label: '6 months' },
-  { value: '9', label: '9 months' },
-  { value: '12', label: '1 year (12 months)' },
-  { value: '18', label: '1.5 years (18 months)' },
-  { value: '24', label: '2 years (24 months)' },
-  { value: '36', label: '3 years (36 months)' },
-  { value: '48', label: '4+ years (48+ months)' },
+const CDL_OPTIONS = [
+  { value: 'Yes', label: 'Yes, I have a CDL-A', description: 'Active Class A license', icon: <Award className="h-5 w-5" /> },
+  { value: 'Permit', label: 'I have a CDL permit', description: 'Permit holder', icon: <GraduationCap className="h-5 w-5" /> },
+  { value: 'InSchool', label: 'Currently in CDL school', description: 'In training now', icon: <GraduationCap className="h-5 w-5" /> },
+  { value: 'No', label: 'No CDL-A', description: 'No license yet' },
 ];
 
-export const CDLInfoSection = React.memo(({ formData, onInputChange }: CDLInfoSectionProps) => {
+const EXPERIENCE_OPTIONS = [
+  { value: '0', label: 'No experience', description: 'Just starting out' },
+  { value: '3', label: '1-3 months', description: 'Recent graduate' },
+  { value: '6', label: '4-6 months', description: 'Some experience' },
+  { value: '12', label: '6-12 months', description: 'Building skills' },
+  { value: '24', label: '1-2 years', description: 'Experienced driver' },
+  { value: '36', label: '2-3 years', description: 'Seasoned professional' },
+  { value: '48', label: '4+ years', description: 'Veteran driver' },
+];
+
+export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }: CDLInfoSectionProps) => {
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-semibold text-foreground border-b pb-2">
-        CDL Information
-      </h2>
-      
-      <div className="space-y-2">
-        <Label htmlFor="cdl" className="text-sm font-medium">
-          Do you have a CDL-A license? <span className="text-destructive">*</span>
-        </Label>
-        <Select value={formData.cdl} onValueChange={(value) => onInputChange('cdl', value)}>
-          <SelectTrigger id="cdl" name="cdl" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
-            <SelectValue placeholder="Select CDL status..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Yes">Yes, I have a CDL-A</SelectItem>
-            <SelectItem value="No">No CDL-A</SelectItem>
-            <SelectItem value="Permit">I have a CDL permit</SelectItem>
-            <SelectItem value="InSchool">Currently in CDL school</SelectItem>
-          </SelectContent>
-        </Select>
+    <div className="space-y-6">
+      {/* Section Header */}
+      <div className="text-center pb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
+          <Truck className="h-6 w-6" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
+          Tell us about your CDL
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          Your license and experience help us match you with the right opportunities
+        </p>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="experience" className="text-sm font-medium">
-          CDL-A driving experience? <span className="text-destructive">*</span>
+      {/* CDL Status */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">
+          Do you have a CDL-A license? <span className="text-destructive">*</span>
         </Label>
-        <Select value={formData.experience} onValueChange={(value) => onInputChange('experience', value)}>
-          <SelectTrigger id="experience" name="experience" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
-            <SelectValue placeholder="Select your experience level..." />
-          </SelectTrigger>
-          <SelectContent className="max-h-[200px]">
-            {EXPERIENCE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground mt-1">
+        <SelectionButtonGroup
+          options={CDL_OPTIONS}
+          value={formData.cdl}
+          onChange={(value) => onInputChange('cdl', value)}
+          columns={2}
+        />
+      </div>
+      
+      {/* Experience */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          How much CDL-A driving experience? <span className="text-destructive">*</span>
+        </Label>
+        <SelectionButtonGroup
+          options={EXPERIENCE_OPTIONS}
+          value={formData.experience}
+          onChange={(value) => onInputChange('experience', value)}
+          columns={2}
+        />
+        <p className="text-xs text-muted-foreground text-center mt-2">
           Include all verifiable CDL-A driving experience
         </p>
       </div>

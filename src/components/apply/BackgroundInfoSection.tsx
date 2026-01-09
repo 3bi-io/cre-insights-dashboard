@@ -1,6 +1,7 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Shield, CheckCircle, XCircle, Medal } from 'lucide-react';
+import { SelectionButtonGroup } from './SelectionButton';
 
 interface BackgroundInfoSectionProps {
   formData: {
@@ -8,41 +9,79 @@ interface BackgroundInfoSectionProps {
     veteran: string;
   };
   onInputChange: (name: string, value: string) => void;
+  isActive?: boolean;
 }
 
-export const BackgroundInfoSection = React.memo(({ formData, onInputChange }: BackgroundInfoSectionProps) => {
+const DRUG_TEST_OPTIONS = [
+  { 
+    value: 'Yes', 
+    label: 'Yes, I can pass a drug test', 
+    description: 'DOT-compliant testing',
+    icon: <CheckCircle className="h-5 w-5" />
+  },
+  { 
+    value: 'No', 
+    label: 'No', 
+    icon: <XCircle className="h-5 w-5" />
+  },
+];
+
+const VETERAN_OPTIONS = [
+  { 
+    value: 'Yes', 
+    label: 'Yes, I served in the military', 
+    description: 'Thank you for your service!',
+    icon: <Medal className="h-5 w-5" />
+  },
+  { 
+    value: 'No', 
+    label: 'No, I am not a veteran', 
+  },
+];
+
+export const BackgroundInfoSection = React.memo(({ formData, onInputChange, isActive }: BackgroundInfoSectionProps) => {
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-semibold text-foreground border-b pb-2">
-        Background Information
-      </h2>
+    <div className="space-y-6">
+      {/* Section Header */}
+      <div className="text-center pb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
+          <Shield className="h-6 w-6" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
+          A few quick questions
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          Standard screening questions - almost done!
+        </p>
+      </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="drug" className="text-sm font-medium">
-          Can you pass a drug test? <span className="text-destructive">*</span>
+      {/* Drug Test */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">
+          Can you pass a DOT drug test? <span className="text-destructive">*</span>
         </Label>
-        <Select value={formData.drug} onValueChange={(value) => onInputChange('drug', value)}>
-          <SelectTrigger id="drug" name="drug" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
-            <SelectValue placeholder="Select..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Yes">Yes</SelectItem>
-            <SelectItem value="No">No</SelectItem>
-          </SelectContent>
-        </Select>
+        <SelectionButtonGroup
+          options={DRUG_TEST_OPTIONS}
+          value={formData.drug}
+          onChange={(value) => onInputChange('drug', value)}
+          columns={2}
+        />
+        <p className="text-xs text-muted-foreground text-center">
+          All CDL drivers must pass a DOT-compliant drug screening
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="veteran" className="text-sm font-medium">Are you a veteran?</Label>
-        <Select value={formData.veteran} onValueChange={(value) => onInputChange('veteran', value)}>
-          <SelectTrigger id="veteran" name="veteran" className="h-12 sm:h-10 text-base sm:text-sm">
-            <SelectValue placeholder="Select..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Yes">Yes</SelectItem>
-            <SelectItem value="No">No</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Veteran Status */}
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">
+          Are you a military veteran?
+        </Label>
+        <SelectionButtonGroup
+          options={VETERAN_OPTIONS}
+          value={formData.veteran}
+          onChange={(value) => onInputChange('veteran', value)}
+          columns={2}
+        />
       </div>
     </div>
   );
