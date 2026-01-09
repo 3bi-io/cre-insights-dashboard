@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 interface LiveTranscriptPanelProps {
   transcripts: LiveTranscriptMessage[];
   pendingUserTranscript?: string;
+  pendingAgentTranscript?: string;
   isSpeaking: boolean;
   isConnected: boolean;
   /** When true, expands to fill available height */
@@ -21,6 +22,7 @@ interface LiveTranscriptPanelProps {
 export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
   transcripts,
   pendingUserTranscript,
+  pendingAgentTranscript,
   isSpeaking,
   isConnected,
   fullscreen = false
@@ -32,7 +34,7 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [transcripts, pendingUserTranscript]);
+  }, [transcripts, pendingUserTranscript, pendingAgentTranscript]);
 
   if (!isConnected) return null;
 
@@ -85,8 +87,33 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
             </div>
           )}
 
-          {/* Pending agent indicator - shows while agent is speaking before transcript arrives */}
-          {isSpeaking && transcripts.length > 0 && transcripts[transcripts.length - 1]?.speaker === 'user' && (
+          {/* Live streaming agent transcript - shows words as they're spoken */}
+          {pendingAgentTranscript && (
+            <div className={cn(
+              "flex gap-2 items-start",
+              fullscreen && "gap-3"
+            )}>
+              <div className={cn(
+                "rounded-full bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0",
+                fullscreen ? "w-8 h-8" : "w-6 h-6"
+              )}>
+                <Bot className={cn(fullscreen ? "w-4 h-4" : "w-3 h-3")} />
+              </div>
+              <div className={cn(
+                "flex-1 p-2 rounded-lg bg-secondary/30 border border-dashed border-secondary/50",
+                fullscreen ? "p-3 text-base" : "text-sm"
+              )}>
+                <p className="text-foreground">{pendingAgentTranscript}</p>
+                <span className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <span className="w-1 h-1 bg-primary rounded-full animate-pulse"></span>
+                  speaking...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Fallback: Pending agent indicator when no streaming transcript but agent is speaking */}
+          {isSpeaking && !pendingAgentTranscript && transcripts.length > 0 && transcripts[transcripts.length - 1]?.speaker === 'user' && (
             <div className="flex gap-2 items-start">
               <div className={cn(
                 "rounded-full bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0",

@@ -28,6 +28,7 @@ const JobsPage = () => {
     isSpeaking,
     transcripts,
     pendingUserTranscript,
+    pendingAgentTranscript,
     startVoiceApplication,
     endVoiceApplication,
   } = useElevenLabsVoice();
@@ -351,6 +352,7 @@ const JobsPage = () => {
           selectedJob={selectedJob}
           transcripts={transcripts}
           pendingUserTranscript={pendingUserTranscript}
+          pendingAgentTranscript={pendingAgentTranscript}
           onEnd={endVoiceApplication}
         />
       </div>

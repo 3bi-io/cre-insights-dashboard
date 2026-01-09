@@ -31,6 +31,7 @@ const JobDetailsPage: React.FC = () => {
     isSpeaking,
     transcripts,
     pendingUserTranscript,
+    pendingAgentTranscript,
     startVoiceApplication,
     endVoiceApplication,
   } = useElevenLabsVoice();
@@ -354,6 +355,7 @@ const JobDetailsPage: React.FC = () => {
           selectedJob={selectedJob}
           transcripts={transcripts}
           pendingUserTranscript={pendingUserTranscript}
+          pendingAgentTranscript={pendingAgentTranscript}
           onEnd={endVoiceApplication}
         />
       </div>

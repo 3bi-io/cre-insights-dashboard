@@ -192,6 +192,11 @@ export interface LiveTranscriptMessage {
   isFinal: boolean;
 }
 
+export interface StreamingTranscriptState {
+  pendingUserTranscript: string;
+  pendingAgentTranscript: string;
+}
+
 // ============= Error Types =============
 
 export interface VoiceAgentError {
