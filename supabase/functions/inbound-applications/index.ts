@@ -99,6 +99,77 @@ const verifyWebhookSignature = async (
 };
 
 /**
+ * Verify ElevenLabs webhook signature
+ * Format: "t=timestamp,v0=hash"
+ * The signature is HMAC-SHA256(timestamp.payload, secret)
+ */
+const verifyElevenLabsSignature = async (
+  payload: string,
+  signatureHeader: string,
+  secret: string
+): Promise<boolean> => {
+  if (!signatureHeader || !secret) return false;
+  
+  try {
+    // Parse the signature header: "t=timestamp,v0=hash"
+    const parts: Record<string, string> = {};
+    signatureHeader.split(',').forEach(part => {
+      const [key, value] = part.split('=');
+      if (key && value) {
+        parts[key.trim()] = value.trim();
+      }
+    });
+    
+    const timestamp = parts['t'];
+    const providedHash = parts['v0'];
+    
+    if (!timestamp || !providedHash) {
+      logger.error('ElevenLabs signature missing timestamp or hash', { parts });
+      return false;
+    }
+    
+    // Check timestamp is within 5 minutes to prevent replay attacks
+    const timestampSeconds = parseInt(timestamp, 10);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (Math.abs(nowSeconds - timestampSeconds) > 300) {
+      logger.error('ElevenLabs signature timestamp too old', { timestamp, now: nowSeconds });
+      return false;
+    }
+    
+    // Compute expected signature: HMAC-SHA256(timestamp.payload, secret)
+    const signedPayload = `${timestamp}.${payload}`;
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(signedPayload)
+    );
+    
+    const expectedHash = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    const isValid = expectedHash === providedHash;
+    if (!isValid) {
+      logger.error('ElevenLabs signature mismatch', { expected: expectedHash.substring(0, 16) + '...', provided: providedHash.substring(0, 16) + '...' });
+    }
+    
+    return isValid;
+  } catch (error) {
+    logger.error('ElevenLabs signature verification error', { error });
+    return false;
+  }
+};
+
+/**
  * Extract value from multiple possible field names
  */
 const extractValue = (data: Record<string, unknown>, fieldNames: string[]): string | undefined => {
@@ -358,7 +429,24 @@ const handler = async (req: Request): Promise<Response> => {
       hasQueryParams: Object.keys(queryParams).length > 0
     });
 
-    // Optional: Verify webhook signature if provided
+    // Verify ElevenLabs webhook signature if present
+    const elevenLabsSignature = req.headers.get('elevenlabs-signature');
+    const elevenLabsSecret = Deno.env.get('ELEVENLABS_WEBHOOK_SECRET');
+    
+    if (elevenLabsSignature) {
+      if (!elevenLabsSecret) {
+        logger.error('ElevenLabs signature present but ELEVENLABS_WEBHOOK_SECRET not configured');
+        return errorResponse('Webhook secret not configured', 500, undefined, origin);
+      }
+      const isValid = await verifyElevenLabsSignature(rawBody, elevenLabsSignature, elevenLabsSecret);
+      if (!isValid) {
+        logger.error('Invalid ElevenLabs webhook signature');
+        return errorResponse('Invalid webhook signature', 401, undefined, origin);
+      }
+      logger.info('ElevenLabs webhook signature verified');
+    }
+    
+    // Optional: Verify generic webhook signature if provided
     const signature = req.headers.get('x-webhook-signature');
     const webhookSecret = Deno.env.get('WEBHOOK_SECRET');
     
