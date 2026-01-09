@@ -13,8 +13,8 @@ export const heroContent = {
     secondary: 'Browse Jobs'
   },
   socialProof: {
-    rating: 'Now in Beta',
-    companies: 'Join our growing pilot program',
+    rating: '★★★★★ 4.8/5',
+    companies: 'Trusted by 50+ companies',
     pricing: 'Fast automated callbacks'
   },
   voiceHighlight: {

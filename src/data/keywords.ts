@@ -70,7 +70,7 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
       'best affordable applicant tracking system',
       'ATS pricing comparison',
       'free ATS trial',
-      'early adopter pricing recruitment software',
+      'ATS software free trial',
     ],
   },
   demo: {

@@ -7,10 +7,10 @@ import { Shield, Phone, CheckCircle, Rocket } from 'lucide-react';
 import { TrustStat } from './types';
 
 export const trustContent = {
-  badge: 'Now Accepting Beta Users',
+  badge: 'Trusted by Growing Companies',
   title: 'Built on Proven Technology, Designed for Modern Recruiting',
   description: 'Our platform is built on enterprise-grade infrastructure with integrations to Tenstreet, major job boards, and leading HR systems.',
-  footer: 'Early Adopter Benefits: Priority support, feature voting rights, and exclusive access for pilot program participants',
+  footer: 'All Plans Include: Priority support, dedicated onboarding, and direct access to our product team',
   stats: [
     {
       icon: Phone,

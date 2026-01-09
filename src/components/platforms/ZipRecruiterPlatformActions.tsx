@@ -79,7 +79,7 @@ const ZipRecruiterPlatformActions: React.FC = () => {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            ZipRecruiter integration is currently in development. Connect your account to get early access.
+            Connect your ZipRecruiter account to sync job postings and track applications automatically.
           </AlertDescription>
         </Alert>
 
