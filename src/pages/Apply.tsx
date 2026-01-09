@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 
+/**
+ * Apply Page - Quick application form for job seekers
+ * Mobile-first design with multi-step wizard
+ */
 const Apply = () => {
   const { 
     jobTitle, 
@@ -16,49 +21,75 @@ const Apply = () => {
     isLoading 
   } = useApplyContext();
 
-  const pageTitle = jobTitle ? `Apply for ${jobTitle}` : 'Quick Apply';
-  const pageDescription = jobTitle && organizationName 
-    ? `Apply for ${jobTitle} at ${organizationName}. Fast, mobile-friendly application. Get a response within 24 hours.`
-    : 'Submit your job application in under 2 minutes. Our streamlined process gets you in front of recruiters faster.';
+  // Memoize SEO content to prevent unnecessary recalculations
+  const seoContent = useMemo(() => {
+    const title = jobTitle ? `Apply for ${jobTitle}` : 'Quick Apply';
+    const description = jobTitle && organizationName 
+      ? `Apply for ${jobTitle} at ${organizationName}. Fast, mobile-friendly application. Get a response within 24 hours.`
+      : 'Submit your job application in under 2 minutes. Our streamlined process gets you in front of recruiters faster.';
+    
+    return { title, description };
+  }, [jobTitle, organizationName]);
 
-  const breadcrumbData = buildBreadcrumbSchema([
-    { name: 'Home', url: 'https://ats.me/' },
-    { name: 'Jobs', url: 'https://ats.me/jobs' },
-    { name: pageTitle, url: `https://ats.me/apply${window.location.search}` },
-  ]);
+  // Memoize breadcrumb schema
+  const breadcrumbData = useMemo(() => {
+    const searchParams = typeof window !== 'undefined' ? window.location.search : '';
+    return buildBreadcrumbSchema([
+      { name: 'Home', url: 'https://ats.me/' },
+      { name: 'Jobs', url: 'https://ats.me/jobs' },
+      { name: seoContent.title, url: `https://ats.me/apply${searchParams}` },
+    ]);
+  }, [seoContent.title]);
+
+  // Canonical URL
+  const canonicalUrl = useMemo(() => {
+    const searchParams = typeof window !== 'undefined' ? window.location.search : '';
+    return `https://ats.me/apply${searchParams}`;
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <SEO
-        title={pageTitle}
-        description={pageDescription}
+        title={seoContent.title}
+        description={seoContent.description}
         keywords="job application, apply online, quick apply, driver application, CDL jobs"
-        canonical={`https://ats.me/apply${window.location.search}`}
+        canonical={canonicalUrl}
         ogType="website"
       />
       <StructuredData data={breadcrumbData} />
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="max-w-2xl mx-auto">
-          <ApplicationHeader 
-            jobTitle={jobTitle}
-            organizationName={organizationName}
-            location={location}
-            logoUrl={logoUrl}
-            source={source}
-            isLoading={isLoading}
-          />
-          <ApplicationForm organizationName={organizationName} />
-          <div className="text-center mt-6 pb-6">
-            <Link 
-              to="/" 
-              className="text-primary hover:underline inline-flex items-center gap-2 text-base sm:text-sm touch-manipulation py-2 px-4 rounded-md hover:bg-accent transition-colors"
-            >
-              ← Back to Home
-            </Link>
+      
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          <div className="max-w-2xl mx-auto">
+            {/* Application Header */}
+            <ApplicationHeader 
+              jobTitle={jobTitle}
+              organizationName={organizationName}
+              location={location}
+              logoUrl={logoUrl}
+              source={source}
+              isLoading={isLoading}
+            />
+            
+            {/* Application Form */}
+            <main>
+              <ApplicationForm organizationName={organizationName} />
+            </main>
+            
+            {/* Back Navigation */}
+            <nav className="text-center mt-6 pb-6" aria-label="Page navigation">
+              <Link 
+                to="/" 
+                className="text-primary hover:underline inline-flex items-center gap-2 text-base sm:text-sm touch-manipulation py-2 px-4 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to Home
+              </Link>
+            </nav>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
