@@ -189,11 +189,19 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
       // Get signed URL
       const urlResponse = await getSignedUrl(agentId, context);
 
-      // Build dynamic variables from job context
+      // Build dynamic variables from job context - aligned with ElevenLabs dashboard
       const dynamicVariables: Record<string, string> = {
+        // Core identifiers
         job_title: context?.jobContext?.jobTitle || 'the driving position',
         company_name: context?.jobContext?.company || 'our company',
-        candidate_name: 'there', // Default for inbound calls where we don't know the name yet
+        candidate_name: context?.jobContext?.candidateName || 'there',
+        
+        // Job details for interview flow
+        job_description: context?.jobContext?.jobDescription || 'Details will be provided by the hiring team.',
+        job_requirements: context?.jobContext?.requirements || 'specific qualifications for this role',
+        job_benefits: context?.jobContext?.benefits || 'competitive benefits package',
+        
+        // Location and compensation
         job_location: context?.jobContext?.location || 'various locations',
         salary_range: context?.jobContext?.salary || 'competitive salary'
       };

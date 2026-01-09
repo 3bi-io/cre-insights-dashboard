@@ -63,7 +63,11 @@ export const useElevenLabsVoice = () => {
         jobDescription: job.jobDescription || `This is a ${job.jobTitle} position`,
         company: job.company || 'C.R. England',
         location: job.location || 'Various locations',
-        salary: job.salary || 'Competitive salary'
+        salary: job.salary || 'Competitive salary',
+        // Interview agent fields
+        candidateName: job.candidateName,
+        requirements: job.requirements,
+        benefits: job.benefits
       };
 
       setSelectedJob(jobContext);
