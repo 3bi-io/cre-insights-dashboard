@@ -47,14 +47,14 @@ const PublicFooter = () => {
               and comprehensive candidate tracking.
             </p>
             <a 
-              href="mailto:contact@ats.me" 
+              href="mailto:support@ats.me" 
               className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors min-h-[44px]"
-              aria-label="Email us at contact@ats.me"
+              aria-label="Email us at support@ats.me"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <span className="text-sm">contact@ats.me</span>
+              <span className="text-sm">support@ats.me</span>
             </a>
           </div>
 

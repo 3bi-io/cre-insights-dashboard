@@ -83,14 +83,6 @@ export const Header: React.FC<HeaderProps> = ({
                   Sign In
                 </Button>
               </Link>
-              <Link to="/auth">
-                <Button 
-                  size="sm" 
-                  className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                >
-                  Start Free Trial
-                </Button>
-              </Link>
             </div>
           )}
 
@@ -146,11 +138,6 @@ export const Header: React.FC<HeaderProps> = ({
                           className="w-full justify-start min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                         >
                           Sign In
-                        </Button>
-                      </Link>
-                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                        <Button className="w-full min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset">
-                          Start Free Trial
                         </Button>
                       </Link>
                     </div>
