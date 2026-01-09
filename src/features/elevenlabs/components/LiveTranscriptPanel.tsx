@@ -48,9 +48,40 @@ export const LiveTranscriptPanel: React.FC<LiveTranscriptPanelProps> = ({
       <ScrollArea className="h-48" ref={scrollRef}>
         <div className="p-3 space-y-3">
           {transcripts.length === 0 && !pendingUserTranscript && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Start speaking to see the transcript...
-            </p>
+            <div className="text-center py-4">
+              {isSpeaking ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                    <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Listening to agent...
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  The agent will speak first...
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Pending agent indicator - shows while agent is speaking before transcript arrives */}
+          {isSpeaking && transcripts.length > 0 && transcripts[transcripts.length - 1]?.speaker === 'user' && (
+            <div className="flex gap-2 items-start">
+              <div className="w-6 h-6 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center flex-shrink-0">
+                <Bot className="w-3 h-3" />
+              </div>
+              <div className="flex-1 p-2 rounded-lg text-sm bg-secondary/30 border border-dashed border-secondary/50">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce"></span>
+                </div>
+              </div>
+            </div>
           )}
 
           {transcripts.map((message) => (
