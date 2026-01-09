@@ -104,3 +104,67 @@ export const useApplicationsKeyboardShortcuts = (handlers: {
 
   return shortcuts;
 };
+
+/**
+ * Global keyboard shortcuts (Cmd+K for search, etc.)
+ */
+export const useGlobalKeyboardShortcuts = (handlers: {
+  onQuickSearch?: () => void;
+  onNavigateHome?: () => void;
+  onNavigateJobs?: () => void;
+}) => {
+  const shortcuts: KeyboardShortcut[] = [
+    {
+      key: 'k',
+      ctrl: true,
+      description: 'Quick search',
+      handler: () => handlers.onQuickSearch?.(),
+    },
+    {
+      key: 'h',
+      ctrl: true,
+      shift: true,
+      description: 'Go to home',
+      handler: () => handlers.onNavigateHome?.(),
+    },
+    {
+      key: 'j',
+      ctrl: true,
+      shift: true,
+      description: 'Go to jobs',
+      handler: () => handlers.onNavigateJobs?.(),
+    },
+  ];
+
+  useKeyboardShortcuts(shortcuts);
+
+  return shortcuts;
+};
+
+/**
+ * Form navigation keyboard shortcuts
+ */
+export const useFormKeyboardShortcuts = (handlers: {
+  onNextStep?: () => void;
+  onPrevStep?: () => void;
+  onSubmit?: () => void;
+}, enabled = true) => {
+  const shortcuts: KeyboardShortcut[] = [
+    {
+      key: 'Enter',
+      ctrl: true,
+      description: 'Submit form / Next step',
+      handler: () => handlers.onNextStep?.(),
+    },
+    {
+      key: 'Backspace',
+      ctrl: true,
+      description: 'Previous step',
+      handler: () => handlers.onPrevStep?.(),
+    },
+  ];
+
+  useKeyboardShortcuts(shortcuts, enabled);
+
+  return shortcuts;
+};
