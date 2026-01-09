@@ -133,6 +133,8 @@ export function ChatInterface() {
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Textarea
             ref={textareaRef}
+            id="grok-chat-input"
+            name="grok-chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
