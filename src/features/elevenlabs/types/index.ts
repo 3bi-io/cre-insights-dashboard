@@ -99,6 +99,10 @@ export interface JobContext {
   company?: string;
   location?: string;
   salary?: string;
+  // Interview agent fields
+  candidateName?: string;
+  requirements?: string;
+  benefits?: string;
 }
 
 // ============= Connection Types =============
