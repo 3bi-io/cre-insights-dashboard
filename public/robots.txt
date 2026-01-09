@@ -17,6 +17,9 @@ Allow: /sitemap
 Allow: /jobs
 Allow: /jobs/*
 Allow: /apply
+Allow: /apply/detailed
+Allow: /demo
+Allow: /pricing
 
 # Disallow admin and private areas
 Disallow: /admin/

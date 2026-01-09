@@ -3,8 +3,9 @@
  * Mobile-first knowledge base, guides, and training resources
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -138,15 +139,36 @@ const ResourcesPage = () => {
     }
   };
 
+  // Build ItemList schema for downloadable resources
+  const resourcesSchema = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "ATS.me Resources & Documentation",
+    "description": "Guides, documentation, and downloadable resources for recruitment teams",
+    "numberOfItems": downloads.length,
+    "itemListElement": downloads.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "item": {
+        "@type": "DigitalDocument",
+        "name": item.title,
+        "fileFormat": item.format,
+        "description": `${item.title} - ${item.format} format`
+      }
+    }))
+  }), []);
+
   return (
-    <div className="min-h-screen py-10 md:py-20">
+    <>
       <SEO
         title="Resources & Documentation | Guides & Best Practices"
         description="Comprehensive knowledge base for ATS.me. Quick start guides, API documentation, implementation checklists, and best practices for recruitment teams."
         keywords="ATS documentation, recruitment guides, implementation guide, API docs, ATS.me resources"
         canonical="https://ats.me/resources"
       />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <StructuredData data={resourcesSchema} />
+      <div className="min-h-screen py-10 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">
           <Badge className="mb-3 md:mb-4 bg-primary/10 text-primary border-primary/20">
@@ -300,9 +322,10 @@ const ResourcesPage = () => {
               </Button>
             </Link>
           </div>
-        </section>
+          </section>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

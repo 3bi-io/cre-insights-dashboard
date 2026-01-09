@@ -11,7 +11,6 @@ const PrivacyPolicyPage = () => {
         description="ATS.me's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform with enterprise-grade data protection."
         keywords="privacy policy, data protection, GDPR compliance, recruitment data security"
         canonical="https://ats.me/privacy-policy"
-        noindex={true}
       />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
