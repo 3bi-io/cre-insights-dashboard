@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
 
 interface FormData {
   firstName: string;
@@ -72,6 +73,18 @@ export const useApplicationForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Form persistence for auto-save
+  const {
+    hasDraft,
+    lastSaved,
+    restoreDraft,
+    clearDraft,
+    discardDraft,
+  } = useFormPersistence(formData, setFormData, {
+    key: 'quick_application',
+    expiryHours: 24,
+  });
 
   // Capture URL parameters on mount (case-insensitive for common variations)
   useEffect(() => {
@@ -204,6 +217,8 @@ export const useApplicationForm = () => {
       return response.json();
     },
     onSuccess: (data) => {
+      // Clear draft on successful submission
+      clearDraft();
       toast.success('Application submitted successfully! Check your email for confirmation.');
       navigate('/thank-you', { 
         state: { 
@@ -237,5 +252,10 @@ export const useApplicationForm = () => {
     handleSubmit,
     isSubmitting: submitApplication.isPending,
     currentStep,
+    // Draft persistence
+    hasDraft,
+    lastSaved,
+    restoreDraft,
+    discardDraft,
   };
 };

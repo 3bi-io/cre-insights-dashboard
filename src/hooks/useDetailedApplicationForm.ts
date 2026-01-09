@@ -5,6 +5,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 import { format } from 'date-fns';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
+
+// Serializable version for localStorage (dates as strings)
+interface SerializableFormData extends Omit<DetailedFormData, 
+  'dateOfBirth' | 'cdlExpirationDate' | 'militaryStartDate' | 'militaryEndDate' | 
+  'preferredStartDate' | 'medicalCardExpiration' | 'dotPhysicalDate'
+> {
+  dateOfBirth: string | null;
+  cdlExpirationDate: string | null;
+  militaryStartDate: string | null;
+  militaryEndDate: string | null;
+  preferredStartDate: string | null;
+  medicalCardExpiration: string | null;
+  dotPhysicalDate: string | null;
+}
 
 export interface DetailedFormData {
   // Personal Information
@@ -184,6 +199,30 @@ const initialFormData: DetailedFormData = {
   backgroundCheckConsent: false,
 };
 
+// Helper to convert form data for storage
+const serializeFormData = (data: DetailedFormData): SerializableFormData => ({
+  ...data,
+  dateOfBirth: data.dateOfBirth?.toISOString() || null,
+  cdlExpirationDate: data.cdlExpirationDate?.toISOString() || null,
+  militaryStartDate: data.militaryStartDate?.toISOString() || null,
+  militaryEndDate: data.militaryEndDate?.toISOString() || null,
+  preferredStartDate: data.preferredStartDate?.toISOString() || null,
+  medicalCardExpiration: data.medicalCardExpiration?.toISOString() || null,
+  dotPhysicalDate: data.dotPhysicalDate?.toISOString() || null,
+});
+
+// Helper to restore form data from storage
+const deserializeFormData = (data: SerializableFormData): DetailedFormData => ({
+  ...data,
+  dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+  cdlExpirationDate: data.cdlExpirationDate ? new Date(data.cdlExpirationDate) : null,
+  militaryStartDate: data.militaryStartDate ? new Date(data.militaryStartDate) : null,
+  militaryEndDate: data.militaryEndDate ? new Date(data.militaryEndDate) : null,
+  preferredStartDate: data.preferredStartDate ? new Date(data.preferredStartDate) : null,
+  medicalCardExpiration: data.medicalCardExpiration ? new Date(data.medicalCardExpiration) : null,
+  dotPhysicalDate: data.dotPhysicalDate ? new Date(data.dotPhysicalDate) : null,
+});
+
 export const useDetailedApplicationForm = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -191,9 +230,46 @@ export const useDetailedApplicationForm = () => {
   const jobId = searchParams.get('job');
 
   const [formData, setFormData] = useState<DetailedFormData>(initialFormData);
+  
+  // Serializable version for persistence
+  const [serializedData, setSerializedData] = useState<SerializableFormData>(() => 
+    serializeFormData(initialFormData)
+  );
+
+  // Sync serialized data when form data changes
+  const handleFormUpdate = useCallback((newData: DetailedFormData) => {
+    setFormData(newData);
+    setSerializedData(serializeFormData(newData));
+  }, []);
+
+  // Form persistence for auto-save
+  const {
+    hasDraft,
+    lastSaved,
+    restoreDraft: restoreSerializedDraft,
+    clearDraft,
+    discardDraft,
+  } = useFormPersistence(serializedData, (data) => {
+    const restored = deserializeFormData(data);
+    setFormData(restored);
+    setSerializedData(data);
+  }, {
+    key: 'detailed_application',
+    expiryHours: 48, // Longer expiry for detailed form
+  });
+
+  // Wrap restoreDraft to handle deserialization
+  const restoreDraft = useCallback(() => {
+    const success = restoreSerializedDraft();
+    return success;
+  }, [restoreSerializedDraft]);
 
   const handleInputChange = useCallback((field: string, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      setSerializedData(serializeFormData(newData));
+      return newData;
+    });
   }, []);
 
   const handleEndorsementToggle = useCallback((endorsement: string) => {
@@ -317,6 +393,8 @@ export const useDetailedApplicationForm = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+      // Clear draft on successful submission
+      clearDraft();
       toast({
         title: "Application Submitted Successfully!",
         description: "Thank you for your detailed application. We'll review it and be in touch soon.",
@@ -363,5 +441,10 @@ export const useDetailedApplicationForm = () => {
     validateStep,
     isSubmitting: submitApplication.isPending,
     jobId,
+    // Draft persistence
+    hasDraft,
+    lastSaved,
+    restoreDraft,
+    discardDraft,
   };
 };

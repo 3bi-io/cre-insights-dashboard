@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Truck } from 'lucide-react';
 import { useStepWizard } from '@/hooks/useStepWizard';
 import { useDetailedApplicationForm } from '@/hooks/useDetailedApplicationForm';
@@ -12,6 +12,7 @@ import { DetailedCDLSection } from './DetailedCDLSection';
 import { DetailedExperienceSection } from './DetailedExperienceSection';
 import { DetailedBackgroundSection } from './DetailedBackgroundSection';
 import { DetailedConsentSection } from './DetailedConsentSection';
+import { DraftBanner, AutoSaveIndicator } from '@/components/shared/DraftBanner';
 
 const TOTAL_STEPS = 6;
 
@@ -23,7 +24,13 @@ export const DetailedApplicationForm = () => {
     handleSubmit,
     validateStep,
     isSubmitting,
+    hasDraft,
+    lastSaved,
+    restoreDraft,
+    discardDraft,
   } = useDetailedApplicationForm();
+
+  const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
 
   const {
     activeStep,
@@ -60,13 +67,36 @@ export const DetailedApplicationForm = () => {
           </p>
         </div>
 
+        {/* Draft Restoration Banner */}
+        {hasDraft && !draftBannerDismissed && (
+          <DraftBanner
+            lastSaved={lastSaved}
+            onRestore={() => {
+              restoreDraft();
+              setDraftBannerDismissed(true);
+            }}
+            onDiscard={() => {
+              discardDraft();
+              setDraftBannerDismissed(true);
+            }}
+            className="mb-6"
+          />
+        )}
+
         {/* Progress Indicator */}
-        <DetailedFormProgressIndicator
-          activeStep={activeStep}
-          completedSteps={completedSteps}
-          onStepClick={goToStep}
-          canGoToStep={canGoToStep}
-        />
+        <div className="flex items-center justify-between mb-4">
+          <DetailedFormProgressIndicator
+            activeStep={activeStep}
+            completedSteps={completedSteps}
+            onStepClick={goToStep}
+            canGoToStep={canGoToStep}
+          />
+        </div>
+        
+        {/* Auto-save indicator */}
+        <div className="flex justify-end mb-2">
+          <AutoSaveIndicator lastSaved={lastSaved} />
+        </div>
 
         {/* Step Content */}
         <div className="bg-card rounded-2xl border border-border shadow-sm p-5 sm:p-8 mb-6">
