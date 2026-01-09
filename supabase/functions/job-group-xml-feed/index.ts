@@ -151,7 +151,10 @@ Deno.serve(async (req) => {
   }
 });
 
-// Generate Google Jobs XML format
+// Base URL for job pages - configurable via environment variable
+const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://ats.me';
+
+// Generate Google Jobs XML format (sitemap pointing to job pages with JSON-LD)
 function generateGoogleJobsXML(jobs: any[], jobGroup: any): string {
   const xmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
@@ -159,9 +162,12 @@ function generateGoogleJobsXML(jobs: any[], jobGroup: any): string {
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">`;
 
+  // Generate URLs pointing to job detail pages (which contain JSON-LD)
   const jobsXML = jobs.map(job => {
+    // Use the job detail page URL, not apply_url
+    const jobPageUrl = `${BASE_URL}/jobs/${job.id}`;
     return `  <url>
-    <loc>${escapeXml(job.apply_url || job.url || '#')}</loc>
+    <loc>${escapeXml(jobPageUrl)}</loc>
     <lastmod>${new Date(job.created_at).toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -173,6 +179,7 @@ function generateGoogleJobsXML(jobs: any[], jobGroup: any): string {
 <!-- Publisher: ${escapeXml(jobGroup.publisher_name)} -->
 <!-- Generated: ${new Date().toISOString()} -->
 <!-- Job Count: ${jobs.length} -->
+<!-- Each URL contains JobPosting JSON-LD structured data -->
 
 ${jobsXML}
 </urlset>`;

@@ -4,211 +4,44 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, 
   AlertCircle, 
   FileText, 
   Download,
-  Eye
+  Eye,
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  validateSitemapFeed, 
+  extractSitemapUrls,
+  extractJsonLdFromHtml,
+  findJobPostingSchema,
+  validateJobPostingSchema 
+} from '@/utils/googleJobsValidation';
+import type { FeedValidationResult, ValidatedUrl } from '@/types/googleJobs';
 
-interface ValidationResult {
-  isValid: boolean;
-  jobCount: number;
-  errors: string[];
-  warnings: string[];
-  xmlPreview: string;
-  jsonLdPreview?: string;
+interface GoogleJobsFeedValidatorProps {
+  feedUrl: string;
 }
 
-const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => {
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+const GoogleJobsFeedValidator: React.FC<GoogleJobsFeedValidatorProps> = ({ feedUrl }) => {
+  const [validationResult, setValidationResult] = useState<FeedValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-  const [showXmlPreview, setShowXmlPreview] = useState(false);
-  const [showJsonLdPreview, setShowJsonLdPreview] = useState(false);
+  const [isDeepValidating, setIsDeepValidating] = useState(false);
+  const [deepValidationProgress, setDeepValidationProgress] = useState(0);
+  const [showSitemapPreview, setShowSitemapPreview] = useState(false);
+  const [validatedUrls, setValidatedUrls] = useState<ValidatedUrl[]>([]);
   const { toast } = useToast();
-
-  const validateXMLStructure = (xmlText: string): ValidationResult => {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-    let jobCount = 0;
-
-    try {
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      
-      // Check for parse errors
-      const parseError = xmlDoc.querySelector('parsererror');
-      if (parseError) {
-        errors.push('XML syntax error: ' + parseError.textContent);
-        return { isValid: false, jobCount: 0, errors, warnings, xmlPreview: xmlText.substring(0, 500) };
-      }
-
-      // Check RSS structure
-      const rss = xmlDoc.querySelector('rss');
-      if (!rss) {
-        errors.push('Missing RSS root element');
-      } else {
-        const version = rss.getAttribute('version');
-        if (version !== '2.0') {
-          warnings.push('RSS version should be 2.0 for Google Jobs compatibility');
-        }
-
-        // Check for Google namespace
-        const googleNS = rss.getAttribute('xmlns:g');
-        if (!googleNS || !googleNS.includes('base.google.com')) {
-          errors.push('Missing Google Base namespace (xmlns:g="http://base.google.com/ns/1.0")');
-        }
-      }
-
-      // Check channel
-      const channel = xmlDoc.querySelector('channel');
-      if (!channel) {
-        errors.push('Missing channel element');
-      } else {
-        // Check required channel elements
-        const requiredChannelElements = ['title', 'description', 'link'];
-        requiredChannelElements.forEach(element => {
-          if (!channel.querySelector(element)) {
-            errors.push(`Missing required channel element: ${element}`);
-          }
-        });
-      }
-
-      // Check job items
-      const items = xmlDoc.querySelectorAll('item');
-      jobCount = items.length;
-
-      if (jobCount === 0) {
-        warnings.push('No job items found in the feed');
-      }
-
-      // Validate each job item (and map to JSON-LD JobPosting)
-      let jsonLdPreview = '';
-      items.forEach((item, index) => {
-        const requiredJobFields = [
-          'g\\:job_title',
-          'g\\:job_description', 
-          'g\\:job_location',
-          'g\\:company_name',
-          'g\\:application_url'
-        ];
-
-        requiredJobFields.forEach(field => {
-          const selector = field; // namespace already escaped
-          if (!item.querySelector(selector)) {
-            errors.push(`Job ${index + 1}: Missing required field ${field.replace('g\\:', '')}`);
-          }
-        });
-
-        // Check for valid URLs
-        const appUrl = item.querySelector('g\\:application_url')?.textContent?.trim() || '';
-        if (appUrl) {
-          try { new URL(appUrl); } catch { errors.push(`Job ${index + 1}: Invalid application URL`); }
-        }
-
-        // Check date formats
-        const datePostedText = item.querySelector('g\\:date_posted')?.textContent?.trim() || '';
-        if (datePostedText) {
-          const date = new Date(datePostedText);
-          if (isNaN(date.getTime())) {
-            errors.push(`Job ${index + 1}: Invalid date_posted format`);
-          }
-        } else {
-          warnings.push(`Job ${index + 1}: Missing date_posted (required for JobPosting.datePosted)`);
-        }
-
-        // JSON-LD JobPosting schema checks based on provided template
-        const title = item.querySelector('g\\:job_title')?.textContent?.trim() || '';
-        const description = item.querySelector('g\\:job_description')?.textContent?.trim() || '';
-        const company = item.querySelector('g\\:company_name')?.textContent?.trim() || '';
-        const jobId = item.querySelector('g\\:job_id')?.textContent?.trim() || item.querySelector('guid')?.textContent?.trim() || '';
-        const jobType = item.querySelector('g\\:job_type')?.textContent?.trim() || '';
-        const location = item.querySelector('g\\:job_location')?.textContent?.trim() || '';
-        const validThrough = item.querySelector('g\\:valid_through')?.textContent?.trim() || '';
-        const salaryText = item.querySelector('g\\:salary')?.textContent?.trim() || '';
-
-        if (!jobId) {
-          warnings.push(`Job ${index + 1}: Missing job_id/guid for identifier.value`);
-        }
-        const allowedEmployment = ['FULL_TIME','PART_TIME','CONTRACTOR','TEMPORARY','INTERN','VOLUNTEER'];
-        if (jobType && !allowedEmployment.includes(jobType.toUpperCase())) {
-          warnings.push(`Job ${index + 1}: job_type "${jobType}" not in ${allowedEmployment.join(', ')}`);
-        }
-        // Location -> PostalAddress expectations
-        const hasCity = /,/.test(location) || /\b[A-Z]{2}\b/.test(location);
-        if (!hasCity) {
-          warnings.push(`Job ${index + 1}: job_location should include city and region (e.g., "City, ST") for PostalAddress`);
-        }
-        // validThrough formatting
-        if (validThrough) {
-          const dt = new Date(validThrough);
-          if (isNaN(dt.getTime())) {
-            errors.push(`Job ${index + 1}: Invalid valid_through format`);
-          }
-        } else {
-          warnings.push(`Job ${index + 1}: Missing valid_through (JobPosting.validThrough)`);
-        }
-        // Salary mapping note
-        if (salaryText) {
-          const hasUnit = /(hour|week|year)/i.test(salaryText);
-          if (!hasUnit) {
-            warnings.push(`Job ${index + 1}: salary should include unit (HOUR/WEEK/YEAR) for JSON-LD baseSalary.value.unitText`);
-          }
-        } else {
-          warnings.push(`Job ${index + 1}: Missing salary; JSON-LD baseSalary is recommended`);
-        }
-
-        // Build JSON-LD preview for first item
-        if (index === 0) {
-          // Attempt to derive minimal JSON-LD object
-          const unit = /hour/i.test(salaryText) ? 'HOUR' : /week/i.test(salaryText) ? 'WEEK' : /year/i.test(salaryText) ? 'YEAR' : undefined;
-          const valueMatch = salaryText.match(/\$?([\d,]+(\.\d+)?)/);
-          const numericValue = valueMatch ? Number(valueMatch[1].replace(/,/g,'')) : undefined;
-          const jsonLd: Record<string, unknown> = {
-            "@context": "https://schema.org/",
-            "@type": "JobPosting",
-            title,
-            description,
-            identifier: jobId ? { "@type": "PropertyValue", name: company || 'Company', value: jobId } : undefined,
-            datePosted: datePostedText ? datePostedText.split('T')[0] : undefined,
-            validThrough: validThrough || undefined,
-            employmentType: jobType || undefined,
-            hiringOrganization: company ? { "@type": "Organization", name: company } : undefined,
-            jobLocation: location ? { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: location.split(',')[0]?.trim(), addressRegion: location.split(',')[1]?.trim() } } : undefined,
-            baseSalary: unit && numericValue ? { "@type": "MonetaryAmount", currency: "USD", value: { "@type": "QuantitativeValue", value: numericValue, unitText: unit } } : undefined
-          };
-          // Remove undefined keys
-          const clean = JSON.parse(JSON.stringify(jsonLd));
-          jsonLdPreview = JSON.stringify(clean, null, 2);
-        }
-      });
-
-      return {
-        isValid: errors.length === 0,
-        jobCount,
-        errors,
-        warnings,
-        xmlPreview: xmlText.substring(0, 1000),
-        jsonLdPreview
-      };
-
-    } catch (error) {
-      return {
-        isValid: false,
-        jobCount: 0,
-        errors: ['Failed to parse XML: ' + (error as Error).message],
-        warnings,
-        xmlPreview: xmlText.substring(0, 500)
-      };
-    }
-  };
 
   const validateFeed = async () => {
     if (!feedUrl) return;
     
     setIsValidating(true);
+    setValidatedUrls([]);
     try {
       const response = await fetch(feedUrl);
       
@@ -217,29 +50,31 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
       }
 
       const xmlText = await response.text();
-      const result = validateXMLStructure(xmlText);
+      const result = validateSitemapFeed(xmlText);
       setValidationResult(result);
 
       if (result.isValid) {
         toast({
-          title: "Feed validation successful",
-          description: `Found ${result.jobCount} valid job listings`
+          title: "Sitemap validation successful",
+          description: `Found ${result.urlCount} job URLs in the sitemap`
         });
       } else {
         toast({
-          title: "Feed validation failed",
+          title: "Sitemap validation failed",
           description: `Found ${result.errors.length} errors`,
           variant: "destructive"
         });
       }
 
     } catch (error) {
-      const errorResult: ValidationResult = {
+      const errorResult: FeedValidationResult = {
         isValid: false,
-        jobCount: 0,
+        urlCount: 0,
         errors: [(error as Error).message],
         warnings: [],
-        xmlPreview: ''
+        sitemapPreview: '',
+        urlsWithJsonLd: 0,
+        urlsWithoutJsonLd: 0
       };
       setValidationResult(errorResult);
       
@@ -253,37 +88,125 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
     }
   };
 
-  const downloadSampleXML = () => {
+  const deepValidateUrls = async () => {
+    if (!feedUrl) return;
+    
+    setIsDeepValidating(true);
+    setDeepValidationProgress(0);
+    const validated: ValidatedUrl[] = [];
+    
+    try {
+      const response = await fetch(feedUrl);
+      const xmlText = await response.text();
+      const urls = extractSitemapUrls(xmlText);
+      
+      // Limit to first 10 URLs for performance
+      const urlsToCheck = urls.slice(0, 10);
+      
+      for (let i = 0; i < urlsToCheck.length; i++) {
+        const entry = urlsToCheck[i];
+        setDeepValidationProgress(((i + 1) / urlsToCheck.length) * 100);
+        
+        const validatedUrl: ValidatedUrl = {
+          url: entry.loc,
+          hasJsonLd: false,
+          errors: [],
+          warnings: []
+        };
+        
+        try {
+          const pageResponse = await fetch(entry.loc);
+          if (pageResponse.ok) {
+            const html = await pageResponse.text();
+            const jsonLdArray = extractJsonLdFromHtml(html);
+            const jobPosting = findJobPostingSchema(jsonLdArray);
+            
+            if (jobPosting) {
+              validatedUrl.hasJsonLd = true;
+              validatedUrl.jobTitle = jobPosting.title as string;
+              
+              const schemaValidation = validateJobPostingSchema(jobPosting);
+              validatedUrl.errors = schemaValidation.errors;
+              validatedUrl.warnings = schemaValidation.warnings;
+            } else {
+              validatedUrl.errors.push('No JobPosting JSON-LD found on page');
+            }
+          } else {
+            validatedUrl.errors.push(`Page returned HTTP ${pageResponse.status}`);
+          }
+        } catch (e) {
+          validatedUrl.errors.push(`Failed to fetch page: ${(e as Error).message}`);
+        }
+        
+        validated.push(validatedUrl);
+      }
+      
+      setValidatedUrls(validated);
+      
+      const withJsonLd = validated.filter(v => v.hasJsonLd).length;
+      const withoutJsonLd = validated.filter(v => !v.hasJsonLd).length;
+      
+      if (validationResult) {
+        setValidationResult({
+          ...validationResult,
+          urlsWithJsonLd: withJsonLd,
+          urlsWithoutJsonLd: withoutJsonLd,
+          validatedUrls: validated
+        });
+      }
+      
+      toast({
+        title: "Deep validation complete",
+        description: `${withJsonLd}/${validated.length} URLs have valid JobPosting schema`
+      });
+      
+    } catch (error) {
+      toast({
+        title: "Deep validation failed",
+        description: (error as Error).message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeepValidating(false);
+    }
+  };
+
+  const downloadSampleSitemap = () => {
     const sampleXML = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
-  <channel>
-    <title>Sample Job Feed</title>
-    <description>Example job feed for Google Jobs</description>
-    <link>https://example.com/jobs</link>
-    <item>
-      <title>Software Engineer</title>
-      <description>Join our team as a Software Engineer...</description>
-      <link>https://example.com/apply/123</link>
-      <g:job_title>Software Engineer</g:job_title>
-      <g:job_description>Join our team as a Software Engineer...</g:job_description>
-      <g:job_location>San Francisco, CA</g:job_location>
-      <g:company_name>Example Company</g:company_name>
-      <g:job_type>FULL_TIME</g:job_type>
-      <g:application_url>https://example.com/apply/123</g:application_url>
-      <g:date_posted>2024-01-01T00:00:00Z</g:date_posted>
-    </item>
-  </channel>
-</rss>`;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Job listing URLs - each page must contain JobPosting JSON-LD -->
+  <url>
+    <loc>https://example.com/jobs/software-engineer-123</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://example.com/jobs/product-manager-456</loc>
+    <lastmod>2024-01-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>`;
 
     const blob = new Blob([sampleXML], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'google-jobs-sample.xml';
+    a.download = 'google-jobs-sitemap-sample.xml';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const openRichResultsTest = () => {
+    if (validatedUrls.length > 0) {
+      const testUrl = `https://search.google.com/test/rich-results?url=${encodeURIComponent(validatedUrls[0].url)}`;
+      window.open(testUrl, '_blank');
+    } else {
+      window.open('https://search.google.com/test/rich-results', '_blank');
+    }
   };
 
   return (
@@ -291,56 +214,105 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5" />
-          XML Feed Validator
+          Sitemap Feed Validator
         </CardTitle>
         <CardDescription>
-          Validate your XML feed against Google Jobs requirements
+          Validate your XML sitemap and verify job pages contain JobPosting JSON-LD schema
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={validateFeed}
             disabled={!feedUrl || isValidating}
-            className="flex-1"
+            className="flex-1 min-w-[140px]"
           >
-            {isValidating ? 'Validating...' : 'Validate Feed'}
+            {isValidating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Validating...
+              </>
+            ) : (
+              'Validate Sitemap'
+            )}
           </Button>
           <Button
-            onClick={downloadSampleXML}
+            onClick={deepValidateUrls}
+            disabled={!feedUrl || isDeepValidating || !validationResult?.isValid}
+            variant="secondary"
+            className="flex-1 min-w-[140px]"
+          >
+            {isDeepValidating ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Checking URLs...
+              </>
+            ) : (
+              'Deep Validate (10 URLs)'
+            )}
+          </Button>
+          <Button
+            onClick={downloadSampleSitemap}
             variant="outline"
           >
             <Download className="w-4 h-4 mr-2" />
-            Sample XML
+            Sample
           </Button>
         </div>
+
+        {isDeepValidating && (
+          <div className="space-y-2">
+            <Progress value={deepValidationProgress} />
+            <p className="text-sm text-muted-foreground text-center">
+              Checking job pages for JSON-LD schema...
+            </p>
+          </div>
+        )}
 
         {validationResult && (
           <div className="space-y-4">
             {/* Status */}
-            <Alert className={validationResult.isValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+            <Alert className={validationResult.isValid ? 'border-green-500/50 bg-green-500/10' : 'border-destructive/50 bg-destructive/10'}>
               <div className="flex items-center gap-2">
                 {validationResult.isValid ? (
                   <CheckCircle className="w-4 h-4 text-green-600" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  <AlertCircle className="w-4 h-4 text-destructive" />
                 )}
-                <AlertDescription className={validationResult.isValid ? 'text-green-800' : 'text-red-800'}>
+                <AlertDescription className={validationResult.isValid ? 'text-green-700' : 'text-destructive'}>
                   {validationResult.isValid 
-                    ? `✅ Feed is valid with ${validationResult.jobCount} job listings`
-                    : `❌ Feed validation failed with ${validationResult.errors.length} errors`
+                    ? `✅ Sitemap is valid with ${validationResult.urlCount} job URLs`
+                    : `❌ Sitemap validation failed with ${validationResult.errors.length} errors`
                   }
                 </AlertDescription>
               </div>
             </Alert>
 
+            {/* JSON-LD Stats */}
+            {validatedUrls.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {validatedUrls.filter(v => v.hasJsonLd).length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Pages with JSON-LD</div>
+                </div>
+                <div className="text-center p-3 bg-destructive/10 rounded-lg">
+                  <div className="text-2xl font-bold text-destructive">
+                    {validatedUrls.filter(v => !v.hasJsonLd).length}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Missing JSON-LD</div>
+                </div>
+              </div>
+            )}
+
             {/* Errors */}
             {validationResult.errors.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium text-red-700">Errors:</h4>
-                <div className="space-y-1">
+                <h4 className="font-medium text-destructive">Errors:</h4>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
                   {validationResult.errors.map((error, index) => (
-                    <div key={index} className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                    <div key={index} className="text-sm text-destructive bg-destructive/10 p-2 rounded">
                       {error}
                     </div>
                   ))}
@@ -351,10 +323,10 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
             {/* Warnings */}
             {validationResult.warnings.length > 0 && (
               <div className="space-y-2">
-                <h4 className="font-medium text-yellow-700">Warnings:</h4>
-                <div className="space-y-1">
+                <h4 className="font-medium text-yellow-600">Warnings:</h4>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
                   {validationResult.warnings.map((warning, index) => (
-                    <div key={index} className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
+                    <div key={index} className="text-sm text-yellow-600 bg-yellow-500/10 p-2 rounded">
                       {warning}
                     </div>
                   ))}
@@ -362,23 +334,74 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
               </div>
             )}
 
-            {/* XML Preview */}
-            {validationResult.xmlPreview && (
+            {/* Validated URLs */}
+            {validatedUrls.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium">Validated Job Pages:</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {validatedUrls.map((validated, index) => (
+                    <div 
+                      key={index} 
+                      className={`p-3 rounded-lg border ${
+                        validated.hasJsonLd && validated.errors.length === 0 
+                          ? 'border-green-500/50 bg-green-500/5' 
+                          : 'border-destructive/50 bg-destructive/5'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {validated.hasJsonLd ? (
+                              <Badge variant="outline" className="text-green-600 border-green-500">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                JSON-LD
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                Missing
+                              </Badge>
+                            )}
+                            {validated.jobTitle && (
+                              <span className="text-sm font-medium truncate">
+                                {validated.jobTitle}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {validated.url}
+                          </p>
+                          {validated.errors.length > 0 && (
+                            <div className="mt-2 text-xs text-destructive">
+                              {validated.errors.slice(0, 2).join(', ')}
+                              {validated.errors.length > 2 && ` +${validated.errors.length - 2} more`}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sitemap Preview */}
+            {validationResult.sitemapPreview && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">XML Preview:</h4>
+                  <h4 className="font-medium">Sitemap Preview:</h4>
                   <Button
-                    onClick={() => setShowXmlPreview(!showXmlPreview)}
+                    onClick={() => setShowSitemapPreview(!showSitemapPreview)}
                     variant="outline"
                     size="sm"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    {showXmlPreview ? 'Hide' : 'Show'} XML
+                    {showSitemapPreview ? 'Hide' : 'Show'}
                   </Button>
                 </div>
-                {showXmlPreview && (
+                {showSitemapPreview && (
                   <Textarea
-                    value={validationResult.xmlPreview + (validationResult.xmlPreview.length >= 1000 ? '...' : '')}
+                    value={validationResult.sitemapPreview + (validationResult.sitemapPreview.length >= 1000 ? '...' : '')}
                     readOnly
                     className="font-mono text-xs h-32"
                   />
@@ -386,29 +409,18 @@ const GoogleJobsFeedValidator: React.FC<{ feedUrl: string }> = ({ feedUrl }) => 
               </div>
             )}
 
-            {/* JSON-LD Preview */}
-            {validationResult.jsonLdPreview && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">JSON-LD Preview (JobPosting):</h4>
-                  <Button
-                    onClick={() => setShowJsonLdPreview(!showJsonLdPreview)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {showJsonLdPreview ? 'Hide' : 'Show'} JSON-LD
-                  </Button>
-                </div>
-                {showJsonLdPreview && (
-                  <Textarea
-                    value={validationResult.jsonLdPreview}
-                    readOnly
-                    className="font-mono text-xs h-48"
-                  />
-                )}
-              </div>
-            )}
+            {/* Google Tools */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={openRichResultsTest}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Rich Results Test
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

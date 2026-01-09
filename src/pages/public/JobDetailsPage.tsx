@@ -10,7 +10,7 @@ import {
   ArrowLeft, ExternalLink, Share2, Mic 
 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
-import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema } from '@/components/StructuredData';
+import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
@@ -140,23 +140,29 @@ const JobDetailsPage: React.FC = () => {
     });
   };
 
-  // Build structured data
+  // Build structured data with enhanced schema
   const jobPostingSchema = buildJobPostingSchema({
+    id: job.id,
     title: displayTitle,
     description: displayDescription,
     datePosted: job.created_at,
     validThrough: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     employmentType: job.job_type || 'FULL_TIME',
     hiringOrganization: companyName,
+    hiringOrganizationLogo: job.clients?.logo_url,
     jobLocation: displayLocation ? {
       city: job.city || '',
       state: job.state || '',
       country: 'US',
     } : undefined,
     baseSalary: (job.salary_min || job.salary_max) ? {
+      minValue: job.salary_min || undefined,
+      maxValue: job.salary_max || undefined,
       currency: 'USD',
-      value: job.salary_min || job.salary_max || 0,
+      unitText: getSalaryUnitText(job.salary_type),
     } : undefined,
+    directApply: true,
+    applicationUrl: `https://ats.me${applyUrl}`,
   });
 
   const breadcrumbSchema = buildBreadcrumbSchema([

@@ -262,7 +262,7 @@ const GoogleJobsPlatformActions: React.FC = () => {
         <Alert>
           <FileText className="h-4 w-4" />
           <AlertDescription>
-            <strong>XML Feed Features:</strong> Generates a Google-compliant XML Sitemap listing all active job posting URLs. Ensure each URL contains valid JobPosting structured data (JSON-LD).
+            <strong>How Google Jobs Works:</strong> This integration generates an XML Sitemap containing URLs to your job pages. Each job page automatically includes JobPosting JSON-LD structured data that Google crawls to display your jobs in search results. The sitemap helps Google discover all your job listings efficiently.
           </AlertDescription>
         </Alert>
       </CardContent>
