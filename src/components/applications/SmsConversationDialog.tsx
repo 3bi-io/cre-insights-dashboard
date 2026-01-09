@@ -267,6 +267,8 @@ const SmsConversationDialog: React.FC<SmsConversationDialogProps> = ({
               <div className="flex gap-3">
                 <div className="flex-1 relative">
                   <Textarea
+                    id="sms-message"
+                    name="sms-message"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Type your message..."

@@ -67,6 +67,8 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
+              id="mobile-job-search"
+              name="mobile-job-search"
               placeholder="Search jobs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -105,6 +107,7 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Company</label>
                   <Select 
+                    name="company-filter"
                     value={clientFilter || "all"} 
                     onValueChange={(val) => setClientFilter(val === "all" ? "" : val)}
                   >
@@ -126,6 +129,7 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Location</label>
                   <Select 
+                    name="location-filter"
                     value={locationFilter || "all"} 
                     onValueChange={(val) => setLocationFilter(val === "all" ? "" : val)}
                   >
@@ -146,7 +150,7 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
                 {/* Sort Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Sort by</label>
-                  <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <Select name="sort-by" value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                     <SelectTrigger className="w-full h-12">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>

@@ -204,6 +204,8 @@ const ContactPage = () => {
                             First Name *
                           </label>
                           <Input
+                            id="firstName"
+                            name="firstName"
                             value={formData.firstName}
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
                             className={`min-h-[44px] ${errors.firstName ? 'border-destructive' : ''}`}
@@ -219,6 +221,8 @@ const ContactPage = () => {
                             Last Name *
                           </label>
                           <Input
+                            id="lastName"
+                            name="lastName"
                             value={formData.lastName}
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
                             className={`min-h-[44px] ${errors.lastName ? 'border-destructive' : ''}`}
@@ -236,6 +240,8 @@ const ContactPage = () => {
                           Email Address *
                         </label>
                         <Input
+                          id="email"
+                          name="email"
                           type="email"
                           value={formData.email}
                           onChange={(e) => handleInputChange('email', e.target.value)}
@@ -255,6 +261,8 @@ const ContactPage = () => {
                             Company *
                           </label>
                           <Input
+                            id="company"
+                            name="company"
                             value={formData.company}
                             onChange={(e) => handleInputChange('company', e.target.value)}
                             className={`min-h-[44px] ${errors.company ? 'border-destructive' : ''}`}
@@ -270,6 +278,8 @@ const ContactPage = () => {
                             Job Title
                           </label>
                           <Input
+                            id="jobTitle"
+                            name="jobTitle"
                             value={formData.jobTitle}
                             onChange={(e) => handleInputChange('jobTitle', e.target.value)}
                             className="min-h-[44px]"
@@ -282,7 +292,7 @@ const ContactPage = () => {
                         <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Company Size
                         </label>
-                        <Select onValueChange={(value) => handleInputChange('companySize', value)}>
+                        <Select name="companySize" onValueChange={(value) => handleInputChange('companySize', value)}>
                           <SelectTrigger className="min-h-[44px]">
                             <SelectValue placeholder="Select company size" />
                           </SelectTrigger>
@@ -300,7 +310,7 @@ const ContactPage = () => {
                         <label className="text-sm font-medium text-foreground mb-1.5 block">
                           Subject *
                         </label>
-                        <Select onValueChange={(value) => handleInputChange('subject', value)}>
+                        <Select name="subject" onValueChange={(value) => handleInputChange('subject', value)}>
                           <SelectTrigger className={`min-h-[44px] ${errors.subject ? 'border-destructive' : ''}`}>
                             <SelectValue placeholder="What can we help you with?" />
                           </SelectTrigger>
@@ -324,6 +334,8 @@ const ContactPage = () => {
                           Message *
                         </label>
                         <Textarea
+                          id="message"
+                          name="message"
                           value={formData.message}
                           onChange={(e) => handleInputChange('message', e.target.value)}
                           placeholder="Tell us more about your requirements..."

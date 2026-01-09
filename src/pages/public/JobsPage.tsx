@@ -197,6 +197,8 @@ const JobsPage = () => {
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
+                    id="job-search"
+                    name="job-search"
                     placeholder="Search jobs by title, company, or keywords..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -204,7 +206,7 @@ const JobsPage = () => {
                   />
                 </div>
                 
-                <Select value={clientFilter || "all"} onValueChange={(val) => setClientFilter(val === "all" ? "" : val)}>
+                <Select name="company-filter" value={clientFilter || "all"} onValueChange={(val) => setClientFilter(val === "all" ? "" : val)}>
                   <SelectTrigger className="w-56">
                     <SelectValue placeholder="All Companies" />
                   </SelectTrigger>
@@ -220,7 +222,7 @@ const JobsPage = () => {
               </div>
 
               <div className="flex gap-4">
-                <Select value={locationFilter || "all"} onValueChange={(val) => setLocationFilter(val === "all" ? "" : val)}>
+                <Select name="location-filter" value={locationFilter || "all"} onValueChange={(val) => setLocationFilter(val === "all" ? "" : val)}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
@@ -234,7 +236,7 @@ const JobsPage = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <Select name="sort-by" value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>

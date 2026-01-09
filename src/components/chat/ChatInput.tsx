@@ -48,6 +48,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       <div className="flex gap-2 items-end">
         <Textarea
           ref={textareaRef}
+          id="ai-chat-input"
+          name="ai-chat-input"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
