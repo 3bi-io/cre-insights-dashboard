@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, User, Mail, Phone, MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { SelectionButtonGroup } from './SelectionButton';
 
 const US_STATES = [
   { value: 'AL', label: 'Alabama' },
@@ -70,6 +72,7 @@ interface PersonalInfoSectionProps {
     over21: string;
   };
   onInputChange: (name: string, value: string) => void;
+  isActive?: boolean;
 }
 
 // Format phone number as user types
@@ -81,10 +84,25 @@ const formatPhoneNumber = (value: string): string => {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
 };
 
-export const PersonalInfoSection = React.memo(({ formData, onInputChange }: PersonalInfoSectionProps) => {
-  // ZIP code auto-lookup for city/state
+const isValidField = (value: string, type?: 'email' | 'phone' | 'zip') => {
+  if (!value.trim()) return false;
+  if (type === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  if (type === 'phone') return value.replace(/\D/g, '').length >= 10;
+  if (type === 'zip') return value.length >= 5;
+  return value.trim().length > 0;
+};
+
+export const PersonalInfoSection = React.memo(({ formData, onInputChange, isActive }: PersonalInfoSectionProps) => {
+  const firstNameRef = useRef<HTMLInputElement>(null);
   const { city: lookupCity, state: lookupState, isLoading: isZipLoading } = useZipCodeLookup(formData.zip);
   const [wasAutoFilled, setWasAutoFilled] = useState(false);
+
+  // Auto-focus first field when becoming active
+  useEffect(() => {
+    if (isActive && firstNameRef.current) {
+      setTimeout(() => firstNameRef.current?.focus(), 300);
+    }
+  }, [isActive]);
 
   // Auto-fill city and state when ZIP lookup returns data
   useEffect(() => {
@@ -107,18 +125,37 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
     onInputChange('phone', formatted);
   }, [onInputChange]);
 
+  const AGE_OPTIONS = [
+    { value: 'Yes', label: 'Yes, I am 21 or older', description: 'Required for CDL driving' },
+    { value: 'No', label: 'No, I am under 21' },
+  ];
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-semibold text-foreground border-b pb-2">
-        Personal Information
-      </h2>
+    <div className="space-y-6">
+      {/* Section Header */}
+      <div className="text-center pb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-3">
+          <User className="h-6 w-6" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-semibold text-foreground">
+          Let's start with your info
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          We'll use this to contact you about your application
+        </p>
+      </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      {/* Name Fields */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="firstName" className="text-sm font-medium">
+          <Label htmlFor="firstName" className="text-sm font-medium flex items-center gap-2">
             First Name <span className="text-destructive">*</span>
+            {isValidField(formData.firstName) && (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            )}
           </Label>
           <Input
+            ref={firstNameRef}
             id="firstName"
             name="firstName"
             autoComplete="given-name"
@@ -126,13 +163,16 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('firstName', e.target.value)}
             required
             aria-required="true"
-            placeholder="Enter your first name"
-            className="h-12 sm:h-10 text-base sm:text-sm"
+            placeholder="John"
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="lastName" className="text-sm font-medium">
+          <Label htmlFor="lastName" className="text-sm font-medium flex items-center gap-2">
             Last Name <span className="text-destructive">*</span>
+            {isValidField(formData.lastName) && (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            )}
           </Label>
           <Input
             id="lastName"
@@ -142,16 +182,21 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('lastName', e.target.value)}
             required
             aria-required="true"
-            placeholder="Enter your last name"
-            className="h-12 sm:h-10 text-base sm:text-sm"
+            placeholder="Doe"
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      {/* Contact Fields */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">
+          <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+            <Mail className="h-4 w-4 text-muted-foreground" />
             Email <span className="text-destructive">*</span>
+            {isValidField(formData.email, 'email') && (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            )}
           </Label>
           <Input
             id="email"
@@ -162,13 +207,17 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             onChange={(e) => onInputChange('email', e.target.value)}
             required
             aria-required="true"
-            placeholder="Enter your email"
-            className="h-12 sm:h-10 text-base sm:text-sm"
+            placeholder="john@example.com"
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone" className="text-sm font-medium">
+          <Label htmlFor="phone" className="text-sm font-medium flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
             Phone Number <span className="text-destructive">*</span>
+            {isValidField(formData.phone, 'phone') && (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            )}
           </Label>
           <Input
             id="phone"
@@ -180,95 +229,101 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange }: Pers
             placeholder="(555) 123-4567"
             required
             aria-required="true"
-            className="h-12 sm:h-10 text-base sm:text-sm"
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
             maxLength={14}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="zip" className="text-sm font-medium">
-            ZIP Code <span className="text-destructive">*</span>
-          </Label>
-          <div className="relative">
-            <Input
-              id="zip"
-              name="zip"
-              autoComplete="postal-code"
-              value={formData.zip}
-              onChange={(e) => onInputChange('zip', e.target.value)}
-              required
-              aria-required="true"
-              placeholder="Enter ZIP code"
-              className="h-12 sm:h-10 text-base sm:text-sm pr-10"
-              maxLength={10}
-            />
-            {isZipLoading && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-            {wasAutoFilled && !isZipLoading && (
-              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
-            )}
+      {/* Location Fields */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="h-4 w-4" />
+          <span className="text-sm font-medium">Location</span>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="zip" className="text-sm font-medium flex items-center gap-2">
+              ZIP Code <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <Input
+                id="zip"
+                name="zip"
+                autoComplete="postal-code"
+                value={formData.zip}
+                onChange={(e) => onInputChange('zip', e.target.value)}
+                required
+                aria-required="true"
+                placeholder="12345"
+                className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors pr-10"
+                maxLength={10}
+              />
+              {isZipLoading && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
+              )}
+              {wasAutoFilled && !isZipLoading && (
+                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
+              )}
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="city" className="text-sm font-medium flex items-center gap-2">
-            City
-            {wasAutoFilled && <span className="text-xs text-muted-foreground">(auto-filled)</span>}
-          </Label>
-          <Input
-            id="city"
-            name="city"
-            autoComplete="address-level2"
-            value={formData.city}
-            onChange={(e) => {
-              onInputChange('city', e.target.value);
-              setWasAutoFilled(false);
-            }}
-            placeholder="Enter your city"
-            className="h-12 sm:h-10 text-base sm:text-sm"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="state" className="text-sm font-medium flex items-center gap-2">
-            State
-            {wasAutoFilled && <span className="text-xs text-muted-foreground">(auto-filled)</span>}
-          </Label>
-          <Select 
-            value={formData.state} 
-            onValueChange={(value) => {
-              onInputChange('state', value);
-              setWasAutoFilled(false);
-            }}
-          >
-            <SelectTrigger id="state" name="state" className="h-12 sm:h-10 text-base sm:text-sm">
-              <SelectValue placeholder="Select state..." />
-            </SelectTrigger>
-            <SelectContent className="max-h-[200px]">
-              {US_STATES.map((state) => (
-                <SelectItem key={state.value} value={state.value}>
-                  {state.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-2">
+            <Label htmlFor="city" className="text-sm font-medium flex items-center gap-2">
+              City
+              {wasAutoFilled && <span className="text-xs text-green-600 font-normal">(auto-filled)</span>}
+            </Label>
+            <Input
+              id="city"
+              name="city"
+              autoComplete="address-level2"
+              value={formData.city}
+              onChange={(e) => {
+                onInputChange('city', e.target.value);
+                setWasAutoFilled(false);
+              }}
+              placeholder="City"
+              className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="state" className="text-sm font-medium flex items-center gap-2">
+              State
+              {wasAutoFilled && <span className="text-xs text-green-600 font-normal">(auto-filled)</span>}
+            </Label>
+            <Select 
+              value={formData.state} 
+              onValueChange={(value) => {
+                onInputChange('state', value);
+                setWasAutoFilled(false);
+              }}
+            >
+              <SelectTrigger id="state" name="state" className="h-14 text-base rounded-xl border-2">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="max-h-[200px]">
+                {US_STATES.map((state) => (
+                  <SelectItem key={state.value} value={state.value}>
+                    {state.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="over21" className="text-sm font-medium">
-          Are you over 21? <span className="text-destructive">*</span>
+      {/* Age Verification */}
+      <div className="space-y-3 pt-2">
+        <Label className="text-sm font-medium">
+          Are you 21 or older? <span className="text-destructive">*</span>
         </Label>
-        <Select value={formData.over21} onValueChange={(value) => onInputChange('over21', value)}>
-          <SelectTrigger id="over21" name="over21" className="h-12 sm:h-10 text-base sm:text-sm" aria-required="true">
-            <SelectValue placeholder="Select your age status..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Yes">Yes</SelectItem>
-            <SelectItem value="No">No</SelectItem>
-          </SelectContent>
-        </Select>
+        <SelectionButtonGroup
+          options={AGE_OPTIONS}
+          value={formData.over21}
+          onChange={(value) => onInputChange('over21', value)}
+          columns={2}
+        />
       </div>
     </div>
   );
