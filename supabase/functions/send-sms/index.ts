@@ -4,7 +4,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse, validationErrorResponse, rateLimitResponse } from '../_shared/response.ts';
 import { createLogger } from '../_shared/logger.ts';
-import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { checkRateLimitWithGeo } from '../_shared/rate-limiter.ts';
 import { verifyUser } from '../_shared/auth.ts';
 
 const logger = createLogger('send-sms');
@@ -57,14 +57,18 @@ const handler = async (req: Request): Promise<Response> => {
       return errorResponse('Authentication required', 401, undefined, origin || undefined);
     }
 
-    // Rate limiting - 30 SMS per minute per user
-    const rateLimitResult = await checkRateLimit(`sms:${user.id}`, {
+    // Rate limiting - 30 SMS per minute per user (150/min for DFW/Alabama devs)
+    const rateLimitResult = await checkRateLimitWithGeo(req, `sms:${user.id}`, {
       maxRequests: 30,
       windowMs: 60000,
     });
 
     if (!rateLimitResult.allowed) {
-      logger.warn('Rate limit exceeded', { user_id: user.id });
+      logger.warn('Rate limit exceeded', { 
+        user_id: user.id,
+        geo_applied: rateLimitResult.geoApplied,
+        effective_limit: rateLimitResult.effectiveMaxRequests
+      });
       return rateLimitResponse(rateLimitResult.retryAfter, origin || undefined);
     }
 

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
-import { checkRateLimit, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
+import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -271,16 +271,19 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Rate limiting - 10 requests per minute per IP
+  // Rate limiting - 10 requests per minute per IP (50/min for DFW/Alabama devs)
   const identifier = getRateLimitIdentifier(req);
-  const rateLimitResult = await checkRateLimit(identifier, { 
+  const rateLimitResult = await checkRateLimitWithGeo(req, identifier, { 
     maxRequests: 10, 
     windowMs: 60000,
     keyPrefix: 'email'
   });
   
   if (!rateLimitResult.allowed) {
-    console.warn(`Rate limit exceeded for: ${identifier}`);
+    console.warn(`Rate limit exceeded for: ${identifier}`, {
+      geoApplied: rateLimitResult.geoApplied,
+      effectiveLimit: rateLimitResult.effectiveMaxRequests
+    });
     return new Response(
       JSON.stringify({ 
         error: "Rate limit exceeded. Please try again later.",

@@ -1,15 +1,22 @@
 /**
  * Rate Limiting Utilities for Edge Functions
  * Provides flexible rate limiting using in-memory Map
+ * Includes geographic-aware rate limiting for developer regions
  * Note: Deno KV is not available in Supabase Edge Functions
  */
 
 import { RateLimitError } from './error-handler.ts';
+import { extractIPFromRequest, getGeoLocation, GeoLocation } from './geo-lookup.ts';
+import { getGeoRateMultiplier, applyGeoMultiplier, GeoRateLimitOverride } from './geo-rate-config.ts';
 
 export interface RateLimitConfig {
   maxRequests: number;
   windowMs: number;
   keyPrefix?: string;
+}
+
+export interface GeoRateLimitConfig extends RateLimitConfig {
+  enableGeoOverride?: boolean;  // Default: true
 }
 
 export interface RateLimitResult {
@@ -125,8 +132,87 @@ export function getRateLimitIdentifier(req: Request, useAuth: boolean = false): 
   }
 
   // Fallback to IP address
-  const forwarded = req.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+  return `ip:${extractIPFromRequest(req)}`;
+}
+
+/**
+ * Extended rate limit result with geo info
+ */
+export interface GeoRateLimitResult extends RateLimitResult {
+  geoApplied: boolean;
+  geoLocation?: GeoLocation | null;
+  matchedRule?: GeoRateLimitOverride | null;
+  effectiveMaxRequests: number;
+}
+
+/**
+ * Check rate limit with geographic awareness
+ * Applies elevated limits for configured developer regions (DFW, Alabama)
+ */
+export async function checkRateLimitWithGeo(
+  req: Request,
+  identifier: string,
+  config: GeoRateLimitConfig = { maxRequests: 100, windowMs: 60000 }
+): Promise<GeoRateLimitResult> {
+  const { maxRequests, windowMs, keyPrefix, enableGeoOverride = true } = config;
   
-  return `ip:${ip}`;
+  let effectiveMaxRequests = maxRequests;
+  let geoApplied = false;
+  let geoLocation: GeoLocation | null = null;
+  let matchedRule: GeoRateLimitOverride | null = null;
+
+  // Try to get geo-based rate limit adjustment
+  if (enableGeoOverride) {
+    try {
+      const ip = extractIPFromRequest(req);
+      geoLocation = await getGeoLocation(ip);
+      
+      if (geoLocation) {
+        const { multiplier, matchedRule: rule } = getGeoRateMultiplier(geoLocation);
+        
+        if (multiplier > 1) {
+          effectiveMaxRequests = applyGeoMultiplier(maxRequests, multiplier);
+          geoApplied = true;
+          matchedRule = rule;
+          
+          console.log(`[GeoRateLimit] Elevated limits applied: ${maxRequests} -> ${effectiveMaxRequests} for ${geoLocation.city}, ${geoLocation.region} (${rule?.id})`);
+        }
+      }
+    } catch (error) {
+      // Geo lookup failed, continue with normal limits
+      console.warn('[GeoRateLimit] Geo lookup failed, using default limits:', (error as Error).message);
+    }
+  }
+
+  // Check rate limit with effective max requests
+  const result = await checkRateLimit(identifier, {
+    maxRequests: effectiveMaxRequests,
+    windowMs,
+    keyPrefix,
+  });
+
+  return {
+    ...result,
+    geoApplied,
+    geoLocation,
+    matchedRule,
+    effectiveMaxRequests,
+  };
+}
+
+/**
+ * Middleware to enforce geo-aware rate limiting
+ */
+export async function enforceRateLimitWithGeo(
+  req: Request,
+  identifier: string,
+  config?: GeoRateLimitConfig
+): Promise<GeoRateLimitResult> {
+  const result = await checkRateLimitWithGeo(req, identifier, config);
+
+  if (!result.allowed) {
+    throw new RateLimitError('Rate limit exceeded', result.retryAfter);
+  }
+
+  return result;
 }

@@ -9,7 +9,7 @@ import { wrapHandler, ValidationError } from '../_shared/error-handler.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse } from '../_shared/response.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
-import { enforceRateLimit, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
+import { enforceRateLimitWithGeo, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
 
 // Zod validation schemas
 const ChatMessageSchema = z.object({
@@ -63,14 +63,18 @@ const handler = wrapHandler(async (req: Request) => {
     return authContext;
   }
 
-  // Rate limiting: 20 requests per minute per user
+  // Rate limiting: 20 requests per minute per user (100/min for DFW/Alabama devs)
   const rateLimitId = getRateLimitIdentifier(req, true);
   try {
-    await enforceRateLimit(rateLimitId, {
+    const rateLimitResult = await enforceRateLimitWithGeo(req, rateLimitId, {
       maxRequests: 20,
       windowMs: 60000, // 1 minute
       keyPrefix: 'ai-chat'
     });
+    
+    if (rateLimitResult.geoApplied) {
+      console.log(`Geo rate limit applied: ${rateLimitResult.matchedRule?.id}, limit: ${rateLimitResult.effectiveMaxRequests}`);
+    }
   } catch {
     console.warn(`Rate limit exceeded for ${rateLimitId}`);
     return errorResponse("Too many requests. Please wait a moment before trying again.", 429, { retryAfter: 60 });
