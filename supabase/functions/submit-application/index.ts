@@ -8,7 +8,7 @@ import {
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
 import { createLogger } from '../_shared/logger.ts';
-import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { checkRateLimitWithGeo } from '../_shared/rate-limiter.ts';
 import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
 
 const logger = createLogger('submit-application');
@@ -384,16 +384,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Rate limiting based on IP
+    // Rate limiting based on IP with geo-awareness for developer regions
     const forwarded = req.headers.get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-    const rateLimitResult = await checkRateLimit(`submit-app:${ip}`, {
+    const rateLimitResult = await checkRateLimitWithGeo(req, `submit-app:${ip}`, {
       maxRequests: 20,
-      windowMs: 60000, // 20 requests per minute per IP
+      windowMs: 60000, // 20 requests per minute per IP (100/min for DFW/Alabama devs)
     });
     
     if (!rateLimitResult.allowed) {
-      logger.warn('Rate limit exceeded', { ip, retry_after: rateLimitResult.retryAfter });
+      logger.warn('Rate limit exceeded', { 
+        ip, 
+        retry_after: rateLimitResult.retryAfter,
+        geo_applied: rateLimitResult.geoApplied,
+        effective_limit: rateLimitResult.effectiveMaxRequests
+      });
       return new Response(
         JSON.stringify({ 
           success: false, 

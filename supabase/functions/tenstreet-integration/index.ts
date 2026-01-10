@@ -3,7 +3,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts'
 import { createLogger } from '../_shared/logger.ts'
-import { checkRateLimit } from '../_shared/rate-limiter.ts'
+import { checkRateLimitWithGeo } from '../_shared/rate-limiter.ts'
 
 const logger = createLogger('tenstreet-integration');
 
@@ -42,16 +42,20 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Rate limiting
+    // Rate limiting with geo-awareness for developer regions
     const forwarded = req.headers.get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-    const rateLimitResult = await checkRateLimit(`tenstreet:${ip}`, {
+    const rateLimitResult = await checkRateLimitWithGeo(req, `tenstreet:${ip}`, {
       maxRequests: 30,
-      windowMs: 60000,
+      windowMs: 60000, // 30 requests per minute (150/min for DFW/Alabama devs)
     });
 
     if (!rateLimitResult.allowed) {
-      logger.warn('Rate limit exceeded', { ip });
+      logger.warn('Rate limit exceeded', { 
+        ip, 
+        geoApplied: rateLimitResult.geoApplied,
+        effectiveLimit: rateLimitResult.effectiveMaxRequests
+      });
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
