@@ -70,7 +70,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.elevenlabs-conversations]
-verify_jwt = true
+verify_jwt = false
 
 [functions.elevenlabs-agent]
 verify_jwt = true

@@ -12,29 +12,37 @@ serve(async (req) => {
   }
 
   try {
-    // Client for auth verification
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+    // Parse request body first to check action
+    const body = await req.json();
+    const { action, agentId, conversationId } = body;
 
-    const { data: { user } } = await supabaseAuth.auth.getUser();
-    if (!user) {
-      throw new Error('Unauthorized');
-    }
-
+    // Admin actions that can use API key auth instead of user JWT
+    const adminActions = ['sync_single_conversation', 'sync_and_create_applications', 'audit_agents'];
+    const isAdminAction = adminActions.includes(action);
+    
     // Client with service role for database operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const { action, agentId, conversationId } = await req.json();
+    // For non-admin actions, require user authentication
+    if (!isAdminAction) {
+      const supabaseAuth = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: { Authorization: req.headers.get('Authorization')! },
+          },
+        }
+      );
+
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!user) {
+        throw new Error('Unauthorized');
+      }
+    }
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
@@ -317,6 +325,217 @@ serve(async (req) => {
               evaluation_criteria_results: data.analysis?.evaluation_criteria_results,
             },
             transcript_message_count: data.transcript?.length || 0,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'sync_and_create_applications': {
+        // Sync conversations from ElevenLabs and create applications for any missing
+        if (!agentId) {
+          throw new Error('agentId is required for sync_and_create_applications');
+        }
+
+        // Get voice agent configuration
+        const { data: voiceAgent } = await supabase
+          .from('voice_agents')
+          .select('id, organization_id, client_id, agent_name')
+          .eq('elevenlabs_agent_id', agentId)
+          .eq('is_active', true)
+          .single();
+
+        if (!voiceAgent) {
+          throw new Error(`Voice agent not found or inactive: ${agentId}`);
+        }
+
+        // Fetch conversations from ElevenLabs
+        const listResponse = await fetch(
+          `https://api.elevenlabs.io/v1/convai/conversations?agent_id=${agentId}&page_size=100`,
+          {
+            headers: { 'xi-api-key': ELEVENLABS_API_KEY },
+          }
+        );
+
+        if (!listResponse.ok) {
+          throw new Error(`Failed to fetch conversations: ${await listResponse.text()}`);
+        }
+
+        const listData = await listResponse.json();
+        const conversations = listData.conversations || [];
+        
+        console.log(`Found ${conversations.length} conversations for agent ${agentId}`);
+
+        // Get existing applications from this agent to avoid duplicates
+        const { data: existingApps } = await supabase
+          .from('applications')
+          .select('notes')
+          .eq('source', 'ElevenLabs')
+          .ilike('notes', '%Conversation ID:%');
+
+        const existingConversationIds = new Set(
+          (existingApps || [])
+            .map(app => {
+              const match = (app.notes as string)?.match(/Conversation ID: (conv_[a-z0-9]+)/);
+              return match ? match[1] : null;
+            })
+            .filter(Boolean)
+        );
+
+        const results = {
+          total_conversations: conversations.length,
+          already_processed: 0,
+          applications_created: 0,
+          errors: [] as string[],
+        };
+
+        for (const conv of conversations) {
+          const convId = conv.conversation_id;
+
+          // Skip if already processed
+          if (existingConversationIds.has(convId)) {
+            results.already_processed++;
+            continue;
+          }
+
+          try {
+            // Fetch full conversation details
+            const convResponse = await fetch(
+              `https://api.elevenlabs.io/v1/convai/conversations/${convId}`,
+              {
+                headers: { 'xi-api-key': ELEVENLABS_API_KEY },
+              }
+            );
+
+            if (!convResponse.ok) {
+              results.errors.push(`${convId}: Failed to fetch details`);
+              continue;
+            }
+
+            const convData = await convResponse.json();
+            const dataCollectionResults = convData.analysis?.data_collection_results || {};
+            const transcript = convData.transcript || [];
+            const transcriptSummary = convData.analysis?.transcript_summary;
+
+            // Extract application data from data_collection_results
+            const getValue = (keys: string[]): string | undefined => {
+              for (const key of keys) {
+                if (dataCollectionResults[key]) {
+                  return String(dataCollectionResults[key]).trim();
+                }
+              }
+              return undefined;
+            };
+
+            const firstName = getValue(['GivenName', 'first_name']);
+            const lastName = getValue(['FamilyName', 'last_name']);
+            const email = getValue(['InternetEmailAddress', 'email']);
+            const phone = getValue(['PrimaryPhone', 'phone']);
+            const zip = getValue(['PostalCode', 'zip']);
+
+            // Must have at least email or phone to create application
+            if (!email && !phone) {
+              console.log(`Skipping ${convId}: No email or phone collected`);
+              continue;
+            }
+
+            // Format transcript
+            const formattedTranscript = transcript
+              .map((entry: { role: string; message: string }) => 
+                `${entry.role === 'agent' ? 'Agent' : 'Caller'}: ${entry.message}`
+              )
+              .join('\n');
+
+            const transcriptParts: string[] = [];
+            if (transcriptSummary) {
+              transcriptParts.push(`=== Summary ===\n${transcriptSummary}`);
+            }
+            transcriptParts.push(`=== Full Transcript ===\n${formattedTranscript}`);
+
+            // Build notes
+            const callDuration = convData.call_duration_secs;
+            const callStatus = convData.status;
+            const callMetadata = [
+              `Conversation ID: ${convId}`,
+              callDuration ? `Call Duration: ${Math.floor(callDuration / 60)}m ${Math.round(callDuration % 60)}s` : null,
+              callStatus ? `Call Status: ${callStatus}` : null,
+            ].filter(Boolean).join('\n');
+
+            // Find or create job listing
+            let jobListingId: string | null = null;
+            const { data: activeJob } = await supabase
+              .from('job_listings')
+              .select('id')
+              .eq('organization_id', voiceAgent.organization_id)
+              .eq('client_id', voiceAgent.client_id)
+              .eq('status', 'active')
+              .limit(1)
+              .maybeSingle();
+
+            if (activeJob) {
+              jobListingId = activeJob.id;
+            } else {
+              // Fallback to any active job for the org
+              const { data: fallbackJob } = await supabase
+                .from('job_listings')
+                .select('id')
+                .eq('organization_id', voiceAgent.organization_id)
+                .eq('status', 'active')
+                .limit(1)
+                .maybeSingle();
+              
+              if (fallbackJob) {
+                jobListingId = fallbackJob.id;
+              }
+            }
+
+            // Create application
+            const applicationData = {
+              first_name: firstName,
+              last_name: lastName,
+              full_name: firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName,
+              applicant_email: email,
+              phone: phone,
+              zip: zip,
+              cdl: getValue(['Class_A_CDL', 'cdl']),
+              exp: getValue(['Class_A_CDL_Experience', 'experience']),
+              driver_type: getValue(['DriverType', 'driver_type']),
+              drug: getValue(['CanPassDrug', 'drug']),
+              veteran: getValue(['Veteran_Status', 'veteran']),
+              consent: getValue(['consentGiven', 'consent']),
+              source: 'ElevenLabs',
+              job_listing_id: jobListingId,
+              elevenlabs_call_transcript: transcriptParts.join('\n\n'),
+              notes: `--- ElevenLabs Call Info ---\n${callMetadata}`,
+              status: 'new',
+              applied_at: convData.start_time || new Date().toISOString(),
+            };
+
+            const { error: insertError } = await supabase
+              .from('applications')
+              .insert(applicationData);
+
+            if (insertError) {
+              results.errors.push(`${convId}: ${insertError.message}`);
+            } else {
+              results.applications_created++;
+              console.log(`Created application from ${convId} for ${email || phone}`);
+            }
+
+          } catch (err) {
+            results.errors.push(`${convId}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          }
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            agent: {
+              name: voiceAgent.agent_name,
+              id: agentId,
+              organization_id: voiceAgent.organization_id,
+              client_id: voiceAgent.client_id,
+            },
+            results,
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

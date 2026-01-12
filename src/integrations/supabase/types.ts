@@ -5766,6 +5766,7 @@ export type Database = {
           agent_id: string
           agent_name: string
           agent_phone_number_id: string | null
+          client_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -5782,6 +5783,7 @@ export type Database = {
           agent_id: string
           agent_name: string
           agent_phone_number_id?: string | null
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -5798,6 +5800,7 @@ export type Database = {
           agent_id?: string
           agent_name?: string
           agent_phone_number_id?: string | null
+          client_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -5811,6 +5814,13 @@ export type Database = {
           voice_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "voice_agents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "voice_agents_organization_id_fkey"
             columns: ["organization_id"]
