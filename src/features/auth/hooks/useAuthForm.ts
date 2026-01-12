@@ -56,7 +56,7 @@ export interface UseAuthFormReturn {
 
 export function useAuthForm(): UseAuthFormReturn {
   const navigate = useNavigate();
-  const { signIn, user, userRole, loading: authLoading } = useAuth();
+  const { signIn, user, userRole, userType, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   // Form state
@@ -87,16 +87,27 @@ export function useAuthForm(): UseAuthFormReturn {
     return localStorage.getItem('rememberMe') === 'true';
   });
 
-  // Redirect authenticated users
+  // Redirect authenticated users - wait for both user AND role to be loaded
   useEffect(() => {
-    if (!authLoading && user) {
-      if (userRole === 'super_admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+    // Wait for auth to be fully loaded
+    if (authLoading) return;
+    if (!user) return;
+    // userRole is null while loading, wait for it to be set (even if to 'user')
+    if (userRole === null) {
+      console.log('[AUTH_FORM] Waiting for userRole to be loaded...');
+      return;
     }
-  }, [user, userRole, authLoading, navigate]);
+    
+    console.log('[AUTH_FORM] Redirecting authenticated user:', { userRole, userType });
+    
+    if (userRole === 'super_admin') {
+      navigate('/admin', { replace: true });
+    } else if (userType === 'jobseeker') {
+      navigate('/my-jobs', { replace: true });
+    } else {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, userRole, userType, authLoading, navigate]);
 
   // Check for password reset mode
   useEffect(() => {
