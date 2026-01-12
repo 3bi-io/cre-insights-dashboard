@@ -23,6 +23,10 @@ interface CandidateProfile {
   profile_completion_percentage?: number;
 }
 
+// Valid roles in the system
+const VALID_ROLES = ['super_admin', 'admin', 'moderator', 'user'] as const;
+type ValidRole = typeof VALID_ROLES[number];
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -43,6 +47,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
+  // Computed properties for role checks
+  isOrgAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,14 +108,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .maybeSingle()
       ]);
 
-      // Process role
+      // Process role with explicit validation
       if (roleResult.error) {
         console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - RPC error:`, roleResult.error);
         logger.error('Error fetching user role', roleResult.error);
         setUserRole('user');
       } else {
-        console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - role fetched:`, roleResult.data);
-        setUserRole(roleResult.data === 'super_admin' ? 'super_admin' : ((roleResult.data as string) || 'user'));
+        const fetchedRole = roleResult.data as string;
+        // Normalize role - only accept known valid roles
+        const normalizedRole: ValidRole = (VALID_ROLES as readonly string[]).includes(fetchedRole) 
+          ? (fetchedRole as ValidRole) 
+          : 'user';
+        console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - role fetched:`, {
+          raw: fetchedRole,
+          normalized: normalizedRole,
+          isOrgAdmin: normalizedRole === 'admin',
+          isSuperAdmin: normalizedRole === 'super_admin'
+        });
+        setUserRole(normalizedRole);
       }
 
       // Process profile
@@ -149,20 +166,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
+      // Log final auth state summary for debugging
+      console.log(`[AUTH][${timestamp}] Auth state summary:`, {
+        userId: _userId.substring(0, 8) + '...',
+        role: userRole,
+        userType: userType,
+        hasOrganization: !!organization,
+        organizationId: organization?.id?.substring(0, 8),
+        isOrgAdmin: userRole === 'admin' && userType === 'organization',
+        isSuperAdmin: userRole === 'super_admin'
+      });
+      
       console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - COMPLETED`);
     };
 
-    try {
-      await Promise.race([fetchLogic(), timeoutPromise]);
-    } catch (error: unknown) {
-      console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - EXCEPTION or TIMEOUT:`, error);
-      logger.error('Error fetching user data (may have timed out)', error);
-      // Set defaults to unblock UI
-      setUserRole('user');
-      setUserType('organization');
-      setOrganization(null);
-      setCandidateProfile(null);
-    }
+    // Retry logic for transient failures
+    const MAX_RETRIES = 2;
+    let retryCount = 0;
+    
+    const fetchWithRetry = async (): Promise<void> => {
+      try {
+        await Promise.race([fetchLogic(), timeoutPromise]);
+      } catch (error: unknown) {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.warn(`[AUTH][${timestamp}] Role fetch failed, retrying (${retryCount}/${MAX_RETRIES}):`, error);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchWithRetry();
+        }
+        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - EXCEPTION or TIMEOUT after ${MAX_RETRIES} retries:`, error);
+        logger.error('Error fetching user data (may have timed out)', error);
+        // Set defaults to unblock UI
+        setUserRole('user');
+        setUserType('organization');
+        setOrganization(null);
+        setCandidateProfile(null);
+      }
+    };
+
+    await fetchWithRetry();
   };
 
   // Helper to clear all auth state
@@ -416,6 +458,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Computed role properties
+  const isOrgAdmin = userRole === 'admin' && userType === 'organization';
+  const isSuperAdmin = userRole === 'super_admin';
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -428,7 +474,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signUp,
       signOut,
       refreshUser,
-      loading
+      loading,
+      isOrgAdmin,
+      isSuperAdmin
     }}>
       {children}
     </AuthContext.Provider>
