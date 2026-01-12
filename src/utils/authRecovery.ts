@@ -9,13 +9,19 @@ const AUTH_STORAGE_KEY = 'supabase.auth.token';
  * Clears all auth-related state from browser storage
  */
 export function clearAuthState(): void {
+  const timestamp = new Date().toISOString();
+  console.log(`[AUTH_RECOVERY][${timestamp}] clearAuthState - starting cleanup`);
+  
   try {
     // Clear Supabase auth token
+    const hadToken = !!localStorage.getItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    console.log(`[AUTH_RECOVERY][${timestamp}] clearAuthState - main token removed:`, { hadToken });
     
     // Clear any session tracking
     sessionStorage.removeItem('session_id');
     sessionStorage.removeItem('session_start');
+    console.log(`[AUTH_RECOVERY][${timestamp}] clearAuthState - session tracking cleared`);
     
     // Clear any other potential auth artifacts
     const keysToRemove: string[] = [];
@@ -27,9 +33,12 @@ export function clearAuthState(): void {
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
     
-    console.log('[AUTH_RECOVERY] Cleared auth state from storage');
+    console.log(`[AUTH_RECOVERY][${timestamp}] clearAuthState - completed`, { 
+      additionalKeysRemoved: keysToRemove.length,
+      keys: keysToRemove 
+    });
   } catch (error) {
-    console.error('[AUTH_RECOVERY] Error clearing auth state:', error);
+    console.error(`[AUTH_RECOVERY][${timestamp}] clearAuthState - error:`, error);
   }
 }
 
@@ -67,20 +76,36 @@ export function isAuthError(error: Error | unknown): boolean {
  * Returns false if token is corrupted or clearly expired
  */
 export function hasValidStoredToken(): boolean {
+  const timestamp = new Date().toISOString();
+  console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - checking token validity`);
+  
   try {
     const storedToken = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!storedToken) return false;
+    if (!storedToken) {
+      console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - no token found`);
+      return false;
+    }
     
+    console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - token exists, parsing...`);
     const parsed = JSON.parse(storedToken);
     
     // Check if it has the expected structure
-    if (!parsed || typeof parsed !== 'object') return false;
+    if (!parsed || typeof parsed !== 'object') {
+      console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - invalid structure`);
+      return false;
+    }
     
     // Check for access token
-    if (!parsed.access_token) return false;
+    if (!parsed.access_token) {
+      console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - missing access_token`);
+      return false;
+    }
     
     // Check if refresh token exists
-    if (!parsed.refresh_token) return false;
+    if (!parsed.refresh_token) {
+      console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - missing refresh_token`);
+      return false;
+    }
     
     // Check expiry - if we have expires_at, verify it's in the future
     if (parsed.expires_at) {
@@ -89,15 +114,25 @@ export function hasValidStoredToken(): boolean {
       
       // If token expired more than 24 hours ago, consider it stale
       const staleThreshold = 24 * 60 * 60 * 1000; // 24 hours
-      if (now.getTime() - expiresAt.getTime() > staleThreshold) {
-        console.log('[AUTH_RECOVERY] Token is stale (expired > 24h ago)');
+      const timeSinceExpiry = now.getTime() - expiresAt.getTime();
+      
+      console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - expiry check`, {
+        expiresAt: expiresAt.toISOString(),
+        now: now.toISOString(),
+        isExpired: timeSinceExpiry > 0,
+        hoursSinceExpiry: Math.round(timeSinceExpiry / (60 * 60 * 1000))
+      });
+      
+      if (timeSinceExpiry > staleThreshold) {
+        console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - token is stale (expired > 24h ago)`);
         return false;
       }
     }
     
+    console.log(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - token is valid`);
     return true;
   } catch (error) {
-    console.log('[AUTH_RECOVERY] Error parsing stored token:', error);
+    console.error(`[AUTH_RECOVERY][${timestamp}] hasValidStoredToken - error parsing token:`, error);
     return false;
   }
 }
@@ -107,32 +142,40 @@ export function hasValidStoredToken(): boolean {
  * Call this on app startup before initializing auth
  */
 export function cleanupCorruptedAuthState(): boolean {
+  const timestamp = new Date().toISOString();
+  console.log(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - starting proactive cleanup check`);
+  
   try {
     const storedToken = localStorage.getItem(AUTH_STORAGE_KEY);
     
     if (!storedToken) {
-      return false; // No token to clean
+      console.log(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - no token found, nothing to clean`);
+      return false;
     }
+    
+    console.log(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - token found, validating...`);
     
     // Try to parse - if it fails, it's corrupted
     try {
       JSON.parse(storedToken);
-    } catch {
-      console.log('[AUTH_RECOVERY] Found corrupted token, clearing...');
+      console.log(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - token is valid JSON`);
+    } catch (parseError) {
+      console.warn(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - found corrupted token (invalid JSON), clearing...`);
       clearAuthState();
       return true;
     }
     
     // Check if token is valid
     if (!hasValidStoredToken()) {
-      console.log('[AUTH_RECOVERY] Found invalid/stale token, clearing...');
+      console.warn(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - found invalid/stale token, clearing...`);
       clearAuthState();
       return true;
     }
     
+    console.log(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - token is valid, no cleanup needed`);
     return false;
   } catch (error) {
-    console.error('[AUTH_RECOVERY] Error during cleanup:', error);
+    console.error(`[AUTH_RECOVERY][${timestamp}] cleanupCorruptedAuthState - error during cleanup:`, error);
     return false;
   }
 }

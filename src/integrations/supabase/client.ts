@@ -20,18 +20,66 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 });
 
 // Global auth error handler - clears stale tokens to prevent app crashes
-supabase.auth.onAuthStateChange((event) => {
-  if (event === 'TOKEN_REFRESHED') {
-    console.log('[SUPABASE_CLIENT] Token refreshed successfully');
-  }
+supabase.auth.onAuthStateChange((event, session) => {
+  const timestamp = new Date().toISOString();
   
-  if (event === 'SIGNED_OUT') {
-    // Ensure all auth state is cleared on sign out
-    try {
-      localStorage.removeItem('supabase.auth.token');
-      console.log('[SUPABASE_CLIENT] Cleared auth token on sign out');
-    } catch (e) {
-      console.error('[SUPABASE_CLIENT] Error clearing token:', e);
-    }
+  // Log ALL auth events with detailed context
+  console.log(`[SUPABASE_CLIENT][${timestamp}] Auth event: ${event}`, {
+    hasSession: !!session,
+    userId: session?.user?.id ? session.user.id.substring(0, 8) + '...' : null,
+    expiresAt: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+    tokenType: session?.token_type || null,
+    hasAccessToken: !!session?.access_token,
+    hasRefreshToken: !!session?.refresh_token
+  });
+
+  // Handle specific events with additional logging
+  switch (event) {
+    case 'INITIAL_SESSION':
+      console.log(`[SUPABASE_CLIENT][${timestamp}] Initial session loaded`, {
+        isAuthenticated: !!session?.user,
+        email: session?.user?.email ? session.user.email.substring(0, 3) + '***' : null
+      });
+      break;
+      
+    case 'TOKEN_REFRESHED':
+      if (session) {
+        console.log(`[SUPABASE_CLIENT][${timestamp}] Token refreshed successfully`, {
+          newExpiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null
+        });
+      } else {
+        console.warn(`[SUPABASE_CLIENT][${timestamp}] TOKEN_REFRESHED but no session - possible refresh failure`);
+      }
+      break;
+      
+    case 'SIGNED_IN':
+      console.log(`[SUPABASE_CLIENT][${timestamp}] User signed in`, {
+        email: session?.user?.email ? session.user.email.substring(0, 3) + '***' : null,
+        provider: session?.user?.app_metadata?.provider || 'email'
+      });
+      break;
+      
+    case 'SIGNED_OUT':
+      console.log(`[SUPABASE_CLIENT][${timestamp}] User signed out - clearing auth token`);
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        console.log(`[SUPABASE_CLIENT][${timestamp}] Auth token cleared from localStorage`);
+      } catch (e) {
+        console.error(`[SUPABASE_CLIENT][${timestamp}] Error clearing token:`, e);
+      }
+      break;
+      
+    case 'USER_UPDATED':
+      console.log(`[SUPABASE_CLIENT][${timestamp}] User updated`, {
+        email: session?.user?.email ? session.user.email.substring(0, 3) + '***' : null
+      });
+      break;
+      
+    case 'PASSWORD_RECOVERY':
+      console.log(`[SUPABASE_CLIENT][${timestamp}] Password recovery initiated`);
+      break;
+      
+    default:
+      console.log(`[SUPABASE_CLIENT][${timestamp}] Unhandled auth event: ${event}`);
   }
 });
