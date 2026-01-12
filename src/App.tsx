@@ -16,6 +16,18 @@ import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { useEffect } from "react";
+import { cleanupCorruptedAuthState } from "@/utils/authRecovery";
+
+// Proactively clean up corrupted auth state on app startup
+// This runs before React renders to prevent crashes from stale tokens
+try {
+  const wasCleared = cleanupCorruptedAuthState();
+  if (wasCleared) {
+    console.log('[APP] Cleaned up corrupted auth state on startup');
+  }
+} catch (e) {
+  console.error('[APP] Error during auth cleanup:', e);
+}
 
 // Service Worker Registration
 function PWAUpdater() {

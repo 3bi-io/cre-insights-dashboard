@@ -192,6 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'TOKEN_REFRESHED' && !session) {
           console.log('[AUTH] Token refresh failed, clearing state');
           clearAuthState();
+          // Also clear localStorage to prevent stale token issues
+          try {
+            localStorage.removeItem('supabase.auth.token');
+          } catch (e) {
+            console.error('[AUTH] Error clearing localStorage:', e);
+          }
           setLoading(false);
           return;
         }
@@ -224,32 +230,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('[AUTH] Initial session check:', { hasSession: !!session, hasError: !!error });
-      
-      // Handle session expired errors gracefully
-      if (error && isSessionExpiredError(error)) {
-        console.log('[AUTH] Session expired on initial check, clearing state');
-        logger.info('Session expired, user needs to re-authenticate');
-        clearAuthState();
+    // Check for existing session with error handling
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        console.log('[AUTH] Initial session check:', { hasSession: !!session, hasError: !!error });
+        
+        // Handle session expired errors gracefully
+        if (error && isSessionExpiredError(error)) {
+          console.log('[AUTH] Session expired on initial check, clearing state');
+          logger.info('Session expired, user needs to re-authenticate');
+          clearAuthState();
+          // Clear localStorage to prevent future issues
+          try {
+            localStorage.removeItem('supabase.auth.token');
+          } catch (e) {
+            console.error('[AUTH] Error clearing localStorage:', e);
+          }
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Defer Supabase calls to prevent deadlock
+          setTimeout(() => {
+            fetchUserRoleAndOrganization(session.user.id);
+          }, 0);
+        }
+        
         setLoading(false);
-        return;
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Defer Supabase calls to prevent deadlock
-        setTimeout(() => {
-          fetchUserRoleAndOrganization(session.user.id);
-        }, 0);
-      }
-      
-      setLoading(false);
-      console.log('[AUTH] Initial load complete');
-    });
+        console.log('[AUTH] Initial load complete');
+      })
+      .catch((error) => {
+        // Catch any unexpected errors during session check
+        console.error('[AUTH] Unexpected error during session check:', error);
+        logger.error('Unexpected error during session check', error);
+        
+        // Clear potentially corrupted state
+        clearAuthState();
+        try {
+          localStorage.removeItem('supabase.auth.token');
+        } catch (e) {
+          console.error('[AUTH] Error clearing localStorage:', e);
+        }
+        
+        setLoading(false);
+      });
 
     // Session heartbeat - refresh every 7 hours (before 8-hour expiry)
     const refreshInterval = setInterval(async () => {
