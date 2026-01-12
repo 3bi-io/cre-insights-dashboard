@@ -98,6 +98,12 @@ export function useAuthForm(): UseAuthFormReturn {
       return;
     }
     
+    // Don't redirect if user is in password update mode (from recovery link)
+    if (updatePasswordMode) {
+      console.log('[AUTH_FORM] In password update mode, skipping redirect');
+      return;
+    }
+    
     console.log('[AUTH_FORM] Redirecting authenticated user:', { userRole, userType });
     
     if (userRole === 'super_admin') {
@@ -107,7 +113,7 @@ export function useAuthForm(): UseAuthFormReturn {
     } else {
       navigate('/dashboard', { replace: true });
     }
-  }, [user, userRole, userType, authLoading, navigate]);
+  }, [user, userRole, userType, authLoading, navigate, updatePasswordMode]);
 
   // Check for password reset mode
   useEffect(() => {
