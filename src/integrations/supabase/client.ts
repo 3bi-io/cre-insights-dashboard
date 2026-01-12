@@ -18,3 +18,20 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     flowType: 'pkce'
   }
 });
+
+// Global auth error handler - clears stale tokens to prevent app crashes
+supabase.auth.onAuthStateChange((event) => {
+  if (event === 'TOKEN_REFRESHED') {
+    console.log('[SUPABASE_CLIENT] Token refreshed successfully');
+  }
+  
+  if (event === 'SIGNED_OUT') {
+    // Ensure all auth state is cleared on sign out
+    try {
+      localStorage.removeItem('supabase.auth.token');
+      console.log('[SUPABASE_CLIENT] Cleared auth token on sign out');
+    } catch (e) {
+      console.error('[SUPABASE_CLIENT] Error clearing token:', e);
+    }
+  }
+});
