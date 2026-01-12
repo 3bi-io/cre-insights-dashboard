@@ -506,7 +506,7 @@ serve(async (req) => {
               job_listing_id: jobListingId,
               elevenlabs_call_transcript: transcriptParts.join('\n\n'),
               notes: `--- ElevenLabs Call Info ---\n${callMetadata}`,
-              status: 'new',
+              status: 'pending',
               applied_at: convData.start_time || new Date().toISOString(),
             };
 
