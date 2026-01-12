@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, Download } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, CheckCircle, ExternalLink, Download, Building2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { JobSelectionList } from '@/components/feeds/JobSelectionList';
+import { useOrganizations } from '@/features/admin/hooks/useOrganizationData';
 
 interface Feed {
   id?: string;
@@ -35,6 +36,7 @@ interface Feed {
 const SuperAdminFeeds = () => {
   const { userRole } = useAuth();
   const { toast } = useToast();
+  const { organizations, isLoading: loadingOrgs } = useOrganizations();
   const [feeds, setFeeds] = useState<Feed[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ const SuperAdminFeeds = () => {
   const [crEnglandDivision, setCrEnglandDivision] = useState<string>('');
   const [selectedJobs, setSelectedJobs] = useState<Set<string>>(new Set());
   const [selectiveImport, setSelectiveImport] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<string>('');
 
   // Available user options for the dropdown (CDL Job Cast partners)
   const availableUsers = [
@@ -246,7 +249,7 @@ const SuperAdminFeeds = () => {
           const { data: importData, error: importError } = await supabase.functions.invoke('import-jobs-from-feed', {
             body: { 
               feedUrl: feedUrl,
-              organizationId: '84214b48-7b51-45bc-ad7f-723bcf50466c'
+              organizationId: selectedOrganization
             }
           });
           
@@ -323,14 +326,19 @@ const SuperAdminFeeds = () => {
       const jobsToImport = feeds.filter(job => selectedJobs.has(job.id!));
       console.log('Importing selected jobs:', jobsToImport.length);
       
-      const organizationId = feedSource === 'crengland' 
-        ? 'b8d5e7f9-4c2a-4e8d-9a1b-3f5c8d9e2a7b'
-        : '84214b48-7b51-45bc-ad7f-723bcf50466c';
+      if (!selectedOrganization) {
+        toast({
+          title: "No organization selected",
+          description: "Please select an organization to import jobs to",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { data, error: importError } = await supabase.functions.invoke('import-selected-jobs', {
         body: { 
           jobs: jobsToImport,
-          organizationId: organizationId,
+          organizationId: selectedOrganization,
           source: feedSource
         }
       });
@@ -363,14 +371,23 @@ const SuperAdminFeeds = () => {
   };
 
   const generateApplications = async () => {
+    if (!selectedOrganization) {
+      toast({
+        title: "No organization selected",
+        description: "Please select an organization to generate applications for",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setGenerating(true);
     try {
-      console.log('Generating applications for Hayes...');
+      console.log('Generating applications for organization:', selectedOrganization);
       
-      const { data, error: functionError } = await supabase.functions.invoke('generate-hayes-applications', {
+      const { data, error: functionError } = await supabase.functions.invoke('generate-applications', {
         body: { 
           count: appCount,
-          organization_id: '84214b48-7b51-45bc-ad7f-723bcf50466c'
+          organization_id: selectedOrganization
         }
       });
       
@@ -431,6 +448,35 @@ const SuperAdminFeeds = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Organization Selector */}
+            <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+              <Label htmlFor="orgSelect" className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Target Organization
+              </Label>
+              <Select value={selectedOrganization} onValueChange={setSelectedOrganization}>
+                <SelectTrigger id="orgSelect" className="bg-background">
+                  <SelectValue placeholder="Select an organization..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-md max-h-[300px] z-50">
+                  {loadingOrgs ? (
+                    <SelectItem value="loading" disabled>Loading organizations...</SelectItem>
+                  ) : (
+                    organizations?.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {!selectedOrganization && (
+                <p className="text-sm text-destructive">
+                  You must select an organization before importing jobs or generating applications.
+                </p>
+              )}
+            </div>
+
             <Tabs value={feedSource} onValueChange={(value) => setFeedSource(value as 'cdl_jobcast' | 'crengland')}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="cdl_jobcast">CDL Job Cast</TabsTrigger>
@@ -512,7 +558,7 @@ const SuperAdminFeeds = () => {
               </label>
             </div>
 
-            <Button onClick={fetchFeeds} disabled={loading || (feedSource === 'cdl_jobcast' && !userParam.trim())} className="w-full">
+            <Button onClick={fetchFeeds} disabled={loading || (feedSource === 'cdl_jobcast' && !userParam.trim()) || !selectedOrganization} className="w-full">
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -533,7 +579,7 @@ const SuperAdminFeeds = () => {
           <CardHeader>
             <CardTitle className="text-lg">Generate Sample Applications</CardTitle>
             <CardDescription>
-              Create realistic CDL applicant data for Hayes organization
+              Create realistic CDL applicant data for the selected organization
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -552,7 +598,7 @@ const SuperAdminFeeds = () => {
               </div>
               <Button 
                 onClick={generateApplications}
-                disabled={generating || !appCount}
+                disabled={generating || !appCount || !selectedOrganization}
                 variant="default"
               >
                 {generating ? (

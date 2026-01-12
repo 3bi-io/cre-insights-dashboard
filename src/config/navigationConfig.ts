@@ -264,7 +264,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/settings/organization': 'Organization Settings',
   '/admin/brand-assets': 'Brand Assets',
   '/admin/active-job-ids': 'Active Job IDs',
-  '/admin/hayes-data': 'Hayes Data Population',
+  '/admin/data-population': 'Data Population',
   '/admin/tenstreet-sync': 'Tenstreet Sync Dashboard',
   '/admin/driverreach-integration': 'DriverReach Integration',
   '/admin/driverreach-sync': 'DriverReach Sync Dashboard',

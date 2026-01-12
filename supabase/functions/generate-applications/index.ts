@@ -131,7 +131,7 @@ const generateApplication = (jobListingId: string, organizationId: string) => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('Generate Hayes applications function called');
+  console.log('Generate applications function called');
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -154,9 +154,43 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const body = await req.json();
-    const { count = 50, organization_id = '84214b48-7b51-45bc-ad7f-723bcf50466c' } = body;
+    const { count = 50, organization_id } = body;
+
+    // Validate organization_id is provided
+    if (!organization_id) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'organization_id is required',
+          message: 'Please provide an organization_id to generate applications for'
+        }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
 
     console.log(`Generating ${count} applications for organization:`, organization_id);
+
+    // Verify the organization exists
+    const { data: org, error: orgError } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('id', organization_id)
+      .single();
+
+    if (orgError || !org) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Organization not found',
+          message: `No organization found with ID: ${organization_id}`
+        }),
+        { 
+          status: 404,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
 
     // Get all active job listings for the organization
     const { data: jobListings, error: jobError } = await supabase
@@ -183,7 +217,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Found ${jobListings.length} job listings`);
+    console.log(`Found ${jobListings.length} job listings for ${org.name}`);
 
     // Generate applications
     const applications = [];
@@ -220,7 +254,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`Successfully inserted ${insertedCount} applications`);
+    console.log(`Successfully inserted ${insertedCount} applications for ${org.name}`);
 
     // Get statistics
     const { data: stats } = await supabase
@@ -236,8 +270,10 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: `Generated ${insertedCount} applications for Hayes Recruiting Solutions`,
+        message: `Generated ${insertedCount} applications for ${org.name}`,
         details: {
+          organization_id,
+          organization_name: org.name,
           requested: count,
           inserted: insertedCount,
           job_listings: jobListings.length,

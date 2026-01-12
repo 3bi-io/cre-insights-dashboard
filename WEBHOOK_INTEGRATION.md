@@ -121,10 +121,10 @@ curl -X POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/inbound-appli
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `organization_id` | uuid | Target organization UUID |
+| `organization_id` | uuid | Target organization UUID (required) |
 | `organization_slug` | string | Organization slug (alternative to ID) |
 
-**Default Organization:** If not specified, applications route to Hayes Recruiting Solutions.
+**Organization Required:** Applications require an `organization_id` or `organization_slug` to be specified. There is no default organization.
 
 ### Additional Fields
 
