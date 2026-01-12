@@ -243,8 +243,227 @@ serve(async (req) => {
         });
       }
 
+      case 'sync_single_conversation': {
+        // Manually sync a specific conversation by ID (even if not in DB)
+        if (!conversationId) {
+          throw new Error('conversationId is required for sync_single_conversation');
+        }
+
+        const response = await fetch(
+          `https://api.elevenlabs.io/v1/convai/conversations/${conversationId}`,
+          {
+            headers: {
+              'xi-api-key': ELEVENLABS_API_KEY,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          if (response.status === 404 || errorText.includes('document_not_found')) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: 'conversation_not_found',
+                message: `Conversation ${conversationId} not found in ElevenLabs`,
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          throw new Error(`ElevenLabs API error: ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract data collection results for inspection
+        const dataCollectionResults = data.analysis?.data_collection_results || {};
+        const collectedFields = Object.keys(dataCollectionResults);
+        
+        // Expected fields for inbound applications
+        const expectedFields = [
+          'GivenName', 'FamilyName', 'PostalCode', 'Class_A_CDL',
+          'Class_A_CDL_Experience', 'DriverType', 'PrimaryPhone',
+          'InternetEmailAddress', 'CanPassDrug', 'Veteran_Status', 'consentGiven'
+        ];
+        
+        const missingFields = expectedFields.filter(f => !collectedFields.includes(f));
+        const completeness = `${expectedFields.length - missingFields.length}/${expectedFields.length}`;
+
+        console.log(`Conversation ${conversationId} data collection:`, {
+          collectedFields,
+          missingFields,
+          completeness
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            conversation: {
+              id: data.conversation_id,
+              agent_id: data.agent_id,
+              status: data.status,
+              duration_seconds: data.call_duration_secs,
+              started_at: data.start_time,
+              ended_at: data.end_time,
+            },
+            data_collection: {
+              results: dataCollectionResults,
+              collected_fields: collectedFields,
+              missing_fields: missingFields,
+              completeness,
+            },
+            analysis: {
+              transcript_summary: data.analysis?.transcript_summary,
+              evaluation_criteria_results: data.analysis?.evaluation_criteria_results,
+            },
+            transcript_message_count: data.transcript?.length || 0,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'audit_agents': {
+        // Audit all active inbound agents for data collection configuration
+        const { data: inboundAgents } = await supabase
+          .from('voice_agents')
+          .select('id, agent_name, elevenlabs_agent_id, organization_id, client_id')
+          .eq('is_active', true)
+          .eq('is_outbound_enabled', false);
+
+        if (!inboundAgents || inboundAgents.length === 0) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              audit_results: [],
+              total_agents: 0,
+              message: 'No active inbound agents found',
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const expectedFields = [
+          'GivenName', 'FamilyName', 'PostalCode', 'Class_A_CDL',
+          'Class_A_CDL_Experience', 'DriverType', 'PrimaryPhone',
+          'InternetEmailAddress', 'CanPassDrug', 'Veteran_Status', 'consentGiven'
+        ];
+
+        const auditResults = [];
+
+        for (const agent of inboundAgents) {
+          try {
+            // Fetch a recent conversation to check data collection
+            const listResponse = await fetch(
+              `https://api.elevenlabs.io/v1/convai/conversations?agent_id=${agent.elevenlabs_agent_id}&page_size=1`,
+              {
+                headers: {
+                  'xi-api-key': ELEVENLABS_API_KEY,
+                },
+              }
+            );
+
+            if (!listResponse.ok) {
+              auditResults.push({
+                agent_name: agent.agent_name,
+                agent_id: agent.elevenlabs_agent_id,
+                organization_id: agent.organization_id,
+                status: 'error',
+                error: `API error: ${listResponse.status}`,
+                data_collection_status: 'unknown',
+                sample_collected_fields: [],
+              });
+              continue;
+            }
+
+            const listData = await listResponse.json();
+            const hasConversations = listData.conversations?.length > 0;
+
+            if (!hasConversations) {
+              auditResults.push({
+                agent_name: agent.agent_name,
+                agent_id: agent.elevenlabs_agent_id,
+                organization_id: agent.organization_id,
+                status: 'no_conversations',
+                data_collection_status: 'unknown',
+                sample_collected_fields: [],
+                message: 'No conversations to analyze',
+              });
+              continue;
+            }
+
+            // Fetch conversation details
+            const convResponse = await fetch(
+              `https://api.elevenlabs.io/v1/convai/conversations/${listData.conversations[0].conversation_id}`,
+              {
+                headers: {
+                  'xi-api-key': ELEVENLABS_API_KEY,
+                },
+              }
+            );
+
+            if (!convResponse.ok) {
+              auditResults.push({
+                agent_name: agent.agent_name,
+                agent_id: agent.elevenlabs_agent_id,
+                organization_id: agent.organization_id,
+                status: 'error',
+                error: 'Failed to fetch conversation details',
+                data_collection_status: 'unknown',
+                sample_collected_fields: [],
+              });
+              continue;
+            }
+
+            const convData = await convResponse.json();
+            const sampleFields = Object.keys(convData.analysis?.data_collection_results || {});
+            const missingFields = expectedFields.filter(f => !sampleFields.includes(f));
+            const dataCollectionStatus = sampleFields.length > 0 
+              ? (missingFields.length === 0 ? 'complete' : 'partial')
+              : 'not_configured';
+
+            auditResults.push({
+              agent_name: agent.agent_name,
+              agent_id: agent.elevenlabs_agent_id,
+              organization_id: agent.organization_id,
+              status: 'ok',
+              data_collection_status: dataCollectionStatus,
+              sample_collected_fields: sampleFields,
+              missing_fields: missingFields,
+              completeness: `${sampleFields.length}/${expectedFields.length}`,
+              sample_conversation_id: listData.conversations[0].conversation_id,
+            });
+          } catch (err) {
+            auditResults.push({
+              agent_name: agent.agent_name,
+              agent_id: agent.elevenlabs_agent_id,
+              organization_id: agent.organization_id,
+              status: 'error',
+              error: err instanceof Error ? err.message : 'Unknown error',
+              data_collection_status: 'unknown',
+              sample_collected_fields: [],
+            });
+          }
+        }
+
+        const configuredCount = auditResults.filter(a => 
+          a.data_collection_status === 'complete' || a.data_collection_status === 'partial'
+        ).length;
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            audit_results: auditResults,
+            total_agents: auditResults.length,
+            configured_count: configuredCount,
+            not_configured_count: auditResults.filter(a => a.data_collection_status === 'not_configured').length,
+            expected_fields: expectedFields,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
-        throw new Error('Invalid action');
+        throw new Error(`Invalid action: ${action}`);
     }
   } catch (error) {
     console.error('Error:', error);
