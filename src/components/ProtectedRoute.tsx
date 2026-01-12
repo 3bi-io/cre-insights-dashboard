@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -6,15 +6,42 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+const LOADING_TIMEOUT_MS = 15000; // 15 seconds max loading time
+
 /**
  * ProtectedRoute - ensures user is authenticated
  * Simply checks authentication - all features are available to authenticated users
+ * Includes timeout protection to prevent infinite loading states
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading: authLoading, userRole } = useAuth();
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Wait for auth data to load
   const isLoading = authLoading || (user && userRole === null);
+
+  // Add timeout protection to prevent infinite loading
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingTimeout(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (isLoading) {
+        console.error('[PROTECTED_ROUTE] Loading timeout reached after 15 seconds');
+        setLoadingTimeout(true);
+      }
+    }, LOADING_TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  // If loading timed out, redirect to auth
+  if (loadingTimeout) {
+    console.error('[PROTECTED_ROUTE] Redirecting to /auth due to loading timeout');
+    return <Navigate to="/auth" replace />;
+  }
   
   if (isLoading) {
     return (
