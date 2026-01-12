@@ -14,14 +14,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { SuperAdminFeedImport } from '@/components/SuperAdminFeedImport';
 import { useOrganizations } from '@/features/admin/hooks/useOrganizationData';
 
-const HayesDataPopulation = () => {
+const DataPopulation = () => {
   const { userRole } = useAuth();
   const { toast } = useToast();
   const { organizations, isLoading: loadingOrgs } = useOrganizations();
   const [generatingApps, setGeneratingApps] = useState(false);
   const [importingJobs, setImportingJobs] = useState(false);
   const [appCount, setAppCount] = useState(100);
-  const [selectedOrgId, setSelectedOrgId] = useState<string>('84214b48-7b51-45bc-ad7f-723bcf50466c');
+  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [stats, setStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<string>('');
@@ -55,7 +55,14 @@ const HayesDataPopulation = () => {
   ];
 
   const loadStats = async () => {
-    if (!selectedOrgId) return;
+    if (!selectedOrgId) {
+      toast({
+        title: "No Organization Selected",
+        description: "Please select an organization first",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoadingStats(true);
     try {
@@ -105,6 +112,15 @@ const HayesDataPopulation = () => {
       return;
     }
 
+    if (!selectedOrgId) {
+      toast({
+        title: "No Organization Selected",
+        description: "Please select an organization to import jobs to",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const feed = clientFeeds.find(f => f.id === selectedFeed);
     if (!feed) return;
 
@@ -139,9 +155,18 @@ const HayesDataPopulation = () => {
   };
 
   const generateApplications = async () => {
+    if (!selectedOrgId) {
+      toast({
+        title: "No Organization Selected",
+        description: "Please select an organization to generate applications for",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setGeneratingApps(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-hayes-applications', {
+      const { data, error } = await supabase.functions.invoke('generate-applications', {
         body: {
           count: appCount,
           organization_id: selectedOrgId
@@ -168,6 +193,8 @@ const HayesDataPopulation = () => {
     }
   };
 
+  const selectedOrgName = organizations?.find(org => org.id === selectedOrgId)?.name || 'Selected Organization';
+
   if (userRole !== 'super_admin') {
     return (
       <PageLayout title="Access Denied" description="Super admin privileges required">
@@ -185,10 +212,10 @@ const HayesDataPopulation = () => {
 
   return (
     <PageLayout 
-      title="Hayes Data Population" 
-      description="Import jobs and generate applications for Hayes Recruiting Solutions"
+      title="Data Population" 
+      description="Import jobs and generate sample applications for any organization"
       actions={
-        <Button onClick={loadStats} disabled={loadingStats} variant="outline">
+        <Button onClick={loadStats} disabled={loadingStats || !selectedOrgId} variant="outline">
           {loadingStats ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
@@ -199,14 +226,62 @@ const HayesDataPopulation = () => {
       }
     >
       <div className="container mx-auto px-4 py-6 space-y-6">
+        {/* Organization Selector - Primary Card */}
+        <Card className="border-primary/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Select Target Organization
+            </CardTitle>
+            <CardDescription>
+              Choose which organization to populate with data
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="orgSelect">Organization</Label>
+              <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
+                <SelectTrigger id="orgSelect" className="bg-popover">
+                  <SelectValue placeholder="Select an organization..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {loadingOrgs ? (
+                    <SelectItem value="loading" disabled>Loading organizations...</SelectItem>
+                  ) : (
+                    organizations?.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {!selectedOrgId && (
+                <p className="text-sm text-muted-foreground">
+                  You must select an organization before importing jobs or generating applications.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Statistics Card */}
         <Card>
           <CardHeader>
             <CardTitle>Current Statistics</CardTitle>
-            <CardDescription>Hayes Recruiting Solutions data overview</CardDescription>
+            <CardDescription>
+              {selectedOrgId ? `${selectedOrgName} data overview` : 'Select an organization to view statistics'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {loadingStats ? (
+            {!selectedOrgId ? (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Select an organization above to view its statistics.
+                </AlertDescription>
+              </Alert>
+            ) : loadingStats ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
@@ -244,7 +319,7 @@ const HayesDataPopulation = () => {
               Step 1: Import Jobs from CDL Job Cast
             </CardTitle>
             <CardDescription>
-              Select a client feed and import job listings
+              Select a client feed and import job listings to the selected organization
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -277,7 +352,7 @@ const HayesDataPopulation = () => {
 
               <Button 
                 onClick={importJobs}
-                disabled={importingJobs || !selectedFeed}
+                disabled={importingJobs || !selectedFeed || !selectedOrgId}
                 size="lg"
                 className="w-full"
               >
@@ -289,7 +364,7 @@ const HayesDataPopulation = () => {
                 ) : (
                   <>
                     <Download className="h-4 w-4 mr-2" />
-                    Import Jobs from Selected Feed
+                    Import Jobs to {selectedOrgId ? selectedOrgName : 'Selected Organization'}
                   </>
                 )}
               </Button>
@@ -312,7 +387,7 @@ const HayesDataPopulation = () => {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Applications will be distributed across all active Hayes job listings with realistic:
+                Applications will be distributed across all active job listings for the selected organization with realistic:
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>Driver names, emails, phone numbers</li>
                   <li>CDL classes, endorsements, experience levels</li>
@@ -324,26 +399,6 @@ const HayesDataPopulation = () => {
             </Alert>
 
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="orgSelect">Select Organization</Label>
-                <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                  <SelectTrigger id="orgSelect">
-                    <SelectValue placeholder="Select an organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingOrgs ? (
-                      <SelectItem value="loading" disabled>Loading organizations...</SelectItem>
-                    ) : (
-                      organizations?.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="appCount">Number of Applications to Generate</Label>
                 <Input
@@ -362,7 +417,7 @@ const HayesDataPopulation = () => {
 
             <Button 
               onClick={generateApplications}
-              disabled={generatingApps || !stats?.jobs}
+              disabled={generatingApps || !stats?.jobs || !selectedOrgId}
               size="lg"
               className="w-full"
             >
@@ -374,16 +429,16 @@ const HayesDataPopulation = () => {
               ) : (
                 <>
                   <Users className="h-4 w-4 mr-2" />
-                  Generate {appCount} Applications
+                  Generate {appCount} Applications for {selectedOrgId ? selectedOrgName : 'Selected Organization'}
                 </>
               )}
             </Button>
 
-            {!stats?.jobs && (
+            {selectedOrgId && !stats?.jobs && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  No active jobs found. Please import jobs first (Step 1).
+                  No active jobs found for {selectedOrgName}. Please import jobs first (Step 1).
                 </AlertDescription>
               </Alert>
             )}
@@ -397,7 +452,7 @@ const HayesDataPopulation = () => {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <p>
-              This tool helps populate the Hayes Recruiting Solutions organization with realistic data for testing and demonstration purposes.
+              This tool helps populate any organization with realistic data for testing and demonstration purposes.
             </p>
             <div>
               <strong>Data Sources:</strong>
@@ -432,4 +487,4 @@ const HayesDataPopulation = () => {
   );
 };
 
-export default HayesDataPopulation;
+export default DataPopulation;

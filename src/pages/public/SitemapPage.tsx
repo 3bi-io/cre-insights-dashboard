@@ -195,7 +195,7 @@ const SitemapPage = () => {
         { path: '/admin/platforms', label: 'Platforms', icon: <Server className="w-4 h-4" />, description: 'Job board platforms' },
         { path: '/admin/feeds', label: 'Feeds Management', icon: <Rss className="w-4 h-4" />, description: 'RSS and XML feeds' },
         { path: '/admin/super-admin-feeds', label: 'Super Admin Feeds', icon: <Rss className="w-4 h-4" />, description: 'Admin feed management' },
-        { path: '/admin/hayes-data', label: 'Hayes Data Population', icon: <Database className="w-4 h-4" />, description: 'Hayes data import' },
+        { path: '/admin/data-population', label: 'Data Population', icon: <Database className="w-4 h-4" />, description: 'Organization data import' },
       ],
     },
     {
