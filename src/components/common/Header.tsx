@@ -1,43 +1,29 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand } from './Brand';
-
-interface NavigationItem {
-  name: string;
-  href: string;
-}
+import { Badge } from '@/components/ui/badge';
+import { publicNavigation, type PublicNavItem } from '@/config/publicNavigationConfig';
+import { isActivePath } from '@/utils/navigationUtils';
 
 interface HeaderProps {
-  navigation?: NavigationItem[];
+  navigation?: PublicNavItem[];
   showAuth?: boolean;
   className?: string;
 }
 
-const defaultNavigation: NavigationItem[] = [
-  { name: 'Jobs', href: '/jobs' },
-  { name: 'Features', href: '/features' },
-  { name: 'Pricing', href: '/pricing' },
-  { name: 'Demo', href: '/demo' },
-  { name: 'Resources', href: '/resources' },
-  { name: 'Contact', href: '/contact' }
-];
-
 export const Header: React.FC<HeaderProps> = ({ 
-  navigation = defaultNavigation, 
+  navigation = publicNavigation, 
   showAuth = true,
   className 
 }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path);
-  };
+  const isActive = (path: string) => isActivePath(location.pathname, path);
 
   return (
     <nav 
@@ -54,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Brand variant="auto" size="auto" priority={true} />
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8" role="menubar" aria-label="Primary navigation">
+          <div className="hidden md:flex items-center space-x-1" role="menubar" aria-label="Primary navigation">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -62,21 +48,26 @@ export const Header: React.FC<HeaderProps> = ({
                 role="menuitem"
                 aria-current={isActive(item.href) ? 'page' : undefined}
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm",
+                  "relative inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                   isActive(item.href) 
-                    ? "text-primary border-b-2 border-primary" 
-                    : "text-muted-foreground"
+                    ? "text-primary bg-primary/5" 
+                    : "text-muted-foreground hover:bg-accent"
                 )}
               >
                 {item.name}
+                {item.isNew && (
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-semibold bg-primary/10 text-primary border-0">
+                    NEW
+                  </Badge>
+                )}
               </Link>
             ))}
           </div>
 
           {/* Auth Buttons */}
           {showAuth && (
-            <div className="hidden md:flex items-center space-x-4" role="group" aria-label="Authentication">
-              <Link to="/auth">
+            <div className="hidden md:flex items-center space-x-3" role="group" aria-label="Authentication">
+              <Link to="/login">
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -85,10 +76,18 @@ export const Header: React.FC<HeaderProps> = ({
                   Sign In
                 </Button>
               </Link>
+              <Link to="/register">
+                <Button 
+                  size="sm" 
+                  className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  Get Started
+                </Button>
+              </Link>
             </div>
           )}
 
-          {/* Mobile Menu Button - proper touch target */}
+          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -109,8 +108,9 @@ export const Header: React.FC<HeaderProps> = ({
                 id="mobile-menu"
                 aria-label="Mobile navigation menu"
               >
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <div className="flex flex-col space-y-6 mt-6">
-                  {/* Mobile Navigation Links - proper touch targets */}
+                  {/* Mobile Navigation Links */}
                   <nav className="flex flex-col space-y-1" role="menu" aria-label="Mobile navigation">
                     {navigation.map((item) => (
                       <Link
@@ -120,13 +120,19 @@ export const Header: React.FC<HeaderProps> = ({
                         role="menuitem"
                         aria-current={isActive(item.href) ? 'page' : undefined}
                         className={cn(
-                          "text-base font-medium transition-colors hover:text-primary px-4 py-3 rounded-md min-h-[48px] flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+                          "flex items-center gap-3 text-base font-medium transition-colors hover:text-primary px-4 py-3 rounded-md min-h-[48px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
                           isActive(item.href) 
                             ? "text-primary bg-primary/10" 
                             : "text-muted-foreground hover:bg-muted"
                         )}
                       >
-                        {item.name}
+                        {item.icon && <item.icon className="h-5 w-5" aria-hidden="true" />}
+                        <span className="flex-1">{item.name}</span>
+                        {item.isNew && (
+                          <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-semibold bg-primary/10 text-primary border-0">
+                            NEW
+                          </Badge>
+                        )}
                       </Link>
                     ))}
                   </nav>
@@ -134,12 +140,19 @@ export const Header: React.FC<HeaderProps> = ({
                   {/* Mobile Auth Buttons */}
                   {showAuth && (
                     <div className="flex flex-col space-y-3 pt-4 border-t" role="group" aria-label="Authentication">
-                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
+                      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                         <Button 
-                          variant="ghost" 
-                          className="w-full justify-start min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                          variant="outline" 
+                          className="w-full min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                         >
                           Sign In
+                        </Button>
+                      </Link>
+                      <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                        <Button 
+                          className="w-full min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                        >
+                          Get Started
                         </Button>
                       </Link>
                     </div>
