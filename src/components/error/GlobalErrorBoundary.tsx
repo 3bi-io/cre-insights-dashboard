@@ -30,7 +30,22 @@ export class GlobalErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    const timestamp = new Date().toISOString();
     const isAuthRelated = isAuthError(error);
+    
+    // Comprehensive error logging
+    console.error(`[ERROR_BOUNDARY][${timestamp}] Error caught:`, {
+      name: error.name,
+      message: error.message,
+      isAuthRelated,
+      stack: error.stack?.substring(0, 500)
+    });
+    
+    console.error(`[ERROR_BOUNDARY][${timestamp}] Component stack:`, errorInfo.componentStack);
+    
+    if (isAuthRelated) {
+      console.warn(`[ERROR_BOUNDARY][${timestamp}] This appears to be an AUTH-RELATED error - user may need to re-authenticate`);
+    }
     
     logger.error('GlobalErrorBoundary caught an error', { 
       error, 

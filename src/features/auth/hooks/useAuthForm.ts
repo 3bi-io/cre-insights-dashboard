@@ -135,13 +135,23 @@ export function useAuthForm(): UseAuthFormReturn {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    const timestamp = new Date().toISOString();
+    console.log(`[AUTH_FORM][${timestamp}] handleSignIn - form submitted for:`, email.substring(0, 3) + '***');
+    
     setLoading(true);
     setError('');
     
     localStorage.setItem('rememberMe', rememberMe.toString());
+    console.log(`[AUTH_FORM][${timestamp}] handleSignIn - calling signIn from useAuth`);
     
     const { error } = await signIn(email, password);
+    
     if (error) {
+      console.error(`[AUTH_FORM][${timestamp}] handleSignIn - error received:`, {
+        message: error.message,
+        name: error.name
+      });
+      
       const errorMessage = error.message.toLowerCase();
       if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid email or password')) {
         setError('Incorrect email or password.');
@@ -150,28 +160,41 @@ export function useAuthForm(): UseAuthFormReturn {
       } else {
         setError(error.message);
       }
+    } else {
+      console.log(`[AUTH_FORM][${timestamp}] handleSignIn - sign in successful`);
     }
+    
     setLoading(false);
+    console.log(`[AUTH_FORM][${timestamp}] handleSignIn - completed`);
   };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    const timestamp = new Date().toISOString();
+    console.log(`[AUTH_FORM][${timestamp}] handlePasswordReset - requesting reset for:`, email.substring(0, 3) + '***');
+    
     setLoading(true);
     setError('');
     
     try {
+      console.log(`[AUTH_FORM][${timestamp}] handlePasswordReset - calling supabase.auth.resetPasswordForEmail`);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?reset=true`,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`[AUTH_FORM][${timestamp}] handlePasswordReset - error:`, error);
+        throw error;
+      }
       
+      console.log(`[AUTH_FORM][${timestamp}] handlePasswordReset - reset email sent successfully`);
       setResetSent(true);
       toast({
         title: "Password reset sent",
         description: "Check your email for password reset instructions.",
       });
     } catch (error: any) {
+      console.error(`[AUTH_FORM][${timestamp}] handlePasswordReset - caught error:`, error.message);
       setError(error.message);
     }
     setLoading(false);
@@ -218,25 +241,34 @@ export function useAuthForm(): UseAuthFormReturn {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    const timestamp = new Date().toISOString();
+    console.log(`[AUTH_FORM][${timestamp}] handleSignUp - form submitted for:`, email.substring(0, 3) + '***');
+    
     setLoading(true);
     setError('');
 
     if (password.length < 6) {
+      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - validation failed: password too short`);
       setError('Password must be at least 6 characters');
       setLoading(false);
       return;
     }
 
     if (!userTypeSelection) {
+      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - validation failed: no user type selected`);
       setError('Please select account type');
       setLoading(false);
       return;
     }
 
+    console.log(`[AUTH_FORM][${timestamp}] handleSignUp - userType:`, userTypeSelection);
+
     try {
       const redirectUrl = userTypeSelection === 'organization' 
         ? `${window.location.origin}/onboarding`
         : `${window.location.origin}/my-jobs/profile`;
+      
+      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - calling supabase.auth.signUp with redirectUrl:`, redirectUrl);
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -249,7 +281,12 @@ export function useAuthForm(): UseAuthFormReturn {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`[AUTH_FORM][${timestamp}] handleSignUp - error from supabase:`, error);
+        throw error;
+      }
+      
+      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - account created successfully`);
       
       toast({
         title: "Account created successfully",
@@ -262,6 +299,7 @@ export function useAuthForm(): UseAuthFormReturn {
       setUserTypeSelection(null);
       setShowUserTypeStep(true);
     } catch (error: any) {
+      console.error(`[AUTH_FORM][${timestamp}] handleSignUp - caught error:`, error.message);
       if (error.message?.includes('already registered')) {
         setError('This email is already registered. Please sign in instead.');
       } else {
@@ -269,13 +307,18 @@ export function useAuthForm(): UseAuthFormReturn {
       }
     }
     setLoading(false);
+    console.log(`[AUTH_FORM][${timestamp}] handleSignUp - completed`);
   };
 
   const handleOAuthSignIn = async (provider: OAuthProvider) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - provider:`, provider);
+    
     setOauthLoading(provider);
     setError('');
     
     try {
+      console.log(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - calling supabase.auth.signInWithOAuth`);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -283,7 +326,12 @@ export function useAuthForm(): UseAuthFormReturn {
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - error:`, error);
+        throw error;
+      }
+      
+      console.log(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - OAuth redirect initiated`);
     } catch (error: any) {
       const providerNames: Record<OAuthProvider, string> = {
         google: 'Google',
@@ -294,6 +342,8 @@ export function useAuthForm(): UseAuthFormReturn {
         twitter: 'X'
       };
       const providerName = providerNames[provider];
+      console.error(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - caught error for ${providerName}:`, error.message);
+      
       if (error.message?.includes('provider is not enabled')) {
         setError(`${providerName} sign-in is not configured. Please contact support or use email/password.`);
       } else {
