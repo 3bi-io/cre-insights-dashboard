@@ -218,18 +218,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Defer Supabase calls to prevent deadlock
+          // Keep loading true until role fetch completes
           setTimeout(() => {
-            fetchUserRoleAndOrganization(session.user.id);
+            fetchUserRoleAndOrganization(session.user.id).finally(() => {
+              setLoading(false);
+              console.log('[AUTH] Loading complete after role fetch');
+            });
           }, 0);
         } else {
           setUserRole(null);
           setUserType(null);
           setOrganization(null);
           setCandidateProfile(null);
+          setLoading(false);
+          console.log('[AUTH] Loading complete (no user)');
         }
-        
-        setLoading(false);
-        console.log('[AUTH] Loading complete');
       }
     );
 
@@ -258,13 +261,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           // Defer Supabase calls to prevent deadlock
+          // Keep loading true until role fetch completes
           setTimeout(() => {
-            fetchUserRoleAndOrganization(session.user.id);
+            fetchUserRoleAndOrganization(session.user.id).finally(() => {
+              setLoading(false);
+              console.log('[AUTH] Initial load complete after role fetch');
+            });
           }, 0);
+        } else {
+          setLoading(false);
+          console.log('[AUTH] Initial load complete (no user)');
         }
-        
-        setLoading(false);
-        console.log('[AUTH] Initial load complete');
       })
       .catch((error) => {
         // Catch any unexpected errors during session check
@@ -354,40 +361,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: noSessionError };
       }
       
-      // fetchUserRoleAndOrganization is already triggered by onAuthStateChange
-      // We just need to wait for it to complete and use its results for navigation
-      console.log(`[AUTH][${timestamp}] signIn - waiting for role fetch from onAuthStateChange`);
-      logger.info('Sign in successful, role will be fetched by auth state listener');
-      
-      // Small delay to allow onAuthStateChange to trigger fetchUserRoleAndOrganization
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Fetch navigation data in parallel (single query)
-      console.log(`[AUTH][${timestamp}] signIn - fetching navigation data`);
-      const [profileResult, roleResult] = await Promise.all([
-        supabase.from('profiles').select('user_type').eq('id', data.session.user.id).maybeSingle(),
-        supabase.rpc('get_current_user_role')
-      ]);
-      
-      const userTypeFromDb = (profileResult.data as any)?.user_type || 'organization';
-      const role = (roleResult.data as string) || 'user';
-      
-      console.log(`[AUTH][${timestamp}] signIn - navigation decision:`, { role, userType: userTypeFromDb });
-      
-      // Navigate based on role and user type
-      let destination: string;
-      if (role === 'super_admin') {
-        destination = '/admin';
-      } else if (userTypeFromDb === 'jobseeker') {
-        destination = '/my-jobs';
-      } else {
-        destination = '/dashboard';
-      }
-      
-      console.log(`[AUTH][${timestamp}] signIn - navigating to:`, destination);
-      navigate(destination);
-      
-      console.log(`[AUTH][${timestamp}] signIn - COMPLETED successfully`);
+      // fetchUserRoleAndOrganization is triggered by onAuthStateChange
+      // Navigation is handled by useAuthForm's useEffect that watches user/userRole
+      console.log(`[AUTH][${timestamp}] signIn - COMPLETED successfully, navigation handled by auth form`);
       return { error: null };
     } catch (err) {
       console.error(`[AUTH][${timestamp}] signIn - EXCEPTION:`, err);
