@@ -48,6 +48,14 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
   const hasAccess = userRole && requiredRoles.includes(userRole as UserRole);
 
+  // Log access check for debugging
+  console.log('[ROLE_GUARD] Access check:', {
+    requiredRoles,
+    userRole,
+    hasAccess,
+    userId: user?.id?.substring(0, 8)
+  });
+
   if (!hasAccess) {
     // If redirect path specified, navigate there
     if (redirectTo) {
