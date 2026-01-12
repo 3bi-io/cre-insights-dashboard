@@ -106,32 +106,8 @@ export function useAuthForm(): UseAuthFormReturn {
     }
   }, []);
 
-  // Handle session cleanup when browser closes
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      const shouldRemember = localStorage.getItem('rememberMe') === 'true';
-      if (!shouldRemember) {
-        sessionStorage.setItem('sessionActive', 'true');
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    const sessionActive = sessionStorage.getItem('sessionActive');
-    const shouldRemember = localStorage.getItem('rememberMe') === 'true';
-    
-    if (!sessionActive && !shouldRemember && !authLoading) {
-      if (user) {
-        supabase.auth.signOut();
-      }
-    }
-    
-    sessionStorage.setItem('sessionActive', 'true');
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [user, authLoading]);
+  // Remember me preference is stored but session management is handled by Supabase
+  // The session heartbeat in useAuth.tsx handles automatic refresh
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -67,86 +67,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRoleAndOrganization = async (_userId: string) => {
     const timestamp = new Date().toISOString();
+    const FETCH_TIMEOUT = 10000; // 10 seconds
     console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - STARTING for user:`, _userId.substring(0, 8) + '...');
     
-    try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Role fetch timeout')), FETCH_TIMEOUT);
+    });
+
+    const fetchLogic = async () => {
       logger.info(`Fetching role and organization for user`, { userId: _userId });
       
-      // Fetch user role
-      console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - calling get_current_user_role RPC`);
-      const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+      // Fetch role and profile in parallel for speed
+      console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - fetching role and profile in parallel`);
       
-      if (roleError) {
-        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - RPC error:`, {
-          message: roleError.message,
-          code: roleError.code,
-          details: roleError.details
-        });
-        logger.error('Error fetching user role', roleError);
+      const [roleResult, profileResult] = await Promise.all([
+        supabase.rpc('get_current_user_role'),
+        supabase
+          .from('profiles')
+          .select(`
+            organization_id,
+            user_type,
+            organizations:organization_id(
+              id,
+              name,
+              slug,
+              logo_url,
+              settings,
+              subscription_status,
+              plan_type
+            )
+          `)
+          .eq('id', _userId)
+          .maybeSingle()
+      ]);
+
+      // Process role
+      if (roleResult.error) {
+        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - RPC error:`, roleResult.error);
+        logger.error('Error fetching user role', roleResult.error);
         setUserRole('user');
       } else {
-        console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - role fetched:`, roleData);
-        logger.debug('User role fetched', { role: roleData });
-        if (roleData === 'super_admin') {
-          setUserRole('super_admin');
-        } else {
-          setUserRole((roleData as string) || 'user');
-        }
+        console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - role fetched:`, roleResult.data);
+        setUserRole(roleResult.data === 'super_admin' ? 'super_admin' : ((roleResult.data as string) || 'user'));
       }
 
-      // Fetch user's profile with organization and user_type
-      console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - fetching profile with organization`);
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-          organization_id,
-          user_type,
-          organizations:organization_id(
-            id,
-            name,
-            slug,
-            logo_url,
-            settings,
-            subscription_status,
-            plan_type
-          )
-        `)
-        .eq('id', _userId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - profile error:`, {
-          message: profileError.message,
-          code: profileError.code,
-          details: profileError.details
-        });
-        logger.error('Error fetching user profile', profileError);
+      // Process profile
+      if (profileResult.error) {
+        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - profile error:`, profileResult.error);
+        logger.error('Error fetching user profile', profileResult.error);
         setOrganization(null);
         setUserType('organization');
       } else {
-        // Set user type from database
-        const dbUserType = (profileData as any)?.user_type as 'organization' | 'jobseeker' | null;
+        const dbUserType = (profileResult.data as any)?.user_type as 'organization' | 'jobseeker' | null;
         setUserType(dbUserType || 'organization');
         console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - user_type:`, dbUserType);
 
-        // Set organization
-        if ((profileData as any)?.organizations) {
-          console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - organization loaded:`, {
-            name: (profileData as any).organizations.name,
-            id: (profileData as any).organizations.id
-          });
-          logger.info('User organization loaded', { 
-            orgName: (profileData as any).organizations.name,
-            orgId: (profileData as any).organizations.id 
-          });
-          setOrganization((profileData as any).organizations as any);
+        if ((profileResult.data as any)?.organizations) {
+          console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - organization loaded`);
+          setOrganization((profileResult.data as any).organizations as any);
         } else {
-          console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - no organization found`);
-          logger.debug('No organization found for user');
           setOrganization(null);
         }
 
-        // Fetch candidate profile if user is a jobseeker
+        // Fetch candidate profile if jobseeker
         if (dbUserType === 'jobseeker') {
           console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - fetching candidate profile`);
           const { data: candidateData, error: candidateError } = await supabase
@@ -157,14 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (candidateError) {
             console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - candidate profile error:`, candidateError);
-            logger.error('Error fetching candidate profile', candidateError);
             setCandidateProfile(null);
-          } else if (candidateData) {
-            console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - candidate profile loaded`);
-            setCandidateProfile(candidateData as CandidateProfile);
           } else {
-            console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - no candidate profile found`);
-            setCandidateProfile(null);
+            setCandidateProfile(candidateData as CandidateProfile);
           }
         } else {
           setCandidateProfile(null);
@@ -172,9 +150,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - COMPLETED`);
+    };
+
+    try {
+      await Promise.race([fetchLogic(), timeoutPromise]);
     } catch (error: unknown) {
-      console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - EXCEPTION:`, error);
-      logger.error('Error fetching user data', error);
+      console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - EXCEPTION or TIMEOUT:`, error);
+      logger.error('Error fetching user data (may have timed out)', error);
+      // Set defaults to unblock UI
       setUserRole('user');
       setUserType('organization');
       setOrganization(null);
@@ -371,35 +354,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error: noSessionError };
       }
       
-      console.log(`[AUTH][${timestamp}] signIn - fetching user role and organization`);
-      logger.info('Sign in successful, fetching user data');
+      // fetchUserRoleAndOrganization is already triggered by onAuthStateChange
+      // We just need to wait for it to complete and use its results for navigation
+      console.log(`[AUTH][${timestamp}] signIn - waiting for role fetch from onAuthStateChange`);
+      logger.info('Sign in successful, role will be fetched by auth state listener');
       
-      // Wait for role and organization to be fetched
-      await fetchUserRoleAndOrganization(data.session.user.id);
+      // Small delay to allow onAuthStateChange to trigger fetchUserRoleAndOrganization
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Get user profile to determine navigation based on user_type
-      console.log(`[AUTH][${timestamp}] signIn - fetching profile for navigation decision`);
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('user_type')
-        .eq('id', data.session.user.id)
-        .maybeSingle();
+      // Fetch navigation data in parallel (single query)
+      console.log(`[AUTH][${timestamp}] signIn - fetching navigation data`);
+      const [profileResult, roleResult] = await Promise.all([
+        supabase.from('profiles').select('user_type').eq('id', data.session.user.id).maybeSingle(),
+        supabase.rpc('get_current_user_role')
+      ]);
       
-      const userTypeFromDb = (profileData as any)?.user_type || 'organization';
-      console.log(`[AUTH][${timestamp}] signIn - user_type from profile:`, userTypeFromDb);
+      const userTypeFromDb = (profileResult.data as any)?.user_type || 'organization';
+      const role = (roleResult.data as string) || 'user';
       
-      // Get role to determine navigation
-      console.log(`[AUTH][${timestamp}] signIn - fetching role for navigation decision`);
-      const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
-      
-      if (roleError) {
-        console.error(`[AUTH][${timestamp}] signIn - role fetch error:`, roleError);
-        logger.error('Error fetching role for navigation', roleError);
-      }
-      
-      const role = (roleData as string) || 'user';
       console.log(`[AUTH][${timestamp}] signIn - navigation decision:`, { role, userType: userTypeFromDb });
-      logger.info('Navigation decision', { role, userType: userTypeFromDb });
       
       // Navigate based on role and user type
       let destination: string;
