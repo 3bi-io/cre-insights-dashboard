@@ -3,18 +3,7 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Briefcase, 
-  Search, 
-  Bookmark, 
-  User, 
-  MessageSquare,
-  LogOut,
-  Home,
-  Settings,
-  Bell,
-  ChevronRight
-} from 'lucide-react';
+import { LogOut, Settings, Bell, ChevronRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/components/common';
 import { 
@@ -27,6 +16,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { candidateNavigation } from '@/config/navigationConfig';
+import { 
+  isActivePath, 
+  getUserInitials, 
+  getDisplayName 
+} from '@/utils/navigationUtils';
 
 const CandidateLayout = () => {
   const { signOut, candidateProfile, user } = useAuth();
@@ -34,34 +29,17 @@ const CandidateLayout = () => {
   const navigate = useNavigate();
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
 
-  const navigation = [
-    { name: 'Dashboard', href: '/my-jobs', icon: Home },
-    { name: 'Applications', href: '/my-jobs/applications', icon: Briefcase },
-    { name: 'Search Jobs', href: '/my-jobs/search', icon: Search },
-    { name: 'Saved Jobs', href: '/my-jobs/saved', icon: Bookmark },
-    { name: 'Profile', href: '/my-jobs/profile', icon: User },
-    { name: 'Messages', href: '/my-jobs/messages', icon: MessageSquare, badge: 'Soon' },
-  ];
-
-  const getUserInitials = () => {
-    if (candidateProfile?.first_name) {
-      return candidateProfile.first_name.charAt(0).toUpperCase();
-    }
-    if (user?.email) {
-      return user.email.charAt(0).toUpperCase();
-    }
-    return 'U';
-  };
-
-  const getDisplayName = () => {
-    if (candidateProfile?.first_name && candidateProfile?.last_name) {
-      return `${candidateProfile.first_name} ${candidateProfile.last_name}`;
-    }
-    if (candidateProfile?.first_name) {
-      return candidateProfile.first_name;
-    }
-    return 'Candidate';
-  };
+  const initials = getUserInitials(
+    user?.email, 
+    candidateProfile?.first_name, 
+    candidateProfile?.last_name
+  );
+  
+  const displayName = getDisplayName(
+    candidateProfile?.first_name, 
+    candidateProfile?.last_name, 
+    user?.email
+  ) || 'Candidate';
 
   const handleQuickSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,35 +111,35 @@ const CandidateLayout = () => {
                   >
                     <Avatar className="w-8 h-8">
                       <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                        {getUserInitials()}
+                        {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm hidden sm:inline">{getDisplayName()}</span>
+                    <span className="text-sm hidden sm:inline">{displayName}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/my-jobs/profile" className="flex items-center">
-                      <User className="w-4 h-4 mr-2" />
+                    <Link to="/my-jobs/profile" className="flex items-center cursor-pointer">
+                      <Settings className="w-4 h-4 mr-2" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/my-jobs/settings" className="flex items-center">
+                    <Link to="/my-jobs/settings" className="flex items-center cursor-pointer">
                       <Settings className="w-4 h-4 mr-2" />
                       Account Settings
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/my-jobs/notifications" className="flex items-center">
+                    <Link to="/my-jobs/notifications" className="flex items-center cursor-pointer">
                       <Bell className="w-4 h-4 mr-2" />
                       Notifications
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive">
+                  <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -176,8 +154,8 @@ const CandidateLayout = () => {
         {/* Sidebar Navigation */}
         <aside className="hidden md:flex w-64 flex-col border-r bg-muted/30 min-h-[calc(100vh-4rem)]">
           <nav className="flex-1 space-y-1 p-4" role="navigation" aria-label="Candidate portal navigation">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+            {candidateNavigation.map((item) => {
+              const isActive = isActivePath(location.pathname, item.href);
               return (
                 <Link
                   key={item.name}
@@ -235,8 +213,8 @@ const CandidateLayout = () => {
         aria-label="Mobile candidate navigation"
       >
         <div className="grid grid-cols-5 gap-1 p-1.5" role="menubar">
-          {navigation.slice(0, 5).map((item) => {
-            const isActive = location.pathname === item.href;
+          {candidateNavigation.slice(0, 5).map((item) => {
+            const isActive = isActivePath(location.pathname, item.href);
             return (
               <Link
                 key={item.name}

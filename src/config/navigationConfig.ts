@@ -1,10 +1,16 @@
-import { 
+import {
+  LucideIcon,
+  Home,
+  Briefcase,
+  Search,
+  Bookmark,
+  User,
+  MessageSquare,
   LayoutDashboard, 
   BriefcaseIcon, 
   Users, 
   Settings, 
   Building, 
-  MessageSquare, 
   Share2, 
   Zap, 
   Bot, 
@@ -21,9 +27,62 @@ import {
   Globe, 
   FolderKanban, 
   Image,
-  Shield,
-  LucideIcon
+  Shield
 } from 'lucide-react';
+
+// Re-export public navigation for convenience
+export { publicNavigation, type PublicNavItem } from './publicNavigationConfig';
+
+// Candidate Portal Navigation
+export interface CandidateNavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: string;
+  description?: string;
+}
+
+export const candidateNavigation: CandidateNavItem[] = [
+  { 
+    name: 'Dashboard', 
+    href: '/my-jobs', 
+    icon: Home,
+    description: 'Your job search overview'
+  },
+  { 
+    name: 'Applications', 
+    href: '/my-jobs/applications', 
+    icon: Briefcase,
+    description: 'Track your applications'
+  },
+  { 
+    name: 'Search Jobs', 
+    href: '/my-jobs/search', 
+    icon: Search,
+    description: 'Find new opportunities'
+  },
+  { 
+    name: 'Saved Jobs', 
+    href: '/my-jobs/saved', 
+    icon: Bookmark,
+    description: 'Your bookmarked jobs'
+  },
+  { 
+    name: 'Profile', 
+    href: '/my-jobs/profile', 
+    icon: User,
+    description: 'Manage your profile'
+  },
+  { 
+    name: 'Messages', 
+    href: '/my-jobs/messages', 
+    icon: MessageSquare,
+    badge: 'Soon',
+    description: 'Recruiter messages'
+  }
+];
+
+// Admin Navigation
 
 export interface NavItem {
   path: string;

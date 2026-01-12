@@ -17,33 +17,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Brand } from '@/components/common';
 import { getRouteTitle } from '@/config/navigationConfig';
+import { 
+  getUserInitials, 
+  getRoleBadgeColor, 
+  getRoleDisplayName 
+} from '@/utils/navigationUtils';
 
 const MobileHeader = () => {
   const location = useLocation();
   const { user, userRole, signOut } = useAuth();
   const { state } = useSidebar();
 
-  const getRoleBadgeColor = (role: string | null) => {
-    switch (role) {
-      case 'super_admin':
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'admin':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'moderator':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-      default:
-        return 'bg-muted text-muted-foreground border-muted';
-    }
-  };
-
   const handleSignOut = async () => {
     await signOut();
   };
 
-  const getUserInitials = () => {
-    if (!user?.email) return 'U';
-    return user.email.charAt(0).toUpperCase();
-  };
+  const initials = getUserInitials(user?.email);
 
   return (
     <header 
@@ -85,7 +74,7 @@ const MobileHeader = () => {
               >
                 <Avatar className="h-10 w-10">
                   <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-                    {getUserInitials()}
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -99,9 +88,7 @@ const MobileHeader = () => {
                   </p>
                   {userRole && (
                     <Badge className={`${getRoleBadgeColor(userRole)} text-xs w-fit mt-1`}>
-                      {userRole === 'super_admin' ? 'Super Admin' : 
-                       userRole === 'admin' ? 'Admin' :
-                       userRole === 'moderator' ? 'Moderator' : 'User'}
+                      {getRoleDisplayName(userRole)}
                     </Badge>
                   )}
                 </div>
