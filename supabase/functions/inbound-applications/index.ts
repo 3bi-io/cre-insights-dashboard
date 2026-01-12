@@ -597,6 +597,48 @@ const handler = async (req: Request): Promise<Response> => {
         if (!applicationData.consent) {
           applicationData.consent = extractValue(dataCollectionResults, ['consentGiven', 'consent', 'agree', 'consent_given']);
         }
+        // Log missing data collection fields for monitoring
+        const expectedFieldsMap = {
+          first_name: 'GivenName',
+          last_name: 'FamilyName', 
+          zip: 'PostalCode',
+          cdl: 'Class_A_CDL',
+          exp: 'Class_A_CDL_Experience',
+          driver_type: 'DriverType',
+          phone: 'PrimaryPhone',
+          applicant_email: 'InternetEmailAddress',
+          drug: 'CanPassDrug',
+          veteran: 'Veteran_Status',
+          consent: 'consentGiven'
+        };
+
+        const missingFields: string[] = [];
+        const collectedFields: string[] = [];
+
+        for (const [appField, elevenLabsField] of Object.entries(expectedFieldsMap)) {
+          if (applicationData[appField as keyof typeof applicationData]) {
+            collectedFields.push(elevenLabsField);
+          } else {
+            missingFields.push(elevenLabsField);
+          }
+        }
+
+        if (missingFields.length > 0) {
+          logger.warn('Missing data collection fields from ElevenLabs', {
+            conversationId: elevenLabsData.conversation_id,
+            agentId: elevenLabsAgentId,
+            missingFields,
+            collectedFields,
+            completeness: `${collectedFields.length}/11`,
+            rawDataCollectionKeys: Object.keys(dataCollectionResults || {})
+          });
+        } else {
+          logger.info('All expected data collection fields received', {
+            conversationId: elevenLabsData.conversation_id,
+            agentId: elevenLabsAgentId,
+            collectedFields
+          });
+        }
       } else {
         logger.info('No data_collection_results in ElevenLabs payload', {
           hasAnalysis: !!analysis,
@@ -715,6 +757,13 @@ const handler = async (req: Request): Promise<Response> => {
           agentId: elevenLabsAgentId,
           organizationId,
           clientId: resolvedClientId
+        });
+      } else {
+        // Log unknown agent for monitoring - this agent needs to be registered
+        logger.error('Unknown ElevenLabs agent - not registered in voice_agents', {
+          agentId: elevenLabsAgentId,
+          conversationId: elevenLabsData?.conversation_id,
+          recommendation: 'Add this agent to the voice_agents table with organization_id'
         });
       }
     }
