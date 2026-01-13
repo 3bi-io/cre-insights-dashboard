@@ -100,6 +100,10 @@ const BillingSettings = React.lazy(() => import("@/pages/settings/BillingSetting
 const CandidateAccountSettings = React.lazy(() => import("@/features/candidate/pages/AccountSettings"));
 const CandidateNotifications = React.lazy(() => import("@/features/candidate/pages/NotificationsPage"));
 
+// Talent Pool pages
+const TalentPoolsPage = React.lazy(() => import("@/features/talent").then(m => ({ default: m.TalentPoolsPage })));
+const TalentSearchPage = React.lazy(() => import("@/features/talent").then(m => ({ default: m.TalentSearchPage })));
+
 // Loading fallback component
 const PageSkeleton = React.memo(() => (
   <div className="p-6 space-y-6">
@@ -267,6 +271,11 @@ const AppRoutes: React.FC = () => {
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
         <Route path="grok" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
+        
+        {/* Talent Pool Routes */}
+        <Route path="talent" element={<ProtectedRouteWrapper><TalentSearchPage /></ProtectedRouteWrapper>} />
+        <Route path="talent/pools" element={<ProtectedRouteWrapper><TalentPoolsPage /></ProtectedRouteWrapper>} />
+        
         <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/security" element={<ProtectedRouteWrapper><SecuritySettings /></ProtectedRouteWrapper>} />

@@ -39,3 +39,6 @@ export { ActivityItem } from './ActivityItem';
 export { KanbanBoard } from './KanbanBoard';
 export { KanbanColumn } from './KanbanColumn';
 export { KanbanCard } from './KanbanCard';
+
+// Communication History
+export { CommunicationHistory } from './CommunicationHistory';

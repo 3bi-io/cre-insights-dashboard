@@ -16,6 +16,7 @@ import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
 import { ApplicationBackgroundChecks } from '@/features/screening';
 import { ActivityTimeline } from '@/features/applications/components/ActivityTimeline';
+import { CommunicationHistory } from '@/features/applications/components/CommunicationHistory';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -28,6 +29,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
   const [isCallHistoryOpen, setIsCallHistoryOpen] = useState(false);
   const [isBGCHistoryOpen, setIsBGCHistoryOpen] = useState(false);
   const [isActivityTimelineOpen, setIsActivityTimelineOpen] = useState(true);
+  const [isCommHistoryOpen, setIsCommHistoryOpen] = useState(false);
   // Use zip code lookup for city and state display
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
 
@@ -398,6 +400,28 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
                 applicantName={getApplicantName(application)}
                 organizationId={application.job_listings?.organization_id}
                 showTitle={false}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+
+          <Separator />
+
+          {/* Communication History */}
+          <Collapsible open={isCommHistoryOpen} onOpenChange={setIsCommHistoryOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
+                <span className="flex items-center gap-2 text-lg font-semibold">
+                  <Mail className="w-4 h-4" />
+                  Communication History
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isCommHistoryOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <CommunicationHistory
+                applicationId={application.id}
+                showTitle={false}
+                maxHeight="300px"
               />
             </CollapsibleContent>
           </Collapsible>

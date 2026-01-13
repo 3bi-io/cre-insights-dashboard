@@ -19,3 +19,7 @@ export type { CandidateActivity } from './useApplicationActivities';
 
 // Kanban Board hooks
 export { useKanbanBoard, KANBAN_COLUMNS } from './useKanbanBoard';
+
+// Communication Logs hooks
+export { useCommunicationLogs, useCommunicationStats } from './useCommunicationLogs';
+export type { CommunicationLog } from './useCommunicationLogs';
