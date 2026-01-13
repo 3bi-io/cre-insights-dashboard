@@ -104,15 +104,20 @@ export function useAuthForm(): UseAuthFormReturn {
       return;
     }
     
-    console.log('[AUTH_FORM] Redirecting authenticated user:', { userRole, userType });
+    // Add small delay to ensure auth state is fully synchronized before navigation
+    const timer = setTimeout(() => {
+      console.log('[AUTH_FORM] Redirecting authenticated user:', { userRole, userType });
+      
+      if (userRole === 'super_admin') {
+        navigate('/admin', { replace: true });
+      } else if (userType === 'jobseeker') {
+        navigate('/my-jobs', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }, 100);
     
-    if (userRole === 'super_admin') {
-      navigate('/admin', { replace: true });
-    } else if (userType === 'jobseeker') {
-      navigate('/my-jobs', { replace: true });
-    } else {
-      navigate('/dashboard', { replace: true });
-    }
+    return () => clearTimeout(timer);
   }, [user, userRole, userType, authLoading, navigate, updatePasswordMode]);
 
   // Check for password reset mode
