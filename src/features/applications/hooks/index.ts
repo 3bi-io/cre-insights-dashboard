@@ -12,3 +12,10 @@ export type { ApplicationsFiltersState } from './useApplicationsFilters';
 export { useApplicationsExport } from './useApplicationsExport';
 
 export { useApplicationsBulkActions } from './useApplicationsBulkActions';
+
+// Activity Timeline hooks
+export { useApplicationActivities, useLogActivity } from './useApplicationActivities';
+export type { CandidateActivity } from './useApplicationActivities';
+
+// Kanban Board hooks
+export { useKanbanBoard, KANBAN_COLUMNS } from './useKanbanBoard';

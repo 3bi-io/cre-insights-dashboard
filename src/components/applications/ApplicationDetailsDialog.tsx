@@ -10,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield } from 'lucide-react';
+import { Eye, Calendar, Phone, Mail, ExternalLink, User, Briefcase, MapPin, Loader2, PhoneCall, ChevronDown, Shield, Clock } from 'lucide-react';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
 import { ApplicationBackgroundChecks } from '@/features/screening';
+import { ActivityTimeline } from '@/features/applications/components/ActivityTimeline';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -26,6 +27,7 @@ interface ApplicationDetailsDialogProps {
 const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: ApplicationDetailsDialogProps) => {
   const [isCallHistoryOpen, setIsCallHistoryOpen] = useState(false);
   const [isBGCHistoryOpen, setIsBGCHistoryOpen] = useState(false);
+  const [isActivityTimelineOpen, setIsActivityTimelineOpen] = useState(true);
   // Use zip code lookup for city and state display
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
 
@@ -332,6 +334,28 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               </div>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Activity Timeline */}
+          <Collapsible open={isActivityTimelineOpen} onOpenChange={setIsActivityTimelineOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
+                <span className="flex items-center gap-2 text-lg font-semibold">
+                  <Clock className="w-4 h-4" />
+                  Activity Timeline
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isActivityTimelineOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <ActivityTimeline
+                applicationId={application.id}
+                showTitle={false}
+                maxHeight="300px"
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           <Separator />
 
