@@ -1,7 +1,7 @@
-import { LayoutGrid, Table } from 'lucide-react';
+import { LayoutGrid, Table, Kanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export type ViewMode = 'grid' | 'table';
+export type ViewMode = 'grid' | 'table' | 'kanban';
 
 interface ApplicationsViewSwitcherProps {
   viewMode: ViewMode;
@@ -31,6 +31,15 @@ export const ApplicationsViewSwitcher = ({
       >
         <Table className="h-4 w-4" />
         <span className="ml-2 hidden sm:inline">Table</span>
+      </Button>
+      <Button
+        variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+        size="sm"
+        onClick={() => onViewModeChange('kanban')}
+        className="h-8 px-3"
+      >
+        <Kanban className="h-4 w-4" />
+        <span className="ml-2 hidden sm:inline">Kanban</span>
       </Button>
     </div>
   );

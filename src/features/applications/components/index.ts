@@ -30,3 +30,12 @@ export { ApplicationsBulkProgress } from './ApplicationsBulkProgress';
 export { ApplicationsDialogs } from './ApplicationsDialogs';
 export { ApplicationsList } from './ApplicationsList';
 export { ApplicationsPageActions } from './ApplicationsPageActions';
+
+// Activity Timeline components
+export { ActivityTimeline } from './ActivityTimeline';
+export { ActivityItem } from './ActivityItem';
+
+// Kanban Board components
+export { KanbanBoard } from './KanbanBoard';
+export { KanbanColumn } from './KanbanColumn';
+export { KanbanCard } from './KanbanCard';
