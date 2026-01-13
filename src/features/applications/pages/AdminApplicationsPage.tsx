@@ -13,6 +13,7 @@ import { ApplicationsFilters } from '../components/ApplicationsFilters';
 import { ApplicationsActions } from '../components/ApplicationsActions';
 import { ApplicationsGrid } from '../components/ApplicationsGrid';
 import { ApplicationsTable } from '../components/ApplicationsTable';
+import { KanbanBoard } from '../components';
 import { ApplicationsViewSwitcher } from '../components/ApplicationsViewSwitcher';
 import ApplicationDetailsDialog from '@/components/applications/ApplicationDetailsDialog';
 import SmsConversationDialog from '@/components/applications/SmsConversationDialog';
@@ -260,7 +261,7 @@ export default function AdminApplicationsPage() {
           showClientFilter={isOrgAdmin}
         />
 
-        {/* Applications View - Grid or Table */}
+        {/* Applications View - Grid, Kanban, or Table */}
         {viewMode === 'grid' ? (
           <ApplicationsGrid
             applications={applications as any}
@@ -275,6 +276,14 @@ export default function AdminApplicationsPage() {
             onDetailsView={handleDetailsView}
             onTenstreetUpdate={handleTenstreetUpdate}
             onScreeningOpen={handleScreeningOpen}
+          />
+        ) : viewMode === 'kanban' ? (
+          <KanbanBoard
+            applications={applications as any}
+            onStatusChange={async (id, status) => {
+              await updateApplication(id, { status: status as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' });
+            }}
+            onApplicationClick={handleDetailsView}
           />
         ) : (
           <ApplicationsTable
@@ -291,19 +300,6 @@ export default function AdminApplicationsPage() {
             onTenstreetUpdate={handleTenstreetUpdate}
             onScreeningOpen={handleScreeningOpen}
           />
-        )}
-
-        {/* Pagination */}
-        {hasNextPage && (
-          <div className="flex justify-center py-8">
-            <button
-              onClick={() => loadMore()}
-              disabled={isFetchingNextPage}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isFetchingNextPage ? 'Loading...' : `Load More (${totalCount - applications.length} remaining)`}
-            </button>
-          </div>
         )}
 
         {/* Pagination */}

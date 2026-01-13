@@ -18,7 +18,9 @@ import {
   Smartphone,
   Clock,
   Users,
-  Zap
+  Zap,
+  Kanban,
+  GripVertical
 } from 'lucide-react';
 import AudioPlayer from '@/components/voice/demo/AudioPlayer';
 import TranscriptDisplay from '@/components/voice/demo/TranscriptDisplay';
@@ -91,6 +93,10 @@ const DemoPage: React.FC = () => {
   const platformFeatures = [
     { label: 'Job Listings Management', included: true },
     { label: 'Application Tracking', included: true },
+    { label: 'Visual Kanban Pipeline', included: true },
+    { label: 'Talent Pool Management', included: true },
+    { label: 'Activity Timeline & Tracking', included: true },
+    { label: 'Communication History', included: true },
     { label: 'AI-Powered Screening', included: true },
     { label: 'Voice Agent Callbacks', included: true },
     { label: 'Analytics Dashboard', included: true },
@@ -150,20 +156,25 @@ const DemoPage: React.FC = () => {
         {/* Main Demo Tabs */}
         <section className="py-16 container mx-auto px-4">
           <Tabs defaultValue="voice" className="space-y-8">
-            <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3">
+            <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-4">
               <TabsTrigger value="voice" className="flex items-center gap-2">
                 <Bot className="h-4 w-4" />
-                <span className="hidden sm:inline">Voice Technology</span>
+                <span className="hidden sm:inline">Voice Tech</span>
                 <span className="sm:hidden">Voice</span>
+              </TabsTrigger>
+              <TabsTrigger value="kanban" className="flex items-center gap-2">
+                <Kanban className="h-4 w-4" />
+                <span className="hidden sm:inline">Pipeline View</span>
+                <span className="sm:hidden">Pipeline</span>
               </TabsTrigger>
               <TabsTrigger value="platform" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Platform Overview</span>
+                <span className="hidden sm:inline">Platform</span>
                 <span className="sm:hidden">Platform</span>
               </TabsTrigger>
               <TabsTrigger value="flow" className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Application Flow</span>
+                <span className="hidden sm:inline">Flow</span>
                 <span className="sm:hidden">Flow</span>
               </TabsTrigger>
             </TabsList>
@@ -269,6 +280,77 @@ const DemoPage: React.FC = () => {
                 <DynamicVariablesCard />
                 <HowItWorksSection />
               </div>
+            </TabsContent>
+
+            {/* Kanban Pipeline Tab */}
+            <TabsContent value="kanban" className="space-y-8">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-2">Visual Kanban Pipeline</h2>
+                <p className="text-muted-foreground">
+                  Drag-and-drop candidates through your hiring stages
+                </p>
+              </div>
+
+              {/* Kanban Demo Mockup */}
+              <div className="overflow-x-auto pb-4">
+                <div className="flex gap-4 min-w-max">
+                  {[
+                    { id: 'new', label: 'New', color: 'bg-blue-500', count: 12, candidates: ['John Smith', 'Sarah Johnson', 'Mike Williams'] },
+                    { id: 'reviewed', label: 'Reviewed', color: 'bg-yellow-500', count: 8, candidates: ['Emily Davis', 'Robert Brown'] },
+                    { id: 'interview', label: 'Interview', color: 'bg-purple-500', count: 5, candidates: ['Lisa Anderson', 'James Wilson'] },
+                    { id: 'hired', label: 'Hired', color: 'bg-green-500', count: 3, candidates: ['David Martinez'] },
+                    { id: 'rejected', label: 'Rejected', color: 'bg-gray-500', count: 4, candidates: ['Mark Taylor'] },
+                  ].map((column) => (
+                    <div key={column.id} className="w-72 flex-shrink-0">
+                      <Card className="h-full">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${column.color}`} />
+                            <CardTitle className="text-sm font-medium">{column.label}</CardTitle>
+                            <Badge variant="secondary" className="ml-auto text-xs">{column.count}</Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {column.candidates.map((name, idx) => (
+                            <div 
+                              key={idx} 
+                              className="p-3 bg-muted/50 rounded-lg border border-muted hover:border-primary/50 transition-colors cursor-grab"
+                            >
+                              <div className="flex items-center gap-2">
+                                <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium text-sm">{name}</p>
+                                  <p className="text-xs text-muted-foreground">CDL Class A Driver</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {column.count > column.candidates.length && (
+                            <p className="text-xs text-muted-foreground text-center py-2">
+                              +{column.count - column.candidates.length} more
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Card className="bg-primary/5 border-primary/20">
+                <CardContent className="py-6">
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
+                    <Kanban className="h-10 w-10 text-primary" />
+                    <div>
+                      <h3 className="text-lg font-bold mb-1">Intuitive Pipeline Management</h3>
+                      <p className="text-muted-foreground text-sm max-w-xl">
+                        Simply drag and drop candidates between columns to update their status. 
+                        Changes sync in real-time across your team, with complete activity tracking.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Platform Overview Tab */}

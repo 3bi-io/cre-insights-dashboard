@@ -23,7 +23,11 @@ import {
   Phone,
   Bot,
   Mic,
-  Sparkles
+  Sparkles,
+  Kanban,
+  History,
+  Database,
+  MessageSquare
 } from 'lucide-react';
 
 const FeaturesPage = () => {
@@ -51,6 +55,28 @@ const FeaturesPage = () => {
       ]
     },
     {
+      icon: Kanban,
+      title: "Visual Kanban Pipeline",
+      description: "Drag-and-drop candidates through hiring stages. See your entire pipeline at a glance with visual status columns.",
+      features: [
+        "Drag-and-drop interface",
+        "Real-time status updates",
+        "Visual pipeline overview",
+        "Quick status changes"
+      ]
+    },
+    {
+      icon: Database,
+      title: "Talent Pool Management",
+      description: "Build and nurture talent pools for future hiring. Search candidates by skills, location, and availability.",
+      features: [
+        "Searchable candidate database",
+        "Smart filtering & search",
+        "Pool organization tools",
+        "Notes & tagging"
+      ]
+    },
+    {
       icon: Mic,
       title: "Voice Apply Technology",
       description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80%.",
@@ -75,6 +101,16 @@ const FeaturesPage = () => {
   ];
 
   const additionalFeatures = [
+    {
+      icon: History,
+      title: "Activity Timeline",
+      description: "Complete history of all candidate interactions"
+    },
+    {
+      icon: MessageSquare,
+      title: "Communication Tracking",
+      description: "Email, SMS, and call history in one place"
+    },
     {
       icon: Zap,
       title: "Automated Workflows",
@@ -138,8 +174,12 @@ const FeaturesPage = () => {
     },
     "featureList": [
       "AI-Powered Candidate Matching",
-      "Automated Workflow Management", 
+      "Visual Kanban Pipeline",
+      "Talent Pool Management",
+      "Activity Timeline & Tracking",
+      "Communication History",
       "Voice Apply Technology",
+      "Automated Workflow Management", 
       "Advanced Analytics Dashboard",
       "Team Collaboration Tools",
       "100+ Job Board Integrations",
