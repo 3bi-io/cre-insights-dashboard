@@ -216,7 +216,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Admin Routes */}
       <Route path="/admin" element={<LayoutWrapper />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<RouteWrapper><Dashboard /></RouteWrapper>} />
         <Route path="jobs" element={<ProtectedRouteWrapper><Jobs /></ProtectedRouteWrapper>} />
         <Route path="campaigns" element={<ProtectedRouteWrapper><Campaigns /></ProtectedRouteWrapper>} />
         <Route path="job-groups" element={<ProtectedRouteWrapper><JobGroups /></ProtectedRouteWrapper>} />
