@@ -144,6 +144,14 @@ export const getNavigationGroups = (options: {
       ]
     },
     {
+      group: "Talent",
+      icon: Search,
+      items: [
+        { path: '/talent', label: 'Candidate Search', icon: Search },
+        { path: '/talent/pools', label: 'Talent Pools', icon: Bookmark }
+      ]
+    },
+    {
       group: "Campaigns",
       icon: Target,
       items: [
@@ -268,6 +276,8 @@ export const routeTitles: Record<string, string> = {
   '/admin/tenstreet-sync': 'Tenstreet Sync Dashboard',
   '/admin/driverreach-integration': 'DriverReach Integration',
   '/admin/driverreach-sync': 'DriverReach Sync Dashboard',
+  '/talent': 'Candidate Search',
+  '/talent/pools': 'Talent Pools',
 };
 
 export const getRouteTitle = (pathname: string): string => {
