@@ -14,7 +14,7 @@ export interface ApplicationsManagementFilters {
   clientFilter: string;
 }
 
-export type ViewMode = 'grid' | 'table';
+export type ViewMode = 'grid' | 'table' | 'kanban';
 
 export const useApplicationsManagement = (hasAccess: boolean, isOrgAdmin: boolean) => {
   const { organization } = useAuth();
