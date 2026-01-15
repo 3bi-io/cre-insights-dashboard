@@ -15,7 +15,7 @@ export const heroContent = {
   socialProof: {
     rating: '4.8/5',
     companies: 'Trusted by 50+ companies',
-    pricing: 'Fast automated callbacks'
+    highlight: 'Fast automated callbacks'
   },
   voiceHighlight: {
     icon: 'phone',

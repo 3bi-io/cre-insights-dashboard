@@ -53,26 +53,6 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
       'predictive hiring analytics',
     ],
   },
-  pricing: {
-    primary: [
-      'ATS pricing',
-      'recruitment software cost',
-      'ATS plans',
-    ],
-    secondary: [
-      'affordable ATS',
-      'ATS software pricing',
-      'recruitment platform cost',
-      'hiring software plans',
-    ],
-    longTail: [
-      'how much does ATS software cost',
-      'best affordable applicant tracking system',
-      'ATS pricing comparison',
-      'free ATS trial',
-      'ATS software free trial',
-    ],
-  },
   demo: {
     primary: [
       'ATS demo',

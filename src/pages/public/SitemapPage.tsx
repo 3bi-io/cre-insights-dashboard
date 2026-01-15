@@ -16,7 +16,7 @@ import {
   FileText,
   Home,
   Phone,
-  DollarSign,
+  
   Sparkles,
   Users,
   Building2,
@@ -219,7 +219,7 @@ const SitemapPage = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title="Sitemap - Navigate ATS.me"
-        description="Complete directory of ATS.me pages. Find job listings, features, pricing, resources, and platform documentation. Navigate to any section quickly."
+        description="Complete directory of ATS.me pages. Find job listings, features, resources, and platform documentation. Navigate to any section quickly."
         keywords="sitemap, ATS.me pages, navigation, site directory, job board, recruitment platform"
         canonical="https://ats.me/sitemap"
       />

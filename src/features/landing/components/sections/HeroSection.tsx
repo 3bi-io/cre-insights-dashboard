@@ -99,7 +99,7 @@ const HeroSection = () => {
               <span className="text-sm">{heroContent.socialProof.rating}</span>
             </div>
             <div className="text-sm">{heroContent.socialProof.companies}</div>
-            <div className="text-sm font-medium text-primary">{heroContent.socialProof.pricing}</div>
+            <div className="text-sm font-medium text-primary">{heroContent.socialProof.highlight}</div>
           </div>
         </div>
       </div>
