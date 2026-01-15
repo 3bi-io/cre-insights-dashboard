@@ -56,7 +56,6 @@ export const useJobDetails = (jobId: string | undefined) => {
         .select(`
           *,
           clients(id, name, logo_url),
-          organizations(id, name, slug),
           job_categories(id, name)
         `)
         .eq('id', jobId)
@@ -65,6 +64,17 @@ export const useJobDetails = (jobId: string | undefined) => {
 
       if (error) throw error;
       if (!data) return null;
+
+      // Fetch organization info securely via public_organization_info view
+      let organizations = null;
+      if (data.organization_id) {
+        const { data: orgData } = await supabase
+          .from('public_organization_info')
+          .select('id, name, slug, logo_url')
+          .eq('id', data.organization_id)
+          .maybeSingle();
+        organizations = orgData;
+      }
 
       // Fetch voice agent for this organization
       let voiceAgent = null;
@@ -80,7 +90,7 @@ export const useJobDetails = (jobId: string | undefined) => {
         voiceAgent = vaData;
       }
 
-      return { ...data, voiceAgent } as unknown as JobDetails;
+      return { ...data, organizations, voiceAgent } as unknown as JobDetails;
     },
     enabled: !!jobId,
     staleTime: 5 * 60 * 1000, // 5 minutes

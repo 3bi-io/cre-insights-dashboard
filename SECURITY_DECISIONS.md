@@ -27,12 +27,14 @@ The following tables use `USING(true)` or `WITH CHECK(true)` RLS policies **by d
 
 ### Data Protection Measures
 
-Despite permissive read policies, sensitive data is protected through:
+Despite permissive read policies on some tables, sensitive data is protected through:
 
-1. **View-based access control**: `public_organization_info` view exposes only safe fields
-2. **Column-level security**: Sensitive columns (SSN, background check results) have separate access controls
-3. **Application-level filtering**: API endpoints filter sensitive data before response
-4. **Audit logging**: All data access is logged to `audit_logs` table
+1. **View-based access control**: `public_organization_info` view exposes only safe fields (id, name, slug, logo_url)
+2. **Organizations table secured**: Public SELECT policy removed; anonymous users must use the secure view
+3. **Security definer functions**: `get_public_organization_info()` and `get_public_organization_by_slug()` provide controlled access
+4. **Column-level security**: Sensitive columns (SSN, background check results) have separate access controls
+5. **Application-level filtering**: API endpoints filter sensitive data before response
+6. **Audit logging**: All data access is logged to `audit_logs` table
 
 ## Authentication-Required Tables
 

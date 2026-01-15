@@ -32,20 +32,16 @@ export function usePaginatedPublicJobs({
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
+      // First fetch job listings with related data
+      // Note: organizations join uses public_organization_info view for security
       let query = supabase
         .from('job_listings')
         .select(`
           *,
-          organizations!inner(
-            name, 
-            slug,
-            id
-          ),
           job_categories(name),
           clients(name, logo_url)
         `, { count: 'exact' })
         .eq('status', 'active')
-        .neq('organizations.slug', 'acme') // Exclude ACME organization listings
         .order('created_at', { ascending: false })
         .range(from, to);
 
@@ -67,23 +63,44 @@ export function usePaginatedPublicJobs({
       const { data, error, count } = await query;
       if (error) throw error;
 
-      // Fetch voice agents for organizations
+      // Fetch organization info securely via public_organization_info view
       if (data && data.length > 0) {
-        const orgIds = [...new Set(data.map(job => job.organizations?.id).filter(Boolean))];
-        const { data: voiceAgents } = await supabase
-          .from('voice_agents')
-          .select('*')
-          .in('organization_id', orgIds)
-          .eq('is_active', true)
-          .eq('is_outbound_enabled', false);
-
-        // Attach voice agents to jobs
-        const jobsWithVoiceAgents = data.map(job => ({
-          ...job,
-          voiceAgent: voiceAgents?.find(va => va.organization_id === job.organizations?.id)
-        }));
-
-        return { jobs: jobsWithVoiceAgents, count };
+        const orgIds = [...new Set(data.map(job => job.organization_id).filter(Boolean))] as string[];
+        
+        // Fetch organization data and voice agents in parallel
+        const [orgResult, voiceAgentsResult] = await Promise.all([
+          supabase
+            .from('public_organization_info')
+            .select('id, name, slug, logo_url')
+            .in('id', orgIds),
+          supabase
+            .from('voice_agents')
+            .select('*')
+            .in('organization_id', orgIds)
+            .eq('is_active', true)
+            .eq('is_outbound_enabled', false)
+        ]);
+        
+        // Create org lookup map
+        const orgMap = new Map(orgResult.data?.map(org => [org.id, org]) || []);
+        
+        // Attach organization info to jobs and filter out ACME
+        const jobsWithOrgs = data
+          .map(job => {
+            const org = job.organization_id ? orgMap.get(job.organization_id) : null;
+            const voiceAgent = voiceAgentsResult.data?.find(va => va.organization_id === job.organization_id);
+            return {
+              ...job,
+              organizations: org,
+              voiceAgent
+            };
+          })
+          .filter(job => {
+            const org = job.organizations;
+            return !org || org.slug !== 'acme';
+          });
+        
+        return { jobs: jobsWithOrgs, count: jobsWithOrgs.length };
       }
 
       return { jobs: data || [], count: count || 0 };
