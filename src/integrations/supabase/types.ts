@@ -6607,6 +6607,24 @@ export type Database = {
         }[]
       }
       get_platform_breakdown_data: { Args: never; Returns: Json }
+      get_public_organization_by_slug: {
+        Args: { org_slug: string }
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+        }[]
+      }
+      get_public_organization_info: {
+        Args: { org_id: string }
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+          slug: string
+        }[]
+      }
       get_publisher_feed_config: {
         Args: { p_organization_id: string; p_publisher_slug: string }
         Returns: {
