@@ -19,7 +19,6 @@ export interface PageSEO {
 export const PAGE_KEYWORDS = {
   home: 'applicant tracking system, ATS software, AI recruitment, voice recruitment, AI voice agents',
   features: 'ATS features, recruitment software features, AI screening, automated workflows, candidate tracking, voice apply',
-  pricing: 'ATS pricing, recruitment software cost, ATS plans, affordable ATS',
   resources: 'recruitment resources, hiring guides, ATS knowledge base, HR best practices',
   contact: 'contact ATS.me, recruitment software support, sales inquiry, schedule demo',
 } as const;

@@ -47,8 +47,8 @@ const FAQSection = () => {
       answer: 'All customers receive email and chat support. Enterprise customers receive a dedicated account manager, phone support, and custom SLAs.',
     },
     {
-      question: 'How does pricing work?',
-      answer: 'Our pricing is based on your organization size and needs. Contact our sales team for a custom quote tailored to your requirements.',
+      question: 'How do I get started?',
+      answer: 'Getting started is easy! Contact our sales team to schedule a demo and discuss your organization\'s needs. We\'ll help you set up your account and get running within 48 hours.',
     },
     {
       question: 'What happens to my data if I cancel?',

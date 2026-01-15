@@ -355,7 +355,7 @@ const ContactPage = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="demo">Schedule a Demo</SelectItem>
-                            <SelectItem value="pricing">Pricing Information</SelectItem>
+                            <SelectItem value="enterprise">Enterprise Inquiry</SelectItem>
                             <SelectItem value="features">Product Features</SelectItem>
                             <SelectItem value="integration">Integration Questions</SelectItem>
                             <SelectItem value="migration">Data Migration</SelectItem>

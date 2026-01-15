@@ -161,12 +161,6 @@ const FeaturesPage = () => {
     "name": "ATS.me",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "299",
-      "priceCurrency": "USD",
-      "priceValidUntil": "2026-12-31"
-    },
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.8",
