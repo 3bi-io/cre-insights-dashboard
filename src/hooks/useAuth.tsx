@@ -38,8 +38,7 @@ interface AuthContextType {
     slug: string;
     logo_url?: string;
     settings?: Record<string, unknown>;
-    subscription_status?: string;
-    plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
+    // subscription_status and plan_type removed - all features available to all users
   } | null;
   candidateProfile: CandidateProfile | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -65,8 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     slug: string;
     logo_url?: string;
     settings?: Record<string, unknown>;
-    subscription_status?: string;
-    plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
+    // subscription_status and plan_type removed - all features available to all users
   } | null>(null);
   const [candidateProfile, setCandidateProfile] = useState<CandidateProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,9 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name,
               slug,
               logo_url,
-              settings,
-              subscription_status,
-              plan_type
+              settings
             )
           `)
           .eq('id', _userId)

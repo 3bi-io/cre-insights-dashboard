@@ -77,14 +77,13 @@ export const generateRoiCalculatorXLSX = (): void => {
     ['Cost Savings ($/year)', '=(Calculator!B13-Calculator!C13)*12'],
     ['Additional Hires Enabled', '=(Calculator!C2-Calculator!B2)*12'],
     [''],
-    ['Your Investment', ''],
-    ['ATS.me Professional Plan ($/month)', 599],
-    ['Annual Cost', 7188],
+    ['Estimated Annual Benefits', ''],
+    ['Cost per Hire Reduction ($)', '=(Calculator!B13-Calculator!C13)*12'],
+    ['Time Efficiency Gains (hours)', '=(Calculator!B10-Calculator!C10)*12'],
     [''],
-    ['Estimated Annual ROI', ''],
-    ['Net Annual Benefit ($)', '=(Calculator!B13-Calculator!C13)*12-7188'],
-    ['ROI Percentage', '=((Calculator!B13-Calculator!C13)*12-7188)/7188*100'],
-    ['Payback Period (months)', '=7188/((Calculator!B13-Calculator!C13))']
+    ['ROI Metrics', ''],
+    ['Net Annual Benefit ($)', '=(Calculator!B13-Calculator!C13)*12'],
+    ['Efficiency Improvement (%)', '=((Calculator!B10-Calculator!C10)/Calculator!B10)*100']
   ];
 
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);

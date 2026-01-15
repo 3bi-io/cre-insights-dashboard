@@ -11,7 +11,7 @@ const JobsPage = React.lazy(() => import("@/pages/public/JobsPage"));
 const JobDetailsPage = React.lazy(() => import("@/pages/public/JobDetailsPage"));
 const PublicClientsPage = React.lazy(() => import("@/pages/public/ClientsPage"));
 const FeaturesPage = React.lazy(() => import("@/pages/public/FeaturesPage"));
-const PricingPage = React.lazy(() => import("@/pages/public/PricingPage"));
+// PricingPage removed - all features available to all users
 const ContactPage = React.lazy(() => import("@/pages/public/ContactPage"));
 const ResourcesPage = React.lazy(() => import("@/pages/public/ResourcesPage"));
 const PrivacyPolicyPage = React.lazy(() => import("@/pages/public/PrivacyPolicyPage"));
@@ -94,7 +94,7 @@ const Offline = React.lazy(() => import("@/pages/Offline"));
 const ProfileSettings = React.lazy(() => import("@/pages/settings/ProfileSettings"));
 const OrganizationSettings = React.lazy(() => import("@/pages/settings/OrganizationSettings"));
 const SecuritySettings = React.lazy(() => import("@/pages/settings/SecuritySettings"));
-const BillingSettings = React.lazy(() => import("@/pages/settings/BillingSettings"));
+// BillingSettings removed - no subscription tiers
 
 // Candidate settings
 const CandidateAccountSettings = React.lazy(() => import("@/features/candidate/pages/AccountSettings"));
@@ -154,7 +154,7 @@ const AppRoutes: React.FC = () => {
         <Route path="jobs/:id" element={<RouteWrapper><JobDetailsPage /></RouteWrapper>} />
         <Route path="clients" element={<RouteWrapper><PublicClientsPage /></RouteWrapper>} />
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
-        <Route path="pricing" element={<RouteWrapper><PricingPage /></RouteWrapper>} />
+        <Route path="pricing" element={<Navigate to="/contact" replace />} />
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
         <Route path="resources" element={<RouteWrapper><ResourcesPage /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
@@ -279,7 +279,7 @@ const AppRoutes: React.FC = () => {
         <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/security" element={<ProtectedRouteWrapper><SecuritySettings /></ProtectedRouteWrapper>} />
-        <Route path="settings/billing" element={<ProtectedRouteWrapper><BillingSettings /></ProtectedRouteWrapper>} />
+        {/* Billing settings removed - all features available to all users */}
       </Route>
 
       {/* Access Denied Route */}

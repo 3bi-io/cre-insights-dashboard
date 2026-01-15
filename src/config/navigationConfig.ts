@@ -259,7 +259,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/media': 'Media Assets',
   '/admin/recruiters': 'Recruiters',
   '/admin/api-keys': 'API Keys',
-  '/admin/billing': 'Billing',
+  // '/admin/billing': 'Billing', // Removed - no subscription tiers
   '/admin/integrations': 'Integrations',
   '/admin/reports': 'Reports',
   '/admin/analytics': 'Analytics',

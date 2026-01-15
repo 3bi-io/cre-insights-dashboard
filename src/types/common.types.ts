@@ -148,8 +148,7 @@ export interface Organization {
   domain_dns_records?: Record<string, unknown>;
   domain_verification_token?: string;
   domain_deployed_at?: string;
-  subscription_status?: string;
-  plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
+  // subscription_status and plan_type removed - all features available to all users
   settings?: Record<string, unknown>;
   created_at: string;
   updated_at: string;

@@ -11,7 +11,7 @@ import { OrganizationFeaturesDialog } from '@/components/admin/OrganizationFeatu
 import { DeleteOrganizationDialog } from '@/components/admin/DeleteOrganizationDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { OrganizationPlatformAccessDialog } from '@/components/admin';
-import PlanBadge from '@/components/PlanBadge';
+// PlanBadge removed - no subscription tiers
 import AdminPageLayout from '@/features/shared/components/AdminPageLayout';
 import { AdminNavigationDashboard } from '@/components/admin/AdminNavigationDashboard';
 
@@ -81,7 +81,7 @@ const Organizations = () => {
                         <CardDescription>{org.slug}</CardDescription>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <PlanBadge />
+                        {/* PlanBadge removed - all features available */}
                         <OrganizationFeaturesDialog organization={org} />
                         <Button 
                           size="sm" 
