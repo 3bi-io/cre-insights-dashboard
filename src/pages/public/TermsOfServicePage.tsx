@@ -154,20 +154,18 @@ const TermsOfServicePage = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>5. Subscription and Payment</CardTitle>
+                <CardTitle>5. Access and Usage</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
-                  Some parts of the Service are billed on a subscription basis. You will be 
-                  billed in advance on a recurring and periodic basis. Billing cycles are 
-                  set either on a monthly or annual basis, depending on the type of subscription 
-                  plan you select.
+                  Access to the Service is provided to authorized users within your organization. 
+                  Your organization's administrator manages user access and feature availability 
+                  based on user roles and responsibilities.
                 </p>
                 <p className="text-muted-foreground">
-                  At the end of each billing cycle, your subscription will automatically renew 
-                  under the same conditions unless you cancel it or we terminate it. You may 
-                  cancel your subscription renewal either through your online account management 
-                  page or by contacting our customer support team.
+                  All registered users have access to platform features appropriate to their role. 
+                  Feature access is managed by your organization's Super Administrator and may be 
+                  adjusted at any time to meet your organization's needs.
                 </p>
               </CardContent>
             </Card>

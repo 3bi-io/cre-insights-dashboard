@@ -26,11 +26,7 @@ export const STATIC_ROUTES: SitemapUrl[] = [
     changefreq: 'weekly',
     priority: 0.9,
   },
-  {
-    loc: 'https://ats.me/pricing',
-    changefreq: 'monthly',
-    priority: 0.9,
-  },
+  // Pricing page removed - all features available to all users
   {
     loc: 'https://ats.me/apply',
     changefreq: 'weekly',

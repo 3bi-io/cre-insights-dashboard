@@ -28,7 +28,7 @@ export interface OrganizationStats {
   name: string;
   slug: string;
   created_at: string;
-  subscription_status: string;
+  // subscription_status removed - all features available to all users
   userCount: number;
   jobCount: number;
   applicationCount: number;
