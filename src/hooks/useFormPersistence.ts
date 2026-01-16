@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useCallback, useRef, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 interface FormPersistenceOptions {
   key: string;
@@ -46,7 +47,7 @@ export function useFormPersistence<T extends object>(
         }
       }
     } catch (error) {
-      console.error('Error checking for draft:', error);
+      logger.error('Error checking for draft', error);
     }
   }, [storageKey]);
 
@@ -70,7 +71,7 @@ export function useFormPersistence<T extends object>(
         }
       }
     } catch (error) {
-      console.error('Error restoring draft:', error);
+      logger.error('Error restoring draft', error);
     }
     return false;
   }, [storageKey, setFormData]);
@@ -92,7 +93,7 @@ export function useFormPersistence<T extends object>(
         setLastSaved(new Date());
         setHasDraft(true);
       } catch (error) {
-        console.error('Error saving draft:', error);
+        logger.error('Error saving draft', error);
       }
     }, debounceMs);
   }, [formData, storageKey, expiryHours, debounceMs]);
@@ -120,7 +121,7 @@ export function useFormPersistence<T extends object>(
       setHasDraft(false);
       setLastSaved(null);
     } catch (error) {
-      console.error('Error clearing draft:', error);
+      logger.error('Error clearing draft', error);
     }
   }, [storageKey]);
 

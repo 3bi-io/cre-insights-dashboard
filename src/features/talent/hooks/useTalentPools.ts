@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface TalentPool {
@@ -105,7 +106,7 @@ export function useTalentPools() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to create talent pool', variant: 'destructive' });
-      console.error('Create pool error:', error);
+      logger.error('Create pool error', error);
     },
   });
 
@@ -124,7 +125,7 @@ export function useTalentPools() {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to delete talent pool', variant: 'destructive' });
-      console.error('Delete pool error:', error);
+      logger.error('Delete pool error', error);
     },
   });
 
@@ -194,7 +195,7 @@ export function useTalentPoolMembers(poolId: string | undefined) {
     },
     onError: (error) => {
       toast({ title: 'Error', description: 'Failed to remove candidate', variant: 'destructive' });
-      console.error('Remove member error:', error);
+      logger.error('Remove member error', error);
     },
   });
 
