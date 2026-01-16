@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -298,7 +299,7 @@ const TenstreetUpdateDialog: React.FC<TenstreetUpdateDialogProps> = ({
       setOpen(false);
       form.reset();
     } catch (error) {
-      console.error('Error sending update to Tenstreet:', error);
+      logger.error('Error sending update to Tenstreet', error, { context: 'TenstreetUpdateDialog' });
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to send update to Tenstreet. Please try again.",

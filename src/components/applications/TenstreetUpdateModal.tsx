@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +70,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
         setSelectedMapping(defaultMapping.id);
       }
     } catch (error) {
-      console.error('Error loading mappings:', error);
+      logger.error('Error loading mappings', error, { context: 'TenstreetUpdateModal' });
     }
   };
 
@@ -103,7 +104,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
 
       loadSavedMappings();
     } catch (error) {
-      console.error('Error saving mapping:', error);
+      logger.error('Error saving mapping', error, { context: 'TenstreetUpdateModal' });
       toast({
         title: "Error",
         description: "Failed to save field mapping settings",
@@ -203,7 +204,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
         .eq('id', application.id);
 
       if (updateError) {
-        console.error('Error updating application:', updateError);
+        logger.warn('Posted to Tenstreet but failed to update local application', { error: updateError, context: 'TenstreetUpdateModal' });
         toast({
           title: "Warning",
           description: "Posted to Tenstreet but failed to update local application data",
@@ -218,7 +219,7 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
       
       onClose();
     } catch (error) {
-      console.error('Error posting to Tenstreet:', error);
+      logger.error('Error posting to Tenstreet', error, { context: 'TenstreetUpdateModal' });
       toast({
         title: "Error",
         description: "Failed to post application to Tenstreet",
