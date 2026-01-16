@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Building2, Plus, Edit, Trash2, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { OrganizationSettings } from './OrganizationSettings';
+import { logger } from '@/lib/logger';
 import { OrganizationFeatureManagement } from './OrganizationFeatureManagement';
 import { OrganizationFeatureBadges } from './OrganizationFeatureBadges';
 import QuickDomainActions from './QuickDomainActions';
@@ -80,7 +81,7 @@ const OrganizationManagement = () => {
       setShowCreateDialog(false);
       setEditingOrg(null);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      logger.error('Error submitting form:', error);
     }
   };
 

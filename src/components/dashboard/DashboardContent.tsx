@@ -234,7 +234,7 @@ const DashboardContent = () => {
         description: "OpenAI analysis of Meta ad spend completed successfully"
       });
     } catch (error) {
-      console.error('Error generating Meta analytics:', error);
+      logError('Error generating Meta analytics:', error);
       toast({
         title: "Error",
         description: "Failed to generate Meta spend analytics",

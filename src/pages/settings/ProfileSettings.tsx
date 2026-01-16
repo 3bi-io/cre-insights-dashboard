@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const ProfileSettings = () => {
   const { user, refreshUser } = useAuth();
@@ -30,7 +31,7 @@ const ProfileSettings = () => {
         .maybeSingle();
       
       if (error) {
-        console.error('Error fetching profile:', error);
+        logger.error('Error fetching profile:', error);
       } else if (data) {
         setProfile({
           full_name: data.full_name || '',

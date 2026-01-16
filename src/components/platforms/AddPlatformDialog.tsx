@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface AddPlatformDialogProps {
   open: boolean;
@@ -63,7 +64,7 @@ const AddPlatformDialog: React.FC<AddPlatformDialogProps> = ({
       setApiEndpoint('');
       onSuccess();
     } catch (error) {
-      console.error('Error adding publisher:', error);
+      logger.error('Error adding publisher:', error);
       toast({
         title: "Error",
         description: "Failed to add publisher. Please try again.",

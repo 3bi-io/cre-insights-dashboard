@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Progress } from '@/components/ui/progress';
 import { useImportApplicationsAccess } from '@/hooks/useImportApplicationsAccess';
 import BulkApplicationImporter from '@/components/csv/BulkApplicationImporter';
+import { logger } from '@/lib/logger';
 
 interface ImportResult {
   success: boolean;
@@ -120,7 +121,7 @@ example-job-id,Jane,,Smith,jane@example.com,555-0101,,Los Angeles,CA,90001,456 O
         });
       }
     } catch (error) {
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
       toast({
         title: "Import failed",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
