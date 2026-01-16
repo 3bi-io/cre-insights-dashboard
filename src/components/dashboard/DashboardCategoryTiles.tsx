@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { getApplicantCategory } from '@/utils/applicationHelpers';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface CategoryData {
   category: string;
@@ -80,7 +81,7 @@ const DashboardCategoryTiles: React.FC = () => {
 
         setCategoryBreakdown(breakdown);
       } catch (error) {
-        console.error('Error fetching category data:', error);
+        logger.error('Error fetching category data:', error);
       } finally {
         setLoading(false);
       }

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, TrendingUp, MousePointer, Eye, Users } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const TalrooPlatformActions = () => {
   const [campaignId, setCampaignId] = useState('');
@@ -71,7 +72,7 @@ const TalrooPlatformActions = () => {
       if (error) throw error;
       setStats(data.totals);
     } catch (error: any) {
-      console.error('Error fetching stats:', error);
+      logger.error('Error fetching stats:', error);
     } finally {
       setIsLoading(false);
     }

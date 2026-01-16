@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { generateFeatureGuidePDF, generateImplementationChecklistPDF, generateBestPracticesPDF } from '@/utils/resourcesPdfGenerator';
 import { generateRoiCalculatorXLSX } from '@/utils/roiCalculatorGenerator';
+import { logger } from '@/lib/logger';
 
 const ResourcesPage = () => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -132,7 +133,7 @@ const ResourcesPage = () => {
       generator();
       toast.success(`${title} downloaded successfully`);
     } catch (error) {
-      console.error('Download error:', error);
+      logger.error('Download error:', error);
       toast.error('Failed to generate download. Please try again.');
     } finally {
       setDownloadingId(null);

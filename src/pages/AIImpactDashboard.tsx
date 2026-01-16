@@ -9,6 +9,7 @@ import { BarChart3, TrendingUp, TrendingDown, Clock, DollarSign, Users, Target, 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { logger } from '@/lib/logger';
 interface MetricComparison {
   metric: string;
   traditional: number;
@@ -189,7 +190,7 @@ const AIImpactDashboard = () => {
         description: "AI impact metrics have been refreshed"
       });
     } catch (error) {
-      console.error('Error loading metrics:', error);
+      logger.error('Error loading metrics:', error);
       toast.error("Failed to load AI impact metrics");
     } finally {
       setLoading(false);

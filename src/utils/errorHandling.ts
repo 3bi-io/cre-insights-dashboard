@@ -4,6 +4,7 @@
  */
 
 import { toast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 // Standard error types for the application
 export enum ErrorType {
@@ -131,7 +132,7 @@ export function handleError(
 
   // Log error if enabled
   if (logError) {
-    console.error('[Error Handler]', {
+    logger.error('[Error Handler]', {
       type: standardError.type,
       severity: standardError.severity,
       message: standardError.message,
