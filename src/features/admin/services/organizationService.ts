@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Organization, OrganizationFormData, OrganizationUpdatePayload } from '../types';
+import { logger } from '@/lib/logger';
 
 /**
  * Central service for organization CRUD operations
@@ -9,7 +10,7 @@ export class OrganizationService {
    * Fetches all organizations
    */
   static async fetchOrganizations(): Promise<Organization[]> {
-    console.log('OrganizationService: Fetching organizations');
+    logger.debug('OrganizationService: Fetching organizations');
     
     const { data, error } = await supabase
       .from('organizations')
@@ -17,11 +18,11 @@ export class OrganizationService {
       .order('name', { ascending: true });
     
     if (error) {
-      console.error('OrganizationService: Error fetching organizations', error);
+      logger.error('OrganizationService: Error fetching organizations', error);
       throw error;
     }
     
-    console.log('OrganizationService: Organizations fetched', data?.length);
+    logger.debug('OrganizationService: Organizations fetched', { count: data?.length });
     return (data || []) as Organization[];
   }
 
@@ -29,7 +30,7 @@ export class OrganizationService {
    * Fetches a single organization by ID
    */
   static async fetchOrganization(id: string): Promise<Organization> {
-    console.log('OrganizationService: Fetching organization', id);
+    logger.debug('OrganizationService: Fetching organization', { id });
     
     const { data, error } = await supabase
       .from('organizations')
@@ -38,7 +39,7 @@ export class OrganizationService {
       .single();
     
     if (error) {
-      console.error('OrganizationService: Error fetching organization', error);
+      logger.error('OrganizationService: Error fetching organization', error);
       throw error;
     }
     
@@ -49,7 +50,7 @@ export class OrganizationService {
    * Creates a new organization
    */
   static async createOrganization(formData: OrganizationFormData): Promise<Organization> {
-    console.log('OrganizationService: Creating organization', formData.name);
+    logger.debug('OrganizationService: Creating organization', { name: formData.name });
     
     // Call the database function to create organization with admin
     const { data, error } = await supabase.rpc('create_organization', {
@@ -59,7 +60,7 @@ export class OrganizationService {
     });
     
     if (error) {
-      console.error('OrganizationService: Error creating organization', error);
+      logger.error('OrganizationService: Error creating organization', error);
       throw error;
     }
     
@@ -74,7 +75,7 @@ export class OrganizationService {
     id: string,
     updates: OrganizationUpdatePayload
   ): Promise<Organization> {
-    console.log('OrganizationService: Updating organization', id);
+    logger.debug('OrganizationService: Updating organization', { id });
     
     const { data, error } = await supabase
       .from('organizations')
@@ -87,11 +88,11 @@ export class OrganizationService {
       .single();
     
     if (error) {
-      console.error('OrganizationService: Error updating organization', error);
+      logger.error('OrganizationService: Error updating organization', error);
       throw error;
     }
     
-    console.log('OrganizationService: Organization updated', data.id);
+    logger.debug('OrganizationService: Organization updated', { id: data.id });
     return data as Organization;
   }
 
@@ -99,7 +100,7 @@ export class OrganizationService {
    * Deletes an organization
    */
   static async deleteOrganization(id: string): Promise<void> {
-    console.log('OrganizationService: Deleting organization', id);
+    logger.debug('OrganizationService: Deleting organization', { id });
     
     const { error } = await supabase
       .from('organizations')
@@ -107,25 +108,25 @@ export class OrganizationService {
       .eq('id', id);
     
     if (error) {
-      console.error('OrganizationService: Error deleting organization', error);
+      logger.error('OrganizationService: Error deleting organization', error);
       throw error;
     }
     
-    console.log('OrganizationService: Organization deleted', id);
+    logger.debug('OrganizationService: Organization deleted', { id });
   }
 
   /**
    * Fetches organization with statistics
    */
   static async fetchOrganizationWithStats(id: string): Promise<any> {
-    console.log('OrganizationService: Fetching organization with stats', id);
+    logger.debug('OrganizationService: Fetching organization with stats', { id });
     
     const { data, error } = await supabase.rpc('get_organization_with_stats', {
       _org_id: id,
     });
     
     if (error) {
-      console.error('OrganizationService: Error fetching org stats', error);
+      logger.error('OrganizationService: Error fetching org stats', error);
       throw error;
     }
     
@@ -139,7 +140,7 @@ export class OrganizationService {
     organizationId: string,
     features: Record<string, any>
   ): Promise<void> {
-    console.log('OrganizationService: Updating org features', organizationId);
+    logger.debug('OrganizationService: Updating org features', { organizationId });
     
     const { error } = await supabase.rpc('update_organization_features', {
       _org_id: organizationId,
@@ -147,25 +148,25 @@ export class OrganizationService {
     });
     
     if (error) {
-      console.error('OrganizationService: Error updating features', error);
+      logger.error('OrganizationService: Error updating features', error);
       throw error;
     }
     
-    console.log('OrganizationService: Features updated');
+    logger.debug('OrganizationService: Features updated');
   }
 
   /**
    * Fetches organization platform access
    */
   static async fetchOrganizationPlatformAccess(organizationId: string): Promise<any[]> {
-    console.log('OrganizationService: Fetching platform access', organizationId);
+    logger.debug('OrganizationService: Fetching platform access', { organizationId });
     
     const { data, error } = await supabase.rpc('get_organization_platform_access', {
       _org_id: organizationId,
     });
     
     if (error) {
-      console.error('OrganizationService: Error fetching platform access', error);
+      logger.error('OrganizationService: Error fetching platform access', error);
       throw error;
     }
     
@@ -180,7 +181,7 @@ export class OrganizationService {
     platformName: string,
     enabled: boolean
   ): Promise<void> {
-    console.log('OrganizationService: Setting platform access', organizationId, platformName, enabled);
+    logger.debug('OrganizationService: Setting platform access', { organizationId, platformName, enabled });
     
     const { error } = await supabase.rpc('set_organization_platform_access', {
       _org_id: organizationId,
@@ -189,10 +190,10 @@ export class OrganizationService {
     });
     
     if (error) {
-      console.error('OrganizationService: Error setting platform access', error);
+      logger.error('OrganizationService: Error setting platform access', error);
       throw error;
     }
     
-    console.log('OrganizationService: Platform access updated');
+    logger.debug('OrganizationService: Platform access updated');
   }
 }

@@ -3,6 +3,8 @@
  * Phase 11: Post-Launch & Scaling
  */
 
+import { logger } from '@/lib/logger';
+
 // Debounce function for expensive operations
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
@@ -58,45 +60,43 @@ export function memoize<T extends (...args: any[]) => any>(
   };
 }
 
-// Image lazy loading helper
-export const lazyLoadImage = (
-  img: HTMLImageElement,
-  src: string,
-  placeholder?: string
-) => {
-  if (placeholder) {
-    img.src = placeholder;
-  }
-
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          img.src = src;
-          observer.unobserve(img);
-        }
-      });
+// Lazy loading helper for components
+export function lazyLoad<T>(
+  factory: () => Promise<{ default: T }>,
+  delay: number = 0
+): () => Promise<{ default: T }> {
+  return () =>
+    new Promise((resolve) => {
+      setTimeout(() => {
+        factory().then(resolve);
+      }, delay);
     });
+}
 
-    observer.observe(img);
-  } else {
-    // Fallback for browsers without IntersectionObserver
-    img.src = src;
-  }
-};
+// Request idle callback polyfill
+export const requestIdleCallbackPolyfill =
+  typeof window !== 'undefined' && 'requestIdleCallback' in window
+    ? window.requestIdleCallback
+    : (cb: IdleRequestCallback) => setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 50 }), 1);
 
-// Batch API calls
+// Cancel idle callback polyfill
+export const cancelIdleCallbackPolyfill =
+  typeof window !== 'undefined' && 'cancelIdleCallback' in window
+    ? window.cancelIdleCallback
+    : (id: number) => clearTimeout(id);
+
+// Batch processor for efficient bulk operations
 export class BatchProcessor<T> {
   private queue: T[] = [];
   private processing = false;
   private batchSize: number;
   private delay: number;
-  private processor: (batch: T[]) => Promise<void>;
+  private processor: (items: T[]) => Promise<void>;
 
   constructor(
-    processor: (batch: T[]) => Promise<void>,
-    batchSize = 10,
-    delay = 100
+    processor: (items: T[]) => Promise<void>,
+    batchSize: number = 10,
+    delay: number = 100
   ) {
     this.processor = processor;
     this.batchSize = batchSize;
@@ -108,12 +108,14 @@ export class BatchProcessor<T> {
     this.scheduleBatch();
   }
 
+  addMany(items: T[]): void {
+    this.queue.push(...items);
+    this.scheduleBatch();
+  }
+
   private scheduleBatch(): void {
     if (this.processing) return;
-
-    setTimeout(() => {
-      this.processBatch();
-    }, this.delay);
+    setTimeout(() => this.processBatch(), this.delay);
   }
 
   private async processBatch(): Promise<void> {
@@ -125,7 +127,7 @@ export class BatchProcessor<T> {
     try {
       await this.processor(batch);
     } catch (error) {
-      console.error('Error processing batch:', error);
+      logger.error('Error processing batch', error);
       // Re-add failed items to queue
       this.queue.unshift(...batch);
     } finally {
@@ -143,144 +145,144 @@ export class BatchProcessor<T> {
 export interface VirtualScrollOptions {
   itemHeight: number;
   containerHeight: number;
-  buffer?: number;
+  overscan?: number;
 }
 
 export function calculateVisibleRange(
   scrollTop: number,
   totalItems: number,
   options: VirtualScrollOptions
-): { start: number; end: number } {
-  const { itemHeight, containerHeight, buffer = 5 } = options;
+): { start: number; end: number; offset: number } {
+  const { itemHeight, containerHeight, overscan = 3 } = options;
 
-  const start = Math.max(0, Math.floor(scrollTop / itemHeight) - buffer);
+  const start = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const visibleCount = Math.ceil(containerHeight / itemHeight);
-  const end = Math.min(totalItems, start + visibleCount + buffer * 2);
+  const end = Math.min(totalItems, start + visibleCount + 2 * overscan);
 
-  return { start, end };
+  return {
+    start,
+    end,
+    offset: start * itemHeight,
+  };
 }
 
-// Request idle callback helper
-export function runWhenIdle(callback: () => void, timeout = 1000): void {
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(callback, { timeout });
-  } else {
-    setTimeout(callback, 0);
-  }
-}
-
-// Web Worker helper
-export function createWorker(workerFunction: Function): Worker {
-  const blob = new Blob([`(${workerFunction.toString()})()`], {
-    type: 'application/javascript',
+// Resource preloading
+export function preloadImage(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = src;
   });
-  const url = URL.createObjectURL(blob);
-  return new Worker(url);
 }
 
-// Preload critical resources
-export function preloadResource(url: string, as: string): void {
-  const link = document.createElement('link');
-  link.rel = 'preload';
-  link.href = url;
-  link.as = as;
-  document.head.appendChild(link);
+export function preloadImages(srcs: string[]): Promise<void[]> {
+  return Promise.all(srcs.map(preloadImage));
 }
 
-// Prefetch next page
-export function prefetchPage(url: string): void {
-  const link = document.createElement('link');
-  link.rel = 'prefetch';
-  link.href = url;
-  document.head.appendChild(link);
-}
-
-// Connection quality detection
+// Connection-aware loading
 export function getConnectionQuality(): 'slow' | 'medium' | 'fast' {
-  if ('connection' in navigator) {
-    const connection = (navigator as any).connection;
-    const effectiveType = connection?.effectiveType;
+  if (typeof navigator === 'undefined' || !('connection' in navigator)) {
+    return 'medium';
+  }
 
-    if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+  const connection = (navigator as any).connection;
+  const effectiveType = connection?.effectiveType;
+
+  switch (effectiveType) {
+    case 'slow-2g':
+    case '2g':
       return 'slow';
-    } else if (effectiveType === '3g') {
+    case '3g':
       return 'medium';
-    }
+    case '4g':
+    default:
+      return 'fast';
   }
-
-  return 'fast';
 }
 
-// Adaptive loading based on connection
-export function shouldLoadHighQuality(): boolean {
-  const quality = getConnectionQuality();
-  return quality === 'fast';
+// Memory-efficient data processing
+export function* chunkedIterator<T>(
+  array: T[],
+  chunkSize: number
+): Generator<T[], void, unknown> {
+  for (let i = 0; i < array.length; i += chunkSize) {
+    yield array.slice(i, i + chunkSize);
+  }
 }
 
-// Memory usage tracking
-export function getMemoryUsage(): {
-  used: number;
-  total: number;
-  percentage: number;
-} | null {
-  if ('memory' in performance && (performance as any).memory) {
-    const memory = (performance as any).memory;
-    return {
-      used: memory.usedJSHeapSize,
-      total: memory.jsHeapSizeLimit,
-      percentage: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100,
-    };
+// Performance monitoring
+export class PerformanceMonitor {
+  private marks: Map<string, number> = new Map();
+
+  mark(name: string): void {
+    this.marks.set(name, performance.now());
   }
 
-  return null;
-}
+  measure(name: string, startMark: string): number | null {
+    const start = this.marks.get(startMark);
+    if (start === undefined) return null;
 
-// Cache management
-export class CacheManager {
-  private cache = new Map<string, { data: any; timestamp: number }>();
-  private maxAge: number;
-
-  constructor(maxAge = 5 * 60 * 1000) {
-    // Default 5 minutes
-    this.maxAge = maxAge;
-  }
-
-  set(key: string, data: any): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-    });
-  }
-
-  get(key: string): any | null {
-    const cached = this.cache.get(key);
-
-    if (!cached) return null;
-
-    const age = Date.now() - cached.timestamp;
-
-    if (age > this.maxAge) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return cached.data;
+    const duration = performance.now() - start;
+    logger.debug(`Performance: ${name} took ${duration.toFixed(2)}ms`);
+    return duration;
   }
 
   clear(): void {
-    this.cache.clear();
-  }
-
-  cleanup(): void {
-    const now = Date.now();
-
-    for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > this.maxAge) {
-        this.cache.delete(key);
-      }
-    }
+    this.marks.clear();
   }
 }
 
-// Export singleton cache instance
-export const globalCache = new CacheManager();
+// Intersection observer helper
+export function createIntersectionObserver(
+  callback: (entries: IntersectionObserverEntry[]) => void,
+  options: IntersectionObserverInit = {}
+): IntersectionObserver | null {
+  if (typeof IntersectionObserver === 'undefined') {
+    return null;
+  }
+
+  return new IntersectionObserver(callback, {
+    rootMargin: '50px',
+    threshold: 0.1,
+    ...options,
+  });
+}
+
+// Resize observer helper
+export function createResizeObserver(
+  callback: (entries: ResizeObserverEntry[]) => void
+): ResizeObserver | null {
+  if (typeof ResizeObserver === 'undefined') {
+    return null;
+  }
+
+  return new ResizeObserver(callback);
+}
+
+// Animation frame helper
+export function scheduleAnimation(callback: () => void): number {
+  return requestAnimationFrame(callback);
+}
+
+export function cancelAnimation(id: number): void {
+  cancelAnimationFrame(id);
+}
+
+// Efficient DOM updates
+export function batchDOMUpdates(updates: (() => void)[]): void {
+  requestAnimationFrame(() => {
+    updates.forEach((update) => update());
+  });
+}
+
+// Memory cleanup helper
+export function cleanupResources(
+  observers: (IntersectionObserver | ResizeObserver | null)[],
+  timeouts: (NodeJS.Timeout | null)[],
+  intervals: (NodeJS.Timeout | null)[]
+): void {
+  observers.forEach((observer) => observer?.disconnect());
+  timeouts.forEach((timeout) => timeout && clearTimeout(timeout));
+  intervals.forEach((interval) => interval && clearInterval(interval));
+}

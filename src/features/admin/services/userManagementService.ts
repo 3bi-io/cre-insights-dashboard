@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { User, CreateUserPayload, UpdateUserPayload, AssignRolePayload, UserRole } from '../types';
+import { logger } from '@/lib/logger';
 
 /**
  * Central service for user and role management operations
@@ -9,7 +10,7 @@ export class UserManagementService {
    * Fetches all users
    */
   static async fetchUsers(): Promise<User[]> {
-    console.log('UserManagementService: Fetching users');
+    logger.debug('UserManagementService: Fetching users');
     
     const { data, error } = await supabase
       .from('profiles')
@@ -17,11 +18,11 @@ export class UserManagementService {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('UserManagementService: Error fetching users', error);
+      logger.error('UserManagementService: Error fetching users', error);
       throw error;
     }
     
-    console.log('UserManagementService: Users fetched', data?.length);
+    logger.debug('UserManagementService: Users fetched', { count: data?.length });
     return data || [];
   }
 
@@ -29,7 +30,7 @@ export class UserManagementService {
    * Fetches users for a specific organization
    */
   static async fetchOrganizationUsers(organizationId: string): Promise<User[]> {
-    console.log('UserManagementService: Fetching org users', organizationId);
+    logger.debug('UserManagementService: Fetching org users', { organizationId });
     
     const { data, error } = await supabase
       .from('profiles')
@@ -38,7 +39,7 @@ export class UserManagementService {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('UserManagementService: Error fetching org users', error);
+      logger.error('UserManagementService: Error fetching org users', error);
       throw error;
     }
     
@@ -49,7 +50,7 @@ export class UserManagementService {
    * Fetches a single user by ID
    */
   static async fetchUser(id: string): Promise<User> {
-    console.log('UserManagementService: Fetching user', id);
+    logger.debug('UserManagementService: Fetching user', { id });
     
     const { data, error } = await supabase
       .from('profiles')
@@ -58,7 +59,7 @@ export class UserManagementService {
       .single();
     
     if (error) {
-      console.error('UserManagementService: Error fetching user', error);
+      logger.error('UserManagementService: Error fetching user', error);
       throw error;
     }
     
@@ -69,7 +70,7 @@ export class UserManagementService {
    * Updates a user's profile
    */
   static async updateUser(id: string, updates: UpdateUserPayload): Promise<User> {
-    console.log('UserManagementService: Updating user', id);
+    logger.debug('UserManagementService: Updating user', { id });
     
     const { data, error } = await supabase
       .from('profiles')
@@ -82,11 +83,11 @@ export class UserManagementService {
       .single();
     
     if (error) {
-      console.error('UserManagementService: Error updating user', error);
+      logger.error('UserManagementService: Error updating user', error);
       throw error;
     }
     
-    console.log('UserManagementService: User updated', data.id);
+    logger.debug('UserManagementService: User updated', { id: data.id });
     return data;
   }
 
@@ -94,7 +95,7 @@ export class UserManagementService {
    * Updates user status (enable/disable)
    */
   static async updateUserStatus(userId: string, enabled: boolean): Promise<void> {
-    console.log('UserManagementService: Updating user status', userId, enabled);
+    logger.debug('UserManagementService: Updating user status', { userId, enabled });
     
     const { error } = await supabase.rpc('update_user_status', {
       _user_id: userId,
@@ -102,18 +103,18 @@ export class UserManagementService {
     });
     
     if (error) {
-      console.error('UserManagementService: Error updating user status', error);
+      logger.error('UserManagementService: Error updating user status', error);
       throw error;
     }
     
-    console.log('UserManagementService: User status updated');
+    logger.debug('UserManagementService: User status updated');
   }
 
   /**
    * Fetches user roles
    */
   static async fetchUserRoles(userId: string): Promise<any[]> {
-    console.log('UserManagementService: Fetching user roles', userId);
+    logger.debug('UserManagementService: Fetching user roles', { userId });
     
     const { data, error } = await supabase
       .from('user_roles')
@@ -121,7 +122,7 @@ export class UserManagementService {
       .eq('user_id', userId);
     
     if (error) {
-      console.error('UserManagementService: Error fetching user roles', error);
+      logger.error('UserManagementService: Error fetching user roles', error);
       throw error;
     }
     
@@ -132,7 +133,7 @@ export class UserManagementService {
    * Assigns a role to a user
    */
   static async assignRole(payload: AssignRolePayload): Promise<void> {
-    console.log('UserManagementService: Assigning role', payload);
+    logger.debug('UserManagementService: Assigning role', { payload });
     
     const { error } = await supabase
       .from('user_roles')
@@ -143,18 +144,18 @@ export class UserManagementService {
       });
     
     if (error) {
-      console.error('UserManagementService: Error assigning role', error);
+      logger.error('UserManagementService: Error assigning role', error);
       throw error;
     }
     
-    console.log('UserManagementService: Role assigned');
+    logger.debug('UserManagementService: Role assigned');
   }
 
   /**
    * Removes a role from a user
    */
   static async removeRole(userId: string, role: UserRole): Promise<void> {
-    console.log('UserManagementService: Removing role', userId, role);
+    logger.debug('UserManagementService: Removing role', { userId, role });
     
     const { error } = await supabase
       .from('user_roles')
@@ -163,18 +164,18 @@ export class UserManagementService {
       .eq('role', role);
     
     if (error) {
-      console.error('UserManagementService: Error removing role', error);
+      logger.error('UserManagementService: Error removing role', error);
       throw error;
     }
     
-    console.log('UserManagementService: Role removed');
+    logger.debug('UserManagementService: Role removed');
   }
 
   /**
    * Checks if user has a specific role
    */
   static async hasRole(userId: string, role: UserRole): Promise<boolean> {
-    console.log('UserManagementService: Checking role', userId, role);
+    logger.debug('UserManagementService: Checking role', { userId, role });
     
     const { data, error } = await supabase.rpc('has_role', {
       _user_id: userId,
@@ -182,7 +183,7 @@ export class UserManagementService {
     });
     
     if (error) {
-      console.error('UserManagementService: Error checking role', error);
+      logger.error('UserManagementService: Error checking role', error);
       return false;
     }
     
@@ -193,14 +194,14 @@ export class UserManagementService {
    * Checks if user is super admin
    */
   static async isSuperAdmin(userId: string): Promise<boolean> {
-    console.log('UserManagementService: Checking super admin', userId);
+    logger.debug('UserManagementService: Checking super admin', { userId });
     
     const { data, error } = await supabase.rpc('is_super_admin', {
       _user_id: userId,
     });
     
     if (error) {
-      console.error('UserManagementService: Error checking super admin', error);
+      logger.error('UserManagementService: Error checking super admin', error);
       return false;
     }
     
@@ -211,12 +212,12 @@ export class UserManagementService {
    * Gets current user's role
    */
   static async getCurrentUserRole(): Promise<UserRole> {
-    console.log('UserManagementService: Getting current user role');
+    logger.debug('UserManagementService: Getting current user role');
     
     const { data, error } = await supabase.rpc('get_current_user_role');
     
     if (error) {
-      console.error('UserManagementService: Error getting current role', error);
+      logger.error('UserManagementService: Error getting current role', error);
       return 'user';
     }
     
