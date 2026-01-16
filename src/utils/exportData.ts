@@ -4,6 +4,7 @@
  */
 
 import jsPDF from 'jspdf';
+import { logger } from '@/lib/logger';
 
 interface ExportOptions {
   filename?: string;
@@ -19,7 +20,7 @@ export function exportToCSV<T extends Record<string, any>>(
   options: ExportOptions = {}
 ): void {
   if (!data || data.length === 0) {
-    console.warn('No data to export');
+    logger.warn('No data to export', { context: 'ExportData' });
     return;
   }
 
@@ -69,7 +70,7 @@ export function exportToPDF<T extends Record<string, any>>(
   options: ExportOptions = {}
 ): void {
   if (!data || data.length === 0) {
-    console.warn('No data to export');
+    logger.warn('No data to export', { context: 'ExportData' });
     return;
   }
 

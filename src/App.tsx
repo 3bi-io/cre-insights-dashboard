@@ -20,23 +20,16 @@ import { cleanupCorruptedAuthState } from "@/utils/authRecovery";
 
 // Proactively clean up corrupted auth state on app startup
 // This runs before React renders to prevent crashes from stale tokens
-const appStartTimestamp = new Date().toISOString();
-console.log(`[APP][${appStartTimestamp}] Application starting...`);
-console.log(`[APP][${appStartTimestamp}] Running proactive auth state cleanup check`);
-
 try {
   const wasCleared = cleanupCorruptedAuthState();
-  console.log(`[APP][${appStartTimestamp}] Auth cleanup result:`, { wasCleared });
   if (wasCleared) {
-    console.warn(`[APP][${appStartTimestamp}] Corrupted auth state was detected and cleared on startup`);
+    logger.warn('Corrupted auth state was detected and cleared on startup', { context: 'APP' });
   } else {
-    console.log(`[APP][${appStartTimestamp}] Auth state is clean, no cleanup needed`);
+    logger.debug('Auth state is clean, no cleanup needed', { context: 'APP' });
   }
 } catch (e) {
-  console.error(`[APP][${appStartTimestamp}] Error during auth cleanup:`, e);
+  logger.error('Error during auth cleanup', e, { context: 'APP' });
 }
-
-console.log(`[APP][${appStartTimestamp}] Proceeding to render application`);
 
 // Service Worker Registration
 function PWAUpdater() {
