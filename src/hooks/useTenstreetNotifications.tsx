@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface TenstreetNotificationCounts {
   pendingScreenings: number;
@@ -11,7 +12,7 @@ interface TenstreetNotificationCounts {
 
 export function useTenstreetNotifications() {
   const { data: counts, isLoading } = useQuery({
-    queryKey: ['tenstreet-notifications'],
+    queryKey: queryKeys.tenstreet.notifications(),
     queryFn: async () => {
       // Get screening counts
       const { data: screenings, error: screeningsError } = await supabase

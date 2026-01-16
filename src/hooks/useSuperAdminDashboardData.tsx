@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface SuperAdminDashboardMetrics {
   totalOrganizations: number;
@@ -19,7 +20,7 @@ interface SuperAdminDashboardMetrics {
 
 export const useSuperAdminDashboardData = () => {
   return useQuery({
-    queryKey: ['super-admin-dashboard'],
+    queryKey: queryKeys.admin.superAdminDashboard(),
     queryFn: async (): Promise<SuperAdminDashboardMetrics> => {
       // 1. Organizations count
       const { count: orgsCount } = await supabase

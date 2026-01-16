@@ -23,6 +23,7 @@ import {
 import { UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface SuperAdminInviteDialogProps {
   trigger?: React.ReactNode;
@@ -106,8 +107,8 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.superAdminUsers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       toast({
         title: 'User invited',
         description: `Successfully invited ${email} as ${selectedRole}`,

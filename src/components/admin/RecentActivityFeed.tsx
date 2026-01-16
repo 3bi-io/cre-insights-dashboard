@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, UserPlus, Building, Briefcase, UserCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface ActivityItem {
   id: string;
@@ -19,7 +19,7 @@ export const RecentActivityFeed = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   const { data: recentData } = useQuery({
-    queryKey: ['recent-activity'],
+    queryKey: queryKeys.system.recentActivity(),
     queryFn: async () => {
       const [users, orgs, jobs, apps] = await Promise.all([
         supabase.from('profiles').select('id, email, created_at').order('created_at', { ascending: false }).limit(5),
@@ -78,10 +78,10 @@ export const RecentActivityFeed = () => {
 
   const getColor = (type: ActivityItem['type']) => {
     switch (type) {
-      case 'user_signup': return 'bg-blue-100 text-blue-700';
-      case 'organization_created': return 'bg-green-100 text-green-700';
-      case 'job_posted': return 'bg-purple-100 text-purple-700';
-      case 'application_received': return 'bg-orange-100 text-orange-700';
+      case 'user_signup': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'organization_created': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'job_posted': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'application_received': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
     }
   };
 
