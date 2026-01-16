@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
+import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface CandidateActivity {
@@ -22,7 +24,7 @@ async function fetchApplicationActivities(applicationId: string): Promise<Candid
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching application activities:', error);
+    logger.error('Error fetching application activities', error, { applicationId, context: 'ApplicationActivities' });
     throw error;
   }
 
@@ -31,7 +33,7 @@ async function fetchApplicationActivities(applicationId: string): Promise<Candid
 
 export function useApplicationActivities(applicationId: string | undefined) {
   const query = useQuery({
-    queryKey: ['application-activities', applicationId],
+    queryKey: queryKeys.activities.application(applicationId || ''),
     queryFn: () => fetchApplicationActivities(applicationId!),
     enabled: !!applicationId,
     staleTime: 30 * 1000, // 30 seconds
@@ -71,7 +73,7 @@ export function useLogActivity() {
     }]);
 
     if (error) {
-      console.error('Error logging activity:', error);
+      logger.error('Error logging activity', error, { params, context: 'ApplicationActivities' });
       throw error;
     }
   };

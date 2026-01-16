@@ -22,6 +22,7 @@ import { Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface UserOrganizationDialogProps {
   user: {
@@ -80,8 +81,8 @@ export const UserOrganizationDialog: React.FC<UserOrganizationDialogProps> = ({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.superAdminUsers() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       toast({
         title: 'Organization updated',
         description: `Successfully updated organization for ${user?.email}`,

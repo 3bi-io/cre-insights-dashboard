@@ -93,6 +93,7 @@ export const queryKeys = {
     credentials: () => [...queryKeys.tenstreet.all, 'credentials'] as const,
     mappings: () => [...queryKeys.tenstreet.all, 'mappings'] as const,
     sync: (applicationId: string) => [...queryKeys.tenstreet.all, 'sync', applicationId] as const,
+    notifications: () => [...queryKeys.tenstreet.all, 'notifications'] as const,
   },
 
   // Analytics & Dashboard
@@ -104,6 +105,8 @@ export const queryKeys = {
     platformBreakdown: () => [...queryKeys.analytics.all, 'platform-breakdown'] as const,
     funnel: () => [...queryKeys.analytics.all, 'funnel'] as const,
     teamActivity: () => [...queryKeys.analytics.all, 'team-activity'] as const,
+    outboundCalls: (orgId: string, start: string, end: string) => 
+      [...queryKeys.analytics.all, 'outbound-calls', orgId, start, end] as const,
   },
 
   // Webhooks
@@ -123,6 +126,8 @@ export const queryKeys = {
     list: () => [...queryKeys.clients.lists()] as const,
     details: () => [...queryKeys.clients.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.clients.details(), id] as const,
+    public: () => [...queryKeys.clients.all, 'public'] as const,
+    publicGrid: () => [...queryKeys.clients.all, 'public-grid'] as const,
   },
 
   // Recruiters
@@ -142,11 +147,51 @@ export const queryKeys = {
     messages: (sessionId: string) => [...queryKeys.chat.all, 'messages', sessionId] as const,
   },
 
-  // System
+  // System & Admin
   system: {
     all: ['system'] as const,
     health: () => [...queryKeys.system.all, 'health'] as const,
     activity: () => [...queryKeys.system.all, 'activity'] as const,
+    recentActivity: () => [...queryKeys.system.all, 'recent-activity'] as const,
+  },
+
+  // Admin/Super Admin
+  admin: {
+    all: ['admin'] as const,
+    users: () => [...queryKeys.admin.all, 'users'] as const,
+    superAdminUsers: () => [...queryKeys.admin.all, 'super-admin-users'] as const,
+    dashboard: () => [...queryKeys.admin.all, 'dashboard'] as const,
+    superAdminDashboard: () => [...queryKeys.admin.all, 'super-admin-dashboard'] as const,
+  },
+
+  // Public pages
+  public: {
+    all: ['public'] as const,
+    jobs: (filters?: Record<string, any>) => [...queryKeys.public.all, 'jobs', filters] as const,
+    jobsPaginated: (page: number, filters?: Record<string, any>) => 
+      [...queryKeys.public.all, 'jobs-paginated', page, filters] as const,
+    clients: () => [...queryKeys.public.all, 'clients'] as const,
+    clientsGrid: () => [...queryKeys.public.all, 'clients-grid'] as const,
+  },
+
+  // Organization Dashboard
+  orgDashboard: {
+    all: ['org-dashboard'] as const,
+    metrics: (orgId: string) => [...queryKeys.orgDashboard.all, 'metrics', orgId] as const,
+    userData: (orgId: string) => [...queryKeys.orgDashboard.all, 'user-data', orgId] as const,
+  },
+
+  // Application Activities
+  activities: {
+    all: ['activities'] as const,
+    application: (applicationId: string) => [...queryKeys.activities.all, 'application', applicationId] as const,
+  },
+
+  // Job Search
+  jobSearch: {
+    all: ['job-search'] as const,
+    search: (filters: Record<string, any>, page: number) => 
+      [...queryKeys.jobSearch.all, filters, page] as const,
   },
 } as const;
 

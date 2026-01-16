@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface UserData {
   id: string;
@@ -21,7 +22,7 @@ export const useOrganizationUserData = () => {
   const { organization } = useAuth();
 
   return useQuery({
-    queryKey: ['organization-user-data', organization?.id],
+    queryKey: queryKeys.orgDashboard.userData(organization?.id || ''),
     queryFn: async (): Promise<UserMetrics> => {
       if (!organization?.id) {
         return {
