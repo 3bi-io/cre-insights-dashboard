@@ -81,7 +81,7 @@ const LayoutContent = () => {
   const initials = getUserInitials(user?.email);
   
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="h-screen flex w-full overflow-hidden">
       {/* Skip Links for Accessibility */}
       <a
         href="#main-content"
@@ -92,7 +92,7 @@ const LayoutContent = () => {
       
       <AppSidebar />
       
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Always show mobile header on mobile, desktop header on desktop */}
         <div className="md:hidden">
           <MobileHeader />
@@ -156,9 +156,9 @@ const LayoutContent = () => {
         <PullToRefresh 
           onRefresh={handleRefresh} 
           enabled={isMobile}
-          className="flex-1 flex flex-col pb-16 md:pb-0"
+          className="flex-1 overflow-y-auto pb-16 md:pb-0"
         >
-          <main id="main-content" className="flex-1" tabIndex={-1}>
+          <main id="main-content" className="min-h-full" tabIndex={-1}>
             <Outlet />
           </main>
         </PullToRefresh>
