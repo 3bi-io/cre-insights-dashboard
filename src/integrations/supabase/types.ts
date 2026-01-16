@@ -6688,6 +6688,7 @@ export type Database = {
         Args: { _enabled: boolean; _user_id: string }
         Returns: undefined
       }
+      validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "super_admin"
