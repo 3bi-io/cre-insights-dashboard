@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface UseOutboundWebhookProps {
   webhookUrl?: string;
@@ -14,12 +15,12 @@ export const useOutboundWebhook = ({ webhookUrl, enabled = false }: UseOutboundW
     eventType: 'created' | 'updated' | 'deleted'
   ) => {
     if (!enabled || !webhookUrl) {
-      console.log('Outbound webhook not enabled or URL not provided');
+      logger.debug('Outbound webhook not enabled or URL not provided');
       return;
     }
 
     try {
-      console.log('Triggering outbound webhook for application:', applicationId);
+      logger.debug('Triggering outbound webhook for application:', { applicationId });
       
       const { data, error } = await supabase.functions.invoke('outbound-webhook', {
         body: {
@@ -30,7 +31,7 @@ export const useOutboundWebhook = ({ webhookUrl, enabled = false }: UseOutboundW
       });
 
       if (error) {
-        console.error('Outbound webhook error:', error);
+        logger.error('Outbound webhook error:', error);
         toast({
           title: "Webhook Failed",
           description: `Failed to send ${eventType} notification`,
@@ -39,10 +40,10 @@ export const useOutboundWebhook = ({ webhookUrl, enabled = false }: UseOutboundW
         return false;
       }
 
-      console.log('Outbound webhook sent successfully:', data);
+      logger.debug('Outbound webhook sent successfully', { data });
       return true;
     } catch (error) {
-      console.error('Error triggering outbound webhook:', error);
+      logger.error('Error triggering outbound webhook:', error);
       toast({
         title: "Webhook Error",
         description: "An error occurred while sending webhook notification",

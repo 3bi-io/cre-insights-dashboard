@@ -26,6 +26,7 @@ import { DynamicCredentialsForm } from '@/features/ats/components/DynamicCredent
 import { useATSSystems, useCreateATSConnection } from '@/hooks/useATSConnections';
 import { useToast } from '@/hooks/use-toast';
 import type { Client } from '../types/client.types';
+import { logger } from '@/lib/logger';
 
 interface BulkTenstreetAssignmentDialogProps {
   open: boolean;
@@ -137,7 +138,7 @@ export const BulkTenstreetAssignmentDialog: React.FC<BulkTenstreetAssignmentDial
         });
         successCount++;
       } catch (error) {
-        console.error(`Failed to create connection for client ${clientId}:`, error);
+        logger.error(`Failed to create connection for client ${clientId}:`, error);
         failureCount++;
       }
 

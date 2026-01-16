@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 // Client-side validation schema
 const contactFormSchema = z.object({
@@ -118,7 +119,7 @@ const ContactPage = () => {
       });
 
     } catch (error) {
-      console.error('Contact form error:', error);
+      logger.error('Contact form error:', error);
       toast({
         variant: "destructive",
         title: "Submission Failed",

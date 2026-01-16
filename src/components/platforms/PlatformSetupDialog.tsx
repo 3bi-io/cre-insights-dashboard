@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
+import { logger } from '@/lib/logger';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -60,7 +61,7 @@ const PlatformSetupDialog: React.FC<PlatformSetupDialogProps> = ({
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating platform:', error);
+      logger.error('Error updating platform:', error);
       toast({
         title: "Error",
         description: "Failed to update platform configuration. Please try again.",

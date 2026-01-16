@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 export const useJobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +45,7 @@ export const useJobs = () => {
   const { data: jobListings, isLoading, refetch, error } = useQuery({
     queryKey: ['job-listings', showAllOrganizations ? 'all' : organization?.id],
     queryFn: async () => {
-      console.log('Fetching job listings...', showAllOrganizations ? 'for all organizations' : 'for current organization');
+      logger.debug('Fetching job listings...', { showAllOrganizations });
       
       // Build the query
       let query = supabase
@@ -70,11 +71,11 @@ export const useJobs = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching job listings:', error);
+        logger.error('Error fetching job listings:', error);
         throw error;
       }
       
-      console.log('Job listings fetched successfully:', data?.length || 0);
+      logger.debug('Job listings fetched successfully', { count: data?.length || 0 });
       return data || [];
     },
     retry: 2,

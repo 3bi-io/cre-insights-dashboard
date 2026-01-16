@@ -1,6 +1,7 @@
+import { logger } from '@/lib/logger';
 
 export const mapCsvToJobListing = (csvRow: any, userId: string) => {
-  console.log('Mapping CSV row:', csvRow);
+  logger.debug('Mapping CSV row:', csvRow);
   
   // Try multiple possible column names for job title
   const jobTitle = csvRow.job_title || csvRow['Job Title'] || csvRow.title || csvRow.Title || '';
@@ -21,12 +22,12 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
   const validSalaryTypes = ['hourly', 'yearly', 'weekly', 'daily', 'contract'];
   let salaryType = null;
   
-  if (rawSalaryType) {
+    if (rawSalaryType) {
     const normalizedType = rawSalaryType.toLowerCase().trim();
     if (validSalaryTypes.includes(normalizedType)) {
       salaryType = normalizedType;
     } else {
-      console.log(`Invalid salary_type "${rawSalaryType}" found, setting to null`);
+      logger.debug(`Invalid salary_type "${rawSalaryType}" found, setting to null`);
     }
   }
   
@@ -53,7 +54,7 @@ export const mapCsvToJobListing = (csvRow: any, userId: string) => {
     user_id: userId,
   };
   
-  console.log('Mapped job listing:', mapped);
+  logger.debug('Mapped job listing:', mapped);
   return mapped;
 };
 

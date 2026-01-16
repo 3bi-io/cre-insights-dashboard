@@ -3,6 +3,7 @@ import { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Application } from '@/types/common.types';
 import { useLogActivity } from './useApplicationActivities';
+import { logger } from '@/lib/logger';
 
 export interface KanbanColumn {
   id: string;
@@ -76,7 +77,7 @@ export function useKanbanBoard({ applications, onStatusChange }: UseKanbanBoardO
       } catch (error) {
         // Revert on error
         queryClient.invalidateQueries({ queryKey: ['applications'] });
-        console.error('Failed to update status:', error);
+        logger.error('Failed to update status:', error);
       } finally {
         setIsProcessing(false);
       }

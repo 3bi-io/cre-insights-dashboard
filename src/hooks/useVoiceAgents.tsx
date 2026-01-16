@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { VoiceAgent, CreateVoiceAgentData, UpdateVoiceAgentData } from '@/features/elevenlabs';
+import { logger } from '@/lib/logger';
 
 export const useVoiceAgents = () => {
   const { toast } = useToast();
@@ -13,7 +14,7 @@ export const useVoiceAgents = () => {
   const { data: voiceAgents, isLoading, error } = useQuery({
     queryKey: ['voice-agents'],
     queryFn: async () => {
-      console.log('Fetching voice agents...');
+      logger.debug('Fetching voice agents...');
       const { data, error } = await supabase
         .from('voice_agents')
         .select(`
@@ -27,11 +28,11 @@ export const useVoiceAgents = () => {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching voice agents:', error);
+        logger.error('Error fetching voice agents:', error);
         throw error;
       }
       
-      console.log('Voice agents fetched:', data?.length);
+      logger.debug('Voice agents fetched', { count: data?.length });
       return data as VoiceAgent[];
     },
     enabled: userRole === 'super_admin' || userRole === 'admin',
@@ -57,7 +58,7 @@ export const useVoiceAgents = () => {
       });
     },
     onError: (error) => {
-      console.error('Error creating voice agent:', error);
+      logger.error('Error creating voice agent:', error);
       toast({
         title: "Error",
         description: "Failed to create voice agent.",
@@ -87,7 +88,7 @@ export const useVoiceAgents = () => {
       });
     },
     onError: (error) => {
-      console.error('Error updating voice agent:', error);
+      logger.error('Error updating voice agent:', error);
       toast({
         title: "Error",
         description: "Failed to update voice agent.",
@@ -114,7 +115,7 @@ export const useVoiceAgents = () => {
       });
     },
     onError: (error) => {
-      console.error('Error deleting voice agent:', error);
+      logger.error('Error deleting voice agent:', error);
       toast({
         title: "Error",
         description: "Failed to delete voice agent.",

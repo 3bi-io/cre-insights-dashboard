@@ -6,6 +6,7 @@ import {
   FeatureKey,
   OrganizationFeaturesMap,
 } from '@/features/organizations/types/features.types';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook for checking organization feature access
@@ -25,7 +26,7 @@ export const useOrganizationFeatures = () => {
           organization.id
         );
       } catch (error) {
-        console.error('Failed to fetch organization features:', error);
+        logger.error('Failed to fetch organization features:', error);
         return {};
       }
     },

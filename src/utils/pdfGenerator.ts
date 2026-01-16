@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from './applicationHelpers';
+import { logger } from '@/lib/logger';
 
 export const generateApplicationsPDF = (applications: any[]) => {
   if (!applications || applications.length === 0) {
@@ -95,7 +96,7 @@ export const generateApplicationsPDF = (applications: any[]) => {
 
     doc.save('applications-report.pdf');
   } catch (error) {
-    console.error('PDF generation error:', error);
+    logger.error('PDF generation error:', error);
     throw new Error('Failed to generate PDF report');
   }
 };
