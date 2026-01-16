@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Upload, X, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface ClientLogoUploadProps {
   clientId: string;
@@ -87,7 +88,7 @@ export const ClientLogoUpload: React.FC<ClientLogoUploadProps> = ({
         description: 'Client logo has been updated successfully',
       });
     } catch (error) {
-      console.error('Error uploading logo:', error);
+      logger.error('Error uploading client logo', error, { context: 'ClientLogoUpload', clientId });
       toast({
         title: 'Upload failed',
         description: 'Failed to upload logo. Please try again.',
@@ -124,7 +125,7 @@ export const ClientLogoUpload: React.FC<ClientLogoUploadProps> = ({
         description: 'Client logo has been removed',
       });
     } catch (error) {
-      console.error('Error deleting logo:', error);
+      logger.error('Error deleting client logo', error, { context: 'ClientLogoUpload', clientId });
       toast({
         title: 'Delete failed',
         description: 'Failed to delete logo. Please try again.',
