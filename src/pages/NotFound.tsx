@@ -5,15 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Home, Search, ArrowLeft, FileQuestion } from "lucide-react";
 import { Brand } from "@/components/common";
 import { SEO } from '@/components/SEO';
+import { logger } from '@/lib/logger';
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
+    logger.warn('404 Error: User attempted to access non-existent route', { path: location.pathname });
   }, [location.pathname]);
 
   return (

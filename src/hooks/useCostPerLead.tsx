@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface CostPerLeadData {
   totalSpend: number;
@@ -133,7 +134,7 @@ export const useCostPerLead = (dateRange?: string) => {
         metaCostPerLead
       };
 
-      console.log('Cost per lead calculation:', result);
+      logger.debug('Cost per lead calculation', { result });
       return result;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes

@@ -7,6 +7,7 @@ import {
 } from '../components';
 import { useRoutes } from '../hooks';
 import { useStableFilter } from '@/utils/performance';
+import { logger } from '@/lib/logger';
 
 interface Route {
   origin_city: string;
@@ -40,7 +41,7 @@ const RoutesPage = () => {
   const filteredRoutes = useStableFilter(routes, filterPredicate, [searchTerm]);
 
   // Debug logging
-  console.log('Routes Page Debug:', {
+  logger.debug('Routes Page Debug', {
     routesCount: routes?.length || 0,
     filteredCount: filteredRoutes?.length || 0,
     loading: isLoading,

@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 
 interface TenstreetErrorBoundaryState {
   hasError: boolean;
@@ -19,7 +20,7 @@ export class TenstreetErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[Tenstreet Error Boundary]', error, errorInfo);
+    logger.error('Tenstreet Error Boundary caught error', error, { componentStack: errorInfo.componentStack });
   }
 
   handleReset = () => {

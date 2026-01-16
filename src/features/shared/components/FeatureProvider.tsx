@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { BaseFeatureConfig, FeatureError } from '../types/feature.types';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface FeatureContextValue {
   hasFeatureAccess: (featureName: string) => boolean;
@@ -27,7 +28,7 @@ export const FeatureProvider: React.FC<FeatureProviderProps> = ({ children }) =>
   };
 
   const reportFeatureError = (error: FeatureError): void => {
-    console.error(`Feature Error [${error.feature}]:`, error);
+    logger.error(`Feature Error [${error.feature}]`, error, { code: error.code });
     
     // You could also send to analytics or error reporting service here
     // analytics.track('feature_error', { feature: error.feature, code: error.code });
