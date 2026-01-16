@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatMessage, ChatSession, ChatContext, AIModel } from '@/components/chat/types';
+import { logger } from '@/lib/logger';
 
 interface UseChatBotProps {
   page: string;
@@ -61,7 +62,7 @@ export const useChatBot = ({ page, context }: UseChatBotProps) => {
           if (data) setSessions(data);
         }
       } catch (error) {
-        console.error('Error fetching chat sessions:', error);
+        logger.error('Error fetching chat sessions', error);
       }
     };
     fetchSessions();
@@ -148,7 +149,7 @@ export const useChatBot = ({ page, context }: UseChatBotProps) => {
         }
       }
     } catch (error) {
-      console.error('Error saving session:', error);
+      logger.error('Error saving session', error);
     }
   };
 
@@ -201,7 +202,7 @@ export const useChatBot = ({ page, context }: UseChatBotProps) => {
 
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
+      logger.error('Chat error', error);
       setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), text: 'Having trouble. Please try again.', sender: 'bot', timestamp: new Date() }]);
       toast({ title: "Connection Error", description: "Check your connection.", variant: "destructive" });
     } finally {
