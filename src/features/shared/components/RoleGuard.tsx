@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { logger } from '@/lib/logger';
 import type { UserRole } from '@/features/admin/types';
 
 interface RoleGuardProps {
@@ -49,11 +50,12 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const hasAccess = userRole && requiredRoles.includes(userRole as UserRole);
 
   // Log access check for debugging
-  console.log('[ROLE_GUARD] Access check:', {
+  logger.debug('[ROLE_GUARD] Access check', {
     requiredRoles,
     userRole,
     hasAccess,
-    userId: user?.id?.substring(0, 8)
+    userId: user?.id?.substring(0, 8),
+    context: 'RoleGuard'
   });
 
   if (!hasAccess) {

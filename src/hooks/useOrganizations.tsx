@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { queryKeys } from '@/lib/queryKeys';
+import { logger } from '@/lib/logger';
 
 interface Organization {
   id: string;
@@ -44,20 +46,20 @@ export const useOrganizations = () => {
 
   // Admin-only: view all organizations
   const { data: organizations, isLoading } = useQuery({
-    queryKey: ['organizations'],
+    queryKey: queryKeys.organizations.all,
     queryFn: async () => {
-      console.log('Fetching organizations...');
+      logger.debug('Fetching organizations...', { context: 'useOrganizations' });
       const { data, error } = await supabase
         .from('organizations')
         .select('*')
         .order('name', { ascending: true });
       
       if (error) {
-        console.error('Error fetching organizations:', error);
+        logger.error('Error fetching organizations', error, { context: 'useOrganizations' });
         throw error;
       }
       
-      console.log('Organizations fetched:', data?.length);
+      logger.debug('Organizations fetched', { count: data?.length, context: 'useOrganizations' });
       return data as Organization[];
     },
     enabled: userRole === 'admin' || userRole === 'super_admin', // Allow both admin and super admin
@@ -76,7 +78,7 @@ export const useOrganizations = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
       toast({
         title: "Success",
         description: "Organization created successfully.",
@@ -105,7 +107,7 @@ export const useOrganizations = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
       toast({
         title: "Success",
         description: "Organization updated successfully.",
@@ -131,7 +133,7 @@ export const useOrganizations = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.organizations.all });
       toast({
         title: "Success",
         description: "Organization deleted successfully.",

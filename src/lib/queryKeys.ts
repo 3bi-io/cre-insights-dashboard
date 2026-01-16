@@ -94,6 +94,13 @@ export const queryKeys = {
     mappings: () => [...queryKeys.tenstreet.all, 'mappings'] as const,
     sync: (applicationId: string) => [...queryKeys.tenstreet.all, 'sync', applicationId] as const,
     notifications: () => [...queryKeys.tenstreet.all, 'notifications'] as const,
+    bulkOperations: ['tenstreet-bulk-operations'] as const,
+  },
+
+  // Communications
+  communications: {
+    all: ['communications'] as const,
+    logs: (applicationId: string) => [...queryKeys.communications.all, 'logs', applicationId] as const,
   },
 
   // Analytics & Dashboard

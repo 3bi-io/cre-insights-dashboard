@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export type UserType = 'organization' | 'jobseeker';
 export type OAuthProvider = 'google' | 'github' | 'apple' | 'linkedin_oidc' | 'azure' | 'twitter';
@@ -94,19 +95,19 @@ export function useAuthForm(): UseAuthFormReturn {
     if (!user) return;
     // userRole is null while loading, wait for it to be set (even if to 'user')
     if (userRole === null) {
-      console.log('[AUTH_FORM] Waiting for userRole to be loaded...');
+      logger.debug('[AUTH_FORM] Waiting for userRole to be loaded...', { context: 'useAuthForm' });
       return;
     }
     
     // Don't redirect if user is in password update mode (from recovery link)
     if (updatePasswordMode) {
-      console.log('[AUTH_FORM] In password update mode, skipping redirect');
+      logger.debug('[AUTH_FORM] In password update mode, skipping redirect', { context: 'useAuthForm' });
       return;
     }
     
     // Add small delay to ensure auth state is fully synchronized before navigation
     const timer = setTimeout(() => {
-      console.log('[AUTH_FORM] Redirecting authenticated user:', { userRole, userType });
+      logger.debug('[AUTH_FORM] Redirecting authenticated user', { userRole, userType, context: 'useAuthForm' });
       
       if (userRole === 'super_admin') {
         navigate('/admin', { replace: true });
@@ -133,22 +134,18 @@ export function useAuthForm(): UseAuthFormReturn {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const timestamp = new Date().toISOString();
-    console.log(`[AUTH_FORM][${timestamp}] handleSignIn - form submitted for:`, email.substring(0, 3) + '***');
+    logger.debug('[AUTH_FORM] handleSignIn - form submitted', { email: email.substring(0, 3) + '***', context: 'useAuthForm' });
     
     setLoading(true);
     setError('');
     
     localStorage.setItem('rememberMe', rememberMe.toString());
-    console.log(`[AUTH_FORM][${timestamp}] handleSignIn - calling signIn from useAuth`);
+    logger.debug('[AUTH_FORM] handleSignIn - calling signIn from useAuth', { context: 'useAuthForm' });
     
     const { error } = await signIn(email, password);
     
     if (error) {
-      console.error(`[AUTH_FORM][${timestamp}] handleSignIn - error received:`, {
-        message: error.message,
-        name: error.name
-      });
+      logger.error('[AUTH_FORM] handleSignIn - error received', error, { context: 'useAuthForm' });
       
       const errorMessage = error.message.toLowerCase();
       if (errorMessage.includes('invalid login credentials') || errorMessage.includes('invalid email or password')) {
@@ -159,40 +156,39 @@ export function useAuthForm(): UseAuthFormReturn {
         setError(error.message);
       }
     } else {
-      console.log(`[AUTH_FORM][${timestamp}] handleSignIn - sign in successful`);
+      logger.debug('[AUTH_FORM] handleSignIn - sign in successful', { context: 'useAuthForm' });
     }
     
     setLoading(false);
-    console.log(`[AUTH_FORM][${timestamp}] handleSignIn - completed`);
+    logger.debug('[AUTH_FORM] handleSignIn - completed', { context: 'useAuthForm' });
   };
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    const timestamp = new Date().toISOString();
-    console.log(`[AUTH_FORM][${timestamp}] handlePasswordReset - requesting reset for:`, email.substring(0, 3) + '***');
+    logger.debug('[AUTH_FORM] handlePasswordReset - requesting reset', { email: email.substring(0, 3) + '***', context: 'useAuthForm' });
     
     setLoading(true);
     setError('');
     
     try {
-      console.log(`[AUTH_FORM][${timestamp}] handlePasswordReset - calling supabase.auth.resetPasswordForEmail`);
+      logger.debug('[AUTH_FORM] handlePasswordReset - calling supabase.auth.resetPasswordForEmail', { context: 'useAuthForm' });
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?reset=true`,
       });
       
       if (error) {
-        console.error(`[AUTH_FORM][${timestamp}] handlePasswordReset - error:`, error);
+        logger.error('[AUTH_FORM] handlePasswordReset - error', error, { context: 'useAuthForm' });
         throw error;
       }
       
-      console.log(`[AUTH_FORM][${timestamp}] handlePasswordReset - reset email sent successfully`);
+      logger.debug('[AUTH_FORM] handlePasswordReset - reset email sent successfully', { context: 'useAuthForm' });
       setResetSent(true);
       toast({
         title: "Password reset sent",
         description: "Check your email for password reset instructions.",
       });
     } catch (error: any) {
-      console.error(`[AUTH_FORM][${timestamp}] handlePasswordReset - caught error:`, error.message);
+      logger.error('[AUTH_FORM] handlePasswordReset - caught error', error, { context: 'useAuthForm' });
       setError(error.message);
     }
     setLoading(false);
@@ -239,34 +235,33 @@ export function useAuthForm(): UseAuthFormReturn {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const timestamp = new Date().toISOString();
-    console.log(`[AUTH_FORM][${timestamp}] handleSignUp - form submitted for:`, email.substring(0, 3) + '***');
+    logger.debug('[AUTH_FORM] handleSignUp - form submitted', { email: email.substring(0, 3) + '***', context: 'useAuthForm' });
     
     setLoading(true);
     setError('');
 
     if (password.length < 6) {
-      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - validation failed: password too short`);
+      logger.debug('[AUTH_FORM] handleSignUp - validation failed: password too short', { context: 'useAuthForm' });
       setError('Password must be at least 6 characters');
       setLoading(false);
       return;
     }
 
     if (!userTypeSelection) {
-      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - validation failed: no user type selected`);
+      logger.debug('[AUTH_FORM] handleSignUp - validation failed: no user type selected', { context: 'useAuthForm' });
       setError('Please select account type');
       setLoading(false);
       return;
     }
 
-    console.log(`[AUTH_FORM][${timestamp}] handleSignUp - userType:`, userTypeSelection);
+    logger.debug('[AUTH_FORM] handleSignUp - userType selected', { userType: userTypeSelection, context: 'useAuthForm' });
 
     try {
       const redirectUrl = userTypeSelection === 'organization' 
         ? `${window.location.origin}/onboarding`
         : `${window.location.origin}/my-jobs/profile`;
       
-      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - calling supabase.auth.signUp with redirectUrl:`, redirectUrl);
+      logger.debug('[AUTH_FORM] handleSignUp - calling supabase.auth.signUp', { redirectUrl, context: 'useAuthForm' });
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -280,11 +275,11 @@ export function useAuthForm(): UseAuthFormReturn {
       });
       
       if (error) {
-        console.error(`[AUTH_FORM][${timestamp}] handleSignUp - error from supabase:`, error);
+        logger.error('[AUTH_FORM] handleSignUp - error from supabase', error, { context: 'useAuthForm' });
         throw error;
       }
       
-      console.log(`[AUTH_FORM][${timestamp}] handleSignUp - account created successfully`);
+      logger.debug('[AUTH_FORM] handleSignUp - account created successfully', { context: 'useAuthForm' });
       
       toast({
         title: "Account created successfully",
@@ -297,7 +292,7 @@ export function useAuthForm(): UseAuthFormReturn {
       setUserTypeSelection(null);
       setShowUserTypeStep(true);
     } catch (error: any) {
-      console.error(`[AUTH_FORM][${timestamp}] handleSignUp - caught error:`, error.message);
+      logger.error('[AUTH_FORM] handleSignUp - caught error', error, { context: 'useAuthForm' });
       if (error.message?.includes('already registered')) {
         setError('This email is already registered. Please sign in instead.');
       } else {
@@ -305,18 +300,17 @@ export function useAuthForm(): UseAuthFormReturn {
       }
     }
     setLoading(false);
-    console.log(`[AUTH_FORM][${timestamp}] handleSignUp - completed`);
+    logger.debug('[AUTH_FORM] handleSignUp - completed', { context: 'useAuthForm' });
   };
 
   const handleOAuthSignIn = async (provider: OAuthProvider) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - provider:`, provider);
+    logger.debug('[AUTH_FORM] handleOAuthSignIn - provider', { provider, context: 'useAuthForm' });
     
     setOauthLoading(provider);
     setError('');
     
     try {
-      console.log(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - calling supabase.auth.signInWithOAuth`);
+      logger.debug('[AUTH_FORM] handleOAuthSignIn - calling supabase.auth.signInWithOAuth', { context: 'useAuthForm' });
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -325,11 +319,11 @@ export function useAuthForm(): UseAuthFormReturn {
       });
       
       if (error) {
-        console.error(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - error:`, error);
+        logger.error('[AUTH_FORM] handleOAuthSignIn - error', error, { context: 'useAuthForm' });
         throw error;
       }
       
-      console.log(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - OAuth redirect initiated`);
+      logger.debug('[AUTH_FORM] handleOAuthSignIn - OAuth redirect initiated', { context: 'useAuthForm' });
     } catch (error: any) {
       const providerNames: Record<OAuthProvider, string> = {
         google: 'Google',
@@ -340,7 +334,7 @@ export function useAuthForm(): UseAuthFormReturn {
         twitter: 'X'
       };
       const providerName = providerNames[provider];
-      console.error(`[AUTH_FORM][${timestamp}] handleOAuthSignIn - caught error for ${providerName}:`, error.message);
+      logger.error(`[AUTH_FORM] handleOAuthSignIn - caught error for ${providerName}`, error, { context: 'useAuthForm' });
       
       if (error.message?.includes('provider is not enabled')) {
         setError(`${providerName} sign-in is not configured. Please contact support or use email/password.`);
