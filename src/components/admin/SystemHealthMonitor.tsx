@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Activity, Database, Zap, Shield, Globe, CheckCircle, AlertCircle } from 'lucide-react';
@@ -32,7 +33,7 @@ export const SystemHealthMonitor = () => {
             : service
         ));
       } catch (error) {
-        console.error('Health check failed:', error);
+        logger.error('Health check failed', error, { context: 'SystemHealthMonitor' });
       }
     };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,11 +35,14 @@ const MetaAdSetReport = () => {
   const { data, isLoading, error, refetch } = useMetaAdSetReport(dateRange);
   const { toast } = useToast();
 
-  // Debug logging
+  // Debug logging (no-op in production)
   React.useEffect(() => {
-    console.log('MetaAdSetReport component - data:', data);
-    console.log('MetaAdSetReport component - isLoading:', isLoading);
-    console.log('MetaAdSetReport component - error:', error);
+    logger.debug('MetaAdSetReport data updated', { 
+      dataCount: data?.adSets?.length, 
+      isLoading, 
+      hasError: !!error, 
+      context: 'MetaAdSetReport' 
+    });
   }, [data, isLoading, error]);
 
   const handleExportCSV = () => {

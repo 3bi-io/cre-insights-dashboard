@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -84,7 +85,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
     queryKey: ['meta-accounts', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
-      console.log('Fetching Meta accounts for actual ID:', CR_ENGLAND_ACTUAL_ID);
+      logger.debug('Fetching Meta accounts', { actualId: CR_ENGLAND_ACTUAL_ID, context: 'MetaPlatformActions' });
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
@@ -92,7 +93,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         .order('account_name');
       
       if (error) throw error;
-      console.log('Meta accounts fetched:', data?.length);
+      logger.debug('Meta accounts fetched', { count: data?.length, context: 'MetaPlatformActions' });
       
       // Transform data to show display IDs
       const transformedData = data?.map(transformAccountDataForDisplay);
@@ -105,7 +106,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
     queryKey: ['meta-campaigns', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
-      console.log('Fetching Meta campaigns for actual ID:', CR_ENGLAND_ACTUAL_ID);
+      logger.debug('Fetching Meta campaigns', { actualId: CR_ENGLAND_ACTUAL_ID, context: 'MetaPlatformActions' });
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
@@ -113,7 +114,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
         .order('campaign_name');
       
       if (error) throw error;
-      console.log('Meta campaigns fetched:', data?.length);
+      logger.debug('Meta campaigns fetched', { count: data?.length, context: 'MetaPlatformActions' });
       return data;
     },
     enabled: !!metaAccounts?.length,
@@ -201,7 +202,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
     try {
       // Use actual account ID for API calls, but display account ID for logging
       const actualAccountId = getActualAccountId(accountId || CR_ENGLAND_DISPLAY_ID);
-      console.log(`Attempting ${action} with display accountId: ${accountId || CR_ENGLAND_DISPLAY_ID}, actual: ${actualAccountId}`);
+      logger.debug(`Attempting ${action}`, { displayId: accountId || CR_ENGLAND_DISPLAY_ID, actualId: actualAccountId, context: 'MetaPlatformActions' });
       
       const metaDatePreset = getMetaDatePreset(dateRange);
       const sinceDays = getSinceDays(dateRange);
@@ -219,7 +220,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       });
 
       if (error) {
-        console.error(`Supabase function error:`, error);
+        logger.error(`Supabase function error for ${action}`, error, { context: 'MetaPlatformActions' });
         throw error;
       }
 
@@ -254,7 +255,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
       
       onRefresh();
     } catch (error: any) {
-      console.error(`Error with ${action}:`, error);
+      logger.error(`Error with ${action}`, error, { context: 'MetaPlatformActions' });
       setSyncStatus(`Error: ${error.message || 'Unknown error occurred'}`);
       setSyncProgress(0);
       
@@ -476,7 +477,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                             .select('source')
                             .in('source', ['fb', 'ig', 'meta']);
                           
-                          console.log(`Total Meta leads (fb/ig/meta): ${metaLeads?.length || 0}`);
+                          logger.debug('Total Meta leads synced', { count: metaLeads?.length || 0, sources: ['fb', 'ig', 'meta'], context: 'MetaPlatformActions' });
                         } catch (error: any) {
                           toast({
                             title: "Error",
