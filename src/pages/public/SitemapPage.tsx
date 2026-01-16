@@ -203,7 +203,6 @@ const SitemapPage = () => {
       description: 'System utilities and error pages',
       icon: <Wrench className="w-5 h-5" />,
       routes: [
-        { path: '/install', label: 'Install PWA', icon: <Download className="w-4 h-4" />, description: 'Install as app' },
         { path: '/offline', label: 'Offline', icon: <WifiOff className="w-4 h-4" />, description: 'Offline mode page' },
         { path: '/access-denied', label: 'Access Denied', icon: <Shield className="w-4 h-4" />, description: 'Access denied page' },
       ],

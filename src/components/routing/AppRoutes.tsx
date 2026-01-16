@@ -87,7 +87,6 @@ const VisitorAnalytics = React.lazy(() => import("@/pages/VisitorAnalytics"));
 const UniversalFeeds = React.lazy(() => import("@/pages/UniversalFeeds"));
 const AccessDenied = React.lazy(() => import("@/pages/AccessDenied"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
-const Install = React.lazy(() => import("@/pages/Install"));
 const Offline = React.lazy(() => import("@/pages/Offline"));
 
 // Settings pages
@@ -285,8 +284,7 @@ const AppRoutes: React.FC = () => {
       {/* Access Denied Route */}
       <Route path="/access-denied" element={<RouteWrapper><AccessDenied /></RouteWrapper>} />
 
-      {/* PWA Routes */}
-      <Route path="/install" element={<RouteWrapper><Install /></RouteWrapper>} />
+      {/* Offline Route */}
       <Route path="/offline" element={<RouteWrapper><Offline /></RouteWrapper>} />
 
       {/* 404 Route */}
