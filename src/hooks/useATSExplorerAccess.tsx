@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook to check if the current user has access to ATS Explorer
@@ -26,13 +27,13 @@ export const useATSExplorerAccess = () => {
         });
 
         if (error) {
-          console.error('Error checking ATS Explorer access:', error);
+          logger.error('Error checking ATS Explorer access', error);
           return false;
         }
 
         return data || false;
       } catch (error) {
-        console.error('Error checking ATS Explorer access:', error);
+        logger.error('Error checking ATS Explorer access', error);
         return false;
       }
     },

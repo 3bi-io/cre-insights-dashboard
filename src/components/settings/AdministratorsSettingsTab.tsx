@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logInfo, logError, logDebug } from '@/utils/loggerUtils';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,7 +105,7 @@ const AdministratorsSettingsTab = () => {
       });
     },
     onError: (error) => {
-      console.error('Error removing admin:', error);
+      logger.error('Error removing admin', error);
       toast({
         title: "Error",
         description: "Failed to remove administrator.",
@@ -153,7 +154,7 @@ const AdministratorsSettingsTab = () => {
         queryClient.invalidateQueries({ queryKey: ['administrators'] });
       }
     } catch (err) {
-      console.error('Error adding admin:', err);
+      logger.error('Error adding admin', err);
       toast({ title: 'Error', description: 'Failed to grant admin role.', variant: 'destructive' });
     } finally {
       setAddingAdmin(false);
