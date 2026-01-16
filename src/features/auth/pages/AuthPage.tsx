@@ -42,9 +42,8 @@ const AuthPage = () => {
     
     if (error) {
       setError(error.message);
-    } else {
-      navigate('/');
     }
+    // Redirect is handled by useAuth hook based on role/userType
     
     setIsLoading(false);
   };
@@ -58,10 +57,8 @@ const AuthPage = () => {
     
     if (error) {
       setError(error.message);
-    } else {
-      // Redirect based on user type
-      navigate(userType === 'jobseeker' ? '/my-jobs' : '/');
     }
+    // Redirect is handled by useAuth hook based on role/userType
     
     setIsLoading(false);
   };
