@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface ActiveUsersData {
   count: number;
@@ -54,7 +55,7 @@ export const useActiveUsers = (pollInterval = 30000) => {
       });
       setError(null);
     } catch (err) {
-      console.error('Error fetching active users:', err);
+      logger.error('Error fetching active users', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch active users'));
     } finally {
       setIsLoading(false);

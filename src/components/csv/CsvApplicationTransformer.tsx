@@ -5,6 +5,7 @@ import { Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { generateCsvFromExcelData, ExcelRow } from '@/utils/csvApplicationImporter';
+import { logger } from '@/lib/logger';
 
 const CsvApplicationTransformer: React.FC = () => {
   const [processing, setProcessing] = useState(false);
@@ -21,7 +22,7 @@ const CsvApplicationTransformer: React.FC = () => {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const excelData = XLSX.utils.sheet_to_json<ExcelRow>(firstSheet);
 
-      console.log(`Processing ${excelData.length} rows from Excel file`);
+      logger.debug('Processing Excel file', { rowCount: excelData.length });
 
       // Generate clean CSV
       const csvContent = generateCsvFromExcelData(excelData);
@@ -39,7 +40,7 @@ const CsvApplicationTransformer: React.FC = () => {
 
       toast.success(`Transformed ${excelData.length} applications to clean CSV`);
     } catch (error) {
-      console.error('Error processing file:', error);
+      logger.error('Error processing file', error);
       toast.error('Failed to process Excel file');
     } finally {
       setProcessing(false);

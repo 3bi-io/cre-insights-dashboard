@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface OpenAIRequest {
   message: string;
@@ -36,7 +37,7 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
     setError(null);
 
     try {
-      console.log('Invoking OpenAI function:', functionName, request);
+      logger.debug('Invoking OpenAI function', { functionName, message: request.message });
 
       const response = await supabase.functions.invoke(functionName, {
         body: request
@@ -52,7 +53,7 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
         throw new Error('Invalid response from OpenAI function');
       }
 
-      console.log('OpenAI response received:', data);
+      logger.debug('OpenAI response received', { source: data.source, model: data.model });
 
       if (onSuccess) {
         onSuccess(data);
@@ -62,7 +63,7 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('OpenAI function error:', errorMessage);
+      logger.error('OpenAI function error', err);
       
       setError(errorMessage);
 

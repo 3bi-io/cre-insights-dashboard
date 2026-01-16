@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SuperAdminFeedImport } from '@/components/SuperAdminFeedImport';
 import { useOrganizations } from '@/features/admin/hooks/useOrganizationData';
+import { logger } from '@/lib/logger';
 
 const DataPopulation = () => {
   const { userRole } = useAuth();
@@ -90,7 +91,7 @@ const DataPopulation = () => {
         statusBreakdown
       });
     } catch (error) {
-      console.error('Error loading stats:', error);
+      logger.error('Error loading stats', error, { organizationId: selectedOrgId });
     } finally {
       setLoadingStats(false);
     }

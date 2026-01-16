@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { normalizePhoneNumber } from '@/utils/phoneNormalizer';
 import { format } from 'date-fns';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
+import { logger } from '@/lib/logger';
 
 // Serializable version for localStorage (dates as strings)
 interface SerializableFormData extends Omit<DetailedFormData, 
@@ -407,7 +408,7 @@ export const useDetailedApplicationForm = () => {
         description: "Failed to submit application. Please try again.",
         variant: "destructive",
       });
-      console.error('Application submission error:', error);
+      logger.error('Application submission error', error);
     },
   });
 

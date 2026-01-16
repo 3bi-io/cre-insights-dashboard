@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -173,7 +174,7 @@ export function useGrokChat() {
         }
       }
     } catch (error: any) {
-      console.error('Chat error:', error);
+      logger.error('Chat error', error);
       
       // Handle specific errors
       if (error.message.includes('Rate limit')) {

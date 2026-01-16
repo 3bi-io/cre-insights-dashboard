@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { logger } from '@/lib/logger';
 
 interface ImportResult {
   success: boolean;
@@ -40,7 +41,7 @@ const BulkApplicationImporter: React.FC = () => {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const excelData = XLSX.utils.sheet_to_json<ExcelRow>(firstSheet);
 
-      console.log(`Processing ${excelData.length} rows from Excel file`);
+      logger.debug('Processing Excel file for import', { rowCount: excelData.length });
 
       // Generate clean CSV
       const csvContent = generateCsvFromExcelData(excelData);
@@ -63,7 +64,7 @@ const BulkApplicationImporter: React.FC = () => {
         toast.error(`Imported ${result.imported} application(s), ${result.failed} failed`);
       }
     } catch (error) {
-      console.error('Error processing file:', error);
+      logger.error('Error processing file', error);
       toast.error('Failed to process and import applications');
     } finally {
       setProcessing(false);

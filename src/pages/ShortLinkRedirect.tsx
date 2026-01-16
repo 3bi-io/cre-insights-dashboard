@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const ShortLinkRedirect: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
@@ -44,7 +45,7 @@ const ShortLinkRedirect: React.FC = () => {
 
         navigate(`/apply?${params.toString()}`, { replace: true });
       } catch (err) {
-        console.error('Error resolving short link:', err);
+        logger.error('Error resolving short link', err, { shortCode });
         setError('Failed to resolve link. Please try again.');
       }
     };

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { logger } from '@/lib/logger';
 
 interface OrganizationWithStats {
   id: string;
@@ -51,7 +52,7 @@ export const useSuperAdminOrganizations = () => {
           });
 
           if (error) {
-            console.error('Error fetching org stats:', error);
+            logger.error('Error fetching org stats', error, { organizationId: org.id });
             return {
               ...org,
               user_count: 0,

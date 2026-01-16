@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Organization } from '@/types/common.types';
+import { logger } from '@/lib/logger';
 
 export const useOrganizationData = (isSuperAdmin: boolean) => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -21,7 +22,7 @@ export const useOrganizationData = (isSuperAdmin: boolean) => {
           setOrganizations(data as Organization[]);
         }
       } catch (err) {
-        console.error('Error fetching organizations:', err);
+        logger.error('Error fetching organizations', err);
       } finally {
         setLoading(false);
       }
