@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface ChatBotPreferences {
   position: { x: number; y: number };
@@ -41,7 +42,7 @@ export const useChatBotPreferences = () => {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Error loading chatbot preferences:', error);
+        logger.error('Error loading chatbot preferences', error);
         setIsLoading(false);
         return;
       }
@@ -55,7 +56,7 @@ export const useChatBotPreferences = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading chatbot preferences:', error);
+      logger.error('Error loading chatbot preferences', error);
     } finally {
       setIsLoading(false);
     }
@@ -79,10 +80,10 @@ export const useChatBotPreferences = () => {
         });
 
       if (error) {
-        console.error('Error saving chatbot preferences:', error);
+        logger.error('Error saving chatbot preferences', error);
       }
     } catch (error) {
-      console.error('Error saving chatbot preferences:', error);
+      logger.error('Error saving chatbot preferences', error);
     }
   };
 

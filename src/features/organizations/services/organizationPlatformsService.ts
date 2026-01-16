@@ -6,6 +6,7 @@ import {
   PlatformKey,
 } from '../types/platforms.types';
 import { isValidPlatformKey } from '../config/organizationPlatforms.config';
+import { logger } from '@/lib/logger';
 
 /**
  * Service layer for organization platform operations
@@ -21,7 +22,7 @@ export class OrganizationPlatformsService {
     });
 
     if (error) {
-      console.error('Error fetching organization platforms:', error);
+      logger.error('Error fetching organization platforms', error, { organizationId });
       throw new Error(`Failed to fetch platforms: ${error.message}`);
     }
 
@@ -96,7 +97,7 @@ export class OrganizationPlatformsService {
     });
 
     if (error) {
-      console.error('Error setting platform access:', error);
+      logger.error('Error setting platform access', error, { organizationId, platformKey });
       throw new Error(`Failed to set platform access: ${error.message}`);
     }
   }
@@ -114,7 +115,7 @@ export class OrganizationPlatformsService {
     });
 
     if (error) {
-      console.error('Error checking platform access:', error);
+      logger.error('Error checking platform access', error, { organizationId, platformKey });
       return false;
     }
 

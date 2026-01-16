@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export interface BGCProvider {
   id: string;
@@ -65,7 +66,7 @@ export class BackgroundCheckService {
    * Get all available BGC providers
    */
   static async getProviders(): Promise<BGCProvider[]> {
-    console.log('BackgroundCheckService: Fetching providers');
+    logger.debug('BackgroundCheckService: Fetching providers');
     
     const { data, error } = await supabase
       .from('background_check_providers')
@@ -74,7 +75,7 @@ export class BackgroundCheckService {
       .order('name');
 
     if (error) {
-      console.error('BackgroundCheckService: Error fetching providers', error);
+      logger.error('BackgroundCheckService: Error fetching providers', error);
       throw error;
     }
 
@@ -89,7 +90,7 @@ export class BackgroundCheckService {
    * Get organization's BGC connections
    */
   static async getConnections(organizationId: string): Promise<BGCConnection[]> {
-    console.log('BackgroundCheckService: Fetching connections for org', organizationId);
+    logger.debug('BackgroundCheckService: Fetching connections', { organizationId });
     
     const { data, error } = await supabase
       .from('organization_bgc_connections')
@@ -101,7 +102,7 @@ export class BackgroundCheckService {
       .order('is_default', { ascending: false });
 
     if (error) {
-      console.error('BackgroundCheckService: Error fetching connections', error);
+      logger.error('BackgroundCheckService: Error fetching connections', error, { organizationId });
       throw error;
     }
 
@@ -135,7 +136,7 @@ export class BackgroundCheckService {
       webhookSecret?: string;
     }
   ): Promise<BGCConnection> {
-    console.log('BackgroundCheckService: Creating connection', { organizationId, providerId });
+    logger.debug('BackgroundCheckService: Creating connection', { organizationId, providerId });
 
     // If this is set as default, unset other defaults first
     if (options?.isDefault) {
@@ -159,7 +160,7 @@ export class BackgroundCheckService {
       .single();
 
     if (error) {
-      console.error('BackgroundCheckService: Error creating connection', error);
+      logger.error('BackgroundCheckService: Error creating connection', error, { organizationId, providerId });
       throw error;
     }
 
@@ -184,7 +185,7 @@ export class BackgroundCheckService {
       webhookSecret?: string;
     }
   ): Promise<BGCConnection> {
-    console.log('BackgroundCheckService: Updating connection', connectionId);
+    logger.debug('BackgroundCheckService: Updating connection', { connectionId });
 
     const updatePayload: Record<string, unknown> = {};
     if (updates.credentials) updatePayload.credentials = updates.credentials;
@@ -201,7 +202,7 @@ export class BackgroundCheckService {
       .single();
 
     if (error) {
-      console.error('BackgroundCheckService: Error updating connection', error);
+      logger.error('BackgroundCheckService: Error updating connection', error, { connectionId });
       throw error;
     }
 
@@ -217,7 +218,7 @@ export class BackgroundCheckService {
    * Delete a BGC connection
    */
   static async deleteConnection(connectionId: string): Promise<void> {
-    console.log('BackgroundCheckService: Deleting connection', connectionId);
+    logger.debug('BackgroundCheckService: Deleting connection', { connectionId });
 
     const { error } = await supabase
       .from('organization_bgc_connections')
@@ -225,7 +226,7 @@ export class BackgroundCheckService {
       .eq('id', connectionId);
 
     if (error) {
-      console.error('BackgroundCheckService: Error deleting connection', error);
+      logger.error('BackgroundCheckService: Error deleting connection', error, { connectionId });
       throw error;
     }
   }
@@ -234,7 +235,7 @@ export class BackgroundCheckService {
    * Initiate a background check via edge function
    */
   static async initiateCheck(params: InitiateCheckParams): Promise<InitiateCheckResult> {
-    console.log('BackgroundCheckService: Initiating check', params);
+    logger.debug('BackgroundCheckService: Initiating check', { applicationId: params.applicationId, checkType: params.checkType });
 
     const { data, error } = await supabase.functions.invoke('background-check', {
       body: {
@@ -248,7 +249,7 @@ export class BackgroundCheckService {
     });
 
     if (error) {
-      console.error('BackgroundCheckService: Error initiating check', error);
+      logger.error('BackgroundCheckService: Error initiating check', error, { applicationId: params.applicationId });
       throw error;
     }
 
@@ -268,7 +269,7 @@ export class BackgroundCheckService {
    * Get status of a background check
    */
   static async getCheckStatus(requestId: string): Promise<BGCRequest> {
-    console.log('BackgroundCheckService: Getting check status', requestId);
+    logger.debug('BackgroundCheckService: Getting check status', { requestId });
 
     const { data, error } = await supabase
       .from('background_check_requests')
@@ -280,7 +281,7 @@ export class BackgroundCheckService {
       .single();
 
     if (error) {
-      console.error('BackgroundCheckService: Error getting check status', error);
+      logger.error('BackgroundCheckService: Error getting check status', error, { requestId });
       throw error;
     }
 
@@ -296,7 +297,7 @@ export class BackgroundCheckService {
    * Get all background check requests for an application
    */
   static async getRequestsByApplication(applicationId: string): Promise<BGCRequest[]> {
-    console.log('BackgroundCheckService: Getting requests for application', applicationId);
+    logger.debug('BackgroundCheckService: Getting requests for application', { applicationId });
 
     const { data, error } = await supabase
       .from('background_check_requests')
@@ -308,7 +309,7 @@ export class BackgroundCheckService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('BackgroundCheckService: Error getting requests', error);
+      logger.error('BackgroundCheckService: Error getting requests', error, { applicationId });
       throw error;
     }
 
@@ -331,7 +332,7 @@ export class BackgroundCheckService {
       offset?: number;
     }
   ): Promise<BGCRequest[]> {
-    console.log('BackgroundCheckService: Getting requests for org', organizationId);
+    logger.debug('BackgroundCheckService: Getting requests for org', { organizationId });
 
     let query = supabase
       .from('background_check_requests')
@@ -357,7 +358,7 @@ export class BackgroundCheckService {
     const { data, error } = await query;
 
     if (error) {
-      console.error('BackgroundCheckService: Error getting org requests', error);
+      logger.error('BackgroundCheckService: Error getting org requests', error, { organizationId });
       throw error;
     }
 
@@ -373,7 +374,7 @@ export class BackgroundCheckService {
    * Test a BGC connection
    */
   static async testConnection(connectionId: string): Promise<{ success: boolean; message: string }> {
-    console.log('BackgroundCheckService: Testing connection', connectionId);
+    logger.debug('BackgroundCheckService: Testing connection', { connectionId });
 
     const { data, error } = await supabase.functions.invoke('background-check', {
       body: {
@@ -383,7 +384,7 @@ export class BackgroundCheckService {
     });
 
     if (error) {
-      console.error('BackgroundCheckService: Error testing connection', error);
+      logger.error('BackgroundCheckService: Error testing connection', error, { connectionId });
       throw error;
     }
 
@@ -404,7 +405,7 @@ export class BackgroundCheckService {
       .single();
 
     if (error) {
-      console.error('BackgroundCheckService: Error getting check types', error);
+      logger.error('BackgroundCheckService: Error getting check types', error, { providerId });
       throw error;
     }
 

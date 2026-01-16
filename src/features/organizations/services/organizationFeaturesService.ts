@@ -6,6 +6,7 @@ import {
   FeatureKey,
 } from '../types/features.types';
 import { isValidFeatureKey } from '../config/organizationFeatures.config';
+import { logger } from '@/lib/logger';
 
 /**
  * Service layer for organization feature operations
@@ -23,7 +24,7 @@ export class OrganizationFeaturesService {
       .order('feature_name');
 
     if (error) {
-      console.error('Error fetching organization features:', error);
+      logger.error('Error fetching organization features', error, { organizationId });
       throw new Error(`Failed to fetch features: ${error.message}`);
     }
 
@@ -74,7 +75,7 @@ export class OrganizationFeaturesService {
     });
 
     if (error) {
-      console.error('Error updating organization features:', error);
+      logger.error('Error updating organization features', error, { organizationId });
       throw new Error(`Failed to update features: ${error.message}`);
     }
   }
@@ -98,7 +99,7 @@ export class OrganizationFeaturesService {
       if (error.code === 'PGRST116') {
         return false;
       }
-      console.error('Error checking feature status:', error);
+      logger.error('Error checking feature status', error, { organizationId, featureKey });
       return false;
     }
 
