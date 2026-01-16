@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 const PAGE_SIZE = 50;
 
@@ -27,7 +28,7 @@ export function usePaginatedPublicJobs({
   }, [searchTerm, locationFilter, categoryFilter, clientFilter]);
 
   const { data, isLoading, error, isFetching } = useQuery({
-    queryKey: ['public-jobs-paginated', page, searchTerm, locationFilter, categoryFilter, clientFilter],
+    queryKey: queryKeys.public.jobsPaginated(page, { searchTerm, locationFilter, categoryFilter, clientFilter }),
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;

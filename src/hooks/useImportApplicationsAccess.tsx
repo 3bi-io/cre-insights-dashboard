@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 /**
  * Hook to check if the current user has access to Import Applications
@@ -12,7 +13,7 @@ export const useImportApplicationsAccess = () => {
   const { userRole, organization } = useAuth();
 
   const { data: hasImportApplicationsAccess = false } = useQuery({
-    queryKey: ['import-applications-access', organization?.id],
+    queryKey: queryKeys.access.importApplications(organization?.id),
     queryFn: async () => {
       // Super admins always have access
       if (userRole === 'super_admin') {

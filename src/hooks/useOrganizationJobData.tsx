@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface JobData {
   id: string;
@@ -24,7 +25,7 @@ export const useOrganizationJobData = () => {
   const { organization } = useAuth();
 
   return useQuery({
-    queryKey: ['organization-job-data', organization?.id],
+    queryKey: queryKeys.orgDashboard.jobData(organization?.id),
     queryFn: async (): Promise<JobMetrics> => {
       if (!organization?.id) {
         return {

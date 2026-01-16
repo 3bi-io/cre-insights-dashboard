@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Filter, FileText, User, Calendar, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 const TenstreetExplorerContent = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: applications, isLoading } = useQuery({
-    queryKey: ['tenstreet-explorer-applications', searchTerm],
+    queryKey: queryKeys.tenstreetExplorer.applications(searchTerm),
     queryFn: async () => {
       let query = supabase
         .from('applications')

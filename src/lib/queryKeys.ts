@@ -107,13 +107,19 @@ export const queryKeys = {
   analytics: {
     all: ['analytics'] as const,
     dashboard: () => [...queryKeys.analytics.all, 'dashboard'] as const,
-    metrics: () => [...queryKeys.analytics.all, 'metrics'] as const,
+    metrics: (orgId?: string) => [...queryKeys.analytics.all, 'metrics', orgId] as const,
     spend: (filters?: Record<string, any>) => [...queryKeys.analytics.all, 'spend', filters] as const,
     platformBreakdown: () => [...queryKeys.analytics.all, 'platform-breakdown'] as const,
-    funnel: () => [...queryKeys.analytics.all, 'funnel'] as const,
+    funnel: (orgId?: string) => [...queryKeys.analytics.all, 'funnel', orgId] as const,
     teamActivity: () => [...queryKeys.analytics.all, 'team-activity'] as const,
     outboundCalls: (orgId: string, start: string, end: string) => 
       [...queryKeys.analytics.all, 'outbound-calls', orgId, start, end] as const,
+    monthlyBudget: (orgId?: string) => [...queryKeys.analytics.all, 'monthly-budget', orgId] as const,
+    jobVolume: (orgId?: string) => [...queryKeys.analytics.all, 'job-volume', orgId] as const,
+    platformPerformance: (orgId?: string) => [...queryKeys.analytics.all, 'platform-performance', orgId] as const,
+    applyPage: (orgId?: string, dateRange?: string) => 
+      [...queryKeys.analytics.all, 'apply-page', orgId, dateRange] as const,
+    budgetOverview: () => [...queryKeys.analytics.all, 'budget-overview'] as const,
   },
 
   // Webhooks
@@ -186,6 +192,20 @@ export const queryKeys = {
     all: ['org-dashboard'] as const,
     metrics: (orgId: string) => [...queryKeys.orgDashboard.all, 'metrics', orgId] as const,
     userData: (orgId: string) => [...queryKeys.orgDashboard.all, 'user-data', orgId] as const,
+    jobData: (orgId?: string) => [...queryKeys.orgDashboard.all, 'job-data', orgId] as const,
+  },
+
+  // Access Control
+  access: {
+    all: ['access'] as const,
+    importApplications: (orgId?: string) => [...queryKeys.access.all, 'import-applications', orgId] as const,
+    atsExplorer: (orgId?: string) => [...queryKeys.access.all, 'ats-explorer', orgId] as const,
+  },
+
+  // Tenstreet Explorer
+  tenstreetExplorer: {
+    all: ['tenstreet-explorer'] as const,
+    applications: (searchTerm?: string) => [...queryKeys.tenstreetExplorer.all, 'applications', searchTerm] as const,
   },
 
   // Application Activities

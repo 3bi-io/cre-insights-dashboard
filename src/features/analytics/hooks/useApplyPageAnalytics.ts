@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { queryKeys } from '@/lib/queryKeys';
 import type { ApplyPageAnalyticsData, DateRange } from '../types/applyAnalytics';
 
 const getDateRangeFilter = (range: DateRange): Date => {
@@ -159,7 +160,7 @@ export const useApplyPageAnalytics = (dateRange: DateRange = '30d') => {
   const { organization } = useAuth();
 
   return useQuery({
-    queryKey: ['applyPageAnalytics', organization?.id, dateRange],
+    queryKey: queryKeys.analytics.applyPage(organization?.id, dateRange),
     queryFn: () => fetchApplyPageAnalytics(organization?.id, dateRange),
     staleTime: 5 * 60 * 1000,
   });

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 /**
  * Hook to check if the current user has access to ATS Explorer
@@ -14,7 +15,7 @@ export const useATSExplorerAccess = () => {
   const isSuperAdmin = userRole === 'super_admin';
 
   const { data: hasAccess, isLoading } = useQuery({
-    queryKey: ['ats-explorer-access', organization?.id],
+    queryKey: queryKeys.access.atsExplorer(organization?.id),
     queryFn: async () => {
       // Check platform access for organization
       if (!organization?.id) {
