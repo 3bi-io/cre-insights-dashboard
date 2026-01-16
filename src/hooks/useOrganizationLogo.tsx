@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 export const useOrganizationLogo = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -60,7 +61,7 @@ export const useOrganizationLogo = () => {
 
       return logoUrl;
     } catch (error: any) {
-      console.error('Logo upload error:', error);
+      logger.error('Organization logo upload failed', error, { context: 'useOrganizationLogo', organizationId: organization?.id });
       toast({
         title: "Upload Failed",
         description: error.message || "Failed to upload logo. Please try again.",
@@ -108,7 +109,7 @@ export const useOrganizationLogo = () => {
 
       return true;
     } catch (error: any) {
-      console.error('Logo deletion error:', error);
+      logger.error('Organization logo deletion failed', error, { context: 'useOrganizationLogo', organizationId: organization?.id });
       toast({
         title: "Deletion Failed",
         description: error.message || "Failed to remove logo. Please try again.",

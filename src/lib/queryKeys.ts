@@ -143,6 +143,16 @@ export const queryKeys = {
     publicGrid: () => [...queryKeys.clients.all, 'public-grid'] as const,
   },
 
+  // Campaigns
+  campaigns: {
+    all: ['campaigns'] as const,
+    lists: () => [...queryKeys.campaigns.all, 'list'] as const,
+    list: (filters?: Record<string, any>) => [...queryKeys.campaigns.lists(), filters] as const,
+    details: () => [...queryKeys.campaigns.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.campaigns.details(), id] as const,
+    jobs: (id: string) => [...queryKeys.campaigns.all, 'jobs', id] as const,
+  },
+
   // Recruiters
   recruiters: {
     all: ['recruiters'] as const,

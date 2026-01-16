@@ -13,6 +13,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Eye, Edit, Trash2, Target } from 'lucide-react';
+import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface Campaign {
   id: string;
@@ -75,7 +77,7 @@ const Campaigns = () => {
 
   // Fetch campaigns with statistics
   const { data: campaigns, isLoading: campaignsLoading, refetch: refetchCampaigns } = useQuery({
-    queryKey: ['campaigns'],
+    queryKey: queryKeys.campaigns.all,
     queryFn: async () => {
       const { data: campaignsData, error: campaignsError } = await supabase
         .from('campaigns')
@@ -194,10 +196,10 @@ const Campaigns = () => {
       });
       setShowCreateDialog(false);
       setCampaignForm({ name: '', description: '', status: 'active' });
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
     },
     onError: (error) => {
-      console.error('Campaign creation error:', error);
+      logger.error('Campaign creation failed', error, { context: 'Campaigns' });
       toast({
         title: "Error",
         description: "Failed to create campaign",
@@ -236,11 +238,11 @@ const Campaigns = () => {
       });
       setShowJobsDialog(false);
       setSelectedJobIds([]);
-      queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
       queryClient.invalidateQueries({ queryKey: ['campaign-job-assignments'] });
     },
     onError: (error) => {
-      console.error('Job assignment error:', error);
+      logger.error('Campaign job assignment failed', error, { context: 'Campaigns' });
       toast({
         title: "Error",
         description: "Failed to update campaign jobs",
