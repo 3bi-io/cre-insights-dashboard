@@ -49,7 +49,7 @@ const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ d
 const JobGroups = React.lazy(() => import("@/pages/JobGroups"));
 const Applications = React.lazy(() => import("@/features/applications").then(m => ({ default: m.ApplicationsPage })));
 const ImportApplications = React.lazy(() => import("@/pages/ImportApplications"));
-const AIAnalytics = React.lazy(() => import("@/features/ai-analytics/pages/AIAnalyticsPage"));
+const AIAnalytics = React.lazy(() => import("@/features/ai-analytics").then(m => ({ default: m.AIAnalyticsPage })));
 const AIImpactDashboard = React.lazy(() => import("@/pages/AIImpactDashboard"));
 const AITools = React.lazy(() => import("@/features/ai-tools").then(m => ({ default: m.AIToolsPage })));
 const VoiceAgent = React.lazy(() => import("@/pages/VoiceAgent"));
