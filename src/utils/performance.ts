@@ -1,5 +1,6 @@
 // Performance utilities for React optimization
 import { useCallback, useMemo, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 /**
  * Debounced callback hook for preventing excessive function calls
@@ -85,7 +86,11 @@ export const useRenderTimeObserver = (componentName: string) => {
     const renderTime = endTime - startTime.current;
     
     if (renderTime > 16) { // Log slow renders (>16ms)
-      console.warn(`Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`);
+      logger.warn(`Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`, {
+        componentName,
+        renderTime,
+        context: 'Performance'
+      });
     }
     
     startTime.current = performance.now();
@@ -155,11 +160,9 @@ export const useIntersectionObserver = (
       observerRef.current = new IntersectionObserver((entries) => {
         if (entries[0]?.isIntersecting) {
           callbackRef.current();
-          observerRef.current?.disconnect();
-          observerRef.current = null;
         }
       }, options);
-
+      
       observerRef.current.observe(element);
     }
   }, [options]);
@@ -168,17 +171,39 @@ export const useIntersectionObserver = (
 };
 
 /**
- * Memory usage monitor
+ * Memory-efficient list chunking for large datasets
  */
-export const useMemoryMonitor = () => {
-  return useCallback(() => {
-    if ('memory' in performance) {
-      const memory = (performance as any).memory;
-      console.log('Memory usage:', {
-        used: `${Math.round(memory.usedJSHeapSize / 1024 / 1024)} MB`,
-        total: `${Math.round(memory.totalJSHeapSize / 1024 / 1024)} MB`,
-        limit: `${Math.round(memory.jsHeapSizeLimit / 1024 / 1024)} MB`,
-      });
+export const chunkArray = <T>(array: T[], chunkSize: number): T[][] => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
+
+/**
+ * Shallow comparison for memoization
+ */
+export const shallowEqual = (objA: any, objB: any): boolean => {
+  if (objA === objB) return true;
+  
+  if (
+    typeof objA !== 'object' || objA === null ||
+    typeof objB !== 'object' || objB === null
+  ) {
+    return false;
+  }
+  
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  
+  if (keysA.length !== keysB.length) return false;
+  
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key) || objA[key] !== objB[key]) {
+      return false;
     }
-  }, []);
+  }
+  
+  return true;
 };

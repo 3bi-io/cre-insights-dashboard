@@ -96,9 +96,8 @@ class ErrorService {
       this.errorQueue.push(payload);
       this.processErrorQueue();
 
-    } catch (reportingError) {
-      // Avoid infinite loops
-      console.error('Error in error reporting:', reportingError);
+    } catch {
+      // Silently fail to avoid infinite loops - can't use logger here
     }
   }
 
@@ -160,21 +159,24 @@ class ErrorService {
   }
 
   private logToConsole(error: Error, context: ErrorContext): void {
-    const logMethod = context.level === 'critical' ? 'error' : 
-                     context.level === 'error' ? 'error' : 'warn';
-
-    console.group(`🚨 ${context.level.toUpperCase()} - ${context.errorId}`);
-    console[logMethod]('Error:', error);
-    console.info('Context:', context);
-    console.info('Timestamp:', context.timestamp);
-    console.info('URL:', context.url);
-    if (context.tags) {
-      console.info('Tags:', context.tags);
+    // Use structured logging instead of console groups
+    const logData = {
+      errorId: context.errorId,
+      level: context.level,
+      timestamp: context.timestamp,
+      url: context.url,
+      error: { name: error.name, message: error.message },
+      ...(context.tags && { tags: context.tags }),
+      ...(context.extra && { extra: context.extra })
+    };
+    
+    // Log to console in development for visibility
+    if (import.meta.env.MODE !== 'production') {
+      console.group(`🚨 ${context.level.toUpperCase()} - ${context.errorId}`);
+      console.error('Error:', error);
+      console.info('Context:', logData);
+      console.groupEnd();
     }
-    if (context.extra) {
-      console.info('Extra Data:', context.extra);
-    }
-    console.groupEnd();
   }
 
   private async sendToRemote(payload: ErrorReportPayload): Promise<void> {
@@ -195,9 +197,8 @@ class ErrorService {
       if (!response.ok) {
         throw new Error(`Failed to send error report: ${response.statusText}`);
       }
-    } catch (error) {
+    } catch {
       // Silently fail remote logging to avoid infinite loops
-      console.warn('Failed to send error report to remote service:', error);
     }
   }
 

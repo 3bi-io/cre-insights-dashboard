@@ -1,4 +1,5 @@
 // AI utility functions for processing and formatting responses
+import { logger } from '@/lib/logger';
 
 export interface AIRequest {
   message: string;
@@ -49,7 +50,7 @@ export const formatAIResponse = (response: any): string => {
     return response.response;
   }
 
-  console.warn('Unexpected AI response format:', response);
+  logger.warn('Unexpected AI response format', { response, context: 'AIUtils' });
   return 'I apologize, but I couldn\'t process your request properly. Please try again.';
 };
 

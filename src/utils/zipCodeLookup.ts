@@ -1,4 +1,6 @@
 // Utility to lookup city and state from zip code
+import { logger } from '@/lib/logger';
+
 export interface ZipCodeData {
   city: string;
   state: string;
@@ -139,23 +141,36 @@ export const lookupZipCode = async (zipCode: string): Promise<ZipCodeData | null
   } catch (error: unknown) {
     const err = error as Error;
     if (err.name === 'AbortError') {
-      console.warn(`Zip code lookup timed out for ${cleanZip}`);
+      logger.warn(`Zip code lookup timed out for ${cleanZip}`, { context: 'ZipCodeLookup' });
     } else {
-      console.warn(`Zip code lookup failed for ${cleanZip}:`, err.message);
+      logger.warn(`Zip code lookup failed for ${cleanZip}`, { error: err.message, context: 'ZipCodeLookup' });
     }
-    addFailedLookup(cleanZip);
     return null;
   }
 };
 
-// Format city and state consistently as "City, ST"
-export const formatCityState = (city: string, state: string): string => {
-  if (!city && !state) return '';
-  if (!city) return state;
-  if (!state) return city;
+// Debounced version for real-time form input
+let debounceTimer: NodeJS.Timeout | null = null;
+
+export const lookupZipCodeDebounced = (
+  zipCode: string,
+  callback: (data: ZipCodeData | null) => void,
+  delay: number = 500
+): void => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+  }
   
-  // Use state abbreviation if it's longer than 2 characters
-  const stateDisplay = state.length > 2 ? state.substring(0, 2).toUpperCase() : state.toUpperCase();
-  
-  return `${city}, ${stateDisplay}`;
+  debounceTimer = setTimeout(async () => {
+    const result = await lookupZipCode(zipCode);
+    callback(result);
+  }, delay);
+};
+
+// Cancel any pending debounced lookup
+export const cancelZipCodeLookup = (): void => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
 };

@@ -21,6 +21,7 @@ import {
 import { Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOrganizations } from '@/hooks/useOrganizations';
+import { logger } from '@/lib/logger';
 
 interface UserOrganizationDialogProps {
   user: {
@@ -74,7 +75,7 @@ export const UserOrganizationDialog: React.FC<UserOrganizationDialogProps> = ({
         
         // Ignore error if no role exists - not all users have roles
         if (roleError && !roleError.message.includes('0 rows')) {
-          console.warn('Could not update user_roles organization:', roleError);
+          logger.warn('Could not update user_roles organization', { error: roleError, context: 'UserOrganizationDialog' });
         }
       }
     },

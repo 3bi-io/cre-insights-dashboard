@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { aiService, type AIRequest, type AIResponse } from '@/services/aiService';
 import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
 
 interface UseTruthContractOptions {
   onSuccess?: (response: AIResponse) => void;
@@ -21,14 +22,17 @@ export const useTruthContract = (options: UseTruthContractOptions = {}) => {
     setError(null);
 
     try {
-      console.log('Processing request with Truth Contract validation:', request);
+      logger.debug('Processing request with Truth Contract validation', { request, context: 'TruthContract' });
 
       const response = await aiService.processRequest(request);
       setLastResponse(response);
 
       // Check if response passed truth validation
       if (!response.isValidated || !response.truthValidation?.isValid) {
-        console.warn('Response failed Truth Contract validation:', response.truthValidation);
+        logger.warn('Response failed Truth Contract validation', { 
+          truthValidation: response.truthValidation,
+          context: 'TruthContract'
+        });
         
         // Show warning to user
         toast({
@@ -61,7 +65,7 @@ export const useTruthContract = (options: UseTruthContractOptions = {}) => {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('Truth Contract processing error:', errorMessage);
+      logger.error('Truth Contract processing error', err, { context: 'TruthContract' });
       
       setError(errorMessage);
 
@@ -114,14 +118,15 @@ export const useTruthContract = (options: UseTruthContractOptions = {}) => {
 
 // Utility hook for simple AI requests with truth contract
 export const useAIWithTruthContract = () => {
-  const { toast } = useToast();
-  
   return useTruthContract({
     onValidationFailed: (response) => {
-      console.warn('AI response failed validation:', response.truthValidation);
+      logger.warn('AI response failed validation', { 
+        truthValidation: response.truthValidation,
+        context: 'TruthContract'
+      });
     },
     onError: (error) => {
-      console.error('AI request failed:', error);
+      logger.error('AI request failed', error, { context: 'TruthContract' });
     }
   });
 };
