@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import DOMPurify from 'dompurify';
 import type { ValidationError } from '@/types/error.types';
 
 // === PRIMITIVE VALIDATORS ===
@@ -326,13 +327,14 @@ export const sanitizers = {
         .replace(/[\s_-]+/g, '-')
         .replace(/^-+|-+$/g, ''),
   sanitizeHtml: (html: string): string => {
-    // Enhanced HTML sanitization
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
-      .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
-      .replace(/javascript:/gi, '');
+    // Use DOMPurify for secure HTML sanitization
+    // Prevents XSS attacks that regex-based sanitization cannot handle
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'b', 'i', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+                     'ul', 'ol', 'li', 'a', 'blockquote', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+      ALLOW_DATA_ATTR: false,
+      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+    });
   }
 };
