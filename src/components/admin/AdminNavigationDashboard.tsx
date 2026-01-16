@@ -16,7 +16,10 @@ import {
   AlertCircle,
   Clock,
   Users,
-  Activity
+  Activity,
+  FileText,
+  Briefcase,
+  UserPlus
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -173,10 +176,25 @@ export function AdminNavigationDashboard() {
   };
 
   const formatActivityAction = (action: string, tableName: string) => {
+    // Handle custom action strings (e.g., "LIST_ACCESS: General application review")
+    if (action.includes(':')) {
+      const [actionType, description] = action.split(':').map(s => s.trim());
+      const actionLabels: Record<string, string> = {
+        'LIST_ACCESS': 'Viewed',
+        'UNAUTHORIZED_ACCESS_ATTEMPT': 'Access denied',
+        'UNAUTHORIZED_SENSITIVE_ACCESS_ATTEMPT': 'Blocked access',
+        'TENSTREET_SEARCH_APPLICANTS': 'ATS search',
+      };
+      const label = actionLabels[actionType] || actionType;
+      return description ? `${label}: ${description}` : label;
+    }
+
+    // Handle standard SQL actions
     const actionMap: Record<string, string> = {
       'INSERT': 'Created',
       'UPDATE': 'Updated',
-      'DELETE': 'Deleted'
+      'DELETE': 'Deleted',
+      'SELECT': 'Viewed'
     };
     const tableMap: Record<string, string> = {
       'organizations': 'organization',
@@ -185,9 +203,21 @@ export function AdminNavigationDashboard() {
       'ats_connections': 'ATS connection',
       'platforms': 'platform',
       'user_roles': 'user role',
-      'organization_features': 'org feature'
+      'organization_features': 'org feature',
+      'profiles': 'profile',
+      'authorization': 'access attempt'
     };
     return `${actionMap[action] || action} ${tableMap[tableName] || tableName}`;
+  };
+
+  const getActivityIcon = (action: string, tableName: string) => {
+    if (action.includes('UNAUTHORIZED')) return AlertCircle;
+    if (action.includes('TENSTREET') || action.includes('ATS')) return Workflow;
+    if (tableName === 'organizations') return Building2;
+    if (tableName === 'applications') return FileText;
+    if (tableName === 'job_listings') return Briefcase;
+    if (tableName === 'profiles') return UserPlus;
+    return Users;
   };
 
   return (
