@@ -29,10 +29,9 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn('relative overflow-auto', className)}
+      className={cn('relative', className)}
       style={{ 
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehavior: 'none'
+        WebkitOverflowScrolling: 'touch'
       }}
     >
       {/* Refresh Indicator */}

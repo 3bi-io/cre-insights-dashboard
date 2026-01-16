@@ -19,7 +19,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   showFooter = true
 }) => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col overflow-y-auto">
       {/* Page Header */}
       {(title || description || actions) && (
         <div className="bg-card border-b border-border">
