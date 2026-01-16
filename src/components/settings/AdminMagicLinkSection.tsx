@@ -7,6 +7,7 @@ import { Mail, Send, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 export const AdminMagicLinkSection = () => {
   const [email, setEmail] = useState('');
@@ -50,7 +51,7 @@ export const AdminMagicLinkSection = () => {
         throw new Error(data?.error || 'Failed to send magic link');
       }
     } catch (error: any) {
-      console.error('Error sending magic link:', error);
+      logger.error('Error sending magic link', error);
       toast({
         title: "Error",
         description: error.message || "Failed to send magic link. Please try again.",
@@ -91,7 +92,7 @@ export const AdminMagicLinkSection = () => {
         throw new Error(data?.error || 'Failed to send bulk magic links');
       }
     } catch (error: any) {
-      console.error('Error sending bulk magic links:', error);
+      logger.error('Error sending bulk magic links', error);
       toast({
         title: "Error",
         description: error.message || "Failed to send bulk magic links. Please try again.",

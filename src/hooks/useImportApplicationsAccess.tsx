@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook to check if the current user has access to Import Applications
@@ -26,13 +27,13 @@ export const useImportApplicationsAccess = () => {
           });
 
           if (error) {
-            console.error('Error checking Import Applications access:', error);
+            logger.error('Error checking Import Applications access', error);
             return false;
           }
 
           return data || false;
         } catch (error) {
-          console.error('Error checking Import Applications access:', error);
+          logger.error('Error checking Import Applications access', error);
           return false;
         }
       }

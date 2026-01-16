@@ -7,6 +7,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { z } from 'zod';
 import { validateData, validatePartialData, ValidationResult } from '@/utils/validation';
 import type { ValidationError } from '@/types/error.types';
+import { logger } from '@/lib/logger';
 
 export interface UseValidationOptions<T> {
   /** Validation schema */
@@ -142,7 +143,7 @@ export function useValidation<T extends Record<string, any>>(
             stringErrors[error.field] = error.message;
           });
         } catch (error) {
-          console.error('Custom validation error:', error);
+          logger.error('Custom validation error', error);
         }
       }
 
@@ -158,7 +159,7 @@ export function useValidation<T extends Record<string, any>>(
 
       return isValid;
     } catch (error) {
-      console.error('Validation error:', error);
+      logger.error('Validation error', error);
       setState(prev => ({
         ...prev,
         isValid: false,

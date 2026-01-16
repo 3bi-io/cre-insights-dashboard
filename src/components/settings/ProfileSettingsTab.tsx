@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { User, Database, Save, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateChangelogPDF } from '@/utils/changelogPdfGenerator';
+import { logger } from '@/lib/logger';
 
 const ProfileSettingsTab = () => {
   const { user, refreshUser } = useAuth();
@@ -57,7 +58,7 @@ const ProfileSettingsTab = () => {
         description: "The changelog PDF has been downloaded successfully.",
       });
     } catch (error) {
-      console.error('Error generating changelog PDF:', error);
+      logger.error('Error generating changelog PDF', error);
       toast({
         title: "Error",
         description: "Failed to generate changelog PDF. Please try again.",
@@ -91,7 +92,7 @@ const ProfileSettingsTab = () => {
       await refreshUser();
       toast({ title: 'Profile updated', description: 'Your profile has been saved.' });
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile', error);
       toast({ title: 'Update failed', description: 'Could not save your profile.', variant: 'destructive' });
     } finally {
       setProfileSaving(false);

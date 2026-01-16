@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * Download a single asset file
  */
@@ -16,7 +18,7 @@ export const downloadAsset = async (url: string, filename: string): Promise<void
     
     window.URL.revokeObjectURL(downloadUrl);
   } catch (error) {
-    console.error('Failed to download asset:', error);
+    logger.error('Failed to download asset', error);
     throw error;
   }
 };
@@ -29,7 +31,7 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error);
+    logger.error('Failed to copy to clipboard', error);
     return false;
   }
 };

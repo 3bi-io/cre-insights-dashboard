@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, TrendingUp, BarChart3, Zap, AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface Platform {
   id: string;
@@ -41,7 +42,7 @@ const XPlatformActions: React.FC<XPlatformActionsProps> = ({ platform, onRefresh
         description: "X API connection is working correctly",
       });
     } catch (error) {
-      console.error('Connection test failed:', error);
+      logger.error('Connection test failed', error);
       toast({
         title: "Connection Failed",
         description: "Unable to connect to X API. Check your credentials.",
@@ -66,7 +67,7 @@ const XPlatformActions: React.FC<XPlatformActionsProps> = ({ platform, onRefresh
         description: "Successfully fetched your X account metrics",
       });
     } catch (error) {
-      console.error('Failed to get metrics:', error);
+      logger.error('Failed to get metrics', error);
       toast({
         title: "Metrics Failed",
         description: "Unable to retrieve X metrics",

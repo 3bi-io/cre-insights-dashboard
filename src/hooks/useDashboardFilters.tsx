@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { subDays } from 'date-fns';
+import { logger } from '@/lib/logger';
 
 interface DateRange {
   from: Date;
@@ -59,7 +59,7 @@ export const useDashboardFilters = () => {
       try {
         setFilters(JSON.parse(savedFilters));
       } catch (error) {
-        console.error('Error loading saved filters:', error);
+        logger.error('Error loading saved filters', error);
       }
     }
 
@@ -72,7 +72,7 @@ export const useDashboardFilters = () => {
           to: new Date(parsed.to)
         });
       } catch (error) {
-        console.error('Error loading saved date range:', error);
+        logger.error('Error loading saved date range', error);
       }
     }
   }, []);

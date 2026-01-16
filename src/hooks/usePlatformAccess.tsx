@@ -7,6 +7,7 @@ import {
   PlatformUpdatePayload,
 } from '@/features/organizations/types/platforms.types';
 import { getAllPlatforms } from '@/features/organizations/config/organizationPlatforms.config';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook for managing organization platform access (admin only)
@@ -27,7 +28,7 @@ export const usePlatformAccess = (organizationId?: string) => {
           organizationId
         );
       } catch (error: any) {
-        console.error('Failed to fetch organization platforms:', error);
+        logger.error('Failed to fetch organization platforms', error);
         toast({
           title: 'Error',
           description: error.message || 'Failed to load platforms',
@@ -67,7 +68,7 @@ export const usePlatformAccess = (organizationId?: string) => {
       });
     },
     onError: (error: any) => {
-      console.error('Failed to update platforms:', error);
+      logger.error('Failed to update platforms', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to update platforms',

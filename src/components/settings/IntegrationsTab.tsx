@@ -21,6 +21,7 @@ import { FeatureGuard } from '@/components/FeatureGuard';
 import ClientWebhookManager from '@/components/integrations/ClientWebhookManager';
 import { CallWebhookManager } from '@/components/voice/CallWebhookManager';
 import { BGCProviderConnections } from '@/features/screening';
+import { logger } from '@/lib/logger';
 
 const IntegrationsTab = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +47,7 @@ const IntegrationsTab = () => {
         description: "X API connection is working correctly",
       });
     } catch (error) {
-      console.error('Connection test failed:', error);
+      logger.error('Connection test failed', error);
       toast({
         title: "Connection Failed",
         description: "Unable to connect to X API. Check your credentials.",
@@ -71,7 +72,7 @@ const IntegrationsTab = () => {
         description: "Successfully refreshed your X account metrics",
       });
     } catch (error) {
-      console.error('Failed to refresh metrics:', error);
+      logger.error('Failed to refresh metrics', error);
       toast({
         title: "Metrics Failed",
         description: "Unable to retrieve X metrics",

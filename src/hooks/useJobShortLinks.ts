@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface ShortLinkOptions {
   jobListingId: string;
@@ -74,7 +75,7 @@ export const useJobShortLinks = () => {
 
       throw new Error('Could not generate unique short code');
     } catch (error: any) {
-      console.error('Error creating short link:', error);
+      logger.error('Error creating short link', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to create short link',
@@ -95,7 +96,7 @@ export const useJobShortLinks = () => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching short links:', error);
+      logger.error('Error fetching short links', error);
       return [];
     }
 

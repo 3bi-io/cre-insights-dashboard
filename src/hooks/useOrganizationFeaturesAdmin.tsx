@@ -7,6 +7,7 @@ import {
   FeatureUpdatePayload,
 } from '@/features/organizations/types/features.types';
 import { getAllFeatures } from '@/features/organizations/config/organizationFeatures.config';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook for managing organization features (admin only)
@@ -27,7 +28,7 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
           organizationId
         );
       } catch (error: any) {
-        console.error('Failed to fetch organization features:', error);
+        logger.error('Failed to fetch organization features', error);
         toast({
           title: 'Error',
           description: error.message || 'Failed to load features',
@@ -68,7 +69,7 @@ export const useOrganizationFeaturesAdmin = (organizationId?: string) => {
       });
     },
     onError: (error: any) => {
-      console.error('Failed to update features:', error);
+      logger.error('Failed to update features', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to update features',

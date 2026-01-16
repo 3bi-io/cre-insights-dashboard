@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { aiConnectionManager, AIConnectionStatus, AIProvider } from '@/services/aiConnectionManager';
 import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
 
 export const useAIConnectionManager = () => {
   const [connectionStatuses, setConnectionStatuses] = useState<AIConnectionStatus[]>([]);
@@ -18,7 +19,7 @@ export const useAIConnectionManager = () => {
       updateStatuses();
       return status;
     } catch (error) {
-      console.error(`Failed to check ${provider} connection:`, error);
+      logger.error(`Failed to check ${provider} connection`, error);
       return null;
     }
   }, [updateStatuses]);
@@ -35,7 +36,7 @@ export const useAIConnectionManager = () => {
         description: `${health.connectedProviders}/${health.totalProviders} providers connected (${health.healthPercentage.toFixed(0)}% health)`,
       });
     } catch (error) {
-      console.error('Failed to refresh AI connections:', error);
+      logger.error('Failed to refresh AI connections', error);
       toast({
         title: "Refresh Failed",
         description: "Failed to refresh AI platform connections",
