@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -29,7 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     const timer = setTimeout(() => {
       if (isLoading) {
-        console.error('[PROTECTED_ROUTE] Loading timeout reached after 15 seconds');
+        logger.error('Loading timeout reached after 15 seconds', {}, { context: 'PROTECTED_ROUTE' });
         setLoadingTimeout(true);
       }
     }, LOADING_TIMEOUT_MS);
@@ -39,7 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // If loading timed out, redirect to auth
   if (loadingTimeout) {
-    console.error('[PROTECTED_ROUTE] Redirecting to /auth due to loading timeout');
+    logger.error('Redirecting to /auth due to loading timeout', {}, { context: 'PROTECTED_ROUTE' });
     return <Navigate to="/auth" replace />;
   }
   

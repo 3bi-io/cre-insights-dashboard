@@ -38,7 +38,6 @@ interface AuthContextType {
     slug: string;
     logo_url?: string;
     settings?: Record<string, unknown>;
-    // subscription_status and plan_type removed - all features available to all users
   } | null;
   candidateProfile: CandidateProfile | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -46,7 +45,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   loading: boolean;
-  // Computed properties for role checks
   isOrgAdmin: boolean;
   isSuperAdmin: boolean;
 }
@@ -64,26 +62,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     slug: string;
     logo_url?: string;
     settings?: Record<string, unknown>;
-    // subscription_status and plan_type removed - all features available to all users
   } | null>(null);
   const [candidateProfile, setCandidateProfile] = useState<CandidateProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const fetchUserRoleAndOrganization = async (_userId: string) => {
-    const timestamp = new Date().toISOString();
-    const FETCH_TIMEOUT = 10000; // 10 seconds
-    console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - STARTING for user:`, _userId.substring(0, 8) + '...');
+    const FETCH_TIMEOUT = 10000;
+    logger.log('fetchUserRoleAndOrganization - starting', { userId: _userId.substring(0, 8) });
     
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Role fetch timeout')), FETCH_TIMEOUT);
     });
 
     const fetchLogic = async () => {
-      logger.info(`Fetching role and organization for user`, { userId: _userId });
-      
-      // Fetch role and profile in parallel for speed
-      console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - fetching role and profile in parallel`);
+      logger.log('Fetching role and profile in parallel', { context: 'AUTH' });
       
       const [roleResult, profileResult] = await Promise.all([
         supabase.rpc('get_current_user_role'),
@@ -106,37 +99,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Process role with explicit validation
       if (roleResult.error) {
-        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - RPC error:`, roleResult.error);
-        logger.error('Error fetching user role', roleResult.error);
+        logger.error('Error fetching user role', roleResult.error, { context: 'AUTH' });
         setUserRole('user');
       } else {
         const fetchedRole = roleResult.data as string;
-        // Normalize role - only accept known valid roles
         const normalizedRole: ValidRole = (VALID_ROLES as readonly string[]).includes(fetchedRole) 
           ? (fetchedRole as ValidRole) 
           : 'user';
-        console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - role fetched:`, {
-          raw: fetchedRole,
+        logger.log('Role fetched', { 
+          raw: fetchedRole, 
           normalized: normalizedRole,
           isOrgAdmin: normalizedRole === 'admin',
-          isSuperAdmin: normalizedRole === 'super_admin'
+          isSuperAdmin: normalizedRole === 'super_admin',
+          context: 'AUTH'
         });
         setUserRole(normalizedRole);
       }
 
       // Process profile
       if (profileResult.error) {
-        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - profile error:`, profileResult.error);
-        logger.error('Error fetching user profile', profileResult.error);
+        logger.error('Error fetching user profile', profileResult.error, { context: 'AUTH' });
         setOrganization(null);
         setUserType('organization');
       } else {
         const dbUserType = (profileResult.data as any)?.user_type as 'organization' | 'jobseeker' | null;
         setUserType(dbUserType || 'organization');
-        console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - user_type:`, dbUserType);
+        logger.log('User type loaded', { userType: dbUserType, context: 'AUTH' });
 
         if ((profileResult.data as any)?.organizations) {
-          console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - organization loaded`);
+          logger.log('Organization loaded', { context: 'AUTH' });
           setOrganization((profileResult.data as any).organizations as any);
         } else {
           setOrganization(null);
@@ -144,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Fetch candidate profile if jobseeker
         if (dbUserType === 'jobseeker') {
-          console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - fetching candidate profile`);
+          logger.log('Fetching candidate profile', { context: 'AUTH' });
           const { data: candidateData, error: candidateError } = await supabase
             .from('candidate_profiles')
             .select('*')
@@ -152,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .maybeSingle();
 
           if (candidateError) {
-            console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - candidate profile error:`, candidateError);
+            logger.error('Error fetching candidate profile', candidateError, { context: 'AUTH' });
             setCandidateProfile(null);
           } else {
             setCandidateProfile(candidateData as CandidateProfile);
@@ -162,18 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      // Log final auth state summary for debugging
-      console.log(`[AUTH][${timestamp}] Auth state summary:`, {
-        userId: _userId.substring(0, 8) + '...',
-        role: userRole,
-        userType: userType,
-        hasOrganization: !!organization,
-        organizationId: organization?.id?.substring(0, 8),
-        isOrgAdmin: userRole === 'admin' && userType === 'organization',
-        isSuperAdmin: userRole === 'super_admin'
-      });
-      
-      console.log(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - COMPLETED`);
+      logger.log('fetchUserRoleAndOrganization completed', { context: 'AUTH' });
     };
 
     // Retry logic for transient failures
@@ -186,13 +166,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error: unknown) {
         if (retryCount < MAX_RETRIES) {
           retryCount++;
-          console.warn(`[AUTH][${timestamp}] Role fetch failed, retrying (${retryCount}/${MAX_RETRIES}):`, error);
+          logger.warn(`Role fetch failed, retrying (${retryCount}/${MAX_RETRIES})`, { error, context: 'AUTH' });
           await new Promise(resolve => setTimeout(resolve, 1000));
           return fetchWithRetry();
         }
-        console.error(`[AUTH][${timestamp}] fetchUserRoleAndOrganization - EXCEPTION or TIMEOUT after ${MAX_RETRIES} retries:`, error);
-        logger.error('Error fetching user data (may have timed out)', error);
-        // Set defaults to unblock UI
+        logger.error('Error fetching user data after retries', error, { context: 'AUTH' });
         setUserRole('user');
         setUserType('organization');
         setOrganization(null);
@@ -226,18 +204,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        logger.debug('Auth state changed', { event, hasSession: !!session });
-        console.log('[AUTH] Auth state changed:', { event, hasSession: !!session });
+        logger.log('Auth state changed', { event, hasSession: !!session, context: 'AUTH' });
         
         // Handle token refresh failure
         if (event === 'TOKEN_REFRESHED' && !session) {
-          console.log('[AUTH] Token refresh failed, clearing state');
+          logger.log('Token refresh failed, clearing state', { context: 'AUTH' });
           clearAuthState();
-          // Also clear localStorage to prevent stale token issues
           try {
             localStorage.removeItem('supabase.auth.token');
           } catch (e) {
-            console.error('[AUTH] Error clearing localStorage:', e);
+            logger.error('Error clearing localStorage', e, { context: 'AUTH' });
           }
           setLoading(false);
           return;
@@ -245,7 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Handle sign out event
         if (event === 'SIGNED_OUT') {
-          console.log('[AUTH] User signed out, clearing state');
+          logger.log('User signed out, clearing state', { context: 'AUTH' });
           clearAuthState();
           setLoading(false);
           return;
@@ -255,12 +231,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer Supabase calls to prevent deadlock
-          // Keep loading true until role fetch completes
           setTimeout(() => {
             fetchUserRoleAndOrganization(session.user.id).finally(() => {
               setLoading(false);
-              console.log('[AUTH] Loading complete after role fetch');
+              logger.log('Loading complete after role fetch', { context: 'AUTH' });
             });
           }, 0);
         } else {
@@ -269,7 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setOrganization(null);
           setCandidateProfile(null);
           setLoading(false);
-          console.log('[AUTH] Loading complete (no user)');
+          logger.log('Loading complete (no user)', { context: 'AUTH' });
         }
       }
     );
@@ -277,18 +251,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for existing session with error handling
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
-        console.log('[AUTH] Initial session check:', { hasSession: !!session, hasError: !!error });
+        logger.log('Initial session check', { hasSession: !!session, hasError: !!error, context: 'AUTH' });
         
-        // Handle session expired errors gracefully
         if (error && isSessionExpiredError(error)) {
-          console.log('[AUTH] Session expired on initial check, clearing state');
-          logger.info('Session expired, user needs to re-authenticate');
+          logger.log('Session expired on initial check, clearing state', { context: 'AUTH' });
           clearAuthState();
-          // Clear localStorage to prevent future issues
           try {
             localStorage.removeItem('supabase.auth.token');
           } catch (e) {
-            console.error('[AUTH] Error clearing localStorage:', e);
+            logger.error('Error clearing localStorage', e, { context: 'AUTH' });
           }
           setLoading(false);
           return;
@@ -298,32 +269,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer Supabase calls to prevent deadlock
-          // Keep loading true until role fetch completes
           setTimeout(() => {
             fetchUserRoleAndOrganization(session.user.id).finally(() => {
               setLoading(false);
-              console.log('[AUTH] Initial load complete after role fetch');
+              logger.log('Initial load complete after role fetch', { context: 'AUTH' });
             });
           }, 0);
         } else {
           setLoading(false);
-          console.log('[AUTH] Initial load complete (no user)');
+          logger.log('Initial load complete (no user)', { context: 'AUTH' });
         }
       })
       .catch((error) => {
-        // Catch any unexpected errors during session check
-        console.error('[AUTH] Unexpected error during session check:', error);
-        logger.error('Unexpected error during session check', error);
-        
-        // Clear potentially corrupted state
+        logger.error('Unexpected error during session check', error, { context: 'AUTH' });
         clearAuthState();
         try {
           localStorage.removeItem('supabase.auth.token');
         } catch (e) {
-          console.error('[AUTH] Error clearing localStorage:', e);
+          logger.error('Error clearing localStorage', e, { context: 'AUTH' });
         }
-        
         setLoading(false);
       });
 
@@ -332,32 +296,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session }, error: getError } = await supabase.auth.getSession();
         
-        // If no session or error getting session, sign out
         if (getError || !session) {
-          console.log('[AUTH] Session invalid during refresh check, signing out');
-          logger.info('Session expired during heartbeat, signing out');
+          logger.log('Session invalid during refresh check, signing out', { context: 'AUTH' });
           await supabase.auth.signOut();
           return;
         }
         
-        console.log('[AUTH] Refreshing session (7-hour heartbeat)');
-        logger.info('Automatic session refresh triggered');
+        logger.log('Refreshing session (7-hour heartbeat)', { context: 'AUTH' });
         
         const { error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {
-          console.log('[AUTH] Session refresh failed:', refreshError.message);
+          logger.log('Session refresh failed', { error: refreshError.message, context: 'AUTH' });
           if (isSessionExpiredError(refreshError)) {
-            console.log('[AUTH] Session expired, signing out');
+            logger.log('Session expired, signing out', { context: 'AUTH' });
             await supabase.auth.signOut();
           }
         } else {
-          console.log('[AUTH] Session refreshed successfully');
+          logger.log('Session refreshed successfully', { context: 'AUTH' });
         }
       } catch (err) {
-        console.error('[AUTH] Error during session refresh:', err);
+        logger.error('Error during session refresh', err, { context: 'AUTH' });
       }
-    }, 7 * 60 * 60 * 1000); // 7 hours in milliseconds
+    }, 7 * 60 * 60 * 1000);
 
     return () => {
       subscription.unsubscribe();
@@ -366,46 +327,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[AUTH][${timestamp}] signIn - STARTING for:`, email.substring(0, 3) + '***');
+    logger.log('signIn - starting', { email: email.substring(0, 3) + '***', context: 'AUTH' });
     
     try {
-      console.log(`[AUTH][${timestamp}] signIn - calling supabase.auth.signInWithPassword`);
+      logger.log('Calling supabase.auth.signInWithPassword', { context: 'AUTH' });
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
-        console.error(`[AUTH][${timestamp}] signIn - authentication error:`, {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        });
-        logger.error('Sign in error', error);
+        logger.error('Sign in authentication error', error, { context: 'AUTH' });
         return { error };
       }
       
-      console.log(`[AUTH][${timestamp}] signIn - auth successful, session created:`, {
+      logger.log('Auth successful, session created', { 
         hasSession: !!data.session,
-        userId: data.session?.user?.id?.substring(0, 8) + '...',
-        expiresAt: data.session?.expires_at
+        userId: data.session?.user?.id?.substring(0, 8),
+        context: 'AUTH'
       });
       
       if (!data.session?.user) {
         const noSessionError = new Error('No session created');
-        console.error(`[AUTH][${timestamp}] signIn - no session in response`);
-        logger.error('Sign in failed - no session', {});
+        logger.error('Sign in failed - no session', {}, { context: 'AUTH' });
         return { error: noSessionError };
       }
       
-      // fetchUserRoleAndOrganization is triggered by onAuthStateChange
-      // Navigation is handled by useAuthForm's useEffect that watches user/userRole
-      console.log(`[AUTH][${timestamp}] signIn - COMPLETED successfully, navigation handled by auth form`);
+      logger.log('signIn completed successfully', { context: 'AUTH' });
       return { error: null };
     } catch (err) {
-      console.error(`[AUTH][${timestamp}] signIn - EXCEPTION:`, err);
-      logger.error('Unexpected error during sign in', err);
+      logger.error('Unexpected error during sign in', err, { context: 'AUTH' });
       const errorObj = err instanceof Error ? err : new Error('An unexpected error occurred during sign in');
       return { error: errorObj };
     }
@@ -454,7 +405,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Computed role properties
   const isOrgAdmin = userRole === 'admin' && userType === 'organization';
   const isSuperAdmin = userRole === 'super_admin';
 
