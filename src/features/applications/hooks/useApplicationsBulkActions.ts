@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { ApplicationStatus, BulkActionProgress } from '@/types/api.types';
+import { logger } from '@/lib/logger';
 
 interface BulkActionsOptions {
   updateApplication: (id: string, data: { status: ApplicationStatus }) => Promise<void>;
@@ -73,7 +74,7 @@ export const useApplicationsBulkActions = ({ updateApplication, refresh }: BulkA
           await updateApplication(ids[i], { status: newStatus });
           successCount++;
         } catch (error) {
-          console.error(`Failed to update application ${ids[i]}:`, error);
+          logger.error(`Failed to update application ${ids[i]}`, error, { context: 'useApplicationsBulkActions', applicationId: ids[i] });
           failureCount++;
         }
 
@@ -153,7 +154,7 @@ export const useApplicationsBulkActions = ({ updateApplication, refresh }: BulkA
           await deleteFunction(ids[i]);
           successCount++;
         } catch (error) {
-          console.error(`Failed to delete application ${ids[i]}:`, error);
+          logger.error(`Failed to delete application ${ids[i]}`, error, { context: 'useApplicationsBulkActions', applicationId: ids[i] });
           failureCount++;
         }
 
