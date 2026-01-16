@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, eachDayOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { OutboundCallStatus } from '@/features/elevenlabs/types/outboundCall';
+import { queryKeys } from '@/lib/queryKeys';
 
 export interface OutboundCallMetrics {
   totalCalls: number;
@@ -61,7 +62,7 @@ export function useOutboundCallAnalytics(options: UseOutboundCallAnalyticsOption
   const effectiveDateRange = dateRange || defaultDateRange;
 
   return useQuery({
-    queryKey: ['outbound-call-analytics', organizationId, effectiveDateRange.start, effectiveDateRange.end],
+    queryKey: queryKeys.analytics.outboundCalls(organizationId || '', format(effectiveDateRange.start, 'yyyy-MM-dd'), format(effectiveDateRange.end, 'yyyy-MM-dd')),
     queryFn: async () => {
       let query = supabase
         .from('outbound_calls')

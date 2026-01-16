@@ -4,10 +4,11 @@ import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 const BudgetOverview = () => {
   const { data: budgetData = [], isLoading } = useQuery({
-    queryKey: ['budget-overview'],
+    queryKey: queryKeys.analytics.budgetOverview(),
     queryFn: async () => {
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();

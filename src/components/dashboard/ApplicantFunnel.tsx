@@ -5,12 +5,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import { queryKeys } from '@/lib/queryKeys';
 
 export const ApplicantFunnel = () => {
   const { organization } = useAuth();
 
   const { data: funnelData, isLoading } = useQuery({
-    queryKey: ['applicant-funnel', organization?.id],
+    queryKey: queryKeys.analytics.funnel(organization?.id),
     queryFn: async () => {
       if (!organization?.id) return null;
 

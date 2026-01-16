@@ -7,11 +7,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 import { ResponsiveTableWrapper, ResponsiveCardWrapper } from '@/components/ui/responsive-data-display';
 
 const JobPerformanceTable = () => {
   const { data: jobData = [], isLoading, refetch } = useQuery({
-    queryKey: ['job-performance'],
+    queryKey: queryKeys.jobs.performance(),
     queryFn: async () => {
       logger.debug('Fetching job performance data', undefined, 'JobPerformance');
       
