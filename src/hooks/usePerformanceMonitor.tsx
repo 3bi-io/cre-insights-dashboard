@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 
 interface PerformanceMetrics {
   renderTime: number;
@@ -31,10 +32,11 @@ export const usePerformanceMonitor = (componentName: string) => {
 
     // Log slow renders (>16ms for 60fps)
     if (renderTime > 16) {
-      console.warn(`[Performance] Slow render in ${componentName}:`, {
+      logger.warn(`[Performance] Slow render in ${componentName}`, {
         renderTime: `${renderTime.toFixed(2)}ms`,
         renderCount: renderCount.current,
         route: location.pathname,
+        context: 'usePerformanceMonitor'
       });
     }
 
@@ -123,19 +125,20 @@ export const usePerformanceMonitor = (componentName: string) => {
       
       entries.forEach((entry) => {
         if (entry.entryType === 'measure' && entry.name.includes(componentName)) {
-          console.log(`[Performance] ${entry.name}: ${entry.duration.toFixed(2)}ms`);
+          logger.debug(`[Performance] ${entry.name}: ${entry.duration.toFixed(2)}ms`, { context: 'PerformanceObserver' });
         }
         
         if (entry.entryType === 'navigation') {
           const navEntry = entry as PerformanceNavigationTiming;
-          console.log('[Performance] Navigation timing:', {
+          logger.debug('[Performance] Navigation timing', {
             domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
             loadComplete: navEntry.loadEventEnd - navEntry.loadEventStart,
+            context: 'PerformanceObserver'
           });
         }
         
         if (entry.entryType === 'paint') {
-          console.log(`[Performance] ${entry.name}: ${entry.startTime.toFixed(2)}ms`);
+          logger.debug(`[Performance] ${entry.name}: ${entry.startTime.toFixed(2)}ms`, { context: 'PerformanceObserver' });
         }
       });
     });
@@ -148,7 +151,7 @@ export const usePerformanceMonitor = (componentName: string) => {
       try {
         observer.observe({ entryTypes: ['measure'] });
       } catch (fallbackError) {
-        console.warn('[Performance] PerformanceObserver not fully supported');
+        logger.warn('[Performance] PerformanceObserver not fully supported', { context: 'usePerformanceMonitor' });
       }
     }
 
@@ -160,7 +163,7 @@ export const usePerformanceMonitor = (componentName: string) => {
   // Route change performance tracking
   useEffect(() => {
     const routeChangeTime = performance.now();
-    console.log(`[Performance] Route change to ${location.pathname} at ${routeChangeTime.toFixed(2)}ms`);
+    logger.debug(`[Performance] Route change to ${location.pathname} at ${routeChangeTime.toFixed(2)}ms`, { context: 'usePerformanceMonitor' });
   }, [location.pathname]);
 
   return {
@@ -179,7 +182,7 @@ export const startPerformanceMonitoring = () => {
     const longTaskObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
       entries.forEach((entry) => {
-        console.warn(`[Performance] Long task detected: ${entry.duration.toFixed(2)}ms`);
+        logger.warn(`[Performance] Long task detected: ${entry.duration.toFixed(2)}ms`, { context: 'PerformanceMonitoring' });
       });
     });
     
@@ -200,7 +203,7 @@ export const startPerformanceMonitoring = () => {
       
       // Log if CLS gets too high
       if (cumulativeLayoutShift > 0.1) {
-        console.warn(`[Performance] High Cumulative Layout Shift: ${cumulativeLayoutShift.toFixed(3)}`);
+        logger.warn(`[Performance] High Cumulative Layout Shift: ${cumulativeLayoutShift.toFixed(3)}`, { context: 'PerformanceMonitoring' });
       }
     });
     
@@ -215,10 +218,10 @@ export const startPerformanceMonitoring = () => {
         const fidEntry = entry as any; // Cast to access processingStart
         if (fidEntry.processingStart && fidEntry.startTime) {
           const firstInputDelay = fidEntry.processingStart - fidEntry.startTime;
-          console.log(`[Performance] First Input Delay: ${firstInputDelay.toFixed(2)}ms`);
+          logger.debug(`[Performance] First Input Delay: ${firstInputDelay.toFixed(2)}ms`, { context: 'PerformanceMonitoring' });
           
           if (firstInputDelay > 100) {
-            console.warn(`[Performance] High First Input Delay detected`);
+            logger.warn(`[Performance] High First Input Delay detected`, { firstInputDelay, context: 'PerformanceMonitoring' });
           }
         }
       });

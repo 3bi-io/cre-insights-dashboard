@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { queryKeys } from '@/lib/queryKeys';
+import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface CommunicationLog {
@@ -38,7 +40,7 @@ export function useCommunicationLogs(applicationId: string | undefined) {
   const { toast } = useToast();
 
   const logsQuery = useQuery({
-    queryKey: ['communication-logs', applicationId],
+    queryKey: queryKeys.communications.logs(applicationId || ''),
     queryFn: () => fetchCommunicationLogs(applicationId!),
     enabled: !!applicationId,
   });
@@ -79,10 +81,10 @@ export function useCommunicationLogs(applicationId: string | undefined) {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication-logs', applicationId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.logs(applicationId || '') });
     },
     onError: (error) => {
-      console.error('Error logging communication:', error);
+      logger.error('Error logging communication', error, { context: 'useCommunicationLogs' });
     },
   });
 

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryKeys } from '@/lib/queryKeys';
+import { logger } from '@/lib/logger';
 
 interface ExportParams {
   organizationId: string;
@@ -73,10 +75,10 @@ export function useTenstreetExport() {
       }
 
       // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ['tenstreet-bulk-operations'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tenstreet.bulkOperations });
     },
     onError: (error: Error) => {
-      console.error('Export error:', error);
+      logger.error('Export error', error, { context: 'useTenstreetExport' });
       toast.error(`Export failed: ${error.message}`);
     },
   });

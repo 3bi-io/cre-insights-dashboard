@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { MetaActionParams, MetaActionResult } from '../types';
+import { logger } from '@/lib/logger';
 
 /**
  * Central service for Meta API operations
@@ -10,14 +11,14 @@ export class MetaService {
    */
   static async invokeAction(params: MetaActionParams): Promise<MetaActionResult> {
     try {
-      console.log('MetaService: Invoking action', params);
+      logger.debug('MetaService: Invoking action', { action: params.action, context: 'MetaService' });
       
       const { data, error } = await supabase.functions.invoke('meta-integration', {
         body: params
       });
 
       if (error) {
-        console.error('MetaService: Function error', error);
+        logger.error('MetaService: Function error', error, { context: 'MetaService' });
         return {
           success: false,
           error: error.message || 'Unknown error occurred',
@@ -31,7 +32,7 @@ export class MetaService {
         data
       };
     } catch (error: any) {
-      console.error('MetaService: Unexpected error', error);
+      logger.error('MetaService: Unexpected error', error, { context: 'MetaService' });
       return {
         success: false,
         error: error.message || 'Unexpected error occurred',
