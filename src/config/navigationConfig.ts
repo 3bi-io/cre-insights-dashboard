@@ -147,8 +147,8 @@ export const getNavigationGroups = (options: {
       group: "Talent",
       icon: Search,
       items: [
-        { path: '/talent', label: 'Candidate Search', icon: Search },
-        { path: '/talent/pools', label: 'Talent Pools', icon: Bookmark }
+        { path: '/admin/talent', label: 'Candidate Search', icon: Search },
+        { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark }
       ]
     },
     {
@@ -230,7 +230,8 @@ export const getNavigationGroups = (options: {
 // Route title mapping for headers
 export const routeTitles: Record<string, string> = {
   '/': 'Home',
-  '/dashboard': 'Admin Dashboard',
+  '/admin': 'Dashboard',
+  '/dashboard': 'Dashboard',
   '/admin/jobs': 'Job Listings',
   '/admin/applications': 'Applications',
   '/admin/campaigns': 'Campaigns',
@@ -276,8 +277,8 @@ export const routeTitles: Record<string, string> = {
   '/admin/tenstreet-sync': 'Tenstreet Sync Dashboard',
   '/admin/driverreach-integration': 'DriverReach Integration',
   '/admin/driverreach-sync': 'DriverReach Sync Dashboard',
-  '/talent': 'Candidate Search',
-  '/talent/pools': 'Talent Pools',
+  '/admin/talent': 'Candidate Search',
+  '/admin/talent/pools': 'Talent Pools',
 };
 
 export const getRouteTitle = (pathname: string): string => {

@@ -34,8 +34,8 @@ const MobileBottomNav: React.FC = () => {
     {
       icon: LayoutDashboard,
       label: 'Dashboard',
-      path: '/dashboard',
-      activePatterns: ['/dashboard']
+      path: '/admin',
+      activePatterns: ['/admin']
     },
     {
       icon: Users,

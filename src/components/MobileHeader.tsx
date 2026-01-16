@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
@@ -95,30 +95,30 @@ const MobileHeader = () => {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="cursor-pointer">
-                <a href="/admin/profile">
+                <Link to="/admin/settings?tab=profile">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile Settings</span>
-                </a>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer">
-                <a href="/admin/settings">
+                <Link to="/admin/settings">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
-                </a>
+                </Link>
               </DropdownMenuItem>
               {(userRole === 'admin' || userRole === 'super_admin') && (
                 <>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <a href="/admin/organizations">
+                    <Link to={userRole === 'super_admin' ? '/admin/organizations' : '/admin/settings/organization'}>
                       <Building2 className="mr-2 h-4 w-4" />
                       <span>Organization</span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="cursor-pointer">
-                    <a href="/admin/user-management">
+                    <Link to="/admin/user-management">
                       <Users className="mr-2 h-4 w-4" />
                       <span>Team Members</span>
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                 </>
               )}
