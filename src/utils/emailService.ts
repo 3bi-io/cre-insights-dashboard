@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export interface SendEmailParams {
   to: string;
@@ -30,13 +31,13 @@ export const sendApplicationEmail = async (params: SendEmailParams): Promise<voi
     });
 
     if (error) {
-      console.error('Error sending email:', error);
+      logger.error('Error sending email:', error);
       throw error;
     }
 
-    console.log('Email sent successfully:', data);
+    logger.debug('Email sent successfully', { data });
   } catch (error) {
-    console.error('Failed to send email:', error);
+    logger.error('Failed to send email:', error);
     throw error;
   }
 };

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { aiService } from '@/services/aiService';
+import { logger } from '@/lib/logger';
 
 /**
  * Background processor for handling AI operations asynchronously
@@ -46,7 +47,7 @@ export class BackgroundProcessor {
           error: error.message,
           completedAt: new Date().toISOString()
         });
-        console.error(`Task ${taskId} failed:`, error);
+        logger.error(`Task ${taskId} failed:`, error);
         throw error;
       })
       .finally(() => {

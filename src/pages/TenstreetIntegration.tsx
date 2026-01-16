@@ -13,6 +13,7 @@ import { Save, Settings, MapPin, User, FileText, Plus, X, TestTube, Users, UserC
 import { AVAILABLE_FIELD_TYPES } from '@/types/tenstreet';
 import { useTenstreetConfiguration } from '@/hooks/useTenstreetConfiguration';
 import { TenstreetQuickActions } from '@/components/tenstreet/TenstreetQuickActions';
+import { logger } from '@/lib/logger';
 
 const TenstreetIntegration = () => {
   const navigate = useNavigate();
@@ -152,7 +153,7 @@ const TenstreetIntegration = () => {
         });
       }
     } catch (error) {
-      console.error('Connection test error:', error);
+      logger.error('Connection test error:', error);
       toast({
         title: "Connection Failed",
         description: "Failed to connect to Tenstreet API. Please check your credentials.",

@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Download, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
+import { logger } from '@/lib/logger';
 
 const HistoryImportButton = () => {
   const [isImporting, setIsImporting] = useState(false);
@@ -50,7 +51,7 @@ const HistoryImportButton = () => {
         throw new Error(data.error || 'Import failed');
       }
     } catch (error) {
-      console.error('Import error:', error);
+      logger.error('Import error:', error);
       toast({
         title: "Import Failed",
         description: error instanceof Error ? error.message : 'Failed to import historic data',

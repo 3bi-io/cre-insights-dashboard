@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import { filterApplications, getStatusCounts, getCategoryCounts } from '@/utils/applicationHelpers';
+import { logger } from '@/lib/logger';
 
 export const OrganizationApplicationsTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +55,7 @@ export const OrganizationApplicationsTab = () => {
         description: "Applications report has been downloaded successfully",
       });
     } catch (error) {
-      console.error('PDF generation error:', error);
+      logger.error('PDF generation error:', error);
       toast({
         title: "Export Failed",
         description: "Failed to generate PDF report",

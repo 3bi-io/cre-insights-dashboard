@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ExternalLink, Copy, Eye, CheckCircle2, AlertCircle, Truck } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const TruckDriverJobs411PlatformActions = () => {
   const [feedUrl, setFeedUrl] = useState('');
@@ -36,7 +37,7 @@ const TruckDriverJobs411PlatformActions = () => {
       
       setConnectionStatus(data.connected ? 'connected' : 'error');
     } catch (error) {
-      console.error('Connection check failed:', error);
+      logger.error('Connection check failed:', error);
       setConnectionStatus('error');
     }
   };
