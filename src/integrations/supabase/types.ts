@@ -4561,6 +4561,7 @@ export type Database = {
           metadata: Json | null
           organization_id: string | null
           phone_number: string
+          retry_count: number | null
           status: string
           updated_at: string
           voice_agent_id: string | null
@@ -4577,6 +4578,7 @@ export type Database = {
           metadata?: Json | null
           organization_id?: string | null
           phone_number: string
+          retry_count?: number | null
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
@@ -4593,6 +4595,7 @@ export type Database = {
           metadata?: Json | null
           organization_id?: string | null
           phone_number?: string
+          retry_count?: number | null
           status?: string
           updated_at?: string
           voice_agent_id?: string | null

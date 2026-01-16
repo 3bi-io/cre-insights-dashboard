@@ -252,6 +252,8 @@ async function processOutboundCall(
     let outboundCallId = body.outbound_call_id;
     let metadata: Record<string, unknown> = {};
 
+    const MAX_RETRY_ATTEMPTS = 3;
+
     // If processing a queued call, fetch the details
     if (outboundCallId) {
       const { data: queuedCall, error: queueError } = await supabase
@@ -264,6 +266,37 @@ async function processOutboundCall(
       if (queueError || !queuedCall) {
         logger.error('Queued call not found', { error: queueError });
         return { success: false, error: 'Queued call not found or already processed', status: 404 };
+      }
+
+      // Check retry count - if exceeded, mark as permanently failed
+      const retryCount = (queuedCall.retry_count as number) || 0;
+      if (retryCount >= MAX_RETRY_ATTEMPTS) {
+        logger.warn(`Call ${outboundCallId} exceeded max retry attempts (${MAX_RETRY_ATTEMPTS})`, { retryCount });
+        await supabase
+          .from('outbound_calls')
+          .update({
+            status: 'failed',
+            error_message: `Exceeded maximum retry attempts (${MAX_RETRY_ATTEMPTS})`,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', outboundCallId);
+        return { success: false, error: `Exceeded maximum retry attempts (${MAX_RETRY_ATTEMPTS})`, status: 400 };
+      }
+
+      // Validate phone number early - skip invalid numbers immediately
+      if (!queuedCall.phone_number || 
+          queuedCall.phone_number.includes('object') ||
+          queuedCall.phone_number.length < 10) {
+        logger.error('Invalid phone number in queued call', { phone: queuedCall.phone_number });
+        await supabase
+          .from('outbound_calls')
+          .update({
+            status: 'failed',
+            error_message: 'Invalid phone number format',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', outboundCallId);
+        return { success: false, error: 'Invalid phone number format', status: 400 };
       }
 
       applicationId = queuedCall.application_id;
@@ -498,15 +531,41 @@ async function processOutboundCall(
     logger.info('ElevenLabs response', { status: elevenLabsResponse.status, body: responseText });
 
     if (!elevenLabsResponse.ok) {
+      logger.error('ElevenLabs API call failed', { 
+        status: elevenLabsResponse.status, 
+        response: responseText,
+        call_id: callRecord?.id 
+      });
+
       if (callRecord) {
-        await supabase
-          .from('outbound_calls')
-          .update({
-            status: 'failed',
-            error_message: `ElevenLabs API error: ${responseText}`,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', callRecord.id);
+        // Increment retry count and keep as queued for transient errors (5xx), fail for permanent errors (4xx)
+        const isTransientError = elevenLabsResponse.status >= 500 && elevenLabsResponse.status < 600;
+        const currentRetryCount = (callRecord.retry_count as number) || 0;
+        
+        if (isTransientError && currentRetryCount < MAX_RETRY_ATTEMPTS - 1) {
+          // Keep as queued for retry, increment retry count
+          await supabase
+            .from('outbound_calls')
+            .update({
+              status: 'queued',
+              retry_count: currentRetryCount + 1,
+              error_message: `Attempt ${currentRetryCount + 1} failed: ${responseText.substring(0, 500)}`,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', callRecord.id);
+          logger.info(`Call ${callRecord.id} will be retried (attempt ${currentRetryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
+        } else {
+          // Permanent failure
+          await supabase
+            .from('outbound_calls')
+            .update({
+              status: 'failed',
+              retry_count: currentRetryCount + 1,
+              error_message: `ElevenLabs API error (${elevenLabsResponse.status}): ${responseText.substring(0, 500)}`,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', callRecord.id);
+        }
       }
 
       return { success: false, error: 'Failed to initiate outbound call', details: responseText, status: elevenLabsResponse.status };
