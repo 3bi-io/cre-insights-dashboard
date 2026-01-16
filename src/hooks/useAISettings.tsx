@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export interface AISettings {
   id?: string;
@@ -79,7 +80,7 @@ export const useAISettings = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading AI settings:', error);
+      logger.error('Failed to load AI settings', error, { context: 'useAISettings' });
       toast.error('Failed to load AI settings');
     } finally {
       setLoading(false);
@@ -101,7 +102,7 @@ export const useAISettings = () => {
       setSettings(data);
       toast.success('AI settings updated successfully');
     } catch (error) {
-      console.error('Error updating AI settings:', error);
+      logger.error('Failed to update AI settings', error, { context: 'useAISettings' });
       toast.error('Failed to update AI settings');
     }
   };

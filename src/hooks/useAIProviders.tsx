@@ -3,6 +3,7 @@ import { useOpenAI } from './useOpenAI';
 import { useAnthropic } from './useAnthropic';
 import { useElevenLabsVoice } from './useElevenLabsVoice';
 import { useAIConnectionManager } from './useAIConnectionManager';
+import { logger } from '@/lib/logger';
 
 interface AIProviderOptions {
   preferredProvider?: 'openai' | 'anthropic' | 'auto';
@@ -48,7 +49,7 @@ export const useAIProviders = (options: AIProviderOptions = {}) => {
         return await openai.invoke(requestOptions);
       }
     } catch (error) {
-      console.error(`${actualProvider} failed, trying fallback...`);
+      logger.warn(`AI provider ${actualProvider} failed, trying fallback`, { provider: actualProvider, context: 'useAIProviders' });
       
       // Fallback to the other provider
       const fallbackProvider = actualProvider === 'openai' ? 'anthropic' : 'openai';
