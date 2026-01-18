@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SkipLinks } from '@/components/shared/SkipLinks';
 import { LogOut, Settings, Bell, ChevronRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/components/common';
@@ -50,14 +51,8 @@ const CandidateLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Skip Links for Accessibility */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none"
-      >
-        Skip to main content
-      </a>
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <SkipLinks />
       
       {/* Header */}
       <header 
@@ -150,9 +145,9 @@ const CandidateLayout = () => {
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
-        <aside className="hidden md:flex w-64 flex-col border-r bg-muted/30 min-h-[calc(100vh-4rem)]">
+        <aside className="hidden md:flex w-64 flex-col border-r bg-muted/30 overflow-y-auto">
           <nav className="flex-1 space-y-1 p-4" role="navigation" aria-label="Candidate portal navigation">
             {candidateNavigation.map((item) => {
               const isActive = isActivePath(location.pathname, item.href);
@@ -201,7 +196,7 @@ const CandidateLayout = () => {
         </aside>
 
         {/* Main Content */}
-        <main id="main-content" className="flex-1 overflow-auto" tabIndex={-1}>
+        <main id="main-content" className="flex-1 overflow-y-auto pb-20 md:pb-0" tabIndex={-1}>
           <Outlet />
         </main>
       </div>

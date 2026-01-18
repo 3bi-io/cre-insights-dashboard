@@ -1,26 +1,24 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '@/components/ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
-import { useATSExplorerAccess } from '@/hooks/useATSExplorerAccess';
 import { useTenstreetNotifications } from '@/hooks/useTenstreetNotifications';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, LayoutDashboard, Building, User, CreditCard, Lock, UserCog } from 'lucide-react';
+import { LogOut, Building, User, CreditCard, Lock, UserCog } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Brand } from '@/components/common';
 import { getNavigationGroups, mainNavItems } from '@/config/navigationConfig';
+import { getRoleBadgeColor, getUserInitials, getRoleDisplayName } from '@/utils/navigationUtils';
 
 const AppSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user, userRole, organization, signOut } = useAuth();
   const { hasVoiceAgent, hasTenstreetAccess } = useOrganizationFeatures();
-  const { hasATSExplorerAccess } = useATSExplorerAccess();
   const { counts: tenstreetCounts } = useTenstreetNotifications();
 
   // Check role helpers
@@ -57,23 +55,7 @@ const AppSidebar = () => {
     await signOut();
   };
 
-  const getRoleBadgeColor = (role: string | null) => {
-    switch (role) {
-      case 'super_admin':
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'admin':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'moderator':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
-      default:
-        return 'bg-muted text-muted-foreground border-muted';
-    }
-  };
-
-  const getUserInitials = () => {
-    if (!user?.email) return 'U';
-    return user.email.charAt(0).toUpperCase();
-  };
+  const userInitials = getUserInitials(user?.email);
 
   // First group (Recruitment) shown expanded, rest in accordion
   const regularGroups = navigationItems.filter(group => group.group === "Recruitment");
@@ -218,15 +200,13 @@ const AppSidebar = () => {
                 aria-haspopup="menu"
               >
                 <Avatar className="w-8 h-8 mr-3">
-                  <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
+                  <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-left">
                   <div className="text-sm font-medium">{user?.email}</div>
                   {userRole && (
                     <Badge className={`text-xs ${getRoleBadgeColor(userRole)}`}>
-                      {userRole === 'super_admin' ? 'Super Admin' : 
-                       userRole === 'admin' ? 'Admin' :
-                       userRole === 'moderator' ? 'Moderator' : 'User'}
+                      {getRoleDisplayName(userRole)}
                     </Badge>
                   )}
                 </div>
