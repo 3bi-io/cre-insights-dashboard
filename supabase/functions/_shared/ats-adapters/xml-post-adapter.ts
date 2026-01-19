@@ -193,8 +193,34 @@ export class XMLPostAdapter extends BaseATSAdapter {
     const creds = this.credentials;
     const mode = creds.mode || this.config.connection.mode || 'TEST';
     const source = creds.source || '3BI';
-    const companyId = creds.company_id || creds.companyId || 
-                      (creds.company_ids as string[] | number[])?.[0]?.toString() || '';
+    
+    // Extract company ID - handle all possible formats (number, string, or array)
+    const companyId = (() => {
+      // Check direct company_id or companyId first
+      if (creds.company_id) return String(creds.company_id);
+      if (creds.companyId) return String(creds.companyId);
+      
+      // Handle company_ids - could be array, string, or number
+      const companyIds = creds.company_ids;
+      if (!companyIds) return '';
+      
+      if (Array.isArray(companyIds)) {
+        return companyIds[0]?.toString() || '';
+      }
+      
+      // Direct string or number value
+      return String(companyIds);
+    })();
+    
+    // Log warning if companyId is missing
+    if (!companyId) {
+      console.warn('[XMLPostAdapter] Missing CompanyId in credentials', {
+        has_company_id: !!creds.company_id,
+        has_companyId: !!creds.companyId,
+        has_company_ids: !!creds.company_ids,
+        company_ids_type: typeof creds.company_ids
+      });
+    }
     
     const fullName = this.buildFullName(application);
     const formattedPhone = this.formatPhone(application.phone);
