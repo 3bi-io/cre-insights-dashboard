@@ -59,27 +59,18 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
         
         if (orgError || !org) throw new Error('Organization not found');
         
-        const { error } = await supabase.rpc('ensure_admin_for_email', {
+        const { data, error } = await supabase.rpc('ensure_admin_for_email', {
           _email: email.toLowerCase().trim(),
           _org_slug: org.slug,
+          _role: selectedRole as 'admin' | 'moderator' | 'super_admin' | 'user',
         });
         
         if (error) throw error;
         
-        // If role is different from default, update it
-        if (selectedRole !== 'admin') {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', email.toLowerCase().trim())
-            .single();
-          
-          if (profile) {
-            await supabase
-              .from('user_roles')
-              .update({ role: selectedRole })
-              .eq('user_id', profile.id);
-          }
+        // Check if function returned an error
+        const result = data as { success?: boolean; error?: string; status?: string } | null;
+        if (result && 'success' in result && !result.success) {
+          throw new Error(result.error || 'Failed to invite user');
         }
       } else {
         // For users without organization, we need to check if user exists first
@@ -106,12 +97,12 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
         }
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, __, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.superAdminUsers() });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       toast({
-        title: 'User invited',
-        description: `Successfully invited ${email} as ${selectedRole}`,
+        title: 'User added',
+        description: `Successfully added or invited ${email} as ${selectedRole}`,
       });
       resetForm();
       setOpen(false);
