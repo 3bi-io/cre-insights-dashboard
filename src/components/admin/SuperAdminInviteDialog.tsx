@@ -48,16 +48,23 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
     mutationFn: async () => {
       if (!email) throw new Error('Email is required');
       
+      let wasInvited = false;
+      let orgName: string | undefined;
+      let orgSlug: string | undefined;
+      
       // Use the ensure_admin_for_email RPC if assigning to an organization
       if (selectedOrgId && selectedOrgId !== 'none') {
-        // Get the organization slug first
+        // Get the organization details first
         const { data: org, error: orgError } = await supabase
           .from('organizations')
-          .select('slug')
+          .select('slug, name')
           .eq('id', selectedOrgId)
           .single();
         
         if (orgError || !org) throw new Error('Organization not found');
+        
+        orgName = org.name;
+        orgSlug = org.slug;
         
         const { data, error } = await supabase.rpc('ensure_admin_for_email', {
           _email: email.toLowerCase().trim(),
@@ -72,6 +79,8 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
         if (result && 'success' in result && !result.success) {
           throw new Error(result.error || 'Failed to invite user');
         }
+        
+        wasInvited = result?.status === 'invited';
       } else {
         // For users without organization, we need to check if user exists first
         const { data: existingProfile } = await supabase
@@ -96,13 +105,33 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
           throw new Error('User does not exist. Please ask them to sign up first, or assign them to an organization.');
         }
       }
+      
+      return { wasInvited, orgName, orgSlug };
     },
-    onSuccess: (_, __, context) => {
+    onSuccess: async (result) => {
+      // Send invitation email for new invites
+      if (result?.wasInvited) {
+        try {
+          await supabase.functions.invoke('send-invite-email', {
+            body: {
+              email: email.toLowerCase().trim(),
+              organizationName: result.orgName,
+              organizationSlug: result.orgSlug,
+              role: selectedRole,
+            }
+          });
+        } catch (emailError) {
+          console.error('[SuperAdminInviteDialog] Failed to send invite email:', emailError);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.superAdminUsers() });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       toast({
-        title: 'User added',
-        description: `Successfully added or invited ${email} as ${selectedRole}`,
+        title: result?.wasInvited ? 'Invitation Sent' : 'User Added',
+        description: result?.wasInvited 
+          ? `Invitation email sent to ${email}`
+          : `Successfully added ${email} as ${selectedRole}`,
       });
       resetForm();
       setOpen(false);
