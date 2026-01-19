@@ -218,6 +218,7 @@ export class XMLPostAdapter extends BaseATSAdapter {
       company_ids_isArray: Array.isArray(creds.company_ids),
       client_id: creds.client_id,
       mode: mode,
+      source: source, // Log the source being used
     });
     
     // Extract company ID - handle all possible formats (number, string, or array)
