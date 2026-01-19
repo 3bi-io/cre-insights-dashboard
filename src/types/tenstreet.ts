@@ -206,6 +206,7 @@ export const AVAILABLE_FIELD_TYPES = [
   'veteran_status',
   'veteran',
   'over_21',
+  'age',
   'can_pass_drug_test',
   'agree_privacy_policy',
   'consent_to_sms',

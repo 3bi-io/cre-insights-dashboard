@@ -41,7 +41,9 @@ const TenstreetUpdateModal = ({ isOpen, onClose, application }: TenstreetUpdateM
   const tenstreetFields = [
     'FirstName', 'LastName', 'Email', 'Phone', 'DateOfBirth', 'SSN',
     'Address1', 'Address2', 'City', 'State', 'ZipCode', 'CDL', 'Experience',
-    'Veteran', 'DriverID', 'CDLExpiration', 'MedicalCardExpiration'
+    'Veteran', 'DriverID', 'CDLExpiration', 'MedicalCardExpiration',
+    // Age-related fields
+    'Over21', 'Age'
   ];
 
   // Load saved mappings on component mount
