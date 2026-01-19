@@ -101,7 +101,7 @@ export function usePaginatedPublicJobs({
             return !org || org.slug !== 'acme';
           });
         
-        return { jobs: jobsWithOrgs, count: jobsWithOrgs.length };
+        return { jobs: jobsWithOrgs, count: count || 0 };
       }
 
       return { jobs: data || [], count: count || 0 };
