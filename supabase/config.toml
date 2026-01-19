@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.tenstreet-integration]
 verify_jwt = true
+
+[functions.send-invite-email]
+verify_jwt = true

@@ -45,7 +45,23 @@ export const UserInviteDialog = ({ trigger }: UserInviteDialogProps) => {
       
       return result as { success: boolean; status: 'assigned' | 'invited'; user_id?: string };
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Send invitation email for new invites
+      if (data?.status === 'invited') {
+        try {
+          await supabase.functions.invoke('send-invite-email', {
+            body: {
+              email: email.toLowerCase().trim(),
+              organizationName: organization?.name,
+              organizationSlug: organization?.slug,
+              role,
+            }
+          });
+        } catch (emailError) {
+          console.error('[UserInviteDialog] Failed to send invite email:', emailError);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ['organization-user-data'] });
       queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
       setEmail('');
@@ -56,7 +72,7 @@ export const UserInviteDialog = ({ trigger }: UserInviteDialogProps) => {
       toast({
         title: isInvited ? 'Invitation Sent' : 'User Added',
         description: isInvited 
-          ? 'An invitation has been created. The user will be added when they sign up.'
+          ? 'An invitation email has been sent to the user.'
           : 'User has been successfully added to the organization.',
       });
     },
