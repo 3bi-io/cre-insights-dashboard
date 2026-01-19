@@ -104,6 +104,14 @@ export class XMLPostAdapter extends BaseATSAdapter {
       const responseText = await response.text();
       const duration = Date.now() - startTime;
 
+      // DEBUG: Log the raw Tenstreet response (first 1500 chars, sensitive data redacted)
+      console.log('[XMLPostAdapter] Tenstreet Raw Response:', 
+        responseText
+          .replace(/<Password>.*?<\/Password>/gi, '<Password>[REDACTED]</Password>')
+          .replace(/<SSN>.*?<\/SSN>/gi, '<SSN>[REDACTED]</SSN>')
+          .substring(0, 1500)
+      );
+
       // Parse response
       const result = this.parseApplicationResponse(responseText);
 
