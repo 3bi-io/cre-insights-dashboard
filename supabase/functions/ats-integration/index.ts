@@ -153,13 +153,15 @@ serve(async (req) => {
 
         // Update connection stats
         if (result.success) {
-          await supabase.rpc('increment_ats_sync_stats', {
+          const { error: rpcError } = await supabase.rpc('increment_ats_sync_stats', {
             p_connection_id: connection_id,
             p_success: true,
-          }).catch(() => {
+          });
+          
+          if (rpcError) {
             // RPC may not exist yet, update manually
-            const stats = atsConnection.sync_stats || { total_sent: 0, total_success: 0, total_failed: 0 };
-            supabase.from('ats_connections').update({
+            const stats = (atsConnection.sync_stats as { total_sent: number; total_success: number; total_failed: number } | null) || { total_sent: 0, total_success: 0, total_failed: 0 };
+            await supabase.from('ats_connections').update({
               sync_stats: {
                 total_sent: stats.total_sent + 1,
                 total_success: stats.total_success + 1,
@@ -167,7 +169,7 @@ serve(async (req) => {
               },
               last_sync_at: new Date().toISOString(),
             }).eq('id', connection_id);
-          });
+          }
         }
         break;
 
