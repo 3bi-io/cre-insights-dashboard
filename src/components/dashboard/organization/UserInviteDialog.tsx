@@ -23,28 +23,44 @@ export const UserInviteDialog = ({ trigger }: UserInviteDialogProps) => {
   const { organization } = useAuth();
   const queryClient = useQueryClient();
 
+  type AppRole = 'admin' | 'moderator' | 'super_admin' | 'user';
+  
   const inviteUserMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: string }) => {
+    mutationFn: async ({ email, role }: { email: string; role: 'user' | 'admin' }) => {
       if (!organization?.slug) throw new Error('Organization not found');
       
-      const { error } = await supabase.rpc('ensure_admin_for_email', {
-        _email: email,
-        _org_slug: organization.slug
+      const { data, error } = await supabase.rpc('ensure_admin_for_email', {
+        _email: email.toLowerCase().trim(),
+        _org_slug: organization.slug,
+        _role: role as AppRole
       });
 
       if (error) throw error;
+      
+      // Check if the function returned an error
+      const result = data as { success?: boolean; error?: string; status?: string; user_id?: string } | null;
+      if (result && 'success' in result && !result.success) {
+        throw new Error(result.error || 'Failed to invite user');
+      }
+      
+      return result as { success: boolean; status: 'assigned' | 'invited'; user_id?: string };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['organization-user-data'] });
+      queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
       setEmail('');
       setRole('user');
       setOpen(false);
+      
+      const isInvited = data?.status === 'invited';
       toast({
-        title: 'User Invited',
-        description: 'User has been successfully invited to the organization.',
+        title: isInvited ? 'Invitation Sent' : 'User Added',
+        description: isInvited 
+          ? 'An invitation has been created. The user will be added when they sign up.'
+          : 'User has been successfully added to the organization.',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to invite user',
