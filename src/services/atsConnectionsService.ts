@@ -364,6 +364,40 @@ class ATSConnectionsService {
   }
 
   /**
+   * Test auto-post by sending a specific application to the ATS
+   */
+  async testAutoPost(
+    connectionId: string, 
+    applicationId: string
+  ): Promise<{ success: boolean; message: string; external_id?: string; raw_response?: string }> {
+    try {
+      const { data, error: funcError } = await supabase.functions.invoke('ats-integration', {
+        body: {
+          action: 'send_application',
+          connection_id: connectionId,
+          application_id: applicationId,
+        },
+      });
+
+      if (funcError) {
+        return { success: false, message: funcError.message || 'Auto-post test failed' };
+      }
+
+      return { 
+        success: data?.success ?? false, 
+        message: data?.message || (data?.success ? 'Application sent successfully' : 'Failed to send application'),
+        external_id: data?.external_id,
+        raw_response: data?.raw_response,
+      };
+    } catch (e) {
+      return { 
+        success: false, 
+        message: e instanceof Error ? e.message : 'Unknown error occurred' 
+      };
+    }
+  }
+
+  /**
    * Copy organization default to a client (creates a client-level override)
    */
   async copyOrgConnectionToClient(

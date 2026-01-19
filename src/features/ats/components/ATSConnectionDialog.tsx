@@ -20,15 +20,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertTriangle, Send } from 'lucide-react';
 import { DynamicCredentialsForm } from './DynamicCredentialsForm';
+import { TestAutoPostDialog } from './TestAutoPostDialog';
 import { 
   useATSSystems, 
   useCreateATSConnection, 
   useUpdateATSConnection,
   useTestATSConnection 
 } from '@/hooks/useATSConnections';
-import type { ATSConnection, ATSSystem } from '@/services/atsConnectionsService';
+import type { ATSConnection } from '@/services/atsConnectionsService';
 
 interface ATSConnectionDialogProps {
   open: boolean;
@@ -69,6 +70,7 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
   const [isAutoPostEnabled, setIsAutoPostEnabled] = useState(false);
   const [autoPostStatuses, setAutoPostStatuses] = useState<string[]>([]);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showTestAutoPost, setShowTestAutoPost] = useState(false);
 
   const selectedSystem = atsSystems?.find(s => s.id === selectedSystemId);
   const isLoading = createConnection.isPending || updateConnection.isPending;
@@ -299,10 +301,10 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
             )}
           </div>
 
-          {/* Test Connection Button (edit mode only) */}
+          {/* Test Connection & Auto-Post Buttons (edit mode only) */}
           {mode === 'edit' && connection && (
-            <div className="border-t pt-4">
-              <div className="flex items-center gap-4">
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -313,19 +315,28 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
                   Test Connection
                 </Button>
                 
-                {testResult && (
-                  <div className={`flex items-center gap-2 text-sm ${
-                    testResult.success ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {testResult.success ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      <XCircle className="h-4 w-4" />
-                    )}
-                    {testResult.message}
-                  </div>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowTestAutoPost(true)}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Test Auto-Post
+                </Button>
               </div>
+              
+              {testResult && (
+                <div className={`flex items-center gap-2 text-sm ${
+                  testResult.success ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {testResult.success ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  {testResult.message}
+                </div>
+              )}
             </div>
           )}
 
@@ -343,6 +354,15 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
             </Button>
           </DialogFooter>
         </form>
+
+        {/* Test Auto-Post Dialog */}
+        {connection && (
+          <TestAutoPostDialog
+            open={showTestAutoPost}
+            onOpenChange={setShowTestAutoPost}
+            connection={connection}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
