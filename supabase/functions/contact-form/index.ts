@@ -134,7 +134,7 @@ const handler = wrapHandler(async (req: Request) => {
       const resend = new Resend(resendApiKey);
       
       const emailResponse = await resend.emails.send({
-        from: getSender('notifications'),
+        from: getSender('contact'),
         to: ['admin@3bi.io'], // Admin notification recipient
         subject: `New Contact Form: ${body.subject}`,
         html: generateAdminNotificationEmail(body),
