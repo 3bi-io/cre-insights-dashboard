@@ -73,6 +73,12 @@ export class XMLPostAdapter extends BaseATSAdapter {
       // Build XML payload
       const xml = this.buildApplicationXml(mappedData as ApplicationData);
       
+      // DEBUG: Log XML payload preview (redact password)
+      const xmlPreview = xml
+        .replace(/<Password>.*?<\/Password>/gi, '<Password>[REDACTED]</Password>')
+        .substring(0, 1200);
+      console.log('[XMLPostAdapter] XML Payload Preview:', xmlPreview);
+      
       this.log('info', 'Sending application', { 
         application_id: application.id,
         endpoint: this.baseEndpoint,
