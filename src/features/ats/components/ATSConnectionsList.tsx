@@ -36,11 +36,13 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Send
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { ATSConnection } from '@/services/atsConnectionsService';
 import { useDeleteATSConnection, useTestATSConnection } from '@/hooks/useATSConnections';
+import { TestAutoPostDialog } from './TestAutoPostDialog';
 
 interface ATSConnectionsListProps {
   connections: ATSConnection[];
@@ -60,6 +62,7 @@ export const ATSConnectionsList: React.FC<ATSConnectionsListProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [connectionToDelete, setConnectionToDelete] = React.useState<ATSConnection | null>(null);
   const [testingConnectionId, setTestingConnectionId] = React.useState<string | null>(null);
+  const [testAutoPostConnection, setTestAutoPostConnection] = React.useState<ATSConnection | null>(null);
   
   const deleteConnection = useDeleteATSConnection(organizationId);
   const testConnection = useTestATSConnection();
@@ -226,6 +229,12 @@ export const ATSConnectionsList: React.FC<ATSConnectionsListProps> = ({
                       )}
                       Test Connection
                     </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => setTestAutoPostConnection(connection)}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      Test Auto-Post
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       onClick={() => handleDelete(connection)}
@@ -262,6 +271,15 @@ export const ATSConnectionsList: React.FC<ATSConnectionsListProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Test Auto-Post Dialog */}
+      {testAutoPostConnection && (
+        <TestAutoPostDialog
+          open={!!testAutoPostConnection}
+          onOpenChange={(open) => !open && setTestAutoPostConnection(null)}
+          connection={testAutoPostConnection}
+        />
+      )}
     </>
   );
 };

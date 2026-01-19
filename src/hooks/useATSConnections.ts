@@ -170,6 +170,26 @@ export function useTestATSConnection() {
 }
 
 /**
+ * Test auto-post by sending a specific application
+ */
+export function useTestAutoPost() {
+  return useMutation({
+    mutationFn: ({ connectionId, applicationId }: { connectionId: string; applicationId: string }) =>
+      atsConnectionsService.testAutoPost(connectionId, applicationId),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Auto-post test failed: ${error.message}`);
+    },
+  });
+}
+
+/**
  * Copy organization default to client
  */
 export function useCopyConnectionToClient(organizationId: string) {
