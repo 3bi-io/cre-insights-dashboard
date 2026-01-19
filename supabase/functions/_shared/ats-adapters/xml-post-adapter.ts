@@ -265,97 +265,85 @@ export class XMLPostAdapter extends BaseATSAdapter {
     
     const fullName = this.buildFullName(application);
     const formattedPhone = this.formatPhone(application.phone);
-    const formattedDOB = this.formatDate(application.date_of_birth);
+    const formattedDOB = application.date_of_birth ? this.formatDateMMDDYYYY(application.date_of_birth) : '';
+    const email = application.applicant_email || application.email || '';
+    const preferredContact = application.preferred_contact_method || 'PrimaryPhone';
     
-    // Build comprehensive Tenstreet XML
+    // Build comprehensive Tenstreet XML per official spec
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <TenstreetData>
   <Mode>${this.escapeXml(String(mode))}</Mode>
   <Source>${this.escapeXml(source)}</Source>
   <Authentication>
     <ClientId>${this.escapeXml(String(creds.client_id || creds.clientId || ''))}</ClientId>
-    <Password>${this.escapeXml(String(creds.password || ''))}</Password>
+    <Password><![CDATA[${creds.password || ''}]]></Password>
     <Service>subject_upload</Service>
   </Authentication>
-  <Company>
-    <CompanyId>${this.escapeXml(companyId)}</CompanyId>
-  </Company>
+  <CompanyId>${this.escapeXml(companyId)}</CompanyId>
+  <CompanyName>${this.escapeXml(application.company_name || '')}</CompanyName>
   <Driver>
-    <DriverId>${this.escapeXml(application.id || '')}</DriverId>
+    <DriverId>${this.escapeXml(application.driver_id || application.id || '')}</DriverId>
+  </Driver>
+  <PersonalData>
     <PersonName>
       <GivenName>${this.escapeXml(application.first_name || '')}</GivenName>
       <MiddleName>${this.escapeXml(application.middle_name || '')}</MiddleName>
       <FamilyName>${this.escapeXml(application.last_name || '')}</FamilyName>
-      <FormattedName>${this.escapeXml(fullName)}</FormattedName>
     </PersonName>
-    <ContactMethod>
-      <Telephone>${this.escapeXml(formattedPhone)}</Telephone>
-      <InternetEmailAddress>${this.escapeXml(application.applicant_email || application.email || '')}</InternetEmailAddress>
-    </ContactMethod>
     <PostalAddress>
-      <AddressLine>${this.escapeXml(application.address_1 || '')}</AddressLine>
+      <CountryCode>${this.escapeXml(application.country || 'US')}</CountryCode>
       <Municipality>${this.escapeXml(application.city || '')}</Municipality>
       <Region>${this.escapeXml(application.state || '')}</Region>
       <PostalCode>${this.escapeXml(application.zip || '')}</PostalCode>
-      <CountryCode>${this.escapeXml(application.country || 'US')}</CountryCode>
-    </PostalAddress>`;
+      <Address1>${this.escapeXml(application.address_1 || '')}</Address1>${application.address_2 ? `
+      <Address2>${this.escapeXml(application.address_2)}</Address2>` : ''}
+    </PostalAddress>${formattedDOB ? `
+    <DateOfBirth>${this.escapeXml(formattedDOB)}</DateOfBirth>` : ''}
+    <ContactData PreferredMethod="${this.escapeXml(preferredContact)}">
+      <InternetEmailAddress>${email ? `mailto:${this.escapeXml(email)}` : ''}</InternetEmailAddress>
+      <PrimaryPhone>${this.escapeXml(formattedPhone)}</PrimaryPhone>${application.secondary_phone ? `
+      <SecondaryPhone>${this.escapeXml(this.formatPhone(application.secondary_phone))}</SecondaryPhone>` : ''}
+    </ContactData>
+  </PersonalData>`;
 
-    // Add date of birth
-    if (formattedDOB) {
-      xml += `
-    <DateOfBirth>${this.escapeXml(formattedDOB)}</DateOfBirth>`;
-    }
-
-    // Add CDL information
+    // Add Licenses section per Tenstreet spec
     if (application.cdl_class || application.cdl_endorsements || application.cdl) {
+      const hasCDL = application.cdl === 'yes' || application.cdl === 'true' || application.cdl === true || !!application.cdl_class;
       xml += `
-    <CDLInformation>`;
-      if (application.cdl_class) {
-        xml += `
-      <CDLClass>${this.escapeXml(application.cdl_class)}</CDLClass>`;
-      }
+  <Licenses>
+    <License>
+      <CurrentLicense>${hasCDL ? 'y' : 'n'}</CurrentLicense>${application.cdl_number ? `
+      <LicenseNumber>${this.escapeXml(application.cdl_number)}</LicenseNumber>` : ''}${application.cdl_expiration_date ? `
+      <ExpirationDate>${this.escapeXml(this.formatDate(application.cdl_expiration_date))}</ExpirationDate>` : ''}
+      <Region>${this.escapeXml(application.cdl_state || application.state || '')}</Region>
+      <CountryCode>US</CountryCode>
+      <CommercialDriversLicense>${hasCDL ? 'y' : 'n'}</CommercialDriversLicense>${application.cdl_class ? `
+      <LicenseClass>${this.escapeXml(application.cdl_class)}</LicenseClass>` : ''}`;
+      
+      // Add endorsements as individual elements
       if (application.cdl_endorsements && application.cdl_endorsements.length > 0) {
         xml += `
-      <Endorsements>${this.escapeXml(application.cdl_endorsements.join(','))}</Endorsements>`;
-      }
-      if (application.cdl_state) {
+      <Endorsements>`;
+        for (const endorsement of application.cdl_endorsements) {
+          xml += `
+        <Endorsement>${this.escapeXml(endorsement)}</Endorsement>`;
+        }
         xml += `
-      <CDLState>${this.escapeXml(application.cdl_state)}</CDLState>`;
+      </Endorsements>`;
       }
-      if (application.cdl_expiration_date) {
-        xml += `
-      <CDLExpiration>${this.escapeXml(this.formatDate(application.cdl_expiration_date))}</CDLExpiration>`;
-      }
+      
       xml += `
-    </CDLInformation>`;
+    </License>
+  </Licenses>`;
     }
 
-    // Add experience
-    if (application.driving_experience_years || application.exp) {
-      xml += `
-    <Experience>
-      <YearsExperience>${this.escapeXml(String(application.driving_experience_years || application.exp || ''))}</YearsExperience>
-    </Experience>`;
-    }
+    // Add ApplicationData section per Tenstreet spec
+    xml += `
+  <ApplicationData>
+    <AppReferrer>${this.escapeXml(application.source || application.referral_source || 'ATS.me')}</AppReferrer>
+    <StatusTag>${this.escapeXml(application.status || 'New')}</StatusTag>`;
 
-    // Add employment history
-    if (application.employment_history && Array.isArray(application.employment_history) && application.employment_history.length > 0) {
-      xml += `
-    <EmploymentHistory>`;
-      for (const job of application.employment_history.slice(0, 5)) {
-        xml += `
-      <Employment>
-        <Employer>${this.escapeXml(job.employer || job.company || '')}</Employer>
-        <Position>${this.escapeXml(job.position || job.title || '')}</Position>
-        <StartDate>${this.escapeXml(this.formatDate(job.start_date || job.startDate))}</StartDate>
-        <EndDate>${this.escapeXml(this.formatDate(job.end_date || job.endDate))}</EndDate>
-      </Employment>`;
-      }
-      xml += `
-    </EmploymentHistory>`;
-    }
-
-    // Add custom/display fields
+    // Add DisplayFields inside ApplicationData per spec
     if (application.custom_questions || application.display_fields) {
       const customData = application.custom_questions || application.display_fields;
       xml += `
@@ -364,8 +352,8 @@ export class XMLPostAdapter extends BaseATSAdapter {
         if (value !== null && value !== undefined) {
           xml += `
       <DisplayField>
-        <Name>${this.escapeXml(key)}</Name>
-        <Value>${this.escapeXml(String(value))}</Value>
+        <DisplayPrompt>${this.escapeXml(key)}</DisplayPrompt>
+        <DisplayValue>${this.escapeXml(String(value))}</DisplayValue>
       </DisplayField>`;
         }
       }
@@ -374,14 +362,6 @@ export class XMLPostAdapter extends BaseATSAdapter {
     }
 
     xml += `
-    <ApplicationData>
-      <Source>${this.escapeXml(application.source || 'API')}</Source>
-      <ExternalId>${this.escapeXml(application.id)}</ExternalId>
-      <StatusTag>${this.escapeXml(application.status || 'New')}</StatusTag>
-    </ApplicationData>
-  </Driver>
-  <ApplicationData>
-    <StatusTag>New</StatusTag>
   </ApplicationData>
 </TenstreetData>`;
 
@@ -467,5 +447,22 @@ export class XMLPostAdapter extends BaseATSAdapter {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
+  }
+
+  /**
+   * Format date to MM/DD/YYYY (Tenstreet DateOfBirth format)
+   */
+  protected formatDateMMDDYYYY(date?: string): string {
+    if (!date) return '';
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${month}/${day}/${year}`;
+    } catch {
+      return '';
+    }
   }
 }
