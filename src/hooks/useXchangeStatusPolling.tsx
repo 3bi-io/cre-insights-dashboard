@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useIsMutating } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef } from 'react';
@@ -36,6 +36,7 @@ export function useXchangeStatusPolling({
 }: UseXchangeStatusPollingOptions) {
   const { toast } = useToast();
   const previousStatusRef = useRef<Record<string, string>>({});
+  const isMutating = useIsMutating();
 
   const { data: requests, isLoading, error } = useQuery({
     queryKey: ['xchange-status', applicationId],
@@ -53,13 +54,16 @@ export function useXchangeStatusPolling({
     },
     enabled: enabled && !!applicationId,
     refetchInterval: (query) => {
+      // Pause polling during any active mutations to prevent UI freeze
+      if (isMutating > 0) return false;
       // Stop polling if all requests are completed or failed
       const allCompleted = query.state.data?.every(
         (req: XchangeRequest) => ['completed', 'failed', 'cancelled'].includes(req.status)
       );
       return allCompleted ? false : pollingInterval;
     },
-    refetchIntervalInBackground: true
+    refetchIntervalInBackground: true,
+    staleTime: 10000, // 10 seconds - reduce unnecessary refetches
   });
 
   // Detect status changes and trigger notifications

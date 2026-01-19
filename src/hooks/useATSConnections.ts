@@ -90,11 +90,18 @@ export function useCreateATSConnection() {
     mutationFn: (data: CreateATSConnectionData) => 
       atsConnectionsService.createConnection(data),
     onSuccess: (_, variables) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['ats-connections', variables.organization_id] 
-      });
       toast.success('ATS connection created successfully');
+      // Delay invalidation to prevent UI freeze
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.orgConnections(variables.organization_id),
+          exact: true
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.clientConnections(variables.organization_id, variables.client_id || undefined),
+          exact: true
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       // Check for unique constraint violation
@@ -117,10 +124,18 @@ export function useUpdateATSConnection(organizationId: string) {
     mutationFn: ({ connectionId, data }: { connectionId: string; data: UpdateATSConnectionData }) =>
       atsConnectionsService.updateConnection(connectionId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['ats-connections', organizationId] 
-      });
       toast.success('ATS connection updated successfully');
+      // Delay invalidation to prevent UI freeze
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.orgConnections(organizationId),
+          exact: true
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.clientConnections(organizationId, undefined),
+          exact: true
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       toast.error(`Failed to update connection: ${error.message}`);
@@ -138,10 +153,18 @@ export function useDeleteATSConnection(organizationId: string) {
     mutationFn: (connectionId: string) =>
       atsConnectionsService.deleteConnection(connectionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['ats-connections', organizationId] 
-      });
       toast.success('ATS connection deleted successfully');
+      // Delay invalidation to prevent UI freeze
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.orgConnections(organizationId),
+          exact: true
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.clientConnections(organizationId, undefined),
+          exact: true
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete connection: ${error.message}`);
@@ -198,11 +221,15 @@ export function useCopyConnectionToClient(organizationId: string) {
   return useMutation({
     mutationFn: ({ connectionId, clientId }: { connectionId: string; clientId: string }) =>
       atsConnectionsService.copyOrgConnectionToClient(connectionId, clientId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['ats-connections', organizationId] 
-      });
+    onSuccess: (_, variables) => {
       toast.success('Connection copied to client successfully');
+      // Delay invalidation to prevent UI freeze
+      setTimeout(() => {
+        queryClient.invalidateQueries({ 
+          queryKey: QUERY_KEYS.clientConnections(organizationId, variables.clientId),
+          exact: true
+        });
+      }, 100);
     },
     onError: (error: Error) => {
       toast.error(`Failed to copy connection: ${error.message}`);
