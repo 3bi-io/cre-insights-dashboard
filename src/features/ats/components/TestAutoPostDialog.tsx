@@ -115,7 +115,10 @@ export const TestAutoPostDialog: React.FC<TestAutoPostDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent 
+        className="sm:max-w-[600px] max-h-[85vh] overflow-hidden flex flex-col"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
