@@ -13,9 +13,8 @@ const PublicLayout = () => {
       
       <main id="main-content" className="flex-1 overflow-y-auto" tabIndex={-1}>
         <Outlet />
+        <PublicFooter />
       </main>
-
-      <PublicFooter />
     </div>
   );
 };
