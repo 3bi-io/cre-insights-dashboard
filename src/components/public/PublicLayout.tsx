@@ -6,12 +6,12 @@ import { SkipLinks } from '@/components/shared/SkipLinks';
 
 const PublicLayout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       <SkipLinks />
       
       <Header />
       
-      <main id="main-content" className="flex-1" tabIndex={-1}>
+      <main id="main-content" className="flex-1 overflow-y-auto" tabIndex={-1}>
         <Outlet />
       </main>
 
