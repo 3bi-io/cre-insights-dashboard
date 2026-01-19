@@ -25,6 +25,7 @@ import { SuperAdminUserManagement } from './SuperAdminUserManagement';
 interface AdminUser {
   id: string;
   email: string | null;
+  full_name: string | null;
   created_at: string;
   role: string;
 }
@@ -60,14 +61,30 @@ const AdministratorsSettingsTab = () => {
         return [];
       }
 
-      // Since we can't access auth.users directly and profiles table is for clients,
-      // we'll only show the current user's email if they're an admin
+      // Fetch profiles for all admin user IDs
+      const userIds = adminRoles.map(r => r.user_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+
+      if (profilesError) {
+        logError('Error fetching admin profiles', profilesError, 'AdminSettings');
+      }
+
+      // Create a map for quick lookup
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.id, p])
+      );
+
+      // Map with profile data
       const result = adminRoles.map(adminRole => {
-        const isCurrentUser = adminRole.user_id === user?.id;
+        const profile = profileMap.get(adminRole.user_id);
         
         return {
           id: adminRole.user_id,
-          email: isCurrentUser ? user?.email || null : null,
+          email: profile?.email || null,
+          full_name: profile?.full_name || null,
           created_at: adminRole.created_at,
           role: adminRole.role
         };
@@ -255,10 +272,10 @@ const AdministratorsSettingsTab = () => {
                               </div>
                               <div>
                                 <p className="text-sm font-medium">
-                                  {admin.email || 'Email not available'}
+                                  {admin.full_name || admin.email || 'Unknown user'}
                                 </p>
-                                <p className="text-xs text-gray-500">
-                                  {admin.id === user?.id ? 'You' : 'Team member'}
+                                <p className="text-xs text-muted-foreground">
+                                  {admin.id === user?.id ? 'You' : admin.email || 'Team member'}
                                 </p>
                               </div>
                             </div>
