@@ -194,23 +194,50 @@ export class XMLPostAdapter extends BaseATSAdapter {
     const mode = creds.mode || this.config.connection.mode || 'TEST';
     const source = creds.source || '3BI';
     
+    // DEBUG: Log all credential keys for troubleshooting (redact password)
+    console.log('[XMLPostAdapter] Credentials debug:', {
+      all_keys: Object.keys(creds),
+      company_id: creds.company_id,
+      companyId: creds.companyId,
+      company_ids: creds.company_ids,
+      company_ids_type: typeof creds.company_ids,
+      company_ids_isArray: Array.isArray(creds.company_ids),
+      client_id: creds.client_id,
+      mode: mode,
+    });
+    
     // Extract company ID - handle all possible formats (number, string, or array)
     const companyId = (() => {
       // Check direct company_id or companyId first
-      if (creds.company_id) return String(creds.company_id);
-      if (creds.companyId) return String(creds.companyId);
+      if (creds.company_id) {
+        console.log('[XMLPostAdapter] Using creds.company_id:', creds.company_id);
+        return String(creds.company_id);
+      }
+      if (creds.companyId) {
+        console.log('[XMLPostAdapter] Using creds.companyId:', creds.companyId);
+        return String(creds.companyId);
+      }
       
       // Handle company_ids - could be array, string, or number
       const companyIds = creds.company_ids;
-      if (!companyIds) return '';
+      if (!companyIds) {
+        console.log('[XMLPostAdapter] No company_ids found');
+        return '';
+      }
       
       if (Array.isArray(companyIds)) {
-        return companyIds[0]?.toString() || '';
+        const firstId = companyIds[0]?.toString() || '';
+        console.log('[XMLPostAdapter] Using company_ids array, first element:', firstId);
+        return firstId;
       }
       
       // Direct string or number value
+      console.log('[XMLPostAdapter] Using company_ids direct value:', companyIds, 'type:', typeof companyIds);
       return String(companyIds);
     })();
+    
+    // Final extracted value
+    console.log('[XMLPostAdapter] Final extracted CompanyId:', companyId, 'length:', companyId.length);
     
     // Log warning if companyId is missing
     if (!companyId) {
