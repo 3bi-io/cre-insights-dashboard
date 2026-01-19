@@ -30,7 +30,7 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
   organizationId,
 }) => {
   const [activeTab, setActiveTab] = useState('organization');
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const [selectedConnection, setSelectedConnection] = useState<ATSConnection | null>(null);
@@ -64,7 +64,7 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
   });
 
   const selectedClient = clients?.find(c => c.id === selectedClientId);
-  const filteredClientConnections = selectedClientId 
+  const filteredClientConnections = selectedClientId !== 'all'
     ? clientConnections?.filter(c => c.client_id === selectedClientId)
     : clientConnections;
 
@@ -206,7 +206,7 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
                       <SelectValue placeholder="Filter by client..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Clients</SelectItem>
+                      <SelectItem value="all">All Clients</SelectItem>
                       {clients?.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
@@ -215,18 +215,18 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground">
-                    {selectedClientId 
+                    {selectedClientId !== 'all'
                       ? `Showing connections for ${selectedClient?.name}`
                       : 'Showing all client-specific connections'}
                   </p>
                 </div>
-                <Button onClick={() => handleAddConnection(true)} disabled={!selectedClientId}>
+                <Button onClick={() => handleAddConnection(true)} disabled={selectedClientId === 'all'}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Client Connection
                 </Button>
               </div>
 
-              {!selectedClientId && (
+              {selectedClientId === 'all' && (
                 <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
                   <strong>Tip:</strong> Select a client from the dropdown to add client-specific 
                   credentials that override the organization defaults.
@@ -238,7 +238,7 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
                 organizationId={organizationId}
                 onEdit={handleEditConnection}
                 isLoading={clientLoading}
-                showClientColumn={!selectedClientId}
+                showClientColumn={selectedClientId === 'all'}
               />
             </TabsContent>
           </Tabs>
@@ -250,8 +250,8 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         organizationId={organizationId}
-        clientId={isForClient ? selectedClientId : null}
-        clientName={isForClient ? selectedClient?.name : undefined}
+        clientId={isForClient && selectedClientId !== 'all' ? selectedClientId : null}
+        clientName={isForClient && selectedClientId !== 'all' ? selectedClient?.name : undefined}
         connection={selectedConnection}
         mode={dialogMode}
       />
