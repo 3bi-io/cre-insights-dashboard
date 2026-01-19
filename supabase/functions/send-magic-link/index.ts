@@ -1,7 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
-// Temporarily commented out to fix build error
-// import { Resend } from "npm:resend@2.0.0";
+import { Resend } from "npm:resend@2.0.0";
+import { createLogger } from "../_shared/logger.ts";
+import { getSender, baseEmailStyles, contentStyles, buttonStyles, getEmailFooter } from "../_shared/email-config.ts";
+
+const logger = createLogger('send-magic-link');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +15,54 @@ interface MagicLinkRequest {
   email?: string;
   bulkSend?: boolean;
 }
+
+/**
+ * Generate magic link email HTML
+ */
+const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): string => {
+  const title = isAdmin ? "Administrator Login" : "Access Your Account";
+  const gradient = isAdmin ? "#1e40af 0%, #3b82f6 100%" : "#667eea 0%, #764ba2 100%";
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${title}</title>
+      </head>
+      <body style="${baseEmailStyles}">
+        <div style="background: linear-gradient(135deg, ${gradient}); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">🔐 ${title}</h1>
+        </div>
+        <div style="${contentStyles}">
+          <p style="font-size: 16px; margin-bottom: 20px;">Hello,</p>
+          <p style="font-size: 16px; margin-bottom: 20px;">
+            ${isAdmin 
+              ? "You have requested a magic link to log in as an administrator." 
+              : "You have been granted access to the portal."}
+          </p>
+          <p style="font-size: 16px; margin-bottom: 20px;">Click the button below to log in:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${actionLink}" style="${buttonStyles}">
+              ${isAdmin ? "Log In as Administrator" : "Log In to Portal"}
+            </a>
+          </div>
+          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 14px; color: #92400e;">
+              ⏰ This link will expire in 1 hour. If you didn't request this login, please ignore this email.
+            </p>
+          </div>
+          <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+            Or copy and paste this link in your browser:<br>
+            <a href="${actionLink}" style="color: #3b82f6; word-break: break-all;">${actionLink}</a>
+          </p>
+        </div>
+        ${getEmailFooter()}
+      </body>
+    </html>
+  `;
+};
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -25,8 +76,16 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      logger.error("RESEND_API_KEY is not configured");
+      throw new Error("Email service is not configured");
+    }
+    
+    const resend = new Resend(resendApiKey);
+
     const { email, bulkSend }: MagicLinkRequest = await req.json();
-    console.log("Magic link request:", { email, bulkSend });
+    logger.info("Magic link request received", { email, bulkSend });
 
     // Handle bulk send for all users
     if (bulkSend) {
@@ -44,8 +103,6 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error("No users found to send magic links to");
       }
 
-      // Temporarily disabled email functionality
-      // const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
       let sentCount = 0;
       const errors: string[] = [];
 
@@ -65,42 +122,35 @@ const handler = async (req: Request): Promise<Response> => {
             continue;
           }
 
-          // Send email - temporarily disabled
-          /* await resend.emails.send({
-            from: "Admin Portal <onboarding@resend.dev>",
+          const actionLink = authData.properties?.action_link;
+          if (!actionLink) {
+            errors.push(`No action link generated for ${profile.email}`);
+            continue;
+          }
+
+          // Send email with verified domain
+          const emailResponse = await resend.emails.send({
+            from: getSender('admin'),
             to: [profile.email],
-            subject: "Magic Link Login Access",
-            html: `
-              <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-                <h1 style="color: #333; text-align: center;">Access Your Account</h1>
-                <p>Hello,</p>
-                <p>You have been granted access to the admin portal. Click the button below to log in:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="${authData.properties?.action_link}" 
-                     style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                    Log In to Portal
-                  </a>
-                </div>
-                <p style="color: #666; font-size: 14px;">
-                  This link will expire in 1 hour. If you didn't expect this email, please ignore it.
-                </p>
-                <p style="color: #666; font-size: 14px;">
-                  Or copy and paste this link in your browser:<br>
-                  <a href="${authData.properties?.action_link}">${authData.properties?.action_link}</a>
-                </p>
-              </div>
-            `,
-          }); */
+            subject: "Magic Link Login Access - ATS.me",
+            html: generateMagicLinkEmail(actionLink, false)
+          });
+
+          if (emailResponse.error) {
+            errors.push(`Error sending to ${profile.email}: ${emailResponse.error.message}`);
+            continue;
+          }
 
           sentCount++;
+          logger.debug("Magic link sent", { email: profile.email, emailId: emailResponse.data?.id });
         } catch (error: any) {
           errors.push(`Error sending to ${profile.email}: ${error.message}`);
         }
       }
 
-      console.log(`Bulk magic links sent: ${sentCount} successful, ${errors.length} errors`);
+      logger.info(`Bulk magic links completed`, { sentCount, errorCount: errors.length });
       if (errors.length > 0) {
-        console.error("Errors:", errors);
+        logger.warn("Bulk send errors", { errors });
       }
 
       return new Response(
@@ -169,42 +219,31 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Error generating magic link: ${authError.message}`);
     }
 
-    // Send email using Resend - temporarily disabled
-    // const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-    
-    /* const emailResponse = await resend.emails.send({
-      from: "Admin Portal <onboarding@resend.dev>",
-      to: [email],
-      subject: "Administrator Magic Link Login",
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-          <h1 style="color: #333; text-align: center;">Administrator Login</h1>
-          <p>Hello,</p>
-          <p>You have requested a magic link to log in as an administrator. Click the button below to log in:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${authData.properties?.action_link}" 
-               style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Log In as Administrator
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            This link will expire in 1 hour. If you didn't request this login, please ignore this email.
-          </p>
-          <p style="color: #666; font-size: 14px;">
-            Or copy and paste this link in your browser:<br>
-            <a href="${authData.properties?.action_link}">${authData.properties?.action_link}</a>
-          </p>
-        </div>
-      `,
-    }); */
+    const actionLink = authData.properties?.action_link;
+    if (!actionLink) {
+      throw new Error("Failed to generate action link");
+    }
 
-    // console.log("Email sent successfully:", emailResponse);
+    // Send email using Resend with verified domain
+    const emailResponse = await resend.emails.send({
+      from: getSender('admin'),
+      to: [email],
+      subject: "Administrator Magic Link Login - ATS.me",
+      html: generateMagicLinkEmail(actionLink, true)
+    });
+
+    if (emailResponse.error) {
+      logger.error("Resend error", emailResponse.error);
+      throw new Error(emailResponse.error.message || "Failed to send email");
+    }
+
+    logger.info("Magic link email sent successfully", { email, emailId: emailResponse.data?.id });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Magic link generated successfully (email temporarily disabled)",
-        // emailId: emailResponse.data?.id 
+        message: "Magic link sent successfully",
+        emailId: emailResponse.data?.id 
       }),
       {
         status: 200,
@@ -215,7 +254,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-magic-link function:", error);
+    logger.error("Error in send-magic-link function", error);
     return new Response(
       JSON.stringify({ 
         error: error.message,

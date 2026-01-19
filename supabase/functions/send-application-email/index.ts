@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { getSender, getEmailFooter, baseEmailStyles, contentStyles } from "../_shared/email-config.ts";
+
+const logger = createLogger('send-application-email');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -323,7 +327,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Invalid email address format");
     }
 
-    console.log("Email request received:", {
+    logger.info("Email request received", {
       to: emailRequest.to,
       type: emailRequest.type,
       subject: emailRequest.subject
@@ -331,20 +335,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     const htmlContent = getEmailTemplate(emailRequest);
 
-    // Send email using Resend
+    // Send email using Resend with verified domain
     const emailResponse = await resend.emails.send({
-      from: "ATS.me <noreply@resend.dev>", // Use your verified domain in production
+      from: getSender('default'),
       to: [emailRequest.to],
       subject: emailRequest.subject,
       html: htmlContent,
     });
 
     if (emailResponse.error) {
-      console.error("Resend error:", emailResponse.error);
+      logger.error("Resend error", emailResponse.error);
       throw new Error(emailResponse.error.message || "Failed to send email");
     }
 
-    console.log("Email sent successfully:", emailResponse.data?.id);
+    logger.info("Email sent successfully", { emailId: emailResponse.data?.id });
 
     return new Response(
       JSON.stringify({ 
@@ -362,7 +366,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error in send-application-email function:", error);
+    logger.error("Error in send-application-email function", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
