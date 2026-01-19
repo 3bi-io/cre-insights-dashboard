@@ -6488,16 +6488,14 @@ export type Database = {
         Args: { _admin_email?: string; _name: string; _slug: string }
         Returns: string
       }
-      ensure_admin_for_email:
-        | { Args: { _email: string; _org_slug: string }; Returns: undefined }
-        | {
-            Args: {
-              _email: string
-              _org_slug: string
-              _role?: Database["public"]["Enums"]["app_role"]
-            }
-            Returns: Json
-          }
+      ensure_admin_for_email: {
+        Args: {
+          _email: string
+          _org_slug: string
+          _role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: Json
+      }
       ensure_super_admin_for_email: {
         Args: { _email: string }
         Returns: undefined
