@@ -59,7 +59,7 @@ export const CreateOrganizationDialog = ({ trigger }: CreateOrganizationDialogPr
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Organization</DialogTitle>
         </DialogHeader>

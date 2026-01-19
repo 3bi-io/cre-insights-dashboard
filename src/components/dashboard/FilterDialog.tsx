@@ -81,7 +81,7 @@ const FilterDialog: React.FC<FilterDialogProps> = ({ onFiltersChange }) => {
           <span className="hidden sm:inline">Filter</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Filter Dashboard</DialogTitle>
         </DialogHeader>

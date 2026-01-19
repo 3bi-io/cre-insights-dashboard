@@ -83,7 +83,7 @@ export const UserRoleEditDialog = ({ user, open, onClose }: UserRoleEditDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
