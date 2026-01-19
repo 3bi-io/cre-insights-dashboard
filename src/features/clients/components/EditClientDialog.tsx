@@ -131,8 +131,8 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 mt-4">
-            <TabsContent value="details" className="mt-0 pr-4">
+          <ScrollArea className="flex-1 mt-4 max-h-[calc(90vh-200px)]">
+            <TabsContent value="details" className="mt-0 pr-4 data-[state=active]:flex-1">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                   {client && (
@@ -311,7 +311,7 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
               </Form>
             </TabsContent>
 
-            <TabsContent value="ats" className="mt-0 pr-4">
+            <TabsContent value="ats" className="mt-0 pr-4 data-[state=active]:flex-1">
               {client?.organization_id ? (
                 <ClientATSSettings
                   clientId={client.id}
