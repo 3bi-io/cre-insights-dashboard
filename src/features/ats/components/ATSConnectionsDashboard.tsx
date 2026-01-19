@@ -205,7 +205,7 @@ export const ATSConnectionsDashboard: React.FC<ATSConnectionsDashboardProps> = (
                     <SelectTrigger className="w-[250px]">
                       <SelectValue placeholder="Filter by client..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                       <SelectItem value="all">All Clients</SelectItem>
                       {clients?.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
