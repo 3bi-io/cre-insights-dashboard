@@ -6118,6 +6118,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_outbound_enabled: boolean | null
+          is_platform_default: boolean | null
           llm_model: string | null
           organization_id: string
           updated_at: string
@@ -6135,6 +6136,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_outbound_enabled?: boolean | null
+          is_platform_default?: boolean | null
           llm_model?: string | null
           organization_id: string
           updated_at?: string
@@ -6152,6 +6154,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_outbound_enabled?: boolean | null
+          is_platform_default?: boolean | null
           llm_model?: string | null
           organization_id?: string
           updated_at?: string
