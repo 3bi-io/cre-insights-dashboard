@@ -104,12 +104,12 @@ export const Header: React.FC<HeaderProps> = ({
               </SheetTrigger>
               <SheetContent 
                 side="right" 
-                className="w-[300px] sm:w-[400px]"
+                className="w-[300px] sm:w-[400px] flex flex-col"
                 id="mobile-menu"
                 aria-label="Mobile navigation menu"
               >
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <div className="flex flex-col space-y-6 mt-6">
+                <div className="flex-1 overflow-y-auto flex flex-col space-y-6 mt-6">
                   {/* Mobile Navigation Links */}
                   <nav className="flex flex-col space-y-1" role="menu" aria-label="Mobile navigation">
                     {navigation.map((item) => (
