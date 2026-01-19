@@ -29,7 +29,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn('relative', className)}
+      className={cn('relative h-full overflow-y-auto', className)}
       style={{ 
         WebkitOverflowScrolling: 'touch'
       }}
@@ -59,6 +59,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 
       {/* Content */}
       <div
+        className="min-h-full"
         style={{
           transform: `translateY(${isRefreshing ? '60px' : `${pullDistance * 0.5}px`})`,
           transition: isRefreshing || pullDistance === 0 ? 'transform 0.3s ease-out' : 'none'

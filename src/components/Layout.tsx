@@ -151,9 +151,9 @@ const LayoutContent = () => {
         <PullToRefresh 
           onRefresh={handleRefresh} 
           enabled={isMobile}
-          className="flex-1 overflow-y-auto pb-16 md:pb-0"
+          className="flex-1 h-full pb-16 md:pb-0"
         >
-          <main id="main-content" className="min-h-full" tabIndex={-1}>
+          <main id="main-content" className="min-h-full p-4 md:p-6" tabIndex={-1}>
             <Outlet />
           </main>
         </PullToRefresh>
