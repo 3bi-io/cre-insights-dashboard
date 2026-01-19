@@ -377,9 +377,12 @@ export class XMLPostAdapter extends BaseATSAdapter {
     <ApplicationData>
       <Source>${this.escapeXml(application.source || 'API')}</Source>
       <ExternalId>${this.escapeXml(application.id)}</ExternalId>
-      <Status>${this.escapeXml(application.status || 'new')}</Status>
+      <StatusTag>${this.escapeXml(application.status || 'New')}</StatusTag>
     </ApplicationData>
   </Driver>
+  <ApplicationData>
+    <StatusTag>New</StatusTag>
+  </ApplicationData>
 </TenstreetData>`;
 
     return xml;

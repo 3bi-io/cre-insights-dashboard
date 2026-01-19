@@ -584,7 +584,8 @@ ${endorsements.map(e => `                    <Endorsement>${e}</Endorsement>`).j
     <PersonalData>${personNameXML}${postalAddressXML}${governmentIdXML}${dateOfBirthXML}${contactDataXML}
     </PersonalData>
     <ApplicationData>
-        <AppReferrer>${escapeXML((config.appReferrer as string) || '')}</AppReferrer>${licensesXML}
+        <AppReferrer>${escapeXML((config.appReferrer as string) || '')}</AppReferrer>
+        <StatusTag>${escapeXML((config.statusTag as string) || 'New')}</StatusTag>${licensesXML}
         <DisplayFields>${displayFieldsXML}
         </DisplayFields>
     </ApplicationData>
