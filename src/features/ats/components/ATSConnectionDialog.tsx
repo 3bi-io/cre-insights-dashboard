@@ -159,7 +159,10 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>
             {mode === 'create' ? 'Add ATS Connection' : 'Edit ATS Connection'}
@@ -185,7 +188,7 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
               <SelectTrigger id="ats-system">
                 <SelectValue placeholder="Select ATS system" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 {atsSystems?.map((system) => (
                   <SelectItem key={system.id} value={system.id}>
                     <div className="flex items-center gap-2">
@@ -237,7 +240,7 @@ export const ATSConnectionDialog: React.FC<ATSConnectionDialogProps> = ({
               <SelectTrigger id="mode">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="test">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-yellow-500" />
