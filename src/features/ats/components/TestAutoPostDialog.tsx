@@ -153,7 +153,7 @@ export const TestAutoPostDialog: React.FC<TestAutoPostDialogProps> = ({
 
         {/* Applications List */}
         <div className="flex-1 min-h-0">
-          <Label className="mb-2 block">Select Application</Label>
+          <p className="text-sm font-medium mb-2">Select Application</p>
           <ScrollArea className="h-[200px] border rounded-lg">
             {applicationsLoading ? (
               <div className="flex items-center justify-center h-full">
