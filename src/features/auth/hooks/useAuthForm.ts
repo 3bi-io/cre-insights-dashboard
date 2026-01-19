@@ -112,8 +112,8 @@ export function useAuthForm(): UseAuthFormReturn {
       if (userRole === 'super_admin') {
         navigate('/admin', { replace: true });
       } else if (userRole === 'admin' && userType === 'organization') {
-        // Organization admins get the full admin experience
-        navigate('/admin', { replace: true });
+        // Organization admins go directly to applications
+        navigate('/admin/applications', { replace: true });
       } else if (userType === 'jobseeker') {
         navigate('/my-jobs', { replace: true });
       } else {
