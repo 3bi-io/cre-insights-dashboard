@@ -2,6 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
+import { createLogger } from "../_shared/logger.ts";
+import { getSender } from "../_shared/email-config.ts";
+
+const logger = createLogger('send-screening-request');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -313,22 +317,22 @@ const handler = async (req: Request): Promise<Response> => {
       providerName
     );
 
-    console.log('Sending screening request email:', {
+    logger.info('Sending screening request email', {
       id: screeningRequest.id,
       type: requestType,
       to: emailTo
     });
 
-    // Send email using Resend
+    // Send email using Resend with verified domain
     const emailResponse = await resend.emails.send({
-      from: 'ATS.me <noreply@resend.dev>', // Use verified domain in production
+      from: getSender('screening'),
       to: [emailTo],
       subject: emailContent.subject,
       html: emailContent.html
     });
 
     if (emailResponse.error) {
-      console.error('Resend error:', emailResponse.error);
+      logger.error('Resend error', emailResponse.error);
       
       // Update screening request with error
       await supabase
@@ -345,7 +349,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(emailResponse.error.message || 'Failed to send email');
     }
 
-    console.log('Email sent successfully:', emailResponse.data?.id);
+    logger.info('Email sent successfully', { emailId: emailResponse.data?.id });
 
     // Update screening request with email ID
     await supabase
@@ -376,7 +380,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error('Error in send-screening-request function:', error);
+    logger.error('Error in send-screening-request function', error);
     return new Response(
       JSON.stringify({
         error: error.message,
