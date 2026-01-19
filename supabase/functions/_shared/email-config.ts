@@ -11,6 +11,7 @@ export const EMAIL_CONFIG = {
     default: "ATS.me <noreply@notifications.3bi.io>",
     admin: "ATS.me Admin <admin@notifications.3bi.io>",
     notifications: "ATS.me <notifications@notifications.3bi.io>",
+    contact: "ATS.me <contact@notifications.3bi.io>",
     support: "ATS.me Support <support@notifications.3bi.io>",
     invites: "ATS.me <invites@notifications.3bi.io>",
     screening: "ATS.me Screening <screening@notifications.3bi.io>"
