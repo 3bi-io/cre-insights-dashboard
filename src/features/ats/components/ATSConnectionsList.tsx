@@ -213,7 +213,7 @@ export const ATSConnectionsList: React.FC<ATSConnectionsListProps> = ({
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
                     <DropdownMenuItem onClick={() => onEdit(connection)}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edit
@@ -252,7 +252,7 @@ export const ATSConnectionsList: React.FC<ATSConnectionsListProps> = ({
       </Table>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete ATS Connection</AlertDialogTitle>
             <AlertDialogDescription>

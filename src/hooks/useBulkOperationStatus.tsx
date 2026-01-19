@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useIsMutating } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef } from 'react';
@@ -32,6 +32,7 @@ export function useBulkOperationStatus({
 }: UseBulkOperationStatusOptions = {}) {
   const { toast } = useToast();
   const previousStatusRef = useRef<Record<string, string>>({});
+  const isMutating = useIsMutating();
 
   const { data: operations, isLoading, error } = useQuery({
     queryKey: ['bulk-operations'],
@@ -47,13 +48,16 @@ export function useBulkOperationStatus({
     },
     enabled,
     refetchInterval: (query) => {
+      // Pause polling during any active mutations to prevent UI freeze
+      if (isMutating > 0) return false;
       // Stop polling if no operations are in progress
       const hasActiveOps = query.state.data?.some(
         (op: BulkOperation) => op.status === 'in_progress'
       );
       return hasActiveOps ? pollingInterval : false;
     },
-    refetchIntervalInBackground: true
+    refetchIntervalInBackground: true,
+    staleTime: 5000, // 5 seconds - reduce unnecessary refetches
   });
 
   // Detect operation completions and trigger notifications

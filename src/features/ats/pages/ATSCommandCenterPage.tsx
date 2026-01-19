@@ -72,7 +72,9 @@ const ATSCommandCenterPage = () => {
         .order('applied_at', { ascending: false });
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 30000, // 30 seconds - prevent unnecessary refetches
+    placeholderData: (previousData) => previousData, // Keep showing old data during refetch
   });
 
   // Fetch recent Xchange activity
@@ -86,7 +88,9 @@ const ATSCommandCenterPage = () => {
         .limit(5);
       if (error) throw error;
       return data;
-    }
+    },
+    staleTime: 30000, // 30 seconds - prevent unnecessary refetches
+    placeholderData: (previousData) => previousData, // Keep showing old data during refetch
   });
 
   const isConfigured = !!credentials?.client_id;
