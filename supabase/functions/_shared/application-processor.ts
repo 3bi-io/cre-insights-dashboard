@@ -4,6 +4,40 @@ import { createLogger } from './logger.ts';
 
 const logger = createLogger('application-processor');
 
+// Hayes Recruiting Solutions organization ID
+const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
+
+// Job ID prefix → Client ID mapping for Hayes organization (CDL Job Cast integration)
+// Each 5-digit prefix maps to a specific client within Hayes
+const HAYES_JOB_ID_CLIENT_MAP: Record<string, string> = {
+  // Danny Herman Trucking
+  '13979': '1d54e463-4d7f-4a05-8189-3e33d0586dea',
+  '13980': '1d54e463-4d7f-4a05-8189-3e33d0586dea',
+  '14204': '1d54e463-4d7f-4a05-8189-3e33d0586dea',
+  // Day and Ross
+  '13934': '30ab5f68-258c-4e81-8217-1123c4536259',
+  '13991': '30ab5f68-258c-4e81-8217-1123c4536259',
+  '14279': '30ab5f68-258c-4e81-8217-1123c4536259',
+  '14280': '30ab5f68-258c-4e81-8217-1123c4536259',
+  // Novco, Inc.
+  '14284': '4a9ef1df-dcc9-499c-999a-446bb9a329fc',
+  // Pemberton Truck Lines Inc
+  '14086': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
+  '14230': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
+  '14294': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
+};
+
+/**
+ * Get client ID from job_id prefix for Hayes organization
+ */
+export const getClientIdFromJobId = (jobId: string | undefined | null): string | null => {
+  if (!jobId || typeof jobId !== 'string' || jobId.length < 5) {
+    return null;
+  }
+  const prefix = jobId.substring(0, 5);
+  return HAYES_JOB_ID_CLIENT_MAP[prefix] || null;
+};
+
 /**
  * Normalize phone number to E.164 format (+1XXXXXXXXXX)
  */
@@ -47,7 +81,17 @@ export const findOrCreateJobListing = async (
     source?: string;
   }
 ): Promise<{ id: string; matchType: 'exact_uuid' | 'exact_job_id' | 'created_from_job_id' | 'general_fallback' | 'created_general' } | null> => {
-  const { jobListingId, jobId, jobTitle, organizationId, clientId, city, state, source } = params;
+  const { jobListingId, jobId, jobTitle, organizationId, city, state, source } = params;
+  
+  // For Hayes organization, determine client from job_id prefix if not explicitly provided
+  let clientId = params.clientId;
+  if (organizationId === HAYES_ORG_ID && !clientId && jobId) {
+    const inferredClientId = getClientIdFromJobId(jobId);
+    if (inferredClientId) {
+      logger.info('Inferred client from job_id prefix', { jobId, clientId: inferredClientId });
+      clientId = inferredClientId;
+    }
+  }
 
   // Step 1: If job_listing_id (UUID) provided, use it directly
   if (jobListingId) {
