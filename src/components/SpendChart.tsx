@@ -4,10 +4,11 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 const SpendChart = () => {
   const { data: spendData = [], isLoading, refetch } = useQuery({
-    queryKey: ['spend-chart'],
+    queryKey: queryKeys.analytics.spendChart(),
     queryFn: async () => {
       logger.debug('Fetching spend chart data', undefined, 'SpendChart');
       

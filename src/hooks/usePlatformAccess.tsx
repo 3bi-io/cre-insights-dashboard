@@ -8,6 +8,7 @@ import {
 } from '@/features/organizations/types/platforms.types';
 import { getAllPlatforms } from '@/features/organizations/config/organizationPlatforms.config';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 /**
  * Hook for managing organization platform access (admin only)
@@ -19,7 +20,7 @@ export const usePlatformAccess = (organizationId?: string) => {
 
   // Fetch organization platforms
   const platformsQuery = useQuery({
-    queryKey: ['organization-platform-access', organizationId],
+    queryKey: queryKeys.platformAccess.byOrganization(organizationId),
     queryFn: async (): Promise<OrganizationPlatformAccess[]> => {
       if (!organizationId) return [];
 

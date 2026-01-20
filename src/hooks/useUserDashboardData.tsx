@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface UserDashboardMetrics {
   totalApplications: number;
@@ -26,7 +27,7 @@ export const useUserDashboardData = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['user-dashboard', user?.id],
+    queryKey: queryKeys.admin.userDashboard(user?.id),
     queryFn: async (): Promise<UserDashboardMetrics> => {
       if (!user?.id) {
         throw new Error('User not authenticated');

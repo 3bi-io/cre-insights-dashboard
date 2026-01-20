@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export const useJobVolumeData = () => {
   return useQuery({
-    queryKey: ['job-volume-data'],
+    queryKey: queryKeys.jobs.volume(),
     queryFn: async () => {
       const { data: jobsData, error } = await supabase
         .from('job_listings')

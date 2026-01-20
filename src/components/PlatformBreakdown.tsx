@@ -4,10 +4,11 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 const PlatformBreakdown = () => {
   const { data: platformData = [], isLoading, refetch } = useQuery({
-    queryKey: ['platform-breakdown'],
+    queryKey: queryKeys.analytics.platformBreakdown(),
     queryFn: async () => {
       logger.debug('Fetching platform breakdown data', undefined, 'PlatformBreakdown');
       

@@ -2,6 +2,7 @@ import { useQuery, useIsMutating } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useRef } from 'react';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface BulkOperation {
   id: string;
@@ -35,7 +36,7 @@ export function useBulkOperationStatus({
   const isMutating = useIsMutating();
 
   const { data: operations, isLoading, error } = useQuery({
-    queryKey: ['bulk-operations'],
+    queryKey: queryKeys.system.bulkOperations(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tenstreet_bulk_operations')

@@ -5,10 +5,11 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { queryKeys } from '@/lib/queryKeys';
 
 export const OrganizationGrowthChart = () => {
   const { data: growthData, isLoading } = useQuery({
-    queryKey: ['organization-growth'],
+    queryKey: queryKeys.analytics.organizationGrowth(),
     queryFn: async () => {
       const last6Months = new Date();
       last6Months.setMonth(last6Months.getMonth() - 6);

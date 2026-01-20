@@ -7,6 +7,7 @@ import type {
   InitiateOutboundCallRequest,
   InitiateOutboundCallResponse 
 } from '@/features/elevenlabs/types/outboundCall';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface UseOutboundCallsOptions {
   applicationId?: string;
@@ -21,7 +22,7 @@ export const useOutboundCalls = (options: UseOutboundCallsOptions = {}) => {
 
   // Fetch outbound calls
   const { data: outboundCalls, isLoading, error } = useQuery({
-    queryKey: ['outbound-calls', applicationId, organizationId],
+    queryKey: applicationId ? queryKeys.outboundCalls.byApplication(applicationId) : queryKeys.outboundCalls.byOrganization(organizationId),
     queryFn: async (): Promise<OutboundCallWithDetails[]> => {
       let query = supabase
         .from('outbound_calls')

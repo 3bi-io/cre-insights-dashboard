@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { VoiceAgent, CreateVoiceAgentData, UpdateVoiceAgentData } from '@/features/elevenlabs';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export const useVoiceAgents = () => {
   const { toast } = useToast();
@@ -12,7 +13,7 @@ export const useVoiceAgents = () => {
 
   // Fetch all voice agents with organization info
   const { data: voiceAgents, isLoading, error } = useQuery({
-    queryKey: ['voice-agents'],
+    queryKey: queryKeys.voiceAgents.list(),
     queryFn: async () => {
       logger.debug('Fetching voice agents...');
       const { data, error } = await supabase
@@ -51,7 +52,7 @@ export const useVoiceAgents = () => {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-agents'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceAgents.all });
       toast({
         title: "Voice agent created",
         description: "Voice agent has been created successfully.",
@@ -81,7 +82,7 @@ export const useVoiceAgents = () => {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-agents'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceAgents.all });
       toast({
         title: "Voice agent updated",
         description: "Voice agent has been updated successfully.",
@@ -108,7 +109,7 @@ export const useVoiceAgents = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-agents'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceAgents.all });
       toast({
         title: "Voice agent deleted",
         description: "Voice agent has been deleted successfully.",

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Building2 } from 'lucide-react';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface RelatedJobsProps {
   currentJobId: string;
@@ -21,7 +22,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
   organizationId,
 }) => {
   const { data: relatedJobs, isLoading } = useQuery({
-    queryKey: ['related-jobs', currentJobId, clientId, categoryId],
+    queryKey: queryKeys.jobs.related(currentJobId, clientId || undefined, categoryId || undefined),
     queryFn: async () => {
       let query = supabase
         .from('job_listings')

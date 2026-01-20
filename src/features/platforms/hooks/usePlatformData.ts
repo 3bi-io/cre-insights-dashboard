@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { PlatformService } from '../services';
+import { queryKeys } from '@/lib/queryKeys';
 
 /**
  * Hook to fetch and manage platforms data with caching
@@ -11,7 +12,7 @@ export const usePlatformData = () => {
     error,
     refetch 
   } = useQuery({
-    queryKey: ['platforms'],
+    queryKey: queryKeys.platforms.list(),
     queryFn: PlatformService.fetchPlatforms,
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 20000, // Data considered fresh for 20 seconds
