@@ -305,93 +305,121 @@ export const useDetailedApplicationForm = () => {
 
   const submitApplication = useMutation({
     mutationFn: async (data: DetailedFormData) => {
+      // Build application payload matching edge function schema
       const applicationData = {
-        prefix: data.prefix || null,
+        // Required fields
         first_name: data.firstName,
-        middle_name: data.middleName || null,
         last_name: data.lastName,
-        suffix: data.suffix || null,
-        date_of_birth: data.dateOfBirth ? format(data.dateOfBirth, 'yyyy-MM-dd') : null,
-        ssn: data.ssn || null,
-        government_id: data.governmentId || null,
-        government_id_type: data.governmentIdType || null,
-        
         applicant_email: data.email,
         phone: normalizePhoneNumber(data.phone),
-        secondary_phone: normalizePhoneNumber(data.secondaryPhone),
-        preferred_contact_method: data.preferredContactMethod,
         
-        address_1: data.address1 || null,
-        address_2: data.address2 || null,
-        city: data.city || null,
-        state: data.state || null,
-        zip: data.zipCode || null,
-        country: data.country,
+        // Job reference - pass both for resolution by edge function
+        job_listing_id: jobId || undefined,
+        job_id: jobId || undefined,
         
-        emergency_contact_name: data.emergencyContactName || null,
-        emergency_contact_phone: normalizePhoneNumber(data.emergencyContactPhone),
-        emergency_contact_relationship: data.emergencyContactRelationship || null,
+        // Location
+        city: data.city || undefined,
+        state: data.state || undefined,
+        zip: data.zipCode || undefined,
+        address_1: data.address1 || undefined,
+        address_2: data.address2 || undefined,
+        country: data.country || 'US',
         
-        cdl: data.cdl,
-        cdl_class: data.cdlClass || null,
-        cdl_endorsements: data.cdlEndorsements.length > 0 ? data.cdlEndorsements : null,
-        cdl_expiration_date: data.cdlExpirationDate ? format(data.cdlExpirationDate, 'yyyy-MM-dd') : null,
-        cdl_state: data.cdlState || null,
-        driving_experience_years: data.drivingExperienceYears ? parseInt(data.drivingExperienceYears) : null,
+        // Personal extended fields
+        prefix: data.prefix || undefined,
+        middle_name: data.middleName || undefined,
+        suffix: data.suffix || undefined,
+        date_of_birth: data.dateOfBirth ? format(data.dateOfBirth, 'yyyy-MM-dd') : undefined,
+        ssn: data.ssn || undefined,
+        government_id: data.governmentId || undefined,
+        government_id_type: data.governmentIdType || undefined,
         
-        exp: data.experience,
-        accident_history: data.accidentHistory || null,
-        violation_history: data.violationHistory || null,
-        employment_history: data.employmentHistory ? data.employmentHistory : null,
-        education_level: data.educationLevel || null,
+        // Secondary contact
+        secondary_phone: normalizePhoneNumber(data.secondaryPhone) || undefined,
+        preferred_contact_method: data.preferredContactMethod || undefined,
         
-        military_service: data.militaryService || null,
-        military_branch: data.militaryBranch || null,
-        military_start_date: data.militaryStartDate ? format(data.militaryStartDate, 'yyyy-MM-dd') : null,
-        military_end_date: data.militaryEndDate ? format(data.militaryEndDate, 'yyyy-MM-dd') : null,
-        veteran: data.veteranStatus || null,
+        // Emergency contact
+        emergency_contact_name: data.emergencyContactName || undefined,
+        emergency_contact_phone: normalizePhoneNumber(data.emergencyContactPhone) || undefined,
+        emergency_contact_relationship: data.emergencyContactRelationship || undefined,
         
-        convicted_felony: data.convictedFelony || null,
-        felony_details: data.felonyDetails || null,
-        work_authorization: data.workAuthorization || null,
+        // CDL & Experience
+        cdl: data.cdl || undefined,
+        cdl_class: data.cdlClass || undefined,
+        cdl_endorsements: data.cdlEndorsements.length > 0 ? data.cdlEndorsements : undefined,
+        cdl_expiration_date: data.cdlExpirationDate ? format(data.cdlExpirationDate, 'yyyy-MM-dd') : undefined,
+        cdl_state: data.cdlState || undefined,
+        driving_experience_years: data.drivingExperienceYears ? parseInt(data.drivingExperienceYears) : undefined,
+        exp: data.experience || undefined,
         
-        can_work_weekends: data.canWorkWeekends || null,
-        can_work_nights: data.canWorkNights || null,
-        willing_to_relocate: data.willingToRelocate || null,
-        preferred_start_date: data.preferredStartDate ? format(data.preferredStartDate, 'yyyy-MM-dd') : null,
-        salary_expectations: data.salaryExpectations || null,
+        // Background
+        accident_history: data.accidentHistory || undefined,
+        violation_history: data.violationHistory || undefined,
+        employment_history: data.employmentHistory || undefined,
+        education_level: data.educationLevel || undefined,
         
-        medical_card_expiration: data.medicalCardExpiration ? format(data.medicalCardExpiration, 'yyyy-MM-dd') : null,
-        hazmat_endorsement: data.hazmatEndorsement || null,
-        passport_card: data.passportCard || null,
-        twic_card: data.twicCard || null,
-        dot_physical_date: data.dotPhysicalDate ? format(data.dotPhysicalDate, 'yyyy-MM-dd') : null,
+        // Military
+        military_service: data.militaryService || undefined,
+        military_branch: data.militaryBranch || undefined,
+        military_start_date: data.militaryStartDate ? format(data.militaryStartDate, 'yyyy-MM-dd') : undefined,
+        military_end_date: data.militaryEndDate ? format(data.militaryEndDate, 'yyyy-MM-dd') : undefined,
+        veteran: data.veteranStatus || undefined,
         
-        how_did_you_hear: data.howDidYouHear || null,
-        referral_source: data.referralSource || null,
+        // Legal & Background
+        convicted_felony: data.convictedFelony || undefined,
+        felony_details: data.felonyDetails || undefined,
+        work_authorization: data.workAuthorization || undefined,
         
-        over_21: data.over21,
-        can_pass_drug_test: data.canPassDrugTest,
-        can_pass_physical: data.canPassPhysical,
+        // Work preferences
+        can_work_weekends: data.canWorkWeekends || undefined,
+        can_work_nights: data.canWorkNights || undefined,
+        willing_to_relocate: data.willingToRelocate || undefined,
+        preferred_start_date: data.preferredStartDate ? format(data.preferredStartDate, 'yyyy-MM-dd') : undefined,
+        salary_expectations: data.salaryExpectations || undefined,
+        
+        // Medical & Certifications
+        medical_card_expiration: data.medicalCardExpiration ? format(data.medicalCardExpiration, 'yyyy-MM-dd') : undefined,
+        hazmat_endorsement: data.hazmatEndorsement || undefined,
+        passport_card: data.passportCard || undefined,
+        twic_card: data.twicCard || undefined,
+        dot_physical_date: data.dotPhysicalDate ? format(data.dotPhysicalDate, 'yyyy-MM-dd') : undefined,
+        
+        // Application details
+        how_did_you_hear: data.howDidYouHear || undefined,
+        referral_source: data.referralSource || undefined,
+        
+        // Consents (convert booleans to strings for consistency)
+        over21: data.over21 || undefined,
+        can_pass_drug_test: data.canPassDrugTest || undefined,
+        can_pass_physical: data.canPassPhysical || undefined,
         drug: data.drugConsent ? 'yes' : 'no',
         consent: data.dataConsent ? 'yes' : 'no',
-        age: data.ageVerification ? 'yes' : 'no',
         agree_privacy_policy: data.agreePrivacyPolicy ? 'yes' : 'no',
         consent_to_sms: data.consentToSms ? 'yes' : 'no',
         consent_to_email: data.consentToEmail ? 'yes' : 'no',
         background_check_consent: data.backgroundCheckConsent ? 'yes' : 'no',
-        
-        job_id: jobId,
-        status: 'pending',
-        applied_at: new Date().toISOString(),
-        source: 'Detailed Application Form',
       };
 
-      const { error } = await supabase
-        .from('applications')
-        .insert([applicationData]);
+      // Call the edge function instead of direct insert
+      const response = await fetch(
+        'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(applicationData),
+        }
+      );
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          throw new Error(result.error || 'You have already applied recently.');
+        }
+        throw new Error(result.error || 'Failed to submit application');
+      }
+
+      return result;
     },
     onSuccess: () => {
       // Clear draft on successful submission
@@ -402,10 +430,10 @@ export const useDetailedApplicationForm = () => {
       });
       navigate('/apply/success');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to submit application. Please try again.",
+        description: error.message || "Failed to submit application. Please try again.",
         variant: "destructive",
       });
       logger.error('Application submission error', error);

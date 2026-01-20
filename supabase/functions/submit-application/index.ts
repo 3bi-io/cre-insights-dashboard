@@ -53,8 +53,9 @@ const detectIntegrationSource = (req: Request): string => {
 };
 
 // Zod validation schema for application submissions
+// Extended to support both quick apply and detailed application forms
 const ApplicationSubmissionSchema = z.object({
-  // Required fields
+  // Required fields (support both camelCase and snake_case)
   firstName: z.string().trim().min(1, 'First name is required').max(100, 'First name too long').optional(),
   first_name: z.string().trim().min(1, 'First name is required').max(100, 'First name too long').optional(),
   lastName: z.string().trim().min(1, 'Last name is required').max(100, 'Last name too long').optional(),
@@ -64,28 +65,92 @@ const ApplicationSubmissionSchema = z.object({
   
   // Phone validation - accepts various formats
   phone: z.string().regex(/^\+?[\d\s\-\(\)]{10,}$/, 'Invalid phone format').optional(),
+  secondary_phone: z.string().optional().nullable(),
+  preferred_contact_method: z.string().max(50).optional(),
   
   // Location fields
   zip: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code format').max(10).optional(),
   city: z.string().max(100, 'City name too long').optional(),
-  state: z.string().max(2, 'State must be 2-letter code').optional(),
+  state: z.string().max(50, 'State name too long').optional(),
+  address_1: z.string().max(255).optional(),
+  address_2: z.string().max(255).optional(),
+  country: z.string().max(50).default('US').optional(),
   
   // Job-related fields
   job_listing_id: z.string().uuid('Invalid job listing ID').optional().or(z.literal('')),
   job_id: z.string().max(50, 'Job ID too long').optional(),
   org_slug: z.string().max(100, 'Organization slug too long').optional(),
   
-  // Application fields with reasonable limits
+  // Personal extended fields (detailed form)
+  prefix: z.string().max(20).optional(),
+  middle_name: z.string().max(100).optional(),
+  suffix: z.string().max(20).optional(),
+  date_of_birth: z.string().optional(), // YYYY-MM-DD format
+  ssn: z.string().max(20).optional(),
+  government_id: z.string().max(100).optional(),
+  government_id_type: z.string().max(50).optional(),
+  
+  // Emergency contact
+  emergency_contact_name: z.string().max(200).optional(),
+  emergency_contact_phone: z.string().optional().nullable(),
+  emergency_contact_relationship: z.string().max(100).optional(),
+  
+  // CDL & License fields
   cdl: z.string().max(50).optional(),
+  cdl_class: z.string().max(10).optional(),
+  cdl_endorsements: z.array(z.string()).optional(),
+  cdl_expiration_date: z.string().optional(),
+  cdl_state: z.string().max(50).optional(),
+  driving_experience_years: z.number().int().min(0).max(99).optional(),
+  
+  // Experience fields
   experience: z.string().max(50).optional(),
   months: z.string().max(10).optional(),
   exp: z.string().max(100).optional(),
-  driving_experience_years: z.number().int().min(0).max(99).optional(),
-  over21: z.string().max(10).optional(),
-  drug: z.string().max(50).optional(),
+  accident_history: z.string().max(2000).optional(),
+  violation_history: z.string().max(2000).optional(),
+  education_level: z.string().max(100).optional(),
+  
+  // Military service
+  military_service: z.string().max(50).optional(),
+  military_branch: z.string().max(100).optional(),
+  military_start_date: z.string().optional(),
+  military_end_date: z.string().optional(),
   veteran: z.string().max(50).optional(),
+  
+  // Background & Legal
+  convicted_felony: z.string().max(50).optional(),
+  felony_details: z.string().max(2000).optional(),
+  work_authorization: z.string().max(100).optional(),
+  
+  // Work preferences
+  can_work_weekends: z.string().max(50).optional(),
+  can_work_nights: z.string().max(50).optional(),
+  willing_to_relocate: z.string().max(50).optional(),
+  preferred_start_date: z.string().optional(),
+  salary_expectations: z.string().max(100).optional(),
+  
+  // Medical & Certifications
+  medical_card_expiration: z.string().optional(),
+  hazmat_endorsement: z.string().max(50).optional(),
+  passport_card: z.string().max(50).optional(),
+  twic_card: z.string().max(50).optional(),
+  dot_physical_date: z.string().optional(),
+  
+  // Application details
+  how_did_you_hear: z.string().max(255).optional(),
+  
+  // Screening & Consents
+  over21: z.string().max(10).optional(),
+  can_pass_drug_test: z.string().max(50).optional(),
+  can_pass_physical: z.string().max(50).optional(),
+  drug: z.string().max(50).optional(),
   consent: z.string().max(50).optional(),
   privacy: z.string().max(50).optional(),
+  agree_privacy_policy: z.string().max(50).optional(),
+  consent_to_sms: z.string().max(50).optional(),
+  consent_to_email: z.string().max(50).optional(),
+  background_check_consent: z.string().max(50).optional(),
   
   // URL tracking parameters
   ad_id: z.string().max(100).optional(),
@@ -98,6 +163,7 @@ const ApplicationSubmissionSchema = z.object({
   
   // Employment history - limit to prevent DoS
   employmentHistory: z.any().optional(),
+  employment_history: z.any().optional(),
 }).refine(
   (data) => (data.firstName || data.first_name) && (data.lastName || data.last_name) && (data.email || data.applicant_email),
   { message: 'First name, last name, and email are required' }
@@ -603,31 +669,106 @@ Deno.serve(async (req) => {
     
     const applicationData = {
       job_listing_id: jobListingId,
-      job_id: externalJobId || formData.job_id || null, // Populate from external_job_id
+      job_id: externalJobId || formData.job_id || null,
+      
+      // Personal info
       first_name: firstName,
       last_name: lastName,
       full_name: `${firstName} ${lastName}`.trim() || null,
       applicant_email: applicantEmail,
       phone: normalizePhone(formData.phone || ''),
+      
+      // Extended personal fields (detailed form)
+      prefix: formData.prefix || null,
+      middle_name: formData.middle_name || null,
+      suffix: formData.suffix || null,
+      date_of_birth: formData.date_of_birth || null,
+      ssn: formData.ssn || null,
+      government_id: formData.government_id || null,
+      government_id_type: formData.government_id_type || null,
+      
+      // Contact
+      secondary_phone: normalizePhone(formData.secondary_phone || '') || null,
+      preferred_contact_method: formData.preferred_contact_method || null,
+      
+      // Emergency contact
+      emergency_contact_name: formData.emergency_contact_name || null,
+      emergency_contact_phone: normalizePhone(formData.emergency_contact_phone || '') || null,
+      emergency_contact_relationship: formData.emergency_contact_relationship || null,
+      
+      // Location
       city: city,
       state: state,
       zip: formData.zip,
-      age: formData.over21,
+      address_1: formData.address_1 || null,
+      address_2: formData.address_2 || null,
+      country: formData.country || 'US',
+      
+      // CDL & License
       cdl: formData.cdl,
+      cdl_class: formData.cdl_class || null,
+      cdl_endorsements: formData.cdl_endorsements || null,
+      cdl_expiration_date: formData.cdl_expiration_date || null,
+      cdl_state: formData.cdl_state || null,
+      
+      // Experience
+      age: formData.over21,
       exp: formData.exp || getExperienceLevel(formData.experience || ''),
       driving_experience_years: drivingExperienceYears,
-      drug: formData.drug,
+      accident_history: formData.accident_history || null,
+      violation_history: formData.violation_history || null,
+      education_level: formData.education_level || null,
+      
+      // Military
+      military_service: formData.military_service || null,
+      military_branch: formData.military_branch || null,
+      military_start_date: formData.military_start_date || null,
+      military_end_date: formData.military_end_date || null,
       veteran: formData.veteran,
-      employment_history: formData.employmentHistory,
+      
+      // Background & Legal
+      convicted_felony: formData.convicted_felony || null,
+      felony_details: formData.felony_details || null,
+      work_authorization: formData.work_authorization || null,
+      
+      // Work preferences
+      can_work_weekends: formData.can_work_weekends || null,
+      can_work_nights: formData.can_work_nights || null,
+      willing_to_relocate: formData.willing_to_relocate || null,
+      preferred_start_date: formData.preferred_start_date || null,
+      salary_expectations: formData.salary_expectations || null,
+      
+      // Medical & Certifications
+      medical_card_expiration: formData.medical_card_expiration || null,
+      hazmat_endorsement: formData.hazmat_endorsement || null,
+      passport_card: formData.passport_card || null,
+      twic_card: formData.twic_card || null,
+      dot_physical_date: formData.dot_physical_date || null,
+      
+      // Screening & Consents
+      over_21: formData.over21 || null,
+      can_pass_drug_test: formData.can_pass_drug_test || null,
+      can_pass_physical: formData.can_pass_physical || null,
+      drug: formData.drug,
       consent: formData.consent,
       privacy: formData.privacy,
-      months: monthsValue, // Store numeric string
+      agree_privacy_policy: formData.agree_privacy_policy || null,
+      consent_to_sms: formData.consent_to_sms || null,
+      consent_to_email: formData.consent_to_email || null,
+      background_check_consent: formData.background_check_consent || null,
+      
+      // Employment history (supports both key formats)
+      employment_history: formData.employmentHistory || formData.employment_history || null,
+      months: monthsValue,
+      
       // URL tracking parameters
       ad_id: formData.ad_id || null,
       campaign_id: formData.campaign_id || null,
       adset_id: formData.adset_id || null,
       referral_source: formData.referral_source || formData.utm_source || null,
-      how_did_you_hear: formData.utm_medium || formData.utm_campaign || null,
+      how_did_you_hear: formData.how_did_you_hear || formData.utm_medium || formData.utm_campaign || null,
+      
+      // Metadata
       source: detectedSource,
       status: 'pending',
       applied_at: new Date().toISOString(),
