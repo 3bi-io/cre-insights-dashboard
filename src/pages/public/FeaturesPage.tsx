@@ -216,7 +216,7 @@ const FeaturesPage = () => {
           </p>
           <Link to="/auth">
             <Button size="lg" className="bg-primary hover:bg-primary/90 min-h-[48px] text-base">
-              Get Started
+              Start Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
@@ -347,7 +347,7 @@ const FeaturesPage = () => {
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
             <Link to="/auth">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto px-8 py-3 text-base md:text-lg bg-white text-primary hover:bg-white/90 min-h-[48px]">
-                Get Started
+                Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
