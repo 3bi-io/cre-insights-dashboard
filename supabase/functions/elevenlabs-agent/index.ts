@@ -1,10 +1,13 @@
 /**
  * ElevenLabs Agent Edge Function
  * Fetches conversation token for WebRTC connection (faster than WebSocket)
+ * Includes IP-based rate limiting for abuse prevention
  */
 import { createLogger } from '../_shared/logger.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { checkRateLimitWithGeo, extractIPFromRequest } from '../_shared/rate-limiter.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('elevenlabs-agent');
 
@@ -20,11 +23,37 @@ Deno.serve(async (req) => {
   const startTime = Date.now();
 
   try {
+    // IP-based rate limiting: 10 requests per minute per IP
+    const ip = extractIPFromRequest(req);
+    const rateLimitResult = await checkRateLimitWithGeo(req, `elevenlabs-agent:${ip}`, {
+      maxRequests: 10,
+      windowMs: 60000,
+    });
+
+    if (!rateLimitResult.allowed) {
+      logger.warn('Rate limit exceeded', { ip: ip.substring(0, 8) + '...' });
+      return errorResponse('Too many requests. Please try again later.', 429, undefined, origin ?? undefined);
+    }
+
     const { agentId } = await req.json();
 
     if (!agentId) {
       logger.warn('Missing agent ID in request');
       return validationErrorResponse('Agent ID is required', origin ?? undefined);
+    }
+
+    // Verify agent exists and is active
+    const supabase = getServiceClient();
+    const { data: agent, error: agentError } = await supabase
+      .from('voice_agents')
+      .select('organization_id, is_active')
+      .eq('agent_id', agentId)
+      .eq('is_active', true)
+      .single();
+
+    if (agentError || !agent) {
+      logger.warn('Invalid or inactive agent requested', { agentId: agentId.substring(0, 8) + '...' });
+      return errorResponse('Voice agent not found or inactive', 404, undefined, origin ?? undefined);
     }
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
@@ -34,12 +63,12 @@ Deno.serve(async (req) => {
       return errorResponse('ElevenLabs API key not configured', 500, undefined, origin ?? undefined);
     }
 
-    logger.info('Requesting conversation token', { agentId });
+    logger.info('Requesting conversation token', { agentId: agentId.substring(0, 8) + '...' });
 
     // Create AbortController with 10 second timeout to prevent hanging
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      logger.warn('Request timeout - aborting after 10s', { agentId });
+      logger.warn('Request timeout - aborting after 10s', { agentId: agentId.substring(0, 8) + '...' });
       controller.abort();
     }, 10000);
 
