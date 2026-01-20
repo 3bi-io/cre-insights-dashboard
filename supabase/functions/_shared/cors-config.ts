@@ -35,7 +35,7 @@ export function getCorsHeaders(origin: string | null): Record<string, string> {
   
   const isAllowed = isExplicitlyAllowed || isPreview;
   
-  console.log(`[CORS] Request from origin: ${origin}, explicitly allowed: ${isExplicitlyAllowed}, preview: ${isPreview}, final allowed: ${isAllowed}`);
+  // CORS validation is silent in production - no logging for performance
   
   return {
     'Access-Control-Allow-Origin': isAllowed && origin ? origin : ALLOWED_ORIGINS[0],

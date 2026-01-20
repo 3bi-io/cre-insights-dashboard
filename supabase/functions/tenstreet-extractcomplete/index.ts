@@ -29,6 +29,9 @@ import {
   createSOAPResponse,
   type ExtractCompleteData
 } from '../_shared/soap-parser.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('tenstreet-extractcomplete');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,7 +51,7 @@ Deno.serve(async (req) => {
   );
 
   try {
-    console.log('[Webhook] Received extractcomplete callback');
+    logger.info('Received extractcomplete callback');
 
     // Only accept POST requests
     if (req.method !== 'POST') {

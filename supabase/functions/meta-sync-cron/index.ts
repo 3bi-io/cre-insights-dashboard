@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('meta-sync-cron');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -90,7 +93,7 @@ serve(async (req) => {
     const targets = (accounts || [])
       .filter((a) => (filterAccountId ? a.account_id === filterAccountId : true));
 
-    console.log(`meta-sync-cron: syncing ${targets.length} accounts${filterAccountId ? ' (filtered)' : ''}`);
+    logger.info(`Syncing ${targets.length} accounts`, { filterAccountId });
 
     let totalCampaigns = 0;
     let totalAdSets = 0;

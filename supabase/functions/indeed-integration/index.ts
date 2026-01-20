@@ -8,6 +8,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { enforceAuth, logSecurityEvent, getClientInfo, createAuthenticatedClient } from '../_shared/serverAuth.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('indeed-integration')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,7 +85,7 @@ serve(async (req) => {
     const body = await req.json()
     const { action } = baseRequestSchema.parse(body)
     
-    console.log(`[INDEED] ${action} by user ${userId}`)
+    logger.info(`Action: ${action}`, { userId })
 
     // Create authenticated Supabase client
     const supabaseClient = createAuthenticatedClient(req)
