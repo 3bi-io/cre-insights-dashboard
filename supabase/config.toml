@@ -194,3 +194,6 @@ verify_jwt = false
 
 [functions.background-tasks]
 verify_jwt = false
+
+[functions.sync-cdl-feeds]
+verify_jwt = false
