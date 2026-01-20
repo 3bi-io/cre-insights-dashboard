@@ -230,24 +230,64 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
-  /* === MOBILE OPTIMIZATIONS === */
+  /* === MOBILE OPTIMIZATIONS FOR ALL DEVICES === */
   @media (max-width: 767px) {
-    /* Prevent text inflation on mobile */
+    /* Prevent text inflation on mobile - critical for older Android */
     body {
       -webkit-text-size-adjust: 100%;
+      -moz-text-size-adjust: 100%;
       text-size-adjust: 100%;
     }
 
-    /* Optimize tap targets */
-    button, a, input, select, textarea {
-      min-height: 44px;
-      touch-action: manipulation;
+    /* Ensure minimum readable font size (16px prevents iOS zoom on focus) */
+    input, select, textarea {
+      font-size: 16px !important;
     }
 
-    /* Smooth scrolling */
+    /* Optimize tap targets - WCAG 2.1 AA compliance (44px minimum) */
+    button, a, input, select, textarea, [role="button"] {
+      min-height: 44px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Larger touch targets for older users */
+    .touch-target-senior {
+      min-height: 52px;
+      min-width: 52px;
+      font-size: 18px !important;
+    }
+
+    /* Smooth scrolling with momentum for iOS */
     html {
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
+    }
+
+    /* Improve text readability for older eyes */
+    p, span, label, li {
+      line-height: 1.6;
+    }
+  }
+
+  /* === ACCESSIBILITY ENHANCEMENTS === */
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --border: 0 0% 20%;
+      --ring: 220 85% 40%;
+    }
+    
+    button, a, input, select {
+      border-width: 2px !important;
+    }
+  }
+
+  /* Large text mode for accessibility */
+  @media (prefers-contrast: more) {
+    body {
+      font-size: 18px;
     }
   }
 
@@ -259,6 +299,39 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    
+    /* Remove potentially disorienting animations */
+    .animate-ping,
+    .animate-pulse,
+    .animate-spin,
+    .animate-bounce {
+      animation: none !important;
+    }
+  }
+
+  /* === OLDER BROWSER/DEVICE FALLBACKS === */
+  
+  /* Flexbox gap fallback for older browsers */
+  @supports not (gap: 1rem) {
+    .flex > * + * {
+      margin-left: 0.5rem;
+    }
+    .flex-col > * + * {
+      margin-top: 0.5rem;
+    }
+  }
+
+  /* Grid fallback for older browsers */
+  @supports not (display: grid) {
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .grid > * {
+      flex: 1 1 300px;
+      margin: 0.5rem;
     }
   }
 
