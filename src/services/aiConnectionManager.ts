@@ -34,7 +34,7 @@ class AIConnectionManager {
     },
     anthropic: {
       provider: 'anthropic',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-4-20250514',
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     },

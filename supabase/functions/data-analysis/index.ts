@@ -2,6 +2,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('data-analysis');
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const corsHeaders = {
@@ -26,7 +29,7 @@ interface DataAnalysisRequest {
 
 const fetchCompleteDataset = async (organizationId?: string) => {
   try {
-    console.log('Fetching complete dataset for analysis...', organizationId ? `Organization: ${organizationId}` : 'All organizations');
+    logger.info('Fetching complete dataset for analysis', { organizationId: organizationId || 'all' });
 
     // Build queries with organization filter
     const applicationsQuery = supabase.from('applications').select(`
@@ -83,7 +86,7 @@ const fetchCompleteDataset = async (organizationId?: string) => {
       }
     };
   } catch (error) {
-    console.error('Error fetching dataset:', error);
+    logger.error('Error fetching dataset', error);
     throw error;
   }
 };
@@ -209,21 +212,21 @@ serve(async (req) => {
       organizationName
     }: DataAnalysisRequest = await req.json();
 
-    console.log('Data analysis request:', { query, analysisType, timeframe, organizationName });
+    logger.info('Data analysis request', { query: query.substring(0, 100), analysisType, timeframe, organizationName });
 
     // Fetch complete dataset with organization filter
     const dataset = await fetchCompleteDataset(organizationId);
-    console.log('Dataset fetched:', dataset.metadata, organizationName ? `for ${organizationName}` : 'all organizations');
+    logger.info('Dataset fetched', { metadata: dataset.metadata, organizationName: organizationName || 'all' });
 
     // Generate data summary
     const summary = generateDataSummary(dataset);
-    console.log('Data summary generated');
+    logger.info('Data summary generated');
 
     // Create analysis prompt
     const analysisPrompt = createAnalysisPrompt(query, dataset, summary, analysisType);
 
     // Call OpenAI for analysis
-    console.log('Sending to OpenAI for analysis...');
+    logger.info('Sending to OpenAI for analysis...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -246,7 +249,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
+      logger.error('OpenAI API error', { status: response.status, error: errorText });
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
@@ -284,14 +287,14 @@ serve(async (req) => {
       }
     };
 
-    console.log('Analysis completed successfully');
+    logger.info('Analysis completed successfully');
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in data-analysis function:', error);
+    logger.error('Error in data-analysis function', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       analysis: "I encountered an error while analyzing your data. Please try again or contact support if the issue persists."

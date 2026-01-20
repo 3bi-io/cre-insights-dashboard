@@ -2,6 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('chatbot-analytics');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -116,7 +119,7 @@ const getApplicationsAnalytics = async (organizationId?: string) => {
       data: data?.slice(0, 5) // Recent 5 for context
     };
   } catch (error) {
-    console.error('Error fetching applications analytics:', error);
+    logger.error('Error fetching applications analytics', error);
     return null;
   }
 };
@@ -161,7 +164,7 @@ const getJobsAnalytics = async (organizationId?: string) => {
       data: data?.slice(0, 5)
     };
   } catch (error) {
-    console.error('Error fetching jobs analytics:', error);
+    logger.error('Error fetching jobs analytics', error);
     return null;
   }
 };
@@ -205,7 +208,7 @@ const getSpendAnalytics = async (organizationId?: string) => {
       recentSpend: recentSpend.toFixed(2)
     };
   } catch (error) {
-    console.error('Error fetching spend analytics:', error);
+    logger.error('Error fetching spend analytics', error);
     return null;
   }
 };
@@ -225,7 +228,7 @@ const getClientsAnalytics = async () => {
 
     return { total, active, byStatus };
   } catch (error) {
-    console.error('Error fetching clients analytics:', error);
+    logger.error('Error fetching clients analytics', error);
     return null;
   }
 };
@@ -306,7 +309,7 @@ serve(async (req) => {
   try {
     const { query, context, organizationId, organizationName }: AnalyticsQuery = await req.json();
 
-    console.log('Received analytics query:', query, 'for organization:', organizationName || 'all');
+    logger.info('Received analytics query', { query: query.substring(0, 100), organizationName: organizationName || 'all' });
 
     // Analyze the query to determine what data to fetch
     const { tables } = analyzeQuery(query);
@@ -333,7 +336,7 @@ serve(async (req) => {
     // Generate analytical response
     const response = await generateAnalyticalResponse(query, analytics);
 
-    console.log('Generated analytics response for organization:', organizationName || 'all');
+    logger.info('Generated analytics response', { organizationName: organizationName || 'all' });
 
     return new Response(JSON.stringify({ 
       response,
@@ -344,7 +347,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in chatbot-analytics function:', error);
+    logger.error('Error in chatbot-analytics function', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       response: "I'm sorry, I encountered an error while analyzing your data. Please try rephrasing your question or contact support if the issue persists."

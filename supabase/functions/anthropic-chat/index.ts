@@ -1,6 +1,9 @@
 // @ts-nocheck
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('anthropic-chat');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +27,7 @@ serve(async (req) => {
     const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
     
     if (!anthropicApiKey) {
-      console.error('ANTHROPIC_API_KEY not found');
+      logger.error('ANTHROPIC_API_KEY not found');
       return new Response(JSON.stringify({ 
         error: 'Anthropic API key not configured' 
       }), {
@@ -44,7 +47,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Processing chat request with Claude:', { model, messageLength: message.length });
+    logger.info('Processing chat request with Claude', { model, messageLength: message.length });
 
     const defaultSystemPrompt = `You are ƷBI's intelligent analytics assistant powered by Claude. You provide insightful analysis of recruitment marketing data with a focus on:
 
@@ -69,7 +72,7 @@ When analyzing data or trends, always explain your methodology and highlight key
       }
     ];
 
-    console.log('Calling Anthropic API...');
+    logger.info('Calling Anthropic API...');
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -89,12 +92,12 @@ When analyzing data or trends, always explain your methodology and highlight key
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Anthropic API error:', response.status, errorText);
+      logger.error('Anthropic API error', { status: response.status, error: errorText });
       throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Anthropic API response received');
+    logger.info('Anthropic API response received');
 
     const generatedText = data.content?.[0]?.text || 'I apologize, but I couldn\'t generate a response. Please try again.';
 
@@ -107,7 +110,7 @@ When analyzing data or trends, always explain your methodology and highlight key
     });
 
   } catch (error) {
-    console.error('Error in anthropic-chat function:', error);
+    logger.error('Error in anthropic-chat function', error);
     
     return new Response(JSON.stringify({ 
       error: 'Failed to process request with Claude',
