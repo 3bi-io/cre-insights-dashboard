@@ -1,8 +1,10 @@
-
 // @ts-nocheck
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('job-feed-xml')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,7 +61,7 @@ serve(async (req) => {
     // Validate XML feed before generation
     const validation = validateXMLFeed(platform, jobListings || [])
     if (validation.warnings.length > 0) {
-      console.warn('XML Feed Validation Warnings:', validation.warnings)
+      logger.warn('XML Feed Validation Warnings', { warnings: validation.warnings })
     }
 
     // Generate XML based on platform

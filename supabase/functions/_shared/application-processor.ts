@@ -1,5 +1,8 @@
 // @ts-nocheck
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('application-processor');
 
 /**
  * Normalize phone number to E.164 format (+1XXXXXXXXXX)
@@ -59,7 +62,7 @@ export const findOrCreateJobListing = async (
     const { data: jobListing } = await query.maybeSingle();
     
     if (jobListing) {
-      console.log('Matched job_id:', jobId, 'to listing:', jobListing.id);
+      logger.info('Matched job_id to listing', { jobId, listingId: jobListing.id });
       return jobListing.id;
     }
   }
@@ -79,7 +82,7 @@ export const findOrCreateJobListing = async (
   const { data: activeJob } = await activeQuery.maybeSingle();
   
   if (activeJob) {
-    console.log('Using active job listing:', activeJob.id);
+    logger.info('Using active job listing', { listingId: activeJob.id });
     return activeJob.id;
   }
 
@@ -109,7 +112,7 @@ export const findOrCreateJobListing = async (
         .single();
       
       if (newJob) {
-        console.log('Created job:', newJob.id, 'for job_id:', jobId);
+        logger.info('Created job listing', { listingId: newJob.id, jobId });
         return newJob.id;
       }
     }
@@ -124,7 +127,7 @@ export const findOrCreateJobListing = async (
     .maybeSingle();
   
   if (fallbackJob) {
-    console.log('Using General Application fallback');
+    logger.info('Using General Application fallback');
     return fallbackJob.id;
   }
 
@@ -148,7 +151,7 @@ export const findOrCreateJobListing = async (
       .single();
     
     if (newFallback) {
-      console.log('Created General Application fallback');
+      logger.info('Created General Application fallback');
       return newFallback.id;
     }
   }
@@ -174,13 +177,13 @@ export const findClientByIdentifier = async (
     .eq('organization_id', organizationId)
     .or(`name.ilike.%${clientIdentifier}%,company.ilike.%${clientIdentifier}%`)
     .maybeSingle();
-  
+
   if (client) {
-    console.log('Matched client:', client.name, 'ID:', client.id);
+    logger.info('Matched client', { name: client.name, id: client.id });
     return client.id;
   }
 
-  console.warn('Client not found for identifier:', clientIdentifier);
+  logger.warn('Client not found for identifier', { clientIdentifier });
   return null;
 };
 

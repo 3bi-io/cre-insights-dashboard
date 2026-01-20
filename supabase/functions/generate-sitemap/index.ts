@@ -5,6 +5,9 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('generate-sitemap');
 
 const STATIC_ROUTES = [
   { loc: 'https://ats.me/', changefreq: 'daily', priority: 1.0 },
@@ -124,7 +127,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Sitemap generated with ${allUrls.length} URLs (${jobs?.length || 0} jobs, ${blogPosts?.length || 0} blog posts)`);
+    logger.info(`Sitemap generated`, { totalUrls: allUrls.length, jobs: jobs?.length || 0, blogPosts: blogPosts?.length || 0 });
 
     const sitemapXML = generateSitemapXML(allUrls);
 

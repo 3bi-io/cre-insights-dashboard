@@ -4,6 +4,9 @@
  */
 
 import { type TenstreetCredentials } from './tenstreet-xml-utils.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('tenstreet-credentials');
 
 export interface CredentialFetchOptions {
   organizationId?: string;
@@ -38,12 +41,12 @@ export async function fetchTenstreetCredentials(
     const { data: credentialsList, error } = await query;
 
     if (error) {
-      console.error('[Credentials] Fetch error:', error);
+      logger.error('Fetch error', error);
       throw new Error('Failed to fetch Tenstreet credentials');
     }
 
     if (!credentialsList || credentialsList.length === 0) {
-      console.warn('[Credentials] No credentials found', { companyId, organizationId });
+      logger.warn('No credentials found', { companyId, organizationId });
       return null;
     }
 
@@ -63,11 +66,11 @@ export async function fetchTenstreetCredentials(
       }
     }
 
-    console.warn('[Credentials] No matching credentials for user', { userId, organizationId, userRole });
+    logger.warn('No matching credentials for user', { userId, organizationId, userRole });
     return null;
 
   } catch (error) {
-    console.error('[Credentials] Error:', error);
+    logger.error('Credential fetch error', error);
     throw error;
   }
 }
@@ -84,20 +87,20 @@ export function validateCredentials(credentials: any): credentials is TenstreetC
   const requiredFields = ['client_id', 'password', 'mode'];
   for (const field of requiredFields) {
     if (!credentials[field]) {
-      console.error(`[Credentials] Missing required field: ${field}`);
+      logger.error(`Missing required field: ${field}`);
       return false;
     }
   }
 
   // Check company_ids or company_id
   if (!credentials.company_ids && !credentials.company_id) {
-    console.error('[Credentials] Missing company_id or company_ids');
+    logger.error('Missing company_id or company_ids');
     return false;
   }
 
   // Validate mode
   if (!['DEV', 'TEST', 'PROD'].includes(credentials.mode)) {
-    console.error(`[Credentials] Invalid mode: ${credentials.mode}`);
+    logger.error(`Invalid mode: ${credentials.mode}`);
     return false;
   }
 

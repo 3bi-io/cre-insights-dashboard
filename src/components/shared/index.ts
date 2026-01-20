@@ -6,3 +6,5 @@ export { SkipLinks } from './SkipLinks';
 export { DataTable } from './DataTable';
 export { StatefulButton } from './StatefulButton';
 export { ResponsiveDialog } from './ResponsiveDialog';
+export { FormWizard, useFormWizard } from './FormWizard';
+export type { WizardStep } from './FormWizard';

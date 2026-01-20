@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { validateBGCWebhook, BGCProvider, BGCConnection } from "../_shared/bgc-adapters/index.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('background-check-webhook');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +19,7 @@ serve(async (req) => {
   const url = new URL(req.url);
   const providerSlug = url.searchParams.get("provider");
 
-  console.log(`[${correlationId}] Webhook received from ${providerSlug}`);
+  logger.info(`Webhook received`, { correlationId, providerSlug });
 
   try {
     const supabase = createClient(

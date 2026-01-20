@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('admin-update-password');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +22,7 @@ serve(async (req) => {
   }
 
    try {
-     console.log('admin-update-password: start');
+     logger.info('Password update request received');
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -96,7 +99,7 @@ serve(async (req) => {
           }
         }
       } catch (e) {
-        console.warn('admin-update-password: listUsers failed', e);
+        logger.warn('listUsers lookup failed', e);
       }
 
       // Fallback: Look up user id via profiles table
