@@ -7,34 +7,34 @@ import { Shield, Phone, CheckCircle, Rocket } from 'lucide-react';
 import { TrustStat } from './types';
 
 export const trustContent = {
-  badge: 'Trusted by Growing Companies',
-  title: 'Built on Proven Technology, Designed for Modern Recruiting',
-  description: 'Our platform is built on enterprise-grade infrastructure with integrations to Tenstreet, major job boards, and leading HR systems.',
+  badge: 'Enterprise-Grade Platform',
+  title: 'Built for Speed, Designed for Results',
+  description: 'Our AI-powered platform delivers measurable outcomes with enterprise-grade infrastructure and seamless integrations.',
   footer: 'All Plans Include: Priority support, dedicated onboarding, and direct access to our product team',
   stats: [
     {
       icon: Phone,
-      value: 'AI Voice',
-      label: 'Technology',
-      description: 'Automated jobseeker callbacks'
+      value: '< 3 min',
+      label: 'Response Time',
+      description: 'From application to callback'
     },
     {
       icon: CheckCircle,
-      value: 'Fast',
-      label: 'Response Times',
-      description: 'Quick application-to-contact'
+      value: '95%',
+      label: 'Call Completion',
+      description: 'Reach rate for qualified leads'
     },
     {
       icon: Shield,
-      value: 'Built-in',
-      label: 'Compliance',
-      description: 'GDPR and EEO ready'
+      value: 'GDPR',
+      label: 'Compliant',
+      description: 'Enterprise security standards'
     },
     {
       icon: Rocket,
-      value: 'Active',
-      label: 'Development',
-      description: 'New features shipping weekly'
+      value: '48h',
+      label: 'Go-Live',
+      description: 'Average implementation time'
     }
   ] as TrustStat[]
 };

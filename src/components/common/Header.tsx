@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Auth Buttons */}
           {showAuth && (
             <div className="hidden md:flex items-center space-x-3" role="group" aria-label="Authentication">
-              <Link to="/login">
+              <Link to="/auth">
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -76,12 +76,12 @@ export const Header: React.FC<HeaderProps> = ({
                   Sign In
                 </Button>
               </Link>
-              <Link to="/register">
+              <Link to="/auth">
                 <Button 
                   size="sm" 
                   className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
-                  Get Started
+                  Start Free Trial
                 </Button>
               </Link>
             </div>
@@ -140,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {/* Mobile Auth Buttons */}
                   {showAuth && (
                     <div className="flex flex-col space-y-3 pt-4 border-t" role="group" aria-label="Authentication">
-                      <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                         <Button 
                           variant="outline" 
                           className="w-full min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
@@ -148,11 +148,11 @@ export const Header: React.FC<HeaderProps> = ({
                           Sign In
                         </Button>
                       </Link>
-                      <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                      <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
                         <Button 
                           className="w-full min-h-[48px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                         >
-                          Get Started
+                          Start Free Trial
                         </Button>
                       </Link>
                     </div>

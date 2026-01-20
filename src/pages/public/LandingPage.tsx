@@ -14,8 +14,6 @@ import { LoadingSkeleton } from '@/features/landing/components/shared/LoadingSke
 const HowItWorksSection = lazy(() => import('@/features/landing/components/sections/HowItWorksSection'));
 const FeaturesSection = lazy(() => import('@/features/landing/components/sections/FeaturesSection'));
 const IntegrationsSection = lazy(() => import('@/features/landing/components/sections/IntegrationsSection'));
-const BenefitsSection = lazy(() => import('@/features/landing/components/sections/BenefitsSection'));
-const OnboardingSection = lazy(() => import('@/features/landing/components/sections/OnboardingSection'));
 
 const TrustSection = lazy(() => import('@/features/landing/components/sections/TrustSection'));
 const FAQSection = lazy(() => import('@/features/landing/components/sections/FAQSection'));
@@ -50,13 +48,6 @@ const LandingPage = () => {
         <IntegrationsSection />
       </Suspense>
       
-      <Suspense fallback={<LoadingSkeleton variant="section" />}>
-        <BenefitsSection />
-      </Suspense>
-      
-      <Suspense fallback={<LoadingSkeleton variant="section" />}>
-        <OnboardingSection />
-      </Suspense>
       
       
       <Suspense fallback={<LoadingSkeleton variant="section" />}>

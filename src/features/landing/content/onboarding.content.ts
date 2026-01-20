@@ -13,7 +13,7 @@ export const onboardingContent = {
   ctaTitle: 'Ready to Get Started?',
   ctaPrimary: 'Schedule Your Kickoff Call',
   ctaSecondary: 'View Implementation Guide',
-  ctaFooter: 'No credit card required • 14-day free trial • Cancel anytime',
+  ctaFooter: 'No credit card required • 30-day free trial • Cancel anytime',
   steps: [
     {
       icon: Calendar,
