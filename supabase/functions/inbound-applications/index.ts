@@ -31,6 +31,12 @@ const INTEGRATION_SIGNATURES: Record<string, { source: string; requiresScreening
   'integromat.com': { source: 'Make Integration', requiresScreening: false },
 };
 
+// Source-specific organization enforcement
+// These sources MUST route to specific organizations regardless of other identifiers
+const SOURCE_ORGANIZATION_OVERRIDES: Record<string, string> = {
+  'CDL Job Cast': '84214b48-7b51-45bc-ad7f-723bcf50466c', // Hayes Recruiting Solutions
+};
+
 // Reserved source values that require full screening data
 const RESERVED_SOURCES = ['Direct Application'];
 
@@ -835,7 +841,31 @@ const handler = async (req: Request): Promise<Response> => {
       hasExplicitOrgId: !!applicationData.organization_id,
       hasElevenLabsAgentId: !!elevenLabsAgentId,
       hasOrganizationSlug: !!applicationData.organization_slug,
+      source: applicationData.source,
     });
+    
+    // Check for source-specific organization override FIRST
+    // CDL Job Cast applications ALWAYS go to Hayes regardless of other params
+    if (applicationData.source && SOURCE_ORGANIZATION_OVERRIDES[applicationData.source]) {
+      const overrideOrg = SOURCE_ORGANIZATION_OVERRIDES[applicationData.source];
+      
+      if (organizationId && organizationId !== overrideOrg) {
+        logger.warn('Organization override applied - source requires specific org', {
+          source: applicationData.source,
+          requestedOrgId: organizationId,
+          enforcedOrgId: overrideOrg
+        });
+      }
+      
+      organizationId = overrideOrg;
+      resolvedFrom = 'source_override';
+      
+      logger.info('Organization enforced by source override', {
+        source: applicationData.source,
+        organizationId,
+        organizationName: 'Hayes Recruiting Solutions'
+      });
+    }
     
     // Try to resolve from ElevenLabs agent ID via voice_agents table
     if (!organizationId && elevenLabsAgentId) {
