@@ -17,5 +17,5 @@ export const ctaContent = {
     { value: '48 Hours', label: 'Average go-live time' },
     { value: 'Priority', label: 'Dedicated onboarding support' }
   ] as CTAStat[],
-  footer: 'No long-term contracts • Cancel anytime • GDPR compliant • SOC 2 certified'
+  footer: 'No long-term contracts • Cancel anytime • GDPR compliant'
 };
