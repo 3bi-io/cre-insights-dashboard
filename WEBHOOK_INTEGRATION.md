@@ -112,10 +112,27 @@ curl -X POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/inbound-appli
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `source` | string | Application source (default: "CDL Job Cast") |
+| `source` | string | Application source (see Source Values below) |
 | `campaign_id` | string | Marketing campaign ID |
 | `ad_id` | string | Advertisement ID |
 | `adset_id` | string | Ad set ID |
+
+### Source Values
+
+| Source | Use Case | Required Fields |
+|--------|----------|-----------------|
+| `Direct Application` | **RESERVED** - Only for native /apply form | `cdl`, `drug`, `consent` required |
+| `CDL Job Cast` | CDL Job Cast leads | Standard fields only |
+| `Indeed` | Indeed applications | Standard fields only |
+| `Zapier Integration` | Zapier webhook integration | Standard fields only |
+| `Make Integration` | Make/Integromat integration | Standard fields only |
+| `External Webhook` | Generic external integration | Standard fields only |
+| `Your Company Name` | Custom branded source (recommended) | Standard fields only |
+
+⚠️ **Important:** 
+- Using `source: 'Direct Application'` from external integrations requires complete screening data (`cdl`, `drug`, `consent`). 
+- Applications without these fields will be **rejected with a 400 error**.
+- **Recommended:** Use your company/integration name as the source value for easy tracking.
 
 ### Organization Routing
 

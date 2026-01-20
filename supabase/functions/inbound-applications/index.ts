@@ -18,6 +18,45 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const logger = createLogger('inbound-applications');
 
+// ============================================================
+// KNOWN INTEGRATION PARTNERS
+// Maps domain signatures to official source names
+// ============================================================
+const INTEGRATION_SIGNATURES: Record<string, { source: string; requiresScreening: boolean }> = {
+  'cdljobcast.com': { source: 'CDL Job Cast', requiresScreening: false },
+  'zapier.com': { source: 'Zapier Integration', requiresScreening: false },
+  'hooks.zapier.com': { source: 'Zapier Integration', requiresScreening: false },
+  'indeed.com': { source: 'Indeed', requiresScreening: false },
+  'make.com': { source: 'Make Integration', requiresScreening: false },
+  'integromat.com': { source: 'Make Integration', requiresScreening: false },
+};
+
+// Reserved source values that require full screening data
+const RESERVED_SOURCES = ['Direct Application'];
+
+/**
+ * Detect integration source from request headers
+ */
+const detectIntegrationSource = (origin: string | null, referer: string | null, userAgent: string | null): string | null => {
+  const combined = `${origin || ''} ${referer || ''} ${userAgent || ''}`.toLowerCase();
+  for (const [domain, config] of Object.entries(INTEGRATION_SIGNATURES)) {
+    if (combined.includes(domain)) {
+      return config.source;
+    }
+  }
+  return null;
+};
+
+/**
+ * Check if request is from our native /apply form
+ */
+const isNativeApplyForm = (origin: string | null, referer: string | null): boolean => {
+  const combined = `${origin || ''} ${referer || ''}`.toLowerCase();
+  return combined.includes('ats.me') || 
+         combined.includes('ats-me.lovable.app') || 
+         combined.includes('localhost');
+};
+
 // Input validation schema
 const InboundApplicationSchema = z.object({
   first_name: z.string().optional(),
@@ -725,6 +764,64 @@ const handler = async (req: Request): Promise<Response> => {
       return validationErrorResponse(validationErrors.join(', '), origin);
     }
 
+    // ============================================================
+    // SOURCE VALIDATION & EXTERNAL DETECTION
+    // Prevent external integrations from spoofing "Direct Application"
+    // ============================================================
+    const requestOrigin = req.headers.get('origin');
+    const requestReferer = req.headers.get('referer');
+    const requestUserAgent = req.headers.get('user-agent');
+    
+    // Check if this is truly from our native form
+    const isNative = isNativeApplyForm(requestOrigin, requestReferer);
+    
+    // Detect known integration partner
+    const detectedIntegration = detectIntegrationSource(requestOrigin, requestReferer, requestUserAgent);
+    
+    // Handle source validation
+    if (applicationData.source === 'Direct Application') {
+      if (!isNative) {
+        // External source claiming to be Direct Application
+        logger.warn('External source claiming Direct Application', {
+          origin: requestOrigin,
+          referer: requestReferer,
+          userAgent: requestUserAgent?.substring(0, 100),
+          detectedIntegration
+        });
+        
+        // Check for required screening fields
+        const missingScreeningFields: string[] = [];
+        if (!applicationData.cdl) missingScreeningFields.push('cdl');
+        if (!applicationData.drug) missingScreeningFields.push('drug');
+        if (!applicationData.consent) missingScreeningFields.push('consent');
+        
+        if (missingScreeningFields.length > 0) {
+          logger.error('Direct Application source missing required screening fields', {
+            missingFields: missingScreeningFields,
+            source: applicationData.source,
+            isNative: false
+          });
+          
+          return validationErrorResponse(
+            `Source "Direct Application" requires screening fields: ${missingScreeningFields.join(', ')}. ` +
+            `Either include these fields or use a different source value (e.g., your company name).`,
+            origin
+          );
+        }
+        
+        // If they provided all required fields, override source to track it
+        applicationData.source = detectedIntegration || 'External Webhook';
+        logger.info('Source overridden from Direct Application', {
+          newSource: applicationData.source,
+          reason: 'External request with complete screening data'
+        });
+      }
+    } else if (detectedIntegration && !applicationData.source) {
+      // Auto-assign source based on detected integration
+      applicationData.source = detectedIntegration;
+      logger.info('Source auto-detected from integration', { source: applicationData.source });
+    }
+
     // Determine organization - priority order:
     // 1. Explicit org_id in query params or body
     // 2. Resolve from ElevenLabs agent_id via voice_agents table
@@ -888,7 +985,48 @@ const handler = async (req: Request): Promise<Response> => {
       return errorResponse('Failed to create application', 500, { details: insertError.message }, origin);
     }
 
-    logger.info('Application created successfully', { id: application.id });
+    // ============================================================
+    // DATA QUALITY MONITORING
+    // Log completeness metrics for integration health tracking
+    // ============================================================
+    const dataQualityFields = {
+      cdl: !!applicationData.cdl,
+      drug: !!applicationData.drug,
+      consent: !!applicationData.consent,
+      phone: !!applicationData.phone,
+      city: !!applicationData.city,
+      exp: !!applicationData.exp,
+      zip: !!applicationData.zip,
+      state: !!applicationData.state,
+    };
+    
+    const completedFields = Object.values(dataQualityFields).filter(Boolean).length;
+    const totalFields = Object.keys(dataQualityFields).length;
+    const qualityScore = Math.round((completedFields / totalFields) * 100);
+    
+    const missingDataFields = Object.entries(dataQualityFields)
+      .filter(([_, present]) => !present)
+      .map(([field]) => field);
+    
+    logger.info('Application created successfully', { 
+      id: application.id,
+      source: applicationData.source,
+      dataQuality: {
+        score: `${qualityScore}%`,
+        completedFields: `${completedFields}/${totalFields}`,
+        missingFields: missingDataFields.length > 0 ? missingDataFields : 'none'
+      }
+    });
+    
+    // Warn on low quality submissions
+    if (qualityScore < 50) {
+      logger.warn('Low data quality application received', {
+        applicationId: application.id,
+        source: applicationData.source,
+        qualityScore: `${qualityScore}%`,
+        missingFields: missingDataFields
+      });
+    }
 
     // Trigger webhooks for this source (non-blocking)
     try {
