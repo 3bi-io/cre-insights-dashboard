@@ -29,7 +29,7 @@ export const CTABlock = ({
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Button 
           size="lg" 
-          className="text-lg px-8 py-6"
+          className="text-lg px-8 py-6 min-h-[48px]"
           onClick={() => navigate(primaryPath)}
         >
           {primaryText}
@@ -39,7 +39,7 @@ export const CTABlock = ({
           <Button 
             size="lg" 
             variant="outline" 
-            className="text-lg px-8 py-6"
+            className="text-lg px-8 py-6 min-h-[48px]"
             onClick={() => navigate(secondaryPath)}
           >
             {secondaryText}

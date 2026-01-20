@@ -96,10 +96,10 @@ const HeroSection = () => {
                   <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
-              <span className="text-sm">{heroContent.socialProof.rating}</span>
+              <span className="text-xs sm:text-sm">{heroContent.socialProof.rating}</span>
             </div>
-            <div className="text-sm">{heroContent.socialProof.companies}</div>
-            <div className="text-sm font-medium text-primary">{heroContent.socialProof.highlight}</div>
+            <div className="text-xs sm:text-sm">{heroContent.socialProof.companies}</div>
+            <div className="text-xs sm:text-sm font-medium text-primary">{heroContent.socialProof.highlight}</div>
           </div>
         </div>
       </div>
