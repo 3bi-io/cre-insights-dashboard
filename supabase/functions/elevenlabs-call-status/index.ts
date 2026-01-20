@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('elevenlabs-call-status');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,7 +82,7 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    console.log(`[elevenlabs-call-status] Action: ${action}`, JSON.stringify(body));
+    logger.info(`Action: ${action}`, { body });
 
     // Handle webhook test
     if (action === "test_webhook") {
@@ -196,7 +199,7 @@ serve(async (req) => {
       const { data: call, error: callError } = await query.single();
 
       if (callError || !call) {
-        console.error("[elevenlabs-call-status] Call not found:", callError);
+        logger.error('Call not found', callError);
         return new Response(
           JSON.stringify({ success: false, error: "Call not found" }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
@@ -230,7 +233,7 @@ serve(async (req) => {
         .eq("id", call.id);
 
       if (updateError) {
-        console.error("[elevenlabs-call-status] Update error:", updateError);
+        logger.error('Update error', updateError);
         return new Response(
           JSON.stringify({ success: false, error: updateError.message }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
@@ -274,13 +277,13 @@ serve(async (req) => {
                 });
 
               if (upsertError) {
-                console.error("[elevenlabs-call-status] Failed to sync conversation:", upsertError);
+                logger.error('Failed to sync conversation', upsertError);
               } else {
-                console.log(`[elevenlabs-call-status] Synced conversation ${call.elevenlabs_conversation_id} to elevenlabs_conversations`);
+                logger.info('Synced conversation', { conversationId: call.elevenlabs_conversation_id });
               }
             }
           } catch (syncError) {
-            console.error("[elevenlabs-call-status] Error syncing conversation:", syncError);
+            logger.error('Error syncing conversation', syncError);
           }
         }
 
@@ -292,7 +295,7 @@ serve(async (req) => {
           .eq("enabled", true)
           .contains("event_types", [mappedStatus]);
 
-        console.log(`[elevenlabs-call-status] Found ${webhooks?.length || 0} webhooks to trigger`);
+        logger.info('Found webhooks to trigger', { count: webhooks?.length || 0 });
 
         // Get application details if available
         let applicantName = call.metadata?.applicant_name || null;
@@ -396,7 +399,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
     );
   } catch (error) {
-    console.error("[elevenlabs-call-status] Error:", error);
+    logger.error('Error processing request', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
