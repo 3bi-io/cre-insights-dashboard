@@ -105,6 +105,8 @@ export const DetailedPersonalSection = React.memo(({
           <Input
             ref={firstNameRef}
             id="firstName"
+            name="firstName"
+            autoComplete="given-name"
             value={formData.firstName}
             onChange={(e) => onInputChange('firstName', e.target.value)}
             placeholder="John"
@@ -117,6 +119,8 @@ export const DetailedPersonalSection = React.memo(({
           </Label>
           <Input
             id="middleName"
+            name="middleName"
+            autoComplete="additional-name"
             value={formData.middleName}
             onChange={(e) => onInputChange('middleName', e.target.value)}
             placeholder="Michael"
@@ -135,6 +139,8 @@ export const DetailedPersonalSection = React.memo(({
           </Label>
           <Input
             id="lastName"
+            name="lastName"
+            autoComplete="family-name"
             value={formData.lastName}
             onChange={(e) => onInputChange('lastName', e.target.value)}
             placeholder="Doe"
@@ -205,6 +211,8 @@ export const DetailedPersonalSection = React.memo(({
           </Label>
           <Input
             id="ssn"
+            name="ssn"
+            autoComplete="off"
             value={formData.ssn}
             onChange={(e) => onInputChange('ssn', formatSSN(e.target.value))}
             placeholder="1234"
@@ -219,6 +227,8 @@ export const DetailedPersonalSection = React.memo(({
           </Label>
           <Input
             id="governmentId"
+            name="governmentId"
+            autoComplete="off"
             value={formData.governmentId}
             onChange={(e) => onInputChange('governmentId', e.target.value)}
             placeholder="ID number"

@@ -120,7 +120,9 @@ export const DetailedContactSection = React.memo(({
           <Input
             ref={emailRef}
             id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={formData.email}
             onChange={(e) => onInputChange('email', e.target.value)}
             placeholder="john@example.com"
@@ -137,7 +139,9 @@ export const DetailedContactSection = React.memo(({
           </Label>
           <Input
             id="phone"
+            name="phone"
             type="tel"
+            autoComplete="tel"
             value={formData.phone}
             onChange={handlePhoneChange('phone')}
             placeholder="(555) 123-4567"
@@ -158,7 +162,9 @@ export const DetailedContactSection = React.memo(({
         </Label>
         <Input
           id="secondaryPhone"
+          name="secondaryPhone"
           type="tel"
+          autoComplete="tel"
           value={formData.secondaryPhone}
           onChange={handlePhoneChange('secondaryPhone')}
           placeholder="(555) 987-6543"
@@ -191,6 +197,8 @@ export const DetailedContactSection = React.memo(({
           </Label>
           <Input
             id="address1"
+            name="address1"
+            autoComplete="street-address"
             value={formData.address1}
             onChange={(e) => onInputChange('address1', e.target.value)}
             placeholder="123 Main Street"
@@ -204,6 +212,8 @@ export const DetailedContactSection = React.memo(({
           </Label>
           <Input
             id="address2"
+            name="address2"
+            autoComplete="address-line2"
             value={formData.address2}
             onChange={(e) => onInputChange('address2', e.target.value)}
             placeholder="Apt 4B"
@@ -219,6 +229,8 @@ export const DetailedContactSection = React.memo(({
             <div className="relative">
               <Input
                 id="zipCode"
+                name="zipCode"
+                autoComplete="postal-code"
                 value={formData.zipCode}
                 onChange={(e) => {
                   onInputChange('zipCode', e.target.value);
@@ -243,6 +255,8 @@ export const DetailedContactSection = React.memo(({
             </Label>
             <Input
               id="city"
+              name="city"
+              autoComplete="address-level2"
               value={formData.city}
               onChange={(e) => {
                 onInputChange('city', e.target.value);
@@ -264,7 +278,7 @@ export const DetailedContactSection = React.memo(({
                 setWasAutoFilled(false);
               }}
             >
-              <SelectTrigger className="h-14 text-base rounded-xl border-2">
+              <SelectTrigger id="state" className="h-14 text-base rounded-xl border-2">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] z-50">
@@ -293,6 +307,8 @@ export const DetailedContactSection = React.memo(({
             </Label>
             <Input
               id="emergencyContactName"
+              name="emergencyContactName"
+              autoComplete="off"
               value={formData.emergencyContactName}
               onChange={(e) => onInputChange('emergencyContactName', e.target.value)}
               placeholder="Emergency contact name"
@@ -305,7 +321,9 @@ export const DetailedContactSection = React.memo(({
             </Label>
             <Input
               id="emergencyContactPhone"
+              name="emergencyContactPhone"
               type="tel"
+              autoComplete="off"
               value={formData.emergencyContactPhone}
               onChange={handlePhoneChange('emergencyContactPhone')}
               placeholder="(555) 123-4567"
