@@ -1,8 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   useVoiceAgentConnection, 
-  createAgentOverrides, 
   JobContext 
 } from '@/features/elevenlabs';
 
@@ -10,21 +9,20 @@ export const useElevenLabsVoice = () => {
   const [selectedJob, setSelectedJob] = useState<JobContext | null>(null);
   const { toast } = useToast();
 
-  const agentOverrides = useMemo(() => {
-    return selectedJob ? createAgentOverrides(selectedJob) : undefined;
-  }, [selectedJob]);
-
+  // No agentOverrides - prompts are managed in ElevenLabs Dashboard
   const { 
-    isConnected, 
+    isConnected,
+    isConnecting,
+    connectionProgress,
     isSpeaking, 
     transcripts, 
     pendingUserTranscript,
     pendingAgentTranscript,
     clearTranscripts,
     connect, 
-    disconnect 
+    disconnect,
+    cancelConnection
   } = useVoiceAgentConnection({
-    agentOverrides,
     onConnect: () => {
       toast({
         title: "Voice Agent Connected",
@@ -73,7 +71,6 @@ export const useElevenLabsVoice = () => {
 
       setSelectedJob(jobContext);
       
-      // Connect directly - cleanup effect no longer triggers on conversation object changes
       await connect(job.voiceAgentId!, { jobContext });
       
     } catch (error: any) {
@@ -89,8 +86,15 @@ export const useElevenLabsVoice = () => {
     await disconnect();
   };
 
+  const cancelVoiceApplication = () => {
+    cancelConnection();
+    setSelectedJob(null);
+  };
+
   return {
     isConnected,
+    isConnecting,
+    connectionProgress,
     selectedJob,
     isSpeaking,
     transcripts,
@@ -99,5 +103,6 @@ export const useElevenLabsVoice = () => {
     clearTranscripts,
     startVoiceApplication,
     endVoiceApplication,
+    cancelVoiceApplication,
   };
 };
