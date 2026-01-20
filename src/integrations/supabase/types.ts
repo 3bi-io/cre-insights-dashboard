@@ -979,6 +979,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ats_connections_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ats_connections_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -2618,6 +2625,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "client_webhooks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_webhooks_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -3248,6 +3262,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "feed_access_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "feed_access_logs_job_group_id_fkey"
             columns: ["job_group_id"]
             isOneToOne: false
@@ -3662,6 +3683,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_job_listings_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
             referencedColumns: ["id"]
           },
           {
@@ -5916,6 +5944,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "universal_feed_configs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "universal_feed_configs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
@@ -6166,6 +6201,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_agents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
             referencedColumns: ["id"]
           },
           {
@@ -6441,6 +6483,14 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_client_info: {
+        Row: {
+          id: string | null
+          logo_url: string | null
+          name: string | null
+        }
+        Relationships: []
       }
       public_organization_info: {
         Row: {

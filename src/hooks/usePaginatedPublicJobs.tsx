@@ -35,12 +35,12 @@ export function usePaginatedPublicJobs({
 
       // First fetch job listings with related data
       // Note: organizations join uses public_organization_info view for security
+      // Note: clients data is fetched separately from public_client_info view
       let query = supabase
         .from('job_listings')
         .select(`
           *,
-          job_categories(name),
-          clients(name, logo_url)
+          job_categories(name)
         `, { count: 'exact' })
         .eq('status', 'active')
         .order('created_at', { ascending: false })
@@ -64,16 +64,21 @@ export function usePaginatedPublicJobs({
       const { data, error, count } = await query;
       if (error) throw error;
 
-      // Fetch organization info securely via public_organization_info view
+      // Fetch organization, client, and voice agent info securely via public views
       if (data && data.length > 0) {
         const orgIds = [...new Set(data.map(job => job.organization_id).filter(Boolean))] as string[];
+        const clientIds = [...new Set(data.map(job => job.client_id).filter(Boolean))] as string[];
         
-        // Fetch organization data and voice agents in parallel
-        const [orgResult, voiceAgentsResult] = await Promise.all([
+        // Fetch organization data, client data, and voice agents in parallel
+        const [orgResult, clientResult, voiceAgentsResult] = await Promise.all([
           supabase
             .from('public_organization_info')
             .select('id, name, slug, logo_url')
             .in('id', orgIds),
+          supabase
+            .from('public_client_info')
+            .select('id, name, logo_url')
+            .in('id', clientIds),
           supabase
             .from('voice_agents')
             .select('*')
@@ -82,17 +87,20 @@ export function usePaginatedPublicJobs({
             .eq('is_outbound_enabled', false)
         ]);
         
-        // Create org lookup map
+        // Create lookup maps
         const orgMap = new Map(orgResult.data?.map(org => [org.id, org]) || []);
+        const clientMap = new Map(clientResult.data?.map(client => [client.id, client]) || []);
         
-        // Attach organization info to jobs and filter out ACME
+        // Attach organization and client info to jobs and filter out ACME
         const jobsWithOrgs = data
           .map(job => {
             const org = job.organization_id ? orgMap.get(job.organization_id) : null;
+            const client = job.client_id ? clientMap.get(job.client_id) : null;
             const voiceAgent = voiceAgentsResult.data?.find(va => va.organization_id === job.organization_id);
             return {
               ...job,
               organizations: org,
+              clients: client,
               voiceAgent
             };
           })
