@@ -4737,6 +4737,39 @@ export type Database = {
           },
         ]
       }
+      pii_access_logs: {
+        Row: {
+          access_reason: string | null
+          accessed_at: string
+          fields_accessed: string[]
+          id: string
+          ip_address: unknown
+          record_id: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          access_reason?: string | null
+          accessed_at?: string
+          fields_accessed: string[]
+          id?: string
+          ip_address?: unknown
+          record_id: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          access_reason?: string | null
+          accessed_at?: string
+          fields_accessed?: string[]
+          id?: string
+          ip_address?: unknown
+          record_id?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       platforms: {
         Row: {
           api_endpoint: string | null
