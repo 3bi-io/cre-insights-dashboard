@@ -193,12 +193,13 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     }
   }, [toast]);
 
-  const getSignedUrl = useCallback(async (agentId: string, context?: any): Promise<SignedUrlResponse> => {
+  const getSignedUrl = useCallback(async (agentId: string | null, context?: any): Promise<SignedUrlResponse> => {
     try {
-      logger.debug('Requesting signed URL', { agentId }, 'VoiceAgentConnection');
+      const useGlobalAgent = context?.useGlobalAgent || false;
+      logger.debug('Requesting signed URL', { agentId, useGlobalAgent }, 'VoiceAgentConnection');
       
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: { agentId, ...context }
+        body: { agentId, useGlobalAgent }
       });
 
       if (error) {
@@ -227,7 +228,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     }
   }, []);
 
-  const connect = useCallback(async (agentId: string, context?: any): Promise<void> => {
+  const connect = useCallback(async (agentId: string | null, context?: any): Promise<void> => {
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
