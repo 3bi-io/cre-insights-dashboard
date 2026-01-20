@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('meta-leads-cron');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,7 +85,7 @@ serve(async (req) => {
     }
     const formsJson = await formsResp.json();
     const forms: Array<{ id: string; name?: string; created_time?: string }> = formsJson.data || [];
-    console.log(`meta-leads-cron: found ${forms.length} forms`);
+    logger.info('Found leadgen forms', { formCount: forms.length });
 
     let inserted = 0;
     let skipped = 0;
@@ -95,7 +98,7 @@ serve(async (req) => {
         const leadsResp = await fetch(nextUrl);
         if (!leadsResp.ok) {
           const e = await leadsResp.json();
-          console.error('meta-leads-cron: leads fetch error', e);
+          logger.error('Leads fetch error', e, { formId: form.id });
           errors++;
           break;
         }
@@ -206,7 +209,7 @@ serve(async (req) => {
 
           const { error } = await supabase.from('applications').insert(insertPayload);
           if (error) {
-            console.error('meta-leads-cron: insert error', error);
+            logger.error('Application insert error', error, { email });
             errors++;
           } else {
             inserted++;
@@ -219,12 +222,13 @@ serve(async (req) => {
       }
     }
 
+    logger.info('Meta leads sync complete', { inserted, skipped, errors });
     return new Response(
       JSON.stringify({ success: true, inserted, skipped, errors }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {
-    console.error('meta-leads-cron error:', err);
+    logger.error('Meta leads cron error', err);
     return new Response(
       JSON.stringify({ success: false, error: err.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

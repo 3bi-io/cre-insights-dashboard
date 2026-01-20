@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createLogger } from "../_shared/logger.ts";
 import { EMAIL_CONFIG, getSender, getReplyTo, getEmailFooter, getEmailHeader, baseEmailStyles, contentStyles, buttonStyles } from "../_shared/email-config.ts";
 
+const logger = createLogger('send-invite-email');
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
@@ -111,14 +113,14 @@ serve(async (req: Request): Promise<Response> => {
       html: emailHtml,
     });
 
-    console.log(`[send-invite-email] Email sent to ${email}:`, emailResponse);
+    logger.info('Invitation email sent successfully', { email, emailId: emailResponse.data?.id });
 
     return new Response(
       JSON.stringify({ success: true, data: emailResponse }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
-    console.error("[send-invite-email] Error:", error);
+    logger.error('Error sending invitation email', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }

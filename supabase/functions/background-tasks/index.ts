@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('background-tasks');
 
 type TaskParameters = {
   data: any;
@@ -83,7 +86,7 @@ serve(async (req) => {
 
 // Background task processing
 async function processTaskInBackground(taskId: string, parameters: TaskParameters): Promise<void> {
-  console.log(`Starting background task: ${taskId}`);
+  logger.info('Starting background task', { taskId, taskType: parameters.task_type });
   
   try {
     // Update task status to processing
@@ -109,9 +112,9 @@ async function processTaskInBackground(taskId: string, parameters: TaskParameter
     await storeTaskResults(taskId, result);
     await updateTaskStatus(taskId, "completed");
     
-    console.log(`Task ${taskId} completed successfully`);
+    logger.info('Task completed successfully', { taskId });
   } catch (error) {
-    console.error(`Task ${taskId} failed:`, error);
+    logger.error('Task failed', error, { taskId });
     await updateTaskStatus(taskId, "failed", error.message);
   }
 }

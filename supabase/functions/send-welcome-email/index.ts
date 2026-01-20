@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createLogger } from "../_shared/logger.ts";
 import { 
   EMAIL_CONFIG, 
   getSender, 
@@ -11,6 +12,7 @@ import {
   buttonStyles
 } from "../_shared/email-config.ts";
 
+const logger = createLogger('send-welcome-email');
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
@@ -116,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
       html: htmlContent,
     });
 
-    console.log(`Welcome email sent successfully to ${to}:`, emailResponse);
+    logger.info('Welcome email sent successfully', { to, emailId: emailResponse.data?.id });
 
     return new Response(
       JSON.stringify({ success: true, data: emailResponse }),
@@ -126,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
   } catch (error: any) {
-    console.error("Error sending welcome email:", error);
+    logger.error('Error sending welcome email', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
