@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Filter } from 'lucide-react';
@@ -11,7 +11,20 @@ interface RoutesSearchProps {
 }
 
 const RoutesSearch = ({ searchTerm, onSearchChange, routesCount }: RoutesSearchProps) => {
+  // Local state for immediate visual feedback
+  const [inputValue, setInputValue] = useState(searchTerm);
   const debouncedSetSearchTerm = useDebouncedCallback(onSearchChange, 300);
+
+  // Sync local state when parent clears/changes the value externally
+  useEffect(() => {
+    setInputValue(searchTerm);
+  }, [searchTerm]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value); // Immediate visual update
+    debouncedSetSearchTerm(value); // Debounced filter update
+  };
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -19,8 +32,8 @@ const RoutesSearch = ({ searchTerm, onSearchChange, routesCount }: RoutesSearchP
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
           placeholder="Search by origin or destination city/state..."
-          value={searchTerm}
-          onChange={(e) => debouncedSetSearchTerm(e.target.value)}
+          value={inputValue}
+          onChange={handleChange}
           className="pl-10"
         />
       </div>
