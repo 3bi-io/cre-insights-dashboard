@@ -40,9 +40,7 @@ interface JobDetails {
     name: string;
   } | null;
   voiceAgent?: {
-    id: string;
-    agent_id: string;
-    is_active: boolean;
+    global: boolean;
   } | null;
 }
 
@@ -77,19 +75,8 @@ export const useJobDetails = (jobId: string | undefined) => {
         organizations = orgData;
       }
 
-      // Fetch voice agent for this organization
-      let voiceAgent = null;
-      if (data.organization_id) {
-        const { data: vaData } = await supabase
-          .from('voice_agents')
-          .select('id, agent_id, is_active')
-          .eq('organization_id', data.organization_id)
-          .eq('is_active', true)
-          .eq('is_outbound_enabled', false)
-          .maybeSingle();
-        
-        voiceAgent = vaData;
-      }
+      // Global voice agent available for all jobs
+      const voiceAgent = { global: true };
 
       return { ...data, organizations, voiceAgent } as unknown as JobDetails;
     },

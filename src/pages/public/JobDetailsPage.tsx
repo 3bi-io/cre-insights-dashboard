@@ -120,15 +120,7 @@ const JobDetailsPage: React.FC = () => {
   };
 
   const handleVoiceApply = () => {
-    if (!job.voiceAgent?.agent_id) {
-      toast({
-        title: "Voice Agent Unavailable",
-        description: "Voice applications are not available for this job.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+    // Global voice agent - always available for all jobs
     startVoiceApplication({
       jobId: job.id,
       jobTitle: displayTitle,
@@ -136,7 +128,6 @@ const JobDetailsPage: React.FC = () => {
       company: companyName,
       location: displayLocation || 'Various locations',
       salary: salary || 'Competitive salary',
-      voiceAgentId: job.voiceAgent.agent_id,
     });
   };
 
@@ -310,18 +301,16 @@ const JobDetailsPage: React.FC = () => {
                     <ExternalLink className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
-                {job.voiceAgent && (
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    onClick={handleVoiceApply}
-                    disabled={isConnected}
-                    className="flex-1"
-                  >
-                    <Mic className="w-4 h-4 mr-2" />
-                    Apply with Voice
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={handleVoiceApply}
+                  disabled={isConnected}
+                  className="flex-1"
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  Apply with Voice
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -351,7 +340,7 @@ const JobDetailsPage: React.FC = () => {
           onVoiceApply={handleVoiceApply}
           isVoiceConnected={isConnected}
           jobTitle={displayTitle}
-          showVoiceButton={!!job.voiceAgent}
+          showVoiceButton={true}
         />
 
         {/* Voice Application Panel with Transcripts */}

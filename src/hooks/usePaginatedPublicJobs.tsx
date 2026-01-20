@@ -64,72 +64,49 @@ export function usePaginatedPublicJobs({
       const { data, error, count } = await query;
       if (error) throw error;
 
-      // Fetch organization, client, and voice agent info securely via public views
-      if (data && data.length > 0) {
-        const orgIds = [...new Set(data.map(job => job.organization_id).filter(Boolean))] as string[];
-        const clientIds = [...new Set(data.map(job => job.client_id).filter(Boolean))] as string[];
-        
-        // Fetch organization data, client data, and voice agents in parallel
-        const [orgResult, clientResult, voiceAgentsResult] = await Promise.all([
-          supabase
-            .from('public_organization_info')
-            .select('id, name, slug, logo_url')
-            .in('id', orgIds),
-          supabase
-            .from('public_client_info')
-            .select('id, name, logo_url')
-            .in('id', clientIds),
-          supabase
-            .from('voice_agents')
-            .select('*')
-            .in('organization_id', orgIds)
-            .eq('is_active', true)
-            .eq('is_outbound_enabled', false)
-        ]);
-        
-        // Create lookup maps
-        const orgMap = new Map(orgResult.data?.map(org => [org.id, org]) || []);
-        const clientMap = new Map(clientResult.data?.map(client => [client.id, client]) || []);
-        
-        // Attach organization and client info to jobs and filter out ACME
-        const jobsWithOrgs = data
-          .map(job => {
-            const org = job.organization_id ? orgMap.get(job.organization_id) : null;
-            const client = job.client_id ? clientMap.get(job.client_id) : null;
-            
-            // Voice agent matching priority:
-            // 1. Client-specific agent (matches job's client_id)
-            // 2. Organization-level agent (fallback if no client-specific agent)
-            let voiceAgent = null;
-            if (voiceAgentsResult.data) {
-              // First try to find a client-specific agent
-              if (job.client_id) {
-                voiceAgent = voiceAgentsResult.data.find(
-                  va => va.client_id === job.client_id
-                );
-              }
-              // Fallback to organization-level agent (one without client_id)
-              if (!voiceAgent && job.organization_id) {
-                voiceAgent = voiceAgentsResult.data.find(
-                  va => va.organization_id === job.organization_id && !va.client_id
-                );
-              }
-            }
-            
-            return {
-              ...job,
-              organizations: org,
-              clients: client,
-              voiceAgent
-            };
-          })
-          .filter(job => {
-            const org = job.organizations;
-            return !org || org.slug !== 'acme';
-          });
-        
-        return { jobs: jobsWithOrgs, count: count || 0 };
-      }
+        // Fetch organization and client info securely via public views
+        // Note: Voice agent matching removed - using global agent for all jobs
+        if (data && data.length > 0) {
+          const orgIds = [...new Set(data.map(job => job.organization_id).filter(Boolean))] as string[];
+          const clientIds = [...new Set(data.map(job => job.client_id).filter(Boolean))] as string[];
+          
+          // Fetch organization data and client data in parallel
+          const [orgResult, clientResult] = await Promise.all([
+            supabase
+              .from('public_organization_info')
+              .select('id, name, slug, logo_url')
+              .in('id', orgIds),
+            supabase
+              .from('public_client_info')
+              .select('id, name, logo_url')
+              .in('id', clientIds)
+          ]);
+          
+          // Create lookup maps
+          const orgMap = new Map(orgResult.data?.map(org => [org.id, org]) || []);
+          const clientMap = new Map(clientResult.data?.map(client => [client.id, client]) || []);
+          
+          // Attach organization and client info to jobs and filter out ACME
+          // All jobs now have voice apply enabled via global agent
+          const jobsWithOrgs = data
+            .map(job => {
+              const org = job.organization_id ? orgMap.get(job.organization_id) : null;
+              const client = job.client_id ? clientMap.get(job.client_id) : null;
+              
+              return {
+                ...job,
+                organizations: org,
+                clients: client,
+                voiceAgent: { global: true } // Global agent available for all jobs
+              };
+            })
+            .filter(job => {
+              const org = job.organizations;
+              return !org || org.slug !== 'acme';
+            });
+          
+          return { jobs: jobsWithOrgs, count: count || 0 };
+        }
 
       return { jobs: data || [], count: count || 0 };
     },

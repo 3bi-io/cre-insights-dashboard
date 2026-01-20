@@ -36,25 +36,42 @@ Deno.serve(async (req) => {
       return errorResponse('Too many requests. Please try again later.', 429, undefined, origin ?? undefined);
     }
 
-    const { agentId } = await req.json();
+    const { agentId, useGlobalAgent } = await req.json();
 
-    if (!agentId) {
-      logger.warn('Missing agent ID in request');
-      return validationErrorResponse('Agent ID is required', origin ?? undefined);
-    }
+    // Determine effective agent ID
+    let effectiveAgentId: string;
 
-    // Verify agent exists and is active
-    const supabase = getServiceClient();
-    const { data: agent, error: agentError } = await supabase
-      .from('voice_agents')
-      .select('organization_id, is_active')
-      .eq('agent_id', agentId)
-      .eq('is_active', true)
-      .single();
+    if (useGlobalAgent) {
+      // Global agent mode - use system-configured agent for all jobs
+      const globalAgentId = Deno.env.get('GLOBAL_VOICE_AGENT_ID');
+      if (!globalAgentId) {
+        logger.error('Global voice agent not configured');
+        return errorResponse('Global voice agent not configured', 500, undefined, origin ?? undefined);
+      }
+      effectiveAgentId = globalAgentId;
+      logger.info('Using global voice agent', { agentId: effectiveAgentId.substring(0, 8) + '...' });
+    } else {
+      // Legacy mode - require specific agent ID
+      if (!agentId) {
+        logger.warn('Missing agent ID in request');
+        return validationErrorResponse('Agent ID is required', origin ?? undefined);
+      }
 
-    if (agentError || !agent) {
-      logger.warn('Invalid or inactive agent requested', { agentId: agentId.substring(0, 8) + '...' });
-      return errorResponse('Voice agent not found or inactive', 404, undefined, origin ?? undefined);
+      // Verify agent exists and is active
+      const supabase = getServiceClient();
+      const { data: agent, error: agentError } = await supabase
+        .from('voice_agents')
+        .select('organization_id, is_active')
+        .eq('agent_id', agentId)
+        .eq('is_active', true)
+        .single();
+
+      if (agentError || !agent) {
+        logger.warn('Invalid or inactive agent requested', { agentId: agentId.substring(0, 8) + '...' });
+        return errorResponse('Voice agent not found or inactive', 404, undefined, origin ?? undefined);
+      }
+      
+      effectiveAgentId = agentId;
     }
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
@@ -64,12 +81,12 @@ Deno.serve(async (req) => {
       return errorResponse('ElevenLabs API key not configured', 500, undefined, origin ?? undefined);
     }
 
-    logger.info('Requesting conversation token', { agentId: agentId.substring(0, 8) + '...' });
+    logger.info('Requesting conversation token', { agentId: effectiveAgentId.substring(0, 8) + '...' });
 
     // Create AbortController with 10 second timeout to prevent hanging
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      logger.warn('Request timeout - aborting after 10s', { agentId: agentId.substring(0, 8) + '...' });
+      logger.warn('Request timeout - aborting after 10s', { agentId: effectiveAgentId.substring(0, 8) + '...' });
       controller.abort();
     }, 10000);
 
@@ -77,7 +94,7 @@ Deno.serve(async (req) => {
       // Use signed URL endpoint - provides authenticated WebSocket URL
       // This is the reliable approach that works with the @11labs/react SDK
       const response = await fetch(
-        `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
+        `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${effectiveAgentId}`,
         {
           method: 'GET',
           headers: {
@@ -104,7 +121,7 @@ Deno.serve(async (req) => {
       const duration = Date.now() - startTime;
       
       logger.info('Signed URL obtained', { 
-        agentId, 
+        agentId: effectiveAgentId, 
         durationMs: duration,
         hasSignedUrl: !!data.signed_url 
       });
@@ -123,7 +140,7 @@ Deno.serve(async (req) => {
       clearTimeout(timeoutId);
       
       if (fetchError.name === 'AbortError') {
-        logger.error('Request timed out', { agentId, durationMs: Date.now() - startTime });
+        logger.error('Request timed out', { agentId: effectiveAgentId, durationMs: Date.now() - startTime });
         return errorResponse(
           'Connection to ElevenLabs timed out. Please try again.',
           504,

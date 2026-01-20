@@ -45,22 +45,13 @@ export const useElevenLabsVoice = () => {
     },
   });
 
-  const startVoiceApplication = async (job: JobContext & { voiceAgentId?: string }) => {
+  const startVoiceApplication = async (job: JobContext) => {
     try {
-      if (!job.voiceAgentId) {
-        toast({
-          title: "Voice Agent Not Available",
-          description: "This organization hasn't configured a voice agent yet.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       const jobContext = {
         jobId: job.jobId,
         jobTitle: job.jobTitle,
         jobDescription: job.jobDescription || `This is a ${job.jobTitle} position`,
-        company: job.company || 'C.R. England',
+        company: job.company || 'Company',
         location: job.location || 'Various locations',
         salary: job.salary || 'Competitive salary',
         // Interview agent fields
@@ -71,7 +62,8 @@ export const useElevenLabsVoice = () => {
 
       setSelectedJob(jobContext);
       
-      await connect(job.voiceAgentId!, { jobContext });
+      // Use global agent for all voice applications
+      await connect(null, { jobContext, useGlobalAgent: true });
       
     } catch (error: any) {
       toast({
