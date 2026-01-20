@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('elevenlabs-conversations');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -65,7 +68,7 @@ serve(async (req) => {
           const errorText = await response.text();
           // Handle agent not found gracefully
           if (response.status === 404 || errorText.includes('document_not_found')) {
-            console.warn(`Agent ${agentId} not found in ElevenLabs - may have been deleted`);
+            logger.warn('Agent not found in ElevenLabs', { agentId });
             return new Response(
               JSON.stringify({ 
                 success: false, 
@@ -112,13 +115,13 @@ serve(async (req) => {
             });
           
           if (upsertError) {
-            console.error(`Failed to upsert conversation ${conv.conversation_id}:`, upsertError);
+            logger.error('Failed to upsert conversation', upsertError, { conversationId: conv.conversation_id });
           } else {
             syncedCount++;
           }
         }
 
-        console.log(`Synced ${syncedCount} conversations for agent ${agentId}`);
+        logger.info('Synced conversations', { agentId, syncedCount });
 
         return new Response(
           JSON.stringify({ 

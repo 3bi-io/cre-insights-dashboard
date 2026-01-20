@@ -3,6 +3,10 @@
  * Provides geographic location lookup with in-memory caching
  */
 
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('geo-lookup');
+
 export interface GeoLocation {
   ip: string;
   city: string;
@@ -82,14 +86,14 @@ export async function getGeoLocation(ip: string): Promise<GeoLocation | null> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`Geo lookup failed for ${ip}: HTTP ${response.status}`);
+      logger.warn('Geo lookup HTTP error', { ip, status: response.status });
       return null;
     }
 
     const data = await response.json();
 
     if (data.status !== 'success') {
-      console.warn(`Geo lookup failed for ${ip}: ${data.message}`);
+      logger.warn('Geo lookup API error', { ip, message: data.message });
       return null;
     }
 
@@ -115,7 +119,7 @@ export async function getGeoLocation(ip: string): Promise<GeoLocation | null> {
   } catch (error) {
     // On error, fail silently - geo lookup is non-critical
     const isTimeout = (error as Error).name === 'AbortError';
-    console.warn(`Geo lookup error for ${ip}: ${isTimeout ? 'timeout' : (error as Error).message}`);
+    logger.warn('Geo lookup error', { ip, error: isTimeout ? 'timeout' : (error as Error).message });
     return null;
   }
 }

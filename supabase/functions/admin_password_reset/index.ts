@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('admin_password_reset');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log("admin_password_reset: start");
+    logger.info('Password reset request started');
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -98,7 +101,7 @@ serve(async (req) => {
           }
         }
       } catch (e) {
-        console.warn("admin_password_reset: listUsers failed", e);
+        logger.warn('listUsers lookup failed', { error: (e as Error).message });
       }
 
       // Fallback: Look up user id via profiles table
@@ -131,12 +134,13 @@ serve(async (req) => {
       });
     }
 
+    logger.info('Password reset successful', { userId });
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (e) {
-    console.error("admin_password_reset: unexpected error", e);
+    logger.error('Unexpected error in password reset', e);
     return new Response(JSON.stringify({ error: "Unexpected error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
