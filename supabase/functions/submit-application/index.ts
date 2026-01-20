@@ -13,6 +13,45 @@ import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
 
 const logger = createLogger('submit-application');
 
+// ============================================================
+// KNOWN INTEGRATION PARTNERS - Mirrored from inbound-applications
+// Maps domain signatures to official source names
+// ============================================================
+const INTEGRATION_SIGNATURES: Record<string, { source: string; requiresScreening: boolean }> = {
+  'cdljobcast.com': { source: 'CDL Job Cast', requiresScreening: false },
+  'cdljobcast': { source: 'CDL Job Cast', requiresScreening: false },
+  'zapier.com': { source: 'Zapier Integration', requiresScreening: false },
+  'hooks.zapier.com': { source: 'Zapier Integration', requiresScreening: false },
+  'indeed.com': { source: 'Indeed', requiresScreening: false },
+  'make.com': { source: 'Make Integration', requiresScreening: false },
+  'integromat.com': { source: 'Make Integration', requiresScreening: false },
+};
+
+// Source-specific organization enforcement
+// These sources MUST route to specific organizations regardless of other identifiers
+const SOURCE_ORGANIZATION_OVERRIDES: Record<string, string> = {
+  'CDL Job Cast': '84214b48-7b51-45bc-ad7f-723bcf50466c', // Hayes Recruiting Solutions
+};
+
+/**
+ * Detect integration source from request headers
+ */
+const detectIntegrationSource = (req: Request): string => {
+  const origin = req.headers.get('origin') || '';
+  const referer = req.headers.get('referer') || '';
+  const userAgent = req.headers.get('user-agent') || '';
+  const combined = `${origin} ${referer} ${userAgent}`.toLowerCase();
+  
+  for (const [domain, config] of Object.entries(INTEGRATION_SIGNATURES)) {
+    if (combined.includes(domain.toLowerCase())) {
+      logger.info('Detected integration source from headers', { source: config.source, matchedDomain: domain });
+      return config.source;
+    }
+  }
+  
+  return 'Direct Application';
+};
+
 // Zod validation schema for application submissions
 const ApplicationSubmissionSchema = z.object({
   // Required fields
@@ -239,13 +278,29 @@ async function triggerSourceWebhooks(
 
 /**
  * Resolve organization ID and job details from various sources
- * Priority: job_listing_id -> org_slug -> fallback to CR England
+ * Priority: source_override -> job_listing_id -> org_slug -> fallback to CR England
  */
 async function resolveOrganizationAndJob(
   supabase: ReturnType<typeof createClient>,
   jobListingId?: string,
-  orgSlug?: string
+  orgSlug?: string,
+  detectedSource?: string
 ): Promise<{ organizationId: string; organizationName: string; externalJobId: string | null; jobTitle: string | null }> {
+  // Priority 0: Source-based organization override (e.g., CDL Job Cast → Hayes)
+  if (detectedSource && SOURCE_ORGANIZATION_OVERRIDES[detectedSource]) {
+    const overrideOrgId = SOURCE_ORGANIZATION_OVERRIDES[detectedSource];
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('id', overrideOrgId)
+      .single();
+    
+    if (org) {
+      logger.info('Resolved org from source override', { source: detectedSource, org_name: org.name });
+      return { organizationId: org.id, organizationName: org.name, externalJobId: null, jobTitle: null };
+    }
+  }
+
   // Priority 1: Get org from job_listing_id
   if (jobListingId) {
     const { data: jobListing } = await supabase
@@ -443,11 +498,16 @@ Deno.serve(async (req) => {
     
     const applicantEmail = (formData.email || formData.applicant_email || '').toLowerCase();
 
-    // Resolve organization and job details dynamically
+    // Detect integration source from request headers (CDL Job Cast, Zapier, etc.)
+    const detectedSource = detectIntegrationSource(req);
+    logger.info('Integration source detection', { detectedSource });
+
+    // Resolve organization and job details dynamically (source-based routing takes priority)
     const { organizationId, organizationName, externalJobId, jobTitle } = await resolveOrganizationAndJob(
       supabase,
       formData.job_listing_id,
-      formData.org_slug
+      formData.org_slug,
+      detectedSource
     );
 
     // Check for duplicate applications within 30 days
@@ -568,7 +628,7 @@ Deno.serve(async (req) => {
       adset_id: formData.adset_id || null,
       referral_source: formData.referral_source || formData.utm_source || null,
       how_did_you_hear: formData.utm_medium || formData.utm_campaign || null,
-      source: 'Direct Application',
+      source: detectedSource,
       status: 'pending',
       applied_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -591,9 +651,9 @@ Deno.serve(async (req) => {
       status: data.status 
     });
 
-    // Trigger webhooks for Direct Application source (non-blocking)
+    // Trigger webhooks for the detected source (non-blocking)
     try {
-      await triggerSourceWebhooks(supabase, data.id, 'Direct Application');
+      await triggerSourceWebhooks(supabase, data.id, detectedSource);
     } catch (webhookError) {
       logger.error('Webhook trigger failed (non-blocking)', webhookError as Error);
     }
