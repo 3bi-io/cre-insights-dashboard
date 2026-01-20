@@ -13,71 +13,26 @@ import { cn } from '@/lib/utils';
 interface PublicClient {
   id: string;
   name: string;
-  company: string | null;
   logo_url: string | null;
   city: string | null;
   state: string | null;
-  status: string;
-  organization_id: string | null;
-  job_count?: number;
+  job_count: number;
 }
 
 const ClientsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all active clients with job counts
+  // Fetch all active clients with job counts from public view
   const { data: clients, isLoading } = useQuery({
     queryKey: ['public-clients-grid'],
     queryFn: async () => {
-      // Get the ACME organization ID to exclude (demo data)
-      const { data: acmeOrg } = await supabase
-        .from('organizations')
-        .select('id')
-        .eq('slug', 'acme')
-        .single();
-      
-      const acmeOrgId = acmeOrg?.id;
-      
-      // Fetch active clients
-      let query = supabase
-        .from('clients')
-        .select('id, name, company, logo_url, city, state, status, organization_id')
-        .eq('status', 'active')
+      const { data, error } = await supabase
+        .from('public_client_info')
+        .select('id, name, logo_url, city, state, job_count')
         .order('name');
       
-      if (acmeOrgId) {
-        query = query.neq('organization_id', acmeOrgId);
-      }
-      
-      const { data: clientsData, error } = await query;
-      
       if (error) throw error;
-      
-      // Get job counts for each client
-      const clientIds = clientsData?.map(c => c.id) || [];
-      const { data: jobCounts } = await supabase
-        .from('job_listings')
-        .select('client_id')
-        .eq('status', 'active')
-        .in('client_id', clientIds);
-      
-      // Count jobs per client
-      const jobCountMap: Record<string, number> = {};
-      jobCounts?.forEach(job => {
-        if (job.client_id) {
-          jobCountMap[job.client_id] = (jobCountMap[job.client_id] || 0) + 1;
-        }
-      });
-      
-      // Add job counts to clients and filter to only those with jobs
-      const clientsWithJobs = clientsData
-        ?.map(client => ({
-          ...client,
-          job_count: jobCountMap[client.id] || 0
-        }))
-        .filter(client => client.job_count > 0) || [];
-      
-      return clientsWithJobs as PublicClient[];
+      return (data || []) as PublicClient[];
     },
   });
 
@@ -89,7 +44,6 @@ const ClientsPage = () => {
     const search = searchTerm.toLowerCase();
     return clients.filter(client =>
       client.name.toLowerCase().includes(search) ||
-      client.company?.toLowerCase().includes(search) ||
       client.city?.toLowerCase().includes(search) ||
       client.state?.toLowerCase().includes(search)
     );

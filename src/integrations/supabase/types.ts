@@ -6486,9 +6486,12 @@ export type Database = {
       }
       public_client_info: {
         Row: {
+          city: string | null
           id: string | null
+          job_count: number | null
           logo_url: string | null
           name: string | null
+          state: string | null
         }
         Relationships: []
       }
