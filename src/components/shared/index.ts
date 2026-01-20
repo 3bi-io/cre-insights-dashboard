@@ -3,3 +3,6 @@ export { EmptyStateMessage } from './EmptyStateMessage';
 export { ConfirmationDialog } from './ConfirmationDialog';
 export { LoadingButton } from './LoadingButton';
 export { SkipLinks } from './SkipLinks';
+export { DataTable } from './DataTable';
+export { StatefulButton } from './StatefulButton';
+export { ResponsiveDialog } from './ResponsiveDialog';

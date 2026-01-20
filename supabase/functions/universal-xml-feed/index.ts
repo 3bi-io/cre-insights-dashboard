@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('universal-xml-feed');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,7 +70,7 @@ Deno.serve(async (req) => {
   const format = url.searchParams.get('format') || 'generic';
   const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
 
-  console.log('Universal XML Feed Request:', { organizationId, clientId, format });
+  logger.info('Feed request', { organizationId, clientId, format });
 
   try {
     // Validate required parameters
@@ -129,7 +132,7 @@ Deno.serve(async (req) => {
       .gte('created_at', oneHourAgo);
 
     if ((recentRequests || 0) >= 1000) {
-      console.log('Rate limit exceeded for IP:', clientIP);
+      logger.warn('Rate limit exceeded', { ip: clientIP });
       return new Response(
         generateErrorXML('Rate limit exceeded. Maximum 1000 requests per hour.'),
         {
@@ -163,7 +166,7 @@ Deno.serve(async (req) => {
     const { data: jobs, error } = await query;
 
     if (error) {
-      console.error('Database error:', error);
+      logger.error('Database error', error);
       return new Response(
         generateErrorXML('Failed to fetch job listings'),
         {
@@ -270,11 +273,7 @@ Deno.serve(async (req) => {
       response_time_ms: responseTime,
     });
 
-    console.log('Feed generated successfully:', {
-      format,
-      jobCount: transformedJobs.length,
-      responseTime
-    });
+    logger.info('Feed generated successfully', { format, jobCount: transformedJobs.length, responseTime });
 
     return new Response(xmlContent, {
       headers: {
@@ -285,7 +284,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error generating feed:', error);
+    logger.error('Error generating feed', error);
     return new Response(
       generateErrorXML('Internal server error'),
       {

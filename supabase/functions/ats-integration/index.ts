@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
+import { createLogger } from '../_shared/logger.ts';
 import type { 
   ATSRequest, 
   ATSResponse, 
@@ -9,6 +10,8 @@ import type {
   FieldMapping,
   ApplicationData 
 } from '../_shared/ats-adapters/types.ts';
+
+const logger = createLogger('ats-integration');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,7 +48,7 @@ serve(async (req) => {
     const request: ATSRequest = await req.json();
     const { action, connection_id, application_id, application_data, options } = request;
 
-    console.log(`[ats-integration] Action: ${action}, Connection: ${connection_id}`);
+    logger.info(`Action: ${action}`, { connectionId: connection_id });
 
     // Validate required fields
     if (!connection_id) {
@@ -66,7 +69,7 @@ serve(async (req) => {
       .single();
 
     if (connError || !connection) {
-      console.error('[ats-integration] Connection not found:', connError);
+      logger.error('Connection not found', connError);
       return new Response(
         JSON.stringify({ success: false, error: 'ATS connection not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -205,7 +208,7 @@ serve(async (req) => {
     }
 
     const totalDuration = Date.now() - startTime;
-    console.log(`[ats-integration] Completed: ${action}, success: ${result.success}, duration: ${totalDuration}ms`);
+    logger.info(`Completed: ${action}`, { success: result.success, duration: totalDuration });
 
     return new Response(
       JSON.stringify({ ...result, total_duration_ms: totalDuration }),
@@ -216,7 +219,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[ats-integration] Error:', error);
+    logger.error('Error processing request', error);
     
     return new Response(
       JSON.stringify({
