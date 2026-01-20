@@ -1,5 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('generate-logo');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -160,7 +163,7 @@ Style: Ultra-premium tech marketing. Dark, sophisticated, modern. Like Vercel, L
       throw new Error('Invalid logo type. Use: icon, horizontal, horizontal-white, og-image, premium-soundwave, premium-icon, or premium-og');
     }
 
-    console.log(`Generating ${type} logo...`);
+    logger.info(`Generating ${type} logo...`);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -182,12 +185,12 @@ Style: Ultra-premium tech marketing. Dark, sophisticated, modern. Like Vercel, L
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI Gateway error:', errorText);
+      logger.error('AI Gateway error', { status: response.status, error: errorText });
       throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('AI response received');
+    logger.info('AI response received');
 
     const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     const textResponse = data.choices?.[0]?.message?.content;
@@ -208,7 +211,7 @@ Style: Ultra-premium tech marketing. Dark, sophisticated, modern. Like Vercel, L
       }
     );
   } catch (error) {
-    console.error('Logo generation error:', error);
+    logger.error('Logo generation error', error);
     return new Response(
       JSON.stringify({
         success: false,

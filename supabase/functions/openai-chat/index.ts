@@ -2,6 +2,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('openai-chat');
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const corsHeaders = {
@@ -23,20 +26,20 @@ interface ChatRequest {
 
 const getAnalyticsData = async () => {
   try {
-    console.log('Fetching analytics data for context...');
+    logger.info('Fetching analytics data for context...');
     
     const response = await supabase.functions.invoke('chatbot-analytics', {
       body: { query: 'general overview' }
     });
 
     if (response.error) {
-      console.error('Analytics fetch error:', response.error);
+      logger.error('Analytics fetch error', response.error);
       return null;
     }
 
     return response.data;
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    logger.error('Error fetching analytics', error);
     return null;
   }
 };
@@ -61,14 +64,14 @@ serve(async (req) => {
   try {
     const { message, model = 'gpt-4.1-2025-04-14', systemPrompt, includeAnalytics }: ChatRequest = await req.json();
 
-    console.log('Received chat request:', { message, model, includeAnalytics });
+    logger.info('Received chat request', { message: message.substring(0, 100), model, includeAnalytics });
 
     let contextData = '';
     const isAnalyticsQuery = includeAnalytics || detectAnalyticsQuery(message);
 
     // If it's an analytics query, get data from our analytics function
     if (isAnalyticsQuery) {
-      console.log('Detected analytics query, fetching data...');
+      logger.info('Detected analytics query, fetching data...');
       try {
         const analyticsResponse = await supabase.functions.invoke('chatbot-analytics', {
           body: { query: message }
@@ -92,7 +95,7 @@ serve(async (req) => {
           contextData = `\n\nCurrent System Analytics Context:\n${JSON.stringify(analytics, null, 2)}`;
         }
       } catch (analyticsError) {
-        console.error('Analytics function error:', analyticsError);
+        logger.error('Analytics function error', analyticsError);
         // Continue with OpenAI if analytics fails
       }
     }
@@ -123,7 +126,7 @@ If asked about data you don't have access to, explain what information you'd nee
       { role: 'user', content: message }
     ];
 
-    console.log('Calling OpenAI with model:', model);
+    logger.info('Calling OpenAI', { model });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -140,7 +143,7 @@ If asked about data you don't have access to, explain what information you'd nee
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
+      logger.error('OpenAI API error', { status: response.status, error: errorText });
       throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
@@ -151,7 +154,7 @@ If asked about data you don't have access to, explain what information you'd nee
       throw new Error('No response generated from OpenAI');
     }
 
-    console.log('OpenAI response generated successfully');
+    logger.info('OpenAI response generated successfully');
 
     return new Response(JSON.stringify({ 
       generatedText,
@@ -162,7 +165,7 @@ If asked about data you don't have access to, explain what information you'd nee
     });
 
   } catch (error) {
-    console.error('Error in openai-chat function:', error);
+    logger.error('Error in openai-chat function', error);
     
     // Provide a helpful fallback response
     const fallbackResponse = "I'm experiencing technical difficulties right now. However, I'm here to help you analyze your recruitment marketing data, track application metrics, monitor spending across platforms, and provide insights on job performance. Please try your question again in a moment, or let me know what specific data you'd like to explore.";
