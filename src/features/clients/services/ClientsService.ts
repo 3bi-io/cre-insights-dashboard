@@ -35,12 +35,17 @@ const clientIdSchema = z.string().uuid('Invalid client ID');
 export class ClientsService {
   constructor() {}
 
-  async getClients(filters?: ClientFilters): Promise<{ data: Client[]; error: string | null }> {
+  async getClients(filters?: ClientFilters, organizationId?: string): Promise<{ data: Client[]; error: string | null }> {
     try {
       let query = supabase
         .from('clients')
         .select('*')
         .order('name');
+
+      // Apply organization filter (defense in depth - RLS also enforces this)
+      if (organizationId) {
+        query = query.eq('organization_id', organizationId);
+      }
 
       // Apply search filter
       if (filters?.search) {

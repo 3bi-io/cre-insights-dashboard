@@ -20,9 +20,9 @@ export function useClientsService(options?: {
   const { userRole, organization } = useAuth();
 
   const { data: clients, isLoading: loading, error, refetch: refresh } = useQuery({
-    queryKey: ['clients'],
+    queryKey: ['clients', organization?.id],
     queryFn: async () => {
-      const result = await clientsService.getClients();
+      const result = await clientsService.getClients(undefined, organization?.id);
       if (result.error) throw new Error(result.error);
       return result.data;
     },
@@ -65,7 +65,7 @@ export function useClientsService(options?: {
     createClient,
     updateClient,
     deleteClient,
-    getClientsBySearch: (filters: ClientFilters) => clientsService.getClients(filters),
+    getClientsBySearch: (filters: ClientFilters) => clientsService.getClients(filters, organization?.id),
     getClientById: (id: string) => clientsService.getClientById(id),
     refresh,
     isCreating: createMutation.isPending,
