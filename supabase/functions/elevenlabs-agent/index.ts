@@ -6,7 +6,8 @@
 import { createLogger } from '../_shared/logger.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { checkRateLimitWithGeo, extractIPFromRequest } from '../_shared/rate-limiter.ts';
+import { checkRateLimitWithGeo } from '../_shared/rate-limiter.ts';
+import { extractIPFromRequest } from '../_shared/geo-lookup.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('elevenlabs-agent');
