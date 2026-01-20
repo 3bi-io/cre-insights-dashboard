@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
@@ -10,6 +10,7 @@ interface SelectionButtonProps {
   isSelected: boolean;
   onSelect: (value: string) => void;
   className?: string;
+  name?: string;
 }
 
 export const SelectionButton = ({
@@ -20,10 +21,17 @@ export const SelectionButton = ({
   isSelected,
   onSelect,
   className,
+  name,
 }: SelectionButtonProps) => {
+  const buttonId = name ? `${name}-${value}` : undefined;
+  
   return (
     <button
       type="button"
+      id={buttonId}
+      name={name}
+      role="radio"
+      aria-checked={isSelected}
       onClick={() => onSelect(value)}
       className={cn(
         "relative w-full p-4 rounded-xl border-2 text-left transition-all duration-200 touch-manipulation",
@@ -80,6 +88,8 @@ interface SelectionButtonGroupProps {
   onChange: (value: string) => void;
   columns?: 1 | 2 | 3;
   className?: string;
+  name?: string;
+  label?: string;
 }
 
 export const SelectionButtonGroup = ({
@@ -88,9 +98,16 @@ export const SelectionButtonGroup = ({
   onChange,
   columns = 1,
   className,
+  name,
+  label,
 }: SelectionButtonGroupProps) => {
+  const generatedId = useId();
+  const groupName = name || `selection-${generatedId}`;
+  
   return (
     <div 
+      role="radiogroup"
+      aria-label={label}
       className={cn(
         "grid gap-3",
         columns === 1 && "grid-cols-1",
@@ -103,6 +120,7 @@ export const SelectionButtonGroup = ({
         <SelectionButton
           key={option.value}
           {...option}
+          name={groupName}
           isSelected={value === option.value}
           onSelect={onChange}
         />
