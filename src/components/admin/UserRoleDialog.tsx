@@ -32,7 +32,7 @@ interface UserRoleDialogProps {
   onClose: () => void;
 }
 
-type UserRole = 'user' | 'admin' | 'super_admin' | 'moderator';
+type UserRole = 'user' | 'admin' | 'super_admin' | 'moderator' | 'recruiter';
 
 export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
   user,

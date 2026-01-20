@@ -6705,10 +6705,7 @@ export type Database = {
           zip: string
         }[]
       }
-      get_current_user_role: {
-        Args: never
-        Returns: Database["public"]["Enums"]["app_role"]
-      }
+      get_current_user_role: { Args: never; Returns: string }
       get_dashboard_metrics: { Args: never; Returns: Json }
       get_org_id_by_slug: { Args: { _slug: string }; Returns: string }
       get_organization_applications: {
@@ -6798,6 +6795,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_role_or_higher: {
+        Args: { _min_role: string; _user_id: string }
+        Returns: boolean
+      }
       increment_ats_sync_stats: {
         Args: { p_connection_id: string; p_success: boolean }
         Returns: undefined
@@ -6835,7 +6836,7 @@ export type Database = {
       validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "super_admin"
+      app_role: "admin" | "moderator" | "recruiter" | "user" | "super_admin"
       screening_request_status:
         | "pending"
         | "sent"
@@ -6973,7 +6974,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "super_admin"],
+      app_role: ["admin", "moderator", "recruiter", "user", "super_admin"],
       screening_request_status: [
         "pending",
         "sent",

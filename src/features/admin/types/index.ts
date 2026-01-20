@@ -2,7 +2,7 @@
 import type { Organization, User } from '@/types/common.types';
 export type { Organization, User };
 
-export type UserRole = 'super_admin' | 'admin' | 'moderator' | 'user';
+export type UserRole = 'super_admin' | 'admin' | 'moderator' | 'recruiter' | 'user';
 
 export interface UserRoleAssignment {
   id: string;
