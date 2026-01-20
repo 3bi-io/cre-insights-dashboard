@@ -17,7 +17,7 @@ const ThankYou = () => {
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full overflow-y-auto bg-background">
       <SEO
         title="Application Submitted Successfully"
         description="Thank you for your application. We've received your information and will be in touch shortly."
