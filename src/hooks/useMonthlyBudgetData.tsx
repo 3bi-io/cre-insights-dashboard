@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 export const useMonthlyBudgetData = () => {
   return useQuery({
-    queryKey: ['monthly-budget-data'],
+    queryKey: queryKeys.analytics.monthlyBudget(),
     queryFn: async () => {
       const { data: spendData, error } = await supabase
         .from('daily_spend')

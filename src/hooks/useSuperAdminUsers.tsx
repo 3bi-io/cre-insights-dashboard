@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface UserWithRole {
   id: string;
@@ -19,7 +20,7 @@ export function useSuperAdminUsers() {
 
   // Fetch all users with their roles and organizations
   const usersQuery = useQuery({
-    queryKey: ['super-admin-users'],
+    queryKey: queryKeys.admin.superAdminUsers(),
     queryFn: async (): Promise<UserWithRole[]> => {
       // First get all profiles with organizations
       const { data: profilesData, error: profilesError } = await supabase
@@ -79,7 +80,7 @@ export function useSuperAdminUsers() {
       }
     },
     onSuccess: (_, { enabled }) => {
-      queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.superAdminUsers() });
       toast({
         title: "User status updated",
         description: `User has been ${enabled ? 'enabled' : 'disabled'} successfully.`,

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface JobDetails {
   id: string;
@@ -47,7 +48,7 @@ interface JobDetails {
 
 export const useJobDetails = (jobId: string | undefined) => {
   return useQuery({
-    queryKey: ['job-details', jobId],
+    queryKey: queryKeys.jobs.detail(jobId || ''),
     queryFn: async (): Promise<JobDetails | null> => {
       if (!jobId) return null;
 

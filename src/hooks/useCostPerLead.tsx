@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface CostPerLeadData {
   totalSpend: number;
@@ -16,7 +17,7 @@ export const useCostPerLead = (dateRange?: string) => {
   const { organization } = useAuth();
   
   return useQuery({
-    queryKey: ['cost-per-lead', dateRange, organization?.id],
+    queryKey: queryKeys.analytics.costPerLead(dateRange, organization?.id),
     queryFn: async () => {
       // Calculate date filter if provided
       let dateFilter = '';

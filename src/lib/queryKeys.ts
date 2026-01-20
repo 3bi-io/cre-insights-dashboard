@@ -52,7 +52,12 @@ export const queryKeys = {
     details: () => [...queryKeys.jobs.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.jobs.details(), id] as const,
     analytics: (id: string) => [...queryKeys.jobs.all, 'analytics', id] as const,
-    performance: () => [...queryKeys.jobs.all, 'performance'] as const,
+    performance: (orgId?: string) => [...queryKeys.jobs.all, 'performance', orgId] as const,
+    volume: () => [...queryKeys.jobs.all, 'volume'] as const,
+    related: (jobId: string, clientId?: string, categoryId?: string) => 
+      [...queryKeys.jobs.all, 'related', jobId, clientId, categoryId] as const,
+    forAssignment: (search?: string, groupId?: string) => 
+      [...queryKeys.jobs.all, 'for-assignment', search, groupId] as const,
   },
 
   // Users & Profiles
@@ -109,17 +114,22 @@ export const queryKeys = {
     dashboard: () => [...queryKeys.analytics.all, 'dashboard'] as const,
     metrics: (orgId?: string) => [...queryKeys.analytics.all, 'metrics', orgId] as const,
     spend: (filters?: Record<string, any>) => [...queryKeys.analytics.all, 'spend', filters] as const,
+    spendChart: () => [...queryKeys.analytics.all, 'spend-chart'] as const,
     platformBreakdown: () => [...queryKeys.analytics.all, 'platform-breakdown'] as const,
     funnel: (orgId?: string) => [...queryKeys.analytics.all, 'funnel', orgId] as const,
     teamActivity: () => [...queryKeys.analytics.all, 'team-activity'] as const,
     outboundCalls: (orgId: string, start: string, end: string) => 
       [...queryKeys.analytics.all, 'outbound-calls', orgId, start, end] as const,
     monthlyBudget: (orgId?: string) => [...queryKeys.analytics.all, 'monthly-budget', orgId] as const,
+    budgetSpend: (orgId?: string) => [...queryKeys.analytics.all, 'budget-spend', orgId] as const,
     jobVolume: (orgId?: string) => [...queryKeys.analytics.all, 'job-volume', orgId] as const,
     platformPerformance: (orgId?: string) => [...queryKeys.analytics.all, 'platform-performance', orgId] as const,
     applyPage: (orgId?: string, dateRange?: string) => 
       [...queryKeys.analytics.all, 'apply-page', orgId, dateRange] as const,
     budgetOverview: () => [...queryKeys.analytics.all, 'budget-overview'] as const,
+    costPerLead: (dateRange?: string, orgId?: string) => 
+      [...queryKeys.analytics.all, 'cost-per-lead', dateRange, orgId] as const,
+    organizationGrowth: () => [...queryKeys.analytics.all, 'organization-growth'] as const,
   },
 
   // Webhooks
@@ -176,6 +186,7 @@ export const queryKeys = {
     health: () => [...queryKeys.system.all, 'health'] as const,
     activity: () => [...queryKeys.system.all, 'activity'] as const,
     recentActivity: () => [...queryKeys.system.all, 'recent-activity'] as const,
+    bulkOperations: () => [...queryKeys.system.all, 'bulk-operations'] as const,
   },
 
   // Admin/Super Admin
@@ -185,6 +196,7 @@ export const queryKeys = {
     superAdminUsers: () => [...queryKeys.admin.all, 'super-admin-users'] as const,
     dashboard: () => [...queryKeys.admin.all, 'dashboard'] as const,
     superAdminDashboard: () => [...queryKeys.admin.all, 'super-admin-dashboard'] as const,
+    userDashboard: (userId?: string) => [...queryKeys.admin.all, 'user-dashboard', userId] as const,
   },
 
   // Public pages
@@ -229,6 +241,37 @@ export const queryKeys = {
     all: ['job-search'] as const,
     search: (filters: Record<string, any>, page: number) => 
       [...queryKeys.jobSearch.all, filters, page] as const,
+  },
+
+  // Voice Agents
+  voiceAgents: {
+    all: ['voice-agents'] as const,
+    lists: () => [...queryKeys.voiceAgents.all, 'list'] as const,
+    list: () => [...queryKeys.voiceAgents.lists()] as const,
+    detail: (id: string) => [...queryKeys.voiceAgents.all, 'detail', id] as const,
+  },
+
+  // Outbound Calls
+  outboundCalls: {
+    all: ['outbound-calls'] as const,
+    lists: () => [...queryKeys.outboundCalls.all, 'list'] as const,
+    byApplication: (applicationId?: string) => 
+      [...queryKeys.outboundCalls.all, 'by-application', applicationId] as const,
+    byOrganization: (orgId?: string) => 
+      [...queryKeys.outboundCalls.all, 'by-organization', orgId] as const,
+  },
+
+  // Candidate
+  candidate: {
+    all: ['candidate'] as const,
+    applications: (userId?: string) => [...queryKeys.candidate.all, 'applications', userId] as const,
+    search: (filters?: Record<string, any>) => [...queryKeys.candidate.all, 'search', filters] as const,
+  },
+
+  // Platform Access
+  platformAccess: {
+    all: ['platform-access'] as const,
+    byOrganization: (orgId?: string) => [...queryKeys.platformAccess.all, 'by-org', orgId] as const,
   },
 } as const;
 
