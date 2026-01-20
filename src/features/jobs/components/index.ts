@@ -7,3 +7,8 @@ export { default as JobsSearch } from '@/components/jobs/JobsSearch';
 export { default as RouteFilter } from '@/components/jobs/RouteFilter';
 export { default as JobAnalyticsDialog } from '@/components/JobAnalyticsDialog';
 export { default as JobEditDialog } from '@/components/JobEditDialog';
+
+// Extracted sub-components
+export { VoiceApplicationStatus } from './VoiceApplicationStatus';
+export { JobsViewToggle } from './JobsViewToggle';
+export { JobsClientFilter } from './JobsClientFilter';
