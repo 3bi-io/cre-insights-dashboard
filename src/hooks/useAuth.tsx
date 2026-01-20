@@ -24,7 +24,7 @@ interface CandidateProfile {
 }
 
 // Valid roles in the system
-const VALID_ROLES = ['super_admin', 'admin', 'moderator', 'user'] as const;
+const VALID_ROLES = ['super_admin', 'admin', 'moderator', 'recruiter', 'user'] as const;
 type ValidRole = typeof VALID_ROLES[number];
 
 interface AuthContextType {

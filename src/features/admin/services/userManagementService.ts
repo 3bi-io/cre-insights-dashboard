@@ -221,6 +221,9 @@ export class UserManagementService {
       return 'user';
     }
     
-    return data || 'user';
+    // Validate the role is a known UserRole
+    const validRoles: UserRole[] = ['super_admin', 'admin', 'moderator', 'recruiter', 'user'];
+    const role = data as string;
+    return validRoles.includes(role as UserRole) ? (role as UserRole) : 'user';
   }
 }
