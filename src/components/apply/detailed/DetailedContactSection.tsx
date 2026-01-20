@@ -6,6 +6,7 @@ import { MapPin, Mail, Phone, CheckCircle2, Loader2, Users } from 'lucide-react'
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { SelectionButtonGroup } from '../SelectionButton';
 import type { DetailedFormData } from '@/hooks/useDetailedApplicationForm';
+import { formatPhoneInput, wasCountryCodeDetected, isValidUSPhone } from '@/utils/phoneFormatter';
 
 interface DetailedContactSectionProps {
   formData: DetailedFormData;
@@ -48,18 +49,10 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'other', label: 'Other' },
 ];
 
-const formatPhoneNumber = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
-  if (digits.length === 0) return '';
-  if (digits.length <= 3) return `(${digits}`;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-};
-
 const isValidField = (value: string, type?: 'email' | 'phone') => {
   if (!value.trim()) return false;
   if (type === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  if (type === 'phone') return value.replace(/\D/g, '').length >= 10;
+  if (type === 'phone') return isValidUSPhone(value);
   return value.trim().length > 0;
 };
 
@@ -71,6 +64,7 @@ export const DetailedContactSection = React.memo(({
   const emailRef = useRef<HTMLInputElement>(null);
   const { city: lookupCity, state: lookupState, isLoading: isZipLoading } = useZipCodeLookup(formData.zipCode);
   const [wasAutoFilled, setWasAutoFilled] = useState(false);
+  const [phoneWasReformatted, setPhoneWasReformatted] = useState(false);
 
   useEffect(() => {
     if (isActive && emailRef.current) {
@@ -87,7 +81,14 @@ export const DetailedContactSection = React.memo(({
   }, [lookupCity, lookupState, onInputChange]);
 
   const handlePhoneChange = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
+    const rawValue = e.target.value;
+    const formatted = formatPhoneInput(rawValue);
+    
+    // Only show reformat message for primary phone
+    if (field === 'phone') {
+      setPhoneWasReformatted(wasCountryCodeDetected(rawValue));
+    }
+    
     onInputChange(field, formatted);
   }, [onInputChange]);
 
@@ -143,6 +144,11 @@ export const DetailedContactSection = React.memo(({
             maxLength={14}
             className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
+          {phoneWasReformatted && formData.phone && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Country code detected and formatted for US
+            </p>
+          )}
         </div>
       </div>
 

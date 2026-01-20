@@ -6,7 +6,7 @@ import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { Loader2, CheckCircle2, User, Mail, Phone, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SelectionButtonGroup } from './SelectionButton';
-
+import { formatPhoneInput, wasCountryCodeDetected, isValidUSPhone } from '@/utils/phoneFormatter';
 const US_STATES = [
   { value: 'AL', label: 'Alabama' },
   { value: 'AK', label: 'Alaska' },
@@ -75,19 +75,10 @@ interface PersonalInfoSectionProps {
   isActive?: boolean;
 }
 
-// Format phone number as user types
-const formatPhoneNumber = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
-  if (digits.length === 0) return '';
-  if (digits.length <= 3) return `(${digits}`;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-};
-
 const isValidField = (value: string, type?: 'email' | 'phone' | 'zip') => {
   if (!value.trim()) return false;
   if (type === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  if (type === 'phone') return value.replace(/\D/g, '').length >= 10;
+  if (type === 'phone') return isValidUSPhone(value);
   if (type === 'zip') return value.length >= 5;
   return value.trim().length > 0;
 };
@@ -96,6 +87,7 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange, isActi
   const firstNameRef = useRef<HTMLInputElement>(null);
   const { city: lookupCity, state: lookupState, isLoading: isZipLoading } = useZipCodeLookup(formData.zip);
   const [wasAutoFilled, setWasAutoFilled] = useState(false);
+  const [phoneWasReformatted, setPhoneWasReformatted] = useState(false);
 
   // Auto-focus first field when becoming active
   useEffect(() => {
@@ -121,7 +113,12 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange, isActi
   }, [formData.zip]);
 
   const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhoneNumber(e.target.value);
+    const rawValue = e.target.value;
+    const formatted = formatPhoneInput(rawValue);
+    
+    // Detect if country code was stripped (for user feedback)
+    setPhoneWasReformatted(wasCountryCodeDetected(rawValue));
+    
     onInputChange('phone', formatted);
   }, [onInputChange]);
 
@@ -232,6 +229,11 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange, isActi
             className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
             maxLength={14}
           />
+          {phoneWasReformatted && formData.phone && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Country code detected and formatted for US
+            </p>
+          )}
         </div>
       </div>
 
