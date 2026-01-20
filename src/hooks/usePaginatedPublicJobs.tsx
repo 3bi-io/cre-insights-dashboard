@@ -96,7 +96,26 @@ export function usePaginatedPublicJobs({
           .map(job => {
             const org = job.organization_id ? orgMap.get(job.organization_id) : null;
             const client = job.client_id ? clientMap.get(job.client_id) : null;
-            const voiceAgent = voiceAgentsResult.data?.find(va => va.organization_id === job.organization_id);
+            
+            // Voice agent matching priority:
+            // 1. Client-specific agent (matches job's client_id)
+            // 2. Organization-level agent (fallback if no client-specific agent)
+            let voiceAgent = null;
+            if (voiceAgentsResult.data) {
+              // First try to find a client-specific agent
+              if (job.client_id) {
+                voiceAgent = voiceAgentsResult.data.find(
+                  va => va.client_id === job.client_id
+                );
+              }
+              // Fallback to organization-level agent (one without client_id)
+              if (!voiceAgent && job.organization_id) {
+                voiceAgent = voiceAgentsResult.data.find(
+                  va => va.organization_id === job.organization_id && !va.client_id
+                );
+              }
+            }
+            
             return {
               ...job,
               organizations: org,
