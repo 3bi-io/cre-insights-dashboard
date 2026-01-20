@@ -98,7 +98,8 @@ export const DetailedApplicationForm = () => {
       />
       <StructuredData data={breadcrumbData} />
       
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted py-6 sm:py-8 px-4">
+      <div className="h-full overflow-y-auto bg-gradient-to-br from-background to-muted">
+        <div className="min-h-full py-6 sm:py-8 px-4">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <header className="text-center mb-6 sm:mb-8">
@@ -165,6 +166,7 @@ export const DetailedApplicationForm = () => {
 
           {/* Celebration Feedback */}
           <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
+        </div>
         </div>
       </div>
     </>
