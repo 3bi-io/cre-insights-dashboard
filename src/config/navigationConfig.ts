@@ -138,17 +138,12 @@ export const getNavigationGroups = (options: {
           { path: '/admin/clients', label: 'Clients', icon: UserCheck }
         ] : []),
         { path: '/admin/routes', label: 'Routes', icon: MapPin },
+        // Talent items merged into Recruitment
+        { path: '/admin/talent', label: 'Candidate Search', icon: Search },
+        { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark },
         ...(hasVoiceAgent && isAdmin ? [
           { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: MessageSquare }
         ] : [])
-      ]
-    },
-    {
-      group: "Talent",
-      icon: Search,
-      items: [
-        { path: '/admin/talent', label: 'Candidate Search', icon: Search },
-        { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark }
       ]
     },
     {
@@ -160,7 +155,7 @@ export const getNavigationGroups = (options: {
       ]
     },
     {
-      group: "Integrations",
+      group: "Connections",
       icon: Share2,
       items: [
         ...(hasTenstreetAccess && isAdmin ? [{
@@ -185,23 +180,19 @@ export const getNavigationGroups = (options: {
       ]
     },
     {
-      group: "AI Platform",
+      group: "AI & Voice",
       icon: Bot,
       items: [
         { path: '/admin/grok', label: 'AI Assistant', icon: Sparkles },
         { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
         { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
-        { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap }
+        { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap },
+        ...(isSuperAdmin ? [
+          { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
+          { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: TrendingUp }
+        ] : [])
       ]
     },
-    ...(isSuperAdmin ? [{
-      group: "Analytics",
-      icon: TrendingUp,
-      items: [
-        { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
-        { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: TrendingUp }
-      ]
-    }] : []),
     {
       group: "Settings",
       icon: Settings,

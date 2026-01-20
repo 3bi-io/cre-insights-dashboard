@@ -4468,6 +4468,75 @@ export type Database = {
           },
         ]
       }
+      organization_usage: {
+        Row: {
+          ai_analytics_queries: number | null
+          ai_screenings_performed: number | null
+          applications_processed: number | null
+          applications_received: number | null
+          ats_syncs_performed: number | null
+          created_at: string | null
+          id: string
+          jobs_active: number | null
+          jobs_posted: number | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          voice_agent_minutes: number | null
+          webhook_calls_made: number | null
+        }
+        Insert: {
+          ai_analytics_queries?: number | null
+          ai_screenings_performed?: number | null
+          applications_processed?: number | null
+          applications_received?: number | null
+          ats_syncs_performed?: number | null
+          created_at?: string | null
+          id?: string
+          jobs_active?: number | null
+          jobs_posted?: number | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          voice_agent_minutes?: number | null
+          webhook_calls_made?: number | null
+        }
+        Update: {
+          ai_analytics_queries?: number | null
+          ai_screenings_performed?: number | null
+          applications_processed?: number | null
+          applications_received?: number | null
+          ats_syncs_performed?: number | null
+          created_at?: string | null
+          id?: string
+          jobs_active?: number | null
+          jobs_posted?: number | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          voice_agent_minutes?: number | null
+          webhook_calls_made?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_usage_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_webhooks: {
         Row: {
           created_at: string | null
@@ -4538,7 +4607,9 @@ export type Database = {
           settings: Json | null
           slug: string
           subscription_status: string | null
+          subscription_tier: string | null
           updated_at: string
+          usage_limits: Json | null
         }
         Insert: {
           created_at?: string
@@ -4555,7 +4626,9 @@ export type Database = {
           settings?: Json | null
           slug: string
           subscription_status?: string | null
+          subscription_tier?: string | null
           updated_at?: string
+          usage_limits?: Json | null
         }
         Update: {
           created_at?: string
@@ -4572,7 +4645,9 @@ export type Database = {
           settings?: Json | null
           slug?: string
           subscription_status?: string | null
+          subscription_tier?: string | null
           updated_at?: string
+          usage_limits?: Json | null
         }
         Relationships: []
       }
@@ -6564,6 +6639,10 @@ export type Database = {
         }
         Returns: Json
       }
+      check_usage_limit: {
+        Args: { p_metric: string; p_organization_id: string }
+        Returns: boolean
+      }
       classify_traffic_source: { Args: { referrer: string }; Returns: string }
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_sms_links: { Args: never; Returns: undefined }
@@ -6805,6 +6884,10 @@ export type Database = {
       }
       increment_short_link_click: {
         Args: { p_short_code: string }
+        Returns: undefined
+      }
+      increment_usage: {
+        Args: { p_amount?: number; p_metric: string; p_organization_id: string }
         Returns: undefined
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
