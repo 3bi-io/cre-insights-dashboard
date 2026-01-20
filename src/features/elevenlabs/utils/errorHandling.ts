@@ -9,50 +9,66 @@ export function parseVoiceAgentError(error: any): VoiceAgentError {
   const errorString = error?.message || error?.toString() || 'Unknown error';
 
   // AudioWorklet errors (check first - most specific)
+  // Common on older Android devices and older browsers
   if (errorString.includes('audioConcatProcessor') || 
       errorString.includes('AudioWorklet') ||
       errorString.includes('worklet') ||
       errorString.includes('registerProcessor')) {
     return {
       code: 'AUDIOWORKLET_NOT_SUPPORTED',
-      message: 'Your browser doesn\'t support audio processing features required for voice chat. Please use the latest version of Chrome, Firefox, or Edge.',
+      message: 'Voice features are not available on this device. Your browser may be outdated or doesn\'t support the required audio features.',
       originalError: error,
       recoverySteps: [
-        'Update your browser to the latest version',
-        'Try using Chrome 120+ or Firefox 120+ (recommended)',
-        'Disable browser extensions that may block audio',
-        'Ensure you\'re using HTTPS (not HTTP)',
-        'Check if your network has content security policies blocking audio'
+        'Please use the "Apply Now" button to submit your application using the form',
+        'If you want to use voice, try updating your browser to the latest version',
+        'Chrome, Firefox, Edge, or Safari (iOS 14.1+) work best',
+        'If on Android, make sure your WebView system component is updated'
       ]
     };
   }
 
-  // Browser compatibility errors
+  // Browser compatibility errors - friendly message for older devices
   if (errorString.includes('BROWSER_NOT_COMPATIBLE')) {
     return {
       code: 'BROWSER_NOT_COMPATIBLE',
-      message: errorString.replace('BROWSER_NOT_COMPATIBLE: ', ''),
+      message: 'Voice application is not available on this device, but you can still apply using the form!',
       originalError: error,
       recoverySteps: [
-        'Update your browser to the latest version',
-        'Switch to Chrome 66+, Firefox 76+, Edge 79+, or Safari 14.1+',
-        'Disable browser extensions temporarily',
-        'Try using a different device if available'
+        'Use the "Apply Now" button to fill out the application form instead',
+        'Voice features require a newer browser with audio support',
+        'If possible, try updating your browser or device software'
       ]
     };
   }
 
-  // Microphone access errors
-  if (errorString.includes('getUserMedia') || errorString.includes('NotAllowedError')) {
+  // Microphone access errors - clearer instructions
+  if (errorString.includes('getUserMedia') || 
+      errorString.includes('NotAllowedError') ||
+      errorString.includes('PermissionDeniedError')) {
     return {
       code: 'MICROPHONE_ACCESS_DENIED',
-      message: 'Microphone access is required. Please allow microphone permissions in your browser settings.',
+      message: 'Microphone access was denied. You can still apply using the form instead.',
       originalError: error,
       recoverySteps: [
-        'Click the microphone icon in your browser\'s address bar',
-        'Select "Always allow" for microphone access',
-        'Refresh the page and try again',
-        'Check your system settings to ensure microphone is not blocked'
+        'To use voice application, allow microphone access when prompted',
+        'Or simply use the "Apply Now" button to fill out the form',
+        'Check your phone settings if microphone is blocked for this browser'
+      ]
+    };
+  }
+
+  // No microphone available (common on older devices or desktop without mic)
+  if (errorString.includes('NotFoundError') || 
+      errorString.includes('DevicesNotFoundError') ||
+      errorString.includes('no audio input')) {
+    return {
+      code: 'MICROPHONE_ACCESS_DENIED',
+      message: 'No microphone detected on this device. Please use the application form instead.',
+      originalError: error,
+      recoverySteps: [
+        'Use the "Apply Now" button to complete your application',
+        'Voice features require a working microphone',
+        'If using a desktop, connect a microphone and refresh the page'
       ]
     };
   }
@@ -61,8 +77,12 @@ export function parseVoiceAgentError(error: any): VoiceAgentError {
   if (errorString.includes('API key') || errorString.includes('not configured')) {
     return {
       code: 'API_KEY_MISSING',
-      message: 'ElevenLabs API key not configured properly. Please contact your administrator.',
-      originalError: error
+      message: 'Voice service is temporarily unavailable. Please use the form to apply.',
+      originalError: error,
+      recoverySteps: [
+        'Click "Apply Now" to submit your application using the form',
+        'Voice service will be restored soon'
+      ]
     };
   }
 
@@ -70,25 +90,56 @@ export function parseVoiceAgentError(error: any): VoiceAgentError {
   if (errorString.includes('Agent ID') || errorString.includes('agent_not_found')) {
     return {
       code: 'INVALID_AGENT_ID',
-      message: 'Invalid Agent ID. Please verify the ElevenLabs Agent ID is correct.',
-      originalError: error
+      message: 'Voice agent is not available for this job. Please use the application form.',
+      originalError: error,
+      recoverySteps: [
+        'Use the "Apply Now" button to submit your application'
+      ]
     };
   }
 
-  // Connection errors
-  if (errorString.includes('Connection') || errorString.includes('network')) {
+  // Connection/network errors - common on slow connections
+  if (errorString.includes('Connection') || 
+      errorString.includes('network') ||
+      errorString.includes('timeout') ||
+      errorString.includes('Failed to fetch')) {
     return {
       code: 'CONNECTION_FAILED',
-      message: 'Failed to connect to voice agent. Please check your internet connection and try again.',
-      originalError: error
+      message: 'Connection failed. This may be due to a slow internet connection.',
+      originalError: error,
+      recoverySteps: [
+        'Check your internet connection and try again',
+        'If the problem persists, use the "Apply Now" button instead',
+        'Voice calls require a stable internet connection'
+      ]
     };
   }
 
-  // Default error
+  // WebRTC not supported (very old browsers)
+  if (errorString.includes('RTCPeerConnection') || 
+      errorString.includes('webrtc') ||
+      errorString.includes('WebRTC')) {
+    return {
+      code: 'BROWSER_NOT_COMPATIBLE',
+      message: 'Voice calling is not supported on this device. Please use the application form.',
+      originalError: error,
+      recoverySteps: [
+        'Use the "Apply Now" button to complete your application',
+        'Voice features require a browser with video calling support',
+        'Try using a newer browser like Chrome, Firefox, or Safari'
+      ]
+    };
+  }
+
+  // Default error - always provide a fallback option
   return {
     code: 'UNKNOWN',
-    message: `Failed to start voice agent: ${errorString}`,
-    originalError: error
+    message: 'Voice application encountered an issue. You can still apply using the form!',
+    originalError: error,
+    recoverySteps: [
+      'Click "Apply Now" to submit your application using the form',
+      'If you want to try voice again, refresh the page and try once more'
+    ]
   };
 }
 
