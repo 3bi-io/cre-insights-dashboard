@@ -137,3 +137,60 @@ verify_jwt = true
 
 [functions.send-welcome-email]
 verify_jwt = true
+
+[functions.send-magic-link]
+verify_jwt = true
+
+[functions.send-screening-request]
+verify_jwt = true
+
+[functions.send-sms]
+verify_jwt = true
+
+[functions.google-jobs-xml]
+verify_jwt = false
+
+[functions.indeed-xml-feed]
+verify_jwt = false
+
+[functions.job-group-xml-feed]
+verify_jwt = false
+
+[functions.google-indexing]
+verify_jwt = true
+
+[functions.generate-logo]
+verify_jwt = true
+
+[functions.generate-applications]
+verify_jwt = true
+
+[functions.import-jobs-from-feed]
+verify_jwt = true
+
+[functions.chatbot-analytics]
+verify_jwt = true
+
+[functions.trigger-webhook]
+verify_jwt = true
+
+[functions.outbound-webhook]
+verify_jwt = true
+
+[functions.admin-update-password]
+verify_jwt = true
+
+[functions.admin_password_reset]
+verify_jwt = true
+
+[functions.fetch-crengland-jobs]
+verify_jwt = true
+
+[functions.domain-configuration]
+verify_jwt = true
+
+[functions.sms-auth]
+verify_jwt = false
+
+[functions.background-tasks]
+verify_jwt = false
