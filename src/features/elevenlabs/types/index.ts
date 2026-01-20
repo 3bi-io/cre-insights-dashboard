@@ -107,14 +107,24 @@ export interface JobContext {
 
 // ============= Connection Types =============
 
+export type ConnectionProgress = 
+  | 'idle' 
+  | 'requesting-mic' 
+  | 'fetching-token' 
+  | 'connecting' 
+  | 'connected';
+
 export interface SignedUrlResponse {
   success: boolean;
-  signedUrl?: string;
+  data?: {
+    signedUrl?: string;
+  };
   error?: string;
+  message?: string;
 }
 
 export interface ConversationSession {
-  signedUrl: string;
+  signedUrl?: string;
   jobContext?: JobContext;
 }
 
@@ -200,7 +210,7 @@ export interface StreamingTranscriptState {
 // ============= Error Types =============
 
 export interface VoiceAgentError {
-  code: 'MICROPHONE_ACCESS_DENIED' | 'API_KEY_MISSING' | 'INVALID_AGENT_ID' | 'CONNECTION_FAILED' | 'AUDIOWORKLET_NOT_SUPPORTED' | 'BROWSER_NOT_COMPATIBLE' | 'UNKNOWN';
+  code: 'MICROPHONE_ACCESS_DENIED' | 'API_KEY_MISSING' | 'INVALID_AGENT_ID' | 'CONNECTION_FAILED' | 'AUDIOWORKLET_NOT_SUPPORTED' | 'BROWSER_NOT_COMPATIBLE' | 'CONNECTION_TIMEOUT' | 'UNKNOWN';
   message: string;
   originalError?: any;
   recoverySteps?: string[];

@@ -6,31 +6,91 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Phone, Mic, Volume2 } from 'lucide-react';
+import { Phone, Mic, Volume2, Loader2, X } from 'lucide-react';
 import { VoiceConnectionStatus } from './VoiceConnectionStatus';
 import { LiveTranscriptPanel } from './LiveTranscriptPanel';
-import { JobContext, LiveTranscriptMessage } from '../types';
+import { JobContext, LiveTranscriptMessage, ConnectionProgress } from '../types';
 import { cn } from '@/lib/utils';
 
 interface VoiceApplicationPanelProps {
   isConnected: boolean;
+  isConnecting?: boolean;
+  connectionProgress?: ConnectionProgress;
   isSpeaking: boolean;
   selectedJob: JobContext | null;
   transcripts: LiveTranscriptMessage[];
   pendingUserTranscript?: string;
   pendingAgentTranscript?: string;
   onEnd: () => void;
+  onCancel?: () => void;
 }
+
+const getProgressMessage = (progress: ConnectionProgress): string => {
+  switch (progress) {
+    case 'requesting-mic':
+      return 'Requesting microphone access...';
+    case 'fetching-token':
+      return 'Establishing secure connection...';
+    case 'connecting':
+      return 'Starting conversation...';
+    case 'connected':
+      return 'Connected!';
+    default:
+      return 'Preparing...';
+  }
+};
 
 export const VoiceApplicationPanel: React.FC<VoiceApplicationPanelProps> = ({
   isConnected,
+  isConnecting = false,
+  connectionProgress = 'idle',
   isSpeaking,
   selectedJob,
   transcripts,
   pendingUserTranscript,
   pendingAgentTranscript,
   onEnd,
+  onCancel,
 }) => {
+  // Show connecting overlay
+  if (isConnecting && selectedJob) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center max-w-md mx-auto px-4 text-center">
+          {/* Animated loader */}
+          <div className="relative mb-6">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+            {/* Pulsing ring */}
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+          </div>
+          
+          {/* Progress text */}
+          <h2 className="text-xl font-semibold mb-2">Connecting to Voice Agent</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            {getProgressMessage(connectionProgress)}
+          </p>
+          
+          {/* Job context */}
+          <div className="bg-muted/50 rounded-lg p-4 mb-6 w-full">
+            <p className="text-sm font-medium">{selectedJob.jobTitle}</p>
+            <p className="text-xs text-muted-foreground">{selectedJob.company}</p>
+          </div>
+          
+          {/* Cancel button */}
+          {onCancel && (
+            <Button variant="outline" onClick={onCancel} className="min-w-[120px]">
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Only show main panel when connected
   if (!isConnected || !selectedJob) return null;
 
   return (
