@@ -51,6 +51,8 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }:
           Do you have a CDL-A license? <span className="text-destructive">*</span>
         </Label>
         <SelectionButtonGroup
+          name="cdl-status"
+          label="CDL Status"
           options={CDL_OPTIONS}
           value={formData.cdl}
           onChange={(value) => onInputChange('cdl', value)}
@@ -65,6 +67,8 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }:
           How much CDL-A driving experience? <span className="text-destructive">*</span>
         </Label>
         <SelectionButtonGroup
+          name="experience-level"
+          label="Driving Experience"
           options={EXPERIENCE_OPTIONS}
           value={formData.experience}
           onChange={(value) => onInputChange('experience', value)}

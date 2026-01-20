@@ -61,6 +61,8 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange, isAc
           Can you pass a DOT drug test? <span className="text-destructive">*</span>
         </Label>
         <SelectionButtonGroup
+          name="drug-test"
+          label="Drug Test"
           options={DRUG_TEST_OPTIONS}
           value={formData.drug}
           onChange={(value) => onInputChange('drug', value)}
@@ -77,6 +79,8 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange, isAc
           Are you a military veteran?
         </Label>
         <SelectionButtonGroup
+          name="veteran-status"
+          label="Veteran Status"
           options={VETERAN_OPTIONS}
           value={formData.veteran}
           onChange={(value) => onInputChange('veteran', value)}

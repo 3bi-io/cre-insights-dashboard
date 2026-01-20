@@ -647,7 +647,7 @@ Deno.serve(async (req) => {
     const { city, state } = await lookupCityState(formData.zip || '');
 
     // Get or create a job listing for the application using shared processor
-    const jobListingId = await findOrCreateJobListing(supabase, {
+    const jobListingResult = await findOrCreateJobListing(supabase, {
       jobListingId: formData.job_listing_id,
       jobId: formData.job_id,
       jobTitle: 'General Application',
@@ -656,6 +656,16 @@ Deno.serve(async (req) => {
       city,
       state,
       source: 'Direct Application',
+    });
+
+    if (!jobListingResult) {
+      logger.error('Failed to resolve job listing');
+      return errorResponse('Unable to process application - no job found', 400, undefined, origin || undefined);
+    }
+
+    logger.info('Job listing resolved', { 
+      jobListingId: jobListingResult.id, 
+      matchType: jobListingResult.matchType 
     });
 
     // Map form data to applications table schema
@@ -668,7 +678,7 @@ Deno.serve(async (req) => {
     const drivingExperienceYears = formData.driving_experience_years ?? Math.floor(monthsNum / 12);
     
     const applicationData = {
-      job_listing_id: jobListingId,
+      job_listing_id: jobListingResult.id,
       job_id: externalJobId || formData.job_id || null,
       
       // Personal info
