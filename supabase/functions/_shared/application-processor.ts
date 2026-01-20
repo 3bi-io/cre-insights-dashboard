@@ -25,7 +25,14 @@ export const normalizePhone = (phone: string | undefined | null): string | null 
 
 /**
  * Find or create job listing for application
- * Returns job listing ID or null if unable to create
+ * 
+ * Resolution priority:
+ * 1. Explicit job_listing_id (UUID) - use directly
+ * 2. Match by job_id text field within organization
+ * 3. If job_id provided but not matched - CREATE new listing for that job_id
+ * 4. General Application fallback (find or create)
+ * 
+ * NOTE: We no longer fall back to "any active job" to prevent mismatched applications
  */
 export const findOrCreateJobListing = async (
   supabase: SupabaseClient,
@@ -39,19 +46,20 @@ export const findOrCreateJobListing = async (
     state?: string;
     source?: string;
   }
-): Promise<string | null> => {
-  let { jobListingId, jobId, jobTitle, organizationId, clientId, city, state, source } = params;
+): Promise<{ id: string; matchType: 'exact_uuid' | 'exact_job_id' | 'created_from_job_id' | 'general_fallback' | 'created_general' } | null> => {
+  const { jobListingId, jobId, jobTitle, organizationId, clientId, city, state, source } = params;
 
-  // Step 1: If job_listing_id provided, use it
+  // Step 1: If job_listing_id (UUID) provided, use it directly
   if (jobListingId) {
-    return jobListingId;
+    logger.info('Using explicit job_listing_id', { jobListingId });
+    return { id: jobListingId, matchType: 'exact_uuid' };
   }
 
   // Step 2: Try to match by job_id text field
   if (jobId) {
     const query = supabase
       .from('job_listings')
-      .select('id')
+      .select('id, title')
       .eq('job_id', jobId)
       .eq('organization_id', organizationId);
     
@@ -62,48 +70,35 @@ export const findOrCreateJobListing = async (
     const { data: jobListing } = await query.maybeSingle();
     
     if (jobListing) {
-      logger.info('Matched job_id to listing', { jobId, listingId: jobListing.id });
-      return jobListing.id;
+      logger.info('Matched job_id to existing listing', { 
+        jobId, 
+        listingId: jobListing.id,
+        title: jobListing.title 
+      });
+      return { id: jobListing.id, matchType: 'exact_job_id' };
     }
-  }
-
-  // Step 3: Find any active job for this organization
-  const activeQuery = supabase
-    .from('job_listings')
-    .select('id')
-    .eq('organization_id', organizationId)
-    .eq('status', 'active')
-    .limit(1);
-  
-  if (clientId) {
-    activeQuery.eq('client_id', clientId);
-  }
-  
-  const { data: activeJob } = await activeQuery.maybeSingle();
-  
-  if (activeJob) {
-    logger.info('Using active job listing', { listingId: activeJob.id });
-    return activeJob.id;
-  }
-
-  // Step 4: Create new job if we have title
-  if (jobTitle) {
+    
+    // Step 3: job_id provided but not matched - CREATE new listing for this job_id
+    // This ensures each unique external job_id gets its own listing
+    logger.info('No match for job_id - creating new listing', { jobId, organizationId });
+    
     const { data: categories } = await supabase
       .from('job_categories')
       .select('id')
       .limit(1);
     
     if (categories?.[0]?.id) {
-      const { data: newJob } = await supabase
+      const newTitle = jobTitle || `Job ${jobId}`;
+      const { data: newJob, error: createError } = await supabase
         .from('job_listings')
         .insert({
-          title: jobTitle,
+          title: newTitle,
           job_id: jobId,
           organization_id: organizationId,
           client_id: clientId,
           category_id: categories[0].id,
           status: 'active',
-          job_summary: `Position from ${source || 'application'}`,
+          job_summary: `Position ${jobId} from ${source || 'application'}`,
           location: city && state ? `${city}, ${state}` : null,
           city,
           state,
@@ -112,13 +107,22 @@ export const findOrCreateJobListing = async (
         .single();
       
       if (newJob) {
-        logger.info('Created job listing', { listingId: newJob.id, jobId });
-        return newJob.id;
+        logger.info('Created new job listing from job_id', { 
+          listingId: newJob.id, 
+          jobId,
+          title: newTitle,
+          source 
+        });
+        return { id: newJob.id, matchType: 'created_from_job_id' };
+      }
+      
+      if (createError) {
+        logger.error('Failed to create job listing from job_id', { jobId, error: createError });
       }
     }
   }
 
-  // Step 5: Fallback to General Application
+  // Step 4: Fallback to General Application (find existing)
   const { data: fallbackJob } = await supabase
     .from('job_listings')
     .select('id')
@@ -127,11 +131,14 @@ export const findOrCreateJobListing = async (
     .maybeSingle();
   
   if (fallbackJob) {
-    logger.info('Using General Application fallback');
-    return fallbackJob.id;
+    logger.info('Using General Application fallback', { 
+      listingId: fallbackJob.id,
+      reason: jobId ? 'job_id creation failed' : 'no job identifier provided'
+    });
+    return { id: fallbackJob.id, matchType: 'general_fallback' };
   }
 
-  // Step 6: Create General Application if doesn't exist
+  // Step 5: Create General Application if doesn't exist
   const { data: categories } = await supabase
     .from('job_categories')
     .select('id')
@@ -151,11 +158,12 @@ export const findOrCreateJobListing = async (
       .single();
     
     if (newFallback) {
-      logger.info('Created General Application fallback');
-      return newFallback.id;
+      logger.info('Created General Application fallback', { listingId: newFallback.id });
+      return { id: newFallback.id, matchType: 'created_general' };
     }
   }
 
+  logger.error('Failed to resolve or create any job listing', { organizationId, jobId });
   return null;
 };
 
