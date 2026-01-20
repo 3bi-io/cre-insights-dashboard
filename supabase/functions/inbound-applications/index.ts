@@ -946,7 +946,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Find or create job listing using shared processor
-    const jobListingId = await findOrCreateJobListing(supabase, {
+    const jobListingResult = await findOrCreateJobListing(supabase, {
       jobListingId: applicationData.job_listing_id,
       jobId: applicationData.job_id,
       jobTitle: applicationData.job_title,
@@ -957,9 +957,18 @@ const handler = async (req: Request): Promise<Response> => {
       source: applicationData.source,
     });
 
-    if (!jobListingId) {
+    if (!jobListingResult) {
       return errorResponse('Unable to create job listing', 500, undefined, origin);
     }
+    
+    const jobListingId = jobListingResult.id;
+    
+    logger.info('Job listing resolved', {
+      jobListingId,
+      matchType: jobListingResult.matchType,
+      providedJobId: applicationData.job_id,
+      source: applicationData.source
+    });
 
     // Prepare application record
     const applicationRecord = {
