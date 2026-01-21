@@ -14,7 +14,8 @@ import { checkGeoAccess, getAllowedRegionsDescription, GeoBlockResult } from '..
 const logger = createLogger('geo-check');
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
