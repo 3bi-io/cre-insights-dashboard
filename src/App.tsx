@@ -12,6 +12,8 @@ import { logger } from "@/lib/logger";
 import AppRoutes from "@/components/routing/AppRoutes";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { cleanupCorruptedAuthState } from "@/utils/authRecovery";
+import { GeoBlockingProvider } from "@/contexts/GeoBlockingContext";
+import { GeoBlockingGate } from "@/components/GeoBlockingGate";
 
 // Proactively clean up corrupted auth state on app startup
 // This runs before React renders to prevent crashes from stale tokens
@@ -65,17 +67,21 @@ const App = React.memo(() => {
     >
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="ui-theme">
-          <BrowserRouter>
-            <AuthProvider>
-              <FeatureProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <AppContent />
-                </TooltipProvider>
-              </FeatureProvider>
-            </AuthProvider>
-          </BrowserRouter>
+          <GeoBlockingProvider>
+            <GeoBlockingGate>
+              <BrowserRouter>
+                <AuthProvider>
+                  <FeatureProvider>
+                    <TooltipProvider>
+                      <Toaster />
+                      <Sonner />
+                      <AppContent />
+                    </TooltipProvider>
+                  </FeatureProvider>
+                </AuthProvider>
+              </BrowserRouter>
+            </GeoBlockingGate>
+          </GeoBlockingProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>

@@ -8,6 +8,8 @@ import {
   BGCConnection,
   CheckType,
 } from "../_shared/bgc-adapters/index.ts";
+import { extractIPFromRequest, getGeoLocation } from "../_shared/geo-lookup.ts";
+import { checkGeoAccess } from "../_shared/geo-blocking.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +23,24 @@ serve(async (req) => {
 
   const correlationId = crypto.randomUUID();
   console.log(`[${correlationId}] Background check request received`);
+
+  // Geo-blocking check - server-side enforcement for PII protection
+  const clientIP = extractIPFromRequest(req);
+  const geo = await getGeoLocation(clientIP);
+  const geoResult = checkGeoAccess(geo);
+  
+  if (!geoResult.allowed) {
+    console.log(`[${correlationId}] Blocked from restricted region: ${geoResult.countryCode}`);
+    return new Response(JSON.stringify({
+      success: false,
+      error: geoResult.message || 'Access is not available in your region.',
+      blocked: true,
+      reason: 'geographic_restriction',
+    }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
