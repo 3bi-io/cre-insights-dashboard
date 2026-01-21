@@ -197,3 +197,6 @@ verify_jwt = false
 
 [functions.sync-cdl-feeds]
 verify_jwt = false
+
+[functions.geo-check]
+verify_jwt = false

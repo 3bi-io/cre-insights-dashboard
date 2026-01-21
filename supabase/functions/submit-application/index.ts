@@ -10,6 +10,8 @@ import { successResponse, errorResponse, validationErrorResponse } from '../_sha
 import { createLogger } from '../_shared/logger.ts';
 import { checkRateLimitWithGeo } from '../_shared/rate-limiter.ts';
 import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
+import { extractIPFromRequest, getGeoLocation } from '../_shared/geo-lookup.ts';
+import { checkGeoAccess } from '../_shared/geo-blocking.ts';
 
 const logger = createLogger('submit-application');
 
@@ -505,6 +507,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Geo-blocking check - server-side enforcement for PII protection
+    const clientIP = extractIPFromRequest(req);
+    const geo = await getGeoLocation(clientIP);
+    const geoResult = checkGeoAccess(geo);
+    
+    if (!geoResult.allowed) {
+      logger.warn('Blocked application submission from restricted region', {
+        ip: clientIP.substring(0, 10) + '***',
+        countryCode: geoResult.countryCode,
+        country: geoResult.country,
+        reason: geoResult.reason,
+      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: geoResult.message || 'Access is not available in your region.',
+          blocked: true,
+          reason: 'geographic_restriction',
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     // Rate limiting based on IP with geo-awareness for developer regions
     const forwarded = req.headers.get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
