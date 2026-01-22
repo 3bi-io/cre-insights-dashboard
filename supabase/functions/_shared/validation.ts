@@ -549,7 +549,8 @@ export async function checkRateLimit(
     
     return { allowed: true, remaining: config.maxRequests - 1, resetAt };
   } catch (error) {
-    console.error('[RATE_LIMIT] Error:', error);
+    // Rate limit errors should fail open to avoid blocking legitimate requests
+    // Logging is skipped here to avoid circular dependency with logger
     return { allowed: true };
   }
 }

@@ -5,6 +5,9 @@
 
 import { buildTenstreetXML, parseXMLResponse, validateXMLStructure, type TenstreetCredentials, type XMLParseResult } from './tenstreet-xml-utils.ts';
 import { sanitizeForLogging } from './tenstreet-pii-utils.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('tenstreet-api-client');
 
 export interface TenstreetAPIConfig {
   endpoint?: string;
@@ -71,15 +74,15 @@ export class TenstreetAPIClient {
     }
 
     // Log sanitized request (remove PII)
-    console.log(`[Tenstreet API] Service: ${options.service}`);
-    console.log(`[Tenstreet API] Request XML (sanitized):`, this.sanitizeXMLForLog(requestXml));
+    logger.info('Making request', { service: options.service });
+    logger.debug('Request XML (sanitized)', { xml: this.sanitizeXMLForLog(requestXml) });
 
     let lastError: Error | null = null;
 
     // Retry loop with exponential backoff
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[Tenstreet API] Attempt ${attempt}/${maxRetries}`);
+        logger.debug('Request attempt', { attempt, maxRetries });
 
         // Make request with timeout
         const controller = new AbortController();
@@ -100,9 +103,8 @@ export class TenstreetAPIClient {
         const duration = Date.now() - startTime;
 
         // Log sanitized response
-        console.log(`[Tenstreet API] Response status: ${response.status}`);
-        console.log(`[Tenstreet API] Response (sanitized):`, this.sanitizeXMLForLog(responseText));
-        console.log(`[Tenstreet API] Duration: ${duration}ms`);
+        logger.debug('Response received', { status: response.status, duration });
+        logger.debug('Response (sanitized)', { xml: this.sanitizeXMLForLog(responseText) });
 
         // Parse response
         const parsed = parseXMLResponse(responseText);
@@ -119,7 +121,7 @@ export class TenstreetAPIClient {
 
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.error(`[Tenstreet API] Attempt ${attempt} failed:`, lastError.message);
+        logger.error(`Attempt ${attempt} failed`, lastError);
 
         // Don't retry on validation errors
         if (lastError.message.includes('Invalid XML') || lastError.message.includes('Validation')) {
@@ -133,7 +135,7 @@ export class TenstreetAPIClient {
 
         // Exponential backoff: 1s, 2s, 4s, 8s...
         const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
-        console.log(`[Tenstreet API] Retrying in ${delay}ms...`);
+        logger.debug('Retrying', { delay });
         await this.sleep(delay);
       }
     }

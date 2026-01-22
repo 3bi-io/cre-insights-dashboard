@@ -2,6 +2,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('meta-spend-analytics');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Meta Spend Analytics function called');
+    logger.info('Meta Spend Analytics function called');
     
     // Get auth header safely
     const authHeader = req.headers.get('Authorization');
@@ -62,7 +65,7 @@ serve(async (req) => {
 
     if (adsError) throw adsError;
 
-    console.log(`Analyzing ${adSets.length} ad sets, ${campaigns.length} campaigns, ${ads.length} ads`);
+    logger.info('Analyzing data', { adSets: adSets.length, campaigns: campaigns.length, ads: ads.length });
 
     // Calculate aggregate metrics
     const totalSpend = adSets.reduce((sum, adSet) => sum + (parseFloat(adSet.spend) || 0), 0);
@@ -199,7 +202,7 @@ Format your response as a JSON object:
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) throw new Error('OpenAI API key is not configured');
 
-    console.log('Calling OpenAI API for Meta spend analysis');
+    logger.info('Calling OpenAI API for Meta spend analysis');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -237,7 +240,7 @@ Format your response as a JSON object:
       recommendations = analysis.recommendations || recommendations;
       summary = analysis.summary || summary;
     } catch (parseError) {
-      console.error('Error parsing OpenAI response:', parseError);
+      logger.error('Error parsing OpenAI response', parseError);
       // Provide fallback insights
       insights = [
         `Analyzed ${adSets.length} ad sets across ${campaigns.length} campaigns`,
@@ -267,7 +270,7 @@ Format your response as a JSON object:
       generatedAt: new Date().toISOString()
     };
 
-    console.log('Meta spend analysis complete');
+    logger.info('Meta spend analysis complete');
 
     return new Response(
       JSON.stringify(result),
@@ -279,7 +282,7 @@ Format your response as a JSON object:
       }
     );
   } catch (error) {
-    console.error('Error in meta-spend-analytics function:', error);
+    logger.error('Error in meta-spend-analytics function', error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to analyze Meta spend data',
