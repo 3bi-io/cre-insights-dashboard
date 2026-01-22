@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface AdSetReportData {
   adSetName: string;
@@ -56,9 +57,7 @@ export const useMetaAdSetReport = (dateRange: string = 'last_30d') => {
     setError(null);
 
     try {
-      console.log('Fetching Meta Ad Set report for date range:', dateRange);
-      console.log('Organization ID:', organization?.id);
-      console.log('Organization data:', organization);
+      logger.debug('Fetching Meta Ad Set report', { dateRange, organizationId: organization?.id, context: 'meta-adset' });
 
       const { data: reportData, error: reportError } = await supabase.functions.invoke(
         'meta-adset-report',
@@ -70,24 +69,21 @@ export const useMetaAdSetReport = (dateRange: string = 'last_30d') => {
         }
       );
 
-      console.log('Edge function response - reportData:', reportData);
-      console.log('Edge function response - reportError:', reportError);
-
       if (reportError) {
-        console.error('Error calling meta-adset-report function:', reportError);
+        logger.error('Meta adset report function error', reportError, { context: 'meta-adset' });
         throw reportError;
       }
 
       if (!reportData || !reportData.success) {
-        console.error('Report data unsuccessful:', reportData);
+        logger.error('Report data unsuccessful', new Error(reportData?.error), { context: 'meta-adset' });
         throw new Error(reportData?.error || 'Failed to generate Ad Set report');
       }
 
-      console.log('Meta Ad Set report fetched successfully:', reportData.summary);
+      logger.debug('Meta Ad Set report fetched', { totalAdSets: reportData.summary?.totalAdSets, context: 'meta-adset' });
       setData(reportData);
 
     } catch (err) {
-      console.error('Error fetching Meta Ad Set report:', err);
+      logger.error('Failed to fetch Meta Ad Set report', err, { context: 'meta-adset' });
       setError(err instanceof Error ? err.message : 'Failed to fetch Ad Set report');
     } finally {
       setIsLoading(false);

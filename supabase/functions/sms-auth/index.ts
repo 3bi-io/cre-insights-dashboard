@@ -1,7 +1,10 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
-import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('sms-auth');
 
 function escapeXML(unsafe: string): string {
   if (!unsafe) return '';
@@ -73,7 +76,7 @@ serve(async (req) => {
         throw new Error('Invalid action');
     }
   } catch (error) {
-    console.error('Error in sms-auth function:', error);
+    logger.error('Error in sms-auth function', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
@@ -145,7 +148,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
   }
 
   const twilioResult = await twilioResponse.json();
-  console.log('SMS sent successfully:', twilioResult.sid);
+  logger.info('SMS sent successfully', { messageSid: twilioResult.sid });
 
   return new Response(
     JSON.stringify({ 
@@ -257,7 +260,7 @@ async function makeCall(phoneNumber: string, message: string) {
   }
 
   const twilioResult = await twilioResponse.json();
-  console.log('Call initiated successfully:', twilioResult.sid);
+  logger.info('Call initiated successfully', { callSid: twilioResult.sid });
 
   return new Response(
     JSON.stringify({ 

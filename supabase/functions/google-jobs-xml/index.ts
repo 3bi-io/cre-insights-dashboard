@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,8 @@ const corsHeaders = {
 
 // Base URL for job pages - configurable via environment variable
 const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://ats.me';
+
+const logger = createLogger('google-jobs-xml');
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -35,7 +38,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('Generating Google Jobs XML sitemap for:', { userId, organizationId });
+    logger.info('Generating Google Jobs XML sitemap', { userId, organizationId });
 
     // Build query based on parameters
     let query = supabase
@@ -58,14 +61,14 @@ Deno.serve(async (req) => {
     const { data: jobListings, error } = await query;
 
     if (error) {
-      console.error('Error fetching job listings:', error);
+      logger.error('Error fetching job listings', error);
       return new Response('Error fetching job listings', { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 
       });
     }
 
-    console.log(`Found ${jobListings?.length || 0} active job listings`);
+    logger.info('Found active job listings', { count: jobListings?.length || 0 });
 
     // Generate XML sitemap
     const xmlContent = generateGoogleJobsSitemap(jobListings || []);
@@ -93,7 +96,7 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
       job_count: jobListings?.length || 0,
       response_time_ms: responseTime
-    }).catch(err => console.error('Failed to log feed access:', err));
+    }).catch(err => logger.error('Failed to log feed access', err));
 
     return new Response(xmlContent, {
       headers: {
@@ -104,7 +107,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in google-jobs-xml function:', error);
+    logger.error('Error in google-jobs-xml function', error);
     return new Response('Internal server error', { 
       status: 500, 
       headers: { ...corsHeaders, 'Content-Type': 'text/plain' } 

@@ -1,10 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const logger = createLogger('trigger-webhook');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,7 +21,7 @@ serve(async (req) => {
 
     const { webhook_id, test_mode, payload } = await req.json();
 
-    console.log('Triggering webhook:', { webhook_id, test_mode });
+    logger.info('Triggering webhook', { webhook_id, test_mode });
 
     // Fetch webhook configuration
     const { data: webhook, error: fetchError } = await supabase
@@ -43,7 +46,7 @@ serve(async (req) => {
       organization_id: webhook.organization_id,
     };
 
-    console.log('Sending webhook to:', webhook.webhook_url);
+    logger.info('Sending webhook', { url: webhook.webhook_url });
 
     // Send webhook
     const webhookResponse = await fetch(webhook.webhook_url, {
@@ -57,7 +60,7 @@ serve(async (req) => {
     const responseStatus = webhookResponse.status;
     const responseBody = await webhookResponse.text();
 
-    console.log('Webhook response:', { responseStatus, responseBody });
+    logger.apiResponse('POST', webhook.webhook_url, responseStatus);
 
     // Log the webhook call
     await supabase.from('webhook_logs').insert({
@@ -84,7 +87,7 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error('Webhook error:', error);
+    logger.error('Webhook error', error);
     return new Response(
       JSON.stringify({
         success: false,

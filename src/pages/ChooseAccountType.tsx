@@ -6,6 +6,7 @@ import { Briefcase, UserCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 const ChooseAccountType = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ const ChooseAccountType = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('[ChooseAccountType] Error fetching profile:', error);
+        logger.error('Error fetching profile', error, { context: 'choose-account-type' });
         setCheckingStatus(false);
         return;
       }
@@ -77,7 +78,7 @@ const ChooseAccountType = () => {
           }, { onConflict: 'user_id' });
 
         if (candidateError) {
-          console.error('[ChooseAccountType] Error creating candidate profile:', candidateError);
+          logger.error('Error creating candidate profile', candidateError, { context: 'choose-account-type' });
         }
       }
 
@@ -93,7 +94,7 @@ const ChooseAccountType = () => {
         navigate('/onboarding');
       }
     } catch (error: any) {
-      console.error('[ChooseAccountType] Error updating user type:', error);
+      logger.error('Error updating user type', error, { context: 'choose-account-type' });
       toast.error('Failed to save account type. Please try again.');
       setIsLoading(false);
       setSelectedType(null);
