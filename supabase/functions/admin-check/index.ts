@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('admin-check');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,7 +59,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
-      console.error('Authentication failed:', authError);
+      logger.error('Authentication failed', authError);
       return new Response(
         JSON.stringify({ 
           authorized: false, 
@@ -77,7 +80,7 @@ serve(async (req) => {
       .rpc('get_current_user_role');
 
     if (roleError) {
-      console.error('Role check failed:', roleError);
+      logger.error('Role check failed', roleError);
       return new Response(
         JSON.stringify({ 
           authorized: false, 
@@ -123,7 +126,7 @@ serve(async (req) => {
         table_name: 'authorization',
         action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
         sensitive_fields: ['role_check'],
-      }).catch(err => console.error('Audit log failed:', err));
+      }).catch(err => logger.error('Audit log failed', err));
 
       return new Response(
         JSON.stringify({ 
@@ -153,7 +156,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Admin check error:', error);
+    logger.error('Admin check error', error);
     return new Response(
       JSON.stringify({ 
         authorized: false, 

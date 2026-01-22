@@ -17,6 +17,9 @@ import { fetchTenstreetCredentials } from '../_shared/tenstreet-credentials.ts';
 import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts';
 import { parseXMLResponse } from '../_shared/tenstreet-xml-utils.ts';
 import { sanitizeForLogging } from '../_shared/tenstreet-pii-utils.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('tenstreet-xchange');
 
 const XCHANGE_SERVICE_TYPES = {
   mvr: 'MVR',
@@ -66,7 +69,7 @@ Deno.serve(async (req) => {
       return validationErrorResponse(`Invalid requestType. Must be one of: ${Object.keys(XCHANGE_SERVICE_TYPES).join(', ')}`);
     }
 
-    console.log(`[Xchange] Processing ${actualRequestType} request for application ${applicationId}`);
+    logger.info('Processing request', { requestType: actualRequestType, applicationId });
 
     // Get application data (basic info only, no PII in logs)
     const { data: application, error: appError } = await supabase
@@ -76,7 +79,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (appError || !application) {
-      console.error('[Xchange] Application not found:', applicationId);
+      logger.error('Application not found', null, { applicationId });
       return errorResponse('Application not found', 404);
     }
 
@@ -84,7 +87,7 @@ Deno.serve(async (req) => {
 
     // Verify user has access to this organization
     if (authContext.organizationId !== organizationId) {
-      console.error('[Xchange] Unauthorized access attempt by user:', authContext.user.id);
+      logger.error('Unauthorized access attempt', null, { userId: authContext.user.id });
       return errorResponse('Unauthorized access to this application', 403);
     }
 
@@ -96,7 +99,7 @@ Deno.serve(async (req) => {
     });
 
     if (!credentials) {
-      console.error('[Xchange] No active Tenstreet credentials found for org:', organizationId);
+      logger.error('No active Tenstreet credentials found', null, { organizationId });
       return errorResponse('Tenstreet credentials not configured for this organization', 400);
     }
 
@@ -128,7 +131,7 @@ Deno.serve(async (req) => {
       </Applicant>
     `;
 
-    console.log(`[Xchange] Sending ${xchangeServiceType} request to Tenstreet API`);
+    logger.info('Sending request to Tenstreet API', { serviceType: xchangeServiceType });
 
     // Make API request with automatic retry and timeout
     const apiResponse = await apiClient.makeRequest(credentials, {
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
     });
 
     if (!apiResponse.success) {
-      console.error('[Xchange] API request failed:', sanitizeForLogging(apiResponse.error));
+      logger.error('API request failed', { error: sanitizeForLogging(apiResponse.error) });
       throw new Error(apiResponse.error || 'Tenstreet API request failed');
     }
 
@@ -175,14 +178,14 @@ Deno.serve(async (req) => {
       .single();
 
     if (logError) {
-      console.error('[Xchange] Failed to log request:', sanitizeForLogging(logError));
+      logger.error('Failed to log request', { error: sanitizeForLogging(logError) });
     }
 
     if (!parsedResponse.success) {
       return errorResponse(parsedResponse.error || 'Tenstreet API request failed', 500);
     }
 
-    console.log('[Xchange] Request successful:', {
+    logger.info('Request successful', {
       requestId: xchangeRequest?.id,
       tenstreetRequestId: parsedResponse.requestId,
       service: xchangeServiceType
@@ -198,7 +201,7 @@ Deno.serve(async (req) => {
     }, 'Xchange request submitted successfully');
 
   } catch (error) {
-    console.error('[Xchange] Error:', sanitizeForLogging(error));
+    logger.error('Error', error);
     return errorResponse(error instanceof Error ? error.message : 'Internal server error', 500);
   }
 });

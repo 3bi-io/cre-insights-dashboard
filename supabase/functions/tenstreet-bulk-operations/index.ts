@@ -7,6 +7,9 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('tenstreet-bulk-operations');
 
 interface BulkOperationRequest {
   operationType: 'import' | 'export' | 'status_update' | 'sync' | 'export_organization_data';
@@ -54,7 +57,7 @@ Deno.serve(async (req) => {
       return validationErrorResponse('operationType is required');
     }
 
-    console.log(`Starting bulk operation: ${operationType} for org ${authContext.organizationId}`);
+    logger.info('Starting bulk operation', { operationType, organizationId: authContext.organizationId });
 
     let result;
     let operationDetails: Record<string, any> = {};
@@ -144,7 +147,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (logError) {
-      console.error('Failed to log bulk operation:', logError);
+      logger.error('Failed to log bulk operation', logError);
     }
 
     return successResponse({
@@ -154,7 +157,7 @@ Deno.serve(async (req) => {
     }, `Bulk ${operationType} completed successfully`);
 
   } catch (error) {
-    console.error('Error in tenstreet-bulk-operations function:', error);
+    logger.error('Error in bulk operations', error);
     return errorResponse(error instanceof Error ? error.message : 'Internal server error', 500);
   }
 });
@@ -284,7 +287,7 @@ async function handleBulkStatusUpdate(supabase: any, organizationId: string, app
 }
 
 async function handleBulkSync(supabase: any, organizationId: string, syncSource: string) {
-  console.log(`Syncing applications from ${syncSource} for organization ${organizationId}`);
+  logger.info('Syncing applications', { syncSource, organizationId });
   
   // This would integrate with external APIs (Facebook, HubSpot, Indeed)
   // For now, return a placeholder implementation
@@ -308,7 +311,7 @@ async function handleOrganizationExport(
   fieldSelection?: string[],
   format: 'csv' | 'xlsx' = 'csv'
 ) {
-  console.log(`Exporting organization data for ${organizationId}`, { filters, format });
+  logger.info('Exporting organization data', { organizationId, filters, format });
 
   try {
     // Build query for applications with organization filter via job_listings
@@ -357,7 +360,7 @@ async function handleOrganizationExport(
     const { data: applications, error } = await query;
 
     if (error) {
-      console.error('Error fetching applications for export:', error);
+      logger.error('Error fetching applications for export', error);
       throw error;
     }
 
@@ -426,7 +429,7 @@ async function handleOrganizationExport(
     };
 
   } catch (error) {
-    console.error('Organization export error:', error);
+    logger.error('Organization export error', error);
     return {
       success: false,
       count: 0,

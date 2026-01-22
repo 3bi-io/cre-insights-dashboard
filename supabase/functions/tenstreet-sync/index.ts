@@ -23,7 +23,9 @@ import {
   maskCredentialsForLog
 } from '../_shared/tenstreet-credentials.ts'
 import { sanitizeForLogging, redactApplicationData } from '../_shared/tenstreet-pii-utils.ts'
+import { createLogger } from '../_shared/logger.ts'
 
+const logger = createLogger('tenstreet-sync');
 const corsHeaders = getCorsHeaders();
 
 serve(async (req) => {
@@ -39,7 +41,7 @@ serve(async (req) => {
 
     const { action, organizationId, companyId, ...params } = await req.json()
     
-    console.log(`[Tenstreet Sync] Action: ${action}`)
+    logger.info('Action received', { action })
 
     // SECURITY: Fetch credentials from database (no hardcoded credentials)
     const credentials = await fetchTenstreetCredentials(supabaseClient, {
@@ -56,7 +58,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('[Tenstreet Sync] Using credentials:', maskCredentialsForLog(credentials));
+    logger.info('Using credentials', { masked: maskCredentialsForLog(credentials) });
 
     // Create API client
     const apiClient = getTenstreetAPIClient();
@@ -79,7 +81,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('[Tenstreet Sync] Error:', error)
+    logger.error('Error', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -99,7 +101,7 @@ async function syncApplicantsFromTenstreet(
 ) {
   const { dateRange, email, phone, lastName } = params
   
-  console.log('[Sync] Searching applicants:', sanitizeForLogging({ email, phone, lastName }));
+  logger.info('Searching applicants', { criteria: sanitizeForLogging({ email, phone, lastName }) });
 
   // Use API client to search
   const response = await apiClient.searchApplicants(credentials, {
@@ -116,7 +118,7 @@ async function syncApplicantsFromTenstreet(
   // Parse applicants from response
   const applicants = parseApplicantsFromXML(response.responseXml);
   
-  console.log(`[Sync] Found ${applicants.length} applicants`);
+  logger.info('Found applicants', { count: applicants.length });
 
   if (applicants.length === 0) {
     return new Response(
@@ -135,7 +137,7 @@ async function syncApplicantsFromTenstreet(
     try {
       if (!applicant.driverId) continue;
 
-      console.log('[Sync] Processing applicant:', sanitizeForLogging(applicant));
+      logger.debug('Processing applicant', { applicant: sanitizeForLogging(applicant) });
 
       // Check if applicant exists
       const { data: existing } = await supabaseClient
@@ -167,7 +169,7 @@ async function syncApplicantsFromTenstreet(
         if (!error) {
           syncedApplicants.push({ ...data[0], action: 'updated' })
         } else {
-          console.error('[Sync] Update error:', error);
+          logger.error('Update error', error);
         }
       } else {
         // Insert new applicant
@@ -184,11 +186,11 @@ async function syncApplicantsFromTenstreet(
         if (!error) {
           syncedApplicants.push({ ...data[0], action: 'created' })
         } else {
-          console.error('[Sync] Insert error:', error);
+          logger.error('Insert error', error);
         }
       }
     } catch (error) {
-      console.error('[Sync] Error syncing applicant:', applicant.driverId, error)
+      logger.error('Error syncing applicant', error, { driverId: applicant.driverId })
     }
   }
 
@@ -225,7 +227,7 @@ async function pushApplicantToTenstreet(
     throw new Error('Application not found')
   }
 
-  console.log('[Push] Pushing application:', applicationId);
+  logger.info('Pushing application', { applicationId });
 
   // Build applicant XML using shared utilities
   const personalDataXml = buildPersonalDataXML({
@@ -288,7 +290,7 @@ async function pushApplicantToTenstreet(
       })
       .eq('id', applicationId)
 
-    console.log('[Push] Application synced, driver_id:', response.data.driverId);
+    logger.info('Application synced', { driverId: response.data.driverId });
   }
 
   return new Response(
@@ -321,7 +323,7 @@ async function updateApplicantStatus(
     throw new Error('Application not found or missing driver_id')
   }
 
-  console.log('[Update Status]', { driverId: application.driver_id, status });
+  logger.info('Updating status', { driverId: application.driver_id, status });
 
   // Use API client
   const response = await apiClient.updateStatus(
@@ -362,7 +364,7 @@ async function searchAndSyncApplicant(
 ) {
   const { email, phone, driverId } = params
 
-  console.log('[Search] Criteria:', sanitizeForLogging({ email, phone, driverId }));
+  logger.info('Search criteria', { criteria: sanitizeForLogging({ email, phone, driverId }) });
 
   let response;
   

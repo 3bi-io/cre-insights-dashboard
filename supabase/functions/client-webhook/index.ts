@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('client-webhook');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +33,7 @@ Deno.serve(async (req) => {
     // Parse request body
     const { application_id, event_type, test_mode = false }: WebhookRequest = await req.json();
 
-    console.log('[CLIENT-WEBHOOK] Processing:', { application_id, event_type, test_mode });
+    logger.info('Processing webhook', { application_id, event_type, test_mode });
 
     // Fetch application with related data
     const { data: application, error: appError } = await supabase
@@ -59,7 +62,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (appError || !application) {
-      console.error('[CLIENT-WEBHOOK] Application not found:', appError);
+      logger.error('Application not found', appError);
       return new Response(
         JSON.stringify({ error: 'Application not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -86,7 +89,7 @@ Deno.serve(async (req) => {
     const { data: webhooks, error: webhookError } = await webhookQuery;
 
     if (webhookError) {
-      console.error('[CLIENT-WEBHOOK] Error fetching webhooks:', webhookError);
+      logger.error('Error fetching webhooks', webhookError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch webhook configurations' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -94,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     if (!webhooks || webhooks.length === 0) {
-      console.log('[CLIENT-WEBHOOK] No webhooks configured for client:', client_id, 'or organization:', organization_id);
+      logger.info('No webhooks configured', { client_id, organization_id });
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -104,7 +107,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[CLIENT-WEBHOOK] Found', webhooks.length, 'webhook(s) to process');
+    logger.info('Found webhooks to process', { count: webhooks.length });
 
     // Process all matching webhooks
     const results: any[] = [];
@@ -113,14 +116,14 @@ Deno.serve(async (req) => {
 
       // Check if webhook is enabled (skip in test mode)
       if (!test_mode && !webhook.enabled) {
-        console.log('[CLIENT-WEBHOOK] Webhook disabled, skipping:', webhook.id);
+        logger.debug('Webhook disabled, skipping', { webhook_id: webhook.id });
         results.push({ webhook_id: webhook.id, skipped: true, reason: 'disabled' });
         continue;
       }
 
       // Check if this event type should be sent
       if (!test_mode && webhook.event_types && !webhook.event_types.includes(event_type)) {
-        console.log('[CLIENT-WEBHOOK] Event type not configured, skipping:', webhook.id);
+        logger.debug('Event type not configured, skipping', { webhook_id: webhook.id });
         results.push({ webhook_id: webhook.id, skipped: true, reason: 'event_type_not_configured' });
         continue;
       }
@@ -204,7 +207,7 @@ Deno.serve(async (req) => {
       let errorMessage: string | null = null;
 
       try {
-        console.log('[CLIENT-WEBHOOK] Sending to:', webhook.webhook_url);
+        logger.info('Sending webhook', { url: webhook.webhook_url });
         
         response = await fetch(webhook.webhook_url, {
           method: 'POST',
@@ -214,10 +217,10 @@ Deno.serve(async (req) => {
         });
 
         responseBody = await response.text();
-        console.log('[CLIENT-WEBHOOK] Response:', response.status, responseBody.substring(0, 200));
+        logger.info('Webhook response', { status: response.status, bodyPreview: responseBody.substring(0, 200) });
 
       } catch (error) {
-        console.error('[CLIENT-WEBHOOK] Request failed:', error);
+        logger.error('Webhook request failed', error);
         errorMessage = error.message;
         response = new Response('', { status: 0 });
       }
@@ -239,7 +242,7 @@ Deno.serve(async (req) => {
         });
 
       if (logError) {
-        console.error('[CLIENT-WEBHOOK] Failed to log webhook:', logError);
+        logger.error('Failed to log webhook', logError);
       }
 
       // Update webhook status
@@ -284,7 +287,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[CLIENT-WEBHOOK] Unexpected error:', error);
+    logger.error('Unexpected error', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

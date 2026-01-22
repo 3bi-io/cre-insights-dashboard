@@ -10,6 +10,9 @@ import {
 } from "../_shared/bgc-adapters/index.ts";
 import { extractIPFromRequest, getGeoLocation } from "../_shared/geo-lookup.ts";
 import { checkGeoAccess } from "../_shared/geo-blocking.ts";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('background-check');
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,7 +25,7 @@ serve(async (req) => {
   }
 
   const correlationId = crypto.randomUUID();
-  console.log(`[${correlationId}] Background check request received`);
+  logger.info('Request received', { correlationId });
 
   // Geo-blocking check - server-side enforcement for PII protection
   const clientIP = extractIPFromRequest(req);
@@ -30,7 +33,7 @@ serve(async (req) => {
   const geoResult = checkGeoAccess(geo);
   
   if (!geoResult.allowed) {
-    console.log(`[${correlationId}] Blocked from restricted region: ${geoResult.countryCode}`);
+    logger.info('Blocked from restricted region', { correlationId, countryCode: geoResult.countryCode });
     return new Response(JSON.stringify({
       success: false,
       error: geoResult.message || 'Access is not available in your region.',
@@ -68,7 +71,7 @@ serve(async (req) => {
       packageName 
     } = body;
 
-    console.log(`[${correlationId}] Action: ${action}, ApplicationId: ${applicationId}, ConnectionId: ${connectionId}`);
+    logger.info('Processing action', { correlationId, action, applicationId, connectionId });
 
     // Handle test connection action
     if (action === "test") {
@@ -90,7 +93,7 @@ serve(async (req) => {
         .single();
 
       if (connError || !conn) {
-        console.error(`[${correlationId}] Connection not found:`, connError);
+        logger.error('Connection not found', connError, { correlationId });
         return new Response(JSON.stringify({ 
           success: false, 
           error: "Connection not found" 
@@ -108,7 +111,7 @@ serve(async (req) => {
         const adapter = createBGCAdapter({ provider, connection, correlationId });
         const testResult = await adapter.testConnection();
         
-        console.log(`[${correlationId}] Test connection result:`, testResult);
+        logger.info('Test connection result', { correlationId, status: testResult.status });
         
         return new Response(JSON.stringify({
           success: testResult.status === "success",
@@ -117,7 +120,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (testError) {
-        console.error(`[${correlationId}] Test connection error:`, testError);
+        logger.error('Test connection error', testError, { correlationId });
         return new Response(JSON.stringify({
           success: false,
           message: (testError as Error).message || "Connection test failed",
@@ -146,7 +149,7 @@ serve(async (req) => {
       .single();
 
     if (appError || !application) {
-      console.error(`[${correlationId}] Application not found:`, appError);
+      logger.error('Application not found', appError, { correlationId });
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Application not found" 
@@ -260,10 +263,10 @@ serve(async (req) => {
       .single();
 
     if (insertError) {
-      console.error(`[${correlationId}] Error recording request:`, insertError);
+      logger.error('Error recording request', insertError, { correlationId });
     }
 
-    console.log(`[${correlationId}] Background check initiated:`, result.external_id);
+    logger.info('Background check initiated', { correlationId, externalId: result.external_id });
 
     // Return consistent response shape
     return new Response(JSON.stringify({
@@ -277,7 +280,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error(`[${correlationId}] Error:`, error);
+    logger.error('Error', error, { correlationId });
     return new Response(JSON.stringify({ 
       success: false, 
       error: (error as Error).message 
