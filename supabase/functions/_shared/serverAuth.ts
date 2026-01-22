@@ -5,6 +5,9 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('serverAuth');
 
 export type UserRole = 'super_admin' | 'admin' | 'moderator' | 'user';
 
@@ -47,7 +50,7 @@ export async function verifyAuth(request: Request): Promise<AuthResult> {
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[AUTH] Missing Supabase environment variables');
+      logger.error('Missing Supabase environment variables');
       return {
         success: false,
         error: 'Server configuration error',
@@ -65,7 +68,7 @@ export async function verifyAuth(request: Request): Promise<AuthResult> {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      console.error('[AUTH] Token verification failed:', userError?.message);
+      logger.error('Token verification failed', null, { error: userError?.message });
       return {
         success: false,
         error: 'Invalid or expired token',
@@ -81,7 +84,7 @@ export async function verifyAuth(request: Request): Promise<AuthResult> {
       .single();
 
     if (profileError) {
-      console.error('[AUTH] Failed to fetch user profile:', profileError.message);
+      logger.error('Failed to fetch user profile', null, { error: profileError.message });
       return {
         success: false,
         error: 'Failed to load user profile',
@@ -94,7 +97,7 @@ export async function verifyAuth(request: Request): Promise<AuthResult> {
       .rpc('get_current_user_role');
 
     if (roleError) {
-      console.error('[AUTH] Failed to fetch user role:', roleError.message);
+      logger.error('Failed to fetch user role', null, { error: roleError.message });
       return {
         success: false,
         error: 'Failed to load user role',
@@ -114,7 +117,7 @@ export async function verifyAuth(request: Request): Promise<AuthResult> {
       },
     };
   } catch (error) {
-    console.error('[AUTH] Unexpected error during authentication:', error);
+    logger.error('Unexpected error during authentication', error);
     return {
       success: false,
       error: 'Authentication failed',
@@ -234,7 +237,7 @@ export async function logSecurityEvent(
       user_agent: details.userAgent || null,
     });
   } catch (error) {
-    console.error('[AUDIT] Failed to log security event:', error);
+    logger.error('Failed to log security event', error);
     // Don't throw - logging failure shouldn't break the request
   }
 }

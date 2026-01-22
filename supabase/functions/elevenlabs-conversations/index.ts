@@ -438,7 +438,7 @@ serve(async (req) => {
 
             // Must have at least email or phone to create application
             if (!email && !phone) {
-              console.log(`Skipping ${convId}: No email or phone collected`);
+              logger.debug('Skipping conversation - no contact info', { conversationId: convId });
               continue;
             }
 
