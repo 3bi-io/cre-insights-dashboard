@@ -19,6 +19,7 @@ const TermsOfServicePage = React.lazy(() => import("@/pages/public/TermsOfServic
 const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPage"));
 const SitemapPage = React.lazy(() => import("@/pages/public/SitemapPage"));
 const DemoPage = React.lazy(() => import("@/pages/public/DemoPage"));
+const JobMapPage = React.lazy(() => import("@/pages/public/JobMapPage"));
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
@@ -161,6 +162,7 @@ const AppRoutes: React.FC = () => {
         <Route path="cookie-policy" element={<RouteWrapper><CookiePolicyPage /></RouteWrapper>} />
         <Route path="sitemap" element={<RouteWrapper><SitemapPage /></RouteWrapper>} />
         <Route path="demo" element={<RouteWrapper><DemoPage /></RouteWrapper>} />
+        <Route path="map" element={<RouteWrapper><JobMapPage /></RouteWrapper>} />
       </Route>
 
       {/* Voice Agent Demo - redirect to consolidated demo page */}
