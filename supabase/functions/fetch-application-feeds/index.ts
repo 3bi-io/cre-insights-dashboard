@@ -1,5 +1,8 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('fetch-application-feeds')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +10,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('Fetch application feeds function called:', req.method, req.url);
+  logger.info('Fetch application feeds function called', { method: req.method });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -23,28 +26,28 @@ serve(async (req) => {
       const url = new URL(req.url);
       user = url.searchParams.get('user') || '*';
       board = url.searchParams.get('board');
-      console.log('GET request, user from query:', user, 'board:', board);
+      logger.debug('GET request params', { user, board });
     } else if (req.method === 'POST') {
       try {
         const body = await req.json();
         user = body.user || '*';
         board = body.board || null;
-        console.log('POST request, user from body:', user, 'board:', board);
+        logger.debug('POST request params', { user, board });
       } catch (e) {
-        console.log('Failed to parse JSON body, using defaults');
+        logger.warn('Failed to parse JSON body, using defaults');
         user = '*';
         board = null;
       }
     }
 
-    console.log('Fetching application feeds for user:', user, 'board:', board);
+    logger.info('Fetching application feeds', { user, board });
 
     // Fetch feeds from the external API
     let feedsUrl = `https://cdljobcast.com/client/recruiting/getfeeds?user=${encodeURIComponent(user)}`;
     if (board) {
       feedsUrl += `&board=${encodeURIComponent(board)}`;
     }
-    console.log('Calling external API:', feedsUrl);
+    logger.info('Calling external API', { feedsUrl });
     
     const response = await fetch(feedsUrl, {
       method: 'GET',
@@ -54,12 +57,12 @@ serve(async (req) => {
       },
     });
     
-    console.log('External API response status:', response.status);
-    console.log('External API response headers:', Object.fromEntries(response.headers.entries()));
+    logger.info('External API response', { status: response.status });
+    logger.debug('External API headers', { headers: Object.fromEntries(response.headers.entries()) });
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('External API error:', response.status, response.statusText, errorText);
+      logger.error('External API error', new Error(errorText), { status: response.status });
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -74,14 +77,14 @@ serve(async (req) => {
     }
     
     const contentType = response.headers.get('content-type');
-    console.log('Response content-type:', contentType);
+    logger.debug('Response content-type', { contentType });
     
     let data;
     if (contentType?.includes('application/json')) {
       data = await response.json();
     } else {
       const text = await response.text();
-      console.log('Non-JSON response received:', text.substring(0, 500) + '...');
+      logger.debug('Non-JSON response received', { preview: text.substring(0, 200) });
       
       // Parse XML response for applications
       if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
@@ -132,7 +135,7 @@ serve(async (req) => {
             applications.push(application);
           }
           
-          console.log(`Parsed ${applications.length} applications from XML feed`);
+          logger.info('Parsed applications from XML', { count: applications.length });
           data = { 
             feeds: applications, 
             message: `Found ${applications.length} applications`,
@@ -142,7 +145,7 @@ serve(async (req) => {
           };
           
         } catch (error) {
-          console.error('Error parsing XML:', error);
+          logger.error('Error parsing XML', error);
           data = { feeds: [], message: 'Failed to parse XML feed', error: error.message };
         }
       } else {
@@ -154,7 +157,7 @@ serve(async (req) => {
       }
     }
     
-    console.log('Successfully fetched application feeds:', JSON.stringify(data).substring(0, 500) + '...');
+    logger.info('Successfully fetched application feeds', { dataPreview: JSON.stringify(data).substring(0, 200) });
     
     return new Response(
       JSON.stringify({ success: true, data }), 
@@ -164,7 +167,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error('Error in fetch-application-feeds function:', error);
+    logger.error('Error in fetch-application-feeds function', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     return new Response(

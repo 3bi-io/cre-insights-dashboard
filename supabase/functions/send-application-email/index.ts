@@ -310,7 +310,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Check if RESEND_API_KEY is configured
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
-      console.error("RESEND_API_KEY is not configured");
+      logger.error("RESEND_API_KEY is not configured");
       throw new Error("Email service is not configured. Please add RESEND_API_KEY.");
     }
     

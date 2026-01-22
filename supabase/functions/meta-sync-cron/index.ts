@@ -155,7 +155,7 @@ serve(async (req) => {
             updated_time: c.updated_time || null,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id,campaign_id' });
-          if (error) console.error('Upsert campaign error', error);
+          if (error) logger.error('Upsert campaign error', error);
         }
         totalCampaigns += campaigns.length;
 
@@ -163,7 +163,7 @@ serve(async (req) => {
         const adsets = await fetchAll<MetaAdSet>(
           `https://graph.facebook.com/v18.0/${act}/adsets?fields=id,name,status,targeting,bid_amount,daily_budget,lifetime_budget,start_time,end_time,created_time,updated_time,campaign_id&limit=500&access_token=${metaAccessToken}`
         );
-        console.log(`Account ${accountId}: ${adsets.length} ad sets`);
+        logger.info('Ad sets fetched', { accountId, count: adsets.length });
         for (const s of adsets) {
           const { error } = await supabase.from('meta_ad_sets').upsert({
             user_id: userId,
@@ -183,7 +183,7 @@ serve(async (req) => {
             updated_time: s.updated_time || null,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id,account_id,adset_id' });
-          if (error) console.error('Upsert ad set error', error);
+          if (error) logger.error('Upsert ad set error', error);
         }
         totalAdSets += adsets.length;
 
@@ -191,7 +191,7 @@ serve(async (req) => {
         const ads = await fetchAll<MetaAd>(
           `https://graph.facebook.com/v18.0/${act}/ads?fields=id,name,status,adset_id,campaign_id,creative{id},preview_shareable_link,created_time,updated_time&limit=500&access_token=${metaAccessToken}`
         );
-        console.log(`Account ${accountId}: ${ads.length} ads`);
+        logger.info('Ads fetched', { accountId, count: ads.length });
         for (const ad of ads) {
           const { error } = await supabase.from('meta_ads').upsert({
             user_id: userId,
@@ -208,11 +208,11 @@ serve(async (req) => {
             updated_time: ad.updated_time || null,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id,ad_id' });
-          if (error) console.error('Upsert ad error', error);
+          if (error) logger.error('Upsert ad error', error);
         }
         totalAds += ads.length;
       } catch (err) {
-        console.error(`meta-sync-cron: error syncing account ${accountId}`, err);
+        logger.error('Error syncing account', err, { accountId });
       }
     }
 
@@ -221,7 +221,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('meta-sync-cron error:', error);
+    logger.error('meta-sync-cron error', error);
     return new Response(JSON.stringify({ error: error.message || 'Unknown error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

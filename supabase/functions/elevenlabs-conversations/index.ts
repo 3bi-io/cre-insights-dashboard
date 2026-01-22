@@ -191,10 +191,10 @@ serve(async (req) => {
               });
             
             if (upsertError) {
-              console.error(`Failed to upsert transcript message ${i}:`, upsertError);
+              logger.error('Failed to upsert transcript message', upsertError, { sequenceNumber: i });
             }
           }
-          console.log(`Stored ${data.transcript.length} transcript messages for conversation ${conversationId}`);
+          logger.info('Stored transcript messages', { conversationId, count: data.transcript.length });
         }
 
         return new Response(
@@ -300,7 +300,8 @@ serve(async (req) => {
         const missingFields = expectedFields.filter(f => !collectedFields.includes(f));
         const completeness = `${expectedFields.length - missingFields.length}/${expectedFields.length}`;
 
-        console.log(`Conversation ${conversationId} data collection:`, {
+        logger.info('Conversation data collection', {
+          conversationId,
           collectedFields,
           missingFields,
           completeness
@@ -366,7 +367,7 @@ serve(async (req) => {
         const listData = await listResponse.json();
         const conversations = listData.conversations || [];
         
-        console.log(`Found ${conversations.length} conversations for agent ${agentId}`);
+        logger.info('Found conversations for agent', { agentId, count: conversations.length });
 
         // Get existing applications from this agent to avoid duplicates
         const { data: existingApps } = await supabase
@@ -521,7 +522,7 @@ serve(async (req) => {
               results.errors.push(`${convId}: ${insertError.message}`);
             } else {
               results.applications_created++;
-              console.log(`Created application from ${convId} for ${email || phone}`);
+              logger.info('Created application from conversation', { conversationId: convId, contact: email || phone });
             }
 
           } catch (err) {
@@ -688,7 +689,7 @@ serve(async (req) => {
         throw new Error(`Invalid action: ${action}`);
     }
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {

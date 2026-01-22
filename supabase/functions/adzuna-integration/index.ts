@@ -119,7 +119,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('[ADZUNA] Integration error:', error)
+    logger.error('Integration error', error)
     
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
@@ -179,19 +179,19 @@ async function syncAdzunaAnalytics(
       // Adzuna doesn't have a direct analytics API for job postings
       // Instead, you'd typically use their job search API to verify listings
       // For now, we log that real API is available but analytics are tracked internally
-      console.log('[ADZUNA] API credentials available - tracking analytics internally')
+      logger.info('API credentials available - tracking analytics internally')
       usedRealApi = true
       
       // Generate analytics based on campaign performance
       // In production, this would integrate with Adzuna's employer dashboard API
       analyticsData = generateAnalyticsData(campaignId, startDate, endDate, jobId, userId, organizationId)
     } catch (apiError) {
-      console.error('[ADZUNA] API error, falling back to internal tracking:', apiError)
+      logger.warn('API error, falling back to internal tracking', { error: apiError })
       analyticsData = generateAnalyticsData(campaignId, startDate, endDate, jobId, userId, organizationId)
     }
   } else {
     // No API credentials - use simulated data for development
-    console.log('[ADZUNA] No API credentials - using simulated analytics data')
+    logger.info('No API credentials - using simulated analytics data')
     analyticsData = generateAnalyticsData(campaignId, startDate, endDate, jobId, userId, organizationId)
   }
 
@@ -204,7 +204,7 @@ async function syncAdzunaAnalytics(
     })
 
   if (error) {
-    console.error('[ADZUNA] Failed to upsert analytics:', error)
+    logger.error('Failed to upsert analytics', error)
     throw error
   }
 
@@ -285,7 +285,7 @@ async function getAdzunaStats(campaignId: string, userId: string, supabaseClient
     .limit(30)
 
   if (error) {
-    console.error('[ADZUNA] Failed to fetch stats:', error)
+    logger.error('Failed to fetch stats', error)
     throw error
   }
 
@@ -328,7 +328,7 @@ async function postJobToAdzuna(
   const credentials = getAdzunaCredentials()
   
   if (!credentials) {
-    console.log('[ADZUNA] No API credentials - job posting simulated')
+    logger.info('No API credentials - job posting simulated')
     
     // Log the attempted posting
     await supabaseClient.from('audit_logs').insert({
@@ -353,7 +353,7 @@ async function postJobToAdzuna(
   try {
     // Adzuna job posting requires partner/employer API access
     // This is a placeholder for the actual implementation
-    console.log('[ADZUNA] Posting job with credentials:', jobData.title)
+    logger.info('Posting job with credentials', { title: jobData.title })
     
     // In production, you would:
     // 1. Format job data according to Adzuna's XML feed spec or API
@@ -385,7 +385,7 @@ async function postJobToAdzuna(
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (apiError) {
-    console.error('[ADZUNA] Job posting failed:', apiError)
+    logger.error('Job posting failed', apiError)
     throw new Error(`Failed to post job to Adzuna: ${apiError.message}`)
   }
 }
@@ -424,7 +424,7 @@ async function searchAdzunaJobs(params: {
       url.searchParams.set('where', params.location)
     }
     
-    console.log(`[ADZUNA] Searching jobs: ${params.query} in ${params.country}`)
+    logger.info('Searching jobs', { query: params.query, country: params.country })
     
     const response = await fetch(url.toString())
     
@@ -445,7 +445,7 @@ async function searchAdzunaJobs(params: {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (apiError) {
-    console.error('[ADZUNA] Job search failed:', apiError)
+    logger.error('Job search failed', apiError)
     return new Response(
       JSON.stringify({
         success: false,
