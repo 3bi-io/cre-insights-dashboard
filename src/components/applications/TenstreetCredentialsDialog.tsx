@@ -11,6 +11,7 @@ import { Shield, Save, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { TENSTREET_API_ENDPOINTS } from '@/types/tenstreet/api-contracts';
+import { logger } from '@/lib/logger';
 
 interface TenstreetCredentialsDialogProps {
   open: boolean;
@@ -155,11 +156,10 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       onOpenChange(false);
     },
     onError: (error: any) => {
-      console.error('Failed to save credentials:', {
-        error,
+      logger.error('Failed to save credentials', error, {
         effectiveOrgId,
-        config: { ...config, password: '***' }, // Don't log password
-        userRole
+        userRole,
+        context: 'tenstreet-credentials'
       });
       
       toast({
@@ -233,7 +233,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
               .eq('id', credentials.id);
             
             if (error) {
-              console.error('Failed to update credential status:', error);
+              logger.error('Failed to update credential status', error, { context: 'tenstreet-credentials' });
             } else {
               // Invalidate queries to refresh the UI
               queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials'] });
@@ -241,7 +241,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
               queryClient.invalidateQueries({ queryKey: ['tenstreet-credentials-summary'] });
             }
           } catch (err) {
-            console.error('Error updating credential status:', err);
+            logger.error('Error updating credential status', err, { context: 'tenstreet-credentials' });
           }
         }
         
@@ -258,10 +258,7 @@ const TenstreetCredentialsDialog: React.FC<TenstreetCredentialsDialogProps> = ({
       }
     },
     onError: (error: any) => {
-      console.error('Connection test failed:', {
-        error,
-        config: { ...config, password: '***' } // Don't log password
-      });
+      logger.error('Connection test failed', error, { context: 'tenstreet-credentials' });
       
       toast({
         title: 'Connection Test Failed',

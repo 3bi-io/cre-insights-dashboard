@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DateRangeOption, MetaAccount, MetaCampaign, MetaAdSet, MetaAd, MetaDailySpend } from '../types';
 import { getStartDate } from '../utils/dateUtils';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook to fetch Meta accounts
@@ -10,7 +11,7 @@ export const useMetaAccounts = (accountId: string) => {
   return useQuery({
     queryKey: ['meta-accounts', accountId],
     queryFn: async () => {
-      console.log('Fetching Meta accounts for ID:', accountId);
+      logger.debug('Fetching Meta accounts', { accountId, context: 'meta-data' });
       const { data, error } = await supabase
         .from('meta_ad_accounts')
         .select('*')
@@ -18,7 +19,7 @@ export const useMetaAccounts = (accountId: string) => {
         .order('account_name');
       
       if (error) throw error;
-      console.log('Meta accounts fetched:', data?.length);
+      logger.debug('Meta accounts fetched', { count: data?.length, context: 'meta-data' });
       return data as MetaAccount[];
     },
     retry: 2,
@@ -33,7 +34,7 @@ export const useMetaCampaigns = (accountId: string, enabled = true) => {
   return useQuery({
     queryKey: ['meta-campaigns', accountId],
     queryFn: async () => {
-      console.log('Fetching Meta campaigns for ID:', accountId);
+      logger.debug('Fetching Meta campaigns', { accountId, context: 'meta-data' });
       const { data, error } = await supabase
         .from('meta_campaigns')
         .select('*')
@@ -41,7 +42,7 @@ export const useMetaCampaigns = (accountId: string, enabled = true) => {
         .order('campaign_name');
       
       if (error) throw error;
-      console.log('Meta campaigns fetched:', data?.length);
+      logger.debug('Meta campaigns fetched', { count: data?.length, context: 'meta-data' });
       return data as MetaCampaign[];
     },
     enabled,
