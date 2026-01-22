@@ -22,6 +22,9 @@ import {
   uuidSchema,
   type z
 } from '../_shared/securitySchemas.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('secure-endpoint-example');
 
 // CORS headers for browser requests
 const corsHeaders = {
@@ -58,7 +61,7 @@ Deno.serve(async (req) => {
     // auth is now AuthContext with verified user info
     const { userId, userRole, organizationId, email } = auth;
     
-    console.log(`[AUTH] User ${userId} (${userRole}) from org ${organizationId}`);
+    logger.info('User authenticated', { userId, userRole, organizationId });
 
     // =========================================================================
     // STEP 2: INPUT VALIDATION (REQUIRED)
@@ -79,11 +82,11 @@ Deno.serve(async (req) => {
     try {
       validatedData = validateRequest(searchApplicationSchema, body);
     } catch (error) {
-      console.error('[VALIDATION] Input validation failed:', error);
+      logger.error('Input validation failed', error);
       return validationErrorResponse(error); // Returns 400 with details
     }
 
-    console.log('[VALIDATION] Input validated:', validatedData);
+    logger.debug('Input validated', { data: validatedData });
 
     // =========================================================================
     // STEP 3: RATE LIMITING (RECOMMENDED)
@@ -117,7 +120,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[RATE_LIMIT] Remaining:', rateLimitResult.data?.remaining);
+    logger.debug('Rate limit check passed', { remaining: rateLimitResult.data?.remaining });
 
     // =========================================================================
     // STEP 4: BUSINESS LOGIC WITH AUDIT LOGGING
@@ -131,7 +134,7 @@ Deno.serve(async (req) => {
       .limit(10);
 
     if (searchError) {
-      console.error('[DB] Search failed:', searchError);
+      logger.error('Database search failed', searchError);
       return new Response(
         JSON.stringify({ success: false, error: 'Database error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -146,7 +149,7 @@ Deno.serve(async (req) => {
       userAgent,
     });
 
-    console.log(`[SUCCESS] Found ${applications?.length || 0} applications`);
+    logger.info('Search completed', { count: applications?.length || 0 });
 
     // =========================================================================
     // STEP 5: ACCESSING SENSITIVE DATA (IF NEEDED)
@@ -166,7 +169,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (sensitiveError) {
-        console.error('[PII_ACCESS] Failed:', sensitiveError);
+        logger.error('PII access failed', sensitiveError);
         // Don't expose internal error details to client
         return new Response(
           JSON.stringify({ success: false, error: 'Access denied' }),
@@ -175,7 +178,7 @@ Deno.serve(async (req) => {
       }
 
       // Sensitive data is now logged in audit_logs table automatically
-      console.log('[PII_ACCESS] Sensitive data accessed for:', applicationId);
+      logger.info('Sensitive data accessed', { applicationId });
       
       // Add sensitive data to first result
       applications[0].sensitive = sensitiveData;
@@ -206,7 +209,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[ERROR] Unexpected error:', error);
+    logger.error('Unexpected error', error);
     
     // SECURITY: Don't expose internal error details
     return new Response(
