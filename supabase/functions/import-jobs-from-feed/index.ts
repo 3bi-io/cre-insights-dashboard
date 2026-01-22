@@ -6,6 +6,9 @@ import { successResponse, errorResponse, validationErrorResponse } from '../_sha
 import { wrapHandler, ValidationError } from '../_shared/error-handler.ts'
 import { getServiceClient } from '../_shared/supabase-client.ts'
 import { parseXMLFeed } from '../_shared/xml-parser.ts'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('import-jobs-from-feed');
 
 const importSchema = z.object({
   feedUrl: z.string().url(),
@@ -31,8 +34,7 @@ const handler = wrapHandler(async (req: Request) => {
   const body = await req.json();
   const { feedUrl, organizationId, clientId = null } = importSchema.parse(body);
 
-  console.log('Fetching jobs from feed:', feedUrl);
-  console.log('Organization ID:', organizationId);
+  logger.info('Fetching jobs from feed', { feedUrl, organizationId });
 
   // Fetch jobs from the feed
   const feedResponse = await fetch(feedUrl, {
@@ -45,7 +47,7 @@ const handler = wrapHandler(async (req: Request) => {
 
   if (!feedResponse.ok) {
     const errorText = await feedResponse.text();
-    console.error('Feed API error:', feedResponse.status, feedResponse.statusText, errorText);
+    logger.error('Feed API error', { status: feedResponse.status, statusText: feedResponse.statusText, errorText });
     throw new Error(`Feed API error: ${feedResponse.status} ${feedResponse.statusText}`);
   }
 
@@ -53,7 +55,7 @@ const handler = wrapHandler(async (req: Request) => {
   let jobs = [];
   
   const text = await feedResponse.text();
-  console.log('Feed response received:', text.substring(0, 500) + '...');
+  logger.debug('Feed response received', { preview: text.substring(0, 200) });
   
   if (contentType?.includes('application/json')) {
     const feedData = JSON.parse(text);
@@ -69,12 +71,12 @@ const handler = wrapHandler(async (req: Request) => {
   } else if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
     // Parse XML feed using shared utility
     jobs = parseXMLFeed(text);
-    console.log(`Parsed ${jobs.length} jobs from XML feed`);
+    logger.info('Parsed jobs from XML feed', { count: jobs.length });
   } else {
     throw new ValidationError('Unsupported content type. Expected JSON or XML.');
   }
 
-  console.log(`Found ${jobs.length} jobs to import`);
+  logger.info('Found jobs to import', { count: jobs.length });
 
   if (jobs.length === 0) {
     return successResponse(

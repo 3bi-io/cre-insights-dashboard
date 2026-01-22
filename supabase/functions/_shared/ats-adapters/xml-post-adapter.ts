@@ -242,21 +242,21 @@ export class XMLPostAdapter extends BaseATSAdapter {
       
       if (Array.isArray(companyIds)) {
         const firstId = companyIds[0]?.toString() || '';
-        console.log('[XMLPostAdapter] Using company_ids array, first element:', firstId);
+        this.log('debug', 'Using company_ids array', { firstElement: firstId });
         return firstId;
       }
       
       // Direct string or number value
-      console.log('[XMLPostAdapter] Using company_ids direct value:', companyIds, 'type:', typeof companyIds);
+      this.log('debug', 'Using company_ids direct value', { value: companyIds, type: typeof companyIds });
       return String(companyIds);
     })();
     
     // Final extracted value
-    console.log('[XMLPostAdapter] Final extracted CompanyId:', companyId, 'length:', companyId.length);
+    this.log('debug', 'Final extracted CompanyId', { companyId, length: companyId.length });
     
     // Log warning if companyId is missing
     if (!companyId) {
-      console.warn('[XMLPostAdapter] Missing CompanyId in credentials', {
+      this.log('warn', 'Missing CompanyId in credentials', {
         has_company_id: !!creds.company_id,
         has_companyId: !!creds.companyId,
         has_company_ids: !!creds.company_ids,
