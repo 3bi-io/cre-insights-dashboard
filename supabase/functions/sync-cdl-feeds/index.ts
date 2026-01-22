@@ -5,6 +5,9 @@ import { successResponse, errorResponse } from '../_shared/response.ts'
 import { wrapHandler } from '../_shared/error-handler.ts'
 import { getServiceClient } from '../_shared/supabase-client.ts'
 import { parseXMLFeed } from '../_shared/xml-parser.ts'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('sync-cdl-feeds');
 
 // Hayes Recruiting Solutions organization ID
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
@@ -62,7 +65,7 @@ async function syncClientFeed(
   };
 
   try {
-    console.log(`[${feed.clientName}] Fetching feed: ${feed.feedUrl}`);
+    logger.info('Fetching feed', { clientName: feed.clientName, feedUrl: feed.feedUrl });
     
     // Fetch the XML feed
     const response = await fetch(feed.feedUrl, {
@@ -81,11 +84,11 @@ async function syncClientFeed(
     
     // Check if response is XML
     if (!xmlText.trim().startsWith('<?xml') && !xmlText.includes('<job>')) {
-      console.log(`[${feed.clientName}] Response is not XML, checking JSON...`);
+      logger.info('Response is not XML, checking JSON...', { clientName: feed.clientName });
       // Try parsing as JSON
       try {
         const jsonData = JSON.parse(xmlText);
-        console.log(`[${feed.clientName}] Received JSON response with ${Array.isArray(jsonData) ? jsonData.length : 'unknown'} items`);
+        logger.info('Received JSON response', { clientName: feed.clientName, itemCount: Array.isArray(jsonData) ? jsonData.length : 'unknown' });
       } catch {
         throw new Error('Feed returned neither valid XML nor JSON');
       }
@@ -94,10 +97,10 @@ async function syncClientFeed(
     // Parse XML feed
     const jobs = parseXMLFeed(xmlText);
     result.jobsInFeed = jobs.length;
-    console.log(`[${feed.clientName}] Parsed ${jobs.length} jobs from feed`);
+    logger.info('Parsed jobs from feed', { clientName: feed.clientName, count: jobs.length });
 
     if (jobs.length === 0) {
-      console.log(`[${feed.clientName}] No jobs in feed, skipping sync`);
+      logger.info('No jobs in feed, skipping sync', { clientName: feed.clientName });
       result.durationMs = Date.now() - startTime;
       return result;
     }
@@ -124,7 +127,7 @@ async function syncClientFeed(
     for (const job of jobs) {
       const jobId = job.referencenumber || job.id;
       if (!jobId) {
-        console.log(`[${feed.clientName}] Skipping job without ID: ${job.title}`);
+        logger.debug('Skipping job without ID', { clientName: feed.clientName, title: job.title });
         continue;
       }
 
@@ -179,7 +182,7 @@ async function syncClientFeed(
           .eq('id', existingJob.id);
 
         if (updateError) {
-          console.error(`[${feed.clientName}] Failed to update job ${jobId}:`, updateError);
+          logger.error('Failed to update job', updateError, { clientName: feed.clientName, jobId });
         } else {
           result.jobsUpdated++;
         }
@@ -212,7 +215,7 @@ async function syncClientFeed(
             .insert(jobData);
 
           if (insertError) {
-            console.error(`[${feed.clientName}] Failed to insert job ${jobId}:`, insertError);
+            logger.error('Failed to insert job', insertError, { clientName: feed.clientName, jobId });
           } else {
             result.jobsInserted++;
           }
@@ -226,7 +229,7 @@ async function syncClientFeed(
       .map((j: any) => j.id);
 
     if (jobsToDeactivate.length > 0) {
-      console.log(`[${feed.clientName}] Deactivating ${jobsToDeactivate.length} stale jobs`);
+      logger.info('Deactivating stale jobs', { clientName: feed.clientName, count: jobsToDeactivate.length });
       
       const { error: deactivateError } = await supabase
         .from('job_listings')
@@ -237,17 +240,22 @@ async function syncClientFeed(
         .in('id', jobsToDeactivate);
 
       if (deactivateError) {
-        console.error(`[${feed.clientName}] Failed to deactivate jobs:`, deactivateError);
+        logger.error('Failed to deactivate jobs', deactivateError, { clientName: feed.clientName });
       } else {
         result.jobsDeactivated = jobsToDeactivate.length;
       }
     }
 
-    console.log(`[${feed.clientName}] Sync complete: ${result.jobsInserted} inserted, ${result.jobsUpdated} updated, ${result.jobsDeactivated} deactivated`);
+    logger.info('Sync complete', { 
+      clientName: feed.clientName, 
+      inserted: result.jobsInserted, 
+      updated: result.jobsUpdated, 
+      deactivated: result.jobsDeactivated 
+    });
 
   } catch (error) {
     result.error = error instanceof Error ? error.message : String(error);
-    console.error(`[${feed.clientName}] Sync failed:`, result.error);
+    logger.error('Sync failed', error, { clientName: feed.clientName });
   }
 
   result.durationMs = Date.now() - startTime;
@@ -261,7 +269,7 @@ const handler = wrapHandler(async (req: Request) => {
     return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
-  console.log('=== CDL Job Cast Feed Sync Started ===');
+  logger.info('CDL Job Cast Feed Sync Started');
   const startTime = Date.now();
   
   const supabase = getServiceClient();
@@ -326,8 +334,12 @@ const handler = wrapHandler(async (req: Request) => {
     results
   };
 
-  console.log('=== CDL Job Cast Feed Sync Complete ===');
-  console.log(`Total: ${summary.totalInserted} inserted, ${summary.totalUpdated} updated, ${summary.totalDeactivated} deactivated in ${totalDuration}ms`);
+  logger.info('CDL Job Cast Feed Sync Complete', { 
+    inserted: summary.totalInserted, 
+    updated: summary.totalUpdated, 
+    deactivated: summary.totalDeactivated,
+    durationMs: totalDuration 
+  });
 
   return successResponse(summary, 'CDL feeds synchronized successfully');
 }, { context: 'SyncCDLFeeds', logRequests: true });

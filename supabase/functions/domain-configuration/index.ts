@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('domain-configuration');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +24,7 @@ serve(async (req) => {
 
     const { organizationId, domain, action } = await req.json()
 
-    console.log(`Domain configuration request: ${action} for ${domain} (org: ${organizationId})`)
+    logger.info('Domain configuration request', { action, domain, organizationId })
 
     // Verify super admin access
     const authHeader = req.headers.get('Authorization')?.replace('Bearer ', '')
@@ -74,7 +77,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Domain configuration error:', error)
+    logger.error('Domain configuration error', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -89,7 +92,7 @@ serve(async (req) => {
 })
 
 async function configureDomain(supabase: any, organizationId: string, domain: string) {
-  console.log(`Configuring domain: ${domain}`)
+  logger.info('Configuring domain', { domain })
   
   // Generate verification token
   const verificationToken = crypto.randomUUID()
@@ -127,7 +130,7 @@ async function configureDomain(supabase: any, organizationId: string, domain: st
     throw new Error(`Failed to configure domain: ${error.message}`)
   }
 
-  console.log(`Domain configured successfully: ${domain}`)
+  logger.info('Domain configured successfully', { domain })
   
   return {
     success: true,
@@ -138,7 +141,7 @@ async function configureDomain(supabase: any, organizationId: string, domain: st
 }
 
 async function verifyDomain(supabase: any, organizationId: string, domain: string) {
-  console.log(`Verifying domain: ${domain}`)
+  logger.info('Verifying domain', { domain })
   
   try {
     // Get organization details
@@ -167,7 +170,7 @@ async function verifyDomain(supabase: any, organizationId: string, domain: strin
       throw new Error(`Failed to update domain status: ${updateError.message}`)
     }
 
-    console.log(`Domain verification ${isVerified ? 'successful' : 'failed'}: ${domain}`)
+    logger.info('Domain verification result', { domain, verified: isVerified })
     
     return {
       success: true,
@@ -177,13 +180,13 @@ async function verifyDomain(supabase: any, organizationId: string, domain: strin
         : 'Domain verification failed. Please check DNS records.'
     }
   } catch (error) {
-    console.error('Domain verification error:', error)
+    logger.error('Domain verification error', error)
     throw error
   }
 }
 
 async function deployDomain(supabase: any, organizationId: string, domain: string) {
-  console.log(`Deploying domain: ${domain}`)
+  logger.info('Deploying domain', { domain })
   
   try {
     // In production, this would trigger actual deployment and SSL provisioning
@@ -212,20 +215,20 @@ async function deployDomain(supabase: any, organizationId: string, domain: strin
         .eq('id', organizationId)
     }, 30000) // 30 seconds simulation
 
-    console.log(`Domain deployment initiated: ${domain}`)
+    logger.info('Domain deployment initiated', { domain })
     
     return {
       success: true,
       message: 'Domain deployment initiated. SSL certificate will be provisioned shortly.'
     }
   } catch (error) {
-    console.error('Domain deployment error:', error)
+    logger.error('Domain deployment error', error)
     throw error
   }
 }
 
 async function removeDomain(supabase: any, organizationId: string, domain: string) {
-  console.log(`Removing domain: ${domain}`)
+  logger.info('Removing domain', { domain })
   
   try {
     // Remove domain configuration
@@ -245,14 +248,14 @@ async function removeDomain(supabase: any, organizationId: string, domain: strin
       throw new Error(`Failed to remove domain: ${error.message}`)
     }
 
-    console.log(`Domain removed successfully: ${domain}`)
+    logger.info('Domain removed successfully', { domain })
     
     return {
       success: true,
       message: 'Domain configuration removed successfully.'
     }
   } catch (error) {
-    console.error('Domain removal error:', error)
+    logger.error('Domain removal error', error)
     throw error
   }
 }
@@ -261,7 +264,7 @@ async function performDNSVerification(domain: string, verificationToken: string)
   try {
     // In production, you would make actual DNS queries here
     // For demo purposes, we'll simulate a successful verification after a delay
-    console.log(`Performing DNS verification for ${domain} with token ${verificationToken}`)
+    logger.info('Performing DNS verification', { domain, tokenPresent: !!verificationToken })
     
     // Simulate DNS lookup delay
     await new Promise(resolve => setTimeout(resolve, 2000))
@@ -275,7 +278,7 @@ async function performDNSVerification(domain: string, verificationToken: string)
     // For now, return true to simulate successful verification
     return true
   } catch (error) {
-    console.error('DNS verification error:', error)
+    logger.error('DNS verification error', error)
     return false
   }
 }

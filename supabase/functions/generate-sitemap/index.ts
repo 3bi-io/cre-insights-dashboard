@@ -96,7 +96,7 @@ serve(async (req) => {
     const { data: jobs, error: jobsError } = await jobsQuery;
 
     if (jobsError) {
-      console.error('Error fetching jobs for sitemap:', jobsError);
+      logger.error('Error fetching jobs for sitemap', jobsError);
     } else if (jobs) {
       jobs.forEach(job => {
         allUrls.push({
@@ -115,7 +115,7 @@ serve(async (req) => {
       .eq('published', true);
 
     if (blogError) {
-      console.error('Error fetching blog posts for sitemap:', blogError);
+      logger.error('Error fetching blog posts for sitemap', blogError);
     } else if (blogPosts) {
       blogPosts.forEach(post => {
         allUrls.push({
@@ -127,7 +127,7 @@ serve(async (req) => {
       });
     }
 
-    logger.info(`Sitemap generated`, { totalUrls: allUrls.length, jobs: jobs?.length || 0, blogPosts: blogPosts?.length || 0 });
+    logger.info('Sitemap generated', { totalUrls: allUrls.length, jobs: jobs?.length || 0, blogPosts: blogPosts?.length || 0 });
 
     const sitemapXML = generateSitemapXML(allUrls);
 
@@ -139,7 +139,7 @@ serve(async (req) => {
       },
     });
   } catch (error) {
-    console.error('Sitemap generation error:', error);
+    logger.error('Sitemap generation error', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
