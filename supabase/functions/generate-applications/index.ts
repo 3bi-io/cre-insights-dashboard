@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('generate-applications');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -227,7 +230,7 @@ const handler = async (req: Request): Promise<Response> => {
       applications.push(application);
     }
 
-    console.log(`Generated ${applications.length} applications, inserting into database...`);
+    logger.info('Generated applications', { count: applications.length });
 
     // Insert applications in batches of 100
     const batchSize = 100;
@@ -243,18 +246,18 @@ const handler = async (req: Request): Promise<Response> => {
         .select('id');
 
       if (error) {
-        console.error(`Error inserting batch ${i / batchSize + 1}:`, error);
+        logger.error('Error inserting batch', { batch: i / batchSize + 1, error });
         errors.push({
           batch: i / batchSize + 1,
           error: error.message
         });
       } else {
         insertedCount += data?.length || 0;
-        console.log(`Inserted batch ${i / batchSize + 1}: ${data?.length || 0} applications`);
+        logger.info('Inserted batch', { batch: i / batchSize + 1, count: data?.length || 0 });
       }
     }
 
-    console.log(`Successfully inserted ${insertedCount} applications for ${org.name}`);
+    logger.info('Successfully inserted applications', { count: insertedCount, organization: org.name });
 
     // Get statistics
     const { data: stats } = await supabase
@@ -288,7 +291,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Error generating applications:', error);
+    logger.error('Error generating applications', error);
     
     return new Response(
       JSON.stringify({ 

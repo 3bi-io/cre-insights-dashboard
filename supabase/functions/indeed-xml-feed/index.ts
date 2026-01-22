@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('indeed-xml-feed')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,7 +56,7 @@ serve(async (req) => {
       user_agent: userAgent,
       job_count: jobListings?.length || 0,
       response_time_ms: responseTime
-    }).catch(err => console.error('Failed to log feed access:', err));
+    }).catch(err => logger.error('Failed to log feed access', err));
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {
@@ -63,7 +66,7 @@ serve(async (req) => {
       },
     })
   } catch (error) {
-    console.error('Error generating Indeed XML feed:', error)
+    logger.error('Error generating Indeed XML feed', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
