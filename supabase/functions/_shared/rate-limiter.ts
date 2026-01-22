@@ -8,6 +8,9 @@
 import { RateLimitError } from './error-handler.ts';
 import { extractIPFromRequest, getGeoLocation, GeoLocation } from './geo-lookup.ts';
 import { getGeoRateMultiplier, applyGeoMultiplier, GeoRateLimitOverride } from './geo-rate-config.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('rate-limiter');
 
 export interface RateLimitConfig {
   maxRequests: number;
@@ -94,7 +97,7 @@ export async function checkRateLimit(
       resetAt: data.resetAt,
     };
   } catch (error) {
-    console.error('Rate limit check failed:', error);
+    logger.error('Rate limit check failed', error);
     // On error, allow the request but log the issue
     return {
       allowed: true,
@@ -175,12 +178,12 @@ export async function checkRateLimitWithGeo(
           geoApplied = true;
           matchedRule = rule;
           
-          console.log(`[GeoRateLimit] Elevated limits applied: ${maxRequests} -> ${effectiveMaxRequests} for ${geoLocation.city}, ${geoLocation.region} (${rule?.id})`);
+          logger.info('Elevated limits applied', { original: maxRequests, effective: effectiveMaxRequests, city: geoLocation.city, region: geoLocation.region, ruleId: rule?.id });
         }
       }
     } catch (error) {
       // Geo lookup failed, continue with normal limits
-      console.warn('[GeoRateLimit] Geo lookup failed, using default limits:', (error as Error).message);
+      logger.warn('Geo lookup failed, using default limits', { error: (error as Error).message });
     }
   }
 

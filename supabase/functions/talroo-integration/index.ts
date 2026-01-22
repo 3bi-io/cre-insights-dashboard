@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('talroo-integration')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +18,7 @@ serve(async (req) => {
   try {
     const { action, campaignId, startDate, endDate } = await req.json()
     
-    console.log(`Talroo integration: ${action}`)
+    logger.info('Processing request', { action })
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -44,7 +47,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Talroo integration error:', error)
+    logger.error('Integration error', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -62,7 +65,7 @@ async function syncTalrooAnalytics(
   userId: string,
   supabaseClient: any
 ) {
-  console.log(`Syncing Talroo analytics for campaign ${campaignId}`)
+  logger.info('Syncing analytics', { campaignId, startDate, endDate })
   
   const mockData = []
   const start = new Date(startDate)

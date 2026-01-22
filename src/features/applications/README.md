@@ -192,9 +192,9 @@ const handleCreateApplication = async (formData) => {
       // ... other fields
     });
     
-    console.log('Created:', application.id);
+    logger.info('Application created', { id: application.id });
   } catch (error) {
-    console.error('Failed:', error);
+    logger.error('Failed to create application', error);
   }
 };
 ```

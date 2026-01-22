@@ -155,7 +155,7 @@ function getIndeedCredentials(): { clientId: string; clientSecret: string } | nu
   const clientSecret = Deno.env.get('INDEED_CLIENT_SECRET')
   
   if (!clientId || !clientSecret) {
-    console.warn('[INDEED] API credentials not configured')
+    logger.warn('API credentials not configured')
     return null
   }
   
@@ -181,14 +181,14 @@ async function getIndeedAccessToken(credentials: { clientId: string; clientSecre
     })
     
     if (!response.ok) {
-      console.error('[INDEED] Failed to get access token:', await response.text())
+      logger.error('Failed to get access token', await response.text())
       return null
     }
     
     const data = await response.json()
     return data.access_token
   } catch (error) {
-    console.error('[INDEED] OAuth error:', error)
+    logger.error('OAuth error', error)
     return null
   }
 }

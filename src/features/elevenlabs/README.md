@@ -38,9 +38,9 @@ The `useVoiceAgentConnection` hook handles all connection lifecycle logic:
 ```typescript
 const { isConnected, isConnecting, isSpeaking, connect, disconnect } = 
   useVoiceAgentConnection({
-    onConnect: () => console.log('Connected!'),
-    onDisconnect: () => console.log('Disconnected!'),
-    onError: (error) => console.error(error)
+    onConnect: () => logger.info('Voice agent connected'),
+    onDisconnect: () => logger.info('Voice agent disconnected'),
+    onError: (error) => logger.error('Voice agent error', error)
   });
 ```
 
@@ -54,7 +54,7 @@ try {
   await connect(agentId);
 } catch (error) {
   const parsedError = parseVoiceAgentError(error);
-  console.log(getErrorTitle(parsedError)); // "Microphone Access Required"
+  logger.info('Voice error', { title: getErrorTitle(parsedError) }); // "Microphone Access Required"
 }
 ```
 

@@ -4,6 +4,9 @@
  */
 
 import { errorResponse } from './response.ts';
+import { createLogger } from './logger.ts';
+
+const logger = createLogger('error-handler');
 
 /**
  * Log error with structured format
@@ -16,11 +19,10 @@ export function logError(
   const errorMessage = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
 
-  console.error(`[${context}] Error:`, {
+  logger.error(`[${context}] Error`, {
     message: errorMessage,
     stack,
     ...details,
-    timestamp: new Date().toISOString(),
   });
 }
 
@@ -84,7 +86,7 @@ export function wrapHandler(
     const startTime = Date.now();
 
     if (logRequests) {
-      console.log(`[${context}] ${req.method} ${req.url}`);
+      logger.info(`${req.method} ${req.url}`, { context });
     }
 
     try {
@@ -92,7 +94,7 @@ export function wrapHandler(
 
       if (logRequests) {
         const duration = Date.now() - startTime;
-        console.log(`[${context}] Completed in ${duration}ms - Status: ${response.status}`);
+        logger.info('Request completed', { context, duration, status: response.status });
       }
 
       return response;

@@ -148,7 +148,7 @@ function getAdzunaCredentials(): { appId: string; apiKey: string } | null {
   const apiKey = Deno.env.get('ADZUNA_API_KEY')
   
   if (!appId || !apiKey) {
-    console.warn('[ADZUNA] API credentials not configured')
+    logger.warn('API credentials not configured')
     return null
   }
   
@@ -167,7 +167,7 @@ async function syncAdzunaAnalytics(
   organizationId: string | null,
   supabaseClient: any
 ) {
-  console.log(`[ADZUNA] Syncing analytics for campaign ${campaignId} from ${startDate} to ${endDate}`)
+  logger.info(`Syncing analytics for campaign ${campaignId}`, { startDate, endDate })
   
   const credentials = getAdzunaCredentials()
   let analyticsData: any[] = []

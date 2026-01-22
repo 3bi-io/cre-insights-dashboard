@@ -148,7 +148,7 @@ serve(async (req) => {
           const errorText = await response.text();
           // Handle "conversation not found" gracefully
           if (response.status === 404 || errorText.includes('conversation_history_not_found') || errorText.includes('document_not_found')) {
-            console.warn(`Conversation ${conversationId} not found in ElevenLabs`);
+            logger.warn('Conversation not found in ElevenLabs', { conversationId });
             return new Response(
               JSON.stringify({ 
                 success: false, 

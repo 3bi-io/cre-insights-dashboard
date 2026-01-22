@@ -44,7 +44,8 @@ export function createATSAdapter(
       return new RESTJSONAdapter(config);
     
     default:
-      console.warn(`Unknown API type '${system.api_type}', defaulting to REST JSON`);
+      // Unknown API type - log warning and default to REST JSON
+      return new RESTJSONAdapter(config);
       return new RESTJSONAdapter(config);
   }
 }

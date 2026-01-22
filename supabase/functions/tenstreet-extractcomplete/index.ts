@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
     // Only accept POST requests
     if (req.method !== 'POST') {
-      console.error('[Webhook] Invalid method:', req.method);
+      logger.error('Invalid method', { method: req.method });
       return new Response(
         createSOAPFault('Client', 'Only POST requests are accepted'),
         { status: 405, headers: corsHeaders }
@@ -64,12 +64,12 @@ Deno.serve(async (req) => {
 
     // Read SOAP XML payload
     const soapXml = await req.text();
-    console.log('[Webhook] Received payload length:', soapXml.length);
+    logger.debug('Received payload', { length: soapXml.length });
 
     // Validate SOAP structure
     const validation = validateSOAPStructure(soapXml);
     if (!validation.valid) {
-      console.error('[Webhook] Invalid SOAP structure:', validation.errors);
+      logger.error('Invalid SOAP structure', { errors: validation.errors });
       return new Response(
         createSOAPFault('Client', `Invalid SOAP structure: ${validation.errors.join(', ')}`),
         { status: 400, headers: corsHeaders }
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     const envelope = parseSOAPEnvelope(soapXml);
     const extractData = parseTenstreetExtractComplete(envelope.body);
 
-    console.log('[Webhook] Parsed data:', {
+    logger.info('Parsed extract data', {
       packetId: extractData.packetId,
       driverId: extractData.driverId,
       status: extractData.status,
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (existingLog) {
-      console.log('[Webhook] Duplicate webhook detected, already processed:', extractData.packetId);
+      logger.info('Duplicate webhook detected, already processed', { packetId: extractData.packetId });
       
       // Log duplicate attempt
       await supabase.from('tenstreet_webhook_logs').insert({
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (!credentials) {
-        console.error('[Webhook] Invalid ClientId:', extractData.clientId);
+        logger.error('Invalid ClientId', { clientId: extractData.clientId });
         return new Response(
           createSOAPFault('Client', 'Invalid or inactive ClientId'),
           { status: 401, headers: corsHeaders }
@@ -157,14 +157,14 @@ Deno.serve(async (req) => {
       let extractResults = null;
       if (extractData.extractURL && extractData.status === 'Complete') {
         try {
-          console.log('[Webhook] Downloading extract file from:', extractData.extractURL);
+          logger.info('Downloading extract file', { url: extractData.extractURL });
           const extractResponse = await fetch(extractData.extractURL);
           if (extractResponse.ok) {
             const extractContent = await extractResponse.text();
             extractResults = { raw: extractContent, url: extractData.extractURL };
           }
         } catch (extractError) {
-          console.error('[Webhook] Failed to download extract file:', extractError);
+          logger.error('Failed to download extract file', extractError);
         }
       }
 
@@ -187,11 +187,11 @@ Deno.serve(async (req) => {
         .eq('id', xchangeRequest.id);
 
       if (updateError) {
-        console.error('[Webhook] Failed to update Xchange request:', updateError);
+        logger.error('Failed to update Xchange request', updateError);
         throw new Error(`Database update failed: ${updateError.message}`);
       }
 
-      console.log('[Webhook] Successfully updated Xchange request:', xchangeRequest.id);
+      logger.info('Successfully updated Xchange request', { requestId: xchangeRequest.id });
 
       // Log successful webhook processing
       await supabase.from('tenstreet_webhook_logs').insert({
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
 
     } else {
       // No ClientId provided - log but accept
-      console.warn('[Webhook] No ClientId in webhook payload');
+      logger.warn('No ClientId in webhook payload');
       
       await supabase.from('tenstreet_webhook_logs').insert({
         packet_id: extractData.packetId,
