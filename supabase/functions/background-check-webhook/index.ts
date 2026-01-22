@@ -67,7 +67,7 @@ serve(async (req) => {
       .single();
 
     if (!request) {
-      console.log(`[${correlationId}] No matching request found for ${externalId}`);
+      logger.info('No matching request found', { correlationId, externalId });
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -86,7 +86,7 @@ serve(async (req) => {
     );
 
     if (!validation.valid) {
-      console.warn(`[${correlationId}] Invalid webhook signature`);
+      logger.warn('Invalid webhook signature', { correlationId });
     }
 
     // Update request status
@@ -111,13 +111,13 @@ serve(async (req) => {
       .update(updateData)
       .eq("id", request.id);
 
-    console.log(`[${correlationId}] Request ${request.id} updated to ${updateData.status}`);
+    logger.info('Request updated', { correlationId, requestId: request.id, status: updateData.status });
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error(`[${correlationId}] Webhook error:`, error);
+    logger.error('Webhook error', error, { correlationId });
     return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

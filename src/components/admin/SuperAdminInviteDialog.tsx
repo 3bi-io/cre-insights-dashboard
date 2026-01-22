@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -121,7 +122,7 @@ export const SuperAdminInviteDialog: React.FC<SuperAdminInviteDialogProps> = ({
             }
           });
         } catch (emailError) {
-          console.error('[SuperAdminInviteDialog] Failed to send invite email:', emailError);
+          logger.error('Failed to send invite email', emailError, { context: 'SuperAdminInviteDialog' });
         }
       }
 

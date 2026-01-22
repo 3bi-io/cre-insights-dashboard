@@ -7,7 +7,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { wrapHandler, ValidationError, ExternalAPIError } from '../_shared/error-handler.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse } from '../_shared/response.ts';
+import { createLogger } from '../_shared/logger.ts';
 
+const logger = createLogger('elevenlabs-api');
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
 const handler = wrapHandler(async (req: Request) => {
@@ -24,7 +26,7 @@ const handler = wrapHandler(async (req: Request) => {
   }
 
   const { action, ...params } = await req.json();
-  console.log('ElevenLabs API action:', action);
+  logger.info('ElevenLabs API action', { action });
 
   const headers = {
     'xi-api-key': ELEVENLABS_API_KEY,

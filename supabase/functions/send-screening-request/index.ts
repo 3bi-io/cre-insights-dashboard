@@ -218,7 +218,8 @@ const handler = async (req: Request): Promise<Response> => {
   });
   
   if (!rateLimitResult.allowed) {
-    console.warn(`Rate limit exceeded for: ${identifier}`, {
+    logger.warn('Rate limit exceeded', {
+      identifier,
       geoApplied: rateLimitResult.geoApplied,
       effectiveLimit: rateLimitResult.effectiveMaxRequests
     });

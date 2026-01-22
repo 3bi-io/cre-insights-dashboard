@@ -2,6 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('google-indexing');
 
 function validateUrl(url: string): boolean {
   try {
@@ -155,11 +158,11 @@ serve(async (req) => {
       try {
         await notifyGoogleIndexing(url, notificationType, accessToken)
         result.successes++
-        console.log(`Successfully notified Google about ${url}`)
+        logger.info('Successfully notified Google', { url })
       } catch (error) {
         result.failures++
         result.errors.push(`${url}: ${error.message}`)
-        console.error(`Failed to notify Google about ${url}:`, error)
+        logger.error('Failed to notify Google', error, { url })
       }
     }
 
@@ -168,7 +171,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Error in google-indexing function:', error)
+    logger.error('Error in google-indexing function', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {

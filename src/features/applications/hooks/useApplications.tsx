@@ -1,10 +1,17 @@
+/**
+ * useApplications Hook
+ * 
+ * Unified hook for application data fetching and CRUD operations.
+ * Uses standardized query keys and proper React Query patterns.
+ */
+
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { applicationsService, Application, CreateApplicationData, UpdateApplicationData } from '../services/ApplicationsService';
-import { FilterOptions } from '@/features/shared/types/feature.types';
+import { applicationsService, CreateApplicationData, UpdateApplicationData } from '../services/ApplicationsService';
+import { queryKeys } from '@/lib/queryKeys';
 
-export interface ApplicationFilters extends FilterOptions {
+export interface ApplicationFilters {
   job_id?: string;
   status?: string;
   cdl_license?: boolean;
@@ -13,16 +20,27 @@ export interface ApplicationFilters extends FilterOptions {
   city?: string;
   state?: string;
   organization_id?: string;
+  search?: string;
+  page?: number;
 }
 
-export function useApplications(options?: { 
+interface UseApplicationsOptions {
   enabled?: boolean;
   filters?: ApplicationFilters;
-}) {
+}
+
+/**
+ * Hook for application data fetching and CRUD mutations.
+ * Uses standardized query keys for cache consistency.
+ */
+export function useApplications(options?: UseApplicationsOptions) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [page, setPage] = React.useState(1);
   const [allApplications, setAllApplications] = React.useState<any[]>([]);
+
+  // Build query key from filters
+  const queryKey = queryKeys.applications.list({ ...options?.filters, page });
 
   // Query for fetching applications with filters
   const {
@@ -31,7 +49,7 @@ export function useApplications(options?: {
     error: queryError,
     refetch
   } = useQuery({
-    queryKey: [`applications`, options?.filters, page],
+    queryKey,
     queryFn: async () => {
       const response = await applicationsService.getApplications({
         ...options?.filters,
@@ -60,8 +78,13 @@ export function useApplications(options?: {
   const applications = allApplications;
   const totalCount = queryData?.totalCount || 0;
   const hasMore = queryData?.hasMore || false;
-  const error = queryError as any;
+  const error = queryError as Error | null;
   const initialized = !loading;
+
+  // Invalidate all application-related queries
+  const invalidateApplications = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+  };
 
   // Create mutation
   const createMutation = useMutation({
@@ -73,13 +96,13 @@ export function useApplications(options?: {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`applications`] });
+      invalidateApplications();
       toast({
         title: "Success",
         description: "Application created successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create application",
@@ -98,13 +121,13 @@ export function useApplications(options?: {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`applications`] });
+      invalidateApplications();
       toast({
         title: "Success",
         description: "Application updated successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update application",
@@ -123,13 +146,13 @@ export function useApplications(options?: {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`applications`] });
+      invalidateApplications();
       toast({
         title: "Success",
         description: "Application deleted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete application",
@@ -138,7 +161,7 @@ export function useApplications(options?: {
     }
   });
 
-  // Wrapper methods with proper typing
+  // Wrapper methods
   const createApplication = (data: CreateApplicationData) => {
     createMutation.mutate(data);
   };
@@ -170,10 +193,14 @@ export function useApplications(options?: {
   const reset = () => {
     setPage(1);
     setAllApplications([]);
-    queryClient.removeQueries({ queryKey: [`applications`] });
+    queryClient.removeQueries({ queryKey: queryKeys.applications.all });
   };
 
-  const reviewApplication = async (id: string, status: 'reviewed' | 'interviewing' | 'hired' | 'rejected', notes?: string) => {
+  const reviewApplication = async (
+    id: string, 
+    status: 'reviewed' | 'interviewing' | 'hired' | 'rejected', 
+    notes?: string
+  ) => {
     const result = await applicationsService.reviewApplication(id, status, notes);
     if (!result.error) {
       refresh();
@@ -206,10 +233,13 @@ export function useApplications(options?: {
     clearError,
     reset,
 
-    // States
+    // Mutation states
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending
+    isDeleting: deleteMutation.isPending,
+
+    // Cache utilities
+    invalidateApplications,
   };
 }
 

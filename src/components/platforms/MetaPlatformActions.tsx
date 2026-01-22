@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import DateRangeFilter from './DateRangeFilter';
 import MetaSpendMetrics from './MetaSpendMetrics';
 import { getActualAccountId, getDisplayAccountId, transformAccountDataForDisplay } from '@/utils/metaAccountAlias';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface MetaPlatformActionsProps {
   platform: {
@@ -83,7 +84,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   const { toast } = useToast();
 
   const { data: metaAccounts, refetch: refetchAccounts, isError: accountsError } = useQuery({
-    queryKey: ['meta-accounts', CR_ENGLAND_ACTUAL_ID],
+    queryKey: queryKeys.meta.accounts(),
     queryFn: async () => {
       logger.debug('Fetching Meta accounts', { actualId: CR_ENGLAND_ACTUAL_ID, context: 'MetaPlatformActions' });
       const { data, error } = await supabase
@@ -104,7 +105,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   });
 
   const { data: metaCampaigns, refetch: refetchCampaigns } = useQuery({
-    queryKey: ['meta-campaigns', CR_ENGLAND_ACTUAL_ID],
+    queryKey: queryKeys.meta.campaigns(CR_ENGLAND_ACTUAL_ID),
     queryFn: async () => {
       logger.debug('Fetching Meta campaigns', { actualId: CR_ENGLAND_ACTUAL_ID, context: 'MetaPlatformActions' });
       const { data, error } = await supabase
@@ -121,7 +122,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   });
 
   const { data: metaSpend, refetch: refetchSpend } = useQuery({
-    queryKey: ['meta-spend', dateRange],
+    queryKey: queryKeys.meta.spend({ dateRange }),
     queryFn: async () => {
       let startDate: string;
       const today = new Date();
@@ -164,7 +165,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   });
 
   const { data: metaAdSets } = useQuery({
-    queryKey: ['meta-ad-sets'],
+    queryKey: queryKeys.meta.adSets(CR_ENGLAND_ACTUAL_ID),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('meta_ad_sets')
@@ -179,7 +180,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
   });
 
   const { data: metaAds } = useQuery({
-    queryKey: ['meta-ads'],
+    queryKey: [...queryKeys.meta.all, 'ads', CR_ENGLAND_ACTUAL_ID],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('meta_ads')

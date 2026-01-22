@@ -131,17 +131,17 @@ serve(async (req) => {
             }, { onConflict: 'user_id,account_id' });
           } else {
             const e = await accResp.json().catch(() => ({}));
-            console.warn('meta-sync-cron: account refresh failed', e);
+            logger.warn('Account refresh failed', { error: e });
           }
         } catch (e) {
-          console.warn('meta-sync-cron: account refresh error', e);
+          logger.warn('Account refresh error', { error: e });
         }
 
         // 2) Campaigns
         const campaigns = await fetchAll<MetaCampaign>(
           `https://graph.facebook.com/v18.0/${act}/campaigns?fields=id,name,objective,status,created_time,updated_time&limit=500&access_token=${metaAccessToken}`
         );
-        console.log(`Account ${accountId}: ${campaigns.length} campaigns`);
+        logger.info('Campaigns fetched', { accountId, count: campaigns.length });
         for (const c of campaigns) {
           const { error } = await supabase.from('meta_campaigns').upsert({
             user_id: userId,

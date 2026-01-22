@@ -11,6 +11,7 @@ import type {
   ATSCredentials,
   FieldMapping 
 } from './types.ts';
+import { createLogger, type EdgeLogger } from '../logger.ts';
 
 // Retry configuration
 const DEFAULT_RETRY_CONFIG = {
@@ -25,12 +26,18 @@ export abstract class BaseATSAdapter {
   protected credentials: ATSCredentials;
   protected baseEndpoint: string;
   protected correlationId: string;
+  protected logger: EdgeLogger;
 
   constructor(config: AdapterConfig) {
     this.config = config;
     this.credentials = config.connection.credentials;
     this.baseEndpoint = config.system.base_endpoint || '';
     this.correlationId = this.generateCorrelationId();
+    this.logger = createLogger(`ats-${this.adapterName}`, {
+      correlationId: this.correlationId,
+      connectionId: config.connection.id,
+      mode: config.connection.mode
+    });
   }
 
   /**
@@ -379,24 +386,18 @@ export abstract class BaseATSAdapter {
   ): void {
     const logData = {
       adapter: this.adapterName,
-      connection_id: this.config.connection.id,
-      correlation_id: this.correlationId,
-      mode: this.config.connection.mode,
-      timestamp: new Date().toISOString(),
       ...data
     };
     
-    const prefix = `[${this.adapterName}:${this.correlationId}]`;
-    
     switch (level) {
       case 'info':
-        console.log(`${prefix} ${message}`, JSON.stringify(logData));
+        this.logger.info(message, logData);
         break;
       case 'warn':
-        console.warn(`${prefix} ${message}`, JSON.stringify(logData));
+        this.logger.warn(message, logData);
         break;
       case 'error':
-        console.error(`${prefix} ${message}`, JSON.stringify(logData));
+        this.logger.error(message, undefined, logData);
         break;
     }
   }

@@ -15,14 +15,21 @@ import {
   RetryConfig,
   DEFAULT_RETRY_CONFIG,
 } from './types.ts';
+import { createLogger, type EdgeLogger } from '../logger.ts';
 
 export abstract class BaseBGCAdapter {
   protected config: BGCAdapterConfig;
   protected correlationId: string;
+  protected logger: EdgeLogger;
   
   constructor(config: BGCAdapterConfig) {
     this.config = config;
     this.correlationId = config.correlationId || crypto.randomUUID();
+    this.logger = createLogger(`bgc-${config.provider.slug}`, {
+      correlationId: this.correlationId,
+      organizationId: config.connection.organization_id,
+      mode: config.connection.mode
+    });
   }
   
   // ============================================================================
@@ -351,25 +358,18 @@ export abstract class BaseBGCAdapter {
     message: string,
     data?: Record<string, unknown>
   ): void {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      correlationId: this.correlationId,
-      provider: this.config.provider.slug,
-      organizationId: this.config.connection.organization_id,
-      message,
-      ...data,
-    };
-    
     switch (level) {
       case 'error':
-        console.error(JSON.stringify(logEntry));
+        this.logger.error(message, undefined, data);
         break;
       case 'warn':
-        console.warn(JSON.stringify(logEntry));
+        this.logger.warn(message, data);
+        break;
+      case 'debug':
+        this.logger.debug(message, data);
         break;
       default:
-        console.log(JSON.stringify(logEntry));
+        this.logger.info(message, data);
     }
   }
   
