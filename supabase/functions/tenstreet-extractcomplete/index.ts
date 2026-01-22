@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (findError || !xchangeRequest) {
-        console.error('[Webhook] Xchange request not found:', extractData.packetId, findError);
+        logger.error('Xchange request not found', findError, { packetId: extractData.packetId });
         
         // Log webhook but don't fail
         await supabase.from('tenstreet_webhook_logs').insert({
@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('[Webhook] Error processing webhook:', error);
+    logger.error('Error processing webhook', error);
     
     return new Response(
       createSOAPFault('Server', error.message || 'Internal server error'),

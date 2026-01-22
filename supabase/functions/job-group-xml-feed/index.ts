@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('job-group-xml-feed');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +35,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Generating XML feed for job group:', jobGroupId);
+    logger.info('Generating XML feed for job group', { jobGroupId });
 
     // Get job group details
     const { data: jobGroup, error: jobGroupError } = await supabase
@@ -42,7 +45,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (jobGroupError || !jobGroup) {
-      console.error('Job group not found:', jobGroupError);
+      logger.error('Job group not found', jobGroupError, { jobGroupId });
       return new Response(
         JSON.stringify({ error: 'Job group not found' }),
         { 
@@ -79,7 +82,7 @@ Deno.serve(async (req) => {
       .eq('job_group_id', jobGroupId);
 
     if (assignmentsError) {
-      console.error('Error fetching job assignments:', assignmentsError);
+      logger.error('Error fetching job assignments', assignmentsError, { jobGroupId });
       return new Response(
         JSON.stringify({ error: 'Error fetching job assignments' }),
         { 
@@ -90,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     const jobs = assignments?.map(a => a.job_listings).filter(Boolean) || [];
-    console.log(`Found ${jobs.length} jobs for job group ${jobGroup.name}`);
+    logger.info('Found jobs for job group', { jobCount: jobs.length, groupName: jobGroup.name });
 
     // Generate XML feed based on publisher
     let xmlContent = '';
@@ -124,7 +127,7 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
       job_count: jobs.length,
       response_time_ms: responseTime
-    }).catch(err => console.error('Failed to log feed access:', err));
+    }).catch(err => logger.error('Failed to log feed access', err));
 
     return new Response(
       JSON.stringify({ 
@@ -140,7 +143,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error generating XML feed:', error);
+    logger.error('Error generating XML feed', error);
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { 

@@ -1,5 +1,8 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('fetch-crengland-jobs');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +10,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('Fetch CR England jobs function called:', req.method, req.url);
+  logger.info('Function called', { method: req.method, url: req.url });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -21,17 +24,17 @@ serve(async (req) => {
       try {
         const body = await req.json();
         division = body.division || null;
-        console.log('POST request, division:', division);
+        logger.debug('POST request', { division });
       } catch (e) {
-        console.log('Failed to parse JSON body, using defaults');
+        logger.debug('Failed to parse JSON body, using defaults');
       }
     } else if (req.method === 'GET') {
       const url = new URL(req.url);
       division = url.searchParams.get('division');
-      console.log('GET request, division from query:', division);
+      logger.debug('GET request', { division });
     }
 
-    console.log('Fetching CR England jobs, division:', division);
+    logger.info('Fetching CR England jobs', { division });
 
     // Fetch jobs from CR England job board
     let jobsUrl = 'https://crengland.com/jobboard/';
@@ -39,7 +42,7 @@ serve(async (req) => {
       jobsUrl += `jobs?division=${encodeURIComponent(division)}`;
     }
     
-    console.log('Calling CR England API:', jobsUrl);
+    logger.debug('Calling CR England API', { jobsUrl });
     
     const response = await fetch(jobsUrl, {
       method: 'GET',
@@ -49,11 +52,11 @@ serve(async (req) => {
       },
     });
     
-    console.log('CR England response status:', response.status);
+    logger.debug('CR England response', { status: response.status });
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('CR England API error:', response.status, response.statusText, errorText);
+      logger.error('CR England API error', new Error(errorText), { status: response.status, statusText: response.statusText });
       return new Response(
         JSON.stringify({ 
           success: false,
@@ -68,7 +71,7 @@ serve(async (req) => {
     }
     
     const html = await response.text();
-    console.log('HTML response received, length:', html.length);
+    logger.debug('HTML response received', { length: html.length });
     
     // Parse HTML to extract job listings
     const jobs = [];
@@ -78,7 +81,7 @@ serve(async (req) => {
     if (jsonLdMatch) {
       try {
         const jsonData = JSON.parse(jsonLdMatch[1]);
-        console.log('Found JSON-LD data:', jsonData);
+        logger.debug('Found JSON-LD data', { type: jsonData['@type'] });
         
         // Handle JobPosting schema
         const jobPostings = Array.isArray(jsonData) ? jsonData : [jsonData];
@@ -104,7 +107,7 @@ serve(async (req) => {
           }
         }
       } catch (e) {
-        console.log('Failed to parse JSON-LD:', e);
+        logger.debug('Failed to parse JSON-LD', { error: e instanceof Error ? e.message : 'Unknown' });
       }
     }
     
@@ -122,7 +125,7 @@ serve(async (req) => {
       
       for (const pattern of patterns) {
         const matches = Array.from(html.matchAll(pattern));
-        console.log(`Pattern found ${matches.length} matches`);
+        logger.debug('Pattern match', { matchCount: matches.length });
         
         for (const match of matches) {
           const jobHtml = match[1] || match[0];
@@ -187,7 +190,7 @@ serve(async (req) => {
     
     // Fallback: Create sample jobs based on known divisions
     if (jobs.length === 0) {
-      console.log('No jobs parsed from HTML, using fallback divisions');
+      logger.debug('No jobs parsed from HTML, using fallback divisions');
       const divisions = [
         { name: 'Dedicated', desc: 'Consistent routes with the same customer, home weekly' },
         { name: 'Over the Road', desc: 'Long-haul opportunities across all 48 states' },
@@ -214,7 +217,7 @@ serve(async (req) => {
       });
     }
     
-    console.log(`Parsed ${jobs.length} jobs from CR England`);
+    logger.info('Parsed jobs from CR England', { count: jobs.length });
     
     const data = { 
       feeds: jobs,
@@ -231,7 +234,7 @@ serve(async (req) => {
     );
     
   } catch (error) {
-    console.error('Error in fetch-crengland-jobs function:', error);
+    logger.error('Error in fetch-crengland-jobs function', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     return new Response(

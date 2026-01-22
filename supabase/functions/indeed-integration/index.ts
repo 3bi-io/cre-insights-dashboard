@@ -126,7 +126,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('[INDEED] Integration error:', error)
+    logger.error('Integration error', error)
     
     // Handle Zod validation errors
     if (error instanceof z.ZodError) {
@@ -205,7 +205,7 @@ async function syncIndeedAnalytics(
   organizationId: string | null,
   supabaseClient: any
 ) {
-  console.log(`[INDEED] Syncing analytics for employer ${employerId} from ${startDate} to ${endDate}`)
+  logger.info('Syncing analytics', { employerId, startDate, endDate })
   
   const credentials = getIndeedCredentials()
   let analyticsData: any[] = []
@@ -237,21 +237,21 @@ async function syncIndeedAnalytics(
           const data = await response.json()
           analyticsData = transformIndeedAnalytics(data, userId, employerId, organizationId)
           usedRealApi = true
-          console.log('[INDEED] Successfully fetched analytics from API')
+          logger.info('Successfully fetched analytics from API')
         } else {
-          console.warn('[INDEED] API returned non-OK status, using simulated data')
+          logger.warn('API returned non-OK status, using simulated data', { status: response.status })
           analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
         }
       } catch (apiError) {
-        console.error('[INDEED] API error, falling back to simulated data:', apiError)
+        logger.error('API error, falling back to simulated data', apiError)
         analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
       }
     } else {
-      console.log('[INDEED] Could not obtain access token - using simulated data')
+      logger.info('Could not obtain access token - using simulated data')
       analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
     }
   } else {
-    console.log('[INDEED] No API credentials - using simulated analytics data')
+    logger.info('No API credentials - using simulated analytics data')
     analyticsData = generateAnalyticsData(employerId, startDate, endDate, jobId, userId, organizationId)
   }
 
@@ -264,7 +264,7 @@ async function syncIndeedAnalytics(
     })
 
   if (error) {
-    console.error('[INDEED] Failed to upsert analytics:', error)
+    logger.error('Failed to upsert analytics', error)
     throw error
   }
 
@@ -374,7 +374,7 @@ async function getIndeedStats(employerId: string, userId: string, supabaseClient
     .limit(30)
 
   if (error) {
-    console.error('[INDEED] Failed to fetch stats:', error)
+    logger.error('Failed to fetch stats', error)
     throw error
   }
 
@@ -417,7 +417,7 @@ async function postJobToIndeed(
   const credentials = getIndeedCredentials()
   
   if (!credentials) {
-    console.log('[INDEED] No API credentials - job posting simulated')
+    logger.info('No API credentials - job posting simulated')
     
     await supabaseClient.from('audit_logs').insert({
       user_id: userId,
@@ -477,7 +477,7 @@ async function postJobToIndeed(
     
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[INDEED] Job posting failed:', errorText)
+      logger.error('Job posting failed', new Error(errorText), { status: response.status })
       throw new Error(`Indeed API error: ${response.status}`)
     }
     
@@ -506,7 +506,7 @@ async function postJobToIndeed(
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (apiError) {
-    console.error('[INDEED] Job posting error:', apiError)
+    logger.error('Job posting error', apiError)
     throw new Error(`Failed to post job to Indeed: ${apiError.message}`)
   }
 }
@@ -588,7 +588,7 @@ async function manageIndeedJob(
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (apiError) {
-    console.error(`[INDEED] ${action} error:`, apiError)
+    logger.error(`${action} error`, apiError)
     throw new Error(`Failed to ${action.replace('_', ' ')}: ${apiError.message}`)
   }
 }
