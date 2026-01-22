@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 
 interface Conversation {
   id: string;
@@ -74,7 +75,7 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
             setTranscript(newTranscriptData || []);
           }
         } catch (apiError) {
-          console.error('Could not load transcript from ElevenLabs:', apiError);
+          logger.error('Could not load transcript from ElevenLabs', apiError, { context: 'conversation-details' });
           setTranscriptError('Could not load transcript from ElevenLabs');
           setTranscript([]);
         }
@@ -84,7 +85,7 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
 
       setAudio(audioData);
     } catch (error) {
-      console.error('Error loading conversation data:', error);
+      logger.error('Error loading conversation data', error, { context: 'conversation-details' });
     } finally {
       setLoading(false);
     }
@@ -102,7 +103,7 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
         setTranscript(newTranscriptData || []);
       }
     } catch (error) {
-      console.error('Retry failed:', error);
+      logger.error('Retry failed', error, { context: 'conversation-details' });
       setTranscriptError('Failed to load transcript');
     } finally {
       setLoading(false);

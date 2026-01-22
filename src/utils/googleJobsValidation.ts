@@ -9,6 +9,7 @@ import {
   GoogleJobsSitemapEntry,
   SITEMAP_NAMESPACE 
 } from '@/types/googleJobs';
+import { logger } from '@/lib/logger';
 
 /**
  * Validates a sitemap XML feed for Google Jobs compatibility
@@ -146,7 +147,7 @@ export function extractSitemapUrls(xmlText: string): GoogleJobsSitemapEntry[] {
       }
     });
   } catch (error) {
-    console.error('Failed to extract sitemap URLs:', error);
+    logger.error('Failed to extract sitemap URLs', error, { context: 'google-jobs-validation' });
   }
 
   return entries;
@@ -273,11 +274,11 @@ export function extractJsonLdFromHtml(html: string): Record<string, unknown>[] {
           }
         }
       } catch (e) {
-        console.error('Failed to parse JSON-LD:', e);
+        logger.error('Failed to parse JSON-LD', e, { context: 'google-jobs-validation' });
       }
     });
   } catch (error) {
-    console.error('Failed to parse HTML:', error);
+    logger.error('Failed to parse HTML', error, { context: 'google-jobs-validation' });
   }
 
   return jsonLdScripts;

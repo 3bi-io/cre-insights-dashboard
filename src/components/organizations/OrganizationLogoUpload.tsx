@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface OrganizationLogoUploadProps {
   organizationId: string;
@@ -104,7 +105,7 @@ export const OrganizationLogoUpload = ({
         description: "Organization logo uploaded successfully",
       });
     } catch (error: any) {
-      console.error('Logo upload error:', error);
+      logger.error('Logo upload error', error, { context: 'org-logo-upload' });
       toast({
         title: "Upload Failed",
         description: error.message || "Failed to upload logo. Please try again.",
@@ -150,7 +151,7 @@ export const OrganizationLogoUpload = ({
         });
       }
     } catch (error: any) {
-      console.error('Logo deletion error:', error);
+      logger.error('Logo deletion error', error, { context: 'org-logo-upload' });
       if (showToast) {
         toast({
           title: "Deletion Failed",
@@ -220,7 +221,7 @@ export const OrganizationLogoUpload = ({
                 alt="Current organization logo" 
                 className="w-16 h-16 object-contain rounded-lg border"
                 onError={(e) => {
-                  console.error('Logo load error:', e);
+                  logger.error('Logo load error', e, { context: 'org-logo-upload' });
                   e.currentTarget.src = '/logo.png';
                 }}
               />

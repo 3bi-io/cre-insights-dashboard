@@ -189,19 +189,19 @@ const SuperAdminFeeds = () => {
     setSelectedJobs(new Set());
     
     try {
-      console.log('Fetching feeds from:', feedSource);
+      logger.debug('Fetching feeds', { feedSource, context: 'super-admin-feeds' });
       
       let data, functionError;
       
       if (feedSource === 'cdl_jobcast') {
-        console.log('Fetching CDL Job Cast for user:', userParam);
+        logger.debug('Fetching CDL Job Cast', { userParam, boardParam, context: 'super-admin-feeds' });
         const response = await supabase.functions.invoke('fetch-feeds', {
           body: { user: userParam, board: boardParam }
         });
         data = response.data;
         functionError = response.error;
       } else if (feedSource === 'crengland') {
-        console.log('Fetching CR England jobs, division:', crEnglandDivision);
+        logger.debug('Fetching CR England jobs', { crEnglandDivision, context: 'super-admin-feeds' });
         const response = await supabase.functions.invoke('fetch-crengland-jobs', {
           body: { division: crEnglandDivision || null }
         });

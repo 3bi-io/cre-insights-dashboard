@@ -9,6 +9,7 @@ import { generateApplicationsPDF } from '@/utils/pdfGenerator';
 import * as XLSX from 'xlsx';
 import type { Application } from '@/types/common.types';
 import type { ExportFormat } from '@/types/api.types';
+import { logger } from '@/lib/logger';
 
 export const useApplicationsExport = () => {
   const { toast } = useToast();
@@ -21,7 +22,7 @@ export const useApplicationsExport = () => {
         description: `Exported ${applications.length} applications to PDF`,
       });
     } catch (error) {
-      console.error('PDF export error:', error);
+      logger.error('PDF export error', error, { context: 'applications-export' });
       toast({
         title: 'Export Failed',
         description: 'Failed to export applications to PDF',
@@ -75,7 +76,7 @@ export const useApplicationsExport = () => {
         description: `Exported ${applications.length} applications to CSV`,
       });
     } catch (error) {
-      console.error('CSV export error:', error);
+      logger.error('CSV export error', error, { context: 'applications-export' });
       toast({
         title: 'Export Failed',
         description: 'Failed to export applications to CSV',
@@ -129,7 +130,7 @@ export const useApplicationsExport = () => {
         description: `Exported ${applications.length} applications to Excel`,
       });
     } catch (error) {
-      console.error('Excel export error:', error);
+      logger.error('Excel export error', error, { context: 'applications-export' });
       toast({
         title: 'Export Failed',
         description: 'Failed to export applications to Excel',
