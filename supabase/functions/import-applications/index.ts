@@ -1,10 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createLogger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const logger = createLogger('import-applications');
 
 interface ImportRequest {
   csv: string;
@@ -219,11 +222,11 @@ serve(async (req) => {
 
     const { csv, organizationId }: ImportRequest = await req.json();
 
-    console.log('Starting import for organization:', organizationId);
+    logger.info('Starting import', { organizationId });
 
     // Parse CSV
     const rows = parseCSV(csv);
-    console.log(`Parsed ${rows.length} rows from CSV`);
+    logger.info('Parsed CSV rows', { rowCount: rows.length });
 
     const results = {
       success: true,
@@ -393,9 +396,9 @@ serve(async (req) => {
           .insert(applicationData);
 
         if (insertError) {
-          console.error(`Error inserting row ${rowNumber}:`, insertError);
+          logger.error('Error inserting row', insertError, { rowNumber });
           results.failed++;
-          results.errors.push({ 
+          results.errors.push({
             row: rowNumber, 
             error: insertError.message 
           });
@@ -403,7 +406,7 @@ serve(async (req) => {
           results.imported++;
         }
       } catch (error) {
-        console.error(`Error processing row ${rowNumber}:`, error);
+        logger.error('Error processing row', error, { rowNumber });
         results.failed++;
         results.errors.push({ 
           row: rowNumber, 
@@ -412,7 +415,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('Import complete:', results);
+    logger.info('Import complete', { imported: results.imported, failed: results.failed });
 
     return new Response(
       JSON.stringify(results),
@@ -423,7 +426,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Import function error:', error);
+    logger.error('Import function error', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'An unexpected error occurred',

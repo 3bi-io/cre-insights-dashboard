@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface UseClientWebhookProps {
   enabled?: boolean;
@@ -13,12 +14,12 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
     eventType: 'created' | 'updated' | 'deleted'
   ) => {
     if (!enabled) {
-      console.log('[CLIENT-WEBHOOK] Webhook triggers disabled');
+      logger.debug('Webhook triggers disabled', { context: 'client-webhook' });
       return false;
     }
 
     try {
-      console.log('[CLIENT-WEBHOOK] Triggering webhook for application:', applicationId);
+      logger.info('Triggering webhook', { applicationId, eventType, context: 'client-webhook' });
       
       const { data, error } = await supabase.functions.invoke('client-webhook', {
         body: {
@@ -29,22 +30,21 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
       });
 
       if (error) {
-        console.error('[CLIENT-WEBHOOK] Error:', error);
-        // Don't show toast for webhook errors - they're logged in the system
+        logger.error('Webhook trigger failed', error, { applicationId, context: 'client-webhook' });
         return false;
       }
 
-      console.log('[CLIENT-WEBHOOK] Response:', data);
+      logger.debug('Webhook response received', { success: data?.success, context: 'client-webhook' });
       return data?.success || false;
     } catch (error) {
-      console.error('[CLIENT-WEBHOOK] Exception:', error);
+      logger.error('Webhook trigger exception', error, { applicationId, context: 'client-webhook' });
       return false;
     }
   };
 
   const testWebhook = async (webhookId: string, applicationId: string) => {
     try {
-      console.log('[CLIENT-WEBHOOK] Testing webhook:', webhookId);
+      logger.info('Testing webhook', { webhookId, applicationId, context: 'client-webhook' });
       
       const { data, error } = await supabase.functions.invoke('client-webhook', {
         body: {
@@ -55,7 +55,7 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
       });
 
       if (error) {
-        console.error('[CLIENT-WEBHOOK] Test error:', error);
+        logger.error('Webhook test failed', error, { webhookId, context: 'client-webhook' });
         toast({
           title: "Webhook Test Failed",
           description: error.message,
@@ -79,7 +79,7 @@ export const useClientWebhook = ({ enabled = true }: UseClientWebhookProps = {})
         return false;
       }
     } catch (error) {
-      console.error('[CLIENT-WEBHOOK] Test exception:', error);
+      logger.error('Webhook test exception', error, { webhookId, context: 'client-webhook' });
       toast({
         title: "Webhook Error",
         description: "An error occurred while testing webhook",

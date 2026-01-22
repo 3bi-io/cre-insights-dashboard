@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 export interface BasicApplicationData {
   id: string;
@@ -60,7 +61,7 @@ export const useSecureApplicationData = () => {
       queryFn: async (): Promise<BasicApplicationData | null> => {
         if (!applicationId) return null;
 
-        console.log('Fetching basic application data for:', applicationId);
+        logger.debug('Fetching basic application data', { applicationId, context: 'secure-data' });
         
         const { data, error } = await supabase
           .rpc('get_application_basic_data', { 
@@ -69,7 +70,7 @@ export const useSecureApplicationData = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching basic application data:', error);
+          logger.error('Failed to fetch basic application data', error, { applicationId });
           throw error;
         }
 
@@ -86,7 +87,7 @@ export const useSecureApplicationData = () => {
       queryFn: async (): Promise<ApplicationSummary | null> => {
         if (!applicationId) return null;
 
-        console.log('Fetching application summary for:', applicationId);
+        logger.debug('Fetching application summary', { applicationId, context: 'secure-data' });
         
         const { data, error } = await supabase
           .rpc('get_application_summary', { 
@@ -95,7 +96,7 @@ export const useSecureApplicationData = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching application summary:', error);
+          logger.error('Failed to fetch application summary', error, { applicationId });
           throw error;
         }
 
@@ -117,7 +118,7 @@ export const useSecureApplicationData = () => {
           throw new Error('Insufficient privileges to access sensitive personal information');
         }
 
-        console.log('Fetching sensitive application data for:', applicationId, 'Reason:', accessReason);
+        logger.info('Accessing sensitive application data', { applicationId, accessReason, context: 'secure-data' });
         
         const { data, error } = await supabase
           .rpc('get_application_sensitive_data', { 
@@ -127,7 +128,7 @@ export const useSecureApplicationData = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching sensitive application data:', error);
+          logger.error('Failed to fetch sensitive application data', error, { applicationId });
           throw error;
         }
 
@@ -144,7 +145,7 @@ export const useSecureApplicationData = () => {
         throw new Error('Access denied: Insufficient privileges');
       }
 
-      console.log('Accessing sensitive data with reason:', reason);
+      logger.info('Sensitive data access requested', { reason, applicationId, context: 'secure-data' });
 
       const { data, error } = await supabase
         .rpc('get_application_sensitive_data', {
@@ -169,7 +170,7 @@ export const useSecureApplicationData = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Sensitive data access error:', error);
+      logger.error('Sensitive data access denied', error, { context: 'secure-data' });
       toast({
         title: 'Access Denied',
         description: error.message || 'Failed to access sensitive information',
