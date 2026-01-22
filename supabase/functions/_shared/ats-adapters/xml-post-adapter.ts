@@ -6,6 +6,9 @@
 
 import { BaseATSAdapter } from './base-adapter.ts';
 import type { ApplicationData, ATSResponse, AdapterConfig } from './types.ts';
+import { createLogger } from '../logger.ts';
+
+const logger = createLogger('xml-post-adapter');
 
 export class XMLPostAdapter extends BaseATSAdapter {
   constructor(config: AdapterConfig) {
@@ -77,7 +80,7 @@ export class XMLPostAdapter extends BaseATSAdapter {
       const xmlPreview = xml
         .replace(/<Password>.*?<\/Password>/gi, '<Password>[REDACTED]</Password>')
         .substring(0, 1200);
-      console.log('[XMLPostAdapter] XML Payload Preview:', xmlPreview);
+      logger.debug('XML Payload Preview', { xml: xmlPreview });
       
       this.log('info', 'Sending application', { 
         application_id: application.id,
@@ -105,12 +108,12 @@ export class XMLPostAdapter extends BaseATSAdapter {
       const duration = Date.now() - startTime;
 
       // DEBUG: Log the raw Tenstreet response (first 1500 chars, sensitive data redacted)
-      console.log('[XMLPostAdapter] Tenstreet Raw Response:', 
-        responseText
+      logger.debug('Tenstreet Raw Response', {
+        response: responseText
           .replace(/<Password>.*?<\/Password>/gi, '<Password>[REDACTED]</Password>')
           .replace(/<SSN>.*?<\/SSN>/gi, '<SSN>[REDACTED]</SSN>')
           .substring(0, 1500)
-      );
+      });
 
       // Parse response
       const result = this.parseApplicationResponse(responseText);
@@ -209,34 +212,34 @@ export class XMLPostAdapter extends BaseATSAdapter {
     const source = creds.source || '3BI';
     
     // DEBUG: Log all credential keys for troubleshooting (redact password)
-    console.log('[XMLPostAdapter] Credentials debug:', {
+    logger.debug('Credentials debug', {
       all_keys: Object.keys(creds),
-      company_id: creds.company_id,
-      companyId: creds.companyId,
-      company_ids: creds.company_ids,
+      has_company_id: !!creds.company_id,
+      has_companyId: !!creds.companyId,
+      has_company_ids: !!creds.company_ids,
       company_ids_type: typeof creds.company_ids,
       company_ids_isArray: Array.isArray(creds.company_ids),
-      client_id: creds.client_id,
+      has_client_id: !!creds.client_id,
       mode: mode,
-      source: source, // Log the source being used
+      source: source,
     });
     
     // Extract company ID - handle all possible formats (number, string, or array)
     const companyId = (() => {
       // Check direct company_id or companyId first
       if (creds.company_id) {
-        console.log('[XMLPostAdapter] Using creds.company_id:', creds.company_id);
+        logger.debug('Using creds.company_id', { value: creds.company_id });
         return String(creds.company_id);
       }
       if (creds.companyId) {
-        console.log('[XMLPostAdapter] Using creds.companyId:', creds.companyId);
+        logger.debug('Using creds.companyId', { value: creds.companyId });
         return String(creds.companyId);
       }
       
       // Handle company_ids - could be array, string, or number
       const companyIds = creds.company_ids;
       if (!companyIds) {
-        console.log('[XMLPostAdapter] No company_ids found');
+        logger.debug('No company_ids found');
         return '';
       }
       

@@ -133,7 +133,7 @@ const handler = wrapHandler(async (req: Request) => {
           
           if (existingClients && existingClients.length > 0) {
             finalClientId = existingClients[0].id;
-            console.log(`Found existing client: ${companyName}`);
+            logger.debug('Found existing client', { companyName });
           } else {
             // Create new client
             const { data: newClient, error: clientError } = await supabase
@@ -148,10 +148,10 @@ const handler = wrapHandler(async (req: Request) => {
               .single();
             
             if (clientError) {
-              console.error('Error creating client:', clientError);
+              logger.error('Error creating client', clientError);
             } else if (newClient) {
               finalClientId = newClient.id;
-              console.log(`Created new client: ${companyName}`);
+              logger.debug('Created new client', { companyName });
             }
           }
         }
@@ -205,7 +205,7 @@ const handler = wrapHandler(async (req: Request) => {
         }
 
         if (existingJob) {
-          console.log(`Job already exists, skipping: ${jobData.title}`);
+          logger.debug('Job already exists, skipping', { title: jobData.title });
           continue;
         }
 
@@ -214,17 +214,17 @@ const handler = wrapHandler(async (req: Request) => {
           .insert(jobData);
 
         if (insertError) {
-          console.error('Error inserting job:', insertError, jobData);
+          logger.error('Error inserting job', insertError, { title: jobData.title });
         } else {
           importedCount++;
-          console.log(`Imported job: ${jobData.title}`);
+          logger.debug('Imported job', { title: jobData.title });
         }
       } catch (jobError) {
-        console.error('Error processing job:', jobError, job);
+        logger.error('Error processing job', jobError);
       }
     }
 
-  console.log(`Successfully imported ${importedCount} jobs`);
+  logger.info('Import complete', { imported: importedCount });
 
   return successResponse(
     { imported: importedCount, total: jobs.length },

@@ -6,6 +6,9 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { createATSAdapter } from './index.ts';
 import type { ATSSystem, ATSConnection, FieldMapping, ApplicationData, ATSResponse } from './types.ts';
+import { createLogger } from '../logger.ts';
+
+const logger = createLogger('auto-post-engine');
 
 interface AutoPostResult {
   connectionId: string;
@@ -49,7 +52,7 @@ export async function autoPostToATS(
 
   const correlationId = `auto-post-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   
-  console.log(`[AutoPostEngine:${correlationId}] Starting auto-post for application ${applicationId}`);
+  logger.info('Starting auto-post', { correlationId, applicationId });
 
   try {
     // Get all active ATS connections for the organization
@@ -60,17 +63,17 @@ export async function autoPostToATS(
       });
 
     if (connError) {
-      console.error(`[AutoPostEngine:${correlationId}] Failed to get connections:`, connError);
+      logger.error('Failed to get connections', connError, { correlationId });
       return summary;
     }
 
     if (!connections || connections.length === 0) {
-      console.log(`[AutoPostEngine:${correlationId}] No active ATS connections found`);
+      logger.info('No active ATS connections found', { correlationId });
       return summary;
     }
 
     summary.totalConnections = connections.length;
-    console.log(`[AutoPostEngine:${correlationId}] Found ${connections.length} active connections`);
+    logger.info('Found active connections', { correlationId, count: connections.length });
 
     // Process each connection
     for (const conn of connections) {
@@ -78,7 +81,7 @@ export async function autoPostToATS(
       
       // Check if auto-post is enabled for this connection
       if (!conn.is_auto_post_enabled) {
-        console.log(`[AutoPostEngine:${correlationId}] Skipping ${conn.ats_slug} - auto-post not enabled`);
+        logger.debug('Skipping - auto-post not enabled', { correlationId, ats: conn.ats_slug });
         summary.skipped++;
         continue;
       }
@@ -87,7 +90,7 @@ export async function autoPostToATS(
       if (conn.auto_post_on_status && conn.auto_post_on_status.length > 0) {
         const appStatus = applicationData.status as string || 'pending';
         if (!conn.auto_post_on_status.includes(appStatus)) {
-          console.log(`[AutoPostEngine:${correlationId}] Skipping ${conn.ats_slug} - status ${appStatus} not in trigger list`);
+          logger.debug('Skipping - status not in trigger list', { correlationId, ats: conn.ats_slug, status: appStatus });
           summary.skipped++;
           continue;
         }
@@ -160,7 +163,7 @@ export async function autoPostToATS(
           ...applicationData
         };
 
-        console.log(`[AutoPostEngine:${correlationId}] Sending to ${conn.ats_slug}...`);
+        logger.info('Sending to ATS', { correlationId, ats: conn.ats_slug });
         const response = await adapter.sendApplication(appData);
         const durationMs = Date.now() - startTime;
 
@@ -178,7 +181,7 @@ export async function autoPostToATS(
 
         if (response.success) {
           summary.successful++;
-          console.log(`[AutoPostEngine:${correlationId}] ${conn.ats_slug} SUCCESS in ${durationMs}ms, externalId: ${response.external_id}`);
+          logger.info('ATS post successful', { correlationId, ats: conn.ats_slug, durationMs, externalId: response.external_id });
           
           // Update sync stats
           await supabase.rpc('increment_ats_sync_stats', {
@@ -194,7 +197,7 @@ export async function autoPostToATS(
 
         } else {
           summary.failed++;
-          console.error(`[AutoPostEngine:${correlationId}] ${conn.ats_slug} FAILED in ${durationMs}ms:`, response.error);
+          logger.error('ATS post failed', null, { correlationId, ats: conn.ats_slug, durationMs, error: response.error });
           
           // Update sync stats
           await supabase.rpc('increment_ats_sync_stats', {
@@ -224,7 +227,7 @@ export async function autoPostToATS(
         const durationMs = Date.now() - startTime;
         const err = error as Error;
         
-        console.error(`[AutoPostEngine:${correlationId}] ${conn.ats_slug} ERROR:`, err.message);
+        logger.error('ATS post error', error, { correlationId, ats: conn.ats_slug, durationMs });
         
         summary.failed++;
         summary.results.push({
@@ -249,10 +252,10 @@ export async function autoPostToATS(
     }
 
   } catch (error) {
-    console.error(`[AutoPostEngine:${correlationId}] Fatal error:`, error);
+    logger.error('Fatal error', error, { correlationId });
   }
 
-  console.log(`[AutoPostEngine:${correlationId}] Complete: ${summary.successful}/${summary.totalConnections} successful, ${summary.failed} failed, ${summary.skipped} skipped`);
+  logger.info('Auto-post complete', { correlationId, successful: summary.successful, total: summary.totalConnections, failed: summary.failed, skipped: summary.skipped });
   
   return summary;
 }

@@ -134,7 +134,7 @@ const generateApplication = (jobListingId: string, organizationId: string) => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('Generate applications function called');
+  logger.info('Generate applications function called');
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -173,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Generating ${count} applications for organization:`, organization_id);
+    logger.info('Generating applications', { count, organization_id });
 
     // Verify the organization exists
     const { data: org, error: orgError } = await supabase
@@ -220,7 +220,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Found ${jobListings.length} job listings for ${org.name}`);
+    logger.info('Found job listings', { count: jobListings.length, organization: org.name });
 
     // Generate applications
     const applications = [];

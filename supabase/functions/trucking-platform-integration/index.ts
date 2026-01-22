@@ -19,7 +19,7 @@ serve(async (req) => {
   try {
     const { action, platform } = await req.json()
     
-    console.log(`Trucking platform integration: ${action} for ${platform}`)
+    logger.info('Processing request', { action, platform })
 
     // Create Supabase client
     const supabaseClient = createClient(
