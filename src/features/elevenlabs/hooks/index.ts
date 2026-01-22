@@ -1,5 +1,6 @@
 /**
  * ElevenLabs Hooks Barrel Export
+ * Consolidated voice AI hooks for ElevenLabs integration
  */
 
 // Core connection hook
@@ -32,3 +33,12 @@ export { useElevenLabsVoice } from './useElevenLabsVoice';
 
 // Voice agents CRUD hook
 export { useVoiceAgents } from './useVoiceAgents';
+
+// Outbound calls hooks
+export { useOutboundCalls } from './useOutboundCalls';
+export { 
+  useOutboundCallAnalytics,
+  type OutboundCallMetrics,
+  type DailyCallVolume,
+  type StatusDistribution
+} from './useOutboundCallAnalytics';

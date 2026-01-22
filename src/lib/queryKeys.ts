@@ -132,6 +132,8 @@ export const queryKeys = {
     budgetSpend: (orgId?: string) => [...queryKeys.analytics.all, 'budget-spend', orgId] as const,
     jobVolume: (orgId?: string) => [...queryKeys.analytics.all, 'job-volume', orgId] as const,
     platformPerformance: (orgId?: string) => [...queryKeys.analytics.all, 'platform-performance', orgId] as const,
+    platformDistribution: (orgId?: string) => [...queryKeys.analytics.all, 'platform-distribution', orgId] as const,
+    spendTrend: (orgId?: string) => [...queryKeys.analytics.all, 'spend-trend', orgId] as const,
     applyPage: (orgId?: string, dateRange?: string) => 
       [...queryKeys.analytics.all, 'apply-page', orgId, dateRange] as const,
     budgetOverview: () => [...queryKeys.analytics.all, 'budget-overview'] as const,
