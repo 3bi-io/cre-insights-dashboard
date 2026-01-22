@@ -245,7 +245,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Check for required environment variables
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
-      console.error("RESEND_API_KEY is not configured");
+      logger.error("RESEND_API_KEY is not configured");
       throw new Error("Email service is not configured");
     }
 
@@ -270,7 +270,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (appError || !application) {
-      console.error('Application lookup error:', appError);
+      logger.error('Application lookup error', appError, { applicationId });
       throw new Error('Application not found');
     }
 
@@ -294,7 +294,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (requestError) {
-      console.error('Error creating screening request:', requestError);
+      logger.error('Error creating screening request', requestError, { applicationId });
       throw new Error('Failed to create screening request');
     }
 

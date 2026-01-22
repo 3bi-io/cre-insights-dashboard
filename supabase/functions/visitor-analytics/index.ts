@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('visitor-analytics');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,9 +64,9 @@ serve(async (req) => {
         const body = await req.json();
         startdate = body.startdate || null;
         enddate = body.enddate || null;
-        console.log('Parsed dates from request body:', { startdate, enddate });
+        logger.debug('Parsed dates from request body', { startdate, enddate });
       } catch (e) {
-        console.log('No JSON body or parse error, falling back to query params');
+        logger.debug('No JSON body or parse error, falling back to query params');
       }
     }
 
@@ -72,10 +75,10 @@ serve(async (req) => {
       const url = new URL(req.url);
       startdate = url.searchParams.get('startdate') || startdate;
       enddate = url.searchParams.get('enddate') || enddate;
-      console.log('Using query params:', { startdate, enddate });
+      logger.debug('Using query params', { startdate, enddate });
     }
 
-    console.log(`Fetching enhanced visitor analytics from ${startdate} to ${enddate}`);
+    logger.info('Fetching enhanced visitor analytics', { startdate, enddate });
 
     const start = startdate ? new Date(startdate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const end = enddate ? new Date(enddate) : new Date();
@@ -294,7 +297,7 @@ serve(async (req) => {
       recentActivity
     };
 
-    console.log('Successfully fetched enhanced visitor analytics data:', {
+    logger.info('Successfully fetched visitor analytics', {
       totalVisitors, totalPageviews, totalSessions, browsers: browsers.length, referrers: referrers.length
     });
 
@@ -303,7 +306,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in visitor-analytics function:', error);
+    logger.error('Error in visitor-analytics function', error);
     return new Response(
       JSON.stringify({ error: error.message, message: 'Failed to fetch analytics data' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
