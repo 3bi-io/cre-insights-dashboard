@@ -48,8 +48,6 @@ verify_jwt = false
 [functions.inbound-applications]
 verify_jwt = false
 
-[functions.generate-hayes-applications]
-verify_jwt = false
 
 [functions.indeed-integration]
 verify_jwt = true
@@ -88,6 +86,12 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.craigslist-integration]
+verify_jwt = true
+
+[functions.meta-adset-report]
+verify_jwt = true
+
+[functions.meta-spend-analytics]
 verify_jwt = true
 
 [functions.meta-integration]
@@ -180,8 +184,6 @@ verify_jwt = true
 [functions.admin-update-password]
 verify_jwt = true
 
-[functions.admin_password_reset]
-verify_jwt = true
 
 [functions.fetch-crengland-jobs]
 verify_jwt = true
