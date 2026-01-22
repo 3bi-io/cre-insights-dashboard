@@ -95,11 +95,19 @@ export const queryKeys = {
   // Tenstreet
   tenstreet: {
     all: ['tenstreet'] as const,
-    credentials: () => [...queryKeys.tenstreet.all, 'credentials'] as const,
+    credentials: (orgId?: string) => [...queryKeys.tenstreet.all, 'credentials', orgId] as const,
+    fieldMappings: (orgId?: string, userId?: string) => 
+      [...queryKeys.tenstreet.all, 'field-mappings', orgId, userId] as const,
     mappings: () => [...queryKeys.tenstreet.all, 'mappings'] as const,
     sync: (applicationId: string) => [...queryKeys.tenstreet.all, 'sync', applicationId] as const,
     notifications: () => [...queryKeys.tenstreet.all, 'notifications'] as const,
     bulkOperations: ['tenstreet-bulk-operations'] as const,
+    credentialsManagement: () => [...queryKeys.tenstreet.all, 'credentials-management'] as const,
+    credentialsSummary: () => [...queryKeys.tenstreet.all, 'credentials-summary'] as const,
+    xchangeRequests: (applicationId?: string, driverId?: string, organizationId?: string) => 
+      [...queryKeys.tenstreet.all, 'xchange-requests', applicationId, driverId, organizationId] as const,
+    xchangeStatus: (applicationId?: string) => 
+      [...queryKeys.tenstreet.all, 'xchange-status', applicationId] as const,
   },
 
   // Communications
