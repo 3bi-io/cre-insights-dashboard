@@ -123,7 +123,7 @@ serve(async (req) => {
       user_agent: userAgent,
       job_count: jobListings?.length || 0,
       response_time_ms: responseTime
-    }).catch(err => console.error('Failed to log feed access:', err));
+    }).catch(err => logger.error('Failed to log feed access', err));
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {
@@ -133,7 +133,7 @@ serve(async (req) => {
       },
     })
   } catch (error) {
-    console.error('Error generating XML feed:', error)
+    logger.error('Error generating XML feed', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {

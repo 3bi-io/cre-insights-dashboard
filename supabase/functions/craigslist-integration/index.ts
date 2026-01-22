@@ -3,6 +3,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('craigslist-integration');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,7 +57,7 @@ serve(async (req) => {
     const accountId = Deno.env.get('CRAIGSLIST_ACCOUNT_ID');
 
     if (!username || !password || !accountId) {
-      console.error('Missing Craigslist credentials');
+      logger.error('Missing Craigslist credentials');
       return new Response(
         JSON.stringify({ 
           error: 'Craigslist credentials not configured',
@@ -88,7 +91,7 @@ serve(async (req) => {
         const validationResult = JobPostingSchema.safeParse(rawJobData);
         
         if (!validationResult.success) {
-          console.error('Validation failed:', validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`));
+          logger.error('Validation failed', { issues: validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`) });
           return new Response(
             JSON.stringify({ 
               error: 'Invalid job data', 
@@ -118,7 +121,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Craigslist integration error:', error);
+    logger.error('Craigslist integration error', error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
@@ -134,7 +137,7 @@ serve(async (req) => {
 
 async function handleConnectionStatus(username: string, accountId: string) {
   try {
-    console.log('Checking Craigslist connection status');
+    logger.info('Checking Craigslist connection status');
     
     // For now, return configured status since we have credentials
     // In a production implementation, you would verify the credentials with Craigslist
@@ -151,7 +154,7 @@ async function handleConnectionStatus(username: string, accountId: string) {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Connection status check failed:', error);
+    logger.error('Connection status check failed', error);
     return new Response(
       JSON.stringify({ 
         connected: false,
@@ -173,7 +176,7 @@ async function handleJobPosting(
   jobData: CraigslistJobData
 ) {
   try {
-    console.log('Posting job to Craigslist:', { 
+    logger.info('Posting job to Craigslist', { 
       title: jobData.title, 
       location: jobData.location,
       category: jobData.category 
@@ -204,7 +207,7 @@ async function handleJobPosting(
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Job posting failed:', error);
+    logger.error('Job posting failed', error);
     return new Response(
       JSON.stringify({ 
         success: false,
@@ -253,7 +256,7 @@ async function handleGetCategories() {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Failed to get categories:', error);
+    logger.error('Failed to get categories', error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to get categories',
