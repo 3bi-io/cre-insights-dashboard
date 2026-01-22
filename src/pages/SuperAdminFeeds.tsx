@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { JobSelectionList } from '@/components/feeds/JobSelectionList';
 import { useOrganizations } from '@/features/admin/hooks/useOrganizationData';
+import { logger } from '@/lib/logger';
 
 interface Feed {
   id?: string;
@@ -267,7 +268,7 @@ const SuperAdminFeeds = () => {
           });
         } catch (importErr) {
           const errorMessage = importErr instanceof Error ? importErr.message : 'Failed to import jobs';
-          console.error('Error importing jobs:', importErr);
+          logger.error('Error importing jobs', importErr, { context: 'super-admin-feeds' });
           toast({
             title: "Error importing jobs",
             description: errorMessage,
@@ -280,7 +281,7 @@ const SuperAdminFeeds = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch feeds';
       setError(errorMessage);
-      console.error('Error fetching feeds:', err);
+      logger.error('Error fetching feeds', err, { context: 'super-admin-feeds' });
       toast({
         title: "Error loading feeds",
         description: errorMessage,
@@ -324,7 +325,7 @@ const SuperAdminFeeds = () => {
     setImporting(true);
     try {
       const jobsToImport = feeds.filter(job => selectedJobs.has(job.id!));
-      console.log('Importing selected jobs:', jobsToImport.length);
+      logger.debug('Importing selected jobs', { count: jobsToImport.length, context: 'super-admin-feeds' });
       
       if (!selectedOrganization) {
         toast({
@@ -359,7 +360,7 @@ const SuperAdminFeeds = () => {
       setSelectedJobs(new Set());
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to import selected jobs';
-      console.error('Error importing selected jobs:', err);
+      logger.error('Error importing selected jobs', err, { context: 'super-admin-feeds' });
       toast({
         title: "Error importing jobs",
         description: errorMessage,
@@ -382,7 +383,7 @@ const SuperAdminFeeds = () => {
 
     setGenerating(true);
     try {
-      console.log('Generating applications for organization:', selectedOrganization);
+      logger.debug('Generating applications', { organizationId: selectedOrganization, count: appCount, context: 'super-admin-feeds' });
       
       const { data, error: functionError } = await supabase.functions.invoke('generate-applications', {
         body: { 
@@ -405,7 +406,7 @@ const SuperAdminFeeds = () => {
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate applications';
-      console.error('Error generating applications:', err);
+      logger.error('Error generating applications', err, { context: 'super-admin-feeds' });
       toast({
         title: "Error generating applications",
         description: errorMessage,

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Platform } from '../types';
+import { logger } from '@/lib/logger';
 
 /**
  * Central service for platform CRUD operations
@@ -9,7 +10,7 @@ export class PlatformService {
    * Fetches all platforms
    */
   static async fetchPlatforms(): Promise<Platform[]> {
-    console.log('PlatformService: Fetching platforms');
+    logger.debug('Fetching platforms', { context: 'platform-service' });
     
     const { data, error } = await supabase
       .from('platforms')
@@ -17,11 +18,11 @@ export class PlatformService {
       .order('name', { ascending: true });
     
     if (error) {
-      console.error('PlatformService: Error fetching platforms', error);
+      logger.error('Error fetching platforms', error, { context: 'platform-service' });
       throw error;
     }
     
-    console.log('PlatformService: Platforms fetched', data?.length);
+    logger.debug('Platforms fetched', { count: data?.length, context: 'platform-service' });
     return data || [];
   }
 
@@ -34,7 +35,7 @@ export class PlatformService {
     api_endpoint?: string | null;
     organization_id?: string;
   }): Promise<Platform> {
-    console.log('PlatformService: Creating platform', platform.name);
+    logger.debug('Creating platform', { name: platform.name, context: 'platform-service' });
     
     const { data, error } = await supabase
       .from('platforms')
@@ -48,11 +49,11 @@ export class PlatformService {
       .single();
     
     if (error) {
-      console.error('PlatformService: Error creating platform', error);
+      logger.error('Error creating platform', error, { context: 'platform-service' });
       throw error;
     }
     
-    console.log('PlatformService: Platform created', data.id);
+    logger.debug('Platform created', { id: data.id, context: 'platform-service' });
     return data;
   }
 
@@ -63,7 +64,7 @@ export class PlatformService {
     id: string, 
     updates: Partial<Omit<Platform, 'id' | 'created_at'>>
   ): Promise<Platform> {
-    console.log('PlatformService: Updating platform', id);
+    logger.debug('Updating platform', { id, context: 'platform-service' });
     
     const { data, error } = await supabase
       .from('platforms')
@@ -73,11 +74,11 @@ export class PlatformService {
       .single();
     
     if (error) {
-      console.error('PlatformService: Error updating platform', error);
+      logger.error('Error updating platform', error, { id, context: 'platform-service' });
       throw error;
     }
     
-    console.log('PlatformService: Platform updated', data.id);
+    logger.debug('Platform updated', { id: data.id, context: 'platform-service' });
     return data;
   }
 
@@ -85,7 +86,7 @@ export class PlatformService {
    * Deletes a platform
    */
   static async deletePlatform(id: string): Promise<void> {
-    console.log('PlatformService: Deleting platform', id);
+    logger.debug('Deleting platform', { id, context: 'platform-service' });
     
     const { error } = await supabase
       .from('platforms')
@@ -93,10 +94,10 @@ export class PlatformService {
       .eq('id', id);
     
     if (error) {
-      console.error('PlatformService: Error deleting platform', error);
+      logger.error('Error deleting platform', error, { id, context: 'platform-service' });
       throw error;
     }
     
-    console.log('PlatformService: Platform deleted', id);
+    logger.debug('Platform deleted', { id, context: 'platform-service' });
   }
 }

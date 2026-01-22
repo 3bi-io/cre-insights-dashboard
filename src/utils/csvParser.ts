@@ -1,10 +1,11 @@
+import { logger } from '@/lib/logger';
 
 export const parseCsvData = (text: string) => {
   const lines = text.split('\n').filter(line => line.trim());
   if (lines.length === 0) return [];
   
   const headers = parseCsvLine(lines[0]);
-  console.log('CSV Headers found:', headers);
+  logger.debug('CSV Headers found', { headers, context: 'csv-parser' });
   
   const data = lines.slice(1).map((line, index) => {
     const values = parseCsvLine(line);
@@ -12,11 +13,10 @@ export const parseCsvData = (text: string) => {
     headers.forEach((header, headerIndex) => {
       row[header] = values[headerIndex] || '';
     });
-    console.log(`Row ${index + 1}:`, row);
     return row;
   });
   
-  console.log(`Total rows parsed: ${data.length}`);
+  logger.debug('CSV parsing complete', { totalRows: data.length, context: 'csv-parser' });
   return data;
 };
 

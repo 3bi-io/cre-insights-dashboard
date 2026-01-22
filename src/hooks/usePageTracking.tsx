@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { trackPageView as gaTrackPageView } from '@/utils/analytics';
+import { logger } from '@/lib/logger';
 
 // Generate or retrieve visitor ID from localStorage
 const getVisitorId = (): string => {
@@ -65,7 +66,7 @@ const trackPageView = async (
       });
 
     if (pageViewError) {
-      console.error('Error tracking page view:', pageViewError);
+      logger.error('Error tracking page view', pageViewError, { context: 'page-tracking' });
       return;
     }
 
@@ -115,10 +116,10 @@ const trackPageView = async (
       });
 
     if (sessionError) {
-      console.error('Error tracking session:', sessionError);
+      logger.error('Error tracking session', sessionError, { context: 'page-tracking' });
     }
   } catch (error) {
-    console.error('Error in page tracking:', error);
+    logger.error('Error in page tracking', error, { context: 'page-tracking' });
   }
 };
 
@@ -165,7 +166,7 @@ export const usePageTracking = () => {
             })
             .eq('session_id', sessionId);
         } catch (error) {
-          console.error('Error tracking session end:', error);
+          logger.error('Error tracking session end', error, { context: 'page-tracking' });
         }
       }
     };

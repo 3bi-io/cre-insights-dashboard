@@ -1,11 +1,14 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const logger = createLogger('outbound-webhook');
 
 interface OutboundWebhookPayload {
   application_id: string;
@@ -14,7 +17,7 @@ interface OutboundWebhookPayload {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log('Outbound webhook triggered:', req.method);
+  logger.info('Outbound webhook triggered', { method: req.method });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -54,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Processing outbound webhook for application:', application_id);
+    logger.info('Processing outbound webhook', { application_id });
 
     // Get complete application data
     const { data: application, error: fetchError } = await supabase
@@ -64,7 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (fetchError || !application) {
-      console.error('Error fetching application:', fetchError);
+      logger.error('Error fetching application', fetchError, { application_id });
       return new Response(
         JSON.stringify({ 
           error: 'Application not found',
@@ -202,7 +205,7 @@ const handler = async (req: Request): Promise<Response> => {
       display_fields: application.display_fields
     };
 
-    console.log('Sending webhook payload to:', webhook_url);
+    logger.info('Sending webhook payload', { webhook_url });
 
     // Send webhook to Zapier
     const webhookResponse = await fetch(webhook_url, {
@@ -215,7 +218,7 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     if (!webhookResponse.ok) {
-      console.error('Webhook failed:', webhookResponse.status, webhookResponse.statusText);
+      logger.error('Webhook delivery failed', null, { status: webhookResponse.status, statusText: webhookResponse.statusText });
       return new Response(
         JSON.stringify({ 
           error: 'Webhook delivery failed',
@@ -229,7 +232,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Webhook delivered successfully');
+    logger.info('Webhook delivered successfully', { application_id, event_type });
 
     return new Response(
       JSON.stringify({ 
@@ -246,7 +249,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Outbound webhook error:', error);
+    logger.error('Outbound webhook error', error);
     
     return new Response(
       JSON.stringify({ 
