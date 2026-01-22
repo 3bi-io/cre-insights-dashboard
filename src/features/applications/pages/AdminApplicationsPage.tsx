@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePlatformAccess } from '@/hooks/usePlatformAccess';
 import PageLayout from '@/components/PageLayout';
+import { usePaginatedApplications } from '../hooks/usePaginatedApplications';
 import { useApplicationsManagement } from '../hooks/useApplicationsManagement';
+import { useApplicationsMutations } from '../hooks/useApplicationsMutations';
 import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useClientsService } from '@/features/clients/hooks';
-import { useApplications } from '../hooks/useApplications';
 import { Card } from '@/components/ui/card';
 import { ApplicationsStats } from '../components/ApplicationsStats';
 import { ApplicationsFilters } from '../components/ApplicationsFilters';
@@ -57,15 +58,9 @@ export default function AdminApplicationsPage() {
     enabled: isOrgAdmin && !!organization
   });
 
-  // Applications management with pagination
+  // UI state management (filters, selection, view mode)
   const {
-    applications,
-    loading,
-    statusCounts,
-    totalCount,
-    hasNextPage,
-    isFetchingNextPage,
-    loadMore,
+    paginationFilters,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -84,13 +79,37 @@ export default function AdminApplicationsPage() {
     handleSelectAll,
     handleSelectApplication,
     clearSelection,
+    applyClientSideFilters,
+    calculateStats,
     handleBulkStatusChange,
     handleExportPDF,
     handleExportCSV,
-  } = useApplicationsManagement(hasAccess, isOrgAdmin);
+  } = useApplicationsManagement({ isOrgAdmin });
 
-  // Get deleteApplication and updateApplication from useApplications hook
-  const { deleteApplication, updateApplication } = useApplications({ enabled: hasAccess });
+  // Data fetching with pagination (canonical hook)
+  const {
+    data,
+    isLoading: loading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = usePaginatedApplications(paginationFilters);
+
+  // CRUD mutations
+  const { updateApplication, deleteApplication } = useApplicationsMutations();
+
+  // Flatten paginated data and apply client-side filters
+  const rawApplications = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) || [];
+  }, [data]);
+
+  const applications = useMemo(() => {
+    return applyClientSideFilters(rawApplications as Application[]);
+  }, [rawApplications, applyClientSideFilters]);
+
+  const totalCount = data?.pages[0]?.totalCount || 0;
+  const { statusCounts } = calculateStats(applications);
 
   // Dialog state management
   const {
@@ -149,11 +168,11 @@ export default function AdminApplicationsPage() {
         'Applicant Name': getApplicantName(app),
         'Email': getApplicantEmail(app),
         'Phone': app.phone || '',
-        'Job': app.job_listings?.title || app.job_listings?.job_title || '',
+        'Job': (app as any).job_listings?.title || (app as any).job_listings?.job_title || '',
         'Status': app.status,
         'Location': `${app.city || ''} ${app.state || ''}`.trim(),
         'Date Applied': new Date(app.applied_at).toLocaleDateString(),
-        'Recruiter': app.recruiters ? `${app.recruiters.first_name} ${app.recruiters.last_name}` : 'Unassigned',
+        'Recruiter': (app as any).recruiters ? `${(app as any).recruiters.first_name} ${(app as any).recruiters.last_name}` : 'Unassigned',
       }));
 
       const ws = XLSX.utils.json_to_sheet(exportData);
@@ -222,8 +241,8 @@ export default function AdminApplicationsPage() {
           />
           <ApplicationsActions
             selectedCount={selectedApplications.size}
-            onExportPDF={handleExportPDF}
-            onExportCSV={handleExportCSV}
+            onExportPDF={() => handleExportPDF(applications)}
+            onExportCSV={() => handleExportCSV(applications)}
             onBulkStatusChange={(status) => handleBulkStatusChange(status, updateApplication)}
             onBulkDelete={handleBulkDelete}
             onBulkExportSelected={handleBulkExportSelected}
@@ -267,7 +286,7 @@ export default function AdminApplicationsPage() {
             applications={applications as any}
             statusCounts={statusCounts}
             selectedApplications={selectedApplications}
-            onSelectAll={handleSelectAll}
+            onSelectAll={(checked) => handleSelectAll(applications, checked)}
             onSelectApplication={handleSelectApplication}
             onStatusChange={(id, status) => 
               updateApplication(id, { status: status as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })
@@ -290,7 +309,7 @@ export default function AdminApplicationsPage() {
             applications={applications as any}
             statusCounts={statusCounts}
             selectedApplications={selectedApplications}
-            onSelectAll={handleSelectAll}
+            onSelectAll={(checked) => handleSelectAll(applications, checked)}
             onSelectApplication={handleSelectApplication}
             onStatusChange={(id, status) => 
               updateApplication(id, { status: status as 'pending' | 'reviewed' | 'interviewing' | 'hired' | 'rejected' })
@@ -306,7 +325,7 @@ export default function AdminApplicationsPage() {
         {hasNextPage && (
           <div className="flex justify-center py-8">
             <button
-              onClick={() => loadMore()}
+              onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
               className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >

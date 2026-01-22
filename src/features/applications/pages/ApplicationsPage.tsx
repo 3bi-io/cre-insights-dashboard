@@ -3,7 +3,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 import { PageLayout } from '@/features/shared';
-import { useApplications } from '../hooks/useApplications';
+import { usePaginatedApplications } from '../hooks/usePaginatedApplications';
+import { useApplicationsMutations } from '../hooks/useApplicationsMutations';
 import { useApplicationDialogs } from '../hooks/useApplicationDialogs';
 import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useApplicationsFilters } from '../hooks/useApplicationsFilters';
@@ -62,28 +63,49 @@ const ApplicationsPage = () => {
   
   const dialogState = useApplicationDialogs();
 
+  // Build pagination filters
+  const paginationFilters = React.useMemo(() => ({
+    search: filters.searchTerm || undefined,
+    organizationId: isOrgAdmin && filters.organizationFilter === 'all' 
+      ? undefined 
+      : filters.organizationFilter !== 'all' 
+        ? filters.organizationFilter 
+        : undefined,
+  }), [filters.searchTerm, filters.organizationFilter, isOrgAdmin]);
+
+  // Data fetching with pagination (canonical hook)
   const {
-    applications: serverFilteredApplications,
-    loading,
+    data,
+    isLoading: loading,
     error,
-    totalCount,
-    hasMore,
-    loadMore,
-    createApplication,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = usePaginatedApplications(paginationFilters);
+
+  // CRUD mutations
+  const {
     updateApplication,
     deleteApplication,
-    refresh,
-  } = useApplications({
-    enabled: true,
-    filters: {
-      search: filters.searchTerm,
-      organization_id: isOrgAdmin && filters.organizationFilter === 'all' 
-        ? undefined 
-        : filters.organizationFilter !== 'all' 
-          ? filters.organizationFilter 
-          : undefined,
+    invalidateApplications,
+  } = useApplicationsMutations();
+
+  // Flatten paginated data
+  const serverFilteredApplications = React.useMemo(() => {
+    return data?.pages.flatMap(page => page.data) || [];
+  }, [data]);
+
+  const totalCount = data?.pages[0]?.totalCount || 0;
+  const hasMore = hasNextPage || false;
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  });
+  };
+  const refresh = async () => {
+    await refetch();
+  };
 
   const { exportApplications } = useApplicationsExport();
 
@@ -144,7 +166,7 @@ const ApplicationsPage = () => {
     {
       key: 'e',
       ctrl: true,
-      handler: () => exportApplications(applications, 'csv'),
+      handler: () => exportApplications(applications as any, 'csv'),
       description: 'Export',
     },
     {
@@ -187,10 +209,10 @@ const ApplicationsPage = () => {
       onViewModeChange={setViewMode}
       columnVisibility={columnVisibility}
       onColumnVisibilityChange={handleColumnVisibilityChange}
-      applications={applications}
+      applications={applications as any}
       selectedApplications={selectedApplications}
       selectionCount={selectionCount}
-      onExport={(format) => exportApplications(applications, format)}
+      onExport={(format) => exportApplications(applications as any, format)}
       onBulkStatusChange={handleBulkStatusChange}
       onBulkDelete={async () => {
         await handleBulkDelete(async (id) => deleteApplication(id));
@@ -246,7 +268,7 @@ const ApplicationsPage = () => {
 
           <div className="space-y-4">
             <ApplicationsList
-              applications={applications}
+              applications={applications as any}
               viewMode={viewMode}
               selectedApplications={selectedApplications}
               columnVisibility={columnVisibility}
