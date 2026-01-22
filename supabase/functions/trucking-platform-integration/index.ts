@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('trucking-platform-integration')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +42,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Trucking platform integration error:', error)
+    logger.error('Trucking platform integration error', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -51,7 +54,7 @@ serve(async (req) => {
 })
 
 async function checkPlatformConnection(platform: string) {
-  console.log(`Checking connection for ${platform}`)
+  logger.info('Checking connection', { platform })
   
   // Simulate connection check for different platforms
   const platformConfigs = {
@@ -104,7 +107,7 @@ async function checkPlatformConnection(platform: string) {
 }
 
 async function postJobToPlatform(platform: string, supabaseClient: any) {
-  console.log(`Posting job to ${platform}`)
+  logger.info('Posting job to platform', { platform })
   
   // For free platforms, we primarily use XML feeds
   // This function simulates the posting process
@@ -124,7 +127,7 @@ async function postJobToPlatform(platform: string, supabaseClient: any) {
 }
 
 async function getPlatformStats(platform: string, supabaseClient: any) {
-  console.log(`Getting stats for ${platform}`)
+  logger.info('Getting stats for platform', { platform })
   
   // Simulate platform statistics
   const stats = {

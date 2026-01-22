@@ -10,6 +10,25 @@ import {
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts'
+import { createLogger } from '../_shared/logger.ts'
+import { 
+  escapeXML,
+  getCompanyId,
+  buildTenstreetXML,
+  parseXMLResponse,
+  parseApplicantFromXML,
+  buildPersonalDataXML
+} from '../_shared/tenstreet-xml-utils.ts'
+import { 
+  fetchTenstreetCredentials,
+  validateCredentials
+} from '../_shared/tenstreet-credentials.ts'
+import { sanitizeForLogging } from '../_shared/tenstreet-pii-utils.ts'
+
+const logger = createLogger('tenstreet-explorer')
+
+// Helper removed - now using shared utilities
+import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts'
 import { 
   escapeXML,
   getCompanyId,
@@ -150,7 +169,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Tenstreet Explorer error:', error)
+    logger.error('Tenstreet Explorer error', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -233,8 +252,8 @@ async function exploreAvailableServices(credentials: any, corsHeaders: Record<st
 async function testService(credentials: any, serviceName: string, customPayload?: any, corsHeaders?: Record<string, string>) {
   const testXML = buildServiceTestXML(credentials, serviceName, customPayload)
   
-  console.log(`Testing service: ${serviceName}`)
-  console.log('XML Payload:', testXML)
+  logger.info('Testing service', { serviceName })
+  logger.debug('XML Payload (sanitized)', { serviceName })
 
   try {
     const response = await fetch('https://dashboard.tenstreet.com/post/', {
@@ -246,7 +265,7 @@ async function testService(credentials: any, serviceName: string, customPayload?
     })
 
     const responseText = await response.text()
-    console.log('Tenstreet response:', responseText)
+    logger.info('Tenstreet response received', { status: response.status })
 
     return new Response(
       JSON.stringify({
@@ -375,7 +394,7 @@ async function exportApplicants(credentials: any, dateRange: any, corsHeaders?: 
 async function makeRequest(xmlPayload: string, actionName: string, corsHeaders?: Record<string, string>, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`${actionName} - Attempt ${attempt}/${maxRetries} - XML Request:`, xmlPayload)
+      logger.info('Request attempt', { action: actionName, attempt, maxRetries })
       
       // Add timeout handling
       const controller = new AbortController();
@@ -393,7 +412,7 @@ async function makeRequest(xmlPayload: string, actionName: string, corsHeaders?:
       clearTimeout(timeoutId);
 
       const responseText = await response.text();
-      console.log(`${actionName} - Response (${response.status}):`, responseText);
+      logger.info('Response received', { action: actionName, status: response.status });
 
       return new Response(
         JSON.stringify({
@@ -408,7 +427,7 @@ async function makeRequest(xmlPayload: string, actionName: string, corsHeaders?:
       );
 
     } catch (error) {
-      console.error(`${actionName} - Attempt ${attempt} failed:`, error);
+      logger.error('Request attempt failed', error, { action: actionName, attempt });
       
       if (attempt === maxRetries) {
         return new Response(
