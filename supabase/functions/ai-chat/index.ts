@@ -10,6 +10,9 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse } from '../_shared/response.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
 import { enforceRateLimitWithGeo, getRateLimitIdentifier } from '../_shared/rate-limiter.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('ai-chat');
 
 // Zod validation schemas
 const ChatMessageSchema = z.object({
@@ -73,10 +76,13 @@ const handler = wrapHandler(async (req: Request) => {
     });
     
     if (rateLimitResult.geoApplied) {
-      console.log(`Geo rate limit applied: ${rateLimitResult.matchedRule?.id}, limit: ${rateLimitResult.effectiveMaxRequests}`);
+      logger.info('Geo rate limit applied', { 
+        rule: rateLimitResult.matchedRule?.id, 
+        limit: rateLimitResult.effectiveMaxRequests 
+      });
     }
   } catch {
-    console.warn(`Rate limit exceeded for ${rateLimitId}`);
+    logger.warn('Rate limit exceeded', { rateLimitId });
     return errorResponse("Too many requests. Please wait a moment before trying again.", 429, { retryAfter: 60 });
   }
 
@@ -85,7 +91,7 @@ const handler = wrapHandler(async (req: Request) => {
   const validationResult = ChatRequestSchema.safeParse(rawBody);
   
   if (!validationResult.success) {
-    console.error('AI chat validation failed:', validationResult.error.issues);
+    logger.warn('AI chat validation failed', { issues: validationResult.error.issues });
     throw new ValidationError('Invalid chat request', validationResult.error.issues.map(issue => ({
       field: issue.path.join('.'),
       message: issue.message
@@ -99,7 +105,7 @@ const handler = wrapHandler(async (req: Request) => {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
 
-  console.log(`AI chat request: ${messages.length} messages, user: ${authContext.userId}`);
+  logger.info('Processing AI chat request', { messageCount: messages.length, userId: authContext.userId });
 
   const systemPrompt = `You are an AI recruitment assistant for ATS.me. Help users with:
 - Job posting questions and best practices
@@ -135,7 +141,7 @@ Keep responses clear, professional, and actionable. If asked about specific cand
     }
     
     const errorText = await response.text();
-    console.error("AI gateway error:", response.status, errorText);
+    logger.error('AI gateway error', new Error(errorText), { status: response.status });
     return errorResponse("AI gateway error", 500);
   }
 

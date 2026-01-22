@@ -168,7 +168,7 @@ serve(async (req) => {
               const response = await fetch(`https://api.zippopotam.us/us/${cleanZip}`);
               
               if (!response.ok) {
-                console.warn(`Zip code lookup failed for ${cleanZip}: ${response.status}`);
+                logger.warn('Zip code lookup failed', { zipCode: cleanZip, status: response.status });
                 return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
               }
 
@@ -184,7 +184,7 @@ serve(async (req) => {
               
               return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
             } catch (error) {
-              console.error(`Error looking up zip code ${cleanZip}:`, error);
+              logger.error('Error looking up zip code', error, { zipCode: cleanZip });
               return { city: fieldsObj.city || '', state: fieldsObj.state || '' };
             }
           };

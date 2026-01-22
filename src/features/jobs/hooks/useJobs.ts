@@ -8,6 +8,7 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
+import { queryKeys } from '@/lib/queryKeys';
 
 export const useJobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,7 +44,7 @@ export const useJobs = () => {
   }, [clientFilter, searchTerm]);
 
   const { data: jobListings, isLoading, refetch, error } = useQuery({
-    queryKey: ['job-listings', showAllOrganizations ? 'all' : organization?.id],
+    queryKey: queryKeys.jobs.list({ organizationId: showAllOrganizations ? 'all' : organization?.id }),
     queryFn: async () => {
       logger.debug('Fetching job listings...', { showAllOrganizations });
       
