@@ -14,12 +14,36 @@ import { checkGeoAccess, getAllowedRegionsDescription, GeoBlockResult } from '..
 const logger = createLogger('geo-check');
 
 serve(async (req) => {
-  const origin = req.headers.get('origin');
+  const origin = req.headers.get('origin') || '';
+  const referer = req.headers.get('referer') || '';
   const corsHeaders = getCorsHeaders(origin);
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Allow Lovable preview environments to bypass geo-blocking for development/testing
+  const isLovablePreview = origin.includes('.lovable.app') || 
+                           origin.includes('lovableproject.com') ||
+                           referer.includes('.lovable.app') ||
+                           referer.includes('lovableproject.com');
+
+  if (isLovablePreview) {
+    logger.info('Lovable preview detected - bypassing geo-check');
+    return new Response(
+      JSON.stringify({
+        allowed: true,
+        countryCode: 'US',
+        country: 'United States (Preview)',
+        reason: 'allowed',
+        checkedAt: new Date().toISOString(),
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 
   const startTime = Date.now();
