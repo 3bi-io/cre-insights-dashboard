@@ -1,6 +1,7 @@
 /**
  * Job Map Component
  * Interactive map visualization of job locations with heat map, clustering, and accessibility
+ * Optimized for all device types with proper gesture handling
  */
 
 import { useEffect, useRef, memo, useCallback } from 'react';
@@ -13,6 +14,19 @@ import { JobMarker } from './JobMarker';
 import { HeatMapLayer } from './HeatMapLayer';
 import { MapZoomControls } from './MapControls';
 import { useTheme } from 'next-themes';
+import { 
+  US_CENTER, 
+  DEFAULT_ZOOM, 
+  MIN_ZOOM, 
+  MAX_ZOOM, 
+  FLY_TO_ZOOM,
+  FLY_TO_DURATION,
+  TILE_URLS,
+  MAP_ATTRIBUTION,
+  CLUSTER_SIZE,
+  CLUSTER_THRESHOLDS,
+} from './constants';
+import { useMapContextOptional } from './MapContext';
 
 // Fix Leaflet default marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -31,10 +45,6 @@ interface JobMapProps {
   className?: string;
 }
 
-// US bounds for initial view
-const US_CENTER: [number, number] = [39.8283, -98.5795];
-const US_ZOOM = 4;
-
 // Map controller component for external control
 function MapController({ 
   selectedLocation,
@@ -48,8 +58,8 @@ function MapController({
 
   useEffect(() => {
     if (selectedLocation && selectedLocation !== previousLocation.current) {
-      map.flyTo([selectedLocation.lat, selectedLocation.lng], 10, {
-        duration: 0.8,
+      map.flyTo([selectedLocation.lat, selectedLocation.lng], FLY_TO_ZOOM, {
+        duration: FLY_TO_DURATION,
       });
       previousLocation.current = selectedLocation;
     }
@@ -133,14 +143,14 @@ function createClusterIcon(cluster: { getChildCount: () => number }): DivIcon {
   const count = cluster.getChildCount();
   
   // Determine size based on count
-  let size = 40;
+  let size: number = CLUSTER_SIZE.SMALL;
   let className = 'job-cluster-small';
   
-  if (count >= 100) {
-    size = 60;
+  if (count >= CLUSTER_THRESHOLDS.LARGE) {
+    size = CLUSTER_SIZE.LARGE;
     className = 'job-cluster-large';
-  } else if (count >= 20) {
-    size = 50;
+  } else if (count >= CLUSTER_THRESHOLDS.MEDIUM) {
+    size = CLUSTER_SIZE.MEDIUM;
     className = 'job-cluster-medium';
   }
 
@@ -161,11 +171,11 @@ export const JobMap = memo(function JobMap({
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
+  const mapContext = useMapContextOptional();
+  const isMobile = mapContext?.isMobile ?? false;
 
   // Tile layer URL based on theme
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const tileUrl = isDark ? TILE_URLS.DARK : TILE_URLS.LIGHT;
 
   const handleMapClick = useCallback(() => {
     // Only deselect if clicking on the map (not on markers)
@@ -263,25 +273,32 @@ export const JobMap = memo(function JobMap({
             transition: none !important;
             animation: none !important;
           }
+          .leaflet-fade-anim .leaflet-tile,
+          .leaflet-zoom-anim .leaflet-zoom-animated {
+            transition: none !important;
+          }
         }
       `}</style>
 
       <MapContainer
         center={US_CENTER}
-        zoom={US_ZOOM}
-        scrollWheelZoom={true}
+        zoom={DEFAULT_ZOOM}
+        // Disable scroll wheel zoom on mobile to prevent accidental zooms
+        scrollWheelZoom={!isMobile}
         className="w-full h-full rounded-lg"
-        minZoom={3}
-        maxZoom={18}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
         keyboard={true}
         keyboardPanDelta={80}
         touchZoom={true}
         dragging={true}
         doubleClickZoom={true}
         zoomControl={false}
+        // Prevent jarring bounces at zoom limits
+        bounceAtZoomLimits={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution={MAP_ATTRIBUTION}
           url={tileUrl}
         />
 

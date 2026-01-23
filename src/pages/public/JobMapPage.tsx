@@ -1,6 +1,7 @@
 /**
  * Job Map Page
  * Interactive map visualization of job locations with heat map and accessibility features
+ * Optimized for all device types: mobile, tablet, and desktop
  */
 
 import { useState, Suspense, lazy, useCallback } from 'react';
@@ -8,6 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
 import { MapFilters, MapStats, JobListPanel, MapLayerControls } from '@/components/map';
+import { MapProvider } from '@/components/map/MapContext';
 
 // Lazy load the map component to reduce initial bundle size
 const JobMap = lazy(() => import('@/components/map/JobMap').then(m => ({ default: m.JobMap })));
@@ -75,7 +77,7 @@ export default function JobMapPage() {
   }, []);
 
   return (
-    <>
+    <MapProvider>
       <Helmet>
         <title>Job Locations Map | ATS.me</title>
         <meta 
@@ -97,15 +99,20 @@ export default function JobMapPage() {
         <meta name="twitter:description" content="Explore job opportunities across the United States on our interactive map." />
       </Helmet>
 
+      {/* 
+        Use h-[100dvh] for dynamic viewport height on mobile (accounts for browser chrome)
+        pt-16 offsets the fixed header
+        pb-safe adds padding for iOS home indicator
+      */}
       <main 
-        className="relative w-full h-[calc(100vh-4rem)] bg-background"
+        className="relative w-full h-[100dvh] pt-16 pb-safe bg-background overflow-hidden"
         id="main-content"
       >
         {/* Skip link target for accessibility */}
         <h1 className="sr-only">Job Locations Map</h1>
         
-        {/* Map Container */}
-        <div className="absolute inset-0">
+        {/* Map Container - fills remaining height */}
+        <div className="absolute inset-0 top-16">
           {error ? (
             <MapErrorFallback error={error} />
           ) : (
@@ -151,6 +158,6 @@ export default function JobMapPage() {
           onClose={handleClosePanel}
         />
       </main>
-    </>
+    </MapProvider>
   );
 }
