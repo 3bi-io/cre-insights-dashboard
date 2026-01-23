@@ -99,14 +99,26 @@ export const getEmailLogo = (
  * Generate unsubscribe section for CAN-SPAM compliance
  * Required for marketing emails, optional for transactional
  */
+/**
+ * Generate unsubscribe URL with token
+ */
+export const getUnsubscribeUrl = (token: string): string => {
+  return `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/email-unsubscribe?token=${token}`;
+};
+
 export const getUnsubscribeSection = (options?: {
   unsubscribeUrl?: string;
+  unsubscribeToken?: string;
   emailType?: 'transactional' | 'marketing';
   preferencesUrl?: string;
 }): string => {
   const isMarketing = options?.emailType === 'marketing';
-  const unsubscribeUrl = options?.unsubscribeUrl || `${EMAIL_CONFIG.brand.website}/unsubscribe`;
-  const preferencesUrl = options?.preferencesUrl || `${EMAIL_CONFIG.brand.website}/email-preferences`;
+  const unsubscribeUrl = options?.unsubscribeToken 
+    ? getUnsubscribeUrl(options.unsubscribeToken)
+    : options?.unsubscribeUrl || `${EMAIL_CONFIG.brand.website}/unsubscribe`;
+  const preferencesUrl = options?.unsubscribeToken
+    ? getUnsubscribeUrl(options.unsubscribeToken)
+    : options?.preferencesUrl || `${EMAIL_CONFIG.brand.website}/email-preferences`;
   
   return `
     <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 11px;">
