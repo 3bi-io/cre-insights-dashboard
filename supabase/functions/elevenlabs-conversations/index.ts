@@ -95,6 +95,35 @@ serve(async (req) => {
           throw new Error(`Voice agent not found for agent ID: ${agentId}`);
         }
 
+        // Verify user has access to this agent's organization
+        const supabaseAuth = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+        );
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+        
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .eq('id', user.id)
+            .single();
+          
+          // Check if super_admin (bypass org check)
+          const { data: roleData } = await supabase.rpc('get_current_user_role', { user_uuid: user.id });
+          const isSuperAdmin = roleData === 'super_admin';
+          
+          if (!isSuperAdmin && profile?.organization_id !== voiceAgent.organization_id) {
+            logger.warn('Unauthorized conversation access attempt', { 
+              agentId, 
+              agentOrg: voiceAgent.organization_id?.substring(0, 8),
+              userOrg: profile?.organization_id?.substring(0, 8)
+            });
+            throw new Error('Access denied: You do not have permission to access this agent');
+          }
+        }
+
         // Store conversations in database
         let syncedCount = 0;
         for (const conv of conversations.conversations || []) {

@@ -36,6 +36,7 @@ serve(async (req) => {
         clients:client_id(name, company, email, city, state, zip_code)
       `)
       .eq('status', 'active')
+      .eq('is_hidden', false)
       .order('created_at', { ascending: false })
 
     if (error) {

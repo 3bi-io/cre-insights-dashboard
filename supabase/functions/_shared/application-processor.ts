@@ -271,6 +271,7 @@ export const findOrCreateJobListing = async (
       organization_id: organizationId,
       category_id: categories[0].id,
       status: 'active',
+      is_hidden: true, // Hide General Applications from public view
       job_summary: clientId ? 'General applications for this carrier' : 'General applications',
       user_id: userId,
     };

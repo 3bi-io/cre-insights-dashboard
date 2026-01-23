@@ -14,14 +14,15 @@ import { queryKeys } from '@/lib/queryKeys';
 export const useVoiceAgents = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { userRole } = useAuth();
+  const { userRole, organization } = useAuth();
 
-  // Fetch all voice agents with organization info
+  // Fetch voice agents with organization filtering for security
   const { data: voiceAgents, isLoading, error } = useQuery({
-    queryKey: queryKeys.voiceAgents.list(),
+    queryKey: queryKeys.voiceAgents.list(organization?.id),
     queryFn: async () => {
-      logger.debug('Fetching voice agents...');
-      const { data, error } = await supabase
+      logger.debug('Fetching voice agents...', { orgId: organization?.id, userRole });
+      
+      let query = supabase
         .from('voice_agents')
         .select(`
           *,
@@ -32,6 +33,13 @@ export const useVoiceAgents = () => {
           )
         `)
         .order('created_at', { ascending: false });
+      
+      // Super admins can see all agents, others only their org's agents
+      if (userRole !== 'super_admin' && organization?.id) {
+        query = query.eq('organization_id', organization.id);
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         logger.error('Error fetching voice agents:', error);

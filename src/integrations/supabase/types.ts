@@ -3449,6 +3449,7 @@ export type Database = {
           dest_state: string | null
           experience_level: string | null
           id: string
+          is_hidden: boolean | null
           job_id: string | null
           job_summary: string | null
           job_title: string | null
@@ -3484,6 +3485,7 @@ export type Database = {
           dest_state?: string | null
           experience_level?: string | null
           id?: string
+          is_hidden?: boolean | null
           job_id?: string | null
           job_summary?: string | null
           job_title?: string | null
@@ -3519,6 +3521,7 @@ export type Database = {
           dest_state?: string | null
           experience_level?: string | null
           id?: string
+          is_hidden?: boolean | null
           job_id?: string | null
           job_summary?: string | null
           job_title?: string | null

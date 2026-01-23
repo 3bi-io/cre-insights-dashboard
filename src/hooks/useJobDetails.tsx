@@ -59,6 +59,7 @@ export const useJobDetails = (jobId: string | undefined) => {
         `)
         .eq('id', jobId)
         .eq('status', 'active')
+        .eq('is_hidden', false)
         .maybeSingle();
 
       if (error) throw error;

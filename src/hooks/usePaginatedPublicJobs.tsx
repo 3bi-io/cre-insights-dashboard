@@ -43,6 +43,7 @@ export function usePaginatedPublicJobs({
           job_categories(name)
         `, { count: 'exact' })
         .eq('status', 'active')
+        .eq('is_hidden', false)
         .order('created_at', { ascending: false })
         .range(from, to);
 

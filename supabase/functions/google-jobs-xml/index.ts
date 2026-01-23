@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
         status
       `)
       .eq('status', 'active')
+      .eq('is_hidden', false)
       .order('created_at', { ascending: false });
 
     if (organizationId) {
