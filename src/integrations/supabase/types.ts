@@ -3096,6 +3096,45 @@ export type Database = {
           },
         ]
       }
+      email_preferences: {
+        Row: {
+          application_updates: boolean | null
+          created_at: string | null
+          email: string
+          id: string
+          marketing_emails: boolean | null
+          system_notifications: boolean | null
+          unsubscribe_token: string | null
+          unsubscribed_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          application_updates?: boolean | null
+          created_at?: string | null
+          email: string
+          id?: string
+          marketing_emails?: boolean | null
+          system_notifications?: boolean | null
+          unsubscribe_token?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          application_updates?: boolean | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          marketing_emails?: boolean | null
+          system_notifications?: boolean | null
+          unsubscribe_token?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       feed_access_logs: {
         Row: {
           client_id: string | null
