@@ -4,99 +4,38 @@
  * Mobile: Bottom drawer with snap points and swipe gestures
  * Tablet: Narrower sheet from right
  * Desktop: Full-width sheet from right
+ * Features virtual scrolling for large job lists (20+ jobs)
  */
 
-import { memo, useCallback, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { memo } from 'react';
 import { MapLocation } from '@/hooks/useJobMapData';
-import { X, MapPin, Building2, DollarSign, Clock, ExternalLink } from 'lucide-react';
+import { X, MapPin, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/design-system/Button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
-import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMapContextOptional } from './MapContext';
 import { DRAWER_SNAP_POINTS, DEFAULT_DRAWER_SNAP, SHEET_WIDTH_DESKTOP, SHEET_WIDTH_TABLET } from './constants';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { VirtualJobList } from './VirtualJobList';
 
 interface JobListPanelProps {
   location: MapLocation | null;
   onClose: () => void;
 }
 
-// Format salary display
-function formatSalary(min?: number, max?: number, type?: string): string | null {
-  if (!min && !max) return null;
-  
-  const formatAmount = (amount: number) => {
-    if (type === 'hourly') return `$${amount}`;
-    if (amount >= 1000) return `$${Math.round(amount / 1000)}k`;
-    return `$${amount}`;
-  };
-  
-  const suffix = type === 'hourly' ? '/hr' : '/yr';
-  
-  if (min && max && min !== max) {
-    return `${formatAmount(min)} - ${formatAmount(max)}${suffix}`;
-  }
-  return `${formatAmount(min || max!)}${suffix}`;
-}
-
-// Memoized job list content
+// Memoized job list content with virtual scrolling
 const JobListContent = memo(function JobListContent({ 
   location, 
   onClose,
   isMobile,
-  isTablet,
 }: { 
   location: MapLocation; 
   onClose: () => void;
   isMobile: boolean;
   isTablet: boolean;
 }) {
-  const listRef = useRef<HTMLDivElement>(null);
-
-  // Focus management - focus first job card on open
-  useEffect(() => {
-    const firstCard = listRef.current?.querySelector('[data-job-index="0"]');
-    if (firstCard instanceof HTMLElement) {
-      // Delay to allow animation to complete
-      setTimeout(() => firstCard.focus(), 100);
-    }
-  }, [location.id]);
-
-  // Keyboard navigation within the list
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const target = e.target as HTMLElement;
-    const jobIndex = target.dataset.jobIndex;
-    
-    if (jobIndex === undefined) return;
-    
-    const currentIndex = parseInt(jobIndex, 10);
-    let nextIndex: number | null = null;
-    
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      nextIndex = currentIndex + 1;
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      nextIndex = currentIndex - 1;
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      onClose();
-      return;
-    }
-    
-    if (nextIndex !== null && nextIndex >= 0 && nextIndex < location.jobs.length) {
-      const nextCard = listRef.current?.querySelector(`[data-job-index="${nextIndex}"]`);
-      if (nextCard instanceof HTMLElement) {
-        nextCard.focus();
-      }
-    }
-  }, [location.jobs.length, onClose]);
-
   return (
     <div 
       className={cn(
@@ -163,93 +102,13 @@ const JobListContent = memo(function JobListContent({
         )}
       </div>
 
-      {/* Job List */}
-      <ScrollArea className="flex-1">
-        <div 
-          ref={listRef}
-          className="p-4 space-y-3"
-          role="list"
-          aria-label={`Jobs in ${location.displayName}`}
-          onKeyDown={handleKeyDown}
-        >
-          {location.jobs.map((job, index) => {
-            const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-            const companyName = job.clients?.name || job.organizations?.name;
-            
-            return (
-              <article
-                key={job.id}
-                data-job-index={index}
-                tabIndex={0}
-                role="listitem"
-                aria-labelledby={`job-title-${job.id}`}
-                className={cn(
-                  "block p-4 rounded-lg border border-border bg-card",
-                  "transition-all duration-200",
-                  "hover:border-primary/50 hover:shadow-md",
-                  "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-                  // Larger touch target on mobile
-                  isMobile && "min-h-[80px]"
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 
-                      id={`job-title-${job.id}`}
-                      className="font-semibold text-base truncate"
-                    >
-                      {job.title || job.job_title}
-                    </h3>
-                    
-                    {companyName && (
-                      <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{companyName}</span>
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
-                      {salary && (
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" aria-hidden="true" />
-                          {salary}
-                        </span>
-                      )}
-                      {job.created_at && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" aria-hidden="true" />
-                          {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
-                        </span>
-                      )}
-                    </div>
-
-                    {job.job_summary && (
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                        {job.job_summary}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-3 pt-3 border-t border-border">
-                  <Link
-                    to={`/jobs/${job.id}`}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 text-sm font-medium text-primary",
-                      "hover:underline focus:outline-none focus:ring-2 focus:ring-ring rounded",
-                      // Larger touch target
-                      "py-1 -my-1"
-                    )}
-                  >
-                    View Details
-                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </ScrollArea>
+      {/* Virtual Job List - efficiently handles large lists */}
+      <VirtualJobList
+        jobs={location.jobs}
+        isMobile={isMobile}
+        locationName={location.displayName}
+        onClose={onClose}
+      />
     </div>
   );
 });
