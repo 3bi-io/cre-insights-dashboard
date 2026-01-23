@@ -1,6 +1,6 @@
 /**
  * Enhanced Map Filters Component
- * Responsive filter controls with improved accessibility
+ * Responsive filter controls with tablet-specific layouts and improved accessibility
  */
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
@@ -20,9 +20,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { JobMapFilters } from '@/hooks/useJobMapData';
 import { useDebouncedCallback } from '@/utils/performance';
+import { useMapContextOptional } from './MapContext';
+import { SEARCH_DEBOUNCE_MS } from './constants';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MapFiltersProps {
   filters: JobMapFilters;
@@ -37,7 +40,12 @@ export const MapFilters = memo(function MapFilters({
   companies,
   categories,
 }: MapFiltersProps) {
-  const isMobile = useIsMobile();
+  const mapContext = useMapContextOptional();
+  const isMobileFallback = useIsMobile();
+  
+  const isMobile = mapContext?.isMobile ?? isMobileFallback;
+  const isTablet = mapContext?.isTablet ?? false;
+  
   const [searchValue, setSearchValue] = useState(filters.searchTerm || '');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +53,7 @@ export const MapFilters = memo(function MapFilters({
   // Debounced search to reduce API calls
   const debouncedSearch = useDebouncedCallback((value: string) => {
     onFiltersChange({ ...filters, searchTerm: value });
-  }, 300);
+  }, SEARCH_DEBOUNCE_MS);
 
   // Handle search input change
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +91,9 @@ export const MapFilters = memo(function MapFilters({
     }
   }, [activeFilterCount]);
 
+  // Use popover for mobile, inline for tablet and desktop
+  const usePopover = isMobile;
+
   return (
     <>
       {/* Screen reader announcements */}
@@ -91,12 +102,25 @@ export const MapFilters = memo(function MapFilters({
       </div>
 
       <div 
-        className="absolute top-4 left-4 right-4 z-[1000] flex flex-wrap gap-2 items-start"
+        className={cn(
+          "absolute z-[1000] flex flex-wrap gap-2 items-start",
+          // Position below header on all devices
+          "top-20 left-4 right-4",
+          // On tablet+, give more room for controls on right
+          "lg:right-auto lg:max-w-2xl"
+        )}
         role="search"
         aria-label="Filter jobs on map"
       >
         {/* Search Input */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] max-w-md">
+        <form 
+          onSubmit={handleSearchSubmit} 
+          className={cn(
+            "flex-1 min-w-[200px]",
+            // Full width on mobile, constrained on larger screens
+            isMobile ? "w-full" : "max-w-md"
+          )}
+        >
           <div className="relative">
             <Search 
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" 
@@ -108,7 +132,11 @@ export const MapFilters = memo(function MapFilters({
               placeholder="Search jobs..."
               value={searchValue}
               onChange={handleSearchChange}
-              className="pl-9 pr-9 bg-background/95 backdrop-blur-sm shadow-lg border-border/50 h-10"
+              className={cn(
+                "pl-9 pr-9 bg-background/95 backdrop-blur-sm shadow-lg border-border/50",
+                // Taller on touch devices
+                isMobile ? "h-12" : "h-10"
+              )}
               aria-label="Search jobs by title, company, or location"
               autoComplete="off"
               autoCorrect="off"
@@ -122,7 +150,12 @@ export const MapFilters = memo(function MapFilters({
                   onFiltersChange({ ...filters, searchTerm: '' });
                   searchInputRef.current?.focus();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded"
+                className={cn(
+                  "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground",
+                  "hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded",
+                  // Larger touch target on mobile
+                  isMobile && "p-1 -mr-1"
+                )}
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
@@ -132,19 +165,23 @@ export const MapFilters = memo(function MapFilters({
         </form>
 
         {/* Filter Controls */}
-        {isMobile ? (
+        {usePopover ? (
           // Mobile: Popover with all filters
           <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="bg-background/95 backdrop-blur-sm shadow-lg relative h-10 w-10"
+                className={cn(
+                  "bg-background/95 backdrop-blur-sm shadow-lg relative",
+                  // Larger touch target on mobile
+                  "h-12 w-12"
+                )}
                 aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
                 aria-expanded={isFilterOpen}
                 aria-haspopup="dialog"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-5 h-5" />
                 {activeFilterCount > 0 && (
                   <span 
                     className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center"
@@ -179,7 +216,7 @@ export const MapFilters = memo(function MapFilters({
                       onFiltersChange({ ...filters, clientFilter: value === 'all' ? '' : value })
                     }
                   >
-                    <SelectTrigger id="mobile-company-filter">
+                    <SelectTrigger id="mobile-company-filter" className="h-11">
                       <SelectValue placeholder="All companies" />
                     </SelectTrigger>
                     <SelectContent>
@@ -208,7 +245,7 @@ export const MapFilters = memo(function MapFilters({
                       onFiltersChange({ ...filters, categoryFilter: value === 'all' ? '' : value })
                     }
                   >
-                    <SelectTrigger id="mobile-category-filter">
+                    <SelectTrigger id="mobile-category-filter" className="h-11">
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
@@ -227,7 +264,7 @@ export const MapFilters = memo(function MapFilters({
                     variant="ghost"
                     size="sm"
                     onClick={clearFilters}
-                    className="w-full"
+                    className="w-full h-11"
                   >
                     <X className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                     Clear all filters
@@ -237,7 +274,7 @@ export const MapFilters = memo(function MapFilters({
             </PopoverContent>
           </Popover>
         ) : (
-          // Desktop: Inline dropdowns
+          // Tablet/Desktop: Inline dropdowns
           <>
             <div className="relative">
               <label htmlFor="desktop-company-filter" className="sr-only">
@@ -251,7 +288,11 @@ export const MapFilters = memo(function MapFilters({
               >
                 <SelectTrigger 
                   id="desktop-company-filter"
-                  className="w-[180px] bg-background/95 backdrop-blur-sm shadow-lg h-10"
+                  className={cn(
+                    "bg-background/95 backdrop-blur-sm shadow-lg",
+                    // Narrower on tablet
+                    isTablet ? "w-[150px] h-10" : "w-[180px] h-10"
+                  )}
                 >
                   <Building2 className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All companies" />
@@ -279,7 +320,11 @@ export const MapFilters = memo(function MapFilters({
               >
                 <SelectTrigger 
                   id="desktop-category-filter"
-                  className="w-[160px] bg-background/95 backdrop-blur-sm shadow-lg h-10"
+                  className={cn(
+                    "bg-background/95 backdrop-blur-sm shadow-lg",
+                    // Narrower on tablet
+                    isTablet ? "w-[130px] h-10" : "w-[160px] h-10"
+                  )}
                 >
                   <Tag className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
                   <SelectValue placeholder="All categories" />

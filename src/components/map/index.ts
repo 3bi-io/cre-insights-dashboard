@@ -10,3 +10,5 @@ export { MapFilters } from './MapFilters';
 export { MapStats } from './MapStats';
 export { MapLayerControls, MapZoomControls } from './MapControls';
 export { HeatMapLayer } from './HeatMapLayer';
+export { MapProvider, useMapContext, useMapContextOptional } from './MapContext';
+export * from './constants';
