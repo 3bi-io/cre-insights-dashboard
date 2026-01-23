@@ -3,7 +3,12 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { getSender } from "../_shared/email-config.ts";
+import { 
+  getSender, 
+  getPreheaderText,
+  getEmailFooter,
+  PREHEADER_TEMPLATES 
+} from "../_shared/email-config.ts";
 
 const logger = createLogger('send-screening-request');
 
@@ -36,6 +41,20 @@ function sanitizeInput(input: string): string {
     .replace(/\//g, '&#x2F;');
 }
 
+// Get preheader text based on request type
+function getPreheader(requestType: string, applicantName: string, organizationName: string): string {
+  switch (requestType) {
+    case 'background_check':
+      return PREHEADER_TEMPLATES.background_check(applicantName);
+    case 'employment_application':
+      return PREHEADER_TEMPLATES.employment_application(organizationName);
+    case 'drug_screening':
+      return PREHEADER_TEMPLATES.drug_screening(applicantName);
+    default:
+      return `Screening request for ${applicantName}`;
+  }
+}
+
 // Generate screening email HTML template
 function generateScreeningEmail(
   requestType: string,
@@ -49,6 +68,9 @@ function generateScreeningEmail(
   const safeEmail = sanitizeInput(applicantEmail);
   const safeOrg = sanitizeInput(organizationName);
   const safeProvider = providerName ? sanitizeInput(providerName) : 'Provider';
+
+  // Get preheader text
+  const preheaderText = getPreheader(requestType, safeName, safeOrg);
 
   const baseStyles = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -83,6 +105,7 @@ function generateScreeningEmail(
               <title>Background Check Request</title>
             </head>
             <body style="${baseStyles}">
+              ${getPreheaderText(preheaderText)}
               <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
                 <h1 style="color: white; margin: 0; font-size: 24px;">🔍 Background Check Request</h1>
               </div>
@@ -102,9 +125,7 @@ function generateScreeningEmail(
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Thank you,</p>
                 <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeOrg}</p>
               </div>
-              <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-                <p>This is an automated message from ${safeOrg}'s hiring platform.</p>
-              </div>
+              ${getEmailFooter({ companyName: safeOrg })}
             </body>
           </html>
         `
@@ -122,6 +143,7 @@ function generateScreeningEmail(
               <title>Employment Application Request</title>
             </head>
             <body style="${baseStyles}">
+              ${getPreheaderText(preheaderText)}
               <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
                 <h1 style="color: white; margin: 0; font-size: 24px;">📋 Complete Your Application</h1>
               </div>
@@ -144,9 +166,7 @@ function generateScreeningEmail(
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Best regards,</p>
                 <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeOrg} Recruitment Team</p>
               </div>
-              <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-                <p>If you have questions, please reply to this email.</p>
-              </div>
+              ${getEmailFooter({ companyName: safeOrg })}
             </body>
           </html>
         `
@@ -164,6 +184,7 @@ function generateScreeningEmail(
               <title>Drug Screening Request</title>
             </head>
             <body style="${baseStyles}">
+              ${getPreheaderText(preheaderText)}
               <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
                 <h1 style="color: white; margin: 0; font-size: 24px;">🏥 Drug Screening Request</h1>
               </div>
@@ -183,9 +204,7 @@ function generateScreeningEmail(
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Thank you,</p>
                 <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeOrg}</p>
               </div>
-              <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-                <p>This is an automated message from ${safeOrg}'s hiring platform.</p>
-              </div>
+              ${getEmailFooter({ companyName: safeOrg })}
             </body>
           </html>
         `
@@ -195,6 +214,7 @@ function generateScreeningEmail(
       return {
         subject: `Screening Request - ${safeName}`,
         html: `
+          ${getPreheaderText(`Screening request for ${safeName}`)}
           <p>Dear ${safeProvider || safeName},</p>
           <p>A screening request has been initiated.</p>
           <p><a href="${portalLink}">Access Portal</a></p>

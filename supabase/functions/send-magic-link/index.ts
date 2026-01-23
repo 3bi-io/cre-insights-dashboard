@@ -2,7 +2,15 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
-import { getSender, baseEmailStyles, contentStyles, buttonStyles, getEmailFooter } from "../_shared/email-config.ts";
+import { 
+  getSender, 
+  getPreheaderText,
+  baseEmailStyles, 
+  contentStyles, 
+  buttonStyles, 
+  getEmailFooter,
+  PREHEADER_TEMPLATES 
+} from "../_shared/email-config.ts";
 
 const logger = createLogger('send-magic-link');
 
@@ -17,11 +25,12 @@ interface MagicLinkRequest {
 }
 
 /**
- * Generate magic link email HTML
+ * Generate magic link email HTML with preheader
  */
 const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): string => {
   const title = isAdmin ? "Administrator Login" : "Access Your Account";
   const gradient = isAdmin ? "#1e40af 0%, #3b82f6 100%" : "#667eea 0%, #764ba2 100%";
+  const preheaderText = PREHEADER_TEMPLATES.magic_link();
   
   return `
     <!DOCTYPE html>
@@ -32,6 +41,7 @@ const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): s
         <title>${title}</title>
       </head>
       <body style="${baseEmailStyles}">
+        ${getPreheaderText(preheaderText)}
         <div style="background: linear-gradient(135deg, ${gradient}); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
           <h1 style="color: white; margin: 0; font-size: 24px;">🔐 ${title}</h1>
         </div>

@@ -7,9 +7,11 @@ import {
   getReplyTo,
   getEmailHeader,
   getEmailFooter,
+  getPreheaderText,
   baseEmailStyles,
   contentStyles,
-  buttonStyles
+  buttonStyles,
+  PREHEADER_TEMPLATES
 } from "../_shared/email-config.ts";
 
 const logger = createLogger('send-welcome-email');
@@ -41,16 +43,21 @@ const handler = async (req: Request): Promise<Response> => {
     const displayName = userName || to.split('@')[0];
     const orgName = organizationName || "ATS.me";
 
+    // Generate preheader text
+    const preheaderText = PREHEADER_TEMPLATES.welcome(orgName);
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to ${orgName}!</title>
       </head>
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
+        ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Welcome to ATS.me! 🎉", "#3b82f6 0%, #667eea 100%")}
+          ${getEmailHeader("Welcome to ATS.me! 🎉", { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "ATS.me - Welcome" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">

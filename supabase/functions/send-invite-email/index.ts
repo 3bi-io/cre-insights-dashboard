@@ -1,7 +1,18 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
-import { EMAIL_CONFIG, getSender, getReplyTo, getEmailFooter, getEmailHeader, baseEmailStyles, contentStyles, buttonStyles } from "../_shared/email-config.ts";
+import { 
+  EMAIL_CONFIG, 
+  getSender, 
+  getReplyTo, 
+  getEmailFooter, 
+  getEmailHeader, 
+  getPreheaderText,
+  baseEmailStyles, 
+  contentStyles, 
+  buttonStyles,
+  PREHEADER_TEMPLATES
+} from "../_shared/email-config.ts";
 
 const logger = createLogger('send-invite-email');
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -58,6 +69,9 @@ serve(async (req: Request): Promise<Response> => {
       ? `<strong>${organizationName}</strong> on ${EMAIL_CONFIG.brand.name}`
       : EMAIL_CONFIG.brand.name;
 
+    // Generate preheader text
+    const preheaderText = PREHEADER_TEMPLATES.invite(inviterName, organizationName || EMAIL_CONFIG.brand.name, roleDisplay);
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -67,8 +81,9 @@ serve(async (req: Request): Promise<Response> => {
         <title>You're Invited to ${EMAIL_CONFIG.brand.name}</title>
       </head>
       <body style="${baseEmailStyles} background-color: #f3f4f6;">
+        ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("You're Invited! 🎉", "#3b82f6 0%, #8b5cf6 100%")}
+          ${getEmailHeader("You're Invited! 🎉", { gradient: "#3b82f6 0%, #8b5cf6 100%", showLogo: true, logoAlt: "ATS.me - Team Invitation" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; color: #374151; margin-bottom: 24px;">

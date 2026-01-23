@@ -2,7 +2,15 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
-import { getSender, getEmailFooter, baseEmailStyles, contentStyles } from "../_shared/email-config.ts";
+import { 
+  getSender, 
+  getEmailFooter, 
+  getPreheaderText,
+  getEmailHeader,
+  baseEmailStyles, 
+  contentStyles,
+  PREHEADER_TEMPLATES 
+} from "../_shared/email-config.ts";
 
 const logger = createLogger('send-application-email');
 
@@ -45,6 +53,24 @@ function sanitizeInput(input: string): string {
     .replace(/\//g, '&#x2F;');
 }
 
+// Get preheader text based on email type
+function getPreheader(type: string, jobTitle: string, status?: string): string {
+  switch (type) {
+    case 'application_received':
+      return PREHEADER_TEMPLATES.application_received(jobTitle);
+    case 'status_update':
+      return PREHEADER_TEMPLATES.status_update(status || 'Updated');
+    case 'interview_invitation':
+      return PREHEADER_TEMPLATES.interview_invitation(jobTitle);
+    case 'offer':
+      return PREHEADER_TEMPLATES.offer(jobTitle);
+    case 'rejection':
+      return PREHEADER_TEMPLATES.rejection();
+    default:
+      return `Update regarding your application for ${jobTitle}`;
+  }
+}
+
 const getEmailTemplate = (request: EmailRequest): string => {
   const { type, candidateName, jobTitle, companyName = "ATS.me", additionalData } = request;
   
@@ -54,29 +80,8 @@ const getEmailTemplate = (request: EmailRequest): string => {
   const safeCompany = sanitizeInput(companyName);
   const safeStatus = additionalData?.status ? sanitizeInput(additionalData.status) : undefined;
 
-  const baseStyles = `
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-  `;
-
-  const headerStyles = (gradient: string) => `
-    background: linear-gradient(135deg, ${gradient});
-    padding: 30px;
-    border-radius: 10px 10px 0 0;
-    text-align: center;
-  `;
-
-  const contentStyles = `
-    background: white;
-    padding: 30px;
-    border: 1px solid #e1e8ed;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-  `;
+  // Get preheader text for email preview
+  const preheaderText = getPreheader(type, safeJobTitle, safeStatus);
 
   switch (type) {
     case 'application_received':
@@ -88,10 +93,9 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Application Received</title>
           </head>
-          <body style="${baseStyles}">
-            <div style="${headerStyles('#667eea 0%, #764ba2 100%')}">
-              <h1 style="color: white; margin: 0; font-size: 28px;">Application Received</h1>
-            </div>
+          <body style="${baseEmailStyles}">
+            ${getPreheaderText(preheaderText)}
+            ${getEmailHeader("Application Received", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: `${safeCompany} - Application Received` })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">Thank you for applying for the <strong>${safeJobTitle}</strong> position at ${safeCompany}!</p>
@@ -108,9 +112,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
               <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeCompany} Recruitment Team</p>
             </div>
-            <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-              <p>© ${new Date().getFullYear()} ${safeCompany}. All rights reserved.</p>
-            </div>
+            ${getEmailFooter({ companyName: safeCompany })}
           </body>
         </html>
       `;
@@ -124,10 +126,9 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Application Status Update</title>
           </head>
-          <body style="${baseStyles}">
-            <div style="${headerStyles('#667eea 0%, #764ba2 100%')}">
-              <h1 style="color: white; margin: 0; font-size: 28px;">Application Update</h1>
-            </div>
+          <body style="${baseEmailStyles}">
+            ${getPreheaderText(preheaderText)}
+            ${getEmailHeader("Application Update", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: `${safeCompany} - Status Update` })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">We have an update regarding your application for the <strong>${safeJobTitle}</strong> position.</p>
@@ -140,9 +141,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
               <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeCompany} Recruitment Team</p>
             </div>
-            <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-              <p>© ${new Date().getFullYear()} ${safeCompany}. All rights reserved.</p>
-            </div>
+            ${getEmailFooter({ companyName: safeCompany })}
           </body>
         </html>
       `;
@@ -161,10 +160,9 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Interview Invitation</title>
           </head>
-          <body style="${baseStyles}">
-            <div style="${headerStyles('#10b981 0%, #059669 100%')}">
-              <h1 style="color: white; margin: 0; font-size: 28px;">Interview Invitation</h1>
-            </div>
+          <body style="${baseEmailStyles}">
+            ${getPreheaderText(preheaderText)}
+            ${getEmailHeader("Interview Invitation", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: `${safeCompany} - Interview Invitation` })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">Great news! We'd like to invite you for an interview for the <strong>${safeJobTitle}</strong> position at ${safeCompany}.</p>
@@ -179,9 +177,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
               <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeCompany} Recruitment Team</p>
             </div>
-            <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-              <p>© ${new Date().getFullYear()} ${safeCompany}. All rights reserved.</p>
-            </div>
+            ${getEmailFooter({ companyName: safeCompany })}
           </body>
         </html>
       `;
@@ -195,10 +191,9 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Job Offer</title>
           </head>
-          <body style="${baseStyles}">
-            <div style="${headerStyles('#f59e0b 0%, #d97706 100%')}">
-              <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Congratulations!</h1>
-            </div>
+          <body style="${baseEmailStyles}">
+            ${getPreheaderText(preheaderText)}
+            ${getEmailHeader("🎉 Congratulations!", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: `${safeCompany} - Job Offer` })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">We are thrilled to offer you the position of <strong>${safeJobTitle}</strong> at ${safeCompany}!</p>
@@ -210,9 +205,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
               <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeCompany} Recruitment Team</p>
             </div>
-            <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-              <p>© ${new Date().getFullYear()} ${safeCompany}. All rights reserved.</p>
-            </div>
+            ${getEmailFooter({ companyName: safeCompany })}
           </body>
         </html>
       `;
@@ -226,10 +219,9 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Application Update</title>
           </head>
-          <body style="${baseStyles}">
-            <div style="${headerStyles('#6b7280 0%, #4b5563 100%')}">
-              <h1 style="color: white; margin: 0; font-size: 28px;">Application Update</h1>
-            </div>
+          <body style="${baseEmailStyles}">
+            ${getPreheaderText(preheaderText)}
+            ${getEmailHeader("Application Update", { gradient: "#6b7280 0%, #4b5563 100%", showLogo: true, logoAlt: `${safeCompany} - Application Update` })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">Thank you for your interest in the <strong>${safeJobTitle}</strong> position at ${safeCompany} and for taking the time to interview with our team.</p>
@@ -243,9 +235,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
               <p style="font-size: 16px; margin-bottom: 5px;">Best regards,</p>
               <p style="font-size: 16px; font-weight: 600; margin-top: 0;">${safeCompany} Recruitment Team</p>
             </div>
-            <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
-              <p>© ${new Date().getFullYear()} ${safeCompany}. All rights reserved.</p>
-            </div>
+            ${getEmailFooter({ companyName: safeCompany })}
           </body>
         </html>
       `;
@@ -260,6 +250,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
             <title>Application Update</title>
           </head>
           <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            ${getPreheaderText(`Update regarding your application for ${safeJobTitle}`)}
             <p>Dear ${safeName},</p>
             <p>This is an update regarding your application for ${safeJobTitle}.</p>
             <p>Best regards,<br>${safeCompany}</p>
