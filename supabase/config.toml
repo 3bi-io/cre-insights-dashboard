@@ -211,3 +211,6 @@ verify_jwt = false
 
 [functions.x-engagement-webhook]
 verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
