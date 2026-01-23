@@ -151,5 +151,5 @@ export function checkGeoAccess(geo: GeoLocation | null): GeoBlockResult {
  * Get a user-friendly region name for the allowed areas
  */
 export function getAllowedRegionsDescription(): string {
-  return 'North America (including Canada, USA, Mexico, Central America, and the Caribbean) and South America';
+  return 'North America (including Greenland, Canada, USA, Mexico, Central America, and the Caribbean) and South America';
 }
