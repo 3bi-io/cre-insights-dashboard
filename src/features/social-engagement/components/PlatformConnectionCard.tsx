@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +12,23 @@ import {
   Link2,
   Link2Off,
   Settings,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { SocialConnection, SocialPlatform, useSocialConnections } from '../hooks/useSocialConnections';
+import { useSocialOAuth } from '../hooks/useSocialOAuth';
+import { SocialOAuthDialog } from './SocialOAuthDialog';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // X (Twitter) icon component
 const XIcon = ({ className }: { className?: string }) => (
@@ -43,8 +58,8 @@ const PLATFORM_CONFIG: Record<SocialPlatform, {
   twitter: {
     name: 'X (Twitter)',
     icon: <XIcon className="h-5 w-5" />,
-    color: 'text-black dark:text-white',
-    bgColor: 'bg-gray-100',
+    color: 'text-foreground',
+    bgColor: 'bg-muted',
   },
   whatsapp: {
     name: 'WhatsApp',
@@ -64,14 +79,21 @@ interface PlatformConnectionCardProps {
   connection?: SocialConnection;
   platform?: SocialPlatform;
   compact?: boolean;
+  organizationId?: string;
 }
 
 export function PlatformConnectionCard({ 
   connection, 
   platform: platformProp,
   compact = false,
+  organizationId,
 }: PlatformConnectionCardProps) {
   const { toggleAutoRespond, toggleActive } = useSocialConnections();
+  const { initiateOAuth, disconnectPlatform, isConnecting, error, resetError } = useSocialOAuth({ organizationId });
+  
+  const [showOAuthDialog, setShowOAuthDialog] = useState(false);
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   
   const platform = connection?.platform || platformProp;
   if (!platform) return null;
@@ -80,6 +102,22 @@ export function PlatformConnectionCard({
   const isConnected = !!connection;
   const isActive = connection?.is_active ?? false;
   const autoRespondEnabled = connection?.auto_respond_enabled ?? false;
+
+  const handleConnectClick = () => {
+    setShowOAuthDialog(true);
+  };
+
+  const handleConnect = async (platform: SocialPlatform) => {
+    await initiateOAuth(platform);
+  };
+
+  const handleDisconnect = async () => {
+    if (!connection) return;
+    setIsDisconnecting(true);
+    await disconnectPlatform(connection.id);
+    setIsDisconnecting(false);
+    setShowDisconnectDialog(false);
+  };
 
   if (compact) {
     return (
@@ -110,92 +148,164 @@ export function PlatformConnectionCard({
               )}
             </>
           ) : (
-            <Badge variant="outline">Not connected</Badge>
+            <Button size="sm" variant="outline" onClick={handleConnectClick}>
+              Connect
+            </Button>
           )}
         </div>
+        
+        <SocialOAuthDialog
+          open={showOAuthDialog}
+          onOpenChange={(open) => {
+            setShowOAuthDialog(open);
+            if (!open) resetError();
+          }}
+          platform={platform}
+          onConnect={handleConnect}
+          isConnecting={isConnecting}
+          error={error}
+        />
       </div>
     );
   }
 
   return (
-    <Card className={cn(!isConnected && "opacity-75")}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={cn("p-3 rounded-lg", config.bgColor, config.color)}>
-              {config.icon}
+    <>
+      <Card className={cn(!isConnected && "opacity-75")}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-3 rounded-lg", config.bgColor, config.color)}>
+                {config.icon}
+              </div>
+              <div>
+                <CardTitle className="text-lg">{config.name}</CardTitle>
+                {connection?.page_name && (
+                  <p className="text-sm text-muted-foreground">{connection.page_name}</p>
+                )}
+                {connection?.platform_username && !connection?.page_name && (
+                  <p className="text-sm text-muted-foreground">{connection.platform_username}</p>
+                )}
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-lg">{config.name}</CardTitle>
-              {connection?.page_name && (
-                <p className="text-sm text-muted-foreground">{connection.page_name}</p>
-              )}
-            </div>
+            
+            {isConnected ? (
+              <Badge variant={isActive ? 'default' : 'secondary'} className="gap-1">
+                <Link2 className="h-3 w-3" />
+                {isActive ? 'Connected' : 'Paused'}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="gap-1">
+                <Link2Off className="h-3 w-3" />
+                Not connected
+              </Badge>
+            )}
           </div>
-          
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
           {isConnected ? (
-            <Badge variant={isActive ? 'default' : 'secondary'} className="gap-1">
-              <Link2 className="h-3 w-3" />
-              {isActive ? 'Connected' : 'Paused'}
-            </Badge>
+            <>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Active</p>
+                  <p className="text-xs text-muted-foreground">
+                    Receive and process messages
+                  </p>
+                </div>
+                <Switch
+                  checked={isActive}
+                  onCheckedChange={(checked) => {
+                    toggleActive.mutate({ connectionId: connection.id, active: checked });
+                  }}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Bot className="h-4 w-4" />
+                    Auto-Respond
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Let AI respond to common inquiries
+                  </p>
+                </div>
+                <Switch
+                  checked={autoRespondEnabled}
+                  onCheckedChange={(checked) => {
+                    toggleAutoRespond.mutate({ connectionId: connection.id, enabled: checked });
+                  }}
+                  disabled={!isActive}
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1 gap-2">
+                  <Settings className="h-4 w-4" />
+                  Configure
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2 text-destructive hover:text-destructive"
+                  onClick={() => setShowDisconnectDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
           ) : (
-            <Badge variant="outline" className="gap-1">
-              <Link2Off className="h-3 w-3" />
-              Not connected
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {isConnected ? (
-          <>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium">Active</p>
-                <p className="text-xs text-muted-foreground">
-                  Receive and process messages
-                </p>
-              </div>
-              <Switch
-                checked={isActive}
-                onCheckedChange={(checked) => {
-                  toggleActive.mutate({ connectionId: connection.id, active: checked });
-                }}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  Auto-Respond
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Let AI respond to common inquiries
-                </p>
-              </div>
-              <Switch
-                checked={autoRespondEnabled}
-                onCheckedChange={(checked) => {
-                  toggleAutoRespond.mutate({ connectionId: connection.id, enabled: checked });
-                }}
-                disabled={!isActive}
-              />
-            </div>
-            
-            <Button variant="outline" size="sm" className="w-full gap-2">
-              <Settings className="h-4 w-4" />
-              Configure
+            <Button className="w-full gap-2" onClick={handleConnectClick}>
+              <Link2 className="h-4 w-4" />
+              Connect {config.name}
             </Button>
-          </>
-        ) : (
-          <Button className="w-full gap-2">
-            <Link2 className="h-4 w-4" />
-            Connect {config.name}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* OAuth Dialog */}
+      <SocialOAuthDialog
+        open={showOAuthDialog}
+        onOpenChange={(open) => {
+          setShowOAuthDialog(open);
+          if (!open) resetError();
+        }}
+        platform={platform}
+        onConnect={handleConnect}
+        isConnecting={isConnecting}
+        error={error}
+      />
+
+      {/* Disconnect Confirmation Dialog */}
+      <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect {config.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the connection to {connection?.page_name || config.name}. 
+              You'll stop receiving messages and won't be able to respond until you reconnect.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDisconnecting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDisconnect}
+              disabled={isDisconnecting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDisconnecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Disconnecting...
+                </>
+              ) : (
+                'Disconnect'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
