@@ -4,12 +4,18 @@
  * Optimized for all device types: mobile, tablet, and desktop
  */
 
-import { useState, Suspense, lazy, useCallback } from 'react';
+import { useState, Suspense, lazy, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
 import { MapFilters, MapStats, JobListPanel, MapLayerControls } from '@/components/map';
-import { MapProvider } from '@/components/map/MapContext';
+import { MapProvider, useMapContext } from '@/components/map/MapContext';
+import { MapAnnouncements } from '@/components/map/MapAnnouncements';
+import { 
+  MapFiltersSkeleton, 
+  MapStatsSkeleton, 
+  MapControlsSkeleton 
+} from '@/components/map/MapSkeletons';
 
 // Lazy load the map component to reduce initial bundle size
 const JobMap = lazy(() => import('@/components/map/JobMap').then(m => ({ default: m.JobMap })));
@@ -49,7 +55,10 @@ function MapErrorFallback({ error }: { error: Error }) {
   );
 }
 
-export default function JobMapPage() {
+// Inner component that uses MapContext
+function JobMapPageContent() {
+  const { isMobile } = useMapContext();
+  
   const [filters, setFilters] = useState<JobMapFilters>({});
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
   const [showHeatMap, setShowHeatMap] = useState(false);
@@ -76,8 +85,19 @@ export default function JobMapPage() {
     setSelectedLocation(null);
   }, []);
 
+  // Calculate active filter count for announcements
+  const activeFilterCount = useMemo(() => {
+    return [
+      filters.searchTerm,
+      filters.clientFilter,
+      filters.categoryFilter,
+    ].filter(Boolean).length;
+  }, [filters]);
+
+  const hasActiveFilters = activeFilterCount > 0;
+
   return (
-    <MapProvider>
+    <>
       <Helmet>
         <title>Job Locations Map | ATS.me</title>
         <meta 
@@ -98,6 +118,18 @@ export default function JobMapPage() {
         <meta name="twitter:title" content="Job Locations Map | ATS.me" />
         <meta name="twitter:description" content="Explore job opportunities across the United States on our interactive map." />
       </Helmet>
+
+      {/* Screen Reader Announcements */}
+      <MapAnnouncements
+        totalJobs={stats.totalJobs}
+        totalLocations={stats.uniqueLocations}
+        isLoading={isLoading}
+        selectedLocation={selectedLocation}
+        showHeatMap={showHeatMap}
+        showMarkers={showMarkers}
+        hasActiveFilters={hasActiveFilters}
+        filterCount={activeFilterCount}
+      />
 
       {/* 
         Use h-[100dvh] for dynamic viewport height on mobile (accounts for browser chrome)
@@ -128,29 +160,37 @@ export default function JobMapPage() {
           )}
         </div>
 
-        {/* Filters Overlay */}
-        <MapFilters
-          filters={filters}
-          onFiltersChange={setFilters}
-          companies={uniqueCompanies}
-          categories={uniqueCategories}
-        />
+        {/* Filters Overlay - with skeleton during initial load */}
+        {isLoading && locations.length === 0 ? (
+          <MapFiltersSkeleton isMobile={isMobile} />
+        ) : (
+          <MapFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            companies={uniqueCompanies}
+            categories={uniqueCategories}
+          />
+        )}
 
-        {/* Stats Overlay */}
+        {/* Stats Overlay - has built-in loading state */}
         <MapStats
           totalJobs={stats.totalJobs}
           uniqueLocations={stats.uniqueLocations}
           jobsWithLocation={stats.jobsWithLocation}
-          isLoading={isLoading}
+          isLoading={isLoading && locations.length === 0}
         />
 
-        {/* Layer Controls */}
-        <MapLayerControls
-          showHeatMap={showHeatMap}
-          onToggleHeatMap={handleToggleHeatMap}
-          showMarkers={showMarkers}
-          onToggleMarkers={handleToggleMarkers}
-        />
+        {/* Layer Controls - with skeleton during initial load */}
+        {isLoading && locations.length === 0 ? (
+          <MapControlsSkeleton isMobile={isMobile} />
+        ) : (
+          <MapLayerControls
+            showHeatMap={showHeatMap}
+            onToggleHeatMap={handleToggleHeatMap}
+            showMarkers={showMarkers}
+            onToggleMarkers={handleToggleMarkers}
+          />
+        )}
 
         {/* Job List Panel */}
         <JobListPanel
@@ -158,6 +198,15 @@ export default function JobMapPage() {
           onClose={handleClosePanel}
         />
       </main>
+    </>
+  );
+}
+
+// Main export wrapped with MapProvider
+export default function JobMapPage() {
+  return (
+    <MapProvider>
+      <JobMapPageContent />
     </MapProvider>
   );
 }
