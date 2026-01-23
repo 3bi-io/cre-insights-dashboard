@@ -1,136 +1,120 @@
 
-# Add Voice Agents for Day and Ross, Danny Herman, Hayes, and CR England
+# Add Outbound Voice Agents for Danny Herman, Pemberton, and Day & Ross
 
 ## Summary
-Add 4 new inbound voice agents to the `voice_agents` table, each configured with their respective ElevenLabs agent IDs and phone number IDs.
+Add 2 new outbound voice agents and update 1 existing agent to enable outbound calling functionality for Danny Herman, Pemberton, and Day & Ross clients under Hayes Recruiting Solutions.
 
-## Agent Configuration Details
+## Current State Analysis
 
-| Agent Name | Organization | Client | ElevenLabs Agent ID | Phone Number ID |
-|------------|--------------|--------|---------------------|-----------------|
-| Inbound - Day and Ross | Hayes Recruiting Solutions | Day and Ross | `agent_9601k9fejg06ep2rmefp4phjwnmj` | `phnum_7401k96e8sdrepsbdk5j370d01tc` |
-| Inbound - Danny Herman | Hayes Recruiting Solutions | Danny Herman Trucking | `agent_0901k95ezb2kejwvc02pvycfj53v` | `phnum_7101k96egay9ed0bfc3tb3efftgt` |
-| Inbound - Hayes | Hayes Recruiting Solutions | None (org-level) | `agent_3901k96k46dhecxbzhr85tmwrph7` | `phnum_5501k910q8qzfnmbmznw6zqx3p8j` |
-| Inbound - CR England | CR England | None (org-level) | `agent_2601k9d75z14f508v87nx8mmwv78` | `phnum_01jz3x3nm8ex6rx09hmf3fr1ht` |
+### Existing Voice Agents
+| Agent Name | Type | Client | Agent ID | Outbound Enabled |
+|------------|------|--------|----------|------------------|
+| Inbound Agent - Day & Ross | Inbound | Day and Ross | `agent_9601k9...` | No |
+| Inbound Agent - Danny Herman | Inbound | Danny Herman Trucking | `agent_0901k9...` | No |
+| **Outbound Agent - Day & Ross** | Outbound | Day and Ross | `agent_2101k9...` | **No (needs fix)** |
 
-## Reference IDs
+### Client ID Clarification
+**Important**: The user provided `1d54e463-4d7f-4a05-8189-3e33d0586dea` for Pemberton, but this is actually the Danny Herman Trucking client ID. The correct IDs are:
 
-**Organizations:**
-- Hayes Recruiting Solutions: `84214b48-7b51-45bc-ad7f-723bcf50466c`
-- CR England: `682af95c-e95a-4e21-8753-ddef7f8c1749`
+| Client | Correct Client ID | Job Listings |
+|--------|-------------------|--------------|
+| Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | 127 |
+| Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` | 46 |
+| Pemberton Truck Lines Inc | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` | 81 |
 
-**Clients (under Hayes):**
-- Day and Ross: `30ab5f68-258c-4e81-8217-1123c4536259`
-- Danny Herman Trucking: `1d54e463-4d7f-4a05-8189-3e33d0586dea`
+## Implementation Plan
 
-## Implementation
-
-### Database Migration
-Create a SQL migration to insert the 4 new voice agents:
+### Step 1: Enable Existing Outbound Agent - Day & Ross
+The agent already exists with the correct agent ID (`agent_2101k9wpz4n9fv78tkr5r5hs9c5c`), just needs `is_outbound_enabled` set to true:
 
 ```sql
--- Insert Inbound Agent for Day and Ross (client-specific)
-INSERT INTO public.voice_agents (
-  organization_id,
-  client_id,
-  agent_name,
-  agent_id,
-  elevenlabs_agent_id,
-  agent_phone_number_id,
-  description,
-  is_active,
-  llm_model
-) VALUES (
-  '84214b48-7b51-45bc-ad7f-723bcf50466c',
-  '30ab5f68-258c-4e81-8217-1123c4536259',
-  'Inbound Agent - Day and Ross',
-  'agent_9601k9fejg06ep2rmefp4phjwnmj',
-  'agent_9601k9fejg06ep2rmefp4phjwnmj',
-  'phnum_7401k96e8sdrepsbdk5j370d01tc',
-  'Inbound voice agent for Day and Ross applicants',
-  true,
-  'gpt-4o-mini'
-);
+UPDATE public.voice_agents
+SET is_outbound_enabled = true
+WHERE agent_id = 'agent_2101k9wpz4n9fv78tkr5r5hs9c5c';
+```
 
--- Insert Inbound Agent for Danny Herman (client-specific)
+### Step 2: Add Outbound Agent - Danny Herman
+```sql
 INSERT INTO public.voice_agents (
   organization_id,
   client_id,
   agent_name,
   agent_id,
   elevenlabs_agent_id,
-  agent_phone_number_id,
   description,
   is_active,
+  is_outbound_enabled,
   llm_model
 ) VALUES (
   '84214b48-7b51-45bc-ad7f-723bcf50466c',
   '1d54e463-4d7f-4a05-8189-3e33d0586dea',
-  'Inbound Agent - Danny Herman',
-  'agent_0901k95ezb2kejwvc02pvycfj53v',
-  'agent_0901k95ezb2kejwvc02pvycfj53v',
-  'phnum_7101k96egay9ed0bfc3tb3efftgt',
-  'Inbound voice agent for Danny Herman Trucking applicants',
+  'Outbound Agent - Danny Herman',
+  'agent_1501kfp6wq37e0vrcear1vebcbdg',
+  'agent_1501kfp6wq37e0vrcear1vebcbdg',
+  'Automated outbound calling agent for Danny Herman Trucking application follow-ups',
   true,
-  'gpt-4o-mini'
-);
-
--- Insert Inbound Agent for Hayes (organization-level)
-INSERT INTO public.voice_agents (
-  organization_id,
-  client_id,
-  agent_name,
-  agent_id,
-  elevenlabs_agent_id,
-  agent_phone_number_id,
-  description,
-  is_active,
-  llm_model
-) VALUES (
-  '84214b48-7b51-45bc-ad7f-723bcf50466c',
-  NULL,
-  'Inbound Agent - Hayes',
-  'agent_3901k96k46dhecxbzhr85tmwrph7',
-  'agent_3901k96k46dhecxbzhr85tmwrph7',
-  'phnum_5501k910q8qzfnmbmznw6zqx3p8j',
-  'Inbound voice agent for Hayes Recruiting Solutions',
-  true,
-  'gpt-4o-mini'
-);
-
--- Insert Inbound Agent for CR England (organization-level)
-INSERT INTO public.voice_agents (
-  organization_id,
-  client_id,
-  agent_name,
-  agent_id,
-  elevenlabs_agent_id,
-  agent_phone_number_id,
-  description,
-  is_active,
-  llm_model
-) VALUES (
-  '682af95c-e95a-4e21-8753-ddef7f8c1749',
-  NULL,
-  'Inbound Agent - CR England',
-  'agent_2601k9d75z14f508v87nx8mmwv78',
-  'agent_2601k9d75z14f508v87nx8mmwv78',
-  'phnum_01jz3x3nm8ex6rx09hmf3fr1ht',
-  'Inbound voice agent for CR England applicants',
   true,
   'gpt-4o-mini'
 );
 ```
 
-## Verification Steps
-After migration:
-1. Query `voice_agents` table to confirm all 4 agents are inserted
-2. Verify each agent shows in the Voice Agent management UI
-3. Test agent connectivity using the ElevenLabs signed URL flow
+### Step 3: Add Outbound Agent - Pemberton
+Using the **correct** Pemberton client ID (`67cadf11-8cce-41c6-8e19-7d2bb0be3b03`):
 
-## Technical Notes
-- Both `agent_id` and `elevenlabs_agent_id` are set to the same value for consistency with existing patterns
-- `is_outbound_enabled` defaults to `false` (these are inbound agents)
-- `voice_id` defaults to Aria (`9BWtsMINqrJLrRacOk9x`)
-- Client-specific agents (Day and Ross, Danny Herman) are linked via `client_id` for proper application routing
-- Organization-level agents (Hayes, CR England) have `client_id = NULL`
+```sql
+INSERT INTO public.voice_agents (
+  organization_id,
+  client_id,
+  agent_name,
+  agent_id,
+  elevenlabs_agent_id,
+  description,
+  is_active,
+  is_outbound_enabled,
+  llm_model
+) VALUES (
+  '84214b48-7b51-45bc-ad7f-723bcf50466c',
+  '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
+  'Outbound Agent - Pemberton',
+  'agent_0101kfp6waxpezy8r56ewhx8eqya',
+  'agent_0101kfp6waxpezy8r56ewhx8eqya',
+  'Automated outbound calling agent for Pemberton Truck Lines application follow-ups',
+  true,
+  true,
+  'gpt-4o-mini'
+);
+```
+
+## Technical Considerations
+
+### Trigger Logic Enhancement Needed
+The current outbound call trigger (`trigger_application_insert_outbound_call`) only matches voice agents by `organization_id`, not `client_id`. This means:
+- All new applications under Hayes Recruiting will use whichever outbound agent is found first
+- Client-specific routing (Danny Herman apps -> Danny Herman agent) won't work automatically
+
+**Recommended Fix**: Update the trigger to prefer client-specific agents when available:
+```sql
+-- Look for client-specific agent first, then fall back to org-level
+SELECT id INTO v_voice_agent_id
+FROM voice_agents
+WHERE organization_id = v_org_id
+  AND is_outbound_enabled = true
+  AND agent_phone_number_id IS NOT NULL
+  AND is_active = true
+  AND (client_id = v_client_id OR client_id IS NULL)
+ORDER BY client_id NULLS LAST
+LIMIT 1;
+```
+
+### Job Listings Verification
+After implementation, verify agents are correctly associated:
+- Danny Herman: 127 active job listings
+- Day and Ross: 46 active job listings  
+- Pemberton: 81 active job listings
+
+All job listings are under Hayes Recruiting Solutions (`84214b48-7b51-45bc-ad7f-723bcf50466c`) with their respective `client_id` values.
+
+## Post-Implementation Verification
+1. Query `voice_agents` to confirm all 3 outbound agents exist with `is_outbound_enabled = true`
+2. Verify correct `client_id` associations for each agent
+3. Test by creating a sample application to verify correct agent routing
