@@ -6,7 +6,6 @@ import { MapPin, Building2, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/design-system/Button';
 import { formatDistanceToNow } from 'date-fns';
-import ReactDOMServer from 'react-dom/server';
 
 interface JobMarkerProps {
   location: MapLocation;
