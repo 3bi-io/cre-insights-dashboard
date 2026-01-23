@@ -68,7 +68,7 @@ const RegionBlocked: React.FC = () => {
                   {allowedRegions || 'North America and South America'}
                 </p>
                 <p className="text-xs mt-1">
-                  Including the United States, Canada, Mexico, Central America, 
+                  Including Greenland, Canada, the United States, Mexico, Central America, 
                   the Caribbean, and all South American countries.
                 </p>
               </div>
