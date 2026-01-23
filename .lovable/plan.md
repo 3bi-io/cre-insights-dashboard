@@ -1,221 +1,180 @@
 
-# Restrict Organization Access to Voice Agents & Related Functions
+# Hide General Application Job Listings from Public Visibility
 
-## Executive Summary
+## Overview
 
-This plan addresses **4 security vulnerabilities** identified in the voice agent system that allow cross-organization data exposure. The goal is to enforce strict organization isolation so that organizations can only view and interact with their own voice agents and related data.
+This plan adds an `is_hidden` column to the `job_listings` table and updates all public-facing queries to exclude hidden listings. General Application listings (created as fallbacks when no specific job matches an application) will be marked as hidden so they remain functional internally but invisible to visitors on the job board, search results, sitemaps, and XML feeds.
 
 ---
 
-## Security Audit Summary
+## Current State Analysis
 
-### Current RLS Policies on `voice_agents`
+### What are "General Application" Listings?
+- Auto-created by `application-processor.ts` when an application doesn't match a specific job
+- Identified by `title = 'General Application'` (or `'General Application - [Client Name]'`)
+- Currently have `status = 'active'`, making them visible alongside regular job postings
+- Located in: `supabase/functions/_shared/application-processor.ts` (lines 213-291)
 
-| Policy Name | Command | Security Issue |
-|-------------|---------|----------------|
-| `Public can view voice agents for active jobs` | SELECT | **HIGH RISK** - Allows ANY user (even unauthenticated) to view all active voice agents across the platform |
-| `Org admins can view their org voice agents` | SELECT | ✅ Correct - Restricts to organization |
-| `Admins can manage voice agents in their org` | ALL | ✅ Correct - Restricts to organization |
-| `Super admins can manage all voice agents` | ALL | ✅ Correct - Super admin bypass |
+### Public Visibility Points (13 locations need updates)
 
-### Identified Vulnerabilities
-
-| Component | Issue | Severity | Impact |
-|-----------|-------|----------|--------|
-| **RLS Policy** | `Public can view voice agents for active jobs` exposes all active agents | HIGH | Any user can see agent names, IDs, and configurations from other orgs |
-| **elevenlabs-agent** | No organization verification when requesting signed URLs | HIGH | Anyone with an agent_id can get a connection token for any org's agent |
-| **elevenlabs-conversations** | Queries agent by `elevenlabs_agent_id` without org check | MEDIUM | Can sync conversation data for agents not owned by user's org |
-| **useVoiceAgents hook** | Queries all voice agents without org filter | MEDIUM | Frontend relies on RLS which has a permissive policy |
+| Category | Location | File |
+|----------|----------|------|
+| **Job Boards** | Paginated public jobs | `src/hooks/usePaginatedPublicJobs.tsx` |
+| | Candidate job search | `src/features/candidate/hooks/useJobSearch.ts` |
+| | Job details page | `src/hooks/useJobDetails.tsx` |
+| | Related jobs component | `src/components/public/RelatedJobs.tsx` |
+| **SEO/Sitemaps** | Dynamic sitemap | `supabase/functions/generate-sitemap/index.ts` |
+| | Google indexing | `supabase/functions/google-indexing/index.ts` |
+| **XML Feeds** | Indeed feed | `supabase/functions/indeed-xml-feed/index.ts` |
+| | Google Jobs XML | `supabase/functions/google-jobs-xml/index.ts` |
+| | Universal XML feed | `supabase/functions/universal-xml-feed/index.ts` |
+| | Job feed XML | `supabase/functions/job-feed-xml/index.ts` |
+| **Admin/Dashboard** | Active jobs list | `src/pages/ActiveJobIds.tsx` |
+| | Job performance table | `src/components/JobPerformanceTable.tsx` |
+| | Job performance chart | `src/components/dashboard/JobPerformanceChart.tsx` |
 
 ---
 
 ## Implementation Plan
 
-### Part 1: Fix RLS Policies on `voice_agents`
+### Step 1: Database Migration
 
-**Drop the permissive public policy and create a restricted one:**
+Create a new migration that:
+1. Adds `is_hidden` boolean column to `job_listings` (default `false`)
+2. Marks all existing "General Application" listings as hidden
+3. Adds index for query performance
 
 ```sql
--- Remove the permissive policy that exposes all agents
-DROP POLICY IF EXISTS "Public can view voice agents for active jobs" ON public.voice_agents;
+-- Add is_hidden column to job_listings table
+ALTER TABLE public.job_listings 
+ADD COLUMN IF NOT EXISTS is_hidden boolean DEFAULT false;
 
--- Remove duplicate/overlapping policies
-DROP POLICY IF EXISTS "Users can view voice agents in their org" ON public.voice_agents;
+-- Create index for efficient filtering
+CREATE INDEX IF NOT EXISTS idx_job_listings_is_hidden 
+ON public.job_listings(is_hidden) 
+WHERE is_hidden = false;
 
--- Create a single, clean SELECT policy for authenticated users
-CREATE POLICY "Users can view voice agents in their org" ON public.voice_agents
-FOR SELECT TO authenticated
-USING (
-  is_super_admin(auth.uid())
-  OR (
-    organization_id = get_user_organization_id()
-    AND auth.uid() IS NOT NULL
-  )
-);
+-- Mark existing General Application listings as hidden
+UPDATE public.job_listings 
+SET is_hidden = true 
+WHERE title ILIKE 'General Application%';
 
--- For public-facing voice connections (job pages), create a function-based approach
--- that validates the request context rather than exposing agent data directly
+-- Add comment for documentation
+COMMENT ON COLUMN public.job_listings.is_hidden IS 
+  'Hidden listings are active but not visible to public visitors (e.g., General Applications)';
 ```
 
-### Part 2: Secure `elevenlabs-agent` Edge Function
+### Step 2: Update Application Processor
 
-**Add organization verification before returning signed URLs:**
+Modify `supabase/functions/_shared/application-processor.ts` to set `is_hidden = true` when creating General Application listings:
 
-Current code (lines 60-72):
+**Line 183-189** - When creating job from job_id (keep visible):
 ```typescript
-// INSECURE: Only checks if agent is active, not organization ownership
-const { data: agent, error: agentError } = await supabase
-  .from('voice_agents')
-  .select('organization_id, is_active')
-  .eq('agent_id', agentId)
-  .eq('is_active', true)
-  .single();
+// No change needed - regular jobs should be visible
 ```
 
-Proposed fix:
+**Lines 269-281** - When creating General Application fallback:
 ```typescript
-// Parse auth token to get user's organization (if authenticated)
-let userOrgId: string | null = null;
-const authHeader = req.headers.get('Authorization');
-if (authHeader?.startsWith('Bearer ')) {
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user } } = await supabaseAuth.auth.getUser(token);
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('organization_id')
-      .eq('id', user.id)
-      .single();
-    userOrgId = profile?.organization_id;
-  }
-}
-
-// Verify agent exists and is active
-const { data: agent, error: agentError } = await supabase
-  .from('voice_agents')
-  .select('organization_id, is_active, is_platform_default')
-  .eq('agent_id', agentId)
-  .eq('is_active', true)
-  .single();
-
-if (agentError || !agent) {
-  return errorResponse('Voice agent not found or inactive', 404);
-}
-
-// Organization validation:
-// 1. Platform default agents are accessible to all
-// 2. Authenticated users can only access their org's agents
-// 3. Public access allowed only for platform defaults or global agent mode
-if (!agent.is_platform_default && userOrgId && agent.organization_id !== userOrgId) {
-  logger.warn('Unauthorized agent access attempt', { 
-    requestedAgent: agentId.substring(0, 8), 
-    userOrg: userOrgId?.substring(0, 8) 
-  });
-  return errorResponse('Access denied: Agent not in your organization', 403);
-}
+const insertData: Record<string, unknown> = {
+  title: 'General Application',
+  organization_id: organizationId,
+  category_id: categories[0].id,
+  status: 'active',
+  is_hidden: true,  // NEW: Hide from public view
+  job_summary: clientId ? 'General applications for this carrier' : 'General applications',
+  user_id: userId,
+};
 ```
 
-### Part 3: Secure `elevenlabs-conversations` Edge Function
+### Step 3: Update Public-Facing Queries
 
-**Add organization ownership verification:**
+All public queries need to add `.eq('is_hidden', false)` or `.neq('is_hidden', true)`:
 
-Current code (lines 87-96):
+#### Frontend Hooks (4 files)
+
+**`src/hooks/usePaginatedPublicJobs.tsx` (line 45)**
 ```typescript
-// INSECURE: Fetches agent without verifying user owns this agent
-const { data: voiceAgent } = await supabase
-  .from('voice_agents')
-  .select('id, organization_id')
-  .eq('elevenlabs_agent_id', agentId)
-  .single();
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW: Exclude hidden listings
 ```
 
-Proposed fix:
+**`src/features/candidate/hooks/useJobSearch.ts` (line 52)**
 ```typescript
-// Get authenticated user's organization
-const supabaseAuth = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-  {
-    global: { headers: { Authorization: req.headers.get('Authorization')! } },
-  }
-);
-const { data: { user } } = await supabaseAuth.auth.getUser();
-if (!user) {
-  throw new Error('Unauthorized');
-}
-
-// Get user's organization
-const { data: profile } = await supabase
-  .from('profiles')
-  .select('organization_id')
-  .eq('id', user.id)
-  .single();
-
-const userOrgId = profile?.organization_id;
-
-// Get the voice_agent record
-const { data: voiceAgent } = await supabase
-  .from('voice_agents')
-  .select('id, organization_id')
-  .eq('elevenlabs_agent_id', agentId)
-  .single();
-
-if (!voiceAgent) {
-  throw new Error(`Voice agent not found for agent ID: ${agentId}`);
-}
-
-// Check user's role for super_admin bypass
-const { data: roleData } = await supabase.rpc('get_current_user_role');
-const isSuperAdmin = roleData === 'super_admin';
-
-// Verify organization ownership (super_admins bypass)
-if (!isSuperAdmin && voiceAgent.organization_id !== userOrgId) {
-  logger.warn('Unauthorized conversation sync attempt', { 
-    agentId, 
-    agentOrg: voiceAgent.organization_id,
-    userOrg: userOrgId 
-  });
-  throw new Error('Access denied: You do not have permission to access this agent');
-}
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW
 ```
 
-### Part 4: Update Frontend Hook
+**`src/hooks/useJobDetails.tsx` (line 61)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW: Prevent direct access to hidden jobs
+```
 
-**Add organization filter to `useVoiceAgents`:**
+**`src/components/public/RelatedJobs.tsx` (lines 39 and 80)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW (add in both query locations)
+```
 
-Current code relies entirely on RLS (which is permissive). Add explicit org filtering:
+#### Edge Functions (6 files)
+
+**`supabase/functions/generate-sitemap/index.ts` (line 90)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW: Keep hidden jobs out of sitemap
+```
+
+**`supabase/functions/indeed-xml-feed/index.ts` (line 38)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW
+```
+
+**`supabase/functions/google-jobs-xml/index.ts` (line 52)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW
+```
+
+**`supabase/functions/universal-xml-feed/index.ts` (line 158)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW
+```
+
+**`supabase/functions/job-feed-xml/index.ts` (line 45)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW
+```
+
+**`supabase/functions/google-indexing/index.ts` (line 98)**
+```typescript
+.eq('status', 'active')
+.eq('is_hidden', false)  // NEW: Don't submit hidden jobs to Google
+```
+
+### Step 4: Admin Visibility (Optional Enhancement)
+
+Admin users should still be able to see and manage hidden listings. Consider:
+
+**`src/pages/ActiveJobIds.tsx` (line 43)** - Add optional toggle:
+```typescript
+// Show hidden toggle for super_admins
+.eq('status', 'active')
+// Only filter by is_hidden if not showing all
+...(showHidden ? {} : { is_hidden: false })
+```
+
+**Dashboard components** can continue showing all active jobs (including hidden) for internal analytics and application management.
+
+### Step 5: Update TypeScript Types
+
+The types will auto-regenerate after the migration, but ensure the new field is recognized:
 
 ```typescript
-// In src/features/elevenlabs/hooks/useVoiceAgents.tsx
-
-const { userRole, organization } = useAuth();
-
-const { data: voiceAgents, isLoading, error } = useQuery({
-  queryKey: queryKeys.voiceAgents.list(organization?.id),
-  queryFn: async () => {
-    logger.debug('Fetching voice agents for organization', { orgId: organization?.id });
-    
-    let query = supabase
-      .from('voice_agents')
-      .select(`*, organizations (name, slug, logo_url)`)
-      .order('created_at', { ascending: false });
-    
-    // Super admins can see all, others filtered to their org
-    if (userRole !== 'super_admin' && organization?.id) {
-      query = query.eq('organization_id', organization.id);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) {
-      logger.error('Error fetching voice agents:', error);
-      throw error;
-    }
-    
-    return data as VoiceAgent[];
-  },
-  enabled: userRole === 'super_admin' || userRole === 'admin',
-});
+// In job_listings Row type:
+is_hidden: boolean
 ```
 
 ---
@@ -224,27 +183,40 @@ const { data: voiceAgents, isLoading, error } = useQuery({
 
 | File | Change Type | Description |
 |------|-------------|-------------|
-| `supabase/migrations/[new].sql` | CREATE | Drop permissive RLS policy, create org-scoped policy |
-| `supabase/functions/elevenlabs-agent/index.ts` | MODIFY | Add organization verification before returning signed URL |
-| `supabase/functions/elevenlabs-conversations/index.ts` | MODIFY | Add organization ownership check before syncing |
-| `src/features/elevenlabs/hooks/useVoiceAgents.tsx` | MODIFY | Add explicit organization filter to query |
+| `supabase/migrations/[new].sql` | CREATE | Add is_hidden column, index, update existing data |
+| `supabase/functions/_shared/application-processor.ts` | MODIFY | Set is_hidden=true for General Applications |
+| `src/hooks/usePaginatedPublicJobs.tsx` | MODIFY | Add is_hidden filter |
+| `src/features/candidate/hooks/useJobSearch.ts` | MODIFY | Add is_hidden filter |
+| `src/hooks/useJobDetails.tsx` | MODIFY | Add is_hidden filter |
+| `src/components/public/RelatedJobs.tsx` | MODIFY | Add is_hidden filter (2 locations) |
+| `supabase/functions/generate-sitemap/index.ts` | MODIFY | Add is_hidden filter |
+| `supabase/functions/indeed-xml-feed/index.ts` | MODIFY | Add is_hidden filter |
+| `supabase/functions/google-jobs-xml/index.ts` | MODIFY | Add is_hidden filter |
+| `supabase/functions/universal-xml-feed/index.ts` | MODIFY | Add is_hidden filter |
+| `supabase/functions/job-feed-xml/index.ts` | MODIFY | Add is_hidden filter |
+| `supabase/functions/google-indexing/index.ts` | MODIFY | Add is_hidden filter |
+| `src/integrations/supabase/types.ts` | AUTO-UPDATE | TypeScript types regenerate |
 
 ---
 
-## Post-Implementation Verification
+## Behavior After Implementation
 
-1. **Test org isolation**: Login as admin of Org A, verify cannot see Org B agents
-2. **Test signed URL protection**: Attempt to get signed URL for another org's agent - should return 403
-3. **Test conversation sync protection**: Attempt to sync conversations for another org's agent - should fail
-4. **Test super_admin bypass**: Verify super_admins can still access all agents
+| Scenario | Before | After |
+|----------|--------|-------|
+| Visitor browses /jobs | Sees "General Application" listings | Only sees real job postings |
+| Visitor accesses hidden job directly | Job details page loads | Returns "not found" / redirects |
+| Application submitted without job_id | Creates visible General Application | Creates hidden General Application |
+| Admin views job list | All jobs visible | All jobs visible (no change) |
+| Sitemap generated | Includes all active jobs | Excludes hidden jobs |
+| Indeed/Google feeds | Include General Applications | Only real job postings |
 
 ---
 
-## Security Model After Fix
+## Verification Steps
 
-| Actor | Can View Own Org Agents | Can View Other Org Agents | Can Get Signed URL |
-|-------|------------------------|---------------------------|-------------------|
-| Unauthenticated | ❌ | ❌ | ❌ (except global/platform default) |
-| Regular User | ❌ | ❌ | ❌ |
-| Org Admin | ✅ | ❌ | ✅ Own org only |
-| Super Admin | ✅ | ✅ | ✅ All |
+1. Run migration and verify `is_hidden` column exists
+2. Confirm existing General Application listings have `is_hidden = true`
+3. Submit a test application without job_id - verify new General Application has `is_hidden = true`
+4. Browse public job board - verify no "General Application" listings appear
+5. Check sitemap XML - confirm hidden jobs excluded
+6. Verify admin dashboard still shows all jobs including hidden ones
