@@ -156,6 +156,7 @@ Deno.serve(async (req) => {
       `)
       .eq('organization_id', organizationId)
       .eq('status', 'active')
+      .eq('is_hidden', false)
       .order('created_at', { ascending: false });
 
     // Add client filter if provided

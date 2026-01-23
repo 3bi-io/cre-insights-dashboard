@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       const supabase = getServiceClient();
       const { data: agent, error: agentError } = await supabase
         .from('voice_agents')
-        .select('organization_id, is_active')
+        .select('organization_id, is_active, is_platform_default')
         .eq('agent_id', agentId)
         .eq('is_active', true)
         .single();
@@ -69,6 +69,39 @@ Deno.serve(async (req) => {
       if (agentError || !agent) {
         logger.warn('Invalid or inactive agent requested', { agentId: agentId.substring(0, 8) + '...' });
         return errorResponse('Voice agent not found or inactive', 404, undefined, origin ?? undefined);
+      }
+
+      // Organization validation for authenticated users
+      // Parse auth token to check if user is from the same organization
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.50.0");
+        const supabaseAuth = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+        
+        if (user) {
+          // Get user's organization
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .eq('id', user.id)
+            .single();
+          
+          const userOrgId = profile?.organization_id;
+          
+          // Validate: user can only access their org's agents (unless platform default)
+          if (!agent.is_platform_default && userOrgId && agent.organization_id !== userOrgId) {
+            logger.warn('Unauthorized agent access attempt', { 
+              requestedAgent: agentId.substring(0, 8) + '...', 
+              userOrg: userOrgId?.substring(0, 8) + '...'
+            });
+            return errorResponse('Access denied: Agent not in your organization', 403, undefined, origin ?? undefined);
+          }
+        }
       }
       
       effectiveAgentId = agentId;

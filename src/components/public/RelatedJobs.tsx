@@ -37,6 +37,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
           job_categories(name)
         `)
         .eq('status', 'active')
+        .eq('is_hidden', false)
         .neq('id', currentJobId)
         .limit(4);
 
@@ -78,6 +79,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             job_categories(name)
           `)
           .eq('status', 'active')
+          .eq('is_hidden', false)
           .not('id', 'in', `(${existingIds.join(',')})`)
           .limit(4 - data.length);
 

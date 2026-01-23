@@ -50,6 +50,7 @@ export const useJobSearch = () => {
           )
         `)
         .eq('status', 'active')
+        .eq('is_hidden', false)
         .order('created_at', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1);
 

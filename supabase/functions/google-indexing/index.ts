@@ -96,6 +96,7 @@ serve(async (req) => {
         .from('job_listings')
         .select('url, apply_url')
         .eq('status', 'active')
+        .eq('is_hidden', false)
 
       if (error) throw error
 

@@ -87,7 +87,8 @@ serve(async (req) => {
     let jobsQuery = supabase
       .from('job_listings')
       .select('id, updated_at')
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .eq('is_hidden', false);
 
     if (acmeOrg?.id) {
       jobsQuery = jobsQuery.neq('organization_id', acmeOrg.id);

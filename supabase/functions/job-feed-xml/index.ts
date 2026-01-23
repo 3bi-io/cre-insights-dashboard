@@ -43,6 +43,7 @@ serve(async (req) => {
       .from('job_listings')
       .select(selectFields)
       .eq('status', 'active')
+      .eq('is_hidden', false)
 
 
     // Filter by user if specified
