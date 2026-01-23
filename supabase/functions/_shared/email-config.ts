@@ -60,24 +60,133 @@ export const getReplyTo = (type: keyof typeof EMAIL_CONFIG.replyTo = 'support'):
 };
 
 /**
- * Generate standard email footer HTML
+ * Generate preheader text (hidden preview text shown in email clients)
+ * Uses spacing characters to prevent body text from appearing in preview
  */
-export const getEmailFooter = (companyName?: string): string => {
-  const company = companyName || EMAIL_CONFIG.brand.name;
+export const getPreheaderText = (text: string): string => {
+  // Hidden preheader with spacing to prevent body text from appearing
+  const spacers = '&#847; &zwnj; &nbsp; &#8199; &#65279; '.repeat(30);
   return `
-    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 30px;">
-      <p style="margin: 5px 0;">© ${EMAIL_CONFIG.brand.year} ${company}. All rights reserved.</p>
-      <p style="margin: 5px 0; color: #9ca3af;">Powered by <a href="${EMAIL_CONFIG.brand.website}" style="color: #3b82f6; text-decoration: none;">ATS.me</a></p>
+    <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all;">
+      ${text}
+    </div>
+    <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all;">
+      ${spacers}
     </div>
   `;
 };
 
 /**
- * Generate email header with gradient
+ * Get email logo with proper alt text for accessibility
  */
-export const getEmailHeader = (title: string, gradient: string = '#667eea 0%, #764ba2 100%'): string => {
+export const getEmailLogo = (
+  altText: string = 'ATS.me - Modern Applicant Tracking System',
+  width: number = 120
+): string => {
+  return `
+    <img 
+      src="${EMAIL_CONFIG.brand.logo}" 
+      alt="${altText}" 
+      width="${width}" 
+      height="auto"
+      style="display: block; margin: 0 auto 16px; border-radius: 8px;"
+      role="img"
+    />
+  `;
+};
+
+/**
+ * Generate unsubscribe section for CAN-SPAM compliance
+ * Required for marketing emails, optional for transactional
+ */
+export const getUnsubscribeSection = (options?: {
+  unsubscribeUrl?: string;
+  emailType?: 'transactional' | 'marketing';
+  preferencesUrl?: string;
+}): string => {
+  const isMarketing = options?.emailType === 'marketing';
+  const unsubscribeUrl = options?.unsubscribeUrl || `${EMAIL_CONFIG.brand.website}/unsubscribe`;
+  const preferencesUrl = options?.preferencesUrl || `${EMAIL_CONFIG.brand.website}/email-preferences`;
+  
+  return `
+    <div style="text-align: center; padding: 16px; color: #9ca3af; font-size: 11px;">
+      ${isMarketing ? `
+        <p style="margin: 0 0 8px 0;">
+          <a href="${unsubscribeUrl}" style="color: #6b7280; text-decoration: underline;">
+            Unsubscribe from these emails
+          </a>
+          &nbsp;|&nbsp;
+          <a href="${preferencesUrl}" style="color: #6b7280; text-decoration: underline;">
+            Manage email preferences
+          </a>
+        </p>
+      ` : ''}
+      <p style="margin: 0;">
+        ${EMAIL_CONFIG.footer.address} • 
+        <a href="${EMAIL_CONFIG.brand.website}" style="color: #6b7280; text-decoration: none;">
+          ${EMAIL_CONFIG.brand.website.replace('https://', '')}
+        </a>
+      </p>
+    </div>
+  `;
+};
+
+/**
+ * Generate standard email footer HTML
+ * Updated to support unsubscribe links and marketing email compliance
+ */
+export const getEmailFooter = (options?: {
+  companyName?: string;
+  showUnsubscribe?: boolean;
+  unsubscribeUrl?: string;
+  emailType?: 'transactional' | 'marketing';
+}): string => {
+  const company = options?.companyName || EMAIL_CONFIG.brand.name;
+  
+  return `
+    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 30px;">
+      <p style="margin: 5px 0;">© ${EMAIL_CONFIG.brand.year} ${company}. All rights reserved.</p>
+      <p style="margin: 5px 0; color: #9ca3af;">
+        Powered by <a href="${EMAIL_CONFIG.brand.website}" style="color: #3b82f6; text-decoration: none;">ATS.me</a>
+      </p>
+      ${options?.showUnsubscribe ? getUnsubscribeSection({
+        unsubscribeUrl: options.unsubscribeUrl,
+        emailType: options.emailType
+      }) : `
+        <p style="margin: 8px 0 0 0; font-size: 11px; color: #9ca3af;">
+          ${EMAIL_CONFIG.footer.unsubscribeText}
+        </p>
+      `}
+    </div>
+  `;
+};
+
+/**
+ * Generate email header with gradient and optional logo
+ * Updated to include logo with alt text for accessibility
+ */
+export const getEmailHeader = (
+  title: string, 
+  options?: {
+    gradient?: string;
+    showLogo?: boolean;
+    logoAlt?: string;
+  }
+): string => {
+  const gradient = options?.gradient || '#667eea 0%, #764ba2 100%';
+  
   return `
     <div style="background: linear-gradient(135deg, ${gradient}); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+      ${options?.showLogo ? `
+        <img 
+          src="${EMAIL_CONFIG.brand.logo}" 
+          alt="${options.logoAlt || 'ATS.me - Modern Applicant Tracking System'}" 
+          width="80" 
+          height="auto"
+          style="display: block; margin: 0 auto 16px; border-radius: 8px;"
+          role="img"
+        />
+      ` : ''}
       <h1 style="color: white; margin: 0; font-size: 24px;">${title}</h1>
     </div>
   `;
@@ -119,3 +228,44 @@ export const buttonStyles = `
   font-weight: 600;
   margin: 16px 0;
 `;
+
+/**
+ * Preheader text templates for different email types
+ */
+export const PREHEADER_TEMPLATES = {
+  // Application emails
+  application_received: (jobTitle: string) => 
+    `Thanks for applying! We've received your application for ${jobTitle} and will review it shortly.`,
+  status_update: (status: string) => 
+    `Your application status has been updated to "${status}". Check inside for details.`,
+  interview_invitation: (jobTitle: string) => 
+    `Great news! You've been selected for an interview for ${jobTitle}.`,
+  offer: (jobTitle: string) => 
+    `Congratulations! We're excited to offer you the ${jobTitle} position.`,
+  rejection: () => 
+    `Thank you for your interest. We have an update on your application.`,
+  
+  // Auth emails
+  welcome: (orgName: string) => 
+    `Welcome aboard! Your ${orgName} account is ready. Here's how to get started.`,
+  invite: (inviterName: string | undefined, orgName: string, role: string) => 
+    inviterName 
+      ? `${inviterName} invited you to join ${orgName} as a ${role}.`
+      : `You've been invited to join ${orgName} as a ${role}.`,
+  magic_link: () => 
+    `Click to sign in securely. This link expires in 1 hour.`,
+  password_reset: () => 
+    `Use this secure link to reset your password. Expires in 24 hours.`,
+  email_confirm: () => 
+    `One click to verify your email and access your account.`,
+  email_change: () => 
+    `Verify your new email address to complete the change.`,
+  
+  // Screening emails
+  background_check: (applicantName: string) => 
+    `A background check has been requested for ${applicantName}.`,
+  employment_application: (orgName: string) => 
+    `Please complete your employment application for ${orgName}.`,
+  drug_screening: (applicantName: string) => 
+    `A drug screening has been requested for ${applicantName}.`
+} as const;

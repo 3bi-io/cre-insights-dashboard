@@ -202,3 +202,6 @@ verify_jwt = false
 
 [functions.geo-check]
 verify_jwt = false
+
+[functions.auth-email-templates]
+verify_jwt = false
