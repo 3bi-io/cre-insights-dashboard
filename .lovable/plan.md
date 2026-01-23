@@ -1,56 +1,60 @@
 
-# Fix Missing Greenland in Region Blocked Page
+# Fix CORS Configuration for Lovable Preview Environments
 
-## Issue Identified
+## Problem Identified
 
-The "Access Restricted" page has a **hardcoded description** that doesn't include Greenland, even though:
-- The backend `geo-blocking.ts` was updated to include Greenland in `getAllowedRegionsDescription()`
-- The `allowedRegions` field is returned from the geo-check API
-- The context properly stores and exposes `allowedRegions`
+The browser is blocked from accessing the app due to a **CORS mismatch**:
 
-### Current Code (RegionBlocked.tsx, lines 71-72)
-```tsx
-<p className="text-xs mt-1">
-  Including the United States, Canada, Mexico, Central America, 
-  the Caribbean, and all South American countries.
-</p>
+- **Request origin**: `https://cf22d483-762d-45c7-a42c-85b40ce9290a.lovableproject.com`
+- **Returned CORS header**: `Access-Control-Allow-Origin: https://ats.me`
+
+The `geo-check` edge function has a bypass that detects `lovableproject.com`, but the **CORS headers** use `cors-config.ts` which only checks for `lovable.app` and `lovable.dev` - **not `lovableproject.com`**.
+
 ```
-
-This **hardcoded text** overrides the dynamic `allowedRegions` value from the context.
+Browser Console Error:
+Access to fetch at '.../geo-check' from origin '...lovableproject.com' 
+has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header 
+has a value 'https://ats.me' that is not equal to the supplied origin.
+```
 
 ---
 
 ## Solution
 
-Update the description text in `RegionBlocked.tsx` to include Greenland, matching the updated backend description.
+Update the shared `isLovablePreview()` function in `cors-config.ts` to also include `lovableproject.com`:
 
 ### File to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/RegionBlocked.tsx` | Update hardcoded description to include Greenland |
+| `supabase/functions/_shared/cors-config.ts` | Add `lovableproject.com` to preview detection |
 
 ### Code Change
 
-**Lines 71-73** - Update the description text:
+**Lines 33-35** - Update `isLovablePreview()`:
 
-```tsx
-<p className="text-xs mt-1">
-  Including Greenland, Canada, the United States, Mexico, Central America, 
-  the Caribbean, and all South American countries.
-</p>
+```typescript
+export function isLovablePreview(origin: string): boolean {
+  return origin.includes('lovable.app') || 
+         origin.includes('lovable.dev') || 
+         origin.includes('lovableproject.com');
+}
 ```
 
 ---
 
-## Why Not Use Dynamic `allowedRegions`?
+## Why This Fixes It
 
-The `allowedRegions` context value contains the full description string ("North America (including Greenland, Canada, USA...)") which is already displayed on **line 68**. The secondary text on lines 71-72 provides additional detail in a more readable format. Keeping both texts consistent ensures a cohesive user experience.
+1. The `getCorsHeaders()` function calls `isOriginAllowed()`
+2. `isOriginAllowed()` calls `isLovablePreview()` to check if the origin is a Lovable preview
+3. When `isLovablePreview()` returns `true`, the CORS header will use the **actual request origin** instead of falling back to `https://ats.me`
+4. The browser will then accept the response since the CORS header matches the request origin
 
 ---
 
-## Verification
+## Impact
 
-After the fix, the page will display:
-- **Primary**: "North America (including Greenland, Canada, USA, Mexico, Central America, and the Caribbean) and South America"
-- **Secondary**: "Including Greenland, Canada, the United States, Mexico, Central America, the Caribbean, and all South American countries."
+- **All edge functions** using `getCorsHeaders()` will automatically allow `lovableproject.com` origins
+- Preview environments and the AI browser tool will have full access
+- No security risk since `lovableproject.com` is an official Lovable domain
+- Production geo-blocking still enforced for non-Americas visitors on production domains
