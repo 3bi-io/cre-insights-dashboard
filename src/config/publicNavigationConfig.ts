@@ -1,4 +1,4 @@
-import { LucideIcon, Briefcase, Building2, Sparkles, Play, BookOpen, Mail, MapPin } from 'lucide-react';
+import { LucideIcon, Briefcase, Building2, Sparkles, Play, BookOpen, Mail } from 'lucide-react';
 
 export interface PublicNavItem {
   name: string;
@@ -14,13 +14,6 @@ export const publicNavigation: PublicNavItem[] = [
     href: '/jobs', 
     icon: Briefcase,
     description: 'Browse open positions'
-  },
-  { 
-    name: 'Map', 
-    href: '/map', 
-    icon: MapPin,
-    isNew: true,
-    description: 'Explore jobs by location'
   },
   { 
     name: 'Companies', 
