@@ -1,4 +1,9 @@
-import { memo, useState } from 'react';
+/**
+ * Enhanced Map Filters Component
+ * Responsive filter controls with improved accessibility
+ */
+
+import { memo, useState, useCallback, useRef, useEffect } from 'react';
 import { Search, X, Filter, Building2, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/design-system/Button';
@@ -17,6 +22,7 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { JobMapFilters } from '@/hooks/useJobMapData';
+import { useDebouncedCallback } from '@/utils/performance';
 
 interface MapFiltersProps {
   filters: JobMapFilters;
@@ -33,6 +39,20 @@ export const MapFilters = memo(function MapFilters({
 }: MapFiltersProps) {
   const isMobile = useIsMobile();
   const [searchValue, setSearchValue] = useState(filters.searchTerm || '');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced search to reduce API calls
+  const debouncedSearch = useDebouncedCallback((value: string) => {
+    onFiltersChange({ ...filters, searchTerm: value });
+  }, 300);
+
+  // Handle search input change
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchValue(value);
+    debouncedSearch(value);
+  }, [debouncedSearch]);
 
   const activeFilterCount = [
     filters.clientFilter,
@@ -44,185 +64,254 @@ export const MapFilters = memo(function MapFilters({
     onFiltersChange({ ...filters, searchTerm: searchValue });
   };
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchValue('');
     onFiltersChange({});
-  };
+    searchInputRef.current?.focus();
+  }, [onFiltersChange]);
 
   const hasAnyFilter = searchValue || filters.clientFilter || filters.categoryFilter;
 
+  // Announce filter changes to screen readers
+  const [announcement, setAnnouncement] = useState('');
+  
+  useEffect(() => {
+    if (activeFilterCount > 0) {
+      setAnnouncement(`${activeFilterCount} filter${activeFilterCount > 1 ? 's' : ''} applied`);
+    } else {
+      setAnnouncement('');
+    }
+  }, [activeFilterCount]);
+
   return (
-    <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-wrap gap-2 items-start">
-      {/* Search Input */}
-      <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search jobs..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            className="pl-9 pr-9 bg-background/95 backdrop-blur-sm shadow-lg border-border/50"
-          />
-          {searchValue && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchValue('');
-                onFiltersChange({ ...filters, searchTerm: '' });
-              }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+    <>
+      {/* Screen reader announcements */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
+
+      <div 
+        className="absolute top-4 left-4 right-4 z-[1000] flex flex-wrap gap-2 items-start"
+        role="search"
+        aria-label="Filter jobs on map"
+      >
+        {/* Search Input */}
+        <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] max-w-md">
+          <div className="relative">
+            <Search 
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" 
+              aria-hidden="true"
+            />
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Search jobs..."
+              value={searchValue}
+              onChange={handleSearchChange}
+              className="pl-9 pr-9 bg-background/95 backdrop-blur-sm shadow-lg border-border/50 h-10"
+              aria-label="Search jobs by title, company, or location"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchValue('');
+                  onFiltersChange({ ...filters, searchTerm: '' });
+                  searchInputRef.current?.focus();
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring rounded"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </form>
+
+        {/* Filter Controls */}
+        {isMobile ? (
+          // Mobile: Popover with all filters
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="bg-background/95 backdrop-blur-sm shadow-lg relative h-10 w-10"
+                aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+                aria-expanded={isFilterOpen}
+                aria-haspopup="dialog"
+              >
+                <Filter className="w-4 h-4" />
+                {activeFilterCount > 0 && (
+                  <span 
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center"
+                    aria-hidden="true"
+                  >
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className="w-72 p-4" 
+              align="end"
+              role="dialog"
+              aria-label="Filter options"
             >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </form>
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm" id="filter-heading">Filters</h4>
+                
+                {/* Company Filter */}
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="mobile-company-filter"
+                    className="text-sm text-muted-foreground flex items-center gap-1.5"
+                  >
+                    <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    Company
+                  </label>
+                  <Select
+                    value={filters.clientFilter || 'all'}
+                    onValueChange={(value) => 
+                      onFiltersChange({ ...filters, clientFilter: value === 'all' ? '' : value })
+                    }
+                  >
+                    <SelectTrigger id="mobile-company-filter">
+                      <SelectValue placeholder="All companies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All companies</SelectItem>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-      {/* Filter Controls */}
-      {isMobile ? (
-        // Mobile: Popover with all filters
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-background/95 backdrop-blur-sm shadow-lg relative"
-            >
-              <Filter className="w-4 h-4" />
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-4" align="end">
-            <div className="space-y-4">
-              <h4 className="font-medium text-sm">Filters</h4>
-              
-              {/* Company Filter */}
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5" />
-                  Company
-                </label>
-                <Select
-                  value={filters.clientFilter || 'all'}
-                  onValueChange={(value) => 
-                    onFiltersChange({ ...filters, clientFilter: value === 'all' ? '' : value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All companies" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All companies</SelectItem>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Category Filter */}
+                <div className="space-y-2">
+                  <label 
+                    htmlFor="mobile-category-filter"
+                    className="text-sm text-muted-foreground flex items-center gap-1.5"
+                  >
+                    <Tag className="w-3.5 h-3.5" aria-hidden="true" />
+                    Category
+                  </label>
+                  <Select
+                    value={filters.categoryFilter || 'all'}
+                    onValueChange={(value) => 
+                      onFiltersChange({ ...filters, categoryFilter: value === 'all' ? '' : value })
+                    }
+                  >
+                    <SelectTrigger id="mobile-category-filter">
+                      <SelectValue placeholder="All categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {hasAnyFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="w-full"
+                  >
+                    <X className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    Clear all filters
+                  </Button>
+                )}
               </div>
-
-              {/* Category Filter */}
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5" />
-                  Category
-                </label>
-                <Select
-                  value={filters.categoryFilter || 'all'}
-                  onValueChange={(value) => 
-                    onFiltersChange({ ...filters, categoryFilter: value === 'all' ? '' : value })
-                  }
+            </PopoverContent>
+          </Popover>
+        ) : (
+          // Desktop: Inline dropdowns
+          <>
+            <div className="relative">
+              <label htmlFor="desktop-company-filter" className="sr-only">
+                Filter by company
+              </label>
+              <Select
+                value={filters.clientFilter || 'all'}
+                onValueChange={(value) => 
+                  onFiltersChange({ ...filters, clientFilter: value === 'all' ? '' : value })
+                }
+              >
+                <SelectTrigger 
+                  id="desktop-company-filter"
+                  className="w-[180px] bg-background/95 backdrop-blur-sm shadow-lg h-10"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {hasAnyFilter && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="w-full"
-                >
-                  <X className="w-3.5 h-3.5 mr-1.5" />
-                  Clear all filters
-                </Button>
-              )}
+                  <Building2 className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
+                  <SelectValue placeholder="All companies" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All companies</SelectItem>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </PopoverContent>
-        </Popover>
-      ) : (
-        // Desktop: Inline dropdowns
-        <>
-          <Select
-            value={filters.clientFilter || 'all'}
-            onValueChange={(value) => 
-              onFiltersChange({ ...filters, clientFilter: value === 'all' ? '' : value })
-            }
-          >
-            <SelectTrigger className="w-[180px] bg-background/95 backdrop-blur-sm shadow-lg">
-              <Building2 className="w-4 h-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="All companies" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All companies</SelectItem>
-              {companies.map((company) => (
-                <SelectItem key={company.id} value={company.id}>
-                  {company.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
-          <Select
-            value={filters.categoryFilter || 'all'}
-            onValueChange={(value) => 
-              onFiltersChange({ ...filters, categoryFilter: value === 'all' ? '' : value })
-            }
-          >
-            <SelectTrigger className="w-[160px] bg-background/95 backdrop-blur-sm shadow-lg">
-              <Tag className="w-4 h-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <div className="relative">
+              <label htmlFor="desktop-category-filter" className="sr-only">
+                Filter by category
+              </label>
+              <Select
+                value={filters.categoryFilter || 'all'}
+                onValueChange={(value) => 
+                  onFiltersChange({ ...filters, categoryFilter: value === 'all' ? '' : value })
+                }
+              >
+                <SelectTrigger 
+                  id="desktop-category-filter"
+                  className="w-[160px] bg-background/95 backdrop-blur-sm shadow-lg h-10"
+                >
+                  <Tag className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {hasAnyFilter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="bg-background/95 backdrop-blur-sm shadow-lg"
-            >
-              <X className="w-3.5 h-3.5 mr-1.5" />
-              Clear
-            </Button>
-          )}
-        </>
-      )}
-    </div>
+            {hasAnyFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="bg-background/95 backdrop-blur-sm shadow-lg h-10"
+                aria-label="Clear all filters"
+              >
+                <X className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                Clear
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+    </>
   );
 });
+
+export default MapFilters;

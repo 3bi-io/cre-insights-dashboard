@@ -1,10 +1,17 @@
-import { useEffect, useRef, memo } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+/**
+ * Job Map Component
+ * Interactive map visualization of job locations with heat map, clustering, and accessibility
+ */
+
+import { useEffect, useRef, memo, useCallback } from 'react';
+import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapLocation } from '@/hooks/useJobMapData';
 import { JobMarker } from './JobMarker';
+import { HeatMapLayer } from './HeatMapLayer';
+import { MapZoomControls } from './MapControls';
 import { useTheme } from 'next-themes';
 
 // Fix Leaflet default marker icon issue
@@ -19,6 +26,8 @@ interface JobMapProps {
   locations: MapLocation[];
   selectedLocation: MapLocation | null;
   onLocationSelect: (location: MapLocation | null) => void;
+  showHeatMap?: boolean;
+  showMarkers?: boolean;
   className?: string;
 }
 
@@ -27,7 +36,13 @@ const US_CENTER: [number, number] = [39.8283, -98.5795];
 const US_ZOOM = 4;
 
 // Map controller component for external control
-function MapController({ selectedLocation }: { selectedLocation: MapLocation | null }) {
+function MapController({ 
+  selectedLocation,
+  onMapClick 
+}: { 
+  selectedLocation: MapLocation | null;
+  onMapClick?: () => void;
+}) {
   const map = useMap();
   const previousLocation = useRef<MapLocation | null>(null);
 
@@ -39,6 +54,76 @@ function MapController({ selectedLocation }: { selectedLocation: MapLocation | n
       previousLocation.current = selectedLocation;
     }
   }, [selectedLocation, map]);
+
+  // Handle map clicks to deselect
+  useMapEvents({
+    click: () => {
+      onMapClick?.();
+    },
+  });
+
+  return null;
+}
+
+// Keyboard navigation handler
+function KeyboardNavigationHandler({ 
+  locations,
+  selectedLocation,
+  onLocationSelect 
+}: {
+  locations: MapLocation[];
+  selectedLocation: MapLocation | null;
+  onLocationSelect: (location: MapLocation | null) => void;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!locations.length) return;
+
+      const currentIndex = selectedLocation 
+        ? locations.findIndex(l => l.id === selectedLocation.id)
+        : -1;
+
+      let newIndex = currentIndex;
+
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          newIndex = currentIndex < locations.length - 1 ? currentIndex + 1 : 0;
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          newIndex = currentIndex > 0 ? currentIndex - 1 : locations.length - 1;
+          break;
+        case 'Escape':
+          onLocationSelect(null);
+          return;
+        case 'Enter':
+        case ' ':
+          if (selectedLocation) {
+            e.preventDefault();
+            // Trigger selection action (already selected, so this could open details)
+          }
+          return;
+        default:
+          return;
+      }
+
+      if (newIndex !== currentIndex && locations[newIndex]) {
+        onLocationSelect(locations[newIndex]);
+      }
+    };
+
+    const mapContainer = map.getContainer();
+    mapContainer.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      mapContainer.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [map, locations, selectedLocation, onLocationSelect]);
 
   return null;
 }
@@ -60,7 +145,7 @@ function createClusterIcon(cluster: { getChildCount: () => number }): DivIcon {
   }
 
   return L.divIcon({
-    html: `<div class="job-cluster-inner">${count}</div>`,
+    html: `<div class="job-cluster-inner" role="img" aria-label="${count} jobs in this area">${count}</div>`,
     className: `job-cluster ${className}`,
     iconSize: L.point(size, size, true),
   });
@@ -70,6 +155,8 @@ export const JobMap = memo(function JobMap({
   locations,
   selectedLocation,
   onLocationSelect,
+  showHeatMap = false,
+  showMarkers = true,
   className = '',
 }: JobMapProps) {
   const { resolvedTheme } = useTheme();
@@ -80,9 +167,21 @@ export const JobMap = memo(function JobMap({
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
     : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
+  const handleMapClick = useCallback(() => {
+    // Only deselect if clicking on the map (not on markers)
+    // Markers handle their own clicks
+  }, []);
+
+  // Calculate total jobs for screen reader announcement
+  const totalJobs = locations.reduce((sum, loc) => sum + loc.jobCount, 0);
+
   return (
-    <div className={`relative w-full h-full ${className}`}>
-      {/* Custom cluster styles */}
+    <div 
+      className={`relative w-full h-full ${className}`}
+      role="application"
+      aria-label={`Interactive job map showing ${totalJobs} jobs across ${locations.length} locations`}
+    >
+      {/* Custom cluster and accessibility styles */}
       <style>{`
         .job-cluster {
           display: flex;
@@ -94,8 +193,11 @@ export const JobMap = memo(function JobMap({
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
           transition: transform 0.2s ease;
         }
-        .job-cluster:hover {
+        .job-cluster:hover,
+        .job-cluster:focus {
           transform: scale(1.1);
+          outline: 3px solid hsl(var(--ring));
+          outline-offset: 2px;
         }
         .job-cluster-inner {
           display: flex;
@@ -118,6 +220,10 @@ export const JobMap = memo(function JobMap({
           font-family: inherit;
           border-radius: var(--radius);
         }
+        .leaflet-container:focus {
+          outline: 3px solid hsl(var(--ring));
+          outline-offset: 2px;
+        }
         .leaflet-popup-content-wrapper {
           border-radius: 12px;
           box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -132,6 +238,32 @@ export const JobMap = memo(function JobMap({
           background: hsl(var(--popover));
           color: hsl(var(--popover-foreground));
         }
+        /* Hide default zoom controls - we provide custom ones */
+        .leaflet-control-zoom {
+          display: none !important;
+        }
+        /* Improve touch targets on mobile */
+        @media (pointer: coarse) {
+          .job-cluster,
+          .job-marker-icon > div {
+            min-width: 44px;
+            min-height: 44px;
+          }
+        }
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+          .job-cluster {
+            border: 2px solid white;
+          }
+        }
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+          .job-cluster,
+          .job-marker-icon > div {
+            transition: none !important;
+            animation: none !important;
+          }
+        }
       `}</style>
 
       <MapContainer
@@ -141,32 +273,76 @@ export const JobMap = memo(function JobMap({
         className="w-full h-full rounded-lg"
         minZoom={3}
         maxZoom={18}
+        keyboard={true}
+        keyboardPanDelta={80}
+        touchZoom={true}
+        dragging={true}
+        doubleClickZoom={true}
+        zoomControl={false}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url={tileUrl}
         />
 
-        <MapController selectedLocation={selectedLocation} />
+        <MapController 
+          selectedLocation={selectedLocation} 
+          onMapClick={handleMapClick}
+        />
 
-        <MarkerClusterGroup
-          chunkedLoading
-          spiderfyOnMaxZoom={true}
-          showCoverageOnHover={false}
-          maxClusterRadius={60}
-          iconCreateFunction={createClusterIcon}
-          animate={true}
-        >
-          {locations.map((location) => (
-            <JobMarker
-              key={location.id}
-              location={location}
-              isSelected={selectedLocation?.id === location.id}
-              onClick={() => onLocationSelect(location)}
-            />
-          ))}
-        </MarkerClusterGroup>
+        <KeyboardNavigationHandler
+          locations={locations}
+          selectedLocation={selectedLocation}
+          onLocationSelect={onLocationSelect}
+        />
+
+        {/* Heat map layer (renders behind markers) */}
+        <HeatMapLayer 
+          locations={locations} 
+          visible={showHeatMap}
+          intensity={0.8}
+        />
+
+        {/* Custom zoom controls */}
+        <MapZoomControls />
+
+        {/* Marker clusters */}
+        {showMarkers && (
+          <MarkerClusterGroup
+            chunkedLoading
+            spiderfyOnMaxZoom={true}
+            showCoverageOnHover={false}
+            maxClusterRadius={60}
+            iconCreateFunction={createClusterIcon}
+            animate={true}
+            spiderfyDistanceMultiplier={1.5}
+            zoomToBoundsOnClick={true}
+          >
+            {locations.map((location) => (
+              <JobMarker
+                key={location.id}
+                location={location}
+                isSelected={selectedLocation?.id === location.id}
+                onClick={() => onLocationSelect(location)}
+              />
+            ))}
+          </MarkerClusterGroup>
+        )}
       </MapContainer>
+
+      {/* Screen reader live region for announcements */}
+      <div 
+        role="status" 
+        aria-live="polite" 
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {selectedLocation && (
+          `Selected ${selectedLocation.displayName} with ${selectedLocation.jobCount} jobs`
+        )}
+      </div>
     </div>
   );
 });
+
+export default JobMap;

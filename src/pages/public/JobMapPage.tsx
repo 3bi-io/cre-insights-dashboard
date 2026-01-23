@@ -1,8 +1,13 @@
-import { useState, Suspense, lazy } from 'react';
+/**
+ * Job Map Page
+ * Interactive map visualization of job locations with heat map and accessibility features
+ */
+
+import { useState, Suspense, lazy, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
-import { MapFilters, MapStats, JobListPanel } from '@/components/map';
+import { MapFilters, MapStats, JobListPanel, MapLayerControls } from '@/components/map';
 
 // Lazy load the map component to reduce initial bundle size
 const JobMap = lazy(() => import('@/components/map/JobMap').then(m => ({ default: m.JobMap })));
@@ -10,9 +15,13 @@ const JobMap = lazy(() => import('@/components/map/JobMap').then(m => ({ default
 // Loading fallback for map
 function MapLoadingFallback() {
   return (
-    <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg">
+    <div 
+      className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg"
+      role="status"
+      aria-label="Loading map"
+    >
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin" aria-hidden="true" />
         <p className="text-sm">Loading map...</p>
       </div>
     </div>
@@ -22,10 +31,14 @@ function MapLoadingFallback() {
 // Error fallback
 function MapErrorFallback({ error }: { error: Error }) {
   return (
-    <div className="w-full h-full flex items-center justify-center bg-destructive/10 rounded-lg p-8">
+    <div 
+      className="w-full h-full flex items-center justify-center bg-destructive/10 rounded-lg p-8"
+      role="alert"
+      aria-live="assertive"
+    >
       <div className="flex flex-col items-center gap-3 text-center">
-        <MapPin className="w-12 h-12 text-destructive" />
-        <h3 className="font-semibold text-lg">Failed to load map</h3>
+        <MapPin className="w-12 h-12 text-destructive" aria-hidden="true" />
+        <h2 className="font-semibold text-lg">Failed to load map</h2>
         <p className="text-sm text-muted-foreground max-w-md">
           {error.message || 'An unexpected error occurred while loading the map.'}
         </p>
@@ -37,6 +50,8 @@ function MapErrorFallback({ error }: { error: Error }) {
 export default function JobMapPage() {
   const [filters, setFilters] = useState<JobMapFilters>({});
   const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
+  const [showHeatMap, setShowHeatMap] = useState(false);
+  const [showMarkers, setShowMarkers] = useState(true);
 
   const {
     locations,
@@ -46,6 +61,18 @@ export default function JobMapPage() {
     isLoading,
     error,
   } = useJobMapData(filters);
+
+  const handleToggleHeatMap = useCallback(() => {
+    setShowHeatMap(prev => !prev);
+  }, []);
+
+  const handleToggleMarkers = useCallback(() => {
+    setShowMarkers(prev => !prev);
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
+    setSelectedLocation(null);
+  }, []);
 
   return (
     <>
@@ -70,7 +97,13 @@ export default function JobMapPage() {
         <meta name="twitter:description" content="Explore job opportunities across the United States on our interactive map." />
       </Helmet>
 
-      <div className="relative w-full h-[calc(100vh-4rem)] bg-background">
+      <main 
+        className="relative w-full h-[calc(100vh-4rem)] bg-background"
+        id="main-content"
+      >
+        {/* Skip link target for accessibility */}
+        <h1 className="sr-only">Job Locations Map</h1>
+        
         {/* Map Container */}
         <div className="absolute inset-0">
           {error ? (
@@ -81,6 +114,8 @@ export default function JobMapPage() {
                 locations={locations}
                 selectedLocation={selectedLocation}
                 onLocationSelect={setSelectedLocation}
+                showHeatMap={showHeatMap}
+                showMarkers={showMarkers}
               />
             </Suspense>
           )}
@@ -102,12 +137,20 @@ export default function JobMapPage() {
           isLoading={isLoading}
         />
 
+        {/* Layer Controls */}
+        <MapLayerControls
+          showHeatMap={showHeatMap}
+          onToggleHeatMap={handleToggleHeatMap}
+          showMarkers={showMarkers}
+          onToggleMarkers={handleToggleMarkers}
+        />
+
         {/* Job List Panel */}
         <JobListPanel
           location={selectedLocation}
-          onClose={() => setSelectedLocation(null)}
+          onClose={handleClosePanel}
         />
-      </div>
+      </main>
     </>
   );
 }
