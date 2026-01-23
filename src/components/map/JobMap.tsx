@@ -11,7 +11,7 @@ import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapLocation } from '@/hooks/useJobMapData';
 import { JobMarker } from './JobMarker';
-import { HeatMapLayer } from './HeatMapLayer';
+import { LazyHeatMapLayer } from './LazyHeatMapLayer';
 import { MapZoomControls } from './MapControls';
 import { useTheme } from 'next-themes';
 import { 
@@ -313,8 +313,8 @@ export const JobMap = memo(function JobMap({
           onLocationSelect={onLocationSelect}
         />
 
-        {/* Heat map layer (renders behind markers) */}
-        <HeatMapLayer 
+        {/* Heat map layer - lazy loaded for performance */}
+        <LazyHeatMapLayer 
           locations={locations} 
           visible={showHeatMap}
           intensity={0.8}
