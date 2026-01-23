@@ -8,7 +8,8 @@ import { Resend } from "npm:resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
 import { 
   EMAIL_CONFIG, 
-  getSender, 
+  getSender,
+  getReviewBcc,
   getEmailFooter, 
   getEmailHeader, 
   getPreheaderText,
@@ -273,6 +274,7 @@ serve(async (req: Request): Promise<Response> => {
         const response = await resend.emails.send({
           from: getSender('default'),
           to: [to],
+          bcc: getReviewBcc(),
           subject: email.subject,
           html: email.html
         });

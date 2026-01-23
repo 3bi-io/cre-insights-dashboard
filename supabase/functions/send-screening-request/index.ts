@@ -4,7 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { 
-  getSender, 
+  getSender,
+  getReviewBcc,
   getPreheaderText,
   getEmailFooter,
   PREHEADER_TEMPLATES 
@@ -348,6 +349,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: getSender('screening'),
       to: [emailTo],
+      bcc: getReviewBcc(),
       subject: emailContent.subject,
       html: emailContent.html
     });

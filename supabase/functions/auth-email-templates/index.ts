@@ -4,7 +4,8 @@ import { createHmac } from "https://deno.land/std@0.190.0/crypto/mod.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { 
   EMAIL_CONFIG,
-  getSender, 
+  getSender,
+  getReviewBcc,
   getPreheaderText,
   getEmailHeader,
   getEmailFooter,
@@ -444,6 +445,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: getSender('default'),
       to: [payload.user.email],
+      bcc: getReviewBcc(),
       subject,
       html
     });

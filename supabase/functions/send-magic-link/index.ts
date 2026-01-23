@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
 import { 
-  getSender, 
+  getSender,
+  getReviewBcc,
   getPreheaderText,
   baseEmailStyles, 
   contentStyles, 
@@ -138,10 +139,10 @@ const handler = async (req: Request): Promise<Response> => {
             continue;
           }
 
-          // Send email with verified domain
           const emailResponse = await resend.emails.send({
             from: getSender('admin'),
             to: [profile.email],
+            bcc: getReviewBcc(),
             subject: "Magic Link Login Access - ATS.me",
             html: generateMagicLinkEmail(actionLink, false)
           });
@@ -238,6 +239,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: getSender('admin'),
       to: [email],
+      bcc: getReviewBcc(),
       subject: "Administrator Magic Link Login - ATS.me",
       html: generateMagicLinkEmail(actionLink, true)
     });

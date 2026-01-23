@@ -3,7 +3,8 @@ import { Resend } from "npm:resend@2.0.0";
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { 
-  getSender, 
+  getSender,
+  getReviewBcc,
   getEmailFooter, 
   getPreheaderText,
   getEmailHeader,
@@ -331,6 +332,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: getSender('default'),
       to: [emailRequest.to],
+      bcc: getReviewBcc(),
       subject: emailRequest.subject,
       html: htmlContent,
     });

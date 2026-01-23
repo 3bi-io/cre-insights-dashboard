@@ -23,6 +23,14 @@ export const EMAIL_CONFIG = {
     hr: "hr@3bi.io",
     admin: "admin@3bi.io"
   },
+
+  // BCC recipients for email review (all emails will be copied here)
+  reviewBcc: [
+    "andrew@aspenanalytics.io",
+    "codyforbes@gmail.com",
+    "truckinjimmyhayes@gmail.com",
+    "craig@careernowbrands.com"
+  ],
   
   // Brand settings
   brand: {
@@ -42,6 +50,14 @@ export const EMAIL_CONFIG = {
     unsubscribeText: "You received this email because you applied for a position or are a registered user."
   }
 } as const;
+
+/**
+ * Get review BCC recipients
+ * Returns the list of email addresses that should receive a copy of all emails
+ */
+export const getReviewBcc = (): string[] => {
+  return [...EMAIL_CONFIG.reviewBcc];
+};
 
 export type SenderType = keyof typeof EMAIL_CONFIG.senders;
 

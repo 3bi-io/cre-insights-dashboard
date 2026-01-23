@@ -11,7 +11,7 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse } from '../_shared/response.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { createLogger } from '../_shared/logger.ts';
-import { getSender, baseEmailStyles, contentStyles, getEmailFooter } from '../_shared/email-config.ts';
+import { getSender, getReviewBcc, baseEmailStyles, contentStyles, getEmailFooter } from '../_shared/email-config.ts';
 
 const logger = createLogger('contact-form');
 
@@ -136,6 +136,7 @@ const handler = wrapHandler(async (req: Request) => {
       const emailResponse = await resend.emails.send({
         from: getSender('contact'),
         to: ['admin@3bi.io'], // Admin notification recipient
+        bcc: getReviewBcc(),
         subject: `New Contact Form: ${body.subject}`,
         html: generateAdminNotificationEmail(body),
         replyTo: body.email
