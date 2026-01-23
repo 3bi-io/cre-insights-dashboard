@@ -140,6 +140,7 @@ export function SocialEngagementDashboard() {
                     <PlatformConnectionCard 
                       key={connection.id} 
                       connection={connection}
+                      organizationId={organization?.id}
                       compact
                     />
                   ))
@@ -201,6 +202,7 @@ export function SocialEngagementDashboard() {
                   key={platform}
                   connection={connection}
                   platform={platform}
+                  organizationId={organization?.id}
                 />
               );
             })}
