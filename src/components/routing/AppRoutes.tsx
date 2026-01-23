@@ -61,6 +61,7 @@ const ElevenLabsAdmin = React.lazy(() => import("@/pages/ElevenLabsAdmin"));
 const ATSCommandCenterPage = React.lazy(() => import("@/features/ats").then(m => ({ default: m.ATSCommandCenterPage })));
 const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m => ({ default: m.MetaAnalyticsPage })));
 const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
+const SocialEngagementDashboard = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SocialEngagementDashboard })));
 
 // Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
@@ -272,6 +273,9 @@ const AppRoutes: React.FC = () => {
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
         <Route path="grok" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
+        
+        {/* Social Engagement Routes */}
+        <Route path="social-engagement" element={<ProtectedRouteWrapper><SocialEngagementDashboard /></ProtectedRouteWrapper>} />
         
         {/* Talent Pool Routes */}
         <Route path="talent" element={<ProtectedRouteWrapper><TalentSearchPage /></ProtectedRouteWrapper>} />
