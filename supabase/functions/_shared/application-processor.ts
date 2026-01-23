@@ -68,6 +68,38 @@ export const normalizePhone = (phone: string | undefined | null): string | null 
  * 
  * NOTE: We no longer fall back to "any active job" to prevent mismatched applications
  */
+/**
+ * Helper to get a user_id for job creation (required field)
+ * Returns the first organization member's user_id from user_roles table
+ */
+const getOrganizationUserId = async (
+  supabase: SupabaseClient,
+  organizationId: string
+): Promise<string | null> => {
+  // First try user_roles table
+  const { data: role } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('organization_id', organizationId)
+    .limit(1)
+    .maybeSingle();
+  
+  if (role?.user_id) {
+    return role.user_id;
+  }
+  
+  // Fallback: get user_id from an existing job listing in this org
+  const { data: existingJob } = await supabase
+    .from('job_listings')
+    .select('user_id')
+    .eq('organization_id', organizationId)
+    .not('user_id', 'is', null)
+    .limit(1)
+    .maybeSingle();
+  
+  return existingJob?.user_id || null;
+};
+
 export const findOrCreateJobListing = async (
   supabase: SupabaseClient,
   params: {
@@ -126,6 +158,13 @@ export const findOrCreateJobListing = async (
     // This ensures each unique external job_id gets its own listing
     logger.info('No match for job_id - creating new listing', { jobId, organizationId });
     
+    // Get a user_id for the job listing (required field)
+    const userId = await getOrganizationUserId(supabase, organizationId);
+    if (!userId) {
+      logger.error('No organization member found for job creation', { organizationId });
+      return null;
+    }
+    
     const { data: categories } = await supabase
       .from('job_categories')
       .select('id')
@@ -146,6 +185,7 @@ export const findOrCreateJobListing = async (
           location: city && state ? `${city}, ${state}` : null,
           city,
           state,
+          user_id: userId,
         })
         .select('id')
         .single();
@@ -161,53 +201,111 @@ export const findOrCreateJobListing = async (
       }
       
       if (createError) {
-        logger.error('Failed to create job listing from job_id', { jobId, error: createError });
+        logger.error('Failed to create job listing from job_id', { 
+          jobId, 
+          errorMessage: createError.message,
+          errorCode: createError.code 
+        });
       }
     }
   }
 
   // Step 4: Fallback to General Application (find existing)
-  const { data: fallbackJob } = await supabase
+  // First try client-specific, then organization-wide
+  let fallbackQuery = supabase
     .from('job_listings')
     .select('id')
     .eq('organization_id', organizationId)
-    .eq('title', 'General Application')
-    .maybeSingle();
+    .eq('title', 'General Application');
   
-  if (fallbackJob) {
-    logger.info('Using General Application fallback', { 
-      listingId: fallbackJob.id,
+  if (clientId) {
+    fallbackQuery = fallbackQuery.eq('client_id', clientId);
+  }
+  
+  const { data: clientFallback } = await fallbackQuery.maybeSingle();
+  
+  if (clientFallback) {
+    logger.info('Using client-specific General Application fallback', { 
+      listingId: clientFallback.id,
+      clientId,
       reason: jobId ? 'job_id creation failed' : 'no job identifier provided'
     });
-    return { id: fallbackJob.id, matchType: 'general_fallback' };
+    return { id: clientFallback.id, matchType: 'general_fallback' };
+  }
+  
+  // If no client-specific fallback, try org-wide (only if clientId was provided)
+  if (clientId) {
+    const { data: orgFallback } = await supabase
+      .from('job_listings')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('title', 'General Application')
+      .is('client_id', null)
+      .maybeSingle();
+    
+    if (orgFallback) {
+      logger.info('Using organization-wide General Application fallback', { 
+        listingId: orgFallback.id,
+        reason: jobId ? 'job_id creation failed' : 'no job identifier provided'
+      });
+      return { id: orgFallback.id, matchType: 'general_fallback' };
+    }
   }
 
   // Step 5: Create General Application if doesn't exist
+  // First get a user_id for the job listing (required field)
+  const userId = await getOrganizationUserId(supabase, organizationId);
+  if (!userId) {
+    logger.error('No organization member found for General Application creation', { organizationId });
+    return null;
+  }
+  
   const { data: categories } = await supabase
     .from('job_categories')
     .select('id')
     .limit(1);
   
   if (categories?.[0]?.id) {
-    const { data: newFallback } = await supabase
+    const insertData: Record<string, unknown> = {
+      title: 'General Application',
+      organization_id: organizationId,
+      category_id: categories[0].id,
+      status: 'active',
+      job_summary: clientId ? 'General applications for this carrier' : 'General applications',
+      user_id: userId,
+    };
+    
+    // Include client_id if available to create client-specific fallback
+    if (clientId) {
+      insertData.client_id = clientId;
+    }
+    
+    const { data: newFallback, error: createError } = await supabase
       .from('job_listings')
-      .insert({
-        title: 'General Application',
-        organization_id: organizationId,
-        category_id: categories[0].id,
-        status: 'active',
-        job_summary: 'General applications',
-      })
+      .insert(insertData)
       .select('id')
       .single();
     
     if (newFallback) {
-      logger.info('Created General Application fallback', { listingId: newFallback.id });
+      logger.info('Created General Application fallback', { 
+        listingId: newFallback.id,
+        clientId,
+        clientSpecific: !!clientId
+      });
       return { id: newFallback.id, matchType: 'created_general' };
+    }
+    
+    if (createError) {
+      logger.error('Failed to create General Application', { 
+        errorMessage: createError.message,
+        errorCode: createError.code,
+        organizationId,
+        clientId
+      });
     }
   }
 
-  logger.error('Failed to resolve or create any job listing', { organizationId, jobId });
+  logger.error('Failed to resolve or create any job listing', { organizationId, jobId, clientId });
   return null;
 };
 
