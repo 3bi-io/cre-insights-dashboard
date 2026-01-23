@@ -343,7 +343,7 @@ async function processOutboundCall(
           .select(`
             id, title, job_title, job_summary, location, city, state,
             salary_min, salary_max, salary_type, job_type, experience_required,
-            organization_id
+            organization_id, client_id
           `)
           .eq('id', application.job_listing_id)
           .single();
@@ -376,33 +376,80 @@ async function processOutboundCall(
       return { success: false, error: 'Invalid phone number format', status: 400 };
     }
 
-    // Get organization ID from job listing
+    // Get organization ID and client ID from job listing
     let organizationId: string | null = null;
+    let clientId: string | null = null;
     if (jobListing?.organization_id) {
       organizationId = jobListing.organization_id as string;
+      clientId = (jobListing.client_id as string) || null;
     } else if (application?.job_listing_id) {
       const { data: jl } = await supabase
         .from('job_listings')
-        .select('organization_id')
+        .select('organization_id, client_id')
         .eq('id', application.job_listing_id)
         .single();
       
       organizationId = jl?.organization_id || null;
+      clientId = jl?.client_id || null;
     }
 
-    // Find voice agent if not specified
+    // Find voice agent if not specified - prefer client-specific agents
     if (!voiceAgentId && organizationId) {
-      const { data: voiceAgent } = await supabase
-        .from('voice_agents')
-        .select('id')
-        .eq('organization_id', organizationId)
-        .eq('is_outbound_enabled', true)
-        .eq('is_active', true)
-        .not('agent_phone_number_id', 'is', null)
-        .limit(1)
-        .single();
-
-      voiceAgentId = voiceAgent?.id;
+      // First try to find a client-specific agent
+      if (clientId) {
+        const { data: clientAgent } = await supabase
+          .from('voice_agents')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('client_id', clientId)
+          .eq('is_outbound_enabled', true)
+          .eq('is_active', true)
+          .not('agent_phone_number_id', 'is', null)
+          .limit(1)
+          .single();
+        
+        if (clientAgent) {
+          voiceAgentId = clientAgent.id;
+          logger.info('Found client-specific outbound agent', { clientId, voiceAgentId });
+        }
+      }
+      
+      // Fall back to organization-level agent (client_id is null)
+      if (!voiceAgentId) {
+        const { data: orgAgent } = await supabase
+          .from('voice_agents')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .is('client_id', null)
+          .eq('is_outbound_enabled', true)
+          .eq('is_active', true)
+          .not('agent_phone_number_id', 'is', null)
+          .limit(1)
+          .single();
+        
+        if (orgAgent) {
+          voiceAgentId = orgAgent.id;
+          logger.info('Using organization-level outbound agent', { organizationId, voiceAgentId });
+        }
+      }
+      
+      // Final fallback - platform default
+      if (!voiceAgentId) {
+        const { data: platformAgent } = await supabase
+          .from('voice_agents')
+          .select('id')
+          .eq('is_platform_default', true)
+          .eq('is_outbound_enabled', true)
+          .eq('is_active', true)
+          .not('agent_phone_number_id', 'is', null)
+          .limit(1)
+          .single();
+        
+        if (platformAgent) {
+          voiceAgentId = platformAgent.id;
+          logger.info('Using platform default outbound agent', { voiceAgentId });
+        }
+      }
     }
 
     if (!voiceAgentId) {
