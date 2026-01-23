@@ -5255,6 +5255,453 @@ export type Database = {
           },
         ]
       }
+      social_engagement_metrics: {
+        Row: {
+          auto_responses_sent: number | null
+          avg_response_time_seconds: number | null
+          conversion_to_application: number | null
+          created_at: string | null
+          date: string
+          escalated_count: number | null
+          id: string
+          interactions_received: number | null
+          job_inquiries_received: number | null
+          manual_responses_sent: number | null
+          organization_id: string
+          platform: string
+          sentiment_negative: number | null
+          sentiment_neutral: number | null
+          sentiment_positive: number | null
+          top_intents: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_responses_sent?: number | null
+          avg_response_time_seconds?: number | null
+          conversion_to_application?: number | null
+          created_at?: string | null
+          date: string
+          escalated_count?: number | null
+          id?: string
+          interactions_received?: number | null
+          job_inquiries_received?: number | null
+          manual_responses_sent?: number | null
+          organization_id: string
+          platform: string
+          sentiment_negative?: number | null
+          sentiment_neutral?: number | null
+          sentiment_positive?: number | null
+          top_intents?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_responses_sent?: number | null
+          avg_response_time_seconds?: number | null
+          conversion_to_application?: number | null
+          created_at?: string | null
+          date?: string
+          escalated_count?: number | null
+          id?: string
+          interactions_received?: number | null
+          job_inquiries_received?: number | null
+          manual_responses_sent?: number | null
+          organization_id?: string
+          platform?: string
+          sentiment_negative?: number | null
+          sentiment_neutral?: number | null
+          sentiment_positive?: number | null
+          top_intents?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_engagement_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_engagement_metrics_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_interactions: {
+        Row: {
+          auto_responded: boolean | null
+          connection_id: string | null
+          content: string
+          created_at: string | null
+          extracted_entities: Json | null
+          id: string
+          intent_classification: string | null
+          intent_confidence: number | null
+          interaction_type: string
+          is_job_related: boolean | null
+          media_urls: Json | null
+          metadata: Json | null
+          organization_id: string
+          parent_id: string | null
+          platform: string
+          platform_conversation_id: string | null
+          platform_message_id: string | null
+          post_content: string | null
+          post_id: string | null
+          requires_human_review: boolean | null
+          requires_response: boolean | null
+          responded_at: string | null
+          response_id: string | null
+          review_reason: string | null
+          sender_avatar_url: string | null
+          sender_handle: string | null
+          sender_id: string
+          sender_name: string | null
+          sender_profile_url: string | null
+          sentiment_label: string | null
+          sentiment_score: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auto_responded?: boolean | null
+          connection_id?: string | null
+          content: string
+          created_at?: string | null
+          extracted_entities?: Json | null
+          id?: string
+          intent_classification?: string | null
+          intent_confidence?: number | null
+          interaction_type: string
+          is_job_related?: boolean | null
+          media_urls?: Json | null
+          metadata?: Json | null
+          organization_id: string
+          parent_id?: string | null
+          platform: string
+          platform_conversation_id?: string | null
+          platform_message_id?: string | null
+          post_content?: string | null
+          post_id?: string | null
+          requires_human_review?: boolean | null
+          requires_response?: boolean | null
+          responded_at?: string | null
+          response_id?: string | null
+          review_reason?: string | null
+          sender_avatar_url?: string | null
+          sender_handle?: string | null
+          sender_id: string
+          sender_name?: string | null
+          sender_profile_url?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auto_responded?: boolean | null
+          connection_id?: string | null
+          content?: string
+          created_at?: string | null
+          extracted_entities?: Json | null
+          id?: string
+          intent_classification?: string | null
+          intent_confidence?: number | null
+          interaction_type?: string
+          is_job_related?: boolean | null
+          media_urls?: Json | null
+          metadata?: Json | null
+          organization_id?: string
+          parent_id?: string | null
+          platform?: string
+          platform_conversation_id?: string | null
+          platform_message_id?: string | null
+          post_content?: string | null
+          post_id?: string | null
+          requires_human_review?: boolean | null
+          requires_response?: boolean | null
+          responded_at?: string | null
+          response_id?: string | null
+          review_reason?: string | null
+          sender_avatar_url?: string | null
+          sender_handle?: string | null
+          sender_id?: string
+          sender_name?: string | null
+          sender_profile_url?: string | null
+          sentiment_label?: string | null
+          sentiment_score?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_interactions_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "social_platform_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_interactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_interactions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "social_interactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_platform_connections: {
+        Row: {
+          access_token: string | null
+          auto_respond_enabled: boolean | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          page_id: string | null
+          page_name: string | null
+          permissions: Json | null
+          platform: string
+          platform_user_id: string | null
+          platform_username: string | null
+          refresh_token: string | null
+          settings: Json | null
+          token_expires_at: string | null
+          updated_at: string | null
+          webhook_secret: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          auto_respond_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          page_id?: string | null
+          page_name?: string | null
+          permissions?: Json | null
+          platform: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          settings?: Json | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          auto_respond_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          page_id?: string | null
+          page_name?: string | null
+          permissions?: Json | null
+          platform?: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          settings?: Json | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_platform_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_platform_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_response_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          intent_type: string
+          is_active: boolean | null
+          last_used_at: string | null
+          name: string
+          organization_id: string
+          platform: string | null
+          priority: number | null
+          template_content: string
+          updated_at: string | null
+          usage_count: number | null
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          intent_type: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name: string
+          organization_id: string
+          platform?: string | null
+          priority?: number | null
+          template_content: string
+          updated_at?: string | null
+          usage_count?: number | null
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          intent_type?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          name?: string
+          organization_id?: string
+          platform?: string | null
+          priority?: number | null
+          template_content?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_response_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_response_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_responses: {
+        Row: {
+          ai_model: string | null
+          ai_provider: string | null
+          approved_by: string | null
+          content: string
+          created_at: string | null
+          edited_by: string | null
+          error_message: string | null
+          id: string
+          interaction_id: string
+          metadata: Json | null
+          organization_id: string
+          original_ai_content: string | null
+          platform: string
+          platform_response_id: string | null
+          response_type: string | null
+          retry_count: number | null
+          sent_at: string | null
+          status: string | null
+          template_id: string | null
+          tokens_used: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_model?: string | null
+          ai_provider?: string | null
+          approved_by?: string | null
+          content: string
+          created_at?: string | null
+          edited_by?: string | null
+          error_message?: string | null
+          id?: string
+          interaction_id: string
+          metadata?: Json | null
+          organization_id: string
+          original_ai_content?: string | null
+          platform: string
+          platform_response_id?: string | null
+          response_type?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          tokens_used?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_model?: string | null
+          ai_provider?: string | null
+          approved_by?: string | null
+          content?: string
+          created_at?: string | null
+          edited_by?: string | null
+          error_message?: string | null
+          id?: string
+          interaction_id?: string
+          metadata?: Json | null
+          organization_id?: string
+          original_ai_content?: string | null
+          platform?: string
+          platform_response_id?: string | null
+          response_type?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+          tokens_used?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_responses_interaction_id_fkey"
+            columns: ["interaction_id"]
+            isOneToOne: false
+            referencedRelation: "social_interactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       talent_pool_members: {
         Row: {
           added_at: string
