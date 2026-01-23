@@ -4,7 +4,8 @@ import { createLogger } from "../_shared/logger.ts";
 import { 
   EMAIL_CONFIG, 
   getSender, 
-  getReplyTo, 
+  getReplyTo,
+  getReviewBcc,
   getEmailFooter, 
   getEmailHeader, 
   getPreheaderText,
@@ -121,6 +122,7 @@ serve(async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: getSender('invites'),
       to: [email],
+      bcc: getReviewBcc(),
       replyTo: getReplyTo('admin'),
       subject: organizationName 
         ? `You're invited to join ${organizationName} on ${EMAIL_CONFIG.brand.name}`

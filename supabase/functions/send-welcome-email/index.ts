@@ -5,6 +5,7 @@ import {
   EMAIL_CONFIG, 
   getSender, 
   getReplyTo,
+  getReviewBcc,
   getEmailHeader,
   getEmailFooter,
   getPreheaderText,
@@ -120,6 +121,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: getSender('default'),
       to: [to],
+      bcc: getReviewBcc(),
       replyTo: getReplyTo('support'),
       subject: `Welcome to ${orgName} on ATS.me! 🎉`,
       html: htmlContent,
