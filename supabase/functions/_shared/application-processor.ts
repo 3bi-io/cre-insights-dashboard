@@ -4,8 +4,27 @@ import { createLogger } from './logger.ts';
 
 const logger = createLogger('application-processor');
 
-// Hayes Recruiting Solutions organization ID
+// Organization IDs
 const HAYES_ORG_ID = '84214b48-7b51-45bc-ad7f-723bcf50466c';
+const CR_ENGLAND_ORG_ID = '682af95c-e95a-4e21-8753-ddef7f8c1749';
+
+// Job ID prefix → Organization mapping (5-digit prefixes)
+// Used when source-based routing fails to catch misrouted applications
+const JOB_ID_PREFIX_ORG_MAP: Record<string, string> = {
+  // Hayes Recruiting clients
+  '13979': HAYES_ORG_ID, // Danny Herman Trucking
+  '13980': HAYES_ORG_ID, // Danny Herman Trucking
+  '13934': HAYES_ORG_ID, // Day and Ross
+  '13991': HAYES_ORG_ID, // Day and Ross
+  '14086': HAYES_ORG_ID, // Pemberton Truck Lines Inc
+  '14204': HAYES_ORG_ID, // Danny Herman Trucking
+  '14230': HAYES_ORG_ID, // Pemberton Truck Lines Inc
+  '14279': HAYES_ORG_ID, // Day and Ross
+  '14280': HAYES_ORG_ID, // Day and Ross
+  '14284': HAYES_ORG_ID, // Novco, Inc.
+  '14294': HAYES_ORG_ID, // Pemberton Truck Lines Inc
+  '14361': HAYES_ORG_ID, // New Hayes prefix (observed)
+};
 
 // Job ID prefix → Client ID mapping for Hayes organization (CDL Job Cast integration)
 // Each 5-digit prefix maps to a specific client within Hayes
@@ -25,17 +44,66 @@ const HAYES_JOB_ID_CLIENT_MAP: Record<string, string> = {
   '14086': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
   '14230': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
   '14294': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
+  '14361': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03', // New Pemberton prefix
+};
+
+// CR England Job ID → Client ID mapping (simple 2-3 digit IDs)
+const CR_ENGLAND_JOB_ID_CLIENT_MAP: Record<string, string> = {
+  // Sysco
+  '13': 'e2619f0a-f111-4f6e-9c23-c5c618528b4a',
+  // Family Dollar
+  '328': '31bfde0f-8f96-4e88-9630-cc3a44910101',
+  // Dollar Tree
+  '338': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+  '361': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+  '371': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+  '882': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+  // Kroger
+  '911': '0f406b8c-7eb7-4d84-b0d6-1e0ee287b20c',
 };
 
 /**
- * Get client ID from job_id prefix for Hayes organization
+ * Infer organization from job_id prefix
+ * Used when source-based routing fails (e.g., Direct Application)
  */
-export const getClientIdFromJobId = (jobId: string | undefined | null): string | null => {
+export const getOrganizationFromJobId = (jobId: string | undefined | null): string | null => {
   if (!jobId || typeof jobId !== 'string' || jobId.length < 5) {
     return null;
   }
   const prefix = jobId.substring(0, 5);
-  return HAYES_JOB_ID_CLIENT_MAP[prefix] || null;
+  return JOB_ID_PREFIX_ORG_MAP[prefix] || null;
+};
+
+/**
+ * Get client ID from job_id for a specific organization
+ * Supports both Hayes (5-digit prefix) and CR England (exact match)
+ */
+export const getClientIdFromJobId = (
+  jobId: string | undefined | null, 
+  organizationId?: string
+): string | null => {
+  if (!jobId || typeof jobId !== 'string') {
+    return null;
+  }
+  
+  // Hayes: 5-digit prefix mapping
+  if (organizationId === HAYES_ORG_ID && jobId.length >= 5) {
+    const prefix = jobId.substring(0, 5);
+    return HAYES_JOB_ID_CLIENT_MAP[prefix] || null;
+  }
+  
+  // CR England: Exact job ID match
+  if (organizationId === CR_ENGLAND_ORG_ID) {
+    return CR_ENGLAND_JOB_ID_CLIENT_MAP[jobId] || null;
+  }
+  
+  // Legacy: Try Hayes prefix matching without org context
+  if (jobId.length >= 5) {
+    const prefix = jobId.substring(0, 5);
+    return HAYES_JOB_ID_CLIENT_MAP[prefix] || null;
+  }
+  
+  return null;
 };
 
 /**
@@ -115,12 +183,16 @@ export const findOrCreateJobListing = async (
 ): Promise<{ id: string; matchType: 'exact_uuid' | 'exact_job_id' | 'created_from_job_id' | 'general_fallback' | 'created_general' } | null> => {
   const { jobListingId, jobId, jobTitle, organizationId, city, state, source } = params;
   
-  // For Hayes organization, determine client from job_id prefix if not explicitly provided
+  // Determine client from job_id for supported organizations
   let clientId = params.clientId;
-  if (organizationId === HAYES_ORG_ID && !clientId && jobId) {
-    const inferredClientId = getClientIdFromJobId(jobId);
+  if (!clientId && jobId) {
+    const inferredClientId = getClientIdFromJobId(jobId, organizationId);
     if (inferredClientId) {
-      logger.info('Inferred client from job_id prefix', { jobId, clientId: inferredClientId });
+      logger.info('Inferred client from job_id', { 
+        jobId, 
+        clientId: inferredClientId,
+        organizationId 
+      });
       clientId = inferredClientId;
     }
   }

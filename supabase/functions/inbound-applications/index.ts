@@ -12,7 +12,8 @@ import {
   normalizePhone, 
   findOrCreateJobListing, 
   findClientByIdentifier,
-  insertApplication 
+  insertApplication,
+  getOrganizationFromJobId 
 } from "../_shared/application-processor.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
@@ -910,11 +911,25 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
+    // Priority: Infer organization from job_id prefix (catches misrouted applications)
+    if (!organizationId && applicationData.job_id) {
+      const inferredOrgId = getOrganizationFromJobId(applicationData.job_id);
+      if (inferredOrgId) {
+        organizationId = inferredOrgId;
+        resolvedFrom = 'job_id_prefix';
+        logger.info('Resolved organization from job_id prefix', { 
+          jobId: applicationData.job_id, 
+          organizationId 
+        });
+      }
+    }
+    
     // If still no organization, return error instead of defaulting
     if (!organizationId) {
       logger.error('Could not determine organization for application', {
         hasAgentId: !!elevenLabsAgentId,
         hasOrgSlug: !!applicationData.organization_slug,
+        hasJobId: !!applicationData.job_id,
         source: applicationData.source
       });
       return errorResponse(
