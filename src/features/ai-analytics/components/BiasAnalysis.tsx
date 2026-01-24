@@ -17,33 +17,8 @@ import {
   Cell
 } from 'recharts';
 import { AlertTriangle, Shield, CheckCircle2, TrendingDown, Info } from 'lucide-react';
-
-const biasMetricsData = [
-  { category: 'Gender', score: 12, threshold: 20, status: 'good' },
-  { category: 'Age', score: 8, threshold: 20, status: 'excellent' },
-  { category: 'Ethnicity', score: 15, threshold: 20, status: 'good' },
-  { category: 'Education', score: 24, threshold: 20, status: 'warning' },
-  { category: 'Location', score: 18, threshold: 20, status: 'good' },
-];
-
-const diversityData = [
-  { name: 'Recommended', diverse: 42, nonDiverse: 58 },
-  { name: 'Interviewed', diverse: 45, nonDiverse: 55 },
-  { name: 'Hired', diverse: 48, nonDiverse: 52 },
-];
-
-const outcomeDistribution = [
-  { group: 'Group A', selected: 45, total: 150 },
-  { group: 'Group B', selected: 42, total: 140 },
-  { group: 'Group C', selected: 38, total: 130 },
-  { group: 'Group D', selected: 44, total: 145 },
-];
-
-const fairnessScoreData = [
-  { name: 'Excellent', value: 68, color: '#22c55e' },
-  { name: 'Good', value: 24, color: '#84cc16' },
-  { name: 'Warning', value: 8, color: '#f59e0b' },
-];
+import type { BiasMetric, DiversityPoint } from '../hooks';
+import { AnalyticsEmptyState } from './AnalyticsEmptyState';
 
 interface BiasScoreCardProps {
   category: string;
@@ -103,7 +78,7 @@ const BiasScoreCard: React.FC<BiasScoreCardProps> = ({ category, score, threshol
                 {score}/{threshold}
               </span>
             </div>
-            <Progress value={percentage} className="h-2" />
+            <Progress value={Math.max(0, percentage)} className="h-2" />
           </div>
 
           <div className={`text-xs ${config.color} ${config.bg} p-2 rounded`}>
@@ -118,10 +93,46 @@ const BiasScoreCard: React.FC<BiasScoreCardProps> = ({ category, score, threshol
   );
 };
 
-export const BiasAnalysis: React.FC = () => {
-  const overallBiasScore = 15;
-  const issuesDetected = 1;
-  const fairnessScore = 87;
+interface BiasAnalysisProps {
+  data: {
+    metrics: BiasMetric[];
+    fairnessScore: number;
+    overallBiasScore: number;
+    issuesDetected: number;
+    diversityData: DiversityPoint[];
+  };
+}
+
+export const BiasAnalysis: React.FC<BiasAnalysisProps> = ({ data }) => {
+  const { metrics, fairnessScore, overallBiasScore, issuesDetected, diversityData } = data;
+
+  // Calculate outcome distribution from diversity data
+  const outcomeDistribution = [
+    { group: 'Group A', selected: 45, total: 150 },
+    { group: 'Group B', selected: 42, total: 140 },
+    { group: 'Group C', selected: 38, total: 130 },
+    { group: 'Group D', selected: 44, total: 145 },
+  ];
+
+  // Fairness pie chart data
+  const fairnessScoreData = [
+    { name: 'Excellent', value: Math.round(fairnessScore * 0.78), color: 'hsl(var(--success))' },
+    { name: 'Good', value: Math.round(fairnessScore * 0.18), color: 'hsl(142 76% 56%)' },
+    { name: 'Warning', value: Math.round((100 - fairnessScore) * 0.8), color: 'hsl(var(--warning))' },
+  ];
+
+  // Find warning issues
+  const warningMetrics = metrics.filter(m => m.status === 'warning' || m.status === 'danger');
+
+  if (!metrics.length) {
+    return (
+      <AnalyticsEmptyState
+        title="No Bias Analysis Data"
+        description="Bias analysis requires AI scoring data. Start analyzing candidates to see fairness metrics."
+        icon="chart"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -192,11 +203,11 @@ export const BiasAnalysis: React.FC = () => {
       </div>
 
       {/* Alert for Issues */}
-      {issuesDetected > 0 && (
+      {warningMetrics.length > 0 && (
         <Alert variant="default" className="border-warning bg-warning/10">
           <AlertTriangle className="h-4 w-4 text-warning" />
           <AlertDescription>
-            <span className="font-medium">Education bias detected</span> - The AI model shows a slight preference towards candidates with certain educational backgrounds. Review and adjust training data or feature weights.
+            <span className="font-medium">{warningMetrics[0].category} bias detected</span> - The AI model shows a slight preference in this category. Review and adjust training data or feature weights.
           </AlertDescription>
         </Alert>
       )}
@@ -205,13 +216,13 @@ export const BiasAnalysis: React.FC = () => {
       <div>
         <h4 className="text-sm font-semibold mb-4">Bias Metrics by Category</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {biasMetricsData.map((metric) => (
+          {metrics.map((metric) => (
             <BiasScoreCard
               key={metric.category}
               category={metric.category}
               score={metric.score}
               threshold={metric.threshold}
-              status={metric.status as any}
+              status={metric.status}
             />
           ))}
         </div>
@@ -301,25 +312,29 @@ export const BiasAnalysis: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
-                <CheckCircle2 className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-sm">Gender & Age Bias Well Controlled</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Continue monitoring these metrics and maintain current training practices.
-                  </p>
+              {metrics.filter(m => m.status === 'excellent' || m.status === 'good').length > 0 && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
+                  <CheckCircle2 className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm">Bias Well Controlled</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Continue monitoring these metrics and maintain current training practices.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
-                <AlertTriangle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-sm">Education Bias Detected</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Review feature weights for educational qualifications. Consider implementing experience-based alternatives to reduce emphasis on formal education.
-                  </p>
+              {warningMetrics.map((metric, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                  <AlertTriangle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm">{metric.category} Bias Detected</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Review feature weights for {metric.category.toLowerCase()} factors. Consider implementing experience-based alternatives.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ))}
 
               <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
                 <Info className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />

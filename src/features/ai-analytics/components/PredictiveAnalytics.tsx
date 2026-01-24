@@ -18,43 +18,40 @@ import {
   ComposedChart
 } from 'recharts';
 import { TrendingUp, Calendar, Users, DollarSign, AlertTriangle } from 'lucide-react';
+import type { ForecastPoint, HiringTrendPoint, CandidateFlowPoint, CostPredictionPoint } from '../hooks';
+import { AnalyticsEmptyState } from './AnalyticsEmptyState';
 
-const forecastData = [
-  { month: 'Jan', actual: 45, predicted: 48, confidence: 92 },
-  { month: 'Feb', actual: 52, predicted: 54, confidence: 89 },
-  { month: 'Mar', actual: 48, predicted: 50, confidence: 91 },
-  { month: 'Apr', actual: 61, predicted: 62, confidence: 88 },
-  { month: 'May', actual: 55, predicted: 58, confidence: 87 },
-  { month: 'Jun', actual: null, predicted: 65, confidence: 85 },
-  { month: 'Jul', actual: null, predicted: 70, confidence: 82 },
-  { month: 'Aug', actual: null, predicted: 68, confidence: 80 },
-];
+interface PredictiveAnalyticsProps {
+  data: {
+    forecastData: ForecastPoint[];
+    hiringTrends: HiringTrendPoint[];
+    candidateFlow: CandidateFlowPoint[];
+    costPredictions: CostPredictionPoint[];
+  };
+}
 
-const hiringTrendData = [
-  { week: 'W1', applications: 120, qualified: 45, hired: 12, predicted: 14 },
-  { week: 'W2', applications: 135, qualified: 52, hired: 15, predicted: 16 },
-  { week: 'W3', applications: 142, qualified: 58, hired: 16, predicted: 18 },
-  { week: 'W4', applications: 128, qualified: 48, hired: 13, predicted: 15 },
-  { week: 'W5', applications: 156, qualified: 62, hired: null, predicted: 19 },
-  { week: 'W6', applications: null, qualified: null, hired: null, predicted: 21 },
-];
+export const PredictiveAnalytics: React.FC<PredictiveAnalyticsProps> = ({ data }) => {
+  const { forecastData, hiringTrends, candidateFlow, costPredictions } = data;
+  
+  // Calculate summary metrics
+  const nextMonthPredicted = forecastData.find(f => f.actual === null)?.predicted || 0;
+  const avgConfidence = Math.round(forecastData.reduce((sum, f) => sum + f.confidence, 0) / forecastData.length);
+  const totalSavings = costPredictions.reduce((sum, c) => sum + c.savings, 0);
+  
+  // Find highest dropout stage
+  const highestDropout = candidateFlow.reduce((max, stage) => 
+    stage.dropout > max.dropout ? stage : max, candidateFlow[0]);
 
-const candidateFlowData = [
-  { stage: 'Applied', count: 847, dropout: 15, predicted: 820 },
-  { stage: 'Screened', count: 720, dropout: 22, predicted: 698 },
-  { stage: 'Interviewed', count: 561, dropout: 18, predicted: 548 },
-  { stage: 'Offered', count: 460, dropout: 8, predicted: 451 },
-  { stage: 'Hired', count: 423, dropout: 0, predicted: 415 },
-];
+  if (!forecastData.length) {
+    return (
+      <AnalyticsEmptyState
+        title="No Prediction Data"
+        description="More historical data is needed to generate accurate predictions. Keep analyzing candidates to build the dataset."
+        icon="trending"
+      />
+    );
+  }
 
-const costPredictionData = [
-  { category: 'Sourcing', current: 12500, predicted: 10800, savings: 1700 },
-  { category: 'Screening', current: 8900, predicted: 6200, savings: 2700 },
-  { category: 'Interviews', current: 15600, predicted: 13100, savings: 2500 },
-  { category: 'Onboarding', current: 7200, predicted: 6500, savings: 700 },
-];
-
-export const PredictiveAnalytics: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -66,7 +63,7 @@ export const PredictiveAnalytics: React.FC = () => {
         </div>
         <Badge variant="outline" className="gap-1">
           <TrendingUp className="w-3 h-3" />
-          87% Accuracy
+          {avgConfidence}% Accuracy
         </Badge>
       </div>
 
@@ -116,6 +113,7 @@ export const PredictiveAnalytics: React.FC = () => {
                     stroke="hsl(var(--success))" 
                     strokeWidth={2}
                     dot={{ r: 4 }}
+                    name="Actual"
                   />
                   <Line 
                     yAxisId="left" 
@@ -125,6 +123,7 @@ export const PredictiveAnalytics: React.FC = () => {
                     strokeWidth={2}
                     strokeDasharray="5 5"
                     dot={{ r: 4 }}
+                    name="Predicted"
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -132,12 +131,12 @@ export const PredictiveAnalytics: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Next Month</p>
-                  <p className="text-2xl font-bold text-primary">65</p>
+                  <p className="text-2xl font-bold text-primary">{nextMonthPredicted}</p>
                   <p className="text-xs text-muted-foreground">predicted hires</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Confidence</p>
-                  <p className="text-2xl font-bold text-success">85%</p>
+                  <p className="text-2xl font-bold text-success">{avgConfidence}%</p>
                   <p className="text-xs text-muted-foreground">prediction accuracy</p>
                 </div>
                 <div className="text-center">
@@ -163,7 +162,7 @@ export const PredictiveAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={candidateFlowData} layout="vertical">
+                <BarChart data={candidateFlow} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis type="number" />
                   <YAxis dataKey="stage" type="category" width={100} />
@@ -175,17 +174,19 @@ export const PredictiveAnalytics: React.FC = () => {
                 </BarChart>
               </ResponsiveContainer>
 
-              <div className="mt-6 p-4 bg-warning/10 rounded-lg border border-warning/20">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">High Dropout Alert</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      22% dropout rate detected at screening stage. Consider simplifying the process or improving candidate communication.
-                    </p>
+              {highestDropout.dropout > 15 && (
+                <div className="mt-6 p-4 bg-warning/10 rounded-lg border border-warning/20">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">High Dropout Alert</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {highestDropout.dropout}% dropout rate detected at {highestDropout.stage.toLowerCase()} stage. Consider simplifying the process or improving candidate communication.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -200,7 +201,7 @@ export const PredictiveAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
-                <LineChart data={hiringTrendData}>
+                <LineChart data={hiringTrends}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="week" />
                   <YAxis />
@@ -211,18 +212,21 @@ export const PredictiveAnalytics: React.FC = () => {
                     dataKey="applications" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={2}
+                    name="Applications"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="qualified" 
                     stroke="hsl(var(--success))" 
                     strokeWidth={2}
+                    name="Qualified"
                   />
                   <Line 
                     type="monotone" 
                     dataKey="hired" 
                     stroke="hsl(var(--chart-1))" 
                     strokeWidth={2}
+                    name="Hired"
                   />
                   <Line 
                     type="monotone" 
@@ -230,6 +234,7 @@ export const PredictiveAnalytics: React.FC = () => {
                     stroke="hsl(var(--warning))" 
                     strokeWidth={2}
                     strokeDasharray="5 5"
+                    name="Predicted"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -250,12 +255,12 @@ export const PredictiveAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={costPredictionData}>
+                <BarChart data={costPredictions}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="category" />
                   <YAxis />
                   <Tooltip 
-                    formatter={(value) => `$${value.toLocaleString()}`}
+                    formatter={(value: number) => `$${value.toLocaleString()}`}
                   />
                   <Legend />
                   <Bar dataKey="current" fill="hsl(var(--destructive))" name="Current Cost" />
@@ -264,7 +269,7 @@ export const PredictiveAnalytics: React.FC = () => {
               </ResponsiveContainer>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
-                {costPredictionData.map((item) => (
+                {costPredictions.map((item) => (
                   <div key={item.category} className="text-center">
                     <p className="text-xs text-muted-foreground mb-1">{item.category}</p>
                     <p className="text-lg font-bold text-success">
@@ -278,7 +283,7 @@ export const PredictiveAnalytics: React.FC = () => {
               <div className="mt-4 p-4 bg-success/10 rounded-lg border border-success/20">
                 <p className="font-medium text-sm">Total Predicted Savings</p>
                 <p className="text-2xl font-bold text-success mt-1">
-                  $7,600 <span className="text-sm font-normal text-muted-foreground">per month</span>
+                  ${totalSavings.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">per month</span>
                 </p>
               </div>
             </CardContent>
