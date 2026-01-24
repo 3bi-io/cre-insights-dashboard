@@ -11,8 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, FileText, FileSpreadsheet, Image, Calendar } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Calendar, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import type { AIAnalyticsData, DateRangeType } from '../hooks';
+import { exportAnalytics } from '../utils/exportUtils';
 
 interface ExportSection {
   id: string;
@@ -21,7 +23,7 @@ interface ExportSection {
   enabled: boolean;
 }
 
-const exportSections: ExportSection[] = [
+const defaultExportSections: ExportSection[] = [
   {
     id: 'performance',
     label: 'AI Performance Metrics',
@@ -60,10 +62,14 @@ const exportSections: ExportSection[] = [
   },
 ];
 
-export const ExportAnalytics: React.FC = () => {
-  const [sections, setSections] = useState<ExportSection[]>(exportSections);
+interface ExportAnalyticsProps {
+  analyticsData: AIAnalyticsData;
+  dateRange: DateRangeType;
+}
+
+export const ExportAnalytics: React.FC<ExportAnalyticsProps> = ({ analyticsData, dateRange }) => {
+  const [sections, setSections] = useState<ExportSection[]>(defaultExportSections);
   const [exportFormat, setExportFormat] = useState<'pdf' | 'csv' | 'excel'>('pdf');
-  const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [isExporting, setIsExporting] = useState(false);
 
   const toggleSection = (id: string) => {
@@ -75,24 +81,95 @@ export const ExportAnalytics: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     
-    // Simulate export process
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      await exportAnalytics(analyticsData, {
+        format: exportFormat,
+        dateRange,
+        sections,
+      });
 
-    const enabledSections = sections.filter(s => s.enabled);
-    const formatLabels = {
-      pdf: 'PDF Report',
-      csv: 'CSV Data',
-      excel: 'Excel Workbook'
-    };
+      const enabledSections = sections.filter(s => s.enabled);
+      const formatLabels = {
+        pdf: 'PDF Report',
+        csv: 'CSV Data',
+        excel: 'Excel Workbook'
+      };
 
-    toast.success(`Export Complete`, {
-      description: `${formatLabels[exportFormat]} with ${enabledSections.length} sections has been downloaded successfully.`
-    });
+      toast.success(`Export Complete`, {
+        description: `${formatLabels[exportFormat]} with ${enabledSections.length} sections has been downloaded successfully.`
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Export Failed', {
+        description: 'There was an error generating your report. Please try again.'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-    setIsExporting(false);
+  const handleQuickExport = async (type: 'executive' | 'technical' | 'monthly') => {
+    setIsExporting(true);
+    
+    try {
+      let quickSections: ExportSection[];
+      
+      switch (type) {
+        case 'executive':
+          quickSections = sections.map(s => ({
+            ...s,
+            enabled: ['performance', 'comparison'].includes(s.id)
+          }));
+          break;
+        case 'technical':
+          quickSections = sections.map(s => ({
+            ...s,
+            enabled: ['performance', 'bias', 'insights'].includes(s.id)
+          }));
+          break;
+        case 'monthly':
+          quickSections = sections.map(s => ({
+            ...s,
+            enabled: ['performance', 'predictions', 'comparison', 'bias'].includes(s.id)
+          }));
+          break;
+        default:
+          quickSections = sections;
+      }
+
+      await exportAnalytics(analyticsData, {
+        format: 'pdf',
+        dateRange,
+        sections: quickSections,
+      });
+
+      const typeLabels = {
+        executive: 'Executive Summary',
+        technical: 'Technical Report',
+        monthly: 'Monthly Report'
+      };
+
+      toast.success(`${typeLabels[type]} Downloaded`, {
+        description: 'Your report has been generated and downloaded successfully.'
+      });
+    } catch (error) {
+      console.error('Quick export error:', error);
+      toast.error('Export Failed', {
+        description: 'There was an error generating your report. Please try again.'
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const enabledCount = sections.filter(s => s.enabled).length;
+
+  // Estimate file size based on format and sections
+  const estimateSize = () => {
+    const baseSize = { pdf: 1.2, excel: 0.8, csv: 0.2 }[exportFormat];
+    const multiplier = enabledCount / sections.length;
+    return (baseSize + (baseSize * multiplier)).toFixed(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -136,6 +213,9 @@ export const ExportAnalytics: React.FC = () => {
                       {section.description}
                     </p>
                   </div>
+                  {section.enabled && (
+                    <CheckCircle2 className="w-4 h-4 text-success" />
+                  )}
                 </div>
               ))}
             </div>
@@ -151,7 +231,7 @@ export const ExportAnalytics: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Format</Label>
-                <Select value={exportFormat} onValueChange={(value: any) => setExportFormat(value)}>
+                <Select value={exportFormat} onValueChange={(value: 'pdf' | 'csv' | 'excel') => setExportFormat(value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -178,21 +258,6 @@ export const ExportAnalytics: React.FC = () => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Date Range</Label>
-                <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="week">Last Week</SelectItem>
-                    <SelectItem value="month">Last Month</SelectItem>
-                    <SelectItem value="quarter">Last Quarter</SelectItem>
-                    <SelectItem value="year">Last Year</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Sections selected</span>
@@ -200,9 +265,7 @@ export const ExportAnalytics: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Estimated size</span>
-                  <span className="font-medium">
-                    {exportFormat === 'pdf' ? '2.4 MB' : exportFormat === 'excel' ? '1.8 MB' : '450 KB'}
-                  </span>
+                  <span className="font-medium">{estimateSize()} MB</span>
                 </div>
               </div>
             </CardContent>
@@ -242,9 +305,8 @@ export const ExportAnalytics: React.FC = () => {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col items-start"
-              onClick={() => {
-                toast.success('Downloading Executive Summary');
-              }}
+              onClick={() => handleQuickExport('executive')}
+              disabled={isExporting}
             >
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-4 h-4" />
@@ -258,9 +320,8 @@ export const ExportAnalytics: React.FC = () => {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col items-start"
-              onClick={() => {
-                toast.success('Downloading Technical Report');
-              }}
+              onClick={() => handleQuickExport('technical')}
+              disabled={isExporting}
             >
               <div className="flex items-center gap-2 mb-2">
                 <FileSpreadsheet className="w-4 h-4" />
@@ -274,9 +335,8 @@ export const ExportAnalytics: React.FC = () => {
             <Button
               variant="outline"
               className="h-auto py-4 flex-col items-start"
-              onClick={() => {
-                toast.success('Downloading Monthly Report');
-              }}
+              onClick={() => handleQuickExport('monthly')}
+              disabled={isExporting}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="w-4 h-4" />

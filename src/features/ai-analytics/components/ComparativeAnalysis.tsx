@@ -18,72 +18,32 @@ import {
   Radar
 } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, DollarSign, Users, Target } from 'lucide-react';
-
-const comparisonData = [
-  {
-    metric: 'Time to Hire',
-    traditional: 42,
-    aiEnhanced: 26,
-    unit: 'days',
-    improvement: 38,
-    icon: <Clock className="w-4 h-4" />
-  },
-  {
-    metric: 'Cost per Hire',
-    traditional: 4200,
-    aiEnhanced: 2800,
-    unit: '$',
-    improvement: 33,
-    icon: <DollarSign className="w-4 h-4" />
-  },
-  {
-    metric: 'Quality Score',
-    traditional: 68,
-    aiEnhanced: 84,
-    unit: '/100',
-    improvement: 24,
-    icon: <Target className="w-4 h-4" />
-  },
-  {
-    metric: 'Candidates Screened',
-    traditional: 45,
-    aiEnhanced: 127,
-    unit: 'per day',
-    improvement: 182,
-    icon: <Users className="w-4 h-4" />
-  },
-  {
-    metric: 'Interview Success',
-    traditional: 62,
-    aiEnhanced: 81,
-    unit: '%',
-    improvement: 31,
-    icon: <CheckCircle2 className="w-4 h-4" />
-  }
-];
-
-const radarData = [
-  { metric: 'Speed', traditional: 65, aiEnhanced: 92 },
-  { metric: 'Accuracy', traditional: 72, aiEnhanced: 88 },
-  { metric: 'Cost Efficiency', traditional: 58, aiEnhanced: 89 },
-  { metric: 'Candidate Experience', traditional: 70, aiEnhanced: 85 },
-  { metric: 'Quality Match', traditional: 68, aiEnhanced: 91 },
-  { metric: 'Bias Reduction', traditional: 45, aiEnhanced: 87 },
-];
-
-const barChartData = comparisonData.map(item => ({
-  name: item.metric,
-  Traditional: item.traditional,
-  'AI-Enhanced': item.aiEnhanced,
-}));
+import type { ComparisonMetric, RadarPoint } from '../hooks';
+import { AnalyticsEmptyState } from './AnalyticsEmptyState';
 
 interface ComparisonCardProps {
-  data: typeof comparisonData[0];
+  data: ComparisonMetric;
 }
 
 const ComparisonCard: React.FC<ComparisonCardProps> = ({ data }) => {
   const improvementColor = data.improvement > 0 ? 'text-success' : 'text-destructive';
   const bgColor = data.improvement > 0 ? 'bg-success/10' : 'bg-destructive/10';
+  
+  const getIcon = (metric: string) => {
+    switch (metric) {
+      case 'Time to Hire': return <Clock className="w-4 h-4" />;
+      case 'Cost per Hire': return <DollarSign className="w-4 h-4" />;
+      case 'Quality Score': return <Target className="w-4 h-4" />;
+      case 'Candidates Screened': return <Users className="w-4 h-4" />;
+      case 'Interview Success': return <CheckCircle2 className="w-4 h-4" />;
+      default: return <Target className="w-4 h-4" />;
+    }
+  };
+
+  // Calculate progress percentages relative to each other
+  const maxValue = Math.max(data.traditional, data.aiEnhanced);
+  const traditionalPercent = (data.traditional / maxValue) * 100;
+  const aiPercent = (data.aiEnhanced / maxValue) * 100;
   
   return (
     <Card className="transition-all hover:shadow-md">
@@ -92,7 +52,7 @@ const ComparisonCard: React.FC<ComparisonCardProps> = ({ data }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-primary/10">
-                {data.icon}
+                {getIcon(data.metric)}
               </div>
               <span className="font-medium text-sm">{data.metric}</span>
             </div>
@@ -111,20 +71,20 @@ const ComparisonCard: React.FC<ComparisonCardProps> = ({ data }) => {
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Traditional</span>
                 <span className="font-medium">
-                  {data.unit === '$' ? data.unit : ''}{data.traditional}{data.unit !== '$' ? data.unit : ''}
+                  {data.unit === '$' ? data.unit : ''}{data.traditional.toLocaleString()}{data.unit !== '$' ? data.unit : ''}
                 </span>
               </div>
-              <Progress value={65} className="h-1.5" />
+              <Progress value={traditionalPercent} className="h-1.5" />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">AI-Enhanced</span>
                 <span className="font-medium text-success">
-                  {data.unit === '$' ? data.unit : ''}{data.aiEnhanced}{data.unit !== '$' ? data.unit : ''}
+                  {data.unit === '$' ? data.unit : ''}{data.aiEnhanced.toLocaleString()}{data.unit !== '$' ? data.unit : ''}
                 </span>
               </div>
-              <Progress value={90} className="h-1.5" />
+              <Progress value={aiPercent} className="h-1.5" />
             </div>
           </div>
         </div>
@@ -133,10 +93,35 @@ const ComparisonCard: React.FC<ComparisonCardProps> = ({ data }) => {
   );
 };
 
-export const ComparativeAnalysis: React.FC = () => {
-  const totalSavings = 125000;
-  const timesSaved = 240;
-  const qualityIncrease = 27;
+interface ComparativeAnalysisProps {
+  data: {
+    metrics: ComparisonMetric[];
+    radarData: RadarPoint[];
+    totalSavings: number;
+    timeSaved: number;
+    qualityIncrease: number;
+  };
+}
+
+export const ComparativeAnalysis: React.FC<ComparativeAnalysisProps> = ({ data }) => {
+  const { metrics, radarData, totalSavings, timeSaved, qualityIncrease } = data;
+
+  // Transform metrics for bar chart
+  const barChartData = metrics.map(item => ({
+    name: item.metric,
+    Traditional: item.traditional,
+    'AI-Enhanced': item.aiEnhanced,
+  }));
+
+  if (!metrics.length) {
+    return (
+      <AnalyticsEmptyState
+        title="No Comparison Data"
+        description="Comparison metrics require both AI and traditional hiring data to calculate improvements."
+        icon="chart"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -174,7 +159,7 @@ export const ComparativeAnalysis: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Time Saved</p>
-                <p className="text-2xl font-bold text-primary">{timesSaved} hrs</p>
+                <p className="text-2xl font-bold text-primary">{timeSaved} hrs</p>
                 <p className="text-xs text-muted-foreground">recruiter hours saved</p>
               </div>
             </div>
@@ -201,7 +186,7 @@ export const ComparativeAnalysis: React.FC = () => {
       <div>
         <h4 className="text-sm font-semibold mb-4">Detailed Metric Comparison</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {comparisonData.map((item) => (
+          {metrics.map((item) => (
             <ComparisonCard key={item.metric} data={item} />
           ))}
         </div>
@@ -220,7 +205,7 @@ export const ComparativeAnalysis: React.FC = () => {
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={barChartData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 11 }} />
                 <YAxis />
                 <Tooltip />
                 <Legend />
@@ -242,7 +227,7 @@ export const ComparativeAnalysis: React.FC = () => {
             <ResponsiveContainer width="100%" height={350}>
               <RadarChart data={radarData}>
                 <PolarGrid className="stroke-muted" />
-                <PolarAngleAxis dataKey="metric" />
+                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} />
                 <Radar 
                   name="Traditional" 
@@ -272,35 +257,22 @@ export const ComparativeAnalysis: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
-              <CheckCircle2 className="w-5 h-5 text-success mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">182% increase in candidate screening</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  AI automation enables reviewing 127 candidates per day vs 45 with traditional methods
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <CheckCircle2 className="w-5 h-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">38% reduction in time-to-hire</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Average hiring cycle reduced from 42 to 26 days through AI-powered automation
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
-              <CheckCircle2 className="w-5 h-5 text-warning mt-0.5" />
-              <div>
-                <p className="font-medium text-sm">33% lower cost per hire</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Cost reduced from $4,200 to $2,800 per hire through improved efficiency and accuracy
-                </p>
-              </div>
-            </div>
+            {metrics.slice(0, 3).map((metric, index) => {
+              const colors = ['bg-success/10 border-success/20', 'bg-primary/10 border-primary/20', 'bg-warning/10 border-warning/20'];
+              const textColors = ['text-success', 'text-primary', 'text-warning'];
+              
+              return (
+                <div key={index} className={`flex items-start gap-3 p-3 rounded-lg ${colors[index]} border`}>
+                  <CheckCircle2 className={`w-5 h-5 ${textColors[index]} mt-0.5`} />
+                  <div>
+                    <p className="font-medium text-sm">{metric.improvement}% improvement in {metric.metric.toLowerCase()}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {metric.metric}: {metric.unit === '$' ? metric.unit : ''}{metric.traditional.toLocaleString()}{metric.unit !== '$' ? metric.unit : ''} → {metric.unit === '$' ? metric.unit : ''}{metric.aiEnhanced.toLocaleString()}{metric.unit !== '$' ? metric.unit : ''} through AI-powered automation
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

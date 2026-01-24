@@ -9,7 +9,6 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend, 
   ResponsiveContainer,
   ScatterChart,
   Scatter,
@@ -17,30 +16,16 @@ import {
   Cell
 } from 'recharts';
 import { Brain, Lightbulb, TrendingUp, AlertCircle } from 'lucide-react';
+import type { FeatureImportance, ConfidenceDistribution } from '../hooks';
+import { AnalyticsEmptyState } from './AnalyticsEmptyState';
 
-const featureImportanceData = [
-  { feature: 'Years of Experience', importance: 0.24, category: 'high' },
-  { feature: 'Skills Match', importance: 0.21, category: 'high' },
-  { feature: 'Education Level', importance: 0.18, category: 'medium' },
-  { feature: 'Previous Roles', importance: 0.15, category: 'medium' },
-  { feature: 'Industry Experience', importance: 0.12, category: 'medium' },
-  { feature: 'Certifications', importance: 0.10, category: 'low' },
-].sort((a, b) => b.importance - a.importance);
-
+// Model version history - this would come from a config in production
 const modelVersionData = [
   { version: 'v1.0', accuracy: 72, deployed: '2024-01' },
   { version: 'v1.1', accuracy: 76, deployed: '2024-03' },
   { version: 'v1.2', accuracy: 81, deployed: '2024-05' },
   { version: 'v2.0', accuracy: 87, deployed: '2024-08' },
   { version: 'v2.1', accuracy: 91, deployed: '2024-11' },
-];
-
-const confidenceDistributionData = [
-  { range: '90-100%', count: 342, x: 95, y: 342, z: 20 },
-  { range: '80-89%', count: 289, x: 85, y: 289, z: 18 },
-  { range: '70-79%', count: 156, x: 75, y: 156, z: 15 },
-  { range: '60-69%', count: 84, x: 65, y: 84, z: 12 },
-  { range: '<60%', count: 26, x: 55, y: 26, z: 8 },
 ];
 
 const performanceMetricsData = [
@@ -50,10 +35,39 @@ const performanceMetricsData = [
   { metric: 'AUC-ROC', value: 0.91, description: 'Overall model discrimination ability' },
 ];
 
-export const ModelInsights: React.FC = () => {
-  const currentVersion = 'v2.1';
-  const lastUpdated = '2024-11-15';
-  const trainingDataPoints = 15847;
+interface ModelInsightsProps {
+  data: {
+    featureImportance: FeatureImportance[];
+    confidenceDistribution: ConfidenceDistribution[];
+    modelVersion: string;
+    trainingDataPoints: number;
+    lastUpdated: string;
+  };
+}
+
+export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
+  const { featureImportance, confidenceDistribution, modelVersion, trainingDataPoints, lastUpdated } = data;
+
+  // Calculate high confidence percentage
+  const totalPredictions = confidenceDistribution.reduce((sum, c) => sum + c.count, 0);
+  const highConfidenceCount = confidenceDistribution
+    .filter(c => c.range === '90-100%' || c.range === '80-89%')
+    .reduce((sum, c) => sum + c.count, 0);
+  const highConfidencePercent = totalPredictions > 0 ? Math.round((highConfidenceCount / totalPredictions) * 100) : 0;
+  
+  const lowConfidenceCount = confidenceDistribution
+    .filter(c => c.range === '<60%')
+    .reduce((sum, c) => sum + c.count, 0);
+
+  if (!featureImportance.length) {
+    return (
+      <AnalyticsEmptyState
+        title="No Model Insights Available"
+        description="Model insights are generated after AI analysis. Start analyzing candidates to see feature importance and confidence distributions."
+        icon="brain"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -68,7 +82,7 @@ export const ModelInsights: React.FC = () => {
           </p>
         </div>
         <Badge variant="outline">
-          Model {currentVersion}
+          Model {modelVersion}
         </Badge>
       </div>
 
@@ -78,7 +92,7 @@ export const ModelInsights: React.FC = () => {
           <CardContent className="p-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Current Model</p>
-              <p className="text-2xl font-bold">{currentVersion}</p>
+              <p className="text-2xl font-bold">{modelVersion}</p>
               <p className="text-xs text-muted-foreground">Released: {lastUpdated}</p>
             </div>
           </CardContent>
@@ -129,13 +143,13 @@ export const ModelInsights: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={featureImportanceData} layout="horizontal">
+              <BarChart data={featureImportance} layout="horizontal">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis type="number" domain={[0, 0.3]} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-                <YAxis dataKey="feature" type="category" width={150} />
-                <Tooltip formatter={(value: any) => `${(value * 100).toFixed(1)}%`} />
+                <YAxis dataKey="feature" type="category" width={150} tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(value: number) => `${(value * 100).toFixed(1)}%`} />
                 <Bar dataKey="importance" fill="hsl(var(--primary))">
-                  {featureImportanceData.map((entry, index) => (
+                  {featureImportance.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={
@@ -150,7 +164,7 @@ export const ModelInsights: React.FC = () => {
             </ResponsiveContainer>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-              {featureImportanceData.slice(0, 3).map((feature, idx) => (
+              {featureImportance.slice(0, 3).map((feature, idx) => (
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">{feature.feature}</span>
@@ -241,8 +255,8 @@ export const ModelInsights: React.FC = () => {
                 <YAxis type="number" dataKey="y" name="Count" />
                 <ZAxis type="number" dataKey="z" range={[100, 1000]} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                <Scatter data={confidenceDistributionData} fill="hsl(var(--primary))">
-                  {confidenceDistributionData.map((entry, index) => (
+                <Scatter data={confidenceDistribution} fill="hsl(var(--primary))">
+                  {confidenceDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={`hsl(var(--primary) / ${0.4 + index * 0.15})`} />
                   ))}
                 </Scatter>
@@ -250,7 +264,7 @@ export const ModelInsights: React.FC = () => {
             </ResponsiveContainer>
 
             <div className="grid grid-cols-5 gap-2 mt-4">
-              {confidenceDistributionData.map((item) => (
+              {confidenceDistribution.map((item) => (
                 <div key={item.range} className="text-center">
                   <p className="text-xs text-muted-foreground">{item.range}</p>
                   <p className="text-lg font-bold">{item.count}</p>
@@ -276,7 +290,7 @@ export const ModelInsights: React.FC = () => {
               <div>
                 <p className="font-medium text-sm">High Confidence Predictions</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  68% of predictions have confidence scores above 90%, indicating strong model reliability for most candidates.
+                  {highConfidencePercent}% of predictions have confidence scores above 80%, indicating strong model reliability for most candidates.
                 </p>
               </div>
             </div>
@@ -286,20 +300,22 @@ export const ModelInsights: React.FC = () => {
               <div>
                 <p className="font-medium text-sm">Consistent Accuracy Improvement</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Model accuracy has improved by 19% from v1.0 to v2.1 through continuous learning and data refinement.
+                  Model accuracy has improved by 19% from v1.0 to {modelVersion} through continuous learning and data refinement.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
-              <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-sm">Low Confidence Cases</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  26 predictions (3%) have confidence below 60%. These cases should receive additional human review to ensure quality.
-                </p>
+            {lowConfidenceCount > 0 && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                <AlertCircle className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">Low Confidence Cases</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lowConfidenceCount} predictions ({totalPredictions > 0 ? Math.round((lowConfidenceCount / totalPredictions) * 100) : 0}%) have confidence below 60%. These cases should receive additional human review to ensure quality.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
               <Brain className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
