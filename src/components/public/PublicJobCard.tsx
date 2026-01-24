@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
+import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
 import {
   Tooltip,
   TooltipContent,
@@ -30,7 +31,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
   const displayTitle = job.title || job.job_title || 'Untitled Job';
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : null);
   const displayDescription = job.job_summary || job.description;
-  const companyName = job.clients?.name || job.client || 'Company';
+  const companyName = getDisplayCompanyName(job);
   const hasVoiceAgent = !!job.voiceAgent;
 
   // Only show voice button if device supports it AND job has voice agent

@@ -34,6 +34,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
           city,
           state,
           clients(name),
+          organizations(name),
           job_categories(name)
         `)
         .eq('status', 'active')
@@ -76,6 +77,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             city,
             state,
             clients(name),
+            organizations(name),
             job_categories(name)
           `)
           .eq('status', 'active')
@@ -132,7 +134,9 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
                 </h3>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <Building2 className="w-3 h-3" />
-                  <span className="line-clamp-1">{job.clients?.name || 'Company'}</span>
+                  <span className="line-clamp-1">
+                    {(job.clients?.name && job.clients.name !== 'Unassigned') ? job.clients.name : (job.organizations?.name || 'Company')}
+                  </span>
                 </div>
                 {(job.location || (job.city && job.state)) && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
