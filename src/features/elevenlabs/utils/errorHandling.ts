@@ -86,14 +86,19 @@ export function parseVoiceAgentError(error: any): VoiceAgentError {
     };
   }
 
-  // Agent ID errors
-  if (errorString.includes('Agent ID') || errorString.includes('agent_not_found')) {
+  // Agent ID errors and ElevenLabs API errors
+  if (errorString.includes('Agent ID') || 
+      errorString.includes('agent_not_found') ||
+      errorString.includes('ElevenLabs API error') ||
+      (errorString.includes('404') && !errorString.includes('page')) ||
+      errorString.includes('agent not found')) {
     return {
       code: 'INVALID_AGENT_ID',
-      message: 'Voice agent is not available for this job. Please use the application form.',
+      message: 'Voice agent is temporarily unavailable. Please use the application form.',
       originalError: error,
       recoverySteps: [
-        'Use the "Apply Now" button to submit your application'
+        'Use the "Apply Now" button to submit your application',
+        'Voice features will be restored soon'
       ]
     };
   }

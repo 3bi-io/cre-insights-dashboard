@@ -140,14 +140,18 @@ Deno.serve(async (req) => {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        logger.error('ElevenLabs API error', { status: response.status, error: errorText });
-        return errorResponse(
-          `ElevenLabs API error: ${response.status} - ${errorText}`,
-          response.status,
-          undefined,
-          origin ?? undefined
-        );
+        let errorMessage = `ElevenLabs API error (${response.status})`;
+        const responseText = await response.text();
+        try {
+          const errorJson = JSON.parse(responseText);
+          errorMessage = errorJson.detail?.message || errorJson.detail || errorJson.message || errorJson.error || errorMessage;
+        } catch {
+          if (responseText) {
+            errorMessage = responseText;
+          }
+        }
+        logger.error('ElevenLabs API error', { status: response.status, error: errorMessage });
+        return errorResponse(errorMessage, response.status, undefined, origin ?? undefined);
       }
 
       const data = await response.json();
@@ -187,10 +191,11 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     const duration = Date.now() - startTime;
-    logger.error('Error in elevenlabs-agent function', error, { durationMs: duration });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Error in elevenlabs-agent function', { durationMs: duration, error: errorMessage });
     
     return errorResponse(
-      error.message || 'Internal server error',
+      errorMessage || 'Internal server error',
       500,
       undefined,
       origin ?? undefined

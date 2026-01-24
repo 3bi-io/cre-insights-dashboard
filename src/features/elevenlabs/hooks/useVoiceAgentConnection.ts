@@ -26,6 +26,17 @@ interface UseVoiceAgentConnectionOptions {
 
 function isRetryableError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
+  
+  // Never retry on permanent configuration errors
+  if (message.includes('404') || 
+      message.includes('403') || 
+      message.includes('not found') ||
+      message.includes('not configured') ||
+      message.includes('Access denied') ||
+      message.includes('agent_not_found')) {
+    return false;
+  }
+  
   // Retry on network errors, timeouts, and temporary server errors
   return (
     message.includes('timeout') ||
@@ -50,6 +61,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   const isConnectedRef = useRef(false);
   const conversationRef = useRef<ReturnType<typeof useConversation> | null>(null);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isAttemptingConnectionRef = useRef(false);
   
   // Keep refs in sync with state
   useEffect(() => {
@@ -229,6 +241,13 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   }, []);
 
   const connect = useCallback(async (agentId: string | null, context?: any): Promise<void> => {
+    // Prevent multiple simultaneous connection attempts
+    if (isAttemptingConnectionRef.current) {
+      logger.warn('Connection already in progress, ignoring duplicate request', undefined, 'VoiceAgentConnection');
+      return;
+    }
+    isAttemptingConnectionRef.current = true;
+    
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
@@ -299,6 +318,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
         }
 
         logger.info('Conversation session started', { agentId, attempt }, 'VoiceAgentConnection');
+        isAttemptingConnectionRef.current = false;
         return; // Success - exit retry loop
 
       } catch (error) {
@@ -320,6 +340,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     }
 
     // All retries exhausted
+    isAttemptingConnectionRef.current = false;
     logger.error('All connection attempts failed', lastError, 'VoiceAgentConnection');
     setIsConnecting(false);
     setConnectionProgress('idle');
