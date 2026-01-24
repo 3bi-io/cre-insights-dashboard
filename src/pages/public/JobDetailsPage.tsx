@@ -18,6 +18,7 @@ import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { VoiceApplicationPanel } from '@/features/elevenlabs';
 import { useToast } from '@/hooks/use-toast';
 import { sanitizers } from '@/utils/validation';
+import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
 
 const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -86,7 +87,7 @@ const JobDetailsPage: React.FC = () => {
   const displayTitle = job.title || job.job_title || 'Job Opening';
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : '');
   const displayDescription = job.job_summary || job.job_description || '';
-  const companyName = job.clients?.name || 'Company';
+  const companyName = getDisplayCompanyName(job);
   const canonicalUrl = `https://ats.me/jobs/${job.id}`;
   const applyUrl = `/apply?job_id=${job.id}&org_slug=${job.organizations?.slug || 'default'}`;
 
