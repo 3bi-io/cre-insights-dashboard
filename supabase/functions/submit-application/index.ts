@@ -162,7 +162,7 @@ const ApplicationSubmissionSchema = z.object({
   utm_source: z.string().max(100).optional(),
   utm_medium: z.string().max(100).optional(),
   utm_campaign: z.string().max(100).optional(),
-  referral_source: z.string().max(500).optional(),
+  referral_source: z.string().max(2000).optional(),
   
   // Employment history - limit to prevent DoS
   employmentHistory: z.any().optional(),
