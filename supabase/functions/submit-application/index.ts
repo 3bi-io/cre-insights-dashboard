@@ -3,7 +3,8 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { 
   normalizePhone, 
   findOrCreateJobListing, 
-  insertApplication 
+  insertApplication,
+  getOrganizationFromJobId 
 } from "../_shared/application-processor.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
@@ -346,13 +347,14 @@ async function triggerSourceWebhooks(
 
 /**
  * Resolve organization ID and job details from various sources
- * Priority: source_override -> job_listing_id -> org_slug -> fallback to CR England
+ * Priority: source_override -> job_id_prefix -> job_listing_id -> org_slug -> fallback to CR England
  */
 async function resolveOrganizationAndJob(
   supabase: ReturnType<typeof createClient>,
   jobListingId?: string,
   orgSlug?: string,
-  detectedSource?: string
+  detectedSource?: string,
+  jobIdFromPayload?: string
 ): Promise<{ organizationId: string; organizationName: string; externalJobId: string | null; jobTitle: string | null }> {
   // Priority 0: Source-based organization override (e.g., CDL Job Cast → Hayes)
   if (detectedSource && SOURCE_ORGANIZATION_OVERRIDES[detectedSource]) {
@@ -365,7 +367,33 @@ async function resolveOrganizationAndJob(
     
     if (org) {
       logger.info('Resolved org from source override', { source: detectedSource, org_name: org.name });
-      return { organizationId: org.id, organizationName: org.name, externalJobId: null, jobTitle: null };
+      return { organizationId: org.id, organizationName: org.name, externalJobId: jobIdFromPayload || null, jobTitle: null };
+    }
+  }
+
+  // Priority 0.5: Infer organization from job_id prefix
+  // This catches misrouted applications (e.g., Hayes jobs coming as Direct Application)
+  if (jobIdFromPayload) {
+    const inferredOrgId = getOrganizationFromJobId(jobIdFromPayload);
+    if (inferredOrgId) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .eq('id', inferredOrgId)
+        .single();
+      
+      if (org) {
+        logger.info('Resolved org from job_id prefix', { 
+          jobId: jobIdFromPayload, 
+          org_name: org.name 
+        });
+        return { 
+          organizationId: org.id, 
+          organizationName: org.name, 
+          externalJobId: jobIdFromPayload, 
+          jobTitle: null 
+        };
+      }
     }
   }
 
@@ -601,7 +629,8 @@ Deno.serve(async (req) => {
       supabase,
       formData.job_listing_id,
       formData.org_slug,
-      detectedSource
+      detectedSource,
+      formData.job_id // Pass job_id for prefix-based organization inference
     );
 
     // Check for duplicate applications within 30 days
