@@ -100,7 +100,7 @@ const AIAnalyticsPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Mobile: Horizontal scroll with tooltips, Desktop: Grid */}
           <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-1">
-            <div className="inline-flex h-auto items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground min-w-max md:min-w-0 md:w-full md:grid md:grid-cols-6">
+            <TabsList className="inline-flex h-auto items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground min-w-max md:min-w-0 md:w-full md:grid md:grid-cols-6">
               <TooltipProvider delayDuration={0}>
                 {tabs.map((tab) => (
                   <Tooltip key={tab.value}>
@@ -119,7 +119,7 @@ const AIAnalyticsPage = () => {
                   </Tooltip>
                 ))}
               </TooltipProvider>
-            </div>
+            </TabsList>
           </div>
 
           {isLoading ? (
