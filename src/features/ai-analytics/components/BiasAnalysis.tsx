@@ -17,7 +17,7 @@ import {
   Cell
 } from 'recharts';
 import { AlertTriangle, Shield, CheckCircle2, TrendingDown, Info } from 'lucide-react';
-import type { BiasMetric, DiversityPoint } from '../hooks';
+import type { BiasMetric, DiversityPoint, OutcomeDistributionPoint, FairnessDistributionPoint } from '../hooks';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
 
 interface BiasScoreCardProps {
@@ -100,26 +100,21 @@ interface BiasAnalysisProps {
     overallBiasScore: number;
     issuesDetected: number;
     diversityData: DiversityPoint[];
+    outcomeDistribution: OutcomeDistributionPoint[];
+    fairnessDistribution: FairnessDistributionPoint[];
   };
 }
 
 export const BiasAnalysis: React.FC<BiasAnalysisProps> = ({ data }) => {
-  const { metrics, fairnessScore, overallBiasScore, issuesDetected, diversityData } = data;
-
-  // Calculate outcome distribution from diversity data
-  const outcomeDistribution = [
-    { group: 'Group A', selected: 45, total: 150 },
-    { group: 'Group B', selected: 42, total: 140 },
-    { group: 'Group C', selected: 38, total: 130 },
-    { group: 'Group D', selected: 44, total: 145 },
-  ];
-
-  // Fairness pie chart data
-  const fairnessScoreData = [
-    { name: 'Excellent', value: Math.round(fairnessScore * 0.78), color: 'hsl(var(--success))' },
-    { name: 'Good', value: Math.round(fairnessScore * 0.18), color: 'hsl(142 76% 56%)' },
-    { name: 'Warning', value: Math.round((100 - fairnessScore) * 0.8), color: 'hsl(var(--warning))' },
-  ];
+  const { 
+    metrics, 
+    fairnessScore, 
+    overallBiasScore, 
+    issuesDetected, 
+    diversityData,
+    outcomeDistribution,
+    fairnessDistribution
+  } = data;
 
   // Find warning issues
   const warningMetrics = metrics.filter(m => m.status === 'warning' || m.status === 'danger');
@@ -288,7 +283,7 @@ export const BiasAnalysis: React.FC<BiasAnalysisProps> = ({ data }) => {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={fairnessScoreData}
+                  data={fairnessDistribution}
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
@@ -296,7 +291,7 @@ export const BiasAnalysis: React.FC<BiasAnalysisProps> = ({ data }) => {
                   dataKey="value"
                   label={({ name, value }) => `${name}: ${value}%`}
                 >
-                  {fairnessScoreData.map((entry, index) => (
+                  {fairnessDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>

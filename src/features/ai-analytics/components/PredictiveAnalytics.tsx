@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
   ComposedChart
 } from 'recharts';
-import { TrendingUp, Calendar, Users, DollarSign, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, Users, DollarSign, AlertTriangle } from 'lucide-react';
 import type { ForecastPoint, HiringTrendPoint, CandidateFlowPoint, CostPredictionPoint } from '../hooks';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
 
@@ -27,11 +27,12 @@ interface PredictiveAnalyticsProps {
     hiringTrends: HiringTrendPoint[];
     candidateFlow: CandidateFlowPoint[];
     costPredictions: CostPredictionPoint[];
+    growthPercent: number;
   };
 }
 
 export const PredictiveAnalytics: React.FC<PredictiveAnalyticsProps> = ({ data }) => {
-  const { forecastData, hiringTrends, candidateFlow, costPredictions } = data;
+  const { forecastData, hiringTrends, candidateFlow, costPredictions, growthPercent } = data;
   
   // Calculate summary metrics
   const nextMonthPredicted = forecastData.find(f => f.actual === null)?.predicted || 0;
@@ -41,6 +42,9 @@ export const PredictiveAnalytics: React.FC<PredictiveAnalyticsProps> = ({ data }
   // Find highest dropout stage
   const highestDropout = candidateFlow.reduce((max, stage) => 
     stage.dropout > max.dropout ? stage : max, candidateFlow[0]);
+
+  // Determine if growth is positive or negative
+  const isPositiveGrowth = growthPercent >= 0;
 
   if (!forecastData.length) {
     return (
@@ -141,7 +145,14 @@ export const PredictiveAnalytics: React.FC<PredictiveAnalyticsProps> = ({ data }
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-1">Growth</p>
-                  <p className="text-2xl font-bold text-primary">+18%</p>
+                  <p className={`text-2xl font-bold flex items-center justify-center gap-1 ${isPositiveGrowth ? 'text-success' : 'text-destructive'}`}>
+                    {isPositiveGrowth ? (
+                      <TrendingUp className="w-5 h-5" />
+                    ) : (
+                      <TrendingDown className="w-5 h-5" />
+                    )}
+                    {isPositiveGrowth ? '+' : ''}{growthPercent}%
+                  </p>
                   <p className="text-xs text-muted-foreground">vs last period</p>
                 </div>
               </div>
