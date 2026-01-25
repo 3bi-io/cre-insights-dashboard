@@ -103,7 +103,6 @@ const CandidateNotifications = React.lazy(() => import("@/features/candidate/pag
 
 // Talent Pool pages
 const TalentPoolsPage = React.lazy(() => import("@/features/talent").then(m => ({ default: m.TalentPoolsPage })));
-const TalentSearchPage = React.lazy(() => import("@/features/talent").then(m => ({ default: m.TalentSearchPage })));
 
 // Loading fallback component
 const PageSkeleton = React.memo(() => (
@@ -276,14 +275,9 @@ const AppRoutes: React.FC = () => {
         
         {/* Talent Routes */}
         <Route path="talent/pools" element={<ProtectedRouteWrapper><TalentPoolsPage /></ProtectedRouteWrapper>} />
-        <Route path="candidate-search" element={<ProtectedRouteWrapper><TalentSearchPage /></ProtectedRouteWrapper>} />
         
         {/* Social Engagement Routes */}
         <Route path="social-engagement" element={<ProtectedRouteWrapper><SocialEngagementDashboard /></ProtectedRouteWrapper>} />
-        
-        {/* Talent Pool Routes */}
-        <Route path="talent" element={<ProtectedRouteWrapper><TalentSearchPage /></ProtectedRouteWrapper>} />
-        <Route path="talent/pools" element={<ProtectedRouteWrapper><TalentPoolsPage /></ProtectedRouteWrapper>} />
         
         <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
