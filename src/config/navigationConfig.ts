@@ -138,8 +138,6 @@ export const getNavigationGroups = (options: {
           { path: '/admin/clients', label: 'Clients', icon: UserCheck }
         ] : []),
         { path: '/admin/routes', label: 'Routes', icon: MapPin },
-        // Talent items merged into Recruitment
-        { path: '/admin/talent', label: 'Candidate Search', icon: Search },
         { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark },
         ...(hasVoiceAgent && isAdmin ? [
           { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: MessageSquare }
