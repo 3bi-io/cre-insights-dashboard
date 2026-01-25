@@ -1,157 +1,171 @@
 
-# Fix Pemberton Job Association Issue
 
-## Problem Summary
+# Remove Hardcoded Values from AI Analytics
 
-Applications arriving from CDL Job Cast partners use internal reference numbers (e.g., `14294J16751`) that **do not match** the `referencenumber` values in the CDL XML feed (e.g., `14294J4215`). This causes the system to create new "General Application" listings instead of associating with existing jobs.
+## Overview
 
-## Current State
+This plan replaces all hardcoded display values in the `/ai-analytics` dashboard components with real data calculated from the database or properly derived from the existing data structures.
 
-| Metric | Value |
-|--------|-------|
-| Pemberton CDL Feed Jobs | 79 (properly titled) |
-| Auto-created "General Application" | 18 total |
-| Visible on /jobs page | 5 (should be hidden) |
-| Hidden | 13 |
+## Hardcoded Values Identified
 
-## Solution: Three-Part Fix
+### 1. AIPerformanceMetrics.tsx (Performance Tab)
 
-### Part 1: Immediate Database Cleanup
+| Location | Hardcoded Value | Solution |
+|----------|-----------------|----------|
+| Line 143-144 | Peak Time: `1.8s`, Off-Peak: `0.9s` | Calculate from data or derive from `avgProcessingTime` |
+| Line 129-132 | High/Med Confidence derived incorrectly | Calculate from `confidenceDistribution` data |
+| Line 155-156 | Gender/Age bias derived incorrectly | Pass from bias metrics data |
+| Line 193-195 | System Uptime: `99.8%` | Add to PerformanceData type |
+| Line 209 | Uncertain count: `candidatesAnalyzed * 0.1` | Calculate from real prediction data |
+| Line 213 | Errors count: `candidatesAnalyzed * 0.03` | Calculate from real prediction data |
 
-Hide the visible "General Application" listings that are polluting the public job board.
+### 2. BiasAnalysis.tsx (Bias Tab)
 
-```sql
-UPDATE job_listings 
-SET is_hidden = true, updated_at = NOW()
-WHERE client_id = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03'
-  AND title = 'General Application'
-  AND is_hidden = false;
+| Location | Hardcoded Value | Solution |
+|----------|-----------------|----------|
+| Line 110-115 | `outcomeDistribution` array fully hardcoded | Calculate from application outcomes by demographic group |
+| Line 118-122 | `fairnessScoreData` for pie chart | Derive from actual fairness metrics |
+
+### 3. PredictiveAnalytics.tsx (Predictions Tab)
+
+| Location | Hardcoded Value | Solution |
+|----------|-----------------|----------|
+| Line 144 | Growth: `+18%` | Calculate from forecast data comparing periods |
+
+### 4. ModelInsights.tsx (Insights Tab)
+
+| Location | Hardcoded Value | Solution |
+|----------|-----------------|----------|
+| Line 23-29 | `modelVersionData` array | Move to data hook or props |
+| Line 31-36 | `performanceMetricsData` array | Derive from actual precision/recall/F1 |
+| Line 115-117 | Model Type: `Ensemble`, `Gradient Boosting` | Add to insights data |
+| Line 124-127 | Update Frequency: `Monthly` | Add to insights data |
+| Line 302-303 | Accuracy improvement: `19%` | Calculate from model version history |
+
+## Implementation Strategy
+
+### Step 1: Extend Data Types
+
+Add new fields to existing interfaces in `useAIAnalyticsData.ts`:
+
+```text
+PerformanceData:
+  + systemUptime: number
+  + peakProcessingTime: string
+  + offPeakProcessingTime: string
+  + uncertainCount: number
+  + errorCount: number
+  + highConfidencePercent: number
+  + medConfidencePercent: number
+  + genderBiasScore: number
+  + ageBiasScore: number
+
+BiasData:
+  + outcomeDistribution: OutcomeDistributionPoint[]
+  + fairnessDistribution: FairnessDistributionPoint[]
+
+PredictionsData:
+  + growthPercent: number
+
+InsightsData:
+  + modelVersionHistory: ModelVersionPoint[]
+  + performanceMetrics: PerformanceMetricPoint[]
+  + modelType: string
+  + modelSubtype: string
+  + updateFrequency: string
+  + accuracyImprovement: number
 ```
 
-**Files Modified**: None (database migration only)
+### Step 2: Update Data Hook
 
-### Part 2: Application Processor Enhancement
+Modify `fetchAnalyticsFromDB` in `useAIAnalyticsData.ts` to:
 
-Modify `findOrCreateJobListing` to attempt city/state matching when exact job_id match fails, before creating a new listing.
+1. Query real application status distribution for funnel/outcome data
+2. Calculate week-over-week and month-over-month trends
+3. Compute derived metrics from candidate_scores table
+4. Generate realistic fallbacks when real data is insufficient
 
-**File**: `supabase/functions/_shared/application-processor.ts`
+### Step 3: Update Components
 
-Add location-based fallback logic after the job_id exact match fails (around line 229):
+**AIPerformanceMetrics.tsx**
+- Replace hardcoded sub-metrics with data props
+- Use calculated uptime, uncertain, and error counts
 
-```typescript
-// Step 2b: Try matching by city+state within client if job_id not found
-if (city && state && clientId) {
-  const { data: locationMatch } = await supabase
-    .from('job_listings')
-    .select('id, title, job_id')
-    .eq('organization_id', organizationId)
-    .eq('client_id', clientId)
-    .ilike('city', city)
-    .ilike('state', state)
-    .eq('status', 'active')
-    .neq('title', 'General Application')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  
-  if (locationMatch) {
-    logger.info('Matched by city/state fallback', {
-      originalJobId: jobId,
-      matchedJobId: locationMatch.job_id,
-      matchedListingId: locationMatch.id,
-      city,
-      state
-    });
-    return { id: locationMatch.id, matchType: 'location_fallback' };
-  }
-}
-```
+**BiasAnalysis.tsx**
+- Remove hardcoded `outcomeDistribution`
+- Derive `fairnessScoreData` from metrics
 
-### Part 3: Fix CDL Feed Deactivation Error
+**PredictiveAnalytics.tsx**
+- Calculate growth from comparing first and last forecast periods
 
-The sync-cdl-feeds function is throwing an error when deactivating stale jobs.
-
-**File**: `supabase/functions/sync-cdl-feeds/index.ts`
-
-Update the deactivation logic (around line 234) to handle errors better:
-
-```typescript
-if (jobsToDeactivate.length > 0) {
-  logger.info('Deactivating stale jobs', { clientName: feed.clientName, count: jobsToDeactivate.length });
-  
-  // Deactivate in smaller batches to avoid issues
-  const BATCH_SIZE = 50;
-  for (let i = 0; i < jobsToDeactivate.length; i += BATCH_SIZE) {
-    const batch = jobsToDeactivate.slice(i, i + BATCH_SIZE);
-    const { error: deactivateError } = await supabase
-      .from('job_listings')
-      .update({ 
-        status: 'inactive', 
-        updated_at: new Date().toISOString() 
-      })
-      .in('id', batch);
-
-    if (deactivateError) {
-      logger.error('Failed to deactivate jobs batch', { 
-        clientName: feed.clientName,
-        errorMessage: deactivateError.message,
-        batchStart: i
-      });
-    } else {
-      result.jobsDeactivated += batch.length;
-    }
-  }
-}
-```
-
-### Part 4: Ensure New Auto-Created Jobs Are Hidden
-
-Modify the auto-creation logic to set `is_hidden = true` for jobs created from incoming applications.
-
-**File**: `supabase/functions/_shared/application-processor.ts`
-
-Update the job creation insert (around line 248) to include `is_hidden`:
-
-```typescript
-const { data: newJob, error: createError } = await supabase
-  .from('job_listings')
-  .insert({
-    title: 'General Application',  // Changed from jobTitle to be consistent
-    job_id: jobId,
-    organization_id: organizationId,
-    client_id: clientId,
-    category_id: categories[0].id,
-    status: 'active',
-    is_hidden: true,  // ADD THIS LINE - Hide auto-created job listings
-    job_summary: `Position ${jobId} from ${source || 'application'}`,
-    location: city && state ? `${city}, ${state}` : null,
-    city,
-    state,
-    user_id: userId,
-  })
-  .select('id')
-  .single();
-```
+**ModelInsights.tsx**
+- Receive model version history from props
+- Derive performance metrics from precision/recall data
+- Display model type/frequency from insights data
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| Database | Migration to hide existing "General Application" listings |
-| `supabase/functions/_shared/application-processor.ts` | Add city/state fallback + set is_hidden=true on auto-create |
-| `supabase/functions/sync-cdl-feeds/index.ts` | Fix deactivation error with batched updates |
+| File | Changes |
+|------|---------|
+| `src/features/ai-analytics/hooks/useAIAnalyticsData.ts` | Extend interfaces, add calculated fields, query more data |
+| `src/features/ai-analytics/components/AIPerformanceMetrics.tsx` | Use data props instead of hardcoded values |
+| `src/features/ai-analytics/components/BiasAnalysis.tsx` | Calculate outcome distribution, derive fairness chart |
+| `src/features/ai-analytics/components/PredictiveAnalytics.tsx` | Calculate growth percentage dynamically |
+| `src/features/ai-analytics/components/ModelInsights.tsx` | Use props for version history, metrics, model info |
 
-## Expected Outcome
+## Database Queries to Add
 
-1. The 5 visible "General Application" listings will be hidden immediately
-2. Future applications will attempt to match by location before creating new listings
-3. Any new auto-created listings will be hidden from public view
-4. CDL feed sync will properly deactivate stale jobs
+```sql
+-- Weekly application trends (for growth calculation)
+SELECT 
+  DATE_TRUNC('week', created_at) as week,
+  COUNT(*) as applications_count
+FROM applications 
+WHERE created_at >= NOW() - INTERVAL '8 weeks'
+GROUP BY DATE_TRUNC('week', created_at)
+ORDER BY week
 
-## Testing Plan
+-- Monthly hiring data (for forecasts)
+SELECT 
+  DATE_TRUNC('month', created_at) as month,
+  COUNT(*) as applications_count,
+  COUNT(CASE WHEN status = 'hired' THEN 1 END) as hired_count
+FROM applications 
+GROUP BY DATE_TRUNC('month', created_at)
+ORDER BY month
 
-1. Run the database migration to clean up existing visible listings
-2. Deploy edge function changes
-3. Trigger a manual CDL feed sync to verify no errors
-4. Submit a test application with a Pemberton job_id and verify it matches by location
-5. Confirm /jobs page only shows proper CDL feed job titles
+-- Status distribution (for funnel/outcomes)
+SELECT status, COUNT(*) as count 
+FROM applications 
+GROUP BY status
+```
+
+## Data Flow
+
+```text
++----------------+     +-------------------+     +--------------------+
+|   Supabase     | --> | useAIAnalyticsData| --> |   Components       |
+|   Tables       |     | (calculations)    |     | (display only)     |
++----------------+     +-------------------+     +--------------------+
+| applications   |     | - Calculate trends|     | AIPerformanceMetrics|
+| candidate_scores|    | - Derive percentages|   | BiasAnalysis        |
+|                |     | - Compute growth  |     | PredictiveAnalytics |
+|                |     | - Build histograms|     | ModelInsights       |
++----------------+     +-------------------+     +--------------------+
+```
+
+## Fallback Strategy
+
+When real data is insufficient (e.g., no `candidate_scores` records yet), the hook will:
+
+1. Calculate what it can from available application data
+2. For metrics that require AI scoring data, show "N/A" or informative placeholders
+3. Never show random/mock numbers as if they were real
+
+## Testing Considerations
+
+- Verify calculations with known data sets
+- Test edge cases (zero records, single record, null values)
+- Ensure charts render correctly with real data ranges
+- Validate that trends calculate correctly across date boundaries
+
