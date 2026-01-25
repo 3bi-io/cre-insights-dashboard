@@ -180,7 +180,7 @@ export const findOrCreateJobListing = async (
     state?: string;
     source?: string;
   }
-): Promise<{ id: string; matchType: 'exact_uuid' | 'exact_job_id' | 'created_from_job_id' | 'general_fallback' | 'created_general' } | null> => {
+): Promise<{ id: string; matchType: 'exact_uuid' | 'exact_job_id' | 'location_fallback' | 'created_from_job_id' | 'general_fallback' | 'created_general' } | null> => {
   const { jobListingId, jobId, jobTitle, organizationId, city, state, source } = params;
   
   // Determine client from job_id for supported organizations
@@ -226,6 +226,35 @@ export const findOrCreateJobListing = async (
       return { id: jobListing.id, matchType: 'exact_job_id' };
     }
     
+    // Step 2b: Try matching by city+state within client if job_id not found
+    // This handles cases where partner reference numbers don't match feed job_ids
+    if (city && state && clientId) {
+      const { data: locationMatch } = await supabase
+        .from('job_listings')
+        .select('id, title, job_id')
+        .eq('organization_id', organizationId)
+        .eq('client_id', clientId)
+        .ilike('city', city)
+        .ilike('state', state)
+        .eq('status', 'active')
+        .neq('title', 'General Application')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (locationMatch) {
+        logger.info('Matched by city/state fallback', {
+          originalJobId: jobId,
+          matchedJobId: locationMatch.job_id,
+          matchedListingId: locationMatch.id,
+          matchedTitle: locationMatch.title,
+          city,
+          state
+        });
+        return { id: locationMatch.id, matchType: 'location_fallback' };
+      }
+    }
+    
     // Step 3: job_id provided but not matched - CREATE new listing for this job_id
     // This ensures each unique external job_id gets its own listing
     logger.info('No match for job_id - creating new listing', { jobId, organizationId });
@@ -253,6 +282,7 @@ export const findOrCreateJobListing = async (
           client_id: clientId,
           category_id: categories[0].id,
           status: 'active',
+          is_hidden: true, // Hide auto-created job listings from public view
           job_summary: `Position ${jobId} from ${source || 'application'}`,
           location: city && state ? `${city}, ${state}` : null,
           city,
@@ -267,6 +297,7 @@ export const findOrCreateJobListing = async (
           listingId: newJob.id, 
           jobId,
           title: newTitle,
+          isHidden: true,
           source 
         });
         return { id: newJob.id, matchType: 'created_from_job_id' };
