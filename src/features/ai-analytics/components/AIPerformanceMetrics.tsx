@@ -103,6 +103,9 @@ interface AIPerformanceMetricsProps {
 }
 
 export const AIPerformanceMetrics: React.FC<AIPerformanceMetricsProps> = ({ data }) => {
+  // Calculate accurate and uncertain/error counts
+  const accurateCount = Math.round(data.candidatesAnalyzed * (data.successRate / 100));
+
   return (
     <div className="space-y-6">
       <div>
@@ -127,8 +130,8 @@ export const AIPerformanceMetrics: React.FC<AIPerformanceMetricsProps> = ({ data
             description="Average confidence level in AI-generated recommendations"
             icon={<Brain className="w-4 h-4 text-primary" />}
             subMetrics={[
-              { label: 'High Conf.', value: `${Math.round(data.predictionConfidence * 0.75)}%` },
-              { label: 'Med Conf.', value: `${Math.round(data.predictionConfidence * 0.25)}%` }
+              { label: 'High Conf.', value: `${data.highConfidencePercent}%` },
+              { label: 'Med Conf.', value: `${data.medConfidencePercent}%` }
             ]}
           />
           
@@ -140,8 +143,8 @@ export const AIPerformanceMetrics: React.FC<AIPerformanceMetricsProps> = ({ data
             icon={<Zap className="w-4 h-4 text-primary" />}
             variant="success"
             subMetrics={[
-              { label: 'Peak Time', value: '1.8s' },
-              { label: 'Off-Peak', value: '0.9s' }
+              { label: 'Peak Time', value: data.peakProcessingTime },
+              { label: 'Off-Peak', value: data.offPeakProcessingTime }
             ]}
           />
           
@@ -152,8 +155,8 @@ export const AIPerformanceMetrics: React.FC<AIPerformanceMetricsProps> = ({ data
             icon={<Activity className="w-4 h-4 text-primary" />}
             variant={data.biasScore < 20 ? 'success' : data.biasScore < 40 ? 'warning' : 'danger'}
             subMetrics={[
-              { label: 'Gender', value: Math.round(data.biasScore * 0.8) },
-              { label: 'Age', value: Math.round(data.biasScore * 0.5) }
+              { label: 'Gender', value: data.genderBiasScore },
+              { label: 'Age', value: data.ageBiasScore }
             ]}
           />
         </div>
@@ -190,9 +193,9 @@ export const AIPerformanceMetrics: React.FC<AIPerformanceMetricsProps> = ({ data
             <div>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-muted-foreground">System Uptime</span>
-                <span className="text-sm font-semibold">99.8%</span>
+                <span className="text-sm font-semibold">{data.systemUptime.toFixed(1)}%</span>
               </div>
-              <Progress value={99.8} className="h-2" />
+              <Progress value={data.systemUptime} className="h-2" />
             </div>
           </div>
 
@@ -202,15 +205,15 @@ export const AIPerformanceMetrics: React.FC<AIPerformanceMetricsProps> = ({ data
               <p className="text-xs text-muted-foreground">Total Predictions</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-success">{Math.round(data.candidatesAnalyzed * (data.successRate / 100))}</p>
+              <p className="text-2xl font-bold text-success">{accurateCount}</p>
               <p className="text-xs text-muted-foreground">Accurate</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-warning">{Math.round(data.candidatesAnalyzed * 0.1)}</p>
+              <p className="text-2xl font-bold text-warning">{data.uncertainCount}</p>
               <p className="text-xs text-muted-foreground">Uncertain</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{Math.round(data.candidatesAnalyzed * 0.03)}</p>
+              <p className="text-2xl font-bold text-destructive">{data.errorCount}</p>
               <p className="text-xs text-muted-foreground">Errors</p>
             </div>
           </div>

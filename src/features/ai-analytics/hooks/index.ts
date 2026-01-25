@@ -8,9 +8,13 @@ export type {
   CostPredictionPoint,
   BiasMetric,
   DiversityPoint,
+  OutcomeDistributionPoint,
+  FairnessDistributionPoint,
   ComparisonMetric,
   RadarPoint,
   FeatureImportance,
   ConfidenceDistribution,
+  ModelVersionPoint,
+  PerformanceMetricPoint,
   DateRangeType,
 } from './useAIAnalyticsData';

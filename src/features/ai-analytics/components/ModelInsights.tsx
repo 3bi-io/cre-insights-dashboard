@@ -16,24 +16,8 @@ import {
   Cell
 } from 'recharts';
 import { Brain, Lightbulb, TrendingUp, AlertCircle } from 'lucide-react';
-import type { FeatureImportance, ConfidenceDistribution } from '../hooks';
+import type { FeatureImportance, ConfidenceDistribution, ModelVersionPoint, PerformanceMetricPoint } from '../hooks';
 import { AnalyticsEmptyState } from './AnalyticsEmptyState';
-
-// Model version history - this would come from a config in production
-const modelVersionData = [
-  { version: 'v1.0', accuracy: 72, deployed: '2024-01' },
-  { version: 'v1.1', accuracy: 76, deployed: '2024-03' },
-  { version: 'v1.2', accuracy: 81, deployed: '2024-05' },
-  { version: 'v2.0', accuracy: 87, deployed: '2024-08' },
-  { version: 'v2.1', accuracy: 91, deployed: '2024-11' },
-];
-
-const performanceMetricsData = [
-  { metric: 'Precision', value: 0.87, description: 'Accuracy of positive predictions' },
-  { metric: 'Recall', value: 0.82, description: 'Ability to find all relevant candidates' },
-  { metric: 'F1-Score', value: 0.84, description: 'Balance between precision and recall' },
-  { metric: 'AUC-ROC', value: 0.91, description: 'Overall model discrimination ability' },
-];
 
 interface ModelInsightsProps {
   data: {
@@ -42,11 +26,29 @@ interface ModelInsightsProps {
     modelVersion: string;
     trainingDataPoints: number;
     lastUpdated: string;
+    modelVersionHistory: ModelVersionPoint[];
+    performanceMetrics: PerformanceMetricPoint[];
+    modelType: string;
+    modelSubtype: string;
+    updateFrequency: string;
+    accuracyImprovement: number;
   };
 }
 
 export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
-  const { featureImportance, confidenceDistribution, modelVersion, trainingDataPoints, lastUpdated } = data;
+  const { 
+    featureImportance, 
+    confidenceDistribution, 
+    modelVersion, 
+    trainingDataPoints, 
+    lastUpdated,
+    modelVersionHistory,
+    performanceMetrics,
+    modelType,
+    modelSubtype,
+    updateFrequency,
+    accuracyImprovement
+  } = data;
 
   // Calculate high confidence percentage
   const totalPredictions = confidenceDistribution.reduce((sum, c) => sum + c.count, 0);
@@ -112,8 +114,8 @@ export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
           <CardContent className="p-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Model Type</p>
-              <p className="text-2xl font-bold">Ensemble</p>
-              <p className="text-xs text-muted-foreground">Gradient Boosting</p>
+              <p className="text-2xl font-bold">{modelType}</p>
+              <p className="text-xs text-muted-foreground">{modelSubtype}</p>
             </div>
           </CardContent>
         </Card>
@@ -122,7 +124,7 @@ export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
           <CardContent className="p-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Update Frequency</p>
-              <p className="text-2xl font-bold">Monthly</p>
+              <p className="text-2xl font-bold">{updateFrequency}</p>
               <p className="text-xs text-muted-foreground">with continuous learning</p>
             </div>
           </CardContent>
@@ -188,7 +190,7 @@ export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {performanceMetricsData.map((metric) => (
+            {performanceMetrics.map((metric) => (
               <div key={metric.metric} className="space-y-2">
                 <div className="flex justify-between items-center">
                   <div>
@@ -221,16 +223,16 @@ export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={modelVersionData}>
+              <BarChart data={modelVersionHistory}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="version" />
                 <YAxis domain={[60, 100]} />
                 <Tooltip />
                 <Bar dataKey="accuracy" fill="hsl(var(--primary))">
-                  {modelVersionData.map((entry, index) => (
+                  {modelVersionHistory.map((entry, index) => (
                     <Cell 
                       key={`cell-${index}`}
-                      fill={index === modelVersionData.length - 1 ? 'hsl(var(--success))' : 'hsl(var(--primary))'}
+                      fill={index === modelVersionHistory.length - 1 ? 'hsl(var(--success))' : 'hsl(var(--primary))'}
                     />
                   ))}
                 </Bar>
@@ -300,7 +302,7 @@ export const ModelInsights: React.FC<ModelInsightsProps> = ({ data }) => {
               <div>
                 <p className="font-medium text-sm">Consistent Accuracy Improvement</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Model accuracy has improved by 19% from v1.0 to {modelVersion} through continuous learning and data refinement.
+                  Model accuracy has improved by {accuracyImprovement}% from v1.0 to {modelVersion} through continuous learning and data refinement.
                 </p>
               </div>
             </div>
