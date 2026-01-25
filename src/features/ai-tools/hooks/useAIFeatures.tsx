@@ -24,7 +24,8 @@ export const useAIFeatures = () => {
       features,
       enabledCount,
       totalCount,
-      hasAnyFeatures: hasAIAccess(),
+      // Include voice features in the "any features" check
+      hasAnyFeatures: hasAIAccess() || hasVoiceAgent() || hasElevenLabsAccess(),
       completionPercentage: Math.round((enabledCount / totalCount) * 100)
     };
   };

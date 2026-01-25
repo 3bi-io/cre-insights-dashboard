@@ -83,13 +83,13 @@ class AIConnectionManager {
           break;
           
         case 'elevenlabs':
-          // ElevenLabs connection test with real agent ID
+          // Use global agent flag for reliable connection testing
           response = await supabase.functions.invoke('elevenlabs-agent', {
             body: {
-              agentId: 'agent_3901k7s5pyt9fsfb17w72f8hf59z'
+              useGlobalAgent: true
             }
           });
-          // ElevenLabs returns { success: true, signedUrl } on success
+          // ElevenLabs returns { success: true, data: { signedUrl } } on success
           isConnected = !response.error && response.data?.success === true;
           break;
           

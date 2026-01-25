@@ -1,12 +1,33 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bot, MessageSquare, BarChart3, Phone } from 'lucide-react';
+import { Bot, MessageSquare, BarChart3, Phone, Loader2 } from 'lucide-react';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
 
 export const AIToolsOverview = () => {
-  const { hasAIAccess } = useOrganizationFeatures();
+  const { hasAIAccess, hasVoiceAgent, hasElevenLabsAccess, isLoading } = useOrganizationFeatures();
 
-  if (!hasAIAccess()) {
+  // Include voice/elevenlabs as valid AI features
+  const hasAnyAIFeature = () => hasAIAccess() || hasVoiceAgent() || hasElevenLabsAccess();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="w-5 h-5" />
+            AI Tools Overview
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasAnyAIFeature()) {
     return (
       <Card>
         <CardHeader>
