@@ -274,6 +274,10 @@ const AppRoutes: React.FC = () => {
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
         <Route path="grok" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
         
+        {/* Talent Routes */}
+        <Route path="talent/pools" element={<ProtectedRouteWrapper><TalentPoolsPage /></ProtectedRouteWrapper>} />
+        <Route path="candidate-search" element={<ProtectedRouteWrapper><TalentSearchPage /></ProtectedRouteWrapper>} />
+        
         {/* Social Engagement Routes */}
         <Route path="social-engagement" element={<ProtectedRouteWrapper><SocialEngagementDashboard /></ProtectedRouteWrapper>} />
         

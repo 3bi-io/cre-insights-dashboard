@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bot, Phone, Zap } from 'lucide-react';
 import { useOrganizationFeatures } from '@/hooks/useOrganizationFeatures';
@@ -6,6 +7,7 @@ import { AIFeatureCard } from './AIFeatureCard';
 import { toast } from 'sonner';
 
 export const AIFeaturesList = () => {
+  const navigate = useNavigate();
   const {
     hasOpenAIAccess,
     hasAnthropicAccess,
@@ -42,7 +44,7 @@ export const AIFeaturesList = () => {
       enabled: hasVoiceAgent(),
       icon: Phone,
       action: 'Setup Voice Agent',
-      onAction: () => handleFeatureAction('Voice Agent')
+      onAction: () => navigate('/admin/voice-agent')
     },
     {
       name: 'ElevenLabs Voice',
@@ -50,7 +52,7 @@ export const AIFeaturesList = () => {
       enabled: hasElevenLabsAccess(),
       icon: Phone,
       action: 'Configure Voice AI',
-      onAction: () => handleFeatureAction('ElevenLabs Voice')
+      onAction: () => navigate('/admin/elevenlabs-admin')
     }
   ];
 
