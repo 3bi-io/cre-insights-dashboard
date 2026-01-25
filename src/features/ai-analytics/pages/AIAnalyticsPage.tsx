@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import {
   AIPerformanceMetrics,
-  PredictiveAnalytics,
   ComparativeAnalysis,
   BiasAnalysis,
   ModelInsights,
@@ -43,7 +42,6 @@ const AIAnalyticsPage = () => {
 
   const tabs = [
     { value: 'performance', label: 'Performance', icon: Brain },
-    { value: 'predictions', label: 'Predictions', icon: TrendingUp },
     { value: 'comparison', label: 'Comparison', icon: GitCompare },
     { value: 'bias', label: 'Bias Analysis', icon: Shield },
     { value: 'insights', label: 'Insights', icon: Lightbulb },
@@ -100,7 +98,7 @@ const AIAnalyticsPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Mobile: Horizontal scroll with tooltips, Desktop: Grid */}
           <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-1">
-            <TabsList className="inline-flex h-auto items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground min-w-max md:min-w-0 md:w-full md:grid md:grid-cols-6">
+            <TabsList className="inline-flex h-auto items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground min-w-max md:min-w-0 md:w-full md:grid md:grid-cols-5">
               <TooltipProvider delayDuration={0}>
                 {tabs.map((tab) => (
                   <Tooltip key={tab.value}>
@@ -138,10 +136,6 @@ const AIAnalyticsPage = () => {
             <>
               <TabsContent value="performance" className="mt-6 animate-fade-in">
                 <AIPerformanceMetrics data={data.performance} />
-              </TabsContent>
-
-              <TabsContent value="predictions" className="mt-6 animate-fade-in">
-                <PredictiveAnalytics data={data.predictions} />
               </TabsContent>
 
               <TabsContent value="comparison" className="mt-6 animate-fade-in">
