@@ -11,9 +11,9 @@ import { OrganizationFeaturesDialog } from '@/components/admin/OrganizationFeatu
 import { DeleteOrganizationDialog } from '@/components/admin/DeleteOrganizationDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { OrganizationPlatformAccessDialog } from '@/components/admin';
-// PlanBadge removed - no subscription tiers
 import AdminPageLayout from '@/features/shared/components/AdminPageLayout';
 import { AdminNavigationDashboard } from '@/components/admin/AdminNavigationDashboard';
+import { AdminEmailUtility } from '@/features/admin/components/AdminEmailUtility';
 
 const Organizations = () => {
   const { data: organizations, isLoading } = useOrganizationsData();
@@ -30,7 +30,12 @@ const Organizations = () => {
       title="Organizations"
       description="Manage multi-tenant organizations and settings"
       requiredRole="super_admin"
-      actions={<CreateOrganizationDialog />}
+      actions={
+        <div className="flex items-center gap-2">
+          <AdminEmailUtility />
+          <CreateOrganizationDialog />
+        </div>
+      }
     >
       <div className="space-y-6">
         {/* Admin Navigation Dashboard */}
