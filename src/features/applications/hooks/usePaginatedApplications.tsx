@@ -26,7 +26,8 @@ export const usePaginatedApplications = (filters: PaginationFilters = {}) => {
             organization_id,
             category_id,
             client_id,
-            job_title
+            job_title,
+            clients(name)
           ),
           recruiters(
             id,

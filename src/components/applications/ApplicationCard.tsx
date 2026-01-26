@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Eye, MessageCircle, Calendar, Phone, ExternalLink, Edit, Mail, MoreVertical, Upload, MapPin, Loader2, FileCheck } from 'lucide-react';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
+import { getJobDisplayTitle } from '@/features/applications/utils/applicationFormatters';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
@@ -48,7 +49,7 @@ const ApplicationCard = ({
   const applicantEmail = getApplicantEmail(application);
   const clientName = getClientName(application);
   const category = getApplicantCategory(application);
-  const jobTitle = application.job_listings?.title || application.job_listings?.job_title || 'Unknown Position';
+  const jobTitle = getJobDisplayTitle(application);
 
   // Get city and state with fallback logic
   const displayCity = application.city || lookupCity;

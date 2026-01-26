@@ -74,6 +74,32 @@ export const getJobTitle = (app: Application): string => {
 };
 
 /**
+ * Gets the display title for a job, showing client name for "General Application" listings
+ * This provides a more meaningful title in the UI when the job is a generic fallback
+ */
+export const getJobDisplayTitle = (app: Application): string => {
+  // Handle missing job listing (orphaned)
+  if (isOrphanedApplication(app.job_listing_id)) {
+    return 'Job Removed';
+  }
+  
+  const rawTitle = app.job_listings?.title || app.job_listings?.job_title;
+  
+  // Handle no title
+  if (!rawTitle) {
+    return 'Unknown Position';
+  }
+  
+  // For "General Application" jobs, display client name if available
+  if (rawTitle.toLowerCase().includes('general application')) {
+    const clientName = getClientName(app);
+    return clientName || rawTitle;
+  }
+  
+  return rawTitle;
+};
+
+/**
  * Parses experience from application data
  * Handles multiple formats: numeric months, text descriptions, legacy data
  * Returns number of months or null if unable to determine

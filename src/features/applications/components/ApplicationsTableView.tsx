@@ -23,6 +23,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
+import { getJobDisplayTitle } from '@/features/applications/utils/applicationFormatters';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import type { Application, Recruiter } from '@/types/common.types';
@@ -231,7 +232,7 @@ export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
               const applicantEmail = getApplicantEmail(application);
               const clientName = getClientName(application);
               const category = getApplicantCategory(application);
-              const jobTitle = application.job_listings?.title || application.job_listings?.job_title || 'Unknown Position';
+              const jobTitle = getJobDisplayTitle(application);
 
               return (
                 <TableRow 
