@@ -12,11 +12,15 @@ interface CandidateApplication {
   job_listings: {
     id: string;
     title: string;
+    job_title?: string;
     location?: string;
     city?: string;
     state?: string;
     salary_min?: number;
     salary_max?: number;
+    clients?: {
+      name: string;
+    };
     organizations: {
       name: string;
       logo_url?: string;
@@ -37,11 +41,13 @@ async function fetchCandidateApplications(userId: string): Promise<CandidateAppl
       job_listings!inner(
         id,
         title,
+        job_title,
         location,
         city,
         state,
         salary_min,
         salary_max,
+        clients(name),
         organizations!inner(
           name,
           logo_url
