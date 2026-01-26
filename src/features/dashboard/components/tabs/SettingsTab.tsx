@@ -94,7 +94,7 @@ export const SettingsTab: React.FC = () => {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground mb-4">
-            Send welcome emails to new users. Emails are automatically BCC'd for review.
+            Send welcome emails and password reset instructions to users. All emails are automatically BCC'd for review.
           </p>
           <AdminEmailUtility />
         </CardContent>
