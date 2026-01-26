@@ -5,6 +5,9 @@ import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
 
 const logger = createLogger('sync-voice-applications');
 
+// Only sync conversations that started after this timestamp (prevents re-importing historical data)
+const SYNC_CUTOFF_DATE = new Date('2026-01-26T19:00:00Z');
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -126,6 +129,12 @@ serve(async (req) => {
 
           // Skip if already processed
           if (existingConversationIds.has(convId)) {
+            continue;
+          }
+
+          // Skip conversations before cutoff date (prevents re-importing historical data)
+          const convStartTime = conv.start_time ? new Date(conv.start_time) : null;
+          if (convStartTime && convStartTime < SYNC_CUTOFF_DATE) {
             continue;
           }
 
