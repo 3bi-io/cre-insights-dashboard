@@ -35,3 +35,6 @@ export { useKanbanBoard, KANBAN_COLUMNS } from './useKanbanBoard';
 // Communication Logs hooks
 export { useCommunicationLogs, useCommunicationStats } from './useCommunicationLogs';
 export type { CommunicationLog } from './useCommunicationLogs';
+
+// Application Stats hook (aggregate statistics for all applications)
+export { useApplicationStats } from './useApplicationStats';
