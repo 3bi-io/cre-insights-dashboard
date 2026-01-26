@@ -14,6 +14,8 @@ import {
   Settings,
   Trash2,
   Loader2,
+  Video,
+  MessageSquare,
 } from 'lucide-react';
 import { SocialConnection, SocialPlatform, useSocialConnections } from '../hooks/useSocialConnections';
 import { useSocialOAuth } from '../hooks/useSocialOAuth';
@@ -72,6 +74,18 @@ const PLATFORM_CONFIG: Record<SocialPlatform, {
     icon: <Linkedin className="h-5 w-5" />,
     color: 'text-blue-700',
     bgColor: 'bg-blue-100',
+  },
+  tiktok: {
+    name: 'TikTok',
+    icon: <Video className="h-5 w-5" />,
+    color: 'text-foreground',
+    bgColor: 'bg-muted',
+  },
+  reddit: {
+    name: 'Reddit',
+    icon: <MessageSquare className="h-5 w-5" />,
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
   },
 };
 

@@ -3219,6 +3219,75 @@ export type Database = {
           },
         ]
       }
+      generated_ad_creatives: {
+        Row: {
+          aspect_ratio: string | null
+          benefits: string[]
+          body: string
+          created_at: string | null
+          created_by: string | null
+          hashtags: string[] | null
+          headline: string
+          id: string
+          job_type: string
+          media_type: string | null
+          media_url: string | null
+          organization_id: string | null
+          platforms_published: string[] | null
+          published_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aspect_ratio?: string | null
+          benefits?: string[]
+          body: string
+          created_at?: string | null
+          created_by?: string | null
+          hashtags?: string[] | null
+          headline: string
+          id?: string
+          job_type: string
+          media_type?: string | null
+          media_url?: string | null
+          organization_id?: string | null
+          platforms_published?: string[] | null
+          published_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aspect_ratio?: string | null
+          benefits?: string[]
+          body?: string
+          created_at?: string | null
+          created_by?: string | null
+          hashtags?: string[] | null
+          headline?: string
+          id?: string
+          job_type?: string
+          media_type?: string | null
+          media_url?: string | null
+          organization_id?: string | null
+          platforms_published?: string[] | null
+          published_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_ad_creatives_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_ad_creatives_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indeed_analytics: {
         Row: {
           applications: number | null
@@ -5254,6 +5323,75 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "sms_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_beacon_configurations: {
+        Row: {
+          ad_creative_enabled: boolean | null
+          auto_engage_enabled: boolean | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          oauth_client_id: string | null
+          oauth_redirect_uri: string | null
+          oauth_scopes: string[] | null
+          organization_id: string | null
+          platform: string
+          settings: Json | null
+          updated_at: string | null
+          webhook_secret: string | null
+          webhook_url: string | null
+          webhook_verified_at: string | null
+        }
+        Insert: {
+          ad_creative_enabled?: boolean | null
+          auto_engage_enabled?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          oauth_client_id?: string | null
+          oauth_redirect_uri?: string | null
+          oauth_scopes?: string[] | null
+          organization_id?: string | null
+          platform: string
+          settings?: Json | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
+          webhook_verified_at?: string | null
+        }
+        Update: {
+          ad_creative_enabled?: boolean | null
+          auto_engage_enabled?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          oauth_client_id?: string | null
+          oauth_redirect_uri?: string | null
+          oauth_scopes?: string[] | null
+          organization_id?: string | null
+          platform?: string
+          settings?: Json | null
+          updated_at?: string | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
+          webhook_verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_beacon_configurations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_beacon_configurations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
         ]
