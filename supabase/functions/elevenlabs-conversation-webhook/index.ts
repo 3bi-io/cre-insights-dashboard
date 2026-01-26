@@ -18,6 +18,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
+import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
 
 const logger = createLogger('elevenlabs-conversation-webhook');
 
@@ -28,15 +29,42 @@ const corsHeaders = {
 };
 
 // Helper to extract values from ElevenLabs data_collection_results
-function getValue(dataCollectionResults: Record<string, unknown>, keys: string[]): string | undefined {
+function getValue(
+  dataCollectionResults: Record<string, unknown>, 
+  keys: string[],
+  options?: { normalizeEmail?: boolean }
+): string | undefined {
   for (const key of keys) {
     const val = dataCollectionResults[key];
     if (val !== undefined && val !== null) {
+      let result: string;
+      
       if (typeof val === 'object') {
         const objVal = val as Record<string, unknown>;
-        return String(objVal.value || objVal.answer || objVal.text || JSON.stringify(val)).trim();
+        // Extract actual value, skip if null/undefined to avoid storing JSON strings
+        const extractedValue = objVal.value ?? objVal.answer ?? objVal.text;
+        if (extractedValue === null || extractedValue === undefined) {
+          continue; // Skip to next key instead of returning JSON
+        }
+        result = String(extractedValue).trim();
+      } else {
+        result = String(val).trim();
       }
-      return String(val).trim();
+      
+      // Apply email normalization if requested
+      if (options?.normalizeEmail) {
+        const normalized = normalizeSpokenEmail(result);
+        if (normalized && isValidEmail(normalized)) {
+          return normalized;
+        }
+        // If normalization failed but original looks like an email, try it
+        if (isValidEmail(result)) {
+          return result.toLowerCase();
+        }
+        continue; // Skip invalid email, try next key
+      }
+      
+      return result;
     }
   }
   return undefined;
@@ -154,7 +182,7 @@ serve(async (req) => {
     // Extract applicant information
     const firstName = getValue(dataCollectionResults, ['GivenName', 'first_name', 'FirstName', 'given_name']);
     const lastName = getValue(dataCollectionResults, ['FamilyName', 'last_name', 'LastName', 'family_name']);
-    const email = getValue(dataCollectionResults, ['InternetEmailAddress', 'email', 'Email', 'email_address']);
+    const email = getValue(dataCollectionResults, ['InternetEmailAddress', 'email', 'Email', 'email_address'], { normalizeEmail: true });
     const phone = getValue(dataCollectionResults, ['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber', 'phone_number']);
     const zip = getValue(dataCollectionResults, ['PostalCode', 'zip', 'Zip', 'ZipCode', 'postal_code']);
 
