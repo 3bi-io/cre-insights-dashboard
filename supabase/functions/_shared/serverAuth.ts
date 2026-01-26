@@ -9,7 +9,7 @@ import { createLogger } from './logger.ts';
 
 const logger = createLogger('serverAuth');
 
-export type UserRole = 'super_admin' | 'admin' | 'moderator' | 'user';
+export type UserRole = 'super_admin' | 'admin' | 'moderator' | 'recruiter' | 'user';
 
 export interface AuthContext {
   userId: string;
@@ -128,16 +128,17 @@ export async function verifyAuth(request: Request): Promise<AuthResult> {
 
 /**
  * CRITICAL: Check if user has required role
- * Role hierarchy: super_admin > admin > moderator > user
+ * Role hierarchy: super_admin > admin > moderator > recruiter > user
  */
 export function hasRequiredRole(
   userRole: UserRole,
   requiredRole: UserRole | UserRole[]
 ): boolean {
   const roleHierarchy: Record<UserRole, number> = {
-    super_admin: 4,
-    admin: 3,
-    moderator: 2,
+    super_admin: 5,
+    admin: 4,
+    moderator: 3,
+    recruiter: 2,
     user: 1,
   };
 

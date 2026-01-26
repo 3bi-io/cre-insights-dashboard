@@ -30,6 +30,7 @@ const AppSidebar = () => {
 
   // Get navigation groups from centralized config
   const navigationItems = getNavigationGroups({
+    userRole,
     isSuperAdmin,
     isAdmin,
     hasVoiceAgent: hasVoiceAgent(),
