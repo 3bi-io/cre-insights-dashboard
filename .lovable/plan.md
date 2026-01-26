@@ -1,130 +1,205 @@
 
-# Refactor "Accounts" to "Clients" for CR England Organization
+# Fix Applications Overview Dashboard
 
-## Overview
+## Problem Summary
 
-This plan consolidates the terminology across the codebase to ensure that all references to CR England's sub-entities (Dollar Tree, Sysco, Kroger, etc.) consistently use "Client" terminology instead of "Account". 
+Based on the screenshot and code analysis, the Applications dashboard has several UX issues:
 
-The current system already uses a `clients` table and a Clients management page, but there are several UI locations and code comments where "Account" is used when referring to these entities.
+1. **Incorrect Statistics Display**: The overview cards show stats calculated from only the first 50 loaded applications (due to pagination), not the full 473 applications in the database
+2. **Non-Interactive Cards**: Status and category cards are purely informational with no click-to-filter capability
+3. **Missing Status Filter**: The status filter (`setStatusFilter`) exists in the hook but is not exposed in the UI
+4. **Visual Inconsistencies**: Text colors use hardcoded values (e.g., `text-gray-600`) instead of theme-aware classes
 
 ---
 
-## Current State Analysis
+## Solution Overview
 
-**What's Already Correct:**
-- Database: The `clients` table properly stores CR England's sub-entities
-- Navigation: Uses "Clients" label (`/admin/clients`)
-- ClientsPage: All components use "Client" terminology
-- Types: Uses `Client` interface with proper naming
-
-**Areas Requiring Refactor:**
-
-| Location | Current Text | Target Text |
-|----------|--------------|-------------|
-| `MetaPlatformActions.tsx:328` | "CR England Account" | "CR England Client" |
-| `MetaPlatformActions.tsx:362` | "Sync CR England Account" | "Sync CR England Client" |
-| `MetaPlatformActions.tsx:364` | "Import CR England Meta ad account..." | "Import CR England Meta client data..." |
-| `metaAccountAlias.ts` comments | References to "account" | References to "client" |
-| `Support.tsx:347` | "client accounts" | "clients" |
-| `Support.tsx:351` | "client accounts" | "clients" |
+Create a dedicated `useApplicationStats` hook that fetches aggregate statistics from the database for ALL applications (not just the paginated subset), make the overview cards clickable to filter the list, add a status filter dropdown, and improve visual consistency.
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: Update UI Text in Meta Platform Actions
+### Phase 1: Create Application Stats Hook
 
-**File: `src/components/platforms/MetaPlatformActions.tsx`**
+**New File: `src/features/applications/hooks/useApplicationStats.ts`**
 
-Update UI labels to use "Client" terminology for CR England:
-
-```text
-Line 328: "CR England Account" → "CR England Client"
-Line 362: "Sync CR England Account" → "Sync CR England Client"
-Line 364: "Import CR England Meta ad account and basic information" → "Import CR England Meta client data and basic information"
-Line 377: "Sync Account" → "Sync Client"
-Line 385: "Sync CR England Campaigns" → (keep as-is, campaigns are separate concept)
-```
-
-### Phase 2: Update Support Page Documentation
-
-**File: `src/pages/Support.tsx`**
-
-Simplify "client accounts" to "clients" for consistency:
-
-```text
-Line 347: "Manage client accounts and relationships." → "Manage clients and relationships."
-Line 351: "Create and manage client accounts with contact information..." → "Create and manage clients with contact information..."
-```
-
-### Phase 3: Update Meta Account Alias Utility
-
-**File: `src/utils/metaAccountAlias.ts`**
-
-While the Meta API uses "account_id" (this is their API terminology), update comments and JSDoc to clarify the client context:
+Create a dedicated React Query hook to fetch global application statistics:
 
 ```typescript
-/**
- * Meta Client Alias System (for CR England)
- * 
- * This system maps Meta ad account IDs to CR England client identifiers
- * for display purposes while using the actual account ID for API calls.
- */
+// Fetch aggregate stats from database
+// Returns: total, byStatus (pending, reviewed, etc.), byCategory (D, SC, SR, N/A)
+// Supports organization filtering for org admins
+// Uses staleTime to avoid excessive refetching
 ```
 
-### Phase 4: Add Organization-Specific Display Logic
+This hook will:
+- Query ALL applications (not paginated)
+- Calculate status counts server-side
+- Calculate category counts by fetching `cdl`, `age`, `exp` fields
+- Support organization filtering
+- Use React Query with `staleTime: 30000` for caching
 
-**File: `src/utils/jobDisplayUtils.ts`**
+### Phase 2: Update ApplicationsOverview Component
 
-Enhance the display utility to properly show "CR England" branding for all sub-clients:
+**File: `src/components/applications/ApplicationsOverview.tsx`**
+
+**Changes:**
+1. Accept new props for click handlers: `onStatusClick`, `onCategoryClick`, `activeStatusFilter`, `activeCategoryFilter`
+2. Add `totalCount` prop to display true database total in badge
+3. Make status cards clickable with hover states and cursor-pointer
+4. Make category cards clickable with hover states
+5. Highlight active filter with visual indicator (ring/border)
+6. Fix text colors to use theme-aware classes (`text-muted-foreground` instead of `text-gray-600`)
 
 ```typescript
-export const getDisplayCompanyName = (job: {
-  clients?: { name?: string | null } | null;
-  client?: string | null;
-  organizations?: { name?: string | null } | null;
-}): string => {
-  const clientName = job.clients?.name || job.client;
-  const orgName = job.organizations?.name;
-  
-  // If client name is "Unassigned" or empty, use organization name
-  if (!clientName || clientName === 'Unassigned') {
-    return orgName || 'Company';
-  }
-  
-  // For CR England, show "CR England - ClientName" format
-  if (orgName === 'CR England' && clientName !== 'CR England') {
-    return `CR England - ${clientName}`;
-  }
-  
-  return clientName;
-};
+interface ApplicationsOverviewProps {
+  statusCounts?: Record<string, number>;
+  categoryCounts?: Record<string, number>;
+  totalCount?: number;
+  onStatusClick?: (status: string) => void;
+  onCategoryClick?: (category: string) => void;
+  activeStatusFilter?: string;
+  activeCategoryFilter?: string;
+}
 ```
+
+### Phase 3: Update ApplicationsSearch Component
+
+**File: `src/components/applications/ApplicationsSearch.tsx`**
+
+**Changes:**
+1. Add status filter dropdown (Pending, Reviewed, Interviewed, Hired, Rejected)
+2. Accept `statusFilter` and `onStatusChange` props
+3. Reorder filters: Status | Category | Source (logical grouping)
+
+### Phase 4: Update ApplicationsPage Integration
+
+**File: `src/features/applications/pages/ApplicationsPage.tsx`**
+
+**Changes:**
+1. Import and use new `useApplicationStats` hook
+2. Pass global stats to `ApplicationsOverview` instead of client-side calculated values
+3. Wire up click handlers from overview cards to filter setters
+4. Add status filter to pagination filters for server-side filtering
+5. Pass active filter states to overview for visual highlighting
+
+### Phase 5: Update Pagination Hook
+
+**File: `src/features/applications/hooks/usePaginatedApplications.tsx`**
+
+**Changes:**
+1. Add `status` to server-side filtering (currently only filters client-side)
+2. Ensure status filter is included in query key for proper cache invalidation
 
 ---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/features/applications/hooks/useApplicationStats.ts` | Dedicated hook for fetching aggregate statistics |
 
 ## Files to Modify
 
-1. **`src/components/platforms/MetaPlatformActions.tsx`** - Update 4-5 UI text strings
-2. **`src/pages/Support.tsx`** - Update 2 description strings
-3. **`src/utils/metaAccountAlias.ts`** - Update JSDoc comments
-4. **`src/utils/jobDisplayUtils.ts`** - Add CR England specific branding logic
+| File | Changes |
+|------|---------|
+| `src/components/applications/ApplicationsOverview.tsx` | Add interactivity, fix colors, accept new props |
+| `src/components/applications/ApplicationsSearch.tsx` | Add status filter dropdown |
+| `src/features/applications/pages/ApplicationsPage.tsx` | Wire up stats hook and click handlers |
+| `src/features/applications/hooks/usePaginatedApplications.tsx` | Add status to server filters |
+| `src/features/applications/hooks/index.ts` | Export new hook |
 
 ---
 
-## Technical Notes
+## Technical Details
 
-- **Third-party API fields remain unchanged**: Fields like `account_id` for HireRight, Fountain, and Meta APIs are external identifiers and will retain their original naming as these are API-defined fields
-- **Personal Account Settings unchanged**: The `AccountSettings` page for candidate profiles is a separate concept (user account) and remains unchanged
-- **Tenstreet `account_name` unchanged**: This refers to Tenstreet's system account identifier, not CR England's clients
-- **Database schema unchanged**: The `clients` table is already correctly named
+### useApplicationStats Hook Structure
+
+```typescript
+interface ApplicationStatsFilters {
+  organizationId?: string;
+}
+
+interface ApplicationStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+}
+
+export const useApplicationStats = (filters: ApplicationStatsFilters = {}) => {
+  return useQuery({
+    queryKey: ['application-stats', filters],
+    queryFn: async () => {
+      // Fetch minimal fields needed for aggregation
+      const query = supabase
+        .from('applications')
+        .select('status, cdl, age, exp, job_listings!inner(organization_id)')
+        
+      // Apply org filter if provided
+      if (filters.organizationId) {
+        query.eq('job_listings.organization_id', filters.organizationId)
+      }
+      
+      const { data, error } = await query
+      
+      // Aggregate results
+      return {
+        total: data.length,
+        byStatus: calculateStatusCounts(data),
+        byCategory: calculateCategoryCounts(data)
+      }
+    },
+    staleTime: 30000, // 30 seconds
+  });
+};
+```
+
+### Clickable Card Styling
+
+```typescript
+// Status card with click handler
+<Card 
+  key={status}
+  className={cn(
+    "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+    activeStatusFilter === status && "ring-2 ring-primary border-primary"
+  )}
+  onClick={() => onStatusClick?.(activeStatusFilter === status ? 'all' : status)}
+>
+```
+
+### Server-Side Status Filtering
+
+```typescript
+// In usePaginatedApplications
+if (filters.status && filters.status !== 'all') {
+  query = query.eq('status', filters.status);
+}
+```
 
 ---
 
 ## Expected Outcome
 
 After implementation:
-- All CR England sub-entities (Dollar Tree, Sysco, Kroger, etc.) are consistently referred to as "Clients"
-- Job listings display as "CR England - Dollar Tree" instead of just "Dollar Tree"
-- Meta integration UI uses "Client" terminology for CR England context
-- Support documentation reflects consistent terminology
+
+1. **Accurate Statistics**: Overview cards display counts for ALL 473 applications, not just loaded 50
+2. **Interactive Filtering**: Clicking a status/category card filters the application list
+3. **Status Filter Dropdown**: New dropdown in search bar for explicit status selection
+4. **Visual Feedback**: Active filter highlighted with ring/border on corresponding card
+5. **Toggle Behavior**: Clicking active filter card clears that filter (returns to "all")
+6. **Theme Consistency**: All text uses theme-aware color classes
+7. **Smooth UX**: Cards have hover states indicating interactivity
+
+---
+
+## UI/UX Improvements Summary
+
+| Before | After |
+|--------|-------|
+| Stats show 50 (loaded page only) | Stats show 473 (all applications) |
+| Cards are static/informational | Cards are clickable filters |
+| No status filter in UI | Status filter dropdown added |
+| Hardcoded gray text colors | Theme-aware muted-foreground colors |
+| No visual indication of active filters | Ring highlight on active filter cards |
