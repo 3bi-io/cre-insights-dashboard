@@ -177,8 +177,7 @@ export const getNavigationGroups = (options: {
           icon: Shield
         }] : []),
         ...(isModerator ? [
-          { path: '/admin/ad-networks', label: 'Ad Networks', icon: Globe },
-          { path: '/admin/job-boards', label: 'Job Boards', icon: Rss }
+          { path: '/admin/ad-networks', label: 'Ad Networks', icon: Globe }
         ] : []),
         ...(isAdmin ? [
           { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
