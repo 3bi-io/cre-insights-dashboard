@@ -10,7 +10,9 @@ import { useOrganizationData } from '../hooks/useOrganizationData';
 import { useApplicationsFilters } from '../hooks/useApplicationsFilters';
 import { useApplicationsExport } from '../hooks/useApplicationsExport';
 import { useApplicationsBulkActions } from '../hooks/useApplicationsBulkActions';
-import { getStatusCounts, getCategoryCounts, getApplicantCategory } from '@/utils/applicationHelpers';
+import { useApplicationStats } from '../hooks/useApplicationStats';
+import { getApplicantCategory } from '@/utils/applicationHelpers';
+import type { ApplicationStatus } from '@/types/api.types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,15 +65,28 @@ const ApplicationsPage = () => {
   
   const dialogState = useApplicationDialogs();
 
-  // Build pagination filters
+  // Build pagination filters - now includes status for server-side filtering
   const paginationFilters = React.useMemo(() => ({
     search: filters.searchTerm || undefined,
+    status: filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
     organizationId: isOrgAdmin && filters.organizationFilter === 'all' 
       ? undefined 
       : filters.organizationFilter !== 'all' 
         ? filters.organizationFilter 
         : undefined,
-  }), [filters.searchTerm, filters.organizationFilter, isOrgAdmin]);
+  }), [filters.searchTerm, filters.statusFilter, filters.organizationFilter, isOrgAdmin]);
+
+  // Build stats filters - only needs org filter
+  const statsFilters = React.useMemo(() => ({
+    organizationId: isOrgAdmin && filters.organizationFilter === 'all' 
+      ? undefined 
+      : filters.organizationFilter !== 'all' 
+        ? filters.organizationFilter 
+        : undefined,
+  }), [filters.organizationFilter, isOrgAdmin]);
+
+  // Fetch global stats for all applications (not paginated)
+  const { data: globalStats } = useApplicationStats(statsFilters);
 
   // Data fetching with pagination (canonical hook)
   const {
@@ -124,7 +139,7 @@ const ApplicationsPage = () => {
     refresh 
   });
 
-  // Client-side filtering for category and source
+  // Client-side filtering for category and source (status is now server-side)
   const applications = React.useMemo(() => {
     if (!serverFilteredApplications) return [];
     
@@ -142,6 +157,15 @@ const ApplicationsPage = () => {
       return true;
     });
   }, [serverFilteredApplications, filters.categoryFilter, filters.sourceFilter]);
+
+  // Handlers for clicking overview cards
+  const handleStatusClick = useCallback((status: string) => {
+    setStatusFilter(status as ApplicationStatus | 'all');
+  }, [setStatusFilter]);
+
+  const handleCategoryClick = useCallback((category: string) => {
+    setCategoryFilter(category);
+  }, [setCategoryFilter]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -184,9 +208,10 @@ const ApplicationsPage = () => {
     }));
   }, []);
 
-  // Calculate counts from applications
-  const statusCounts = getStatusCounts(applications || []);
-  const categoryCounts = getCategoryCounts(applications || []);
+  // Use global stats for accurate counts across all applications
+  const statusCounts = globalStats?.byStatus || {};
+  const categoryCounts = globalStats?.byCategory || {};
+  const globalTotalCount = globalStats?.total || 0;
 
   // Debug logging
   logger.debug('Applications page state', {
@@ -239,7 +264,12 @@ const ApplicationsPage = () => {
             <CardContent className="p-6">
               <ApplicationsOverview 
                 statusCounts={statusCounts} 
-                categoryCounts={categoryCounts} 
+                categoryCounts={categoryCounts}
+                totalCount={globalTotalCount}
+                onStatusClick={handleStatusClick}
+                onCategoryClick={handleCategoryClick}
+                activeStatusFilter={filters.statusFilter}
+                activeCategoryFilter={filters.categoryFilter}
               />
             </CardContent>
           </Card>
@@ -247,10 +277,12 @@ const ApplicationsPage = () => {
           <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
             <ApplicationsSearch
               searchTerm={filters.searchTerm}
+              statusFilter={filters.statusFilter}
               categoryFilter={filters.categoryFilter}
               sourceFilter={filters.sourceFilter}
               organizationFilter={filters.organizationFilter}
               onSearchChange={setSearchTerm}
+              onStatusChange={(value) => setStatusFilter(value as ApplicationStatus | 'all')}
               onCategoryChange={setCategoryFilter}
               onSourceChange={setSourceFilter}
               onOrganizationChange={setOrganizationFilter}

@@ -5,10 +5,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ApplicationsSearchProps {
   searchTerm: string;
+  statusFilter?: string;
   categoryFilter: string;
   sourceFilter: string;
   organizationFilter?: string;
   onSearchChange: (value: string) => void;
+  onStatusChange?: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onSourceChange: (value: string) => void;
   onOrganizationChange?: (value: string) => void;
@@ -18,10 +20,12 @@ interface ApplicationsSearchProps {
 
 const ApplicationsSearch = ({
   searchTerm,
+  statusFilter = 'all',
   categoryFilter,
   sourceFilter,
   organizationFilter = 'all',
   onSearchChange,
+  onStatusChange,
   onCategoryChange,
   onSourceChange,
   onOrganizationChange,
@@ -33,7 +37,7 @@ const ApplicationsSearch = ({
   return (
     <div className={`flex ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'} gap-4 mb-6`}>
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
         <Input
           placeholder="Search by applicant name, email, or job title..."
           value={searchTerm}
@@ -55,6 +59,23 @@ const ApplicationsSearch = ({
                 {org.name}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {/* Status Filter */}
+      {onStatusChange && (
+        <Select value={statusFilter} onValueChange={onStatusChange}>
+          <SelectTrigger className={`${isMobile ? 'w-full h-12 text-base' : 'w-40'} bg-background border shadow-sm`}>
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent className="z-50 bg-popover border shadow-md">
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="reviewed">Reviewed</SelectItem>
+            <SelectItem value="interviewed">Interviewed</SelectItem>
+            <SelectItem value="hired">Hired</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
       )}
