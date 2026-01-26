@@ -62,9 +62,43 @@ export const Brand: React.FC<BrandProps> = ({
       lg: 40,
       xl: 48
     }[size] || 32;
-    return <div className={cn("flex items-center", className)}>
-        <LazyImage src={customLogoUrl} alt={logoAlt} width={pixelSize} height={pixelSize} priority={priority} skeleton={false} className="h-auto w-auto object-contain" onError={() => setImageError(true)} />
-      </div>;
+    
+    // For horizontal variant, show logo + organization name
+    if (variant === 'horizontal') {
+      return (
+        <div className={cn("flex items-center gap-2", className)}>
+          <LazyImage 
+            src={customLogoUrl} 
+            alt={logoAlt} 
+            width={pixelSize} 
+            height={pixelSize} 
+            priority={priority} 
+            skeleton={false} 
+            className="h-auto w-auto object-contain max-h-8" 
+            onError={() => setImageError(true)} 
+          />
+          <span className={cn("font-logo font-semibold tracking-tight truncate", textSize)}>
+            {organizationName}
+          </span>
+        </div>
+      );
+    }
+    
+    // For icon variant, just show the logo
+    return (
+      <div className={cn("flex items-center", className)}>
+        <LazyImage 
+          src={customLogoUrl} 
+          alt={logoAlt} 
+          width={pixelSize} 
+          height={pixelSize} 
+          priority={priority} 
+          skeleton={false} 
+          className="h-auto w-auto object-contain" 
+          onError={() => setImageError(true)} 
+        />
+      </div>
+    );
   }
   const getLogo = () => {
     // Text-only variant
