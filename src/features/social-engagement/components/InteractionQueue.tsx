@@ -49,6 +49,8 @@ const PLATFORM_COLORS: Record<SocialPlatform, string> = {
   twitter: 'bg-black',
   whatsapp: 'bg-green-500',
   linkedin: 'bg-blue-700',
+  tiktok: 'bg-black',
+  reddit: 'bg-orange-500',
 };
 
 const INTENT_LABELS: Record<string, { label: string; color: string }> = {

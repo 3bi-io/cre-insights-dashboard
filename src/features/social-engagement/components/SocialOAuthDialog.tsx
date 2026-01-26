@@ -13,6 +13,8 @@ import {
   Facebook, 
   Instagram, 
   MessageCircle, 
+  MessageSquare,
+  Video,
   Linkedin,
   ExternalLink,
   Loader2,
@@ -95,17 +97,22 @@ const PLATFORM_INFO: Record<SocialPlatform, PlatformInfo> = {
     supported: true, // Via Meta Business Suite
   },
   linkedin: {
-    name: 'LinkedIn',
-    icon: <Linkedin className="h-6 w-6" />,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-100',
+    name: 'LinkedIn', icon: <Linkedin className="h-6 w-6" />, color: 'text-blue-700', bgColor: 'bg-blue-100',
     description: 'Connect your LinkedIn Company Page for professional engagement.',
-    permissions: [
-      'Post updates to company page',
-      'View and respond to comments',
-      'Access page analytics',
-    ],
-    supported: false, // Requires LinkedIn Partner approval
+    permissions: ['Post updates to company page', 'View and respond to comments', 'Access page analytics'],
+    supported: false,
+  },
+  tiktok: {
+    name: 'TikTok', icon: <Video className="h-6 w-6" />, color: 'text-foreground', bgColor: 'bg-muted',
+    description: 'Connect TikTok for Business for video content engagement.',
+    permissions: ['View video analytics', 'Post video content'],
+    supported: false,
+  },
+  reddit: {
+    name: 'Reddit', icon: <MessageSquare className="h-6 w-6" />, color: 'text-orange-600', bgColor: 'bg-orange-100',
+    description: 'Connect Reddit for community-targeted job promotion.',
+    permissions: ['Post to subreddits', 'View and respond to comments'],
+    supported: false,
   },
 };
 

@@ -2,12 +2,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Shield } from 'lucide-react';
+import { Settings, Shield, Antenna } from 'lucide-react';
 
 export const SettingsTab: React.FC = () => {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>AI Configuration</CardTitle>
@@ -20,6 +20,23 @@ export const SettingsTab: React.FC = () => {
             <Button asChild variant="outline">
               <Link to="/admin/ai-configuration">
                 <Settings className="mr-2 h-4 w-4" /> Configure AI
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Social Beacons</CardTitle>
+            <CardDescription>Social media platform configuration</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Configure X, Facebook, Instagram, WhatsApp, TikTok, and Reddit integrations.
+            </p>
+            <Button asChild variant="outline">
+              <Link to="/admin/social-beacons">
+                <Antenna className="mr-2 h-4 w-4" /> Social Beacons
               </Link>
             </Button>
           </CardContent>

@@ -26,42 +26,14 @@ interface RealTimeFeedProps {
   onInteractionClick?: (interaction: SocialInteraction) => void;
 }
 
-const PLATFORM_CONFIG: Record<SocialPlatform, { 
-  name: string; 
-  color: string; 
-  bgColor: string;
-  gradient: string;
-}> = {
-  facebook: { 
-    name: 'Facebook', 
-    color: 'text-blue-600', 
-    bgColor: 'bg-blue-500/10',
-    gradient: 'from-blue-500 to-blue-600'
-  },
-  instagram: { 
-    name: 'Instagram', 
-    color: 'text-pink-600', 
-    bgColor: 'bg-pink-500/10',
-    gradient: 'from-purple-500 via-pink-500 to-orange-400'
-  },
-  twitter: { 
-    name: 'X', 
-    color: 'text-foreground', 
-    bgColor: 'bg-foreground/10',
-    gradient: 'from-gray-700 to-gray-900'
-  },
-  whatsapp: { 
-    name: 'WhatsApp', 
-    color: 'text-green-600', 
-    bgColor: 'bg-green-500/10',
-    gradient: 'from-green-500 to-green-600'
-  },
-  linkedin: { 
-    name: 'LinkedIn', 
-    color: 'text-blue-700', 
-    bgColor: 'bg-blue-700/10',
-    gradient: 'from-blue-600 to-blue-800'
-  },
+const PLATFORM_CONFIG: Record<SocialPlatform, { name: string; color: string; bgColor: string; gradient: string }> = {
+  facebook: { name: 'Facebook', color: 'text-blue-600', bgColor: 'bg-blue-500/10', gradient: 'from-blue-500 to-blue-600' },
+  instagram: { name: 'Instagram', color: 'text-pink-600', bgColor: 'bg-pink-500/10', gradient: 'from-purple-500 via-pink-500 to-orange-400' },
+  twitter: { name: 'X', color: 'text-foreground', bgColor: 'bg-foreground/10', gradient: 'from-gray-700 to-gray-900' },
+  whatsapp: { name: 'WhatsApp', color: 'text-green-600', bgColor: 'bg-green-500/10', gradient: 'from-green-500 to-green-600' },
+  linkedin: { name: 'LinkedIn', color: 'text-blue-700', bgColor: 'bg-blue-700/10', gradient: 'from-blue-600 to-blue-800' },
+  tiktok: { name: 'TikTok', color: 'text-foreground', bgColor: 'bg-foreground/10', gradient: 'from-gray-900 to-black' },
+  reddit: { name: 'Reddit', color: 'text-orange-600', bgColor: 'bg-orange-500/10', gradient: 'from-orange-500 to-orange-600' },
 };
 
 const INTERACTION_ICONS: Record<string, React.ReactNode> = {

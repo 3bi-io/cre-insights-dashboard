@@ -62,7 +62,7 @@ const ATSCommandCenterPage = React.lazy(() => import("@/features/ats").then(m =>
 const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m => ({ default: m.MetaAnalyticsPage })));
 const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
 const SocialEngagementDashboard = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SocialEngagementDashboard })));
-
+const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement/pages/SuperAdminSocialBeacons"));
 // Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
@@ -278,6 +278,7 @@ const AppRoutes: React.FC = () => {
         
         {/* Social Engagement Routes */}
         <Route path="social-engagement" element={<ProtectedRouteWrapper><SocialEngagementDashboard /></ProtectedRouteWrapper>} />
+        <Route path="social-beacons" element={<ProtectedRouteWrapper><SuperAdminSocialBeacons /></ProtectedRouteWrapper>} />
         
         <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
