@@ -1,4 +1,35 @@
-import { Application, ApplicationCategory } from '../types';
+import { ApplicationCategory } from '../types';
+
+/**
+ * Minimal application interface for formatter functions
+ * Uses optional fields to support both typed Application and raw Supabase data
+ * Note: We use a permissive interface that works with any application-like object
+ */
+interface ApplicationLike {
+  first_name?: string | null;
+  last_name?: string | null;
+  full_name?: string | null;
+  applicant_email?: string | null;
+  city?: string | null;
+  state?: string | null;
+  cdl?: string | null;
+  age?: string | null;
+  exp?: string | null;
+  months?: string | null;
+  source?: string | null;
+  job_listing_id?: string | null;
+  job_listings?: {
+    title?: string | null;
+    job_title?: string | null;
+    organization_id?: string | null;
+    clients?: { name?: string | null } | null;
+    client?: string | null;
+  } | null;
+}
+
+// Type helper to accept both Application and raw Supabase data
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyApplication = ApplicationLike | any;
 
 /**
  * Special UUID marker for applications whose job listings have been deleted
@@ -15,7 +46,7 @@ export const isOrphanedApplication = (jobListingId?: string | null): boolean => 
 /**
  * Gets the full name of an applicant with fallback logic
  */
-export const getApplicantName = (app: Application): string => {
+export const getApplicantName = (app: AnyApplication): string => {
   if (app.first_name && app.last_name) {
     return `${app.first_name} ${app.last_name}`;
   } else if (app.first_name) {
@@ -31,14 +62,14 @@ export const getApplicantName = (app: Application): string => {
 /**
  * Gets the email of an applicant with fallback
  */
-export const getApplicantEmail = (app: Application): string => {
+export const getApplicantEmail = (app: AnyApplication): string => {
   return app.applicant_email || 'No email provided';
 };
 
 /**
  * Formats the location display for an applicant
  */
-export const getApplicantLocation = (app: Application): string => {
+export const getApplicantLocation = (app: AnyApplication): string => {
   const city = app.city || '';
   const state = app.state || '';
   
@@ -55,7 +86,7 @@ export const getApplicantLocation = (app: Application): string => {
 /**
  * Gets the client name from job listing relationship
  */
-export const getClientName = (app: Application): string | null => {
+export const getClientName = (app: AnyApplication): string | null => {
   if (isOrphanedApplication(app.job_listing_id)) {
     return null;
   }
@@ -66,7 +97,7 @@ export const getClientName = (app: Application): string | null => {
 /**
  * Gets the job title from application
  */
-export const getJobTitle = (app: Application): string => {
+export const getJobTitle = (app: AnyApplication): string => {
   if (isOrphanedApplication(app.job_listing_id)) {
     return 'Job Removed';
   }
@@ -77,7 +108,7 @@ export const getJobTitle = (app: Application): string => {
  * Gets the display title for a job, showing client name for "General Application" listings
  * This provides a more meaningful title in the UI when the job is a generic fallback
  */
-export const getJobDisplayTitle = (app: Application): string => {
+export const getJobDisplayTitle = (app: AnyApplication): string => {
   // Handle missing job listing (orphaned)
   if (isOrphanedApplication(app.job_listing_id)) {
     return 'Job Removed';
@@ -104,7 +135,7 @@ export const getJobDisplayTitle = (app: Application): string => {
  * Handles multiple formats: numeric months, text descriptions, legacy data
  * Returns number of months or null if unable to determine
  */
-export const parseExperienceMonths = (app: Application): number | null => {
+export const parseExperienceMonths = (app: AnyApplication): number | null => {
   // Priority 1: Use numeric "months" field if available
   if (app.months) {
     const monthsNum = parseInt(app.months, 10);
@@ -164,7 +195,7 @@ export const parseExperienceMonths = (app: Application): number | null => {
  * SR: Student Ready - No CDL + Age + <3 months exp
  * N/A: All other combinations
  */
-export const getApplicantCategory = (app: Application): ApplicationCategory => {
+export const getApplicantCategory = (app: AnyApplication): ApplicationCategory => {
   const hasCdl = app.cdl?.toLowerCase() === 'yes';
   const hasAge = app.age?.toLowerCase() === 'yes';
   

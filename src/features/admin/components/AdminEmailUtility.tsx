@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Send, Loader2, Plus, X, KeyRound } from 'lucide-react';
+import { Mail, Send, Loader2, Plus, X, KeyRound, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface EmailRecipient {
   email: string;
@@ -20,6 +21,7 @@ interface AdminEmailUtilityProps {
 }
 
 export function AdminEmailUtility({ trigger }: AdminEmailUtilityProps) {
+  const { isSuperAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const [emailType, setEmailType] = useState<EmailType>('welcome');
   const [organizationName, setOrganizationName] = useState('CR England');
@@ -173,12 +175,32 @@ export function AdminEmailUtility({ trigger }: AdminEmailUtilityProps) {
   };
 
   const handleSend = () => {
+    // Security check: only super admins can send system emails
+    if (!isSuperAdmin) {
+      toast({
+        title: 'Access Denied',
+        description: 'Only Super Administrators can send system emails.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (emailType === 'welcome') {
       handleSendWelcome();
     } else {
       handleSendPasswordReset();
     }
   };
+
+  // If not a super admin, render a disabled button with tooltip
+  if (!isSuperAdmin) {
+    return (
+      <Button variant="outline" size="sm" disabled title="Only Super Administrators can send system emails">
+        <ShieldAlert className="mr-2 h-4 w-4" />
+        Send System Email
+      </Button>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

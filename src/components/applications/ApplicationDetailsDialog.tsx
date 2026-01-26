@@ -17,6 +17,13 @@ import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
 import { ApplicationBackgroundChecks } from '@/features/screening';
 import { ActivityTimeline } from '@/features/applications/components/ActivityTimeline';
 import { CommunicationHistory } from '@/features/applications/components/CommunicationHistory';
+import { 
+  getApplicantName, 
+  getApplicantEmail, 
+  getClientName,
+  getJobDisplayTitle 
+} from '@/features/applications/utils/applicationFormatters';
+import { getStatusColor } from '@/features/applications/utils/statusColors';
 
 interface ApplicationDetailsDialogProps {
   application: any;
@@ -32,42 +39,6 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
   const [isCommHistoryOpen, setIsCommHistoryOpen] = useState(false);
   // Use zip code lookup for city and state display
   const { city: lookupCity, state: lookupState, isLoading: isLookingUp } = useZipCodeLookup(application.zip);
-
-  const getApplicantName = (app: any) => {
-    if (app.first_name && app.last_name) {
-      return `${app.first_name} ${app.last_name}`;
-    } else if (app.first_name) {
-      return app.first_name;
-    } else if (app.last_name) {
-      return app.last_name;
-    }
-    return 'Anonymous Applicant';
-  };
-
-  const getApplicantEmail = (app: any) => {
-    return app.applicant_email || 'No email provided';
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-blue-100 text-blue-800';
-      case 'reviewed':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'interviewed':
-        return 'bg-purple-100 text-purple-800';
-      case 'hired':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getClientName = (app: any) => {
-    return app.job_listings?.clients?.name || app.job_listings?.client || null;
-  };
 
   // Get city and state with fallback logic
   const displayCity = application.city || lookupCity || 'Not provided';
@@ -109,7 +80,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Status</label>
                 <div className="mt-1">
-                  <Badge className={getStatusColor(application.status)}>
+                  <Badge className={getStatusColor(application.status, 'dialog')}>
                     {application.status}
                   </Badge>
                 </div>
@@ -259,7 +230,7 @@ const ApplicationDetailsDialog = ({ application, trigger, isOpen, onClose }: App
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Position</label>
                 <p className="text-sm">
-                  {application.job_listings?.title || application.job_listings?.job_title || 'No job title provided'}
+                  {getJobDisplayTitle(application)}
                 </p>
               </div>
               {getClientName(application) && (

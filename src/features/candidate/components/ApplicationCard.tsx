@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Calendar, MessageSquare, X, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ApplicationProgress } from './ApplicationProgress';
+import { getStatusColor, getStatusLabel } from '@/features/applications/utils/statusColors';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,32 +25,6 @@ interface ApplicationCardProps {
   isWithdrawing?: boolean;
 }
 
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    pending: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-    reviewed: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-    interview_scheduled: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-    offer_extended: 'bg-green-500/10 text-green-600 border-green-500/20',
-    hired: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-    rejected: 'bg-red-500/10 text-red-600 border-red-500/20',
-    withdrawn: 'bg-muted text-muted-foreground border-muted',
-  };
-  return colors[status] || 'bg-muted text-muted-foreground';
-};
-
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    pending: 'Pending Review',
-    reviewed: 'Reviewed',
-    interview_scheduled: 'Interview Scheduled',
-    offer_extended: 'Offer Extended',
-    hired: 'Hired',
-    rejected: 'Not Selected',
-    withdrawn: 'Withdrawn',
-  };
-  return labels[status] || status;
-};
-
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({
   application,
   onWithdraw,
@@ -57,6 +32,22 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
 }) => {
   const job = application.job_listings;
   const canWithdraw = !['withdrawn', 'hired', 'rejected'].includes(application.status);
+
+  // Calculate display title: show client name for "General Application" jobs
+  const displayTitle = useMemo(() => {
+    if (!job) return 'Unknown Position';
+    
+    const title = job.title || job.job_title;
+    if (!title) return 'Unknown Position';
+    
+    // For "General Application" jobs, display client name if available
+    if (title.toLowerCase().includes('general application')) {
+      const clientName = job.clients?.name;
+      return clientName || title;
+    }
+    
+    return title;
+  }, [job]);
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -72,7 +63,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
                 />
               )}
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold truncate">{job?.title}</h3>
+                <h3 className="text-lg font-semibold truncate">{displayTitle}</h3>
                 <p className="text-sm text-muted-foreground truncate">
                   {job?.organizations?.name}
                 </p>
@@ -80,7 +71,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge className={getStatusColor(application.status)}>
+            <Badge className={getStatusColor(application.status, 'candidate')}>
               {getStatusLabel(application.status)}
             </Badge>
             {canWithdraw && onWithdraw && (
