@@ -15,7 +15,11 @@ interface EmailRecipient {
 
 type EmailType = 'welcome' | 'password_reset';
 
-export function AdminEmailUtility() {
+interface AdminEmailUtilityProps {
+  trigger?: React.ReactNode;
+}
+
+export function AdminEmailUtility({ trigger }: AdminEmailUtilityProps) {
   const [open, setOpen] = useState(false);
   const [emailType, setEmailType] = useState<EmailType>('welcome');
   const [organizationName, setOrganizationName] = useState('CR England');
@@ -179,10 +183,12 @@ export function AdminEmailUtility() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Mail className="mr-2 h-4 w-4" />
-          Send System Email
-        </Button>
+        {trigger || (
+          <Button variant="outline" size="sm">
+            <Mail className="mr-2 h-4 w-4" />
+            Send System Email
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>

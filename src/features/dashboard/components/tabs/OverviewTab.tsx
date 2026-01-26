@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Activity, Shield, Database, Cpu } from 'lucide-react';
+import { AlertCircle, Activity, Shield, Database, Cpu, Mail } from 'lucide-react';
+import { AdminEmailUtility } from '@/features/admin/components/AdminEmailUtility';
 
 interface AuditLog {
   id: string;
@@ -99,6 +100,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ recentActivity }) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Utilities Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Email Utilities</CardTitle>
+            <CardDescription>Send system emails to users</CardDescription>
+          </div>
+          <Mail className="h-5 w-5 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <AdminEmailUtility />
+        </CardContent>
+      </Card>
     </div>
   );
 };
