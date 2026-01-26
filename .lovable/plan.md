@@ -1,43 +1,62 @@
 
-# Remove "Team" Tab from Settings
+# Fix Send System Email CTA - Make It Accessible
 
-## Overview
+## Problem
+The "Send System Email" button (provided by `AdminEmailUtility` component) is currently only accessible in two locations:
+1. **Buried in Settings tab** - Super Admin Dashboard → Settings tab → Email Utilities card (bottom of page)
+2. **Organizations page header** - `/admin/organizations` page
 
-Remove the "Team" (administrators) tab from the Settings page for all organizations and user roles.
+Since the user is typically on the home route (`/`), the button is not visible without navigating to specific pages and tabs.
 
-## Current State
+## Solution
+Add the "Send System Email" CTA to more prominent, easily accessible locations:
 
-The Settings page at `src/pages/Settings.tsx` has 9 tabs, with the "Team" tab:
-- Displayed with label "Team" but uses value `administrators`
-- Currently only visible to admin and super_admin roles
-- Uses `AdministratorsSettingsTab` component
+### Option A: Add to Admin Quick Actions (Recommended)
+Add a "Send Email" quick action button to the `AdminQuickActions` component that is visible across admin pages.
 
-## Changes Required
+### Option B: Add to Super Admin Dashboard Header
+Add the `AdminEmailUtility` component directly to the main dashboard view, visible without needing to navigate to the Settings tab.
 
-### File: `src/pages/Settings.tsx`
+---
 
-1. **Remove 'administrators' from validTabs array** (line 21)
-   - Change from 9 valid tabs to 8
+## Implementation Details
 
-2. **Update grid columns** (line 36)
-   - Remove the conditional logic for admin users
-   - Change from `sm:grid-cols-9` / `sm:grid-cols-8` to just `sm:grid-cols-8`
+### 1. Add to AdminQuickActions Component
 
-3. **Remove the Team TabsTrigger** (line 45)
-   - Delete the conditional `{isAdmin && <TabsTrigger value="administrators"...}` line
+**File: `src/components/admin/AdminQuickActions.tsx`**
 
-4. **Remove the Team TabsContent** (lines 81-85)
-   - Delete the conditional `{isAdmin && (<TabsContent value="administrators"...)}` block
+Add a new action that directly triggers the email dialog:
 
-5. **Remove unused import** (line 12)
-   - Delete `import AdministratorsSettingsTab from '@/components/settings/AdministratorsSettingsTab';`
+```typescript
+// Add Mail icon import
+import { Mail } from 'lucide-react';
 
-6. **Clean up isAdmin variable** (line 19)
-   - Remove the `isAdmin` constant since it's no longer needed
+// Add AdminEmailUtility import
+import { AdminEmailUtility } from '@/features/admin/components/AdminEmailUtility';
+```
 
-## Result
+Modify the component to include the email utility alongside navigation buttons.
 
-After this change:
-- The Settings page will have 8 tabs for all users
-- The "Team" tab will no longer appear for any role
-- The `AdministratorsSettingsTab` component file will remain in the codebase but be unused (can be deleted separately if desired)
+### 2. Add to Super Admin Dashboard (Overview Tab)
+
+**File: `src/features/dashboard/components/tabs/OverviewTab.tsx`**
+
+Add a Quick Actions section that includes the `AdminEmailUtility` component for immediate access on the default Overview tab.
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/admin/AdminQuickActions.tsx` | Add `AdminEmailUtility` component to quick actions grid |
+| `src/features/dashboard/components/tabs/OverviewTab.tsx` | Add Email Utilities card with `AdminEmailUtility` |
+
+---
+
+## Expected Outcome
+
+After implementation:
+- Super admins will see the "Send System Email" button on the default Overview tab
+- The button will also be available in the Quick Actions grid across admin pages
+- No need to navigate to Settings tab to send system emails
