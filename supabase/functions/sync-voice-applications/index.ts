@@ -133,7 +133,10 @@ serve(async (req) => {
           }
 
           // Skip conversations before cutoff date (prevents re-importing historical data)
-          const convStartTime = conv.start_time ? new Date(conv.start_time) : null;
+          // ElevenLabs uses 'start_time_unix_secs' (Unix timestamp in seconds)
+          const convStartUnix = conv.start_time_unix_secs;
+          const convStartTime = convStartUnix ? new Date(convStartUnix * 1000) : null;
+          
           if (convStartTime && convStartTime < SYNC_CUTOFF_DATE) {
             continue;
           }
