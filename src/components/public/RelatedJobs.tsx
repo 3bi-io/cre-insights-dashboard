@@ -2,17 +2,32 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Building2 } from 'lucide-react';
 import { queryKeys } from '@/lib/queryKeys';
+import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
 
 interface RelatedJobsProps {
   currentJobId: string;
   clientId?: string | null;
   categoryId?: string | null;
   organizationId?: string | null;
+}
+
+interface RelatedJob {
+  id: string;
+  title: string | null;
+  job_title: string | null;
+  location: string | null;
+  city: string | null;
+  state: string | null;
+  client_id: string | null;
+  organization_id: string | null;
+  clients: { name: string | null } | null;
+  organizations?: { name: string | null } | null;
+  job_categories: { name: string | null } | null;
 }
 
 export const RelatedJobs: React.FC<RelatedJobsProps> = ({
@@ -33,8 +48,9 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
           location,
           city,
           state,
+          client_id,
+          organization_id,
           clients(name),
-          organizations(name),
           job_categories(name)
         `)
         .eq('status', 'active')
@@ -65,8 +81,9 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
       if (error) throw error;
 
       // If not enough results from client/category, fetch more
-      if (data && data.length < 4) {
-        const existingIds = [currentJobId, ...data.map(j => j.id)];
+      let allJobs = data || [];
+      if (allJobs.length < 4) {
+        const existingIds = [currentJobId, ...allJobs.map(j => j.id)];
         let fallbackQuery = supabase
           .from('job_listings')
           .select(`
@@ -76,24 +93,46 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             location,
             city,
             state,
+            client_id,
+            organization_id,
             clients(name),
-            organizations(name),
             job_categories(name)
           `)
           .eq('status', 'active')
           .eq('is_hidden', false)
           .not('id', 'in', `(${existingIds.join(',')})`)
-          .limit(4 - data.length);
+          .limit(4 - allJobs.length);
 
         if (acmeOrg?.id) {
           fallbackQuery = fallbackQuery.neq('organization_id', acmeOrg.id);
         }
 
         const { data: moreJobs } = await fallbackQuery;
-        return [...data, ...(moreJobs || [])];
+        allJobs = [...allJobs, ...(moreJobs || [])];
       }
 
-      return data || [];
+      // Fetch organization names via public view
+      const orgIds = [...new Set(allJobs.map(j => j.organization_id).filter(Boolean))];
+      let orgMap: Record<string, string> = {};
+      
+      if (orgIds.length > 0) {
+        const { data: orgsData } = await supabase
+          .from('public_organization_info')
+          .select('id, name')
+          .in('id', orgIds);
+        
+        if (orgsData) {
+          orgMap = Object.fromEntries(orgsData.map(o => [o.id, o.name]));
+        }
+      }
+
+      // Enrich jobs with organization names
+      return allJobs.map(job => ({
+        ...job,
+        organizations: job.organization_id && orgMap[job.organization_id] 
+          ? { name: orgMap[job.organization_id] } 
+          : null
+      })) as RelatedJob[];
     },
     enabled: !!currentJobId,
     staleTime: 5 * 60 * 1000,
@@ -125,36 +164,37 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Related Jobs</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {relatedJobs.map((job) => (
-          <Link key={job.id} to={`/jobs/${job.id}`}>
-            <Card className="hover:shadow-md transition-shadow h-full">
-              <CardContent className="p-4">
-                <h3 className="font-medium line-clamp-1 mb-2">
-                  {job.title || job.job_title}
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <Building2 className="w-3 h-3" />
-                  <span className="line-clamp-1">
-                    {(job.clients?.name && job.clients.name !== 'Unassigned') ? job.clients.name : (job.organizations?.name || 'Company')}
-                  </span>
-                </div>
-                {(job.location || (job.city && job.state)) && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-3 h-3" />
-                    <span className="line-clamp-1">
-                      {job.location || `${job.city}, ${job.state}`}
-                    </span>
+        {relatedJobs.map((job) => {
+          const companyName = getDisplayCompanyName(job);
+          return (
+            <Link key={job.id} to={`/jobs/${job.id}`}>
+              <Card className="hover:shadow-md transition-shadow h-full">
+                <CardContent className="p-4">
+                  <h3 className="font-medium line-clamp-1 mb-2">
+                    {job.title || job.job_title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <Building2 className="w-3 h-3" />
+                    <span className="line-clamp-1">{companyName}</span>
                   </div>
-                )}
-                {job.job_categories?.name && (
-                  <Badge variant="secondary" className="mt-2 text-xs">
-                    {job.job_categories.name}
-                  </Badge>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+                  {(job.location || (job.city && job.state)) && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="w-3 h-3" />
+                      <span className="line-clamp-1">
+                        {job.location || `${job.city}, ${job.state}`}
+                      </span>
+                    </div>
+                  )}
+                  {job.job_categories?.name && (
+                    <Badge variant="secondary" className="mt-2 text-xs">
+                      {job.job_categories.name}
+                    </Badge>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
