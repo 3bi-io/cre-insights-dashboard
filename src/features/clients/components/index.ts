@@ -8,3 +8,5 @@ export { default as CreateClientDialog } from './CreateClientDialog';
 export { default as EditClientDialog } from './EditClientDialog';
 export { ClientLogoUpload } from './ClientLogoUpload';
 export { BulkTenstreetAssignmentDialog } from './BulkTenstreetAssignmentDialog';
+export { default as ClientMetricsCard } from './ClientMetricsCard';
+export { default as ClientsOverviewDashboard } from './ClientsOverviewDashboard';

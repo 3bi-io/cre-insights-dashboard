@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Users, FileText } from 'lucide-react';
+import { Bot, Users, FileText, Building2 } from 'lucide-react';
 import { OrganizationOverview } from '@/components/dashboard/organization/OrganizationOverview';
 import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
@@ -10,6 +10,7 @@ import AIImpactDashboard from '@/pages/AIImpactDashboard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import { OrganizationApplicationsTab } from '@/components/dashboard/organization/OrganizationApplicationsTab';
 import { ApplyPageAnalyticsPage } from '@/features/analytics';
+import { ClientsOverviewDashboard } from '@/features/clients';
 
 export interface DashboardTab {
   id: string;
@@ -46,6 +47,12 @@ export const dashboardTabs: DashboardTab[] = [
     label: 'Applications',
     icon: Users,
     component: OrganizationApplicationsTab,
+  },
+  {
+    id: 'clients',
+    label: 'Clients',
+    icon: Building2,
+    component: ClientsOverviewDashboard,
   },
   {
     id: 'users',
