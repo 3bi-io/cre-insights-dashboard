@@ -1,81 +1,324 @@
 
-# Fix Administrators Settings Tab - Display Issues
 
-## Problem Summary
+# Navigation Menus & Role Visibility Audit + Refactoring Plan
 
-The Administrators Settings Tab shows "Unknown user" for many administrators despite valid data existing in the database. After investigation, I identified multiple issues:
+## Executive Summary
 
-1. **RLS blocking profile queries**: The two-step query (roles first, then profiles) may fail if the profiles RLS policy doesn't return all records
-2. **Missing `super_admin` users in list**: The query only fetches users with `role = 'admin'`, excluding super admins
-3. **Inner join excludes orphaned users**: The `SuperAdminUserManagement` component uses `!inner` join which excludes users without organizations
-4. **Data quality**: Some users have their email stored in the `full_name` field
+This audit reviews all navigation menus across the platform for all device types (mobile, tablet, desktop) and user roles (super_admin, admin, moderator, recruiter, viewer/user). Several inconsistencies, gaps, and opportunities for mobile-first improvements have been identified.
 
 ---
 
-## Solution
+## Current Architecture Overview
 
-### Phase 1: Fix AdministratorsSettingsTab Query
+### User Types & Navigation Contexts
 
-**File: `src/components/settings/AdministratorsSettingsTab.tsx`**
+| User Type | Primary Layout | Navigation System |
+|-----------|----------------|-------------------|
+| **Public Visitor** | `PublicLayout` | Header nav + mobile hamburger menu |
+| **Candidate (Job Seeker)** | `CandidateLayout` | Desktop sidebar + mobile bottom nav (5 items) |
+| **Organization Staff** | `Layout` | Desktop sidebar + mobile bottom nav (3 primary + "More" sheet) |
 
-1. **Include both `admin` and `super_admin` roles** in the administrators list
-2. **Use a single optimized query** with a left join pattern to avoid RLS issues between separate queries
-3. **Add proper error handling** and logging for when profiles are not returned
-4. **Improve display logic** to handle edge cases better
+### Role Hierarchy
 
-```text
-Changes to query (lines 47-95):
-- Change filter from .eq('role', 'admin') to .in('role', ['admin', 'super_admin'])
-- Add better null handling for profile data
-- Log when profiles don't match roles for debugging
-```
-
-### Phase 2: Fix SuperAdminUserManagement Query
-
-**File: `src/components/settings/SuperAdminUserManagement.tsx`**
-
-1. **Change `!inner` to left join** to include users without organizations
-2. **Handle null organization gracefully** in the UI
-
-```text
-Changes to query (lines 134-146):
-- Change organizations!inner(name) to organizations(name) (left join)
-- Update organization_name fallback handling
-```
-
-### Phase 3: Improve Display Logic
-
-**File: `src/components/settings/AdministratorsSettingsTab.tsx`**
-
-Update the UI to:
-1. Show email as primary display if full_name equals email (avoid redundancy)
-2. Add visual distinction between `admin` and `super_admin` roles
-3. Show organization context for each administrator
+Database: `user < recruiter < moderator < admin < super_admin`
 
 ---
 
-## Technical Details
+## Issues Identified
 
-### Current Query Flow (Problematic)
+### Issue 1: Inconsistent Role Display Names
+
+**Location**: `src/utils/navigationUtils.ts:96-108`
 
 ```text
-Step 1: Fetch user_roles (9 admin records found)
-     ↓
-Step 2: Fetch profiles for those user_ids (may return fewer due to RLS)
-     ↓
-Step 3: Map results (missing profiles = "Unknown user")
+Current getRoleDisplayName() handles:
+- super_admin -> "Super Admin"
+- admin -> "Admin"
+- moderator -> "Moderator"
+- candidate -> "Candidate"
+- default -> "User"
+
+Missing:
+- recruiter -> should show "Recruiter"
+- viewer -> should show "Viewer" (if used)
 ```
 
-### New Query Flow (Fixed)
+**Impact**: Users with `recruiter` role see "User" instead of their proper role name in headers and badges.
 
-```text
-Step 1: Fetch user_roles with role IN ('admin', 'super_admin')
-     ↓
-Step 2: Fetch profiles with explicit RLS bypass logging
-     ↓
-Step 3: Map with fallback - show email if profile missing
-     ↓
-Step 4: Log warnings for orphaned role assignments
+---
+
+### Issue 2: Backend Role Hierarchy Mismatch
+
+**Location**: `supabase/functions/_shared/serverAuth.ts:137-142`
+
+```typescript
+// Current (missing recruiter)
+const roleHierarchy: Record<UserRole, number> = {
+  super_admin: 4,
+  admin: 3,
+  moderator: 2,
+  user: 1,
+};
+```
+
+**Database hierarchy** (correct):
+```sql
+ARRAY['user', 'recruiter', 'moderator', 'admin', 'super_admin']
+```
+
+**Impact**: Edge functions don't properly recognize recruiter role in hierarchy checks.
+
+---
+
+### Issue 3: Navigation Config Missing Recruiter/Viewer Handling
+
+**Location**: `src/config/navigationConfig.ts:113-217`
+
+Current `getNavigationGroups()` only accepts:
+- `isSuperAdmin: boolean`
+- `isAdmin: boolean`
+
+Missing checks for:
+- `isModerator`
+- `isRecruiter`
+
+**Impact**: Moderators and recruiters see the same navigation as base users, even though they should have access to some admin features.
+
+---
+
+### Issue 4: Mobile Header Missing Organization Context
+
+**Location**: `src/components/MobileHeader.tsx:82-95`
+
+The desktop header shows the organization name, but the mobile header only shows the user's email and role badge.
+
+**Impact**: On mobile, users lose visibility into which organization they're working in.
+
+---
+
+### Issue 5: Settings Security Page Not Linked in Navigation
+
+**Current route**: `/admin/settings/security`
+
+This page exists in routes (`AppRoutes.tsx:285`) but is not accessible from the main Settings tabs (`Settings.tsx`). The Settings page has 8 tabs but Security is a separate route.
+
+**Impact**: Users must navigate directly via URL or through the sidebar dropdown; no clear path in the Settings UI.
+
+---
+
+### Issue 6: Candidate Portal Missing "Settings" in Mobile Nav
+
+**Location**: `src/features/candidate/components/CandidateLayout.tsx:211`
+
+Mobile nav shows only first 5 items from `candidateNavigation`:
+1. Dashboard
+2. Applications
+3. Search Jobs
+4. Saved Jobs
+5. Profile
+
+Missing from mobile (in desktop sidebar only):
+- Messages (has "Soon" badge)
+- Settings link
+- Notifications link
+
+**Impact**: Candidates can't access settings/notifications from mobile bottom nav.
+
+---
+
+### Issue 7: RoleGuard Uses Exact Match Instead of Hierarchy
+
+**Location**: `src/features/shared/components/RoleGuard.tsx:49-50`
+
+```typescript
+const hasAccess = userRole && requiredRoles.includes(userRole as UserRole);
+```
+
+This checks for **exact match**, not hierarchy. So if a page requires `admin`, a `super_admin` would need to be explicitly listed.
+
+**Workaround in use**: Pages list `['admin', 'super_admin']` as arrays.
+
+**Recommendation**: Add `hasRoleOrHigher()` utility to frontend for cleaner hierarchy checks.
+
+---
+
+## Refactoring Plan
+
+### Phase 1: Fix Role Display Names (Quick Win)
+
+**File**: `src/utils/navigationUtils.ts`
+
+Add missing role display names:
+
+```typescript
+export function getRoleDisplayName(role: string | null): string {
+  switch (role) {
+    case 'super_admin':
+      return 'Super Admin';
+    case 'admin':
+      return 'Admin';
+    case 'moderator':
+      return 'Moderator';
+    case 'recruiter':
+      return 'Recruiter';
+    case 'viewer':
+    case 'user':
+      return 'Viewer';
+    case 'candidate':
+      return 'Candidate';
+    default:
+      return 'User';
+  }
+}
+```
+
+Also add matching badge colors for recruiter/viewer.
+
+---
+
+### Phase 2: Add Frontend Role Hierarchy Utility
+
+**New file**: `src/utils/roleUtils.ts`
+
+```typescript
+const ROLE_HIERARCHY = {
+  user: 1,
+  viewer: 1,
+  recruiter: 2,
+  moderator: 3,
+  admin: 4,
+  super_admin: 5,
+} as const;
+
+export function hasRoleOrHigher(
+  userRole: string | null,
+  requiredRole: string
+): boolean {
+  if (!userRole) return false;
+  const userLevel = ROLE_HIERARCHY[userRole] ?? 0;
+  const requiredLevel = ROLE_HIERARCHY[requiredRole] ?? 0;
+  return userLevel >= requiredLevel;
+}
+
+export function getEffectiveRoleName(role: string | null): string {
+  // Normalize viewer -> user for legacy compatibility
+  if (role === 'viewer') return 'user';
+  return role ?? 'user';
+}
+```
+
+---
+
+### Phase 3: Extend Navigation Config for All Roles
+
+**File**: `src/config/navigationConfig.ts`
+
+Update `getNavigationGroups()` signature:
+
+```typescript
+export const getNavigationGroups = (options: {
+  userRole: string | null;
+  hasVoiceAgent: boolean;
+  hasTenstreetAccess: boolean;
+  organizationSlug?: string;
+  tenstreetNotificationCount?: number;
+}): NavGroup[] => {
+  const { userRole, hasVoiceAgent, hasTenstreetAccess, ... } = options;
+  
+  // Role checks using hierarchy
+  const isSuperAdmin = userRole === 'super_admin';
+  const isAdminOrHigher = hasRoleOrHigher(userRole, 'admin');
+  const isModeratorOrHigher = hasRoleOrHigher(userRole, 'moderator');
+  const isRecruiterOrHigher = hasRoleOrHigher(userRole, 'recruiter');
+  
+  // Build navigation based on hierarchy...
+}
+```
+
+This ensures:
+- Super admins see everything
+- Admins see admin-level and below
+- Moderators see moderator-level features
+- Recruiters see recruitment features
+- Viewers see read-only features
+
+---
+
+### Phase 4: Add Security Tab to Settings Page
+
+**File**: `src/pages/Settings.tsx`
+
+Add Security as a tab instead of a separate route:
+
+```typescript
+const validTabs = ['profile', 'security', 'integrations', ...];
+
+// Add Security tab trigger
+<TabsTrigger value="security">Security</TabsTrigger>
+
+// Add Security tab content
+<TabsContent value="security">
+  <SecuritySettingsTab />
+</TabsContent>
+```
+
+Create `SecuritySettingsTab.tsx` that imports the content from `SecuritySettings.tsx`.
+
+---
+
+### Phase 5: Improve Mobile Header with Organization Context
+
+**File**: `src/components/MobileHeader.tsx`
+
+Add organization name display:
+
+```typescript
+// After brand logo
+{organization && (
+  <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+    {organization.name}
+  </span>
+)}
+```
+
+---
+
+### Phase 6: Enhance Candidate Mobile Navigation
+
+**File**: `src/features/candidate/components/CandidateLayout.tsx`
+
+Option A: Add Settings icon as 5th item (replacing Messages which is "Soon")
+Option B: Add a "More" sheet pattern similar to admin mobile nav
+
+Recommended: Option A for simplicity
+
+```typescript
+// Update candidateNavigation order or create mobile-specific array
+const mobileNavItems = [
+  candidateNavigation[0], // Dashboard
+  candidateNavigation[1], // Applications
+  candidateNavigation[2], // Search
+  candidateNavigation[3], // Saved
+  { name: 'Settings', href: '/my-jobs/settings', icon: Settings }
+];
+```
+
+---
+
+### Phase 7: Fix Backend Role Hierarchy
+
+**File**: `supabase/functions/_shared/serverAuth.ts`
+
+Update to include recruiter:
+
+```typescript
+const roleHierarchy: Record<UserRole, number> = {
+  super_admin: 5,
+  admin: 4,
+  moderator: 3,
+  recruiter: 2,
+  user: 1,
+};
 ```
 
 ---
@@ -84,45 +327,50 @@ Step 4: Log warnings for orphaned role assignments
 
 | File | Changes |
 |------|---------|
-| `src/components/settings/AdministratorsSettingsTab.tsx` | Fix query to include super_admin, improve null handling, better display logic |
-| `src/components/settings/SuperAdminUserManagement.tsx` | Change `!inner` to left join for organizations |
+| `src/utils/navigationUtils.ts` | Add recruiter/viewer display names and badge colors |
+| `src/utils/roleUtils.ts` (new) | Create frontend role hierarchy utility |
+| `src/config/navigationConfig.ts` | Extend role checking to support full hierarchy |
+| `src/components/MobileHeader.tsx` | Add organization name display |
+| `src/components/AppSidebar.tsx` | Update to use new role hierarchy |
+| `src/components/MobileBottomNav.tsx` | Update to use new role hierarchy |
+| `src/pages/Settings.tsx` | Add Security tab |
+| `src/components/settings/SecuritySettingsTab.tsx` (new) | Wrapper for security settings content |
+| `src/features/candidate/components/CandidateLayout.tsx` | Add Settings to mobile nav |
+| `supabase/functions/_shared/serverAuth.ts` | Add recruiter to role hierarchy |
 
 ---
 
-## UI Improvements
+## Expected Results After Implementation
 
-### Before (Current Issue)
-
-| User | Role | Added |
-|------|------|-------|
-| Unknown user / Team member | Admin | 1/19/2026 |
-| Unknown user / Team member | Admin | 1/19/2026 |
-| ken.munck@crengland.com | Admin | 1/25/2026 |
-
-### After (Fixed)
-
-| User | Role | Added |
-|------|------|-------|
-| wayne.cederholm@crengland.com | Admin | 1/25/2026 |
-| ken.munck@crengland.com | Admin | 1/25/2026 |
-| Cody Forbes (codyforbes@gmail.com) | Admin | 1/15/2026 |
-| c@3bi.io | Super Admin | 9/7/2025 |
+| User Role | Desktop Sidebar | Mobile Bottom Nav | Mobile More Sheet |
+|-----------|-----------------|-------------------|-------------------|
+| **Super Admin** | All groups + Administration | Dashboard, Apps, Jobs, More | Full menu |
+| **Admin** | All groups except Administration | Dashboard, Apps, Jobs, More | Full except Administration |
+| **Moderator** | Recruitment, Campaigns, AI, limited Settings | Dashboard, Apps, Jobs, More | Limited features |
+| **Recruiter** | Recruitment, limited Campaigns | Dashboard, Apps, Jobs, More | Recruitment-focused |
+| **Viewer/User** | Dashboard, read-only views | Dashboard, Apps, Jobs, More | Read-only items |
 
 ---
 
-## Additional Cleanup
+## Accessibility Improvements Included
 
-1. **Remove duplicate display of email**: If `full_name` equals `email`, only show email once
-2. **Add role badge styling**: Distinguish super_admin (purple) from admin (blue)
-3. **Add organization column**: Show which organization each admin belongs to
-4. **Sort by role priority**: Super admins first, then admins, then by date
+1. All navigation items maintain proper `aria-current="page"` for screen readers
+2. Mobile "More" sheet has proper role="menu" and aria-labels
+3. Skip links already implemented on all layouts
+4. Focus management on route changes preserved
 
 ---
 
-## Expected Outcome
+## Testing Checklist
 
-After implementation:
-- All 9+ administrators will display with correct names/emails
-- Super admins will be included in the list with distinct styling
-- Users without organizations won't be filtered out
-- Better debugging information logged when profile data is missing
+After implementation, verify:
+- [ ] Super admin sees all navigation items on desktop and mobile
+- [ ] Admin sees appropriate admin-level items
+- [ ] Moderator sees moderator-appropriate features
+- [ ] Recruiter sees recruitment-focused navigation
+- [ ] Viewer sees read-only appropriate items
+- [ ] Candidate portal shows Settings in mobile nav
+- [ ] Mobile header shows organization name
+- [ ] Security settings accessible from Settings tabs
+- [ ] Role badges display correct names for all roles
+
