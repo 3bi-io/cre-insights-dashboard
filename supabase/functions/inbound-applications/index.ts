@@ -525,10 +525,29 @@ const handler = async (req: Request): Promise<Response> => {
       job_id: extractValue(body, ['job_id', 'jobId', 'reference_number', 'referenceNumber']),
       job_title: extractValue(body, ['job_title', 'jobTitle', 'position', 'title']),
       
-      cdl: extractValue(body, ['cdl', 'cdl_license', 'has_cdl']),
-      cdl_class: extractValue(body, ['cdl_class', 'cdlClass', 'license_class']),
-      cdl_state: extractValue(body, ['cdl_state', 'cdlState', 'license_state']),
-      exp: extractValue(body, ['exp', 'experience', 'years_experience', 'yearsExperience']),
+      // Expanded CDL field mapping to capture partner-specific field names
+      cdl: extractValue(body, [
+        'cdl', 'cdl_license', 'has_cdl', 
+        'cdl_a', 'class_a_cdl', 'has_class_a', 'cdl_status',
+        'ClassACDL', 'class_a', 'has_cdl_a', 'CDL', 'HasCDL',
+        'cdl_type', 'license_type', 'cdl_holder'
+      ]),
+      cdl_class: extractValue(body, [
+        'cdl_class', 'cdlClass', 'license_class',
+        'CDLClass', 'class_type', 'license_type', 'cdl_license_class'
+      ]),
+      cdl_state: extractValue(body, [
+        'cdl_state', 'cdlState', 'license_state',
+        'CDLState', 'state_of_license', 'licensing_state'
+      ]),
+      // Expanded experience field mapping for CDL Jobcast variations
+      exp: extractValue(body, [
+        'exp', 'experience', 'years_experience', 'yearsExperience',
+        'driving_experience', 'months_experience', 'experience_months',
+        'DrivingExperience', 'cdl_experience', 'trucking_experience',
+        'Experience', 'YearsOfExperience', 'TruckingExperience',
+        'otr_experience', 'cdl_years', 'years_driving'
+      ]),
       
       age: extractValue(body, ['age', 'over_21', 'over21']),
       veteran: extractValue(body, ['veteran', 'military', 'military_service']),
@@ -866,6 +885,37 @@ const handler = async (req: Request): Promise<Response> => {
         organizationId,
         organizationName: 'Hayes Recruiting Solutions'
       });
+      
+      // ============================================================
+      // CDL JOB CAST PAYLOAD ANALYSIS
+      // Log detailed field information to identify unmapped field names
+      // ============================================================
+      if (applicationData.source === 'CDL Job Cast') {
+        const allFieldNames = Object.keys(body);
+        
+        // Find fields that might contain CDL or experience data
+        const potentialCDLFields = Object.entries(body)
+          .filter(([key]) => {
+            const lowerKey = key.toLowerCase();
+            return lowerKey.includes('cdl') || 
+                   lowerKey.includes('experience') ||
+                   lowerKey.includes('license') ||
+                   lowerKey.includes('exp') ||
+                   lowerKey.includes('years') ||
+                   lowerKey.includes('driving');
+          })
+          .map(([key, value]) => ({ field: key, value: String(value).substring(0, 100) }));
+        
+        logger.info('CDL Job Cast payload analysis', {
+          totalFields: allFieldNames.length,
+          allFieldNames,
+          potentialCDLFields,
+          extractedCDL: applicationData.cdl || 'NOT FOUND',
+          extractedExp: applicationData.exp || 'NOT FOUND',
+          extractedCDLClass: applicationData.cdl_class || 'NOT FOUND',
+          extractedCDLState: applicationData.cdl_state || 'NOT FOUND',
+        });
+      }
     }
     
     // Try to resolve from ElevenLabs agent ID via voice_agents table
