@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Send, Loader2, Plus, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Mail, Send, Loader2, Plus, X, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -12,8 +13,11 @@ interface EmailRecipient {
   userName: string;
 }
 
+type EmailType = 'welcome' | 'password_reset';
+
 export function AdminEmailUtility() {
   const [open, setOpen] = useState(false);
+  const [emailType, setEmailType] = useState<EmailType>('welcome');
   const [organizationName, setOrganizationName] = useState('CR England');
   const [recipients, setRecipients] = useState<EmailRecipient[]>([
     { email: '', userName: '' }
@@ -40,7 +44,11 @@ export function AdminEmailUtility() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  const handleSend = async () => {
+  const resetForm = () => {
+    setRecipients([{ email: '', userName: '' }]);
+  };
+
+  const handleSendWelcome = async () => {
     const validRecipients = recipients.filter(r => r.email && validateEmail(r.email));
     
     if (validRecipients.length === 0) {
@@ -86,7 +94,7 @@ export function AdminEmailUtility() {
         description: `Successfully sent ${successCount} welcome email(s).`,
       });
       setOpen(false);
-      setRecipients([{ email: '', userName: '' }]);
+      resetForm();
     } else if (successCount > 0 && failCount > 0) {
       toast({
         title: 'Partial Success',
@@ -102,68 +110,182 @@ export function AdminEmailUtility() {
     }
   };
 
+  const handleSendPasswordReset = async () => {
+    const validRecipients = recipients.filter(r => r.email && validateEmail(r.email));
+    
+    if (validRecipients.length === 0) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter at least one valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSending(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const recipient of validRecipients) {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(recipient.email, {
+          redirectTo: `${window.location.origin}/auth?reset=true`,
+        });
+
+        if (error) {
+          console.error(`Failed to send reset to ${recipient.email}:`, error);
+          failCount++;
+        } else {
+          successCount++;
+        }
+      } catch (err) {
+        console.error(`Error sending reset to ${recipient.email}:`, err);
+        failCount++;
+      }
+    }
+
+    setIsSending(false);
+
+    if (successCount > 0 && failCount === 0) {
+      toast({
+        title: 'Reset Emails Sent',
+        description: `Successfully sent ${successCount} password reset email(s).`,
+      });
+      setOpen(false);
+      resetForm();
+    } else if (successCount > 0 && failCount > 0) {
+      toast({
+        title: 'Partial Success',
+        description: `Sent ${successCount} reset email(s), ${failCount} failed.`,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Failed to Send',
+        description: 'Could not send password reset emails. Check console for details.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSend = () => {
+    if (emailType === 'welcome') {
+      handleSendWelcome();
+    } else {
+      handleSendPasswordReset();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Mail className="mr-2 h-4 w-4" />
-          Send Welcome Email
+          Send System Email
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Send Welcome Emails</DialogTitle>
+          <DialogTitle>Send System Emails</DialogTitle>
           <DialogDescription>
-            Send formal welcome emails to new users. Emails are automatically BCC'd to c@3bi.io.
+            Send welcome emails or password reset instructions to users.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="organization">Organization Name</Label>
-            <Input
-              id="organization"
-              value={organizationName}
-              onChange={(e) => setOrganizationName(e.target.value)}
-              placeholder="e.g., CR England"
-            />
-          </div>
+        <Tabs value={emailType} onValueChange={(v) => setEmailType(v as EmailType)} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="welcome" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Welcome Email
+            </TabsTrigger>
+            <TabsTrigger value="password_reset" className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4" />
+              Password Reset
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-3">
-            <Label>Recipients</Label>
-            {recipients.map((recipient, index) => (
-              <div key={index} className="flex gap-2 items-start">
-                <div className="flex-1 space-y-2">
+          <TabsContent value="welcome" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="organization">Organization Name</Label>
+              <Input
+                id="organization"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                placeholder="e.g., CR England"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label>Recipients</Label>
+              {recipients.map((recipient, index) => (
+                <div key={index} className="flex gap-2 items-start">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      value={recipient.email}
+                      onChange={(e) => updateRecipient(index, 'email', e.target.value)}
+                      placeholder="email@example.com"
+                      type="email"
+                    />
+                    <Input
+                      value={recipient.userName}
+                      onChange={(e) => updateRecipient(index, 'userName', e.target.value)}
+                      placeholder="User Name (optional)"
+                    />
+                  </div>
+                  {recipients.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeRecipient(index)}
+                      className="shrink-0 mt-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={addRecipient} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Recipient
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="password_reset" className="space-y-4 mt-4">
+            <p className="text-sm text-muted-foreground">
+              Send password reset instructions to users. They will receive a secure link to set a new password (expires in 24 hours).
+            </p>
+
+            <div className="space-y-3">
+              <Label>Recipients</Label>
+              {recipients.map((recipient, index) => (
+                <div key={index} className="flex gap-2 items-center">
                   <Input
                     value={recipient.email}
                     onChange={(e) => updateRecipient(index, 'email', e.target.value)}
                     placeholder="email@example.com"
                     type="email"
+                    className="flex-1"
                   />
-                  <Input
-                    value={recipient.userName}
-                    onChange={(e) => updateRecipient(index, 'userName', e.target.value)}
-                    placeholder="User Name (optional)"
-                  />
+                  {recipients.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeRecipient(index)}
+                      className="shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                {recipients.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeRecipient(index)}
-                    className="shrink-0 mt-1"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button variant="outline" size="sm" onClick={addRecipient} className="w-full">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Recipient
-            </Button>
-          </div>
-        </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={addRecipient} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Recipient
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
@@ -178,7 +300,7 @@ export function AdminEmailUtility() {
             ) : (
               <>
                 <Send className="mr-2 h-4 w-4" />
-                Send Emails
+                {emailType === 'welcome' ? 'Send Welcome Email(s)' : 'Send Reset Email(s)'}
               </>
             )}
           </Button>
