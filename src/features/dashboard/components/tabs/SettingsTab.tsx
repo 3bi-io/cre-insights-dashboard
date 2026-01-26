@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, Shield, Antenna } from 'lucide-react';
+import { Settings, Shield, Antenna, Mail } from 'lucide-react';
+import { AdminEmailUtility } from '@/features/admin/components/AdminEmailUtility';
 
 export const SettingsTab: React.FC = () => {
   return (
@@ -80,6 +81,22 @@ export const SettingsTab: React.FC = () => {
               <Link to="/admin/settings?tab=integrations">Integrations</Link>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Utilities
+          </CardTitle>
+          <CardDescription>Send system emails to users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Send welcome emails to new users. Emails are automatically BCC'd for review.
+          </p>
+          <AdminEmailUtility />
         </CardContent>
       </Card>
     </div>
