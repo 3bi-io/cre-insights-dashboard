@@ -5,6 +5,7 @@
 /**
  * Get the display name for a company/client
  * Falls back to organization name if client is "Unassigned" or missing
+ * For CR England, shows "CR England - ClientName" format for sub-clients
  */
 export const getDisplayCompanyName = (job: {
   clients?: { name?: string | null } | null;
@@ -12,10 +13,16 @@ export const getDisplayCompanyName = (job: {
   organizations?: { name?: string | null } | null;
 }): string => {
   const clientName = job.clients?.name || job.client;
+  const orgName = job.organizations?.name;
   
   // If client name is "Unassigned" or empty, use organization name
   if (!clientName || clientName === 'Unassigned') {
-    return job.organizations?.name || 'Company';
+    return orgName || 'Company';
+  }
+  
+  // For CR England, show "CR England - ClientName" format
+  if (orgName === 'CR England' && clientName !== 'CR England') {
+    return `CR England - ${clientName}`;
   }
   
   return clientName;

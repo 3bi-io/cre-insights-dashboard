@@ -344,11 +344,11 @@ const supportSections: SupportSection[] = [
     id: 'clients',
     title: 'Clients',
     icon: Users,
-    description: 'Manage client accounts and relationships.',
+    description: 'Manage clients and relationships.',
     features: [
       {
         title: 'Client Management',
-        content: 'Create and manage client accounts with contact information, billing details, and account settings.'
+        content: 'Create and manage clients with contact information, billing details, and account settings.'
       },
       {
         title: 'Client Portal Access',

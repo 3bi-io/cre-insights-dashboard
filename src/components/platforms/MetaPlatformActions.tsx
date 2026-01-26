@@ -325,7 +325,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <Target className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-              <div className="text-sm font-medium">CR England Account</div>
+              <div className="text-sm font-medium">CR England Client</div>
               <div className="text-2xl font-bold text-blue-600">
                 {metaAccounts?.length || 0}
               </div>
@@ -359,9 +359,9 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Sync CR England Account</p>
+                <p className="font-medium">Sync CR England Client</p>
                 <p className="text-sm text-muted-foreground">
-                  Import CR England Meta ad account and basic information
+                  Import CR England Meta client data and basic information
                 </p>
               </div>
               <Button 
@@ -374,7 +374,7 @@ const MetaPlatformActions: React.FC<MetaPlatformActionsProps> = ({ platform, onR
                 ) : (
                   <Download className="w-4 h-4 mr-2" />
                 )}
-                Sync Account
+                Sync Client
               </Button>
             </div>
 

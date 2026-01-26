@@ -1,11 +1,14 @@
 /**
- * Meta Account ID Alias System
+ * Meta Client Alias System (for CR England)
  * 
- * This system allows displaying an alias account ID to users while
- * using the actual account ID for data fetching behind the scenes.
+ * This system maps Meta ad account IDs to CR England client identifiers
+ * for display purposes while using the actual account ID for API calls.
+ * 
+ * Note: The Meta API uses "account_id" as their field name - this is
+ * third-party API terminology and does not refer to CR England "Clients".
  */
 
-// Account alias mapping
+// Client alias mapping (Meta account IDs)
 const ACCOUNT_ALIASES = {
   // Display ID -> Actual Data ID  
   '897639563274136': '1594827328159714'
