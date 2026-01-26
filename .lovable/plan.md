@@ -1,67 +1,164 @@
 
-# Send Welcome Emails to CR England Users
+# Add Password Reset Email Capabilities to Admin Email Utility
 
-## Current Situation
+## Overview
 
-The `send-welcome-email` edge function requires JWT authentication (`verify_jwt = true`), and while you're logged into the application, the edge function testing tool I'm using doesn't have access to your session token.
+Extend the existing `AdminEmailUtility` component to support both welcome emails and password reset emails. This will allow super administrators to trigger password reset emails to users directly from the dashboard, using Supabase's built-in `auth.resetPasswordForEmail()` method which sends branded emails via the existing `auth-email-templates` hook.
 
-**Good news**: The BCC to `c@3bi.io` is already configured in the shared email configuration (line 30-31 of `email-config.ts`), so all welcome emails will automatically be copied to that address.
+---
 
-## Solution: Create Admin Email Utility Component
+## Current Architecture
 
-I'll add a simple admin utility in the Super Admin dashboard that allows you to send welcome emails directly from the UI while authenticated.
+The platform has two password reset mechanisms:
+1. **User-initiated**: Via `supabase.auth.resetPasswordForEmail()` which triggers the `auth-email-templates` Edge Function for branded emails
+2. **Admin direct update**: Via `admin-update-password` Edge Function that directly changes the password (no email sent)
 
-### Implementation
+The new feature will add a third option:
+3. **Admin-triggered password reset email**: Super admins can send reset instructions to users via the UI
 
-**1. Create Admin Email Utility Component**
+---
 
-File: `src/features/admin/components/AdminEmailUtility.tsx`
+## Implementation Plan
+
+### Phase 1: Extend AdminEmailUtility Component
+
+**File: `src/features/admin/components/AdminEmailUtility.tsx`**
+
+Add a toggle or tabs to switch between:
+- **Welcome Email** (existing functionality)
+- **Password Reset Email** (new functionality)
+
+Changes:
+- Add `emailType` state: `'welcome' | 'password_reset'`
+- Add tab/toggle UI to switch between email types
+- Modify form to show appropriate fields based on email type
+- Add new `handleSendPasswordReset()` function that uses `supabase.auth.resetPasswordForEmail()`
 
 ```typescript
-// A simple dialog allowing super admins to send welcome emails
-// - Email input field
-// - User name input field  
-// - Organization selector (pre-populated from existing orgs)
-// - Send button that invokes the edge function with your JWT
+// New state
+const [emailType, setEmailType] = useState<'welcome' | 'password_reset'>('welcome');
+
+// New handler for password reset
+const handleSendPasswordReset = async () => {
+  const validRecipients = recipients.filter(r => validateEmail(r.email));
+  
+  for (const recipient of validRecipients) {
+    await supabase.auth.resetPasswordForEmail(recipient.email, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+  }
+};
 ```
 
-**2. Add to Super Admin Dashboard**
+### Phase 2: Update UI Layout
 
-Update the Settings tab to include a "Send Welcome Email" action button that opens the utility dialog.
+**Component Changes:**
 
-### Technical Details
+1. Add `Tabs` component at the top of the dialog to switch between:
+   - "Welcome Email" tab
+   - "Password Reset" tab
 
-- Uses your existing authenticated session via `supabase.functions.invoke()`
-- Validates email format before sending
-- Shows success/error toast notifications
-- Pre-populates "CR England" as the organization option
+2. Conditionally render form fields:
+   - **Welcome Email**: Shows organization name + recipients (email + name)
+   - **Password Reset**: Shows only recipients (email only, name not needed)
 
-### Files to Create/Modify
+3. Update description text based on selected type:
+   - Welcome: "Send formal welcome emails to new users"
+   - Password Reset: "Send password reset instructions to users"
 
-| File | Action |
-|------|--------|
-| `src/features/admin/components/AdminEmailUtility.tsx` | Create - Email sending dialog |
-| `src/features/dashboard/components/tabs/SettingsTab.tsx` | Modify - Add utility trigger |
+4. Change button text:
+   - Welcome: "Send Welcome Email(s)"
+   - Password Reset: "Send Reset Email(s)"
 
-### Alternative: Quick Script Approach
+### Phase 3: Update SettingsTab Description
 
-If you prefer not to add UI, I can create a one-time admin script edge function that:
-1. Has `verify_jwt = false` but validates service role key
-2. Accepts an array of recipients
-3. Sends the welcome emails with proper BCC
-4. Self-documents for audit purposes
+**File: `src/features/dashboard/components/tabs/SettingsTab.tsx`**
 
-This would be a quick way to send these two specific emails without UI changes.
+Update the Email Utilities card description to reflect both capabilities:
 
-## Recommended Approach
+```typescript
+<p className="text-sm text-muted-foreground mb-4">
+  Send welcome emails and password reset instructions to users. 
+  All emails are automatically BCC'd for review.
+</p>
+```
 
-**Option A (Recommended)**: Add the Admin Email Utility to the dashboard - reusable for future needs
+---
 
-**Option B (Quick)**: Create a one-time admin script function specifically for this task
+## Technical Details
 
-Both approaches will send formal welcome emails to:
-- Wayne.Cederholm@crengland.com (Wayne Cederholm)
-- ken.munck@crengland.com (Ken Munck)
+### Password Reset Flow
 
-With organization: **CR England**
-BCC: **c@3bi.io** (already configured)
+When the admin triggers a password reset:
+1. Calls `supabase.auth.resetPasswordForEmail(email, { redirectTo })`
+2. Supabase Auth generates a secure token and fires the `auth-email-templates` webhook
+3. The Edge Function generates a branded password reset email with:
+   - Custom styling matching the ATS.me brand
+   - 24-hour expiration notice
+   - Security messaging
+4. Email is sent via Resend with automatic BCC to `c@3bi.io` and `codyforbes@gmail.com`
+
+### BCC Handling
+
+Password reset emails sent via `auth.resetPasswordForEmail()` go through the `auth-email-templates` Edge Function, which already uses `getReviewBcc()` to add the configured BCC addresses.
+
+### Security
+
+- Only super_admin and admin roles can access this utility (inherited from dashboard access control)
+- Uses Supabase's built-in token generation (cryptographically secure)
+- Tokens expire in 24 hours (Supabase default)
+- All emails logged for audit purposes
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/features/admin/components/AdminEmailUtility.tsx` | Add email type toggle, password reset handler, update UI |
+| `src/features/dashboard/components/tabs/SettingsTab.tsx` | Update description text |
+
+---
+
+## UI Wireframe
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Send System Emails                                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐                  │
+│  │ Welcome Email   │  │ Password Reset  │  ← Tabs          │
+│  └─────────────────┘  └─────────────────┘                  │
+│                                                             │
+│  [If Welcome Email selected]                                │
+│  ┌───────────────────────────────────────────────────────┐ │
+│  │ Organization Name                                      │ │
+│  │ ┌─────────────────────────────────────────────────┐   │ │
+│  │ │ CR England                                       │   │ │
+│  │ └─────────────────────────────────────────────────┘   │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                                                             │
+│  Recipients                                                 │
+│  ┌─────────────────────────────────────────────────────────┐
+│  │ email@example.com                                [x]   │
+│  │ User Name (optional)                                   │
+│  └─────────────────────────────────────────────────────────┘
+│                                                             │
+│  [+ Add Recipient]                                         │
+│                                                             │
+│  ┌──────────┐  ┌───────────────────┐                       │
+│  │  Cancel  │  │  Send Email(s)    │                       │
+│  └──────────┘  └───────────────────┘                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Success Criteria
+
+1. Super admins can switch between welcome email and password reset modes
+2. Password reset emails are sent using Supabase's secure token generation
+3. All emails use the branded `auth-email-templates` system
+4. BCC addresses are automatically included for oversight
+5. Toast notifications confirm success/failure for each recipient
