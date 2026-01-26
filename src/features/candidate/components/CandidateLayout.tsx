@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SkipLinks } from '@/components/shared/SkipLinks';
-import { LogOut, Settings, Bell, ChevronRight, Search } from 'lucide-react';
+import { LogOut, Settings, Bell, ChevronRight, Search, Home, Briefcase, Bookmark, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/components/common';
 import { 
@@ -23,6 +23,15 @@ import {
   getUserInitials, 
   getDisplayName 
 } from '@/utils/navigationUtils';
+
+// Mobile-specific navigation (replaces Messages with Settings)
+const mobileNavItems = [
+  { name: 'Dashboard', href: '/my-jobs', icon: Home },
+  { name: 'Applications', href: '/my-jobs/applications', icon: Briefcase },
+  { name: 'Search', href: '/my-jobs/search', icon: Search },
+  { name: 'Saved', href: '/my-jobs/saved', icon: Bookmark },
+  { name: 'Settings', href: '/my-jobs/settings', icon: Settings }
+];
 
 const CandidateLayout = () => {
   const { signOut, candidateProfile, user } = useAuth();
@@ -208,8 +217,9 @@ const CandidateLayout = () => {
         aria-label="Mobile candidate navigation"
       >
         <div className="grid grid-cols-5 gap-1 p-1.5" role="menubar">
-          {candidateNavigation.slice(0, 5).map((item) => {
+          {mobileNavItems.map((item) => {
             const isActive = isActivePath(location.pathname, item.href);
+            const Icon = item.icon;
             return (
               <Link
                 key={item.name}
@@ -224,14 +234,14 @@ const CandidateLayout = () => {
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <item.icon 
+                <Icon 
                   className={cn(
                     "h-5 w-5 transition-transform",
                     isActive && "scale-110"
                   )} 
                   aria-hidden="true" 
                 />
-                <span className="truncate font-medium">{item.name.split(' ')[0]}</span>
+                <span className="truncate font-medium">{item.name}</span>
               </Link>
             );
           })}

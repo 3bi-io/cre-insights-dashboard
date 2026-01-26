@@ -11,13 +11,14 @@ import NotificationsSettingsTab from '@/components/settings/NotificationsSetting
 import PrivacySettingsTab from '@/components/settings/PrivacySettingsTab';
 import AdministratorsSettingsTab from '@/components/settings/AdministratorsSettingsTab';
 import VerificationsSettingsTab from '@/components/settings/VerificationsSettingsTab';
+import SecuritySettingsTab from '@/components/settings/SecuritySettingsTab';
 
 const Settings = () => {
   const { userRole } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   
-  const validTabs = ['profile', 'integrations', 'verifications', 'webhooks', 'documentation', 'notifications', 'privacy', 'administrators'];
+  const validTabs = ['profile', 'security', 'integrations', 'verifications', 'webhooks', 'documentation', 'notifications', 'privacy', 'administrators'];
   const tabParam = searchParams.get('tab');
   const activeTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'profile';
 
@@ -32,8 +33,9 @@ const Settings = () => {
     >
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className={`inline-flex w-max sm:w-full ${isAdmin ? 'sm:grid sm:grid-cols-8' : 'sm:grid sm:grid-cols-7'} min-w-max`}>
+          <TabsList className={`inline-flex w-max sm:w-full ${isAdmin ? 'sm:grid sm:grid-cols-9' : 'sm:grid sm:grid-cols-8'} min-w-max`}>
             <TabsTrigger value="profile" className="whitespace-nowrap">Profile</TabsTrigger>
+            <TabsTrigger value="security" className="whitespace-nowrap">Security</TabsTrigger>
             <TabsTrigger value="integrations" className="whitespace-nowrap">Integrations</TabsTrigger>
             <TabsTrigger value="verifications" className="whitespace-nowrap">Verifications</TabsTrigger>
             <TabsTrigger value="webhooks" className="whitespace-nowrap">Webhooks</TabsTrigger>
@@ -46,6 +48,10 @@ const Settings = () => {
 
         <TabsContent value="profile" className="space-y-6">
           <ProfileSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="security" className="space-y-6">
+          <SecuritySettingsTab />
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6">

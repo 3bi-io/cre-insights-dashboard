@@ -25,7 +25,7 @@ import {
 
 const MobileHeader = () => {
   const location = useLocation();
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, organization, signOut } = useAuth();
   const { state } = useSidebar();
 
   const handleSignOut = async () => {
@@ -48,12 +48,17 @@ const MobileHeader = () => {
         />
         
         {/* Logo and Title */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Brand variant="icon" size="sm" showAsLink={false} priority={true} />
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold leading-none text-foreground">
+          <div className="flex flex-col min-w-0">
+            <h1 className="text-lg font-semibold leading-none text-foreground truncate">
               {getRouteTitle(location.pathname)}
             </h1>
+            {organization?.name && (
+              <span className="text-xs text-muted-foreground truncate mt-0.5">
+                {organization.name}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -111,21 +111,28 @@ export const mainNavItems: NavItem[] = [
 
 // All navigation groups - source of truth for both desktop and mobile
 export const getNavigationGroups = (options: {
-  isSuperAdmin: boolean;
-  isAdmin: boolean;
+  userRole?: string | null;
+  // Legacy boolean flags (kept for backward compatibility)
+  isSuperAdmin?: boolean;
+  isAdmin?: boolean;
   hasVoiceAgent: boolean;
   hasTenstreetAccess: boolean;
   organizationSlug?: string;
   tenstreetNotificationCount?: number;
 }): NavGroup[] => {
   const { 
-    isSuperAdmin, 
-    isAdmin, 
+    userRole,
     hasVoiceAgent, 
     hasTenstreetAccess, 
     organizationSlug,
     tenstreetNotificationCount = 0
   } = options;
+
+  // Support both new userRole and legacy boolean flags
+  const isSuperAdmin = options.isSuperAdmin ?? userRole === 'super_admin';
+  const isAdmin = options.isAdmin ?? (userRole === 'admin' || userRole === 'super_admin');
+  const isModerator = userRole === 'moderator' || isAdmin;
+  const isRecruiter = userRole === 'recruiter' || isModerator;
 
   return [
     {
@@ -134,11 +141,13 @@ export const getNavigationGroups = (options: {
       items: [
         { path: '/admin/applications', label: 'Applications', icon: Users },
         { path: '/admin/jobs', label: 'Job Listings', icon: BriefcaseIcon },
-        ...(organizationSlug !== 'acme' ? [
+        ...(organizationSlug !== 'acme' && isRecruiter ? [
           { path: '/admin/clients', label: 'Clients', icon: UserCheck }
         ] : []),
         { path: '/admin/routes', label: 'Routes', icon: MapPin },
-        { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark },
+        ...(isModerator ? [
+          { path: '/admin/talent/pools', label: 'Talent Pools', icon: Bookmark }
+        ] : []),
         ...(hasVoiceAgent && isAdmin ? [
           { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: MessageSquare }
         ] : [])
@@ -167,8 +176,10 @@ export const getNavigationGroups = (options: {
           label: 'Verifications',
           icon: Shield
         }] : []),
-        { path: '/admin/ad-networks', label: 'Ad Networks', icon: Globe },
-        { path: '/admin/job-boards', label: 'Job Boards', icon: Rss },
+        ...(isModerator ? [
+          { path: '/admin/ad-networks', label: 'Ad Networks', icon: Globe },
+          { path: '/admin/job-boards', label: 'Job Boards', icon: Rss }
+        ] : []),
         ...(isAdmin ? [
           { path: '/admin/webhook-management', label: 'Webhooks', icon: Webhook }
         ] : []),
@@ -182,9 +193,13 @@ export const getNavigationGroups = (options: {
       icon: Bot,
       items: [
         { path: '/admin/grok', label: 'AI Assistant', icon: Sparkles },
-        { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
-        { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 },
-        { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap },
+        ...(isModerator ? [
+          { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
+          { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 }
+        ] : []),
+        ...(isAdmin ? [
+          { path: '/admin/ai-impact', label: 'AI Impact', icon: Zap }
+        ] : []),
         ...(isSuperAdmin ? [
           { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: BarChart3 },
           { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: TrendingUp }
@@ -213,7 +228,7 @@ export const getNavigationGroups = (options: {
         { path: '/admin/media', label: 'Media Assets', icon: Image }
       ]
     }] : [])
-  ];
+  ].filter(group => group.items.length > 0); // Filter out empty groups
 };
 
 // Route title mapping for headers

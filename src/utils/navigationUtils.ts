@@ -83,8 +83,13 @@ export function getRoleBadgeColor(role: string | null): string {
       return 'bg-destructive/10 text-destructive border-destructive/20';
     case 'moderator':
       return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+    case 'recruiter':
+      return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
     case 'candidate':
       return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20';
+    case 'viewer':
+    case 'user':
+      return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
     default:
       return 'bg-muted text-muted-foreground border-muted';
   }
@@ -101,6 +106,12 @@ export function getRoleDisplayName(role: string | null): string {
       return 'Admin';
     case 'moderator':
       return 'Moderator';
+    case 'recruiter':
+      return 'Recruiter';
+    case 'viewer':
+      return 'Viewer';
+    case 'user':
+      return 'User';
     case 'candidate':
       return 'Candidate';
     default:

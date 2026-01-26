@@ -53,6 +53,7 @@ const MobileBottomNav: React.FC = () => {
 
   // Get navigation groups from centralized config
   const navigationGroups = getNavigationGroups({
+    userRole,
     isSuperAdmin,
     isAdmin,
     hasVoiceAgent: hasVoiceAgent(),
