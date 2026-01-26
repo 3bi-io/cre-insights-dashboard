@@ -25,5 +25,10 @@ export const getDisplayCompanyName = (job: {
     return `CR England - ${clientName}`;
   }
   
+  // For Hayes Recruiting Solutions, show "Hayes Recruiting - ClientName" format
+  if (orgName === 'Hayes Recruiting Solutions' && clientName !== 'Hayes Recruiting Solutions') {
+    return `Hayes Recruiting - ${clientName}`;
+  }
+  
   return clientName;
 };
