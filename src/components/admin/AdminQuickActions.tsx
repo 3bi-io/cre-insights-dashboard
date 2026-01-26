@@ -5,11 +5,12 @@ import {
   Users, 
   Briefcase, 
   BarChart3, 
-  Settings,
   FileText,
   Shield,
-  Upload
+  Upload,
+  Mail
 } from 'lucide-react';
+import { AdminEmailUtility } from '@/features/admin/components/AdminEmailUtility';
 
 export function AdminQuickActions() {
   const navigate = useNavigate();
@@ -81,6 +82,17 @@ export function AdminQuickActions() {
               </Button>
             );
           })}
+          <AdminEmailUtility 
+            trigger={
+              <Button
+                variant="outline"
+                className="h-20 flex-col gap-2 hover:bg-accent"
+              >
+                <Mail className="h-5 w-5 text-indigo-600" />
+                <span className="text-xs font-medium">Send Email</span>
+              </Button>
+            }
+          />
         </div>
       </CardContent>
     </Card>
