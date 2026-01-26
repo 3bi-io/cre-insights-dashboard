@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+
 import { AdminPageLayout } from '@/features/shared';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
@@ -9,16 +9,14 @@ import ApiDocumentation from '@/components/settings/ApiDocumentation';
 import ProfileSettingsTab from '@/components/settings/ProfileSettingsTab';
 import NotificationsSettingsTab from '@/components/settings/NotificationsSettingsTab';
 import PrivacySettingsTab from '@/components/settings/PrivacySettingsTab';
-import AdministratorsSettingsTab from '@/components/settings/AdministratorsSettingsTab';
+
 import VerificationsSettingsTab from '@/components/settings/VerificationsSettingsTab';
 import SecuritySettingsTab from '@/components/settings/SecuritySettingsTab';
 
 const Settings = () => {
-  const { userRole } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
   
-  const validTabs = ['profile', 'security', 'integrations', 'verifications', 'webhooks', 'documentation', 'notifications', 'privacy', 'administrators'];
+  const validTabs = ['profile', 'security', 'integrations', 'verifications', 'webhooks', 'documentation', 'notifications', 'privacy'];
   const tabParam = searchParams.get('tab');
   const activeTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'profile';
 
@@ -33,7 +31,7 @@ const Settings = () => {
     >
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className={`inline-flex w-max sm:w-full ${isAdmin ? 'sm:grid sm:grid-cols-9' : 'sm:grid sm:grid-cols-8'} min-w-max`}>
+          <TabsList className="inline-flex w-max sm:w-full sm:grid sm:grid-cols-8 min-w-max">
             <TabsTrigger value="profile" className="whitespace-nowrap">Profile</TabsTrigger>
             <TabsTrigger value="security" className="whitespace-nowrap">Security</TabsTrigger>
             <TabsTrigger value="integrations" className="whitespace-nowrap">Integrations</TabsTrigger>
@@ -42,7 +40,6 @@ const Settings = () => {
             <TabsTrigger value="documentation" className="whitespace-nowrap">API Docs</TabsTrigger>
             <TabsTrigger value="notifications" className="whitespace-nowrap">Notifications</TabsTrigger>
             <TabsTrigger value="privacy" className="whitespace-nowrap">Privacy</TabsTrigger>
-            {isAdmin && <TabsTrigger value="administrators" className="whitespace-nowrap">Team</TabsTrigger>}
           </TabsList>
         </div>
 
@@ -77,12 +74,6 @@ const Settings = () => {
         <TabsContent value="privacy" className="space-y-6">
           <PrivacySettingsTab />
         </TabsContent>
-
-        {isAdmin && (
-          <TabsContent value="administrators" className="space-y-6">
-            <AdministratorsSettingsTab />
-          </TabsContent>
-        )}
       </Tabs>
     </AdminPageLayout>
   );
