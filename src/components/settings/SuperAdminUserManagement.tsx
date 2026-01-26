@@ -130,7 +130,7 @@ export const SuperAdminUserManagement: React.FC = () => {
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['super-admin-users', searchTerm],
     queryFn: async (): Promise<User[]> => {
-      // Get profiles with organizations
+      // Get profiles with organizations (left join to include users without orgs)
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -140,7 +140,7 @@ export const SuperAdminUserManagement: React.FC = () => {
           created_at,
           organization_id,
           enabled,
-          organizations!inner(name)
+          organizations(name)
         `)
         .ilike('email', `%${searchTerm}%`)
         .order('created_at', { ascending: false });

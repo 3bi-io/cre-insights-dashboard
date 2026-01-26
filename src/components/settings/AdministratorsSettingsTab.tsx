@@ -28,6 +28,7 @@ interface AdminUser {
   full_name: string | null;
   created_at: string;
   role: string;
+  organization_name?: string | null;
 }
 
 const AdministratorsSettingsTab = () => {
@@ -43,11 +44,11 @@ const AdministratorsSettingsTab = () => {
     queryFn: async (): Promise<AdminUser[]> => {
       logDebug('Fetching administrators', {}, 'AdminSettings');
       
-      // Get admin roles
+      // Get admin and super_admin roles
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role, created_at')
-        .eq('role', 'admin');
+        .in('role', ['admin', 'super_admin']);
       
       if (rolesError) {
         logError('Error fetching admin roles', rolesError, 'AdminSettings');
@@ -65,7 +66,7 @@ const AdministratorsSettingsTab = () => {
       const userIds = adminRoles.map(r => r.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, email, full_name')
+        .select('id, email, full_name, organization_id, organizations(name)')
         .in('id', userIds);
 
       if (profilesError) {
@@ -77,17 +78,33 @@ const AdministratorsSettingsTab = () => {
         (profiles || []).map(p => [p.id, p])
       );
 
-      // Map with profile data
+      // Log orphaned roles for debugging
+      const orphanedRoles = adminRoles.filter(r => !profileMap.has(r.user_id));
+      if (orphanedRoles.length > 0) {
+        logError('Found orphaned admin roles without profiles', { 
+          orphanedUserIds: orphanedRoles.map(r => r.user_id) 
+        }, 'AdminSettings');
+      }
+
+      // Map with profile data, sort by role priority then date
       const result = adminRoles.map(adminRole => {
         const profile = profileMap.get(adminRole.user_id);
+        const orgName = (profile?.organizations as any)?.name || null;
         
         return {
           id: adminRole.user_id,
           email: profile?.email || null,
           full_name: profile?.full_name || null,
           created_at: adminRole.created_at,
-          role: adminRole.role
+          role: adminRole.role,
+          organization_name: orgName
         };
+      }).sort((a, b) => {
+        // Super admins first, then admins
+        if (a.role === 'super_admin' && b.role !== 'super_admin') return -1;
+        if (a.role !== 'super_admin' && b.role === 'super_admin') return 1;
+        // Then by date (newest first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
       logDebug('Final administrators result', { count: result.length }, 'AdminSettings');
@@ -247,6 +264,7 @@ const AdministratorsSettingsTab = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>User</TableHead>
+                      <TableHead>Organization</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Added</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
@@ -255,61 +273,81 @@ const AdministratorsSettingsTab = () => {
                   <TableBody>
                     {administrators?.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8">
+                        <TableCell colSpan={5} className="text-center py-8">
                           <div className="flex flex-col items-center gap-2">
-                            <Users className="w-8 h-8 text-gray-400" />
-                            <p className="text-sm text-gray-500">No administrators found</p>
+                            <Users className="w-8 h-8 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">No administrators found</p>
                           </div>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      administrators?.map((admin) => (
-                        <TableRow key={admin.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                                <Mail className="w-4 h-4 text-gray-500" />
+                      administrators?.map((admin) => {
+                        // Display logic: avoid showing email twice if full_name equals email
+                        const displayName = admin.full_name && admin.full_name !== admin.email 
+                          ? admin.full_name 
+                          : null;
+                        const displayEmail = admin.email || 'Unknown user';
+                        
+                        return (
+                          <TableRow key={admin.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                  <Mail className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {displayName || displayEmail}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {admin.id === user?.id ? 'You' : (displayName ? displayEmail : '')}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {admin.full_name || admin.email || 'Unknown user'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {admin.id === user?.id ? 'You' : admin.email || 'Team member'}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="capitalize">
-                              {admin.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-gray-500">
-                            {new Date(admin.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            {admin.id !== user?.id && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem 
-                                    onClick={() => handleRemoveAdmin(admin.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Remove Admin
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">
+                                {admin.organization_name || 'No Organization'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  admin.role === 'super_admin' 
+                                    ? 'bg-purple-100 text-purple-800 border-purple-200' 
+                                    : 'bg-blue-100 text-blue-800 border-blue-200'
+                                }
+                              >
+                                {admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {new Date(admin.created_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              {admin.id !== user?.id && admin.role !== 'super_admin' && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem 
+                                      onClick={() => handleRemoveAdmin(admin.id)}
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Remove Admin
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
