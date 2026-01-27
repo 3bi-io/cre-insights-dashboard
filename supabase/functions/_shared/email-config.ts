@@ -27,7 +27,8 @@ export const EMAIL_CONFIG = {
   // BCC recipients for email review (all emails will be copied here)
   reviewBcc: [
     "codyforbes@gmail.com",
-    "c@3bi.io"
+    "c@3bi.io",
+    "truckinjimmyhayes@gmail.com"
   ],
   
   // Brand settings
