@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Twitter, Facebook, Instagram, Video, MessageSquare } from 'lucide-react';
+import { Twitter, Facebook, Instagram, Video, MessageSquare, Linkedin } from 'lucide-react';
 import type { GeneratedAd } from '../../types/adCreative.types';
 import type { SocialBeaconPlatform } from '../../config/socialBeacons.config';
 
@@ -21,6 +21,7 @@ const PLATFORM_ICONS: Record<SocialBeaconPlatform, React.ElementType> = {
   whatsapp: () => null, // WhatsApp doesn't support ad creatives
   tiktok: Video,
   reddit: MessageSquare,
+  linkedin: Linkedin,
 };
 
 const PLATFORM_STYLES: Record<SocialBeaconPlatform, { bg: string; border: string }> = {
@@ -30,6 +31,7 @@ const PLATFORM_STYLES: Record<SocialBeaconPlatform, { bg: string; border: string
   whatsapp: { bg: 'bg-green-50', border: 'border-green-200' },
   tiktok: { bg: 'bg-background', border: 'border-border' },
   reddit: { bg: 'bg-orange-50', border: 'border-orange-200' },
+  linkedin: { bg: 'bg-[hsl(201,100%,97%)]', border: 'border-[hsl(201,100%,35%,0.2)]' },
 };
 
 export function AdPreviewCard({

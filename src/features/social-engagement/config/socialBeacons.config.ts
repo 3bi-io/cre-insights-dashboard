@@ -8,6 +8,7 @@ import {
   MessageCircle, 
   Video, 
   MessageSquare,
+  Linkedin,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -20,7 +21,8 @@ export type SocialBeaconPlatform =
   | 'instagram' 
   | 'whatsapp' 
   | 'tiktok' 
-  | 'reddit';
+  | 'reddit'
+  | 'linkedin';
 
 /**
  * Authentication types for platform connections
@@ -154,6 +156,23 @@ export const SOCIAL_BEACONS: Record<SocialBeaconPlatform, SocialBeaconConfig> = 
     apiDocUrl: 'https://www.reddit.com/dev/api',
     characterLimit: 40000,
     mediaFormats: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
+  },
+  linkedin: {
+    platform: 'linkedin',
+    name: 'LinkedIn',
+    description: 'LinkedIn Marketing API for professional job recruitment',
+    icon: Linkedin,
+    color: 'hsl(201, 100%, 35%)',
+    bgColor: 'hsl(201, 100%, 35%, 0.1)',
+    authType: 'oauth2',
+    requiredSecrets: ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'],
+    optionalSecrets: ['LINKEDIN_ORGANIZATION_ID'],
+    webhookSupported: false,
+    autoEngageSupported: false,
+    adCreativeSupported: true,
+    apiDocUrl: 'https://learn.microsoft.com/en-us/linkedin/marketing/',
+    characterLimit: 3000,
+    mediaFormats: ['image/jpeg', 'image/png', 'video/mp4'],
   },
 };
 
