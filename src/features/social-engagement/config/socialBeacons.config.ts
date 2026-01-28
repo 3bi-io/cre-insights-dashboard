@@ -63,10 +63,8 @@ export const SOCIAL_BEACONS: Record<SocialBeaconPlatform, SocialBeaconConfig> = 
     bgColor: 'hsl(var(--muted))',
     authType: 'oauth2_pkce',
     requiredSecrets: [
-      'TWITTER_CONSUMER_KEY', 
-      'TWITTER_CONSUMER_SECRET', 
-      'TWITTER_ACCESS_TOKEN', 
-      'TWITTER_ACCESS_TOKEN_SECRET'
+      'TWITTER_CLIENT_ID', 
+      'TWITTER_CLIENT_SECRET'
     ],
     webhookSupported: true,
     autoEngageSupported: true,

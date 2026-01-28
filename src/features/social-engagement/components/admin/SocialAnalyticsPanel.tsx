@@ -25,6 +25,8 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
       facebook: { engagements: 389, impressions: 15200, trend: 'up' },
       instagram: { engagements: 312, impressions: 8900, trend: 'down' },
       tiktok: { engagements: 90, impressions: 2630, trend: 'up' },
+      linkedin: { engagements: 234, impressions: 12400, trend: 'up' },
+      reddit: { engagements: 67, impressions: 3100, trend: 'neutral' },
     },
   };
 
