@@ -249,19 +249,24 @@ serve(async (req) => {
 
       tokenData = await tokenResponse.json();
 
-      // Get user info
-      const userResponse = await fetch('https://api.linkedin.com/v2/me', {
+      // Get user info using OpenID Connect userinfo endpoint (v2/me is deprecated)
+      const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
       });
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        platformUserId = userData.id;
-        platformUsername = `${userData.localizedFirstName} ${userData.localizedLastName}`;
+        // OpenID Connect returns 'sub' instead of 'id', and 'name' instead of localizedFirstName/lastName
+        platformUserId = userData.sub;
+        platformUsername = userData.name || `${userData.given_name || ''} ${userData.family_name || ''}`.trim();
         pages = [{
-          id: userData.id,
-          name: platformUsername,
+          id: userData.sub,
+          name: platformUsername || userData.email || 'LinkedIn User',
           access_token: tokenData.access_token,
         }];
+        console.log('LinkedIn user info retrieved:', { sub: userData.sub, name: platformUsername });
+      } else {
+        const errorText = await userResponse.text();
+        console.error('LinkedIn userinfo fetch failed:', errorText);
       }
     }
 
