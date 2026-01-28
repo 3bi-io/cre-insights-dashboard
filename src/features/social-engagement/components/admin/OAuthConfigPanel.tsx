@@ -152,6 +152,7 @@ function getOAuthScopes(platform: SocialBeaconPlatform): string[] {
     whatsapp: [], // WhatsApp uses Business API, not OAuth
     tiktok: ['user.info.basic', 'video.list', 'video.publish'],
     reddit: ['identity', 'submit', 'read'],
+    linkedin: ['r_liteprofile', 'r_organization_social', 'w_organization_social', 'rw_organization_admin'],
   };
   return scopes[platform] || [];
 }

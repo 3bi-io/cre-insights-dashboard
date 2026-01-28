@@ -55,7 +55,10 @@ const OAUTH_CONFIGS: Record<string, OAuthConfig> = {
   linkedin: {
     authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
     scopes: [
-      'r_liteprofile',
+      'openid',
+      'profile',
+      'email',
+      'w_member_social',
       'r_organization_social',
       'w_organization_social',
       'rw_organization_admin',
