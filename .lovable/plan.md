@@ -1,111 +1,184 @@
 
-# LinkedIn Beacon Integration Plan
+# LinkedIn Social Beacon Fix Plan
 
-## Current State Analysis
+## Issues Identified
 
-### Existing Infrastructure
-The platform has a robust Social Beacon system supporting X (Twitter), Facebook, Instagram, WhatsApp, TikTok, and Reddit. The system includes:
-- **OAuth flow**: Edge functions `social-oauth-init` and `social-oauth-callback` already have LinkedIn OAuth support
-- **Database tables**: `social_platform_connections` and `social_beacon_configurations` for storing credentials and settings
-- **UI components**: `SuperAdminSocialBeacons` dashboard with credential management, OAuth setup, and analytics
-- **LinkedIn Apply Route**: `/in/apply/:jobId` already exists for tracking LinkedIn-sourced applicants
+### Issue 1: Credential Status Detection is Broken
+**Location**: `src/features/social-engagement/components/admin/PlatformCredentialsManager.tsx`
 
-### What's Missing for LinkedIn
-1. **Edge function secrets**: `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` are not configured
-2. **Beacon config**: LinkedIn is not included in the `SocialBeaconPlatform` type or `SOCIAL_BEACONS` configuration
-3. **UI integration**: LinkedIn doesn't appear in the platform credentials manager
-4. **No active connections**: Database shows no LinkedIn entries in either configuration table
+The `getConfiguredSecrets` function (lines 30-36) only returns secrets if a database record exists with `auto_engage_enabled` or `ad_creative_enabled` set to true. Since LinkedIn was just added and has no database record, it always shows "Not Configured" even though `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` are actually configured in Supabase.
+
+**Current broken logic:**
+```typescript
+const getConfiguredSecrets = (platform: string): string[] => {
+  const config = getConfigByPlatform(platform as any);
+  if (config?.auto_engage_enabled || config?.ad_creative_enabled) {
+    return SOCIAL_BEACONS[platform]?.requiredSecrets || [];
+  }
+  return []; // Always empty for new platforms!
+};
+```
+
+### Issue 2: LinkedIn OAuth Uses Deprecated API Endpoint
+**Location**: `supabase/functions/social-oauth-callback/index.ts` (lines 253-265)
+
+LinkedIn has migrated to OpenID Connect and deprecated the `v2/me` endpoint. The current code:
+```typescript
+const userResponse = await fetch('https://api.linkedin.com/v2/me', {
+  headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
+});
+```
+
+This endpoint no longer works for new LinkedIn apps. The correct endpoint is:
+```
+https://api.linkedin.com/v2/userinfo
+```
+
+And returns different field names:
+- `sub` instead of `id`
+- `name` instead of `localizedFirstName`/`localizedLastName`
+
+### Issue 3: Configure/Test Buttons Don't Actually Work
+**Location**: `src/features/social-engagement/components/admin/PlatformCredentialsManager.tsx`
+
+- **Configure** (line 38-42): Just shows a toast message with instructions
+- **Test** (line 45-57): Only runs a fake `setTimeout` simulation, no actual API call
+
+### Issue 4: No Edge Function to Verify Secrets
+There's no edge function to check if platform secrets are actually configured, so the UI has no way to determine real connection status.
+
+---
 
 ## Implementation Plan
 
-### Phase 1: Add LinkedIn API Credentials (Secrets)
-Add two secrets to Supabase Edge Functions:
-- `LINKEDIN_CLIENT_ID` - Your LinkedIn app Client ID
-- `LINKEDIN_CLIENT_SECRET` - Your LinkedIn app Client Secret
-
-### Phase 2: Update Beacon Configuration
-Modify `src/features/social-engagement/config/socialBeacons.config.ts`:
+### Phase 1: Create Secret Verification Edge Function
+Create `supabase/functions/verify-platform-secrets/index.ts`:
 
 ```typescript
-// Add to SocialBeaconPlatform type
-export type SocialBeaconPlatform = 
-  | 'x' 
-  | 'facebook' 
-  | 'instagram' 
-  | 'whatsapp' 
-  | 'tiktok' 
-  | 'reddit'
-  | 'linkedin';  // NEW
-
-// Add to SOCIAL_BEACONS configuration
-linkedin: {
-  platform: 'linkedin',
-  name: 'LinkedIn',
-  description: 'LinkedIn Marketing API for professional job recruitment',
-  icon: Linkedin,
-  color: 'hsl(201, 100%, 35%)',
-  bgColor: 'hsl(201, 100%, 35%, 0.1)',
-  authType: 'oauth2',
-  requiredSecrets: ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'],
-  optionalSecrets: ['LINKEDIN_ORGANIZATION_ID'],
-  webhookSupported: false,
-  autoEngageSupported: false,
-  adCreativeSupported: true,
-  apiDocUrl: 'https://learn.microsoft.com/en-us/linkedin/marketing/',
-  characterLimit: 3000,
-  mediaFormats: ['image/jpeg', 'image/png', 'video/mp4'],
-},
+// Check if required platform secrets exist in environment
+// Returns: { platform: string, hasAllSecrets: boolean, configuredSecrets: string[], missingSecrets: string[] }
 ```
 
-### Phase 3: Update OAuth Config Panel
-Update `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx`:
-- Add LinkedIn scopes to the helper function
+This edge function will:
+1. Accept a platform name
+2. Check environment variables for each required secret
+3. Return which secrets exist (without exposing values)
+
+### Phase 2: Fix Credential Status Detection
+Update `PlatformCredentialsManager.tsx`:
+
+1. Add state for verified secrets
+2. Call the verification edge function on mount/refresh
+3. Update `configuredSecrets` prop to use real verification data
 
 ```typescript
-linkedin: ['r_liteprofile', 'r_organization_social', 'w_organization_social', 'rw_organization_admin'],
+// New approach
+const [verifiedSecrets, setVerifiedSecrets] = useState<Record<string, string[]>>({});
+
+useEffect(() => {
+  const verifySecrets = async () => {
+    for (const platform of platforms) {
+      const { data } = await supabase.functions.invoke('verify-platform-secrets', {
+        body: { platform: platform.platform }
+      });
+      if (data?.configuredSecrets) {
+        setVerifiedSecrets(prev => ({
+          ...prev,
+          [platform.platform]: data.configuredSecrets
+        }));
+      }
+    }
+  };
+  verifySecrets();
+}, []);
 ```
 
-### Phase 4: Update Edge Function OAuth Scopes (if needed)
-The `social-oauth-init` edge function already has LinkedIn configuration with these scopes:
-- `r_liteprofile`
-- `r_organization_social`  
-- `w_organization_social`
-- `rw_organization_admin`
+### Phase 3: Fix LinkedIn OAuth Callback
+Update `supabase/functions/social-oauth-callback/index.ts`:
 
-These may need updating for the LinkedIn Marketing API v2 to include:
-- `r_ads` (read ad accounts)
-- `r_ads_reporting` (ad analytics)
-- `w_member_social` (post on behalf of members)
+Replace the deprecated API call:
+```typescript
+// OLD (broken):
+const userResponse = await fetch('https://api.linkedin.com/v2/me', ...);
+const userData = await userResponse.json();
+platformUserId = userData.id;
+platformUsername = `${userData.localizedFirstName} ${userData.localizedLastName}`;
+
+// NEW (OpenID Connect):
+const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', ...);
+const userData = await userResponse.json();
+platformUserId = userData.sub;
+platformUsername = userData.name;
+```
+
+### Phase 4: Implement Real Test Functionality
+Update `handleTest` in `PlatformCredentialsManager.tsx`:
+
+1. Call an edge function that actually tests the API connection
+2. For LinkedIn: Make a test API call using the stored access token
+3. Return success/failure with descriptive message
+
+### Phase 5: Improve Configure Button
+Options:
+1. Show a dialog with current secret status and link to Supabase
+2. For platforms with OAuth, trigger the OAuth flow directly
+3. Show step-by-step instructions specific to each platform
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `supabase/functions/verify-platform-secrets/index.ts` | NEW - Edge function to verify secrets exist |
+| `supabase/functions/social-oauth-callback/index.ts` | Fix LinkedIn to use `/v2/userinfo` endpoint |
+| `src/features/social-engagement/components/admin/PlatformCredentialsManager.tsx` | Use real secret verification, improve test/configure |
+| `src/features/social-engagement/hooks/useSocialBeaconConfig.ts` | Add secret verification query |
+
+---
 
 ## Technical Details
 
-### LinkedIn App Requirements
-Before connecting, you need a LinkedIn Developer App with:
-1. **Products enabled**: Marketing Developer Platform, Sign In with LinkedIn
-2. **OAuth 2.0 redirect URL**: `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/social-oauth-callback`
-3. **Required permissions**: Posting, Company Pages, Analytics
+### verify-platform-secrets Edge Function Schema
 
-### Files to Modify
-| File | Change |
-|------|--------|
-| `src/features/social-engagement/config/socialBeacons.config.ts` | Add LinkedIn to platform type and config |
-| `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` | Add LinkedIn scopes display |
-| `supabase/functions/social-oauth-init/index.ts` | Update scopes if needed for Marketing API |
-| Edge Function Secrets | Add `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` |
+**Request:**
+```typescript
+{
+  platform: 'linkedin' | 'facebook' | 'instagram' | 'x' | ...
+}
+```
 
-### OAuth Flow
-1. User clicks "Connect LinkedIn" in Social Beacons dashboard
-2. `social-oauth-init` generates authorization URL with Client ID
-3. User authorizes app on LinkedIn
-4. LinkedIn redirects to `social-oauth-callback` with code
-5. Edge function exchanges code for access token
-6. Connection stored in `social_platform_connections` table
-7. User can enable auto-posting and ad creative features
+**Response:**
+```typescript
+{
+  success: true,
+  platform: 'linkedin',
+  hasAllSecrets: true,
+  configuredSecrets: ['LINKEDIN_CLIENT_ID', 'LINKEDIN_CLIENT_SECRET'],
+  missingSecrets: []
+}
+```
 
-## Next Steps
-Once you approve this plan:
-1. I'll prompt you to add the `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` secrets
-2. Update the beacon configuration to include LinkedIn
-3. Test the OAuth flow end-to-end
+### LinkedIn userinfo Response Format
+```json
+{
+  "sub": "abc123",
+  "name": "John Doe",
+  "given_name": "John",
+  "family_name": "Doe",
+  "picture": "https://...",
+  "email": "john@example.com",
+  "email_verified": true
+}
+```
 
-Would you like to proceed?
+---
+
+## Expected Outcome
+
+After implementation:
+1. LinkedIn card will show "Connected" if both secrets are configured
+2. "Configure" will open a dialog with clear instructions or trigger OAuth
+3. "Test" will actually verify the API connection works
+4. OAuth flow will successfully fetch user profile and store connection
+
