@@ -6727,7 +6727,7 @@ export type Database = {
           is_outbound_enabled: boolean | null
           is_platform_default: boolean | null
           llm_model: string | null
-          organization_id: string
+          organization_id: string | null
           updated_at: string
           voice_id: string | null
         }
@@ -6745,7 +6745,7 @@ export type Database = {
           is_outbound_enabled?: boolean | null
           is_platform_default?: boolean | null
           llm_model?: string | null
-          organization_id: string
+          organization_id?: string | null
           updated_at?: string
           voice_id?: string | null
         }
@@ -6763,7 +6763,7 @@ export type Database = {
           is_outbound_enabled?: boolean | null
           is_platform_default?: boolean | null
           llm_model?: string | null
-          organization_id?: string
+          organization_id?: string | null
           updated_at?: string
           voice_id?: string | null
         }
