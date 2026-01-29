@@ -5144,6 +5144,80 @@ export type Database = {
           },
         ]
       }
+      shared_voice_conversations: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          created_by: string | null
+          custom_title: string | null
+          expires_at: string | null
+          hide_caller_info: boolean | null
+          id: string
+          is_active: boolean | null
+          organization_id: string | null
+          share_code: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          created_by?: string | null
+          custom_title?: string | null
+          expires_at?: string | null
+          hide_caller_info?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          share_code: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          custom_title?: string | null
+          expires_at?: string | null
+          hide_caller_info?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          share_code?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_voice_conversations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "elevenlabs_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_voice_conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_voice_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_voice_conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_conversations: {
         Row: {
           application_id: string
@@ -7014,6 +7088,31 @@ export type Database = {
         }
         Relationships: []
       }
+      public_shared_conversation_info: {
+        Row: {
+          agent_name: string | null
+          conversation_id: string | null
+          custom_title: string | null
+          duration_seconds: number | null
+          expires_at: string | null
+          hide_caller_info: boolean | null
+          id: string | null
+          organization_logo: string | null
+          organization_name: string | null
+          share_code: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_voice_conversations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "elevenlabs_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_access_sensitive_applicant_data: {
@@ -7058,6 +7157,7 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      generate_share_code: { Args: never; Returns: string }
       generate_short_code: { Args: { length?: number }; Returns: string }
       get_active_ats_connections: {
         Args: { p_client_id?: string; p_organization_id: string }
@@ -7270,6 +7370,10 @@ export type Database = {
       }
       increment_ats_sync_stats: {
         Args: { p_connection_id: string; p_success: boolean }
+        Returns: undefined
+      }
+      increment_share_view_count: {
+        Args: { p_share_code: string }
         Returns: undefined
       }
       increment_short_link_click: {
