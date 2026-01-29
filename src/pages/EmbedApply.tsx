@@ -90,22 +90,6 @@ const EmbedApply: React.FC = () => {
           {/* Application Form */}
           <ApplicationForm organizationName={organizationName} />
           
-          {/* Powered by branding (optional) */}
-          {!hideBranding && (
-            <div className="text-center mt-6 pb-4">
-              <p className="text-xs text-muted-foreground">
-                Powered by{' '}
-                <a 
-                  href="https://ats.me" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  ATS.me
-                </a>
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
