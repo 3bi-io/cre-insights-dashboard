@@ -10,12 +10,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { User, Bot, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { User, Bot, Clock, Calendar, AlertCircle, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
+import { ShareConversationDialog } from './ShareConversationDialog';
 
 interface Conversation {
   id: string;
@@ -44,6 +45,7 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
   const [audio, setAudio] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [transcriptError, setTranscriptError] = useState<string | null>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   useEffect(() => {
     if (open && conversation) {
@@ -118,13 +120,27 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle>Conversation Details</DialogTitle>
-          <DialogDescription>
-            {conversation.voice_agents?.agent_name} • {format(new Date(conversation.started_at), 'PPpp')}
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>Conversation Details</DialogTitle>
+              <DialogDescription>
+                {conversation.voice_agents?.agent_name} • {format(new Date(conversation.started_at), 'PPpp')}
+              </DialogDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShareDialog(true)}
+              className="ml-4"
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="grid grid-cols-3 gap-4 mb-4">
@@ -242,5 +258,14 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
         </div>
       </DialogContent>
     </Dialog>
+
+    <ShareConversationDialog
+      conversationId={conversation.conversation_id}
+      conversationDbId={conversation.id}
+      agentName={conversation.voice_agents?.agent_name}
+      open={showShareDialog}
+      onOpenChange={setShowShareDialog}
+    />
+    </>
   );
 };

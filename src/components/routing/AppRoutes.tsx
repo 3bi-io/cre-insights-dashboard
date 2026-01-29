@@ -32,6 +32,7 @@ const XApply = React.lazy(() => import("@/pages/XApply"));
 const LinkedInApply = React.lazy(() => import("@/pages/LinkedInApply"));
 const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
 const ShortLinkRedirect = React.lazy(() => import("@/pages/ShortLinkRedirect"));
+const SharedVoicePage = React.lazy(() => import("@/pages/public/SharedVoicePage"));
 
 // Main application pages
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -180,6 +181,9 @@ const AppRoutes: React.FC = () => {
       
       {/* Short Link Redirect */}
       <Route path="/j/:shortCode" element={<RouteWrapper><ShortLinkRedirect /></RouteWrapper>} />
+      
+      {/* Public Voice Conversation Share */}
+      <Route path="/voice/:shareCode" element={<RouteWrapper><SharedVoicePage /></RouteWrapper>} />
       
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
       

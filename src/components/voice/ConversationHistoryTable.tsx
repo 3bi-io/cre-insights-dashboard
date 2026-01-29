@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Download, Eye } from 'lucide-react';
+import { MessageSquare, Download, Eye, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ConversationDetailsDialog } from './ConversationDetailsDialog';
+import { ShareConversationDialog } from './ShareConversationDialog';
 
 interface Conversation {
   id: string;
@@ -35,6 +36,7 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
   isDownloadingAudio,
 }) => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [shareConversation, setShareConversation] = useState<Conversation | null>(null);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return 'N/A';
@@ -95,6 +97,14 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setShareConversation(conversation)}
+                      >
+                        <Share2 className="h-4 w-4 mr-1" />
+                        Share
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => onDownloadAudio(conversation.conversation_id)}
                         disabled={isDownloadingAudio}
                       >
@@ -115,6 +125,16 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
           conversation={selectedConversation}
           open={!!selectedConversation}
           onOpenChange={(open) => !open && setSelectedConversation(null)}
+        />
+      )}
+
+      {shareConversation && (
+        <ShareConversationDialog
+          conversationId={shareConversation.conversation_id}
+          conversationDbId={shareConversation.id}
+          agentName={shareConversation.voice_agents?.agent_name}
+          open={!!shareConversation}
+          onOpenChange={(open) => !open && setShareConversation(null)}
         />
       )}
     </>
