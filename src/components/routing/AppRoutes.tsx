@@ -28,6 +28,7 @@ const ChooseAccountType = React.lazy(() => import("@/pages/ChooseAccountType"));
 const Apply = React.lazy(() => import("@/pages/Apply"));
 const DetailedApply = React.lazy(() => import("@/pages/DetailedApply"));
 const ThankYou = React.lazy(() => import("@/pages/ThankYou"));
+const EmbedApply = React.lazy(() => import("@/pages/EmbedApply"));
 const XApply = React.lazy(() => import("@/pages/XApply"));
 const LinkedInApply = React.lazy(() => import("@/pages/LinkedInApply"));
 const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
@@ -173,6 +174,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/apply" element={<RouteWrapper><Apply /></RouteWrapper>} />
       <Route path="/apply/detailed" element={<RouteWrapper><DetailedApply /></RouteWrapper>} />
       <Route path="/thank-you" element={<RouteWrapper><ThankYou /></RouteWrapper>} />
+      
+      {/* Embeddable Apply Page (light mode only, for iframe embedding) */}
+      <Route path="/embed/apply" element={<RouteWrapper><EmbedApply /></RouteWrapper>} />
       
       {/* Social Platform Apply Routes - cleaner URLs with tracking */}
       <Route path="/x/apply/:jobId" element={<RouteWrapper><XApply /></RouteWrapper>} />
