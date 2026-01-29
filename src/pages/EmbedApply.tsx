@@ -81,7 +81,7 @@ const EmbedApply: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full overflow-y-auto bg-background">
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="max-w-2xl mx-auto">
           {/* Header with org/job branding */}
