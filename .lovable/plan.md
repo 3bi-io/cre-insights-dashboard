@@ -1,137 +1,195 @@
 
-# LinkedIn Social Beacon - Complete Fix Plan
 
-## Root Cause Analysis
+# Public Voice Interaction Share Page
 
-### Issue 1: Database CHECK Constraint Blocking LinkedIn
-**Severity**: Critical - This is the main blocker
+## Overview
 
-The `social_beacon_configurations` table has a CHECK constraint:
-```sql
-CHECK ((platform = ANY (ARRAY['x'::text, 'facebook'::text, 'instagram'::text, 'whatsapp'::text, 'tiktok'::text, 'reddit'::text])))
-```
+Create a shareable public page that displays a single voice conversation, allowing users to listen to the audio recording and read the transcript without requiring authentication. This enables organizations to share voice interactions for training, review, or demonstration purposes.
 
-LinkedIn is NOT in this list, so any attempt to upsert a LinkedIn configuration (toggle feature, save settings) will fail with a constraint violation error.
+## Current State Analysis
 
-### Issue 2: Secret Name Mismatch in Configuration
-**Severity**: Medium
+### Existing Resources
+- **Conversation Data**: `elevenlabs_conversations` table stores conversation metadata (agent_id, duration, status, timestamps)
+- **Transcripts**: `elevenlabs_transcripts` table stores conversation messages with speaker, message, and timestamps
+- **Audio**: `elevenlabs_audio` table stores references to audio files (format: `conversations/{conversation_id}/audio.mp3`)
+- **Existing Components**: `AudioPlayer`, `TranscriptDisplay`, and `ConversationDetailsDialog` provide reusable UI elements
 
-The frontend configuration (`socialBeacons.config.ts`) defines:
-```typescript
-x: {
-  requiredSecrets: ['TWITTER_CONSUMER_KEY', 'TWITTER_CONSUMER_SECRET', 'TWITTER_ACCESS_TOKEN', 'TWITTER_ACCESS_TOKEN_SECRET']
-}
-```
-
-But the edge function `verify-platform-secrets` checks:
-```typescript
-x: ['TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET']
-```
-
-This mismatch means the credential status shown in the UI may not reflect reality for X/Twitter.
-
-### Issue 3: Missing LinkedIn in Analytics Mock Data
-**Severity**: Low
-
-The `SocialAnalyticsPanel` has hardcoded mock data that doesn't include LinkedIn, so it won't appear in the analytics section.
-
----
+### Current Limitations
+- All tables have RLS policies requiring authentication (super_admin or org admin roles)
+- No public-facing view or edge function to serve conversation data to unauthenticated users
+- Audio URLs reference ElevenLabs storage paths, requiring authenticated edge function calls
 
 ## Implementation Plan
 
-### Phase 1: Update Database CHECK Constraint (Required)
-**File**: Database Migration
+### 1. Database Schema Changes
 
-Alter the CHECK constraint to include 'linkedin':
-
+**Add a shareable link tracking table:**
 ```sql
-ALTER TABLE social_beacon_configurations 
-DROP CONSTRAINT social_beacon_configurations_platform_check;
-
-ALTER TABLE social_beacon_configurations 
-ADD CONSTRAINT social_beacon_configurations_platform_check 
-CHECK (platform = ANY (ARRAY['x', 'facebook', 'instagram', 'whatsapp', 'tiktok', 'reddit', 'linkedin']));
+CREATE TABLE shared_voice_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES elevenlabs_conversations(id) ON DELETE CASCADE,
+  share_code VARCHAR(12) UNIQUE NOT NULL,
+  organization_id UUID REFERENCES organizations(id),
+  created_by UUID REFERENCES profiles(id),
+  expires_at TIMESTAMPTZ,
+  view_count INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  hide_caller_info BOOLEAN DEFAULT false,
+  custom_title TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
 ```
 
-### Phase 2: Fix Secret Name Consistency
-**File**: `src/features/social-engagement/config/socialBeacons.config.ts`
-
-Update X (Twitter) configuration to match what the edge function expects:
-
-```typescript
-// Current (mismatched):
-requiredSecrets: ['TWITTER_CONSUMER_KEY', 'TWITTER_CONSUMER_SECRET', 'TWITTER_ACCESS_TOKEN', 'TWITTER_ACCESS_TOKEN_SECRET']
-
-// Updated (matches edge function):
-requiredSecrets: ['TWITTER_CLIENT_ID', 'TWITTER_CLIENT_SECRET']
+**Create a public view for safe data exposure:**
+```sql
+CREATE VIEW public_shared_conversation_info AS
+SELECT 
+  svc.share_code,
+  svc.custom_title,
+  svc.hide_caller_info,
+  svc.expires_at,
+  ec.started_at,
+  ec.duration_seconds,
+  ec.status,
+  va.agent_name,
+  o.name AS organization_name,
+  o.logo_url AS organization_logo
+FROM shared_voice_conversations svc
+JOIN elevenlabs_conversations ec ON svc.conversation_id = ec.id
+LEFT JOIN voice_agents va ON ec.voice_agent_id = va.id
+LEFT JOIN organizations o ON ec.organization_id = o.id
+WHERE svc.is_active = true
+AND (svc.expires_at IS NULL OR svc.expires_at > now());
 ```
 
-OR update the edge function to match the frontend - depends on which secrets you have configured. Since the edge function uses `TWITTER_CLIENT_ID`, we should align to that.
+**RLS Policies:**
+- Allow authenticated admins to create/manage share links for their organization's conversations
+- Allow public read access to the `public_shared_conversation_info` view
 
-### Phase 3: Add LinkedIn to Analytics Panel
-**File**: `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx`
+### 2. Edge Function: `get-shared-conversation`
 
-Add LinkedIn to the mock analytics data:
+Create an edge function that serves conversation data publicly by share code:
 
-```typescript
-byPlatform: {
-  x: { engagements: 456, impressions: 18500, trend: 'up' },
-  facebook: { engagements: 389, impressions: 15200, trend: 'up' },
-  instagram: { engagements: 312, impressions: 8900, trend: 'down' },
-  tiktok: { engagements: 90, impressions: 2630, trend: 'up' },
-  linkedin: { engagements: 234, impressions: 12400, trend: 'up' }, // Add this
+**Endpoint**: `GET /functions/v1/get-shared-conversation?code={share_code}`
+
+**Response**:
+```json
+{
+  "success": true,
+  "conversation": {
+    "title": "CDL Qualification Call",
+    "agent_name": "Hiring Assistant",
+    "organization": { "name": "Acme Trucking", "logo_url": "..." },
+    "started_at": "2025-12-19T10:00:00Z",
+    "duration_seconds": 180,
+    "transcript": [
+      { "speaker": "agent", "message": "Hello...", "timestamp": "...", "sequence_number": 0 }
+    ],
+    "audio_url": "https://.../signed-audio-url"
+  }
 }
 ```
 
-### Phase 4: Verify OAuth Scopes Alignment
-**File**: `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx`
+**Features**:
+- Validates share code existence and expiration
+- Increments view count
+- Fetches audio from ElevenLabs API and returns a short-lived signed URL or streams it directly
+- Optionally redacts caller info if `hide_caller_info` is true
 
-The current LinkedIn scopes include deprecated `r_liteprofile`. Update to modern OpenID Connect scopes:
+### 3. Frontend Page: `src/pages/public/SharedVoicePage.tsx`
 
-```typescript
-// Current:
-linkedin: ['r_liteprofile', 'r_organization_social', 'w_organization_social', 'rw_organization_admin']
+**Route**: `/voice/:shareCode`
 
-// Updated:
-linkedin: ['openid', 'profile', 'email', 'w_member_social', 'r_organization_social', 'w_organization_social', 'rw_organization_admin']
+**UI Components**:
+- Organization branding (logo, name)
+- Conversation metadata (date, duration, agent name)
+- Audio player with full playback controls
+- Synchronized transcript display (highlights current speaker while audio plays)
+- Share/copy link button
+- Back to landing page CTA
+
+**Layout**:
+```
++--------------------------------------------------+
+|  [Logo] Organization Name                        |
++--------------------------------------------------+
+|                                                  |
+|  Voice Conversation: CDL Qualification Call      |
+|  Dec 19, 2025 • 3:00 min • Hiring Assistant      |
+|                                                  |
+|  +--------------------------------------------+  |
+|  |  [▶️ Play]  ▬▬▬▬▬▬▬▬▬▬▬▬  0:45 / 3:00  🔊 |  |
+|  +--------------------------------------------+  |
+|                                                  |
+|  +--------------------------------------------+  |
+|  |  TRANSCRIPT                                 |  |
+|  |  ----------------------------------------   |  |
+|  |  🤖 Agent (0:00)                          |  |
+|  |  "Hello, this is a follow-up call..."     |  |
+|  |                                           |  |
+|  |  👤 Caller (0:12)              |  |
+|  |  "Yes, that sounds correct."              |  |
+|  +--------------------------------------------+  |
+|                                                  |
+|  [Copy Link]  [Browse Jobs →]                    |
++--------------------------------------------------+
 ```
 
----
+### 4. Admin UI: Create Share Link
 
-## Files to Modify
+Add a "Share" button to `ConversationDetailsDialog.tsx` and `ConversationHistoryTable.tsx`:
 
-| File | Change | Priority |
-|------|--------|----------|
-| Database Migration | Add 'linkedin' to platform CHECK constraint | Critical |
-| `src/features/social-engagement/config/socialBeacons.config.ts` | Fix X/Twitter secret names to match edge function | High |
-| `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx` | Add LinkedIn mock data | Medium |
-| `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` | Update LinkedIn OAuth scopes to modern endpoints | Medium |
+**Share Dialog**:
+- Toggle: Set expiration (1 day, 7 days, 30 days, never)
+- Toggle: Hide caller info
+- Text input: Custom title (optional)
+- Generate shareable URL: `https://ats.me/voice/abc123xyz`
 
----
+### 5. Hook: `useSharedConversation`
 
-## Technical Details
+```typescript
+export function useSharedConversation(shareCode: string) {
+  return useQuery({
+    queryKey: ['shared-conversation', shareCode],
+    queryFn: async () => {
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/get-shared-conversation?code=${shareCode}`
+      );
+      if (!response.ok) throw new Error('Conversation not found');
+      return response.json();
+    },
+    enabled: !!shareCode,
+  });
+}
+```
 
-### Why the 404/Error Occurs
-When you click the Ad Creative toggle for LinkedIn:
-1. `PlatformCredentialCard` calls `onToggleAdCreative(enabled)`
-2. `PlatformCredentialsManager` calls `toggleFeature.mutate({ platform: 'linkedin', feature: 'ad_creative_enabled', enabled })`
-3. `useSocialBeaconConfig.toggleFeature` attempts to upsert to `social_beacon_configurations`
-4. PostgreSQL rejects the insert due to CHECK constraint violation
-5. The Supabase client returns an error, which the mutation handles with "Failed to update feature"
+## Files to Create/Modify
 
-### After the Fix
-1. Database accepts 'linkedin' as a valid platform value
-2. LinkedIn configuration can be created/updated
-3. Toggle switches work correctly
-4. LinkedIn appears in all tabs (Credentials, OAuth Setup, Ad Creative, Settings, Analytics)
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/migrations/xxx.sql` | Create | Add `shared_voice_conversations` table and public view |
+| `supabase/functions/get-shared-conversation/index.ts` | Create | Serve conversation data publicly |
+| `src/pages/public/SharedVoicePage.tsx` | Create | Public voice interaction display page |
+| `src/hooks/useSharedConversation.ts` | Create | Hook to fetch shared conversation data |
+| `src/components/voice/ShareConversationDialog.tsx` | Create | Admin dialog to create share links |
+| `src/components/voice/ConversationDetailsDialog.tsx` | Modify | Add "Share" button |
+| `src/components/voice/ConversationHistoryTable.tsx` | Modify | Add share action to row menu |
+| `src/components/routing/AppRoutes.tsx` | Modify | Add `/voice/:shareCode` route |
 
----
+## Security Considerations
 
-## Expected Outcome
+1. **Time-limited access**: Share links can have optional expiration dates
+2. **No PII exposure**: `hide_caller_info` option redacts personal information
+3. **View tracking**: View counts help organizations monitor link usage
+4. **Organization isolation**: Only org admins can create share links for their conversations
+5. **Soft-delete support**: `is_active` flag allows disabling links without deleting data
 
-After implementing these changes:
-- LinkedIn toggle switches will function correctly
-- LinkedIn secrets will show as "Connected" (since `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET` are already configured)
-- LinkedIn will appear in the Analytics panel
-- OAuth scopes displayed will match what the edge function actually requests
-- Full LinkedIn beacon functionality will be operational
+## Audio Handling Strategy
+
+The edge function will fetch audio from ElevenLabs and either:
+1. **Stream directly** - Proxy the audio response through the edge function
+2. **Return signed URL** - Generate a time-limited signed URL for client-side playback
+
+Option 1 is recommended for simplicity, as it doesn't require additional storage bucket configuration.
+
