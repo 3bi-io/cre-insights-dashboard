@@ -26,12 +26,12 @@ import AudioPlayer from '@/components/voice/demo/AudioPlayer';
 import TranscriptDisplay from '@/components/voice/demo/TranscriptDisplay';
 import DynamicVariablesCard from '@/components/voice/demo/DynamicVariablesCard';
 import HowItWorksSection from '@/components/voice/demo/HowItWorksSection';
-import { liveCallTranscript, voicemailTranscript } from '@/components/voice/demo/transcriptData';
+import { liveCallTranscript, voicemailTranscript, voiceApplyTranscript } from '@/components/voice/demo/transcriptData';
 
 const DemoPage: React.FC = () => {
   const [liveCallTime, setLiveCallTime] = useState(0);
   const [voicemailTime, setVoicemailTime] = useState(0);
-
+  const [voiceApplyTime, setVoiceApplyTime] = useState(0);
   const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -188,11 +188,63 @@ const DemoPage: React.FC = () => {
                 </p>
               </div>
 
-              <Tabs defaultValue="live" className="space-y-6">
-                <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-                  <TabsTrigger value="live">Live Applicant Call</TabsTrigger>
-                  <TabsTrigger value="voicemail">Voicemail Scenario</TabsTrigger>
+              <Tabs defaultValue="voice-apply" className="space-y-6">
+                <TabsList className="grid w-full max-w-xl mx-auto grid-cols-3">
+                  <TabsTrigger value="voice-apply">Voice Apply</TabsTrigger>
+                  <TabsTrigger value="live">Outbound Call</TabsTrigger>
+                  <TabsTrigger value="voicemail">Voicemail</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="voice-apply">
+                  <div className="flex justify-center mb-4">
+                    <Badge variant="outline" className="gap-1 bg-primary/10 text-primary border-primary/20">
+                      <Mic className="h-3 w-3" />
+                      Complete Application Flow
+                    </Badge>
+                  </div>
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Mic className="h-5 w-5 text-primary" />
+                          Voice Apply Demo
+                        </CardTitle>
+                        <CardDescription>
+                          Full candidate application in under 6 minutes
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <AudioPlayer
+                          src="/audio/voice-apply-demo.mp3"
+                          onTimeUpdate={setVoiceApplyTime}
+                        />
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          <Badge variant="secondary" className="text-xs">CDL Screening</Badge>
+                          <Badge variant="secondary" className="text-xs">Veteran Recognition</Badge>
+                          <Badge variant="secondary" className="text-xs">Conversational AI</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground text-center">
+                          * Real conversation demonstrating complete intake flow
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Live Transcript</CardTitle>
+                        <CardDescription>
+                          Watch the full application unfold
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <TranscriptDisplay
+                          currentTime={voiceApplyTime}
+                          transcriptData={voiceApplyTranscript}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
 
                 <TabsContent value="live">
                   <div className="grid lg:grid-cols-2 gap-6">
