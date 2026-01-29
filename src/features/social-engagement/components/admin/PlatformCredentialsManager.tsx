@@ -32,7 +32,25 @@ export function PlatformCredentialsManager({ organizationId = null }: PlatformCr
     toggleFeature,
   } = useSocialBeaconConfig(organizationId);
 
-  const platforms = getAllSocialBeacons();
+  const allPlatforms = getAllSocialBeacons();
+  
+  // Sort platforms: connected first, then partial, then not configured
+  const platforms = [...allPlatforms].sort((a, b) => {
+    const aVerification = verifiedSecrets[a.platform];
+    const bVerification = verifiedSecrets[b.platform];
+    const aConfig = getConfigByPlatform(a.platform);
+    const bConfig = getConfigByPlatform(b.platform);
+    
+    // Calculate priority: 3 = fully connected, 2 = partial, 1 = has config, 0 = not configured
+    const getPriority = (verification: typeof aVerification, config: typeof aConfig) => {
+      if (verification?.hasAllSecrets) return 3;
+      if (verification?.configuredSecrets?.length > 0) return 2;
+      if (config) return 1;
+      return 0;
+    };
+    
+    return getPriority(bVerification, bConfig) - getPriority(aVerification, aConfig);
+  });
 
   // Verify secrets on mount and when refresh is clicked
   const verifyAllSecrets = async () => {
