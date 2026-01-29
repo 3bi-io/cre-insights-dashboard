@@ -1,118 +1,195 @@
 
-# Voice Application Demo - Real Conversation Implementation
+
+# Embeddable Apply Page (Light Mode Only)
 
 ## Overview
 
-Integrate the uploaded real voice conversation audio file into the Demo page as a showcase of ATS.me's Voice Apply feature. This ~5.5 minute conversation demonstrates the complete candidate intake process, including qualification questions and conversational AI responses.
+Create a standalone embeddable version of the `/apply` page that:
+1. Forces light mode regardless of system/user theme preferences
+2. Is optimized for iframe embedding on external websites
+3. Removes navigation elements that don't make sense in an embedded context
+4. Includes proper iframe security headers and sizing behaviors
 
-## Audio Content Summary
+## Current Architecture
 
-The uploaded audio file (`Audio_for_conversation_conv_3701kg441b1zfbpaskh4xcbq5v74.mp3`) contains:
-- **Duration**: ~5 minutes 24 seconds (324 seconds)
-- **Type**: Voice Apply - Inbound candidate application
-- **Highlights**:
-  - Complete candidate intake flow
-  - Personal information collection (name, phone, email, zip code)
-  - Qualification screening (age, CDL class, experience, drug test eligibility, veteran status)
-  - Conversational handling of humor (UFO question)
-  - Professional wrap-up with next steps
+The existing `/apply` page uses:
+- `useApplyContext` hook to fetch job/org context from URL params
+- `ApplicationHeader` for branding and job details
+- `ApplicationForm` with 4-step wizard (Personal, CDL, Background, Consent)
+- Theme system via CSS variables (`:root` for light, `.dark` for dark mode)
+- Submits to `submit-application` edge function
+- Redirects to `/thank-you` on success
 
 ## Implementation Plan
 
-### 1. Copy Audio File to Public Assets
-**Action**: Copy the uploaded audio to `public/audio/voice-apply-demo.mp3`
+### 1. Create Embed Apply Page
 
-This makes the audio accessible for playback on the demo page.
+**File**: `src/pages/EmbedApply.tsx`
 
-### 2. Create Transcript Data Entry
-**File**: `src/components/voice/demo/transcriptData.ts`
+A dedicated page component that:
+- Wraps the existing form components
+- Forces light theme by adding `light` class to document and setting CSS variables
+- Removes back-to-home navigation (not relevant in iframe)
+- Uses `postMessage` to communicate submission success to parent window
+- Has minimal padding optimized for iframe display
+- Includes optional "Powered by ATS.me" footer
 
-Add a new transcript array for the Voice Apply conversation:
+Key changes from original:
+- No `<Link to="/">` navigation
+- Inline light theme enforcement via `useEffect`
+- Post-submission behavior: send message to parent OR show inline success
 
-```typescript
-export const voiceApplyTranscript: TranscriptEntry[] = [
-  { startTime: 0, endTime: 3, speaker: 'agent', text: "Hi there, I'm an AI recruiting assistant." },
-  { startTime: 3, endTime: 5, speaker: 'agent', text: "Welcome to ATS.me." },
-  { startTime: 5, endTime: 14, speaker: 'agent', text: "I'm here to help you explore various opportunities with ATS.me, one of America's fastest growing AI recruiting solutions." },
-  { startTime: 14, endTime: 17, speaker: 'agent', text: "Are you ready to get started with your application?" },
-  { startTime: 17, endTime: 18, speaker: 'applicant', text: "Yes." },
-  // ... (full transcript with ~50 entries covering the complete 5.5 min conversation)
-  { startTime: 319, endTime: 321, speaker: 'agent', text: "Thank you for your time today, Cody." },
-  { startTime: 321, endTime: 324, speaker: 'agent', text: "A recruiter will be in touch soon. Have a great day." },
-];
+### 2. Create Embed Thank You Component
+
+**File**: `src/components/apply/EmbedThankYou.tsx`
+
+An inline success state (instead of page redirect) that:
+- Shows success message within the same iframe
+- Sends `postMessage` to parent window with submission result
+- Optional: auto-close or redirect behavior configurable via URL params
+
+### 3. Update Routing
+
+**File**: `src/components/routing/AppRoutes.tsx`
+
+Add new route:
+```
+/embed/apply → EmbedApply (no layout wrapper)
 ```
 
-### 3. Update Demo Page UI
-**File**: `src/pages/public/DemoPage.tsx`
+### 4. URL Parameters for Customization
 
-Add a third tab to the voice technology section:
+The embed page will support additional URL params:
+- `?job_listing_id=xxx` - Existing job context
+- `?org=xxx` - Organization slug
+- `?hide_branding=true` - Hide "Powered by ATS.me"
+- `?success_redirect=https://...` - Redirect parent on success
+- `?success_message=postMessage` - Use postMessage on success
 
-```
-Voice Technology Tabs:
-├── Live Applicant Call (existing)
-├── Voicemail Scenario (existing)
-└── Voice Apply Demo (NEW - full application flow)
-```
+### 5. Parent Window Integration
 
-**Changes**:
-1. Import the new `voiceApplyTranscript` data
-2. Add state for tracking Voice Apply audio time
-3. Add a third tab "Voice Apply" with the new audio player and transcript
-4. Include contextual badges highlighting the demo features
+Provide JavaScript snippet for embedding:
 
-### 4. UI Layout for New Tab
+```html
+<iframe 
+  src="https://ats.me/embed/apply?org=acme-trucking&job_listing_id=123"
+  style="width: 100%; min-height: 600px; border: none;"
+  allow="clipboard-write"
+></iframe>
 
-```
-+------------------------------------------+
-|  🎙️ Voice Apply - Complete Application   |
-|  ---------------------------------------- |
-|  See how candidates apply in under 5 min  |
-+------------------------------------------+
-|                                          |
-|  +------------------------------------+  |
-|  | [▶ Play]  ▬▬▬▬▬▬▬▬  1:45 / 5:24   |  |
-|  +------------------------------------+  |
-|                                          |
-|  +------------------------------------+  |
-|  | LIVE TRANSCRIPT                    |  |
-|  | [Synced with audio playback]       |  |
-|  | ...                                |  |
-|  +------------------------------------+  |
-|                                          |
-|  [Badge: CDL Screening]                  |
-|  [Badge: Veteran Recognition]            |
-|  [Badge: Conversational AI]              |
-+------------------------------------------+
+<script>
+window.addEventListener('message', function(e) {
+  if (e.origin !== 'https://ats.me') return;
+  if (e.data.type === 'application_submitted') {
+    console.log('Application submitted:', e.data.applicationId);
+    // Handle success (e.g., redirect, show modal, track conversion)
+  }
+  if (e.data.type === 'resize') {
+    document.querySelector('iframe').style.height = e.data.height + 'px';
+  }
+});
+</script>
 ```
 
 ## Files to Create/Modify
 
 | File | Action | Description |
 |------|--------|-------------|
-| `public/audio/voice-apply-demo.mp3` | Copy | Audio file from user upload |
-| `src/components/voice/demo/transcriptData.ts` | Modify | Add `voiceApplyTranscript` array with ~50 timestamped entries |
-| `src/pages/public/DemoPage.tsx` | Modify | Add third "Voice Apply" tab with audio player and transcript display |
+| `src/pages/EmbedApply.tsx` | Create | Embeddable apply page with forced light mode |
+| `src/components/apply/EmbedThankYou.tsx` | Create | Inline success state for embed |
+| `src/hooks/useEmbedMode.ts` | Create | Hook for iframe detection and postMessage |
+| `src/components/routing/AppRoutes.tsx` | Modify | Add `/embed/apply` route |
 
 ## Technical Details
 
-### Transcript Timing Format
-Each entry follows the existing format:
+### Light Mode Enforcement
+
 ```typescript
-interface TranscriptEntry {
-  startTime: number;  // Seconds from audio start
-  endTime: number;    // Seconds when this line ends
-  speaker: 'agent' | 'applicant';
-  text: string;
-}
+// In EmbedApply.tsx
+useEffect(() => {
+  // Force light mode on document
+  const root = document.documentElement;
+  root.classList.remove('dark');
+  root.classList.add('light');
+  
+  // Cleanup on unmount (restore original theme)
+  return () => {
+    // Only restore if we're still on embed page
+  };
+}, []);
 ```
 
-### Audio Player Integration
-The existing `AudioPlayer` component with `onTimeUpdate` callback will sync with `TranscriptDisplay` to highlight the current speaking segment.
+### PostMessage Communication
+
+```typescript
+// On successful submission
+const notifyParent = (data: { type: string; applicationId?: string }) => {
+  if (window.parent !== window) {
+    window.parent.postMessage(data, '*');
+  }
+};
+
+// Auto-resize for dynamic content
+useEffect(() => {
+  const sendHeight = () => {
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: 'resize',
+        height: document.body.scrollHeight
+      }, '*');
+    }
+  };
+  const observer = new ResizeObserver(sendHeight);
+  observer.observe(document.body);
+  return () => observer.disconnect();
+}, []);
+```
+
+### Modified Form Hook
+
+Create a wrapper around `useApplicationForm` that:
+- Overrides the success handler to use postMessage instead of navigate
+- Stores success state locally for inline thank-you display
+
+## Security Considerations
+
+1. **CORS**: The edge function already accepts cross-origin requests
+2. **X-Frame-Options**: Ensure the embed route is allowed to be iframed (Lovable's default should allow this)
+3. **Origin Validation**: When using postMessage, validate the parent origin if needed
+4. **Input Sanitization**: Existing form validation applies
+
+## User Experience Flow
+
+```
+External Website                     Embed Iframe
+      |                                    |
+      |  <-- User visits page              |
+      |       with iframe embed            |
+      |                                    |
+      |                           [Apply Form Step 1]
+      |                                    |
+      |                           [Apply Form Step 2]
+      |                                    |
+      |                           [Apply Form Step 3]
+      |                                    |
+      |                           [Apply Form Step 4]
+      |                                    |
+      |                           [Submit Button]
+      |                                    |
+      |                           [Inline Success]
+      |                                    |
+      |  postMessage({type: 'submitted'})  |
+      |  <---------------------------------|
+      |                                    |
+[Handle success event]                     |
+```
 
 ## Expected Outcome
 
 After implementation:
-- Users visiting `/demo` will see a new "Voice Apply" tab
-- The tab showcases a real, complete 5.5-minute application conversation
-- Audio playback syncs with transcript highlighting
-- Demonstrates key features: qualification screening, conversational AI, and professional candidate experience
+- External websites can embed `<iframe src="https://ats.me/embed/apply?org=acme">` 
+- The form displays in consistent light mode regardless of system theme
+- Form submissions work identically to the main `/apply` page
+- Parent windows receive success notifications via postMessage
+- The iframe auto-resizes based on content height
+
