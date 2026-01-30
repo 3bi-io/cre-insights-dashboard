@@ -70,7 +70,7 @@ const EmbedApply: React.FC = () => {
   // If submitted, show inline thank you
   if (isSubmitted && submissionResult) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background px-6 sm:px-4">
         <EmbedThankYou
           applicationId={submissionResult.applicationId}
           organizationName={submissionResult.organizationName}
@@ -82,7 +82,7 @@ const EmbedApply: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto bg-background">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="container mx-auto px-6 sm:px-4 py-4 sm:py-6">
         <div className="max-w-2xl mx-auto">
           {/* Header with org/job branding */}
           <ApplicationHeader />
