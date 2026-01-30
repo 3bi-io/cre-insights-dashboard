@@ -1,121 +1,210 @@
 
-# Android Device Compatibility & UX Audit Report
+# Add Embed Form Outbound Voice Agent
 
-## Current Status: Strong Foundation
+## Context
 
-The codebase demonstrates solid mobile-first architecture with many best practices already in place. Here's a detailed assessment:
+You want all submissions from `/embed/apply` to trigger outbound calls via a specific ElevenLabs agent:
 
-### What's Already Working Well
+| Property | Value |
+|----------|-------|
+| **Agent ID** | `agent_3201kfp75kshfgwr1kfs310715z3` |
+| **Phone Number ID** | `phnum_6901kg7vdsf5em2sh1cc1933d8j4` |
 
-| Category | Implementation | Status |
-|----------|---------------|--------|
-| **Touch Targets** | Minimum 44px (WCAG 2.1 AA compliant) buttons and inputs | Excellent |
-| **Responsive Breakpoints** | Full spectrum (xs, sm, md, lg, xl, 2xl) with useResponsiveLayout hook | Excellent |
-| **Safe Area Insets** | env(safe-area-inset-*) for notched devices | Good |
-| **Capacitor Setup** | Core, Android, and iOS packages installed with proper config | Good |
-| **Touch Manipulation** | CSS `touch-manipulation` class applied to interactive elements | Good |
-| **Reduced Motion** | prefers-reduced-motion media query support | Good |
-| **Bottom Navigation** | Mobile-optimized with accessible ARIA labels | Excellent |
-| **Responsive Modals** | Dialog on desktop, Drawer (bottom sheet) on mobile | Excellent |
-| **Pull-to-Refresh** | Custom hook with configurable threshold | Good |
-| **Device Capabilities** | useDeviceCapabilities hook with connection speed detection | Excellent |
+## Current Architecture Analysis
 
-### Issues Identified for Android Optimization
-
-#### 1. Missing viewport-fit Meta Tag (Critical for Edge-to-Edge Android)
-The `index.html` viewport meta tag doesn't include `viewport-fit=cover`, which is needed for proper edge-to-edge display on modern Android devices with notches or rounded corners.
-
-**Current:**
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+### Application Flow
+```text
+/embed/apply (iframe)
+    ↓
+useApplicationForm → submit-application edge function
+    ↓
+Database INSERT → trigger_application_insert_outbound_call()
+    ↓
+Creates record in outbound_calls table
 ```
 
-**Should be:**
-```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+### Current Trigger Logic (Priority Order)
+1. **Client-specific agent** - Matches `client_id` from job listing
+2. **Organization-level agent** - Matches `organization_id` with `client_id IS NULL`
+3. **Platform default agent** - Falls back to `is_platform_default = true`
+
+### The Gap
+- Embed form applications currently get `source: 'Direct Application'` (same as regular `/apply`)
+- No way to distinguish embed traffic for specialized routing
+- Need to add a dedicated embed outbound agent as a new routing option
+
+## Solution Overview
+
+### Phase 1: Add Embed Source Tracking
+Add `'Embed Form'` as a distinct source identifier so the system can recognize embed traffic.
+
+### Phase 2: Insert Embed Outbound Agent
+Add the new voice agent to the `voice_agents` table with the provided credentials.
+
+### Phase 3: Update Database Trigger
+Modify `trigger_application_insert_outbound_call()` to prioritize the embed agent when `source = 'Embed Form'`.
+
+## Implementation Details
+
+### 1. Update EmbedApply.tsx - Add Source Tracking
+
+The embed form needs to pass a `source` field to identify its traffic:
+
+```typescript
+// In ApplicationForm submission for embed context
+const formattedData = {
+  ...data,
+  source: 'Embed Form',  // NEW: Explicit source identifier
+  // ... existing fields
+};
 ```
 
-#### 2. Missing Android Navigation Bar Safe Area
-The CSS handles `safe-area-inset-bottom` for iOS home indicator, but Android navigation gestures also need consideration for consistent behavior.
+### 2. Insert Voice Agent Record
 
-#### 3. Drawer Component Missing Safe Area Padding
-The `DrawerContent` component in `drawer.tsx` doesn't apply safe area padding for the bottom, which could cause content to be obscured by Android gesture navigation.
+Create a new migration to add the embed outbound agent:
 
-#### 4. Mobile Bottom Nav Missing Safe Area
-The `MobileBottomNav.tsx` component uses `h-16` fixed height but doesn't account for `safe-area-inset-bottom` padding.
+```sql
+INSERT INTO voice_agents (
+  agent_name,
+  agent_id,
+  elevenlabs_agent_id,
+  agent_phone_number_id,
+  organization_id,      -- NULL for platform-wide
+  client_id,            -- NULL for platform-wide
+  is_active,
+  is_outbound_enabled,
+  is_platform_default,
+  llm_model,
+  description
+) VALUES (
+  'Outbound Agent - Embed Form',
+  'agent_3201kfp75kshfgwr1kfs310715z3',
+  'agent_3201kfp75kshfgwr1kfs310715z3',
+  'phnum_6901kg7vdsf5em2sh1cc1933d8j4',
+  NULL,  -- Platform-wide, not org-specific
+  NULL,  -- No client association
+  true,
+  true,
+  false, -- Not the platform default
+  'gpt-4o-mini',
+  'Dedicated outbound calling agent for embed form submissions'
+);
+```
 
-#### 5. Some Chat Components Use Fixed vh Instead of dvh
-Several chat components use `100vh` calculations which can cause layout issues on Android browsers where the address bar changes the viewport size.
+### 3. Update Database Trigger Function
 
-#### 6. No Android-Specific Splash Screen Configuration
-While Capacitor splash screen plugin is configured, there's no Android-specific customization for different screen densities.
+Modify `trigger_application_insert_outbound_call()` to check for embed source first:
 
-## Recommended Improvements
+```sql
+CREATE OR REPLACE FUNCTION public.trigger_application_insert_outbound_call()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_org_id UUID;
+  v_client_id UUID;
+  v_voice_agent_id UUID;
+BEGIN
+  IF NEW.phone IS NOT NULL AND NEW.phone != '' AND length(NEW.phone) >= 10 THEN
+    
+    -- PRIORITY 0: Embed Form submissions get dedicated agent
+    IF NEW.source = 'Embed Form' THEN
+      SELECT id INTO v_voice_agent_id
+      FROM voice_agents
+      WHERE agent_id = 'agent_3201kfp75kshfgwr1kfs310715z3'
+        AND is_outbound_enabled = true
+        AND agent_phone_number_id IS NOT NULL
+        AND is_active = true
+      LIMIT 1;
+      
+      IF v_voice_agent_id IS NOT NULL THEN
+        INSERT INTO outbound_calls (
+          application_id,
+          voice_agent_id,
+          organization_id,
+          phone_number,
+          status,
+          metadata
+        ) VALUES (
+          NEW.id,
+          v_voice_agent_id,
+          NULL,  -- No org for embed
+          NEW.phone,
+          'queued',
+          jsonb_build_object(
+            'applicant_name', COALESCE(NEW.first_name, '') || ' ' || COALESCE(NEW.last_name, ''),
+            'triggered_by', 'embed_form_submission',
+            'source', 'Embed Form'
+          )
+        );
+        RETURN NEW;
+      END IF;
+    END IF;
+    
+    -- EXISTING LOGIC: Client → Org → Platform default
+    SELECT jl.organization_id, jl.client_id INTO v_org_id, v_client_id
+    FROM job_listings jl
+    WHERE jl.id = NEW.job_listing_id;
+    
+    -- ... rest of existing logic unchanged
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$;
+```
 
-### Phase 1: Critical Android Fixes
+### 4. Update Submit-Application Edge Function
 
-1. **Update viewport meta tag** in `index.html`
-   - Add `viewport-fit=cover` for edge-to-edge support
-   - Add `interactive-widget=resizes-content` for better keyboard handling
+Add `'Embed Form'` detection based on referrer/origin:
 
-2. **Enhance Drawer component** with safe area padding
-   - Add `pb-[env(safe-area-inset-bottom)]` to DrawerContent
+```typescript
+// Add to INTEGRATION_SIGNATURES
+const INTEGRATION_SIGNATURES = {
+  // ... existing entries
+  'embed/apply': { source: 'Embed Form', requiresScreening: false },
+};
+```
 
-3. **Fix Mobile Bottom Nav** safe area handling
-   - Add safe area bottom padding to prevent gesture bar overlap
-
-4. **Update chat components** to use dvh units
-   - Replace `100vh` with `100dvh` for dynamic viewport height
-
-### Phase 2: Enhanced Android UX
-
-1. **Add Android-specific CSS overrides**
-   - User-scalable considerations for accessibility
-   - Touch feedback enhancements (ripple effects via CSS)
-
-2. **Optimize for Android WebView**
-   - Add `android:hardwareAccelerated="true"` guidance
-   - GPU layer promotion for animations
-
-3. **Improve connection-aware loading**
-   - Leverage existing `useDeviceCapabilities` for image quality
+Or pass source explicitly from the frontend.
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `index.html` | Add viewport-fit=cover, interactive-widget |
-| `src/components/ui/drawer.tsx` | Add safe area bottom padding |
-| `src/components/MobileBottomNav.tsx` | Add safe-area-bottom class |
-| `src/index.css` | Add Android-specific CSS optimizations |
-| `src/components/chat/ChatMessages.tsx` | Use dvh units |
-| `src/components/chat/ChatSettings.tsx` | Use dvh units |
-| `src/components/chat/ChatHistory.tsx` | Use dvh units |
-| `capacitor.config.ts` | Add Android-specific splash screen config |
+| `src/hooks/useApplicationForm.ts` | Pass `source: 'Embed Form'` when in embed context |
+| `src/pages/EmbedApply.tsx` | Pass embed context to ApplicationForm |
+| `supabase/migrations/[new].sql` | Insert voice agent + update trigger function |
+| `supabase/functions/submit-application/index.ts` | Detect embed referrer as 'Embed Form' source |
 
-## Expected Outcomes
+## Alternative: Explicit Source Parameter
 
-After implementation:
-- Full edge-to-edge display on modern Android devices
-- No content obscured by gesture navigation bars
-- Consistent viewport behavior when keyboard opens/closes
-- Improved performance on lower-end Android devices
-- Better touch responsiveness with proper feedback
-- Smoother animations with GPU acceleration
+The cleanest approach is to pass `source` explicitly from the embed form:
 
-## Testing Recommendations
+**In EmbedApply or its form hook:**
+```typescript
+const formattedData = {
+  ...data,
+  source: 'Embed Form',  // Hardcoded for embed route
+};
+```
 
-After changes, test on:
-1. Android with 3-button navigation
-2. Android with gesture navigation (edge-to-edge)
-3. Android devices with notches/punch-hole cameras
-4. Low-end Android devices (entry-level CPU/RAM)
-5. Android Chrome and Samsung Internet browsers
+This avoids complex referrer detection and makes the intent explicit.
 
-## Notes on Capacitor
+## Expected Behavior After Implementation
 
-The project has `@capacitor/android` installed but the `/android` folder doesn't exist yet. To create a native Android app:
+1. User fills out form on `/embed/apply` (embedded iframe)
+2. Form submits with `source: 'Embed Form'`
+3. Application inserted into database
+4. Database trigger fires, detects `source = 'Embed Form'`
+5. Trigger selects the dedicated embed agent (`agent_3201kfp75kshfgwr1kfs310715z3`)
+6. Outbound call record created with `status: 'queued'`
+7. ElevenLabs outbound call system picks up and dials from `phnum_6901kg7vdsf5em2sh1cc1933d8j4`
 
-1. Run `npx cap add android` to generate Android project
-2. Run `npx cap sync` after any web code changes
-3. Open in Android Studio with `npx cap open android`
+## Rollback Strategy
+
+If issues arise:
+1. Update the voice agent to `is_active = false`
+2. Embed submissions will fall back to existing routing logic
