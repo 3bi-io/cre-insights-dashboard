@@ -23,9 +23,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   }, [messages]);
 
   const heightClass = isPinned 
-    ? 'h-[calc(100vh-140px)]' 
+    ? 'h-[calc(100dvh-140px)]' 
     : isMobile 
-      ? 'h-[calc(100vh-200px)]' 
+      ? 'h-[calc(100dvh-200px)]' 
       : 'h-[460px]';
 
   return (

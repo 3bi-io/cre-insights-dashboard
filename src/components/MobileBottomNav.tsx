@@ -100,7 +100,7 @@ const MobileBottomNav: React.FC = () => {
 
   return (
     <nav 
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg pb-[env(safe-area-inset-bottom)]"
       role="navigation"
       aria-label="Primary mobile navigation"
     >
