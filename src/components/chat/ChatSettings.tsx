@@ -24,7 +24,7 @@ export const ChatSettings: React.FC<ChatSettingsProps> = ({
   };
 
   return (
-    <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[460px]'}`}>
+    <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100dvh-200px)]' : 'h-[460px]'}`}>
       <div className="space-y-4">
         <h3 className="font-medium text-base">AI Model Settings</h3>
 

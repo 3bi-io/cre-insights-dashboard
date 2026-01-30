@@ -22,7 +22,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({
   isMobile
 }) => {
   return (
-    <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100vh-200px)]' : 'h-[460px]'} flex flex-col`}>
+    <div className={`flex-1 p-4 ${isMobile ? 'h-[calc(100dvh-200px)]' : 'h-[460px]'} flex flex-col`}>
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-medium">Chat History</h3>
         <Button variant="ghost" size="sm" onClick={onNewSession} className="gap-1">
