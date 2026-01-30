@@ -10,6 +10,10 @@ export interface Feature {
   description: string;
 }
 
+export interface DetailedFeature extends Feature {
+  features: string[];
+}
+
 export interface Stat {
   number: string;
   label: string;
@@ -63,4 +67,30 @@ export interface FAQ {
 export interface CTAStat {
   value: string;
   label: string;
+}
+
+export interface FeaturedProduct {
+  badge: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  platforms?: {
+    name: string;
+    icon: LucideIcon;
+    color: string;
+  }[];
+  stats?: {
+    value: string;
+    label: string;
+  }[];
+  capabilities?: {
+    icon: LucideIcon;
+    title: string;
+    description: string;
+  }[];
+  cta: {
+    primary: string;
+    secondary?: string;
+    path: string;
+  };
 }

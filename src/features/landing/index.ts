@@ -22,6 +22,9 @@ export { IconFeatureCard } from './components/shared/IconFeatureCard';
 export { StatCard } from './components/shared/StatCard';
 export { TimelineCard } from './components/shared/TimelineCard';
 export { CTABlock } from './components/shared/CTABlock';
+export { FeaturedProductCard } from './components/shared/FeaturedProductCard';
 
-// Content (if needed elsewhere)
+// Content
 export * from './content/types';
+export { socialBeaconContent } from './content/socialBeacon.content';
+export { featuresContent } from './content/features.content';
