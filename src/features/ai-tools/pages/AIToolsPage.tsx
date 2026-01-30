@@ -27,3 +27,5 @@ export const AIToolsPage = () => {
     </PageLayout>
   );
 };
+
+export default AIToolsPage;

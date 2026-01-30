@@ -212,7 +212,9 @@ export function SocialEngagementDashboard() {
         <TabsContent value="analytics">
           <EngagementMetrics organizationId={organization?.id} />
         </TabsContent>
-      </Tabs>
+    </Tabs>
     </div>
   );
 }
+
+export default SocialEngagementDashboard;
