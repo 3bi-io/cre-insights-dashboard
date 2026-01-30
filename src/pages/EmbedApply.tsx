@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
-import { ApplicationForm } from '@/components/apply/ApplicationForm';
+import { EmbedApplicationForm } from '@/components/apply/EmbedApplicationForm';
 import { EmbedThankYou } from '@/components/apply/EmbedThankYou';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
 import { useApplyContext } from '@/hooks/useApplyContext';
@@ -87,8 +85,11 @@ const EmbedApply: React.FC = () => {
           {/* Header with org/job branding */}
           <ApplicationHeader />
           
-          {/* Application Form */}
-          <ApplicationForm organizationName={organizationName} />
+          {/* Embed Application Form - routes to dedicated outbound agent */}
+          <EmbedApplicationForm 
+            organizationName={organizationName} 
+            onSubmitSuccess={handleSubmissionSuccess}
+          />
           
         </div>
       </div>

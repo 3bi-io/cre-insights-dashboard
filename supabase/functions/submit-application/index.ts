@@ -28,6 +28,7 @@ const INTEGRATION_SIGNATURES: Record<string, { source: string; requiresScreening
   'indeed.com': { source: 'Indeed', requiresScreening: false },
   'make.com': { source: 'Make Integration', requiresScreening: false },
   'integromat.com': { source: 'Make Integration', requiresScreening: false },
+  'embed/apply': { source: 'Embed Form', requiresScreening: false },
 };
 
 // Source-specific organization enforcement
@@ -37,9 +38,16 @@ const SOURCE_ORGANIZATION_OVERRIDES: Record<string, string> = {
 };
 
 /**
- * Detect integration source from request headers
+ * Detect integration source from request headers or explicit source field
+ * Priority: explicit source in body > header detection > fallback
  */
-const detectIntegrationSource = (req: Request): string => {
+const detectIntegrationSource = (req: Request, explicitSource?: string): string => {
+  // Priority 1: Explicit source passed from frontend (e.g., Embed Form)
+  if (explicitSource && explicitSource.trim() !== '') {
+    logger.info('Using explicit source from request body', { source: explicitSource });
+    return explicitSource;
+  }
+
   const origin = req.headers.get('origin') || '';
   const referer = req.headers.get('referer') || '';
   const userAgent = req.headers.get('user-agent') || '';
@@ -163,6 +171,9 @@ const ApplicationSubmissionSchema = z.object({
   utm_medium: z.string().max(100).optional(),
   utm_campaign: z.string().max(100).optional(),
   referral_source: z.string().max(2000).optional(),
+  
+  // Explicit source override (for embed forms, etc.)
+  source: z.string().max(100).optional(),
   
   // Employment history - limit to prevent DoS
   employmentHistory: z.any().optional(),
@@ -620,9 +631,10 @@ Deno.serve(async (req) => {
     
     const applicantEmail = (formData.email || formData.applicant_email || '').toLowerCase();
 
-    // Detect integration source from request headers (CDL Job Cast, Zapier, etc.)
-    const detectedSource = detectIntegrationSource(req);
-    logger.info('Integration source detection', { detectedSource });
+    // Detect integration source from request headers or explicit source field
+    // Explicit source from body takes priority (e.g., 'Embed Form' from /embed/apply)
+    const detectedSource = detectIntegrationSource(req, formData.source);
+    logger.info('Integration source detection', { detectedSource, explicitSource: formData.source });
 
     // Resolve organization and job details dynamically (source-based routing takes priority)
     const { organizationId, organizationName, externalJobId, jobTitle } = await resolveOrganizationAndJob(
