@@ -64,7 +64,7 @@ const ATSCommandCenterPage = React.lazy(() => import("@/features/ats").then(m =>
 const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m => ({ default: m.MetaAnalyticsPage })));
 const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
 const SocialEngagementDashboard = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SocialEngagementDashboard })));
-const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement/pages/SuperAdminSocialBeacons"));
+const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SuperAdminSocialBeacons })));
 // Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
