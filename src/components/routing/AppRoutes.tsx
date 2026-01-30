@@ -45,7 +45,7 @@ const JobSearchPage = React.lazy(() => import("@/features/candidate").then(m => 
 const SavedJobsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.SavedJobsPage })));
 const MessagesPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MessagesPage })));
 const ProfilePage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.ProfilePage })));
-const JobDetailPage = React.lazy(() => import("@/features/candidate/pages/JobDetailPage"));
+const JobDetailPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.JobDetailPage })));
 const GrokChatPage = React.lazy(() => import("@/features/ai-chat").then(m => ({ default: m.GrokChatPage })));
 const Jobs = React.lazy(() => import("@/features/jobs").then(m => ({ default: m.JobsPage })));
 const Campaigns = React.lazy(() => import("@/features/campaigns").then(m => ({ default: m.CampaignsPage })));
@@ -67,7 +67,7 @@ const SocialEngagementDashboard = React.lazy(() => import("@/features/social-eng
 const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SuperAdminSocialBeacons })));
 // Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
-const RoutesPage = React.lazy(() => import("@/features/routes/pages/RoutesPage"));
+const RoutesPage = React.lazy(() => import("@/features/routes").then(m => ({ default: m.RoutesPage })));
 const Platforms = React.lazy(() => import("@/pages/Platforms"));
 const AdNetworks = React.lazy(() => import("@/pages/AdNetworks"));
 const JobBoards = React.lazy(() => import("@/pages/JobBoards"));
@@ -100,8 +100,8 @@ const SecuritySettings = React.lazy(() => import("@/pages/settings/SecuritySetti
 // BillingSettings removed - no subscription tiers
 
 // Candidate settings
-const CandidateAccountSettings = React.lazy(() => import("@/features/candidate/pages/AccountSettings"));
-const CandidateNotifications = React.lazy(() => import("@/features/candidate/pages/NotificationsPage"));
+const CandidateAccountSettings = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateAccountSettings })));
+const CandidateNotifications = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.CandidateNotifications })));
 
 // Talent Pool pages
 const TalentPoolsPage = React.lazy(() => import("@/features/talent").then(m => ({ default: m.TalentPoolsPage })));

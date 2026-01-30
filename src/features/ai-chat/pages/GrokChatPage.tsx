@@ -12,3 +12,5 @@ export function GrokChatPage() {
     </div>
   );
 }
+
+export default GrokChatPage;
