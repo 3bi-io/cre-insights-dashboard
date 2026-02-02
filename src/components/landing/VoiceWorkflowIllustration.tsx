@@ -19,7 +19,7 @@ const workflowSteps: WorkflowStep[] = [
   {
     icon: User,
     label: 'Design Intake',
-    description: 'Jobseeker submits consent + contact info',
+    description: 'Your team calls AI and designs role',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/10',
     borderClass: 'border-primary/30',
