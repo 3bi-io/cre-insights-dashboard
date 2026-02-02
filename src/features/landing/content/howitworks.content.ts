@@ -67,7 +67,7 @@ export const howItWorksContent = {
     },
     {
       icon: BarChart3,
-      title: 'Review & Hire',
+      title: 'Auto-Shutoff',
       description: 'Transcripts, scores, and insights',
       highlight: 'Data-driven'
     },
