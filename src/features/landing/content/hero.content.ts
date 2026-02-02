@@ -7,7 +7,7 @@ export const heroContent = {
   badge: 'AI Voice Interviews Designed for No Resume Jobs',
   headline: 'Interview',
   headlineAccent: ' Everyone',
-  subheadline: 'Employers add phone # to a job ad.\nJobseekers consent to secure screens, and called in minutes.\nAI agents conduct dialogues 24/7 to accommodate all shifts.\nReal people are evaluated for real employers for real critical jobs.',
+  subheadline: 'Some occupations are not resume driven.\nCritical roles left vacant create real risks.\nEmployers should interview anyone with interest.\nTry 25 minutes of dialogue rather than data entry.',
   cta: {
     primary: 'Employers Start Here',
     secondary: 'Browse Jobs'
