@@ -47,10 +47,6 @@ const HeroSection = () => {
               {heroContent.headlineAccent}
             </span>
           </h1>
-          
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-2 whitespace-pre-line">
-            {heroContent.subheadline}
-          </p>
 
           {/* Industry tags */}
           <div className="flex flex-wrap items-center justify-center gap-2 mb-6 md:mb-8 px-2">
@@ -65,6 +61,10 @@ const HeroSection = () => {
               </div>
             ))}
           </div>
+          
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-2 whitespace-pre-line">
+            {heroContent.subheadline}
+          </p>
           
           {/* CTA Buttons - proper touch targets */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 md:mb-12 px-4">
