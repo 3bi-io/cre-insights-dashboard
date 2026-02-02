@@ -34,7 +34,7 @@ export const howItWorksContent = {
     {
       icon: Bot,
       title: 'Have a Chat',
-      description: 'Instant qualification against your criteria',
+      description: 'Present experience and credentials with confidence',
       highlight: 'Real-time'
     },
     {
