@@ -7,7 +7,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Star, Search, Phone } from 'lucide-react';
+import { ArrowRight, Star, Search } from 'lucide-react';
 import { heroContent } from '../../content/hero.content';
 import VoiceWorkflowIllustration from '@/components/landing/VoiceWorkflowIllustration';
 
@@ -52,14 +52,18 @@ const HeroSection = () => {
             {heroContent.subheadline}
           </p>
 
-          {/* Voice callback highlight - flex-wrap for very small screens */}
-          <div className="flex items-center justify-center gap-2 mb-6 md:mb-8 px-2">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-success/10 rounded-full border border-success/20 flex-wrap justify-center">
-              <Phone className="h-4 w-4 text-success motion-safe:animate-pulse flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-medium text-success text-center">
-                {heroContent.voiceHighlight?.text || 'AI calls back jobseekers automatically'}
-              </span>
-            </div>
+          {/* Industry tags */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6 md:mb-8 px-2">
+            {heroContent.industryTags?.map((tag) => (
+              <div 
+                key={tag}
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-success/10 rounded-full border border-success/20"
+              >
+                <span className="text-xs sm:text-sm font-medium text-success">
+                  {tag}
+                </span>
+              </div>
+            ))}
           </div>
           
           {/* CTA Buttons - proper touch targets */}

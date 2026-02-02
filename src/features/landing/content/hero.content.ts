@@ -17,8 +17,5 @@ export const heroContent = {
     companies: 'Trusted by 50+ companies',
     highlight: 'Fast automated callbacks'
   },
-  voiceHighlight: {
-    icon: 'phone',
-    text: 'AI calls back jobseekers automatically'
-  }
+  industryTags: ['Cyber', 'Healthcare', 'Trades', 'Transportation']
 };
