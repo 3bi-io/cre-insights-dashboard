@@ -11,7 +11,7 @@ import StatsSection from '@/features/landing/components/sections/StatsSection';
 import { LoadingSkeleton } from '@/features/landing/components/shared/LoadingSkeleton';
 
 // Lazy load sections below the fold for better performance
-const HowItWorksSection = lazy(() => import('@/features/landing/components/sections/HowItWorksSection'));
+// HowItWorksSection is now integrated into HeroSection
 const FeaturesSection = lazy(() => import('@/features/landing/components/sections/FeaturesSection'));
 const IntegrationsSection = lazy(() => import('@/features/landing/components/sections/IntegrationsSection'));
 
@@ -34,10 +34,7 @@ const LandingPage = () => {
       <HeroSection />
       <StatsSection />
       
-      {/* How It Works - key differentiator */}
-      <Suspense fallback={<LoadingSkeleton variant="section" />}>
-        <HowItWorksSection />
-      </Suspense>
+      {/* HowItWorks is now part of HeroSection */}
       
       {/* Below the fold - lazy loaded with skeleton placeholders */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
