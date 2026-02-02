@@ -19,7 +19,7 @@ const workflowSteps: WorkflowStep[] = [
   {
     icon: User,
     label: 'Start',
-    description: 'Jobseeker submits application',
+    description: 'Jobseeker submits consent + contact info',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/10',
     borderClass: 'border-primary/30',
