@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Star, Search } from 'lucide-react';
 import { heroContent } from '../../content/hero.content';
-import VoiceWorkflowIllustration from '@/components/landing/VoiceWorkflowIllustration';
+import { howItWorksContent } from '../../content/howitworks.content';
 
 const HeroSection = () => {
   return (
@@ -89,8 +89,42 @@ const HeroSection = () => {
             </Link>
           </div>
 
-          {/* Voice Workflow Illustration */}
-          <VoiceWorkflowIllustration />
+          {/* How It Works - Inline Steps */}
+          <div className="mb-8 md:mb-12">
+            <div className="text-center mb-6">
+              <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">
+                {howItWorksContent.badge}
+              </Badge>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+                {howItWorksContent.title}
+              </h2>
+            </div>
+            
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
+              {howItWorksContent.steps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <div 
+                    key={index}
+                    className="relative bg-card/80 backdrop-blur-sm border rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <div className="flex justify-center mb-2 mt-1">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm mb-1">{step.title}</h3>
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           
           {/* Social proof - responsive layout */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-muted-foreground px-4 mt-12">
