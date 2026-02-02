@@ -61,7 +61,7 @@ export const howItWorksContent = {
     },
     {
       icon: Users,
-      title: 'Receive Candidates',
+      title: 'Await Interest',
       description: 'Pre-qualified applicants delivered',
       highlight: '24/7'
     },
