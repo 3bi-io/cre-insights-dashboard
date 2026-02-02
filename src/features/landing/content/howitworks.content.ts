@@ -22,7 +22,7 @@ export const howItWorksContent = {
     {
       icon: FileText,
       title: 'Start',
-      description: 'Consent and contact entry',
+      description: 'Consent, enter contact info, and await call',
       highlight: 'Any channel'
     },
     {
