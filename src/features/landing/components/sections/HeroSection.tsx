@@ -68,23 +68,23 @@ const HeroSection = () => {
           
           {/* CTA Buttons - proper touch targets */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 md:mb-12 px-4">
-            <Link to="/auth" className="w-full sm:w-auto">
+            <Link to="/jobs" className="w-full sm:w-auto">
               <Button 
                 size="lg" 
                 className="w-full sm:w-auto min-h-[48px] bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {heroContent.cta.primary}
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <Search className="mr-2 h-5 w-5" />
+                {heroContent.cta.secondary}
               </Button>
             </Link>
-            <Link to="/jobs" className="w-full sm:w-auto">
+            <Link to="/auth" className="w-full sm:w-auto">
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="w-full sm:w-auto min-h-[48px] px-6 sm:px-8 py-3 text-base sm:text-lg border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
               >
-                <Search className="mr-2 h-5 w-5" />
-                {heroContent.cta.secondary}
+                {heroContent.cta.primary}
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
