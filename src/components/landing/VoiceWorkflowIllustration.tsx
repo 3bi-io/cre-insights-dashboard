@@ -34,7 +34,7 @@ const workflowSteps: WorkflowStep[] = [
   },
   {
     icon: Phone,
-    label: 'AI Callback',
+    label: 'Candidate Call',
     description: 'Automated call within minutes',
     colorClass: 'text-success',
     bgClass: 'bg-success/10',
