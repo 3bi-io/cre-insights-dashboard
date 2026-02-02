@@ -7,7 +7,7 @@ export const heroContent = {
   badge: 'AI Voice Interviews Designed for No Resume Jobs',
   headline: 'Hire Faster and',
   headlineAccent: ' Fraud-Free',
-  subheadline: 'Jobseekers consent and receive automated voice callbacks in minutes. AI voice agents assess 24/7 with security prompts so real people are evaluated for critical jobs.',
+  subheadline: 'Jobseekers consent and receive a callback in minutes. AI voice agents securely assess 24/7 so real people are evaluated for really critical jobs.',
   cta: {
     primary: 'Start Free Trial',
     secondary: 'Browse Jobs'
