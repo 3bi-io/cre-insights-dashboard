@@ -33,7 +33,7 @@ export const howItWorksContent = {
     },
     {
       icon: Bot,
-      title: 'Talk About Your Experience',
+      title: 'Have a Chat',
       description: 'Instant qualification against your criteria',
       highlight: 'Real-time'
     },
