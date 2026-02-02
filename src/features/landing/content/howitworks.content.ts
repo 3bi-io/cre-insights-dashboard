@@ -50,7 +50,7 @@ export const howItWorksContent = {
     {
       icon: Briefcase,
       title: 'Post Job',
-      description: 'Add phone # to your job ad',
+      description: 'Just add a phone #',
       highlight: 'Quick setup'
     },
     {
