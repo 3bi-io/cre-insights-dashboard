@@ -18,7 +18,7 @@ interface WorkflowStep {
 const workflowSteps: WorkflowStep[] = [
   {
     icon: User,
-    label: 'Apply',
+    label: 'Start',
     description: 'Jobseeker submits application',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/10',
@@ -177,7 +177,7 @@ const VoiceWorkflowIllustration: React.FC = () => {
 
         {/* Mobile: Flow indicator */}
         <div className="flex justify-center items-center mt-4 gap-1.5 text-xs">
-          <span className="text-primary font-medium">Apply</span>
+          <span className="text-primary font-medium">Start</span>
           <span className="text-muted-foreground">→</span>
           <span className="text-accent font-medium">Screen</span>
           <span className="text-muted-foreground">→</span>
