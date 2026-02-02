@@ -27,7 +27,7 @@ export const howItWorksContent = {
     },
     {
       icon: Phone,
-      title: 'Automated Voice Callback',
+      title: 'Callback & Security Check',
       description: 'AI calls the jobseeker within minutes',
       highlight: '< 3 min'
     },
