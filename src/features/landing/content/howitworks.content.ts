@@ -80,7 +80,7 @@ export const howItWorksContent = {
     {
       icon: CheckCircle,
       title: 'Finalize',
-      description: 'Get results and place humans in decision loops',
+      description: 'Get results and place humans in decision making',
       highlight: 'Complete'
     }
   ] as HowItWorksStep[],
