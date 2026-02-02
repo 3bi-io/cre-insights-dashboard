@@ -27,7 +27,7 @@ const workflowSteps: WorkflowStep[] = [
   {
     icon: Bot,
     label: 'Taxonomy Adds',
-    description: 'With your custom job profile',
+    description: 'Validated skills added to role',
     colorClass: 'text-accent',
     bgClass: 'bg-accent/10',
     borderClass: 'border-accent/30',
