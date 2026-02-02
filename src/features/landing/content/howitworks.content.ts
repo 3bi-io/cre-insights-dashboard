@@ -3,7 +3,7 @@
  * Visual flow for automated voice callback process - Jobseeker & Employer views
  */
 
-import { FileText, Bot, Phone, ClipboardCheck, Briefcase, Settings, Users, BarChart3 } from 'lucide-react';
+import { FileText, Bot, Phone, ClipboardCheck, Briefcase, Settings, Users, BarChart3, CheckCircle } from 'lucide-react';
 
 export interface HowItWorksStep {
   icon: typeof FileText;
@@ -70,6 +70,12 @@ export const howItWorksContent = {
       title: 'Review & Hire',
       description: 'Transcripts, scores, and insights',
       highlight: 'Data-driven'
+    },
+    {
+      icon: CheckCircle,
+      title: 'Finalize',
+      description: 'Make decisions',
+      highlight: 'Complete'
     }
   ] as HowItWorksStep[],
 
