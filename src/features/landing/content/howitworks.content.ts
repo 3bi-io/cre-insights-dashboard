@@ -55,7 +55,7 @@ export const howItWorksContent = {
     },
     {
       icon: Briefcase,
-      title: 'Post Job',
+      title: 'Post When Needed',
       description: 'Just add a phone #',
       highlight: 'Quick setup'
     },
