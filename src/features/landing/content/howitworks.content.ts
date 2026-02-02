@@ -45,7 +45,7 @@ export const howItWorksContent = {
     },
     {
       icon: Clock,
-      title: 'Await Evaluation',
+      title: 'Await Next Steps',
       description: 'Candidate waits for employer review',
       highlight: 'Human decision'
     }
