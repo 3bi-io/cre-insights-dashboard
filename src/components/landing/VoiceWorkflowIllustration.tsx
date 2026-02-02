@@ -26,7 +26,7 @@ const workflowSteps: WorkflowStep[] = [
   },
   {
     icon: Bot,
-    label: 'Taxonomy Adds',
+    label: 'Add Taxonomies',
     description: 'Validated knowledge, skills, and abilities',
     colorClass: 'text-accent',
     bgClass: 'bg-accent/10',
