@@ -40,7 +40,7 @@ export const howItWorksContent = {
     {
       icon: ClipboardCheck,
       title: 'Transcripts & Logs',
-      description: '100% Transparency on Results',
+      description: '100% transparency with copy of results',
       highlight: 'Complete record'
     },
     {
