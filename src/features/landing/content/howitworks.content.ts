@@ -19,8 +19,8 @@ export const howItWorksContent = {
   steps: [
     {
       icon: FileText,
-      title: 'Jobseeker Applies',
-      description: 'Through web, mobile, or Voice Apply',
+      title: 'Start',
+      description: 'Consent and contact entry',
       highlight: 'Any channel'
     },
     {
