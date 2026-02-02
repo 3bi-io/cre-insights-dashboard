@@ -50,7 +50,7 @@ export const howItWorksContent = {
     {
       icon: Settings,
       title: 'Configure AI',
-      description: 'Set screening criteria and questions',
+      description: 'Set criteria and experiences for 3 critical roles',
       highlight: 'Customizable'
     },
     {
