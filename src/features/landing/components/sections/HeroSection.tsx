@@ -92,7 +92,7 @@ const HeroSection = () => {
           {/* How It Works - Two Rows: Jobseeker & Employer */}
           <div className="mb-8 md:mb-12">
             <div className="text-center mb-6">
-              <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">
+              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 text-sm sm:text-base px-4 py-1.5">
                 {howItWorksContent.badge}
               </Badge>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
