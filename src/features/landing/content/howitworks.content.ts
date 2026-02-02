@@ -46,7 +46,7 @@ export const howItWorksContent = {
     {
       icon: Clock,
       title: 'Await Next Steps',
-      description: 'Candidate waits for employer review',
+      description: 'Likely a tentative offer',
       highlight: 'Human decision'
     }
   ] as HowItWorksStep[],
