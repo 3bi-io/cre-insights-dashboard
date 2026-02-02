@@ -34,7 +34,7 @@ const workflowSteps: WorkflowStep[] = [
   },
   {
     icon: Phone,
-    label: 'Call with AI Voice',
+    label: 'Candidate Call',
     description: 'Secured / anti-fraud conversation',
     colorClass: 'text-success',
     bgClass: 'bg-success/10',
