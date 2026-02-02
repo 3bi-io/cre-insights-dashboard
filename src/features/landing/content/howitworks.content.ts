@@ -62,7 +62,7 @@ export const howItWorksContent = {
     {
       icon: Users,
       title: 'Await Interest',
-      description: 'Candidates dialogue with AI for 1 of your 3 roles',
+      description: 'Candidates dialogue with AI about a Critical Role',
       highlight: '24/7'
     },
     {
