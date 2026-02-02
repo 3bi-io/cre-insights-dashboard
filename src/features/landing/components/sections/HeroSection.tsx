@@ -89,7 +89,7 @@ const HeroSection = () => {
             </Link>
           </div>
 
-          {/* How It Works - Inline Steps */}
+          {/* How It Works - Two Rows: Jobseeker & Employer */}
           <div className="mb-8 md:mb-12">
             <div className="text-center mb-6">
               <Badge className="mb-3 bg-primary/10 text-primary border-primary/20">
@@ -100,29 +100,66 @@ const HeroSection = () => {
               </h2>
             </div>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
-              {howItWorksContent.steps.map((step, index) => {
-                const Icon = step.icon;
-                return (
-                  <div 
-                    key={index}
-                    className="relative bg-card/80 backdrop-blur-sm border rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <div className="flex justify-center mb-2 mt-1">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Icon className="h-5 w-5 text-primary" />
+            {/* Jobseeker Row */}
+            <div className="mb-6">
+              <h3 className="text-sm sm:text-base font-semibold text-muted-foreground mb-3 text-center">
+                {howItWorksContent.jobseekerTitle}
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
+                {howItWorksContent.jobseekerSteps.map((step, index) => {
+                  const Icon = step.icon;
+                  return (
+                    <div 
+                      key={index}
+                      className="relative bg-card/80 backdrop-blur-sm border rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                          {index + 1}
+                        </span>
                       </div>
+                      <div className="flex justify-center mb-2 mt-1">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                      </div>
+                      <h3 className="font-semibold text-foreground text-sm mb-1">{step.title}</h3>
+                      <p className="text-xs text-muted-foreground">{step.description}</p>
                     </div>
-                    <h3 className="font-semibold text-foreground text-sm mb-1">{step.title}</h3>
-                    <p className="text-xs text-muted-foreground">{step.description}</p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Employer Row */}
+            <div>
+              <h3 className="text-sm sm:text-base font-semibold text-muted-foreground mb-3 text-center">
+                {howItWorksContent.employerTitle}
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
+                {howItWorksContent.employerSteps.map((step, index) => {
+                  const Icon = step.icon;
+                  return (
+                    <div 
+                      key={index}
+                      className="relative bg-card/80 backdrop-blur-sm border rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div className="flex justify-center mb-2 mt-1">
+                        <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                          <Icon className="h-5 w-5 text-accent" />
+                        </div>
+                      </div>
+                      <h3 className="font-semibold text-foreground text-sm mb-1">{step.title}</h3>
+                      <p className="text-xs text-muted-foreground">{step.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
           
