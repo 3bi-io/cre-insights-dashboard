@@ -28,7 +28,7 @@ export const howItWorksContent = {
     {
       icon: Phone,
       title: 'Security Check',
-      description: 'AI calls the jobseeker within minutes',
+      description: 'Multi-step process to protect you and employer',
       highlight: '< 3 min'
     },
     {
