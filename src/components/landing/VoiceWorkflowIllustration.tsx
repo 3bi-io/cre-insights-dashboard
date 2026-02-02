@@ -42,7 +42,7 @@ const workflowSteps: WorkflowStep[] = [
   },
   {
     icon: CheckCircle,
-    label: 'Hired Fast',
+    label: 'Complete Validation',
     description: 'Ready for interview',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/10',
@@ -183,7 +183,7 @@ const VoiceWorkflowIllustration: React.FC = () => {
           <span className="text-muted-foreground">→</span>
           <span className="text-success font-medium">Call</span>
           <span className="text-muted-foreground">→</span>
-          <span className="text-primary font-medium">Hire</span>
+          <span className="text-primary font-medium">Validate</span>
         </div>
       </div>
 
