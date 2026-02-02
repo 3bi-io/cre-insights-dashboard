@@ -27,7 +27,7 @@ const workflowSteps: WorkflowStep[] = [
   {
     icon: Bot,
     label: 'AI Screens',
-    description: 'Instant AI screening',
+    description: 'With your custom job profile',
     colorClass: 'text-accent',
     bgClass: 'bg-accent/10',
     borderClass: 'border-accent/30',
