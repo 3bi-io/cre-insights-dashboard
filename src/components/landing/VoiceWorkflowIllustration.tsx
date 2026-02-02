@@ -26,7 +26,7 @@ const workflowSteps: WorkflowStep[] = [
   },
   {
     icon: Bot,
-    label: 'AI Screens',
+    label: 'Taxonomy Adds',
     description: 'With your custom job profile',
     colorClass: 'text-accent',
     bgClass: 'bg-accent/10',
@@ -179,7 +179,7 @@ const VoiceWorkflowIllustration: React.FC = () => {
         <div className="flex justify-center items-center mt-4 gap-1.5 text-xs">
           <span className="text-primary font-medium">Intake</span>
           <span className="text-muted-foreground">→</span>
-          <span className="text-accent font-medium">Screen</span>
+          <span className="text-accent font-medium">Taxonomy</span>
           <span className="text-muted-foreground">→</span>
           <span className="text-success font-medium">Call</span>
           <span className="text-muted-foreground">→</span>
