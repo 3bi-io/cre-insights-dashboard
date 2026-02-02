@@ -56,7 +56,7 @@ export const howItWorksContent = {
     {
       icon: Briefcase,
       title: 'Add Phone #',
-      description: 'Just add a phone #',
+      description: 'Post critical roles as normal',
       highlight: 'Quick setup'
     },
     {
