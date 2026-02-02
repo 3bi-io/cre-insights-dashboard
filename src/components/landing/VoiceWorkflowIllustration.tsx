@@ -43,7 +43,7 @@ const workflowSteps: WorkflowStep[] = [
   {
     icon: CheckCircle,
     label: 'Complete Validation',
-    description: 'Ready for interview',
+    description: 'Experiences matched to Role Design',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/10',
     borderClass: 'border-primary/30',
