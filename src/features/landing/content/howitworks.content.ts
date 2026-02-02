@@ -3,7 +3,7 @@
  * Visual flow for automated voice callback process - Jobseeker & Employer views
  */
 
-import { FileText, Bot, Phone, ClipboardCheck, Settings, Users, Power, CheckCircle, Smartphone } from 'lucide-react';
+import { FileText, Bot, Phone, ClipboardCheck, Settings, Users, Power, CheckCircle, Smartphone, Clock } from 'lucide-react';
 
 export interface HowItWorksStep {
   icon: typeof FileText;
@@ -26,22 +26,28 @@ export const howItWorksContent = {
       highlight: 'Any channel'
     },
     {
-      icon: Bot,
-      title: 'AI Screens & Qualifies',
-      description: 'Instant qualification against your criteria',
-      highlight: 'Real-time'
-    },
-    {
       icon: Phone,
       title: 'Automated Voice Callback',
       description: 'AI calls the jobseeker within minutes',
       highlight: '< 3 min'
     },
     {
+      icon: Bot,
+      title: 'AI Screens & Qualifies',
+      description: 'Instant qualification against your criteria',
+      highlight: 'Real-time'
+    },
+    {
       icon: ClipboardCheck,
       title: 'Logged & Tracked',
       description: 'Full transcript and next steps captured',
       highlight: 'Complete record'
+    },
+    {
+      icon: Clock,
+      title: 'Await Evaluation',
+      description: 'Candidate waits for employer review',
+      highlight: 'Human decision'
     }
   ] as HowItWorksStep[],
   
