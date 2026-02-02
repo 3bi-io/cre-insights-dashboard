@@ -68,7 +68,7 @@ export const howItWorksContent = {
     {
       icon: BarChart3,
       title: 'Auto-Shutoff',
-      description: 'Transcripts, scores, and insights',
+      description: 'Be Kind When Interest is High',
       highlight: 'Data-driven'
     },
     {
