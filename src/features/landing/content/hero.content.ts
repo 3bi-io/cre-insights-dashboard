@@ -9,7 +9,7 @@ export const heroContent = {
   headlineAccent: ' Fraud-Free',
   subheadline: 'Employers add phone # to a job ad.\nJobseekers consent to secure screens, and called in minutes.\nAI agents conduct dialogues 24/7 to accommodate all shifts.\nReal people are evaluated for real employers for real critical jobs.',
   cta: {
-    primary: 'Start Free Trial',
+    primary: 'Employers Start Here',
     secondary: 'Browse Jobs'
   },
   socialProof: {
