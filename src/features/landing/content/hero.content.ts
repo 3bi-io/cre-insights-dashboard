@@ -4,7 +4,7 @@
  */
 
 export const heroContent = {
-  badge: '🎙️ AI Voice Technology: Instant Automated Callbacks',
+  badge: 'AI Voice Interviews | Designed for No Resume Jobs',
   headline: 'Hire Faster with',
   headlineAccent: ' AI Voice Recruitment',
   subheadline: 'Jobseekers apply and receive automated voice callbacks within minutes. Our AI voice agents interview 24/7 in a secure and fraud-free manner, so you never miss critical talent.',
