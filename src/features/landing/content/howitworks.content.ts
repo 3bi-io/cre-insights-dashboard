@@ -48,16 +48,16 @@ export const howItWorksContent = {
   employerTitle: 'For Employers',
   employerSteps: [
     {
-      icon: Briefcase,
-      title: 'Post Job',
-      description: 'Just add a phone #',
-      highlight: 'Quick setup'
-    },
-    {
       icon: Settings,
       title: 'Configure AI',
       description: 'Set screening criteria and questions',
       highlight: 'Customizable'
+    },
+    {
+      icon: Briefcase,
+      title: 'Post Job',
+      description: 'Just add a phone #',
+      highlight: 'Quick setup'
     },
     {
       icon: Users,
