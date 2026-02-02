@@ -48,7 +48,7 @@ const HeroSection = () => {
             </span>
           </h1>
           
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-2">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto leading-relaxed px-2 whitespace-pre-line">
             {heroContent.subheadline}
           </p>
 
