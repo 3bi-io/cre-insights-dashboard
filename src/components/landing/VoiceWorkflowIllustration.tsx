@@ -18,7 +18,7 @@ interface WorkflowStep {
 const workflowSteps: WorkflowStep[] = [
   {
     icon: User,
-    label: 'Design Intake',
+    label: 'Begin Role Design',
     description: 'Your team calls AI and designs role',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/10',
