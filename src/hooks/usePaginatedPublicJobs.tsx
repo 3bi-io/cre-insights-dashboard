@@ -5,37 +5,56 @@ import { queryKeys } from '@/lib/queryKeys';
 
 const PAGE_SIZE = 50;
 
+export type PublicJobSortOption = 'recent' | 'title' | 'salary-high' | 'salary-low';
+
 interface UsePaginatedPublicJobsParams {
   searchTerm?: string;
   locationFilter?: string;
   categoryFilter?: string;
   clientFilter?: string;
+  sortBy?: PublicJobSortOption;
 }
+
+// Sorting configuration for database queries
+const getSortConfig = (sortBy: PublicJobSortOption): { column: string; ascending: boolean } => {
+  switch (sortBy) {
+    case 'title':
+      return { column: 'title', ascending: true };
+    case 'salary-high':
+      return { column: 'salary_max', ascending: false };
+    case 'salary-low':
+      return { column: 'salary_min', ascending: true };
+    case 'recent':
+    default:
+      return { column: 'created_at', ascending: false };
+  }
+};
 
 export function usePaginatedPublicJobs({
   searchTerm = '',
   locationFilter = '',
   categoryFilter = '',
-  clientFilter = ''
+  clientFilter = '',
+  sortBy = 'recent'
 }: UsePaginatedPublicJobsParams = {}) {
   const [page, setPage] = useState(0);
   const [allJobs, setAllJobs] = useState<any[]>([]);
 
-  // Reset pagination when filters change
+  // Reset pagination when filters or sort change
   useEffect(() => {
     setPage(0);
     setAllJobs([]);
-  }, [searchTerm, locationFilter, categoryFilter, clientFilter]);
+  }, [searchTerm, locationFilter, categoryFilter, clientFilter, sortBy]);
+
+  const sortConfig = getSortConfig(sortBy);
 
   const { data, isLoading, error, isFetching } = useQuery({
-    queryKey: queryKeys.public.jobsPaginated(page, { searchTerm, locationFilter, categoryFilter, clientFilter }),
+    queryKey: queryKeys.public.jobsPaginated(page, { searchTerm, locationFilter, categoryFilter, clientFilter, sortBy }),
     queryFn: async () => {
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      // First fetch job listings with related data
-      // Note: organizations join uses public_organization_info view for security
-      // Note: clients data is fetched separately from public_client_info view
+      // Build query with server-side sorting
       let query = supabase
         .from('job_listings')
         .select(`
@@ -44,7 +63,7 @@ export function usePaginatedPublicJobs({
         `, { count: 'exact' })
         .eq('status', 'active')
         .eq('is_hidden', false)
-        .order('created_at', { ascending: false })
+        .order(sortConfig.column, { ascending: sortConfig.ascending })
         .range(from, to);
 
       // Apply search filter

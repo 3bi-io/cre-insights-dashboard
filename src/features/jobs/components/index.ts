@@ -12,3 +12,6 @@ export { default as JobEditDialog } from '@/components/JobEditDialog';
 export { VoiceApplicationStatus } from './VoiceApplicationStatus';
 export { JobsViewToggle } from './JobsViewToggle';
 export { JobsClientFilter } from './JobsClientFilter';
+
+// Public jobs page components
+export * from './public';
