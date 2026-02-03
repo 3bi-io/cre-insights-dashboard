@@ -1,210 +1,295 @@
 
-# Add Embed Form Outbound Voice Agent
+# /jobs Page Refactoring Plan
 
-## Context
+## Overview
 
-You want all submissions from `/embed/apply` to trigger outbound calls via a specific ElevenLabs agent:
+The public `/jobs` page (`src/pages/public/JobsPage.tsx`) is a key entry point for jobseekers. After reviewing the codebase, I've identified several areas for improvement focusing on code organization, performance, maintainability, and alignment with established patterns.
 
-| Property | Value |
-|----------|-------|
-| **Agent ID** | `agent_3201kfp75kshfgwr1kfs310715z3` |
-| **Phone Number ID** | `phnum_6901kg7vdsf5em2sh1cc1933d8j4` |
+## Current State Analysis
 
-## Current Architecture Analysis
+### What's Working Well
+- Pagination with infinite scroll via `usePaginatedPublicJobs`
+- Mobile-responsive design with `MobileFilterSheet`
+- SEO implementation with structured data
+- Voice application integration
+- Client and location filtering
 
-### Application Flow
+### Areas for Improvement
+
+1. **Code Organization**: The page component is 338 lines with inline state management, filtering logic, and rendering all in one file
+2. **Pattern Consistency**: Not using the standardized `DataLoadingStateHandler` component for loading/error/empty states
+3. **Duplicate Logic**: Category filtering happens client-side redundantly (also done in hook)
+4. **Performance**: Locations are computed from loaded jobs rather than fetched from backend
+5. **Type Safety**: Using `any` for job types throughout
+6. **Separation of Concerns**: Filter state management mixed with rendering logic
+
+## Refactoring Plan
+
+### Phase 1: Extract Custom Hook for Job Page State
+
+Create a dedicated hook `usePublicJobsPage` to encapsulate all state management:
+
 ```text
-/embed/apply (iframe)
-    ↓
-useApplicationForm → submit-application edge function
-    ↓
-Database INSERT → trigger_application_insert_outbound_call()
-    ↓
-Creates record in outbound_calls table
+src/features/jobs/hooks/usePublicJobsPage.ts
 ```
 
-### Current Trigger Logic (Priority Order)
-1. **Client-specific agent** - Matches `client_id` from job listing
-2. **Organization-level agent** - Matches `organization_id` with `client_id IS NULL`
-3. **Platform default agent** - Falls back to `is_platform_default = true`
+This hook will manage:
+- Filter states (search, location, client, sort)
+- Integration with `usePaginatedPublicJobs`
+- Location options derived from jobs
+- Client fetching logic
+- Sorting logic (currently inline in component)
 
-### The Gap
-- Embed form applications currently get `source: 'Direct Application'` (same as regular `/apply`)
-- No way to distinguish embed traffic for specialized routing
-- Need to add a dedicated embed outbound agent as a new routing option
+### Phase 2: Extract Filter Components
 
-## Solution Overview
+Create reusable filter components in the jobs feature:
 
-### Phase 1: Add Embed Source Tracking
-Add `'Embed Form'` as a distinct source identifier so the system can recognize embed traffic.
+```text
+src/features/jobs/components/public/
+├── JobFiltersDesktop.tsx     // Desktop filter row
+├── JobFiltersState.tsx       // Filter state provider/types
+├── JobSortSelect.tsx         // Reusable sort dropdown
+└── index.ts                  // Barrel exports
+```
 
-### Phase 2: Insert Embed Outbound Agent
-Add the new voice agent to the `voice_agents` table with the provided credentials.
+### Phase 3: Define Proper Types
 
-### Phase 3: Update Database Trigger
-Modify `trigger_application_insert_outbound_call()` to prioritize the embed agent when `source = 'Embed Form'`.
+Create a proper type definition for public job listings:
 
-## Implementation Details
+```text
+src/features/jobs/types/publicJob.ts
+```
 
-### 1. Update EmbedApply.tsx - Add Source Tracking
+This replaces the scattered `any` types with a proper interface that includes:
+- Core job fields
+- Related organization and client data
+- Voice agent availability flag
+- Category information
 
-The embed form needs to pass a `source` field to identify its traffic:
+### Phase 4: Refactor Main Component
+
+Update `JobsPage.tsx` to:
+
+1. Use `DataLoadingStateHandler` for consistent loading/error/empty states
+2. Delegate state management to the new hook
+3. Use extracted filter components
+4. Apply proper TypeScript types
+5. Reduce component size to ~150 lines focused on composition
+
+### Phase 5: Optimize Performance
+
+1. **Memoize filter computations** - Wrap expensive operations in `useMemo`
+2. **Debounce search input** - Already partially implemented but can be standardized
+3. **Move sorting to backend** - Pass sort option to `usePaginatedPublicJobs` hook so sorting happens in the database query rather than client-side
+4. **Lazy load voice panel** - Only import `VoiceApplicationPanel` when voice is actually initiated
+
+### Phase 6: Update Hook Integration
+
+Modify `usePaginatedPublicJobs` to:
+- Accept sort option and apply ordering in the query
+- Use standardized query keys from `queryKeys.ts`
+- Add proper return types
+
+## Technical Details
+
+### New File Structure
+
+```text
+src/features/jobs/
+├── components/
+│   ├── public/
+│   │   ├── JobFiltersDesktop.tsx
+│   │   ├── JobSortSelect.tsx
+│   │   └── index.ts
+│   └── index.ts (update exports)
+├── hooks/
+│   ├── usePublicJobsPage.ts (new)
+│   └── index.ts (update exports)
+├── types/
+│   ├── publicJob.ts (new)
+│   └── index.ts (new)
+└── index.ts (update exports)
+```
+
+### Key Code Changes
+
+**1. Type Definition (publicJob.ts)**
 
 ```typescript
-// In ApplicationForm submission for embed context
-const formattedData = {
-  ...data,
-  source: 'Embed Form',  // NEW: Explicit source identifier
-  // ... existing fields
-};
+export interface PublicJob {
+  id: string;
+  title?: string;
+  job_title?: string;
+  job_summary?: string;
+  description?: string;
+  city?: string;
+  state?: string;
+  location?: string;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  salary_type?: string | null;
+  job_type?: string | null;
+  created_at: string;
+  dest_city?: string;
+  dest_state?: string;
+  organizations?: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string;
+  } | null;
+  clients?: {
+    id: string;
+    name: string;
+    logo_url?: string;
+  } | null;
+  job_categories?: {
+    name: string;
+  } | null;
+  voiceAgent?: { global: boolean };
+}
 ```
 
-### 2. Insert Voice Agent Record
+**2. Hook Integration (usePublicJobsPage.ts)**
 
-Create a new migration to add the embed outbound agent:
+```typescript
+export interface PublicJobsPageState {
+  // Filters
+  searchTerm: string;
+  locationFilter: string;
+  clientFilter: string;
+  sortBy: SortOption;
+  
+  // Setters
+  setSearchTerm: (value: string) => void;
+  setLocationFilter: (value: string) => void;
+  setClientFilter: (value: string) => void;
+  setSortBy: (value: SortOption) => void;
+  
+  // Data
+  jobs: PublicJob[];
+  totalCount: number;
+  locations: string[];
+  clients: { id: string; name: string }[];
+  
+  // Loading states
+  isLoading: boolean;
+  isFetchingMore: boolean;
+  hasMore: boolean;
+  
+  // Actions
+  loadMore: () => void;
+}
+```
 
-```sql
-INSERT INTO voice_agents (
-  agent_name,
-  agent_id,
-  elevenlabs_agent_id,
-  agent_phone_number_id,
-  organization_id,      -- NULL for platform-wide
-  client_id,            -- NULL for platform-wide
-  is_active,
-  is_outbound_enabled,
-  is_platform_default,
-  llm_model,
-  description
-) VALUES (
-  'Outbound Agent - Embed Form',
-  'agent_3201kfp75kshfgwr1kfs310715z3',
-  'agent_3201kfp75kshfgwr1kfs310715z3',
-  'phnum_6901kg7vdsf5em2sh1cc1933d8j4',
-  NULL,  -- Platform-wide, not org-specific
-  NULL,  -- No client association
-  true,
-  true,
-  false, -- Not the platform default
-  'gpt-4o-mini',
-  'Dedicated outbound calling agent for embed form submissions'
+**3. Updated usePaginatedPublicJobs**
+
+Add sorting to the database query:
+
+```typescript
+interface UsePaginatedPublicJobsParams {
+  searchTerm?: string;
+  locationFilter?: string;
+  categoryFilter?: string;
+  clientFilter?: string;
+  sortBy?: 'recent' | 'title' | 'salary-high' | 'salary-low';
+}
+
+// In the query:
+const orderConfig = {
+  'recent': { column: 'created_at', ascending: false },
+  'title': { column: 'title', ascending: true },
+  'salary-high': { column: 'salary_max', ascending: false },
+  'salary-low': { column: 'salary_min', ascending: true },
+};
+
+query = query.order(
+  orderConfig[sortBy].column, 
+  { ascending: orderConfig[sortBy].ascending }
 );
 ```
 
-### 3. Update Database Trigger Function
-
-Modify `trigger_application_insert_outbound_call()` to check for embed source first:
-
-```sql
-CREATE OR REPLACE FUNCTION public.trigger_application_insert_outbound_call()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-DECLARE
-  v_org_id UUID;
-  v_client_id UUID;
-  v_voice_agent_id UUID;
-BEGIN
-  IF NEW.phone IS NOT NULL AND NEW.phone != '' AND length(NEW.phone) >= 10 THEN
-    
-    -- PRIORITY 0: Embed Form submissions get dedicated agent
-    IF NEW.source = 'Embed Form' THEN
-      SELECT id INTO v_voice_agent_id
-      FROM voice_agents
-      WHERE agent_id = 'agent_3201kfp75kshfgwr1kfs310715z3'
-        AND is_outbound_enabled = true
-        AND agent_phone_number_id IS NOT NULL
-        AND is_active = true
-      LIMIT 1;
-      
-      IF v_voice_agent_id IS NOT NULL THEN
-        INSERT INTO outbound_calls (
-          application_id,
-          voice_agent_id,
-          organization_id,
-          phone_number,
-          status,
-          metadata
-        ) VALUES (
-          NEW.id,
-          v_voice_agent_id,
-          NULL,  -- No org for embed
-          NEW.phone,
-          'queued',
-          jsonb_build_object(
-            'applicant_name', COALESCE(NEW.first_name, '') || ' ' || COALESCE(NEW.last_name, ''),
-            'triggered_by', 'embed_form_submission',
-            'source', 'Embed Form'
-          )
-        );
-        RETURN NEW;
-      END IF;
-    END IF;
-    
-    -- EXISTING LOGIC: Client → Org → Platform default
-    SELECT jl.organization_id, jl.client_id INTO v_org_id, v_client_id
-    FROM job_listings jl
-    WHERE jl.id = NEW.job_listing_id;
-    
-    -- ... rest of existing logic unchanged
-  END IF;
-  
-  RETURN NEW;
-END;
-$function$;
-```
-
-### 4. Update Submit-Application Edge Function
-
-Add `'Embed Form'` detection based on referrer/origin:
+**4. Simplified JobsPage Structure**
 
 ```typescript
-// Add to INTEGRATION_SIGNATURES
-const INTEGRATION_SIGNATURES = {
-  // ... existing entries
-  'embed/apply': { source: 'Embed Form', requiresScreening: false },
+const JobsPage = () => {
+  const pageState = usePublicJobsPage();
+  const voice = useElevenLabsVoice();
+
+  return (
+    <>
+      <SEO ... />
+      <StructuredData ... />
+      
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-6 lg:py-8">
+          <JobsPageHeader 
+            totalCount={pageState.totalCount} 
+          />
+          
+          <MobileFilterSheet {...pageState} />
+          <JobFiltersDesktop {...pageState} />
+          
+          <DataLoadingStateHandler
+            data={pageState.jobs}
+            isLoading={pageState.isLoading}
+            isError={false}
+            emptyTitle="No Jobs Found"
+            emptyDescription="Try adjusting your search criteria"
+            emptyIcon={Building2}
+          >
+            {(jobs) => (
+              <JobsGrid 
+                jobs={jobs}
+                onVoiceApply={voice.startVoiceApplication}
+                isVoiceConnected={voice.isConnected}
+                selectedJobId={voice.selectedJob?.jobId}
+              />
+            )}
+          </DataLoadingStateHandler>
+          
+          {pageState.hasMore && (
+            <LoadMoreButton 
+              onClick={pageState.loadMore}
+              isLoading={pageState.isFetchingMore}
+            />
+          )}
+          
+          <VoiceApplicationPanel {...voice} />
+        </div>
+      </div>
+    </>
+  );
 };
 ```
 
-Or pass source explicitly from the frontend.
+## Benefits
+
+1. **Maintainability**: Smaller, focused components are easier to test and modify
+2. **Reusability**: Filter components and hooks can be reused in candidate portal
+3. **Performance**: Server-side sorting reduces client-side computation
+4. **Type Safety**: Proper TypeScript types catch errors at compile time
+5. **Consistency**: Aligns with established patterns like `DataLoadingStateHandler`
+6. **Testing**: Extracted hooks can be unit tested independently
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/hooks/useApplicationForm.ts` | Pass `source: 'Embed Form'` when in embed context |
-| `src/pages/EmbedApply.tsx` | Pass embed context to ApplicationForm |
-| `supabase/migrations/[new].sql` | Insert voice agent + update trigger function |
-| `supabase/functions/submit-application/index.ts` | Detect embed referrer as 'Embed Form' source |
+| File | Change |
+|------|--------|
+| `src/pages/public/JobsPage.tsx` | Refactor to use new components and hooks |
+| `src/hooks/usePaginatedPublicJobs.tsx` | Add sort parameter and return types |
+| `src/features/jobs/hooks/usePublicJobsPage.ts` | New file - page state hook |
+| `src/features/jobs/types/publicJob.ts` | New file - type definitions |
+| `src/features/jobs/components/public/JobFiltersDesktop.tsx` | New file - desktop filters |
+| `src/features/jobs/components/public/index.ts` | New file - barrel exports |
+| `src/features/jobs/hooks/index.ts` | Update exports |
+| `src/features/jobs/index.ts` | Update exports |
 
-## Alternative: Explicit Source Parameter
+## Implementation Order
 
-The cleanest approach is to pass `source` explicitly from the embed form:
-
-**In EmbedApply or its form hook:**
-```typescript
-const formattedData = {
-  ...data,
-  source: 'Embed Form',  // Hardcoded for embed route
-};
-```
-
-This avoids complex referrer detection and makes the intent explicit.
-
-## Expected Behavior After Implementation
-
-1. User fills out form on `/embed/apply` (embedded iframe)
-2. Form submits with `source: 'Embed Form'`
-3. Application inserted into database
-4. Database trigger fires, detects `source = 'Embed Form'`
-5. Trigger selects the dedicated embed agent (`agent_3201kfp75kshfgwr1kfs310715z3`)
-6. Outbound call record created with `status: 'queued'`
-7. ElevenLabs outbound call system picks up and dials from `phnum_6901kg7vdsf5em2sh1cc1933d8j4`
-
-## Rollback Strategy
-
-If issues arise:
-1. Update the voice agent to `is_active = false`
-2. Embed submissions will fall back to existing routing logic
+1. Create type definitions first (foundational)
+2. Update `usePaginatedPublicJobs` with sort support
+3. Create `usePublicJobsPage` hook
+4. Extract filter components
+5. Refactor `JobsPage.tsx` to compose everything
+6. Test end-to-end functionality
