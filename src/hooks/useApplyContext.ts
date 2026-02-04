@@ -37,28 +37,30 @@ export const useApplyContext = (): ApplyContext => {
                         searchParams.get('source');
 
       if (jobListingId) {
-        // Fetch job listing with client only (org info excluded for privacy)
+        // Step 1: Fetch job listing (get client_id, not joining clients due to RLS)
         const { data: jobListing } = await supabase
           .from('job_listings')
-          .select(`
-            id,
-            title,
-            city,
-            state,
-            clients (
-              id,
-              name
-            )
-          `)
+          .select('id, title, city, state, client_id')
           .eq('id', jobListingId)
           .maybeSingle();
 
         if (jobListing) {
-          const client = jobListing.clients as any;
+          let clientName: string | null = null;
+
+          // Step 2: Fetch client name from public_client_info view
+          if (jobListing.client_id) {
+            const { data: clientInfo } = await supabase
+              .from('public_client_info')
+              .select('name')
+              .eq('id', jobListing.client_id)
+              .maybeSingle();
+            
+            clientName = clientInfo?.name || null;
+          }
           
           setContext({
             jobTitle: jobListing.title,
-            clientName: client?.name || null,
+            clientName,
             location: jobListing.city && jobListing.state 
               ? `${jobListing.city}, ${jobListing.state}` 
               : null,
