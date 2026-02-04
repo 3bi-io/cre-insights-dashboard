@@ -65,7 +65,7 @@ const JobsPage = () => {
         "datePosted": job.created_at,
         "hiringOrganization": {
           "@type": "Organization",
-          "name": (job.clients?.name && job.clients.name !== 'Unassigned') ? job.clients.name : (job.organizations?.name || "Company")
+          "name": (job.clients?.name && job.clients.name !== 'Unassigned') ? job.clients.name : "Company"
         },
         "jobLocation": {
           "@type": "Place",

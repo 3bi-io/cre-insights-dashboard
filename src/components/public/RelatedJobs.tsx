@@ -26,7 +26,6 @@ interface RelatedJob {
   client_id: string | null;
   organization_id: string | null;
   clients: { name: string | null } | null;
-  organizations?: { name: string | null } | null;
   job_categories: { name: string | null } | null;
 }
 
@@ -111,28 +110,8 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
         allJobs = [...allJobs, ...(moreJobs || [])];
       }
 
-      // Fetch organization names via public view
-      const orgIds = [...new Set(allJobs.map(j => j.organization_id).filter(Boolean))];
-      let orgMap: Record<string, string> = {};
-      
-      if (orgIds.length > 0) {
-        const { data: orgsData } = await supabase
-          .from('public_organization_info')
-          .select('id, name')
-          .in('id', orgIds);
-        
-        if (orgsData) {
-          orgMap = Object.fromEntries(orgsData.map(o => [o.id, o.name]));
-        }
-      }
-
-      // Enrich jobs with organization names
-      return allJobs.map(job => ({
-        ...job,
-        organizations: job.organization_id && orgMap[job.organization_id] 
-          ? { name: orgMap[job.organization_id] } 
-          : null
-      })) as RelatedJob[];
+      // Return jobs without organization info for privacy
+      return allJobs as RelatedJob[];
     },
     enabled: !!currentJobId,
     staleTime: 5 * 60 * 1000,

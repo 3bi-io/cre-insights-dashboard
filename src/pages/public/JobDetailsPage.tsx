@@ -89,7 +89,7 @@ const JobDetailsPage: React.FC = () => {
   const displayDescription = job.job_summary || job.job_description || '';
   const companyName = getDisplayCompanyName(job);
   const canonicalUrl = `https://ats.me/jobs/${job.id}`;
-  const applyUrl = `/apply?job_id=${job.id}&org_slug=${job.organizations?.slug || 'default'}`;
+  const applyUrl = `/apply?job_id=${job.id}`;
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
     if (!min && !max) return null;

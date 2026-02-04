@@ -30,11 +30,6 @@ interface JobDetails {
     name: string;
     logo_url: string | null;
   } | null;
-  organizations: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
   job_categories: {
     id: string;
     name: string;
@@ -65,21 +60,11 @@ export const useJobDetails = (jobId: string | undefined) => {
       if (error) throw error;
       if (!data) return null;
 
-      // Fetch organization info securely via public_organization_info view
-      let organizations = null;
-      if (data.organization_id) {
-        const { data: orgData } = await supabase
-          .from('public_organization_info')
-          .select('id, name, slug, logo_url')
-          .eq('id', data.organization_id)
-          .maybeSingle();
-        organizations = orgData;
-      }
-
       // Global voice agent available for all jobs
+      // Note: Organization info is not fetched for privacy
       const voiceAgent = { global: true };
 
-      return { ...data, organizations, voiceAgent } as unknown as JobDetails;
+      return { ...data, voiceAgent } as unknown as JobDetails;
     },
     enabled: !!jobId,
     staleTime: 5 * 60 * 1000, // 5 minutes

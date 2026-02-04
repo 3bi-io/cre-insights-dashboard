@@ -54,8 +54,8 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
 
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
 
-  // Create apply URL with job information
-  const applyUrl = `/apply?job_id=${job.id}&org_slug=${job.organizations?.slug || 'default'}`;
+  // Create apply URL with job information (org_slug removed for privacy)
+  const applyUrl = `/apply?job_id=${job.id}`;
   
   const handleVoiceApply = () => {
     if (!onVoiceApply || !hasVoiceAgent) return;
