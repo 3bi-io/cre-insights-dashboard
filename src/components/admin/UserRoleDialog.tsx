@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/select';
 import { Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { getRoleDescription } from '@/utils/authHelpers';
 
 interface UserRoleDialogProps {
   user: {
@@ -42,6 +44,7 @@ export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isSuperAdmin, getRoleOptions } = useAdminAccess();
 
   useEffect(() => {
     if (user?.role) {
@@ -86,6 +89,7 @@ export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
       queryClient.invalidateQueries({ queryKey: ['super-admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-users'] });
       toast({
         title: 'Role updated',
         description: `Successfully updated role for ${user?.email} to ${selectedRole}`,
@@ -108,6 +112,9 @@ export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
 
   if (!user) return null;
 
+  // Get role options based on current user's permissions
+  const roleOptions = getRoleOptions(isSuperAdmin);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -126,7 +133,7 @@ export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
             <div className="space-y-2">
               <Label>Current Role</Label>
               <p className="text-sm text-muted-foreground capitalize">
-                {user.role || 'No role assigned'}
+                {user.role?.replace('_', ' ') || 'No role assigned'}
               </p>
             </div>
 
@@ -137,14 +144,15 @@ export const UserRoleDialog: React.FC<UserRoleDialogProps> = ({
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  {roleOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Super Admins have full platform access. Admins can manage their organization.
+                {getRoleDescription(selectedRole)}
               </p>
             </div>
           </div>

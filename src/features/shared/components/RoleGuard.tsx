@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/lib/logger';
+import { hasRoleOrHigher } from '@/utils/roleUtils';
 import type { UserRole } from '@/features/admin/types';
 
 interface RoleGuardProps {
@@ -10,20 +11,30 @@ interface RoleGuardProps {
   requiredRole: UserRole | UserRole[];
   fallback?: React.ReactNode;
   redirectTo?: string;
+  /**
+   * When true, uses exact role matching instead of hierarchy
+   * Default is false (uses hierarchy - higher roles can access lower role content)
+   */
+  exactMatch?: boolean;
 }
 
 /**
  * RoleGuard component for protecting routes/content based on user roles
  * 
+ * By default, uses role hierarchy - a super_admin can access admin content,
+ * an admin can access moderator content, etc.
+ * 
  * @param requiredRole - Single role or array of roles that can access the content
  * @param fallback - Optional custom fallback component to show when access is denied
- * @param redirectTo - Optional path to redirect to when access is denied (defaults to showing AccessDenied)
+ * @param redirectTo - Optional path to redirect to when access is denied
+ * @param exactMatch - When true, only exact role matches are allowed (default: false)
  */
 const RoleGuard: React.FC<RoleGuardProps> = ({
   children,
   requiredRole,
   fallback,
-  redirectTo
+  redirectTo,
+  exactMatch = false,
 }) => {
   const { userRole, loading, user } = useAuth();
 
@@ -47,13 +58,18 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
 
   // Check if user has required role
   const requiredRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-  const hasAccess = userRole && requiredRoles.includes(userRole as UserRole);
+  
+  // Use hierarchy-aware check by default, exact match only when explicitly requested
+  const hasAccess = exactMatch
+    ? userRole && requiredRoles.includes(userRole as UserRole)
+    : requiredRoles.some(role => hasRoleOrHigher(userRole, role));
 
   // Log access check for debugging
   logger.debug('[ROLE_GUARD] Access check', {
     requiredRoles,
     userRole,
     hasAccess,
+    exactMatch,
     userId: user?.id?.substring(0, 8),
     context: 'RoleGuard'
   });
