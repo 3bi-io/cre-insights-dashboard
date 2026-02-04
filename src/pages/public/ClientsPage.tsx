@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { Search, Building2, MapPin, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -170,18 +171,18 @@ const ClientCard: React.FC<ClientCardProps> = ({ client }) => {
       )}>
         <CardContent className="p-4 flex flex-col items-center text-center">
           {/* Logo Container */}
-          <div className="w-full aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+          <LogoAvatar size="lg" className="w-full aspect-square mb-3">
             {client.logo_url ? (
-              <img
+              <LogoAvatarImage 
                 src={client.logo_url}
                 alt={`${client.name} logo`}
-                className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200"
                 loading="lazy"
+                className="group-hover:scale-105 transition-transform duration-200"
               />
             ) : (
-              <Building2 className="h-12 w-12 text-muted-foreground/40" />
+              <LogoAvatarFallback iconSize="lg" />
             )}
-          </div>
+          </LogoAvatar>
           
           {/* Company Name */}
           <h3 className="font-semibold text-sm text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
