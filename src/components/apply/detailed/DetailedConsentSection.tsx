@@ -257,6 +257,19 @@ export const DetailedConsentSection = React.memo(({
           </p>
         </div>
       )}
+
+      {/* Legal Disclosure */}
+      <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+        <p className="text-sm text-muted-foreground text-center">
+          By submitting, you confirm that the information provided is accurate and complete.
+        </p>
+        <p className="text-xs text-muted-foreground/80">
+          By submitting this form, you agree we can contact you for follow-ups—via 
+          outbound calls, texts, emails, or other digital means—using AI tools or 
+          automated systems at the info you shared. Standard rates might apply, 
+          and you can opt out anytime.
+        </p>
+      </div>
     </div>
   );
 });
