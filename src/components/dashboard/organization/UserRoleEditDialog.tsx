@@ -7,6 +7,8 @@ import { Shield } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { getRoleDescription } from '@/utils/authHelpers';
 
 interface User {
   id: string;
@@ -26,6 +28,7 @@ export const UserRoleEditDialog = ({ user, open, onClose }: UserRoleEditDialogPr
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isSuperAdmin, organizationId, getRoleOptions } = useAdminAccess();
 
   React.useEffect(() => {
     if (user) {
@@ -43,18 +46,21 @@ export const UserRoleEditDialog = ({ user, open, onClose }: UserRoleEditDialogPr
 
       if (deleteError) throw deleteError;
 
-      // Add new role
+      // Add new role with organization context
       const { error: insertError } = await supabase
         .from('user_roles')
         .insert({
           user_id: userId,
-          role: newRole as 'user' | 'admin' | 'moderator' | 'super_admin'
+          role: newRole as 'user' | 'admin' | 'moderator' | 'super_admin' | 'recruiter',
+          organization_id: organizationId || null,
         });
 
       if (insertError) throw insertError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-user-data'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-roles'] });
       onClose();
       toast({
         title: 'Role Updated',
@@ -80,6 +86,9 @@ export const UserRoleEditDialog = ({ user, open, onClose }: UserRoleEditDialogPr
   };
 
   if (!user) return null;
+
+  // Get role options - org admins can't assign super_admin
+  const roleOptions = getRoleOptions(isSuperAdmin);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -107,11 +116,16 @@ export const UserRoleEditDialog = ({ user, open, onClose }: UserRoleEditDialogPr
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="moderator">Moderator</SelectItem>
+                {roleOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {getRoleDescription(selectedRole)}
+            </p>
           </div>
           
           <div className="flex justify-end gap-2 pt-4">

@@ -10,10 +10,13 @@ import { Users, Mail, Plus, UserX } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { getRoleDisplayName } from '@/utils/authHelpers';
 
 interface Organization {
   id: string;
   name: string;
+  slug?: string;
 }
 
 interface OrganizationUser {
@@ -29,13 +32,19 @@ interface UserManagementDialogProps {
   trigger?: React.ReactNode;
 }
 
+type InviteRole = 'user' | 'recruiter' | 'moderator' | 'admin';
+
 export const UserManagementDialog = ({ organization, trigger }: UserManagementDialogProps) => {
   const [open, setOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'user'>('user');
+  const [inviteRole, setInviteRole] = useState<InviteRole>('user');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isSuperAdmin, getRoleOptions } = useAdminAccess();
+
+  // Get role options excluding super_admin for invites (only super admins can create super admins via different flow)
+  const availableRoles = getRoleOptions(false);
 
   // Fetch organization users
   const { data: users, isLoading } = useQuery({
@@ -79,7 +88,7 @@ export const UserManagementDialog = ({ organization, trigger }: UserManagementDi
       // Call the ensure_admin_for_email function to set up the user
       const { error } = await supabase.rpc('ensure_admin_for_email', {
         _email: email,
-        _org_slug: (organization as any).slug || 'default-org'
+        _org_slug: organization.slug || 'default-org'
       });
 
       if (error) throw error;
@@ -148,6 +157,19 @@ export const UserManagementDialog = ({ organization, trigger }: UserManagementDi
     }
   };
 
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'default';
+      case 'moderator':
+        return 'secondary';
+      case 'recruiter':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -181,13 +203,16 @@ export const UserManagementDialog = ({ organization, trigger }: UserManagementDi
                 </div>
                 <div>
                   <Label htmlFor="role">Role</Label>
-                  <Select value={inviteRole} onValueChange={(value: 'admin' | 'user') => setInviteRole(value)}>
+                  <Select value={inviteRole} onValueChange={(value: InviteRole) => setInviteRole(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      {availableRoles.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -248,8 +273,8 @@ export const UserManagementDialog = ({ organization, trigger }: UserManagementDi
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={user.role === 'admin' ? 'secondary' : 'outline'}>
-                        {user.role}
+                      <Badge variant={getRoleBadgeVariant(user.role)}>
+                        {getRoleDisplayName(user.role)}
                       </Badge>
                       <Button
                         variant="ghost"
