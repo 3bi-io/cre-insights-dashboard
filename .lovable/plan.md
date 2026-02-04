@@ -1,245 +1,270 @@
 
 
-# Social Beacons Feature - Complete Review and Refactoring Plan
+# Ad Networks Review and Enhancement Plan
 
 ## Executive Summary
 
-After thorough review of `/social-beacons` (Super Admin Social Beacons), I've identified that while the foundation is solid, **several key features are incomplete or non-functional**, and the UX can be significantly improved. The most critical gaps are:
+After comprehensive review of the `/admin/ad-networks` page and all associated platform components, I've identified several areas where functionality is incomplete, UX can be improved, and additional features would make this best-in-class. The core infrastructure is solid, but there are gaps in API credential management, inconsistent UI patterns, and missing platform-specific action components.
 
-1. **Image generation is not implemented** - The edge function returns `mediaUrl: null` 
-2. **Video generation is not implemented** - Only appears as a UI option
-3. **No saved creatives gallery** - Creatives are saved but not displayed
-4. **Multi-platform preview not available** - Only shows X/Twitter preview
-5. **No export functionality** - Export button exists but does nothing
+## Current Architecture Overview
 
-## Current State Analysis
-
-### What's Working Well
-- Platform credentials verification via `verify-platform-secrets` edge function
-- Platform configuration storage in `social_beacon_configurations` table
-- OAuth flow for LinkedIn, Facebook, Instagram, Twitter
-- Ad copy generation via Lovable AI (text only)
-- Global settings management
-- Analytics panel (mock data)
-
-### Critical Gaps Identified
-
-#### Gap 1: Image Generation Not Implemented
-**File:** `supabase/functions/generate-ad-creative/index.ts` (line 171)
-```typescript
-mediaUrl: null, // Image generation would be a separate step
-```
-The edge function generates text but never generates images despite the UI offering AI image generation.
-
-#### Gap 2: No Saved Creatives Gallery
-**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
-The `useAdCreative` hook fetches `savedCreatives` but there's no UI component to display them.
-
-#### Gap 3: Single Platform Preview Only
-**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` (line 260-262)
-```typescript
-<AdPreviewCard 
-  preview={currentPreview}
-  platform="x"  // Hardcoded to X only
-  isLoading={isGenerating}
-/>
+### Components Structure
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                     AdNetworks Page                          │
+├─────────────────────────────────────────────────────────────┤
+│  Tabs: Overview | Talroo | ATS Integrations                 │
+├─────────────────────────────────────────────────────────────┤
+│  Overview → PlatformsTable (uses PLATFORM_CONFIGS)          │
+│  Talroo → TalrooPlatformActions                             │
+│  Integrations → TenstreetNavigationCard                     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-#### Gap 4: Export Button Non-Functional
-**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` (lines 279-282)
-```typescript
-<Button variant="outline">
-  <Download className="mr-2 h-4 w-4" />
-  Export
-</Button>
-```
-No onClick handler attached.
+### Platform Categories
+| Category | Platforms | Status |
+|----------|-----------|--------|
+| **Paid** | Google Jobs, Indeed, Meta, X, ZipRecruiter, Talroo | Partial functionality |
+| **Free** | Craigslist, SimplyHired, Glassdoor, Dice, FlexJobs | XML feeds only |
+| **Trucking** | Truck Driver Jobs 411, NewJobs4You | CDL-optimized |
 
-#### Gap 5: Mock Analytics Data
-**File:** `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx`
-All analytics are hardcoded mock data, not fetched from the database.
+### Configured Secrets
+- **Meta**: `META_ACCESS_TOKEN`, `META_APP_ID`, `META_APP_SECRET` ✓
+- **Craigslist**: `CRAIGSLIST_USERNAME`, `CRAIGSLIST_PASSWORD`, `CRAIGSLIST_ACCOUNT_ID` ✓
+- **LinkedIn**: `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` ✓
+- **Google**: `GOOGLE_SERVICE_ACCOUNT_JSON` ✓
+- **Indeed**: Missing `INDEED_CLIENT_ID`, `INDEED_CLIENT_SECRET`
+- **Adzuna**: Missing `ADZUNA_APP_ID`, `ADZUNA_API_KEY`
+- **Talroo**: Missing API credentials
+- **ZipRecruiter**: Missing API credentials
+- **X/Twitter**: Missing `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET`
+
+## Identified Issues
+
+### Issue 1: PlatformsTable Displays Static Data Instead of Database Platforms
+**Location:** `src/components/platforms/PlatformsTable.tsx`
+
+**Problem:** The table uses hardcoded `PLATFORM_CONFIGS` array instead of the dynamic `platforms` prop passed from the parent. The platforms from the database are ignored.
+
+```typescript
+// Current (line 99-101): Uses static config
+{PLATFORM_CONFIGS.map((platform) => (
+  <PlatformCard key={platform.name} platform={platform} />
+))}
+
+// Should use: Dynamic platforms from database
+{(platforms || PLATFORM_CONFIGS).map((platform) => ...)}
+```
+
+### Issue 2: No Platform-Specific Action Tabs for Most Networks
+**Location:** `src/pages/AdNetworks.tsx`
+
+**Problem:** Only Talroo has a dedicated tab. Major platforms like Meta, Indeed, Google Jobs, X, and ZipRecruiter have dedicated action components but no way to access them from the Ad Networks page.
+
+**Existing Components Not Surfaced:**
+- `MetaPlatformActions.tsx` (585 lines, fully functional)
+- `IndeedPlatformActions.tsx` (functional)
+- `GoogleJobsPlatformActions.tsx` (functional)
+- `XPlatformActions.tsx` (functional)
+- `ZipRecruiterPlatformActions.tsx` (simulated only)
+- `AdzunaPlatformActions.tsx` (functional with simulated data)
+- `CraigslistPlatformActions.tsx` (functional with credentials)
+- `GlassdoorPlatformActions.tsx` (XML feed only)
+- `SimplyHiredPlatformActions.tsx` (XML feed only)
+- `TruckDriverJobs411PlatformActions.tsx` (functional)
+
+### Issue 3: X Platform Integration Has No Edge Function
+**Location:** `src/components/platforms/XPlatformActions.tsx` (lines 34, 59)
+
+**Problem:** The component calls `x-platform-integration` edge function which doesn't exist. Search found no matches in `supabase/functions`.
+
+```typescript
+// Non-existent function being called
+const response = await supabase.functions.invoke('x-platform-integration', {
+  body: { action: 'test_connection' }
+});
+```
+
+### Issue 4: IndeedPlatformActions Uses Wrong Action Name
+**Location:** `src/components/platforms/IndeedPlatformActions.tsx` (line 31)
+
+**Problem:** Uses `action: 'getStats'` but edge function expects `action: 'get_stats'`.
+
+```typescript
+// Current (incorrect):
+action: 'getStats'
+
+// Should be:
+action: 'get_stats'
+```
+
+### Issue 5: ZipRecruiter Integration is Simulated Only
+**Location:** `src/components/platforms/ZipRecruiterPlatformActions.tsx` (line 38)
+
+**Problem:** Connection handler just simulates with a timeout, no actual API integration exists.
+
+```typescript
+// Simulation only - no real API call
+await new Promise(resolve => setTimeout(resolve, 2000));
+```
+
+### Issue 6: Talroo Uses Mock/Simulated Data
+**Location:** `supabase/functions/talroo-integration/index.ts` (lines 70-94)
+
+**Problem:** The edge function generates random mock data instead of calling Talroo's actual API.
+
+```typescript
+// Mock data generation instead of real API
+const clicks = Math.floor(Math.random() * 400) + 100
+const impressions = clicks * (Math.floor(Math.random() * 7) + 5)
+```
+
+### Issue 7: Missing Unified Platform Management UI
+**Problem:** Each platform has its own action component but users must know where to find them. No central dashboard shows connection status for all platforms at a glance.
+
+### Issue 8: No Credential Status Indicators
+**Problem:** Users can't see at a glance which platforms have API credentials configured vs which are using simulated data.
 
 ## Comprehensive Refactoring Plan
 
-### Phase 1: Implement AI Image Generation
+### Phase 1: Fix PlatformsTable to Use Database Data
 
-**File to Modify:** `supabase/functions/generate-ad-creative/index.ts`
+**File:** `src/components/platforms/PlatformsTable.tsx`
 
-Add image generation using the Lovable AI Gateway with `google/gemini-2.5-flash-image`:
+Update the table to merge database platforms with static configs:
+- Use database platforms when available
+- Fall back to PLATFORM_CONFIGS for display
+- Show actual connection status from database
+- Add credential status indicators
 
-```typescript
-// After text generation, add image generation:
-if (generateImage) {
-  const imagePrompt = `Create a professional recruitment ad image for a ${jobTypeLabel} truck driver position.
+### Phase 2: Create Platform Action Router Component
 
-Design requirements:
-- ${aspectRatio} aspect ratio
-- Professional, modern recruitment marketing style
-- Feature trucking/transportation imagery
-- Include visual elements for: ${benefitsList}
-- Eye-catching but corporate appropriate
-- High contrast for social media visibility
-- No text in the image (text will be overlaid)
+**New File:** `src/components/platforms/PlatformActionPanel.tsx`
 
-Style: Professional social media recruitment ad for ${companyName || 'a trucking company'}.`;
+Create a unified component that:
+- Accepts platform name/type as prop
+- Routes to appropriate action component
+- Shows credential status
+- Provides consistent UX across all platforms
 
-  const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
-      messages: [{ role: "user", content: imagePrompt }],
-      modalities: ["image", "text"],
-    }),
-  });
+### Phase 3: Expand Ad Networks Tabs
 
-  if (imageResponse.ok) {
-    const imageData = await imageResponse.json();
-    const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (imageUrl) {
-      // Upload base64 to Supabase Storage and return public URL
-      // Or return base64 directly for client-side display
-    }
-  }
-}
-```
+**File:** `src/pages/AdNetworks.tsx`
 
-### Phase 2: Create Saved Creatives Gallery Component
+Reorganize tabs into platform categories:
+- **Overview** - All platforms table with status
+- **Paid Networks** - Meta, Indeed, Google Jobs, X, ZipRecruiter, Talroo
+- **Free Networks** - Craigslist, SimplyHired, Glassdoor, Dice, FlexJobs  
+- **Trucking** - Truck Driver Jobs 411, NewJobs4You, RoadWarriors
+- **ATS Integrations** - Tenstreet (existing)
 
-**New File:** `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx`
+Each sub-tab shows the platform-specific action component.
 
-Create a gallery component to display saved creatives with:
-- Grid layout of creative cards
-- Quick preview on hover
-- Actions: Edit, Delete, Publish, Duplicate
-- Filter by job type, date, platform
-- Pagination or infinite scroll
-- Empty state with CTA to create first creative
+### Phase 4: Create X Platform Edge Function
 
-### Phase 3: Multi-Platform Preview
+**New File:** `supabase/functions/x-platform-integration/index.ts`
 
-**File to Modify:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+Create the missing edge function with:
+- Connection testing using X API v2
+- Metrics retrieval
+- Campaign management
+- Use existing `TWITTER_CLIENT_ID`/`TWITTER_CLIENT_SECRET` pattern from verify-platform-secrets
 
-Add platform tabs for preview:
-- X (Twitter) - 280 char limit
-- Facebook - Full content
-- Instagram - 2200 char limit
-- LinkedIn - 3000 char limit
-- TikTok - Vertical video focus
+### Phase 5: Fix Indeed Integration Action Name
 
-**Enhance AdPreviewCard:**
-- Show character count vs. limit
-- Platform-specific styling (dark mode for X, blue for Facebook, etc.)
-- Warning badges when content exceeds limits
-- Platform-specific CTA button styles
+**File:** `src/features/platforms/hooks/useIndeedData.tsx`
 
-### Phase 4: Implement Export Functionality
+Fix the action name mismatch:
+- Change `getStats` → `get_stats`
+- Change `getEmployers` → implementation for that action
 
-**File to Modify:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+### Phase 6: Create Credential Status Dashboard
 
-Add export capabilities:
-- Download image as PNG/JPG
-- Export text as formatted clipboard copy
-- Export as JSON for API integration
-- Generate shareable preview link
+**New File:** `src/components/platforms/PlatformCredentialsOverview.tsx`
 
-### Phase 5: Enhance Ad Creative Studio UX
+Create a dashboard component showing:
+- All platforms with required secrets
+- Which secrets are configured vs missing
+- Quick links to configure missing credentials
+- Real-time status from `verify-platform-secrets` edge function
 
-**Complete UX Overhaul:**
+### Phase 7: Add ZipRecruiter Edge Function
 
-1. **Split View Layout:**
-   - Left: Configuration form
-   - Center: Live preview (switchable platforms)
-   - Right: Saved creatives sidebar (collapsible)
+**New File:** `supabase/functions/ziprecruiter-integration/index.ts`
 
-2. **Add AI Suggestions Panel:**
-   - Auto-suggest benefits based on job type
-   - Trending hashtags by industry
-   - Optimal posting times by platform
+Create proper integration with:
+- Connection testing
+- Job posting sync
+- Analytics retrieval
+- Proper error handling
 
-3. **Batch Generation:**
-   - Generate multiple variations at once
-   - A/B test different headlines
-   - Quick regenerate with variations
+### Phase 8: Improve XML Feed UX
 
-4. **Template System:**
-   - Save configurations as reusable templates
-   - Organization-wide template library
-   - Quick apply templates
-
-### Phase 6: Connect Real Analytics
-
-**File to Modify:** `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx`
-
-Create hook and queries for:
-- Real engagement data from `social_interactions` table
-- Creative performance from `generated_ad_creatives` table
-- Platform-wise breakdown from actual API responses
-- Time-series charts with Recharts
-
-### Phase 7: Video Generation Support (Future)
-
-Add video generation using external services or AI video APIs:
-- Short-form video for TikTok/Reels
-- Animated text overlays
-- Template-based video creation
+**Enhancement to all XML-based platforms:**
+- Add "Copy Feed URL" prominent button
+- Show last feed access timestamp
+- Show job count in feed
+- Add feed validation button
+- Show Google indexing status
 
 ## Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` | Display saved ad creatives |
-| `src/features/social-engagement/components/admin/CreativeCard.tsx` | Individual creative preview card |
-| `src/features/social-engagement/components/admin/PlatformPreviewTabs.tsx` | Multi-platform preview switcher |
-| `src/features/social-engagement/components/admin/ExportMenu.tsx` | Export options dropdown |
-| `src/features/social-engagement/hooks/useAnalyticsDashboard.ts` | Real analytics data fetching |
-| `src/features/social-engagement/utils/platformLimits.ts` | Character limits and validation |
+| `supabase/functions/x-platform-integration/index.ts` | X/Twitter API integration |
+| `supabase/functions/ziprecruiter-integration/index.ts` | ZipRecruiter API integration |
+| `src/components/platforms/PlatformActionPanel.tsx` | Unified platform action router |
+| `src/components/platforms/PlatformCredentialsOverview.tsx` | Credentials status dashboard |
+| `src/components/platforms/PlatformCategoryTabs.tsx` | Category-based platform tabs |
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `supabase/functions/generate-ad-creative/index.ts` | Add AI image generation |
-| `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` | Complete UX overhaul |
-| `src/features/social-engagement/components/admin/AdPreviewCard.tsx` | Platform-specific styling |
-| `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx` | Connect real data |
-| `src/features/social-engagement/pages/SuperAdminSocialBeacons.tsx` | Add Creatives tab |
+| `src/pages/AdNetworks.tsx` | Expand tabs, add platform categories |
+| `src/components/platforms/PlatformsTable.tsx` | Use database platforms + credential status |
+| `src/features/platforms/hooks/useIndeedData.tsx` | Fix action name mismatch |
+| `src/components/platforms/XPlatformActions.tsx` | Connect to new edge function |
+| `src/components/platforms/ZipRecruiterPlatformActions.tsx` | Connect to new edge function |
+| `src/components/platforms/IndeedPlatformActions.tsx` | Fix action name, improve UX |
 
 ## Implementation Priority
 
-1. **Critical (Phase 1):** Implement AI image generation - This is the most visible missing feature
-2. **High (Phase 2-3):** Saved creatives gallery + multi-platform preview
-3. **Medium (Phase 4-5):** Export functionality + UX enhancements
-4. **Lower (Phase 6-7):** Real analytics + video generation
+1. **Critical (Phase 1-3):** Fix PlatformsTable, create action panel, expand tabs - Immediate usability improvement
+2. **High (Phase 4-5):** Create X edge function, fix Indeed action - Core functionality gaps
+3. **Medium (Phase 6-7):** Credential dashboard, ZipRecruiter integration - Enhanced management
+4. **Lower (Phase 8):** XML feed UX improvements - Polish
 
-## Technical Considerations
+## UX Improvements
 
-### Image Generation
-- Use `google/gemini-2.5-flash-image` for standard quality
-- Use `google/gemini-3-pro-image-preview` for higher quality (consider as option)
-- Store generated images in Supabase Storage for persistence
-- Return both base64 for immediate preview and storage URL for saving
+### Platform Cards with Status
+Each platform card should show:
+- Platform logo and name
+- Connection status (Connected/Simulated/Not Configured)
+- Last sync timestamp
+- Quick action buttons (Sync, Configure, View Feed)
 
-### Storage Management
-- Create `ad-creatives` storage bucket
-- Implement cleanup for orphaned images
-- Set appropriate RLS policies for organization isolation
+### Credential Configuration Flow
+When clicking on an unconfigured platform:
+1. Show which secrets are needed
+2. Explain where to get credentials (link to platform docs)
+3. Guide to add secrets
+4. Verify connection after configuration
 
-### Rate Limiting
-- Add debounce on generate button
-- Show clear feedback for rate limit errors (429)
-- Queue multiple generation requests
+### Analytics Integration
+For platforms with analytics (Meta, Indeed, Talroo, Adzuna):
+- Show mini metrics cards in overview
+- Link to detailed analytics in platform tab
+- Show spend, clicks, applications summary
 
 ## Expected Outcome
 
 After implementation:
-- Users can generate complete ad creatives with AI images
-- Preview how ads will look across all supported platforms
-- Save, manage, and reuse creatives
-- Export creatives for use outside the platform
-- Track real performance metrics
-- Best-in-class social recruitment creative studio
+- All platform action components accessible from Ad Networks page
+- Clear credential status for every platform
+- Functional X and ZipRecruiter integrations
+- Fixed Indeed integration
+- Consistent UX across all platform management
+- Easy to see which platforms need configuration
+- Best-in-class ad network management dashboard
 
