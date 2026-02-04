@@ -1,122 +1,170 @@
 
-# Update Client and Organization Logos
+# Update Email Templates: Organization Name → Client Name
 
 ## Overview
 
-Add logos for four companies across the entire application:
-- **CR England** (Organization) - Uses `organization-logos` storage bucket
-- **Day and Ross** (Client) - Uses `client-logos` storage bucket
-- **Novco, Inc.** (Client) - Uses `client-logos` storage bucket
-- **Danny Herman Trucking** (Client) - Uses `client-logos` storage bucket (DHT logo)
+Change all applicant-facing email templates to display the **Client Name** instead of the **Organization Name**, maintaining privacy about the recruiting organization while showing the brand the applicant is applying to work for.
 
-## Database Records
+## Context
 
-| Entity Type | Name | ID | Storage Bucket |
-|-------------|------|-----|----------------|
-| Organization | CR England | `682af95c-e95a-4e21-8753-ddef7f8c1749` | organization-logos |
-| Client | Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` | client-logos |
-| Client | Novco, Inc. | `4a9ef1df-dcc9-499c-999a-446bb9a329fc` | client-logos |
-| Client | Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | client-logos |
+Currently, emails to applicants show the recruiting organization (e.g., "Hayes Recruiting Solutions") when they should show the client company (e.g., "Pemberton Truck Lines Inc", "Danny Herman Trucking"). This aligns with the existing privacy model implemented on public job pages.
 
-## Implementation Steps
+**Example:**
+- **Before**: "Thank you for applying for the CDL Driver position at Hayes Recruiting Solutions"
+- **After**: "Thank you for applying for the CDL Driver position at Pemberton Truck Lines Inc"
 
-### Step 1: Copy Logo Files to Project
+## Email Types & Changes
 
-Copy the uploaded logos to `src/assets/logos/` for organization and bundling:
+| Email Type | Current Name | New Name | Reason |
+|------------|--------------|----------|--------|
+| Application Received | Organization Name | Client Name | Applicant-facing |
+| Status Update | Organization Name | Client Name | Applicant-facing |
+| Interview Invitation | Organization Name | Client Name | Applicant-facing |
+| Job Offer | Organization Name | Client Name | Applicant-facing |
+| Rejection | Organization Name | Client Name | Applicant-facing |
+| Screening Request | Organization Name | Client Name | Applicant-facing |
+| **Welcome Email** | Organization Name | **No Change** | Internal admin users |
+| **Invite Email** | Organization Name | **No Change** | Internal admin users |
 
-| Source File | Destination |
-|-------------|-------------|
-| `user-uploads://cre.jpeg` | `src/assets/logos/cr-england.jpeg` |
-| `user-uploads://DayandRoss.jpeg` | `src/assets/logos/day-and-ross.jpeg` |
-| `user-uploads://novco.png` | `src/assets/logos/novco.png` |
-| `user-uploads://dht.png` | `src/assets/logos/danny-herman.png` |
+## Implementation Details
 
-### Step 2: Upload to Supabase Storage
+### File 1: `supabase/functions/submit-application/index.ts`
 
-Upload each logo to the appropriate Supabase storage bucket:
+**Changes:**
+1. Update the `resolveOrganizationAndJob` function to also fetch client name from job listings
+2. Rename return value from `organizationName` to `clientName` 
+3. Update the query to include client data: `clients(id, name)`
+4. Pass `clientName` to the confirmation email
 
-**Organization Logos Bucket (`organization-logos`):**
-- CR England logo
-
-**Client Logos Bucket (`client-logos`):**
-- Day and Ross logo
-- Novco logo
-- Danny Herman (DHT) logo
-
-### Step 3: Update Database Records
-
-Update the `logo_url` column for each entity with the public URL from Supabase Storage.
-
-**Organizations table:**
-```sql
-UPDATE organizations 
-SET logo_url = '[public-url-for-cr-england-logo]'
-WHERE id = '682af95c-e95a-4e21-8753-ddef7f8c1749';
+**Before (line ~415):**
+```typescript
+.select('organization_id, external_job_id, title, organizations(id, name, slug)')
 ```
 
-**Clients table:**
-```sql
-UPDATE clients 
-SET logo_url = '[public-url-for-day-and-ross-logo]'
-WHERE id = '30ab5f68-258c-4e81-8217-1123c4536259';
-
-UPDATE clients 
-SET logo_url = '[public-url-for-novco-logo]'
-WHERE id = '4a9ef1df-dcc9-499c-999a-446bb9a329fc';
-
-UPDATE clients 
-SET logo_url = '[public-url-for-danny-herman-logo]'
-WHERE id = '1d54e463-4d7f-4a05-8189-3e33d0586dea';
+**After:**
+```typescript
+.select('organization_id, external_job_id, title, client_id, organizations(id, name, slug), clients(id, name)')
 ```
 
-## Where Logos Will Display
-
-Once updated, the logos will automatically appear across the entire platform using the premium app-icon styling (`LogoAvatar` component with `rounded-2xl`):
-
-### CR England (Organization):
-- Admin sidebar header (via `AppSidebar.tsx`)
-- Organization settings and branding pages
-- Voice agent cards
-- Candidate job detail pages (when viewing CR England jobs)
-
-### Client Logos (Day and Ross, Novco, Danny Herman):
-- `/jobs` page - Job cards (`PublicJobCard.tsx`)
-- `/jobs/:id` - Job details page (`JobDetailsPage.tsx`)
-- `/apply` pages - Application header (`ApplicationHeader.tsx`)
-- `/companies` page - Company directory (`ClientsPage.tsx`)
-- Admin clients dashboard (`ClientsOverviewDashboard.tsx`)
-- Candidate application cards and job views
-
-## Visual Result
-
-All logos will display with the premium app-icon styling:
-
-```
-╭─────────────────╮
-│                 │
-│   [LOGO IMG]    │   Company/Client Name
-│                 │
-╰─────────────────╯
-
-- rounded-2xl (16px radius)
-- bg-muted/80 background
-- object-contain with p-2 padding
-- border border-border/50
+**Updated return type:**
+```typescript
+{ organizationId, organizationName, clientName, externalJobId, jobTitle }
 ```
 
-## Files to Create/Modify
+**Updated email call (~line 521):**
+```typescript
+companyName: clientName || organizationName,  // Use client name for applicant emails
+```
 
-| File | Action |
-|------|--------|
-| `src/assets/logos/` | CREATE directory |
-| `src/assets/logos/cr-england.jpeg` | COPY from user-uploads |
-| `src/assets/logos/day-and-ross.jpeg` | COPY from user-uploads |
-| `src/assets/logos/novco.png` | COPY from user-uploads |
-| `src/assets/logos/danny-herman.png` | COPY from user-uploads |
+### File 2: `supabase/functions/send-screening-request/index.ts`
 
-## Technical Notes
+**Changes:**
+Update the application query to include client data and use client name.
 
-- Logo files are stored in `src/assets` for version control and as backup
-- Primary display uses Supabase Storage URLs stored in database `logo_url` columns
-- The `LogoAvatar` component with `object-contain` ensures logos of any aspect ratio display correctly without cropping
-- All logos will be served from Supabase CDN for optimal performance
+**Before (line ~289):**
+```typescript
+.select('*, job_listings(title, organization_id, organizations(name))')
+...
+const organizationName = application.job_listings?.organizations?.name || 'Organization';
+```
+
+**After:**
+```typescript
+.select('*, job_listings(title, organization_id, client_id, organizations(name), clients(name))')
+...
+const clientName = application.job_listings?.clients?.name || 
+                   application.job_listings?.organizations?.name || 
+                   'Company';
+```
+
+Then use `clientName` instead of `organizationName` in the email template generation.
+
+### File 3: `supabase/functions/_shared/email-config.ts`
+
+**Changes:**
+Update preheader templates to use more generic naming.
+
+**Before (line ~294):**
+```typescript
+employment_application: (orgName: string) => 
+  `Please complete your employment application for ${orgName}.`,
+```
+
+**After:**
+```typescript
+employment_application: (companyName: string) => 
+  `Please complete your employment application for ${companyName}.`,
+```
+
+### File 4: `src/utils/emailService.ts`
+
+**Changes:**
+Add `companyName` parameter to the interface and helper functions.
+
+**Before:**
+```typescript
+export interface SendEmailParams {
+  to: string;
+  candidateName: string;
+  jobTitle: string;
+  type: ...
+}
+```
+
+**After:**
+```typescript
+export interface SendEmailParams {
+  to: string;
+  candidateName: string;
+  jobTitle: string;
+  companyName?: string;  // Client name for branded emails
+  type: ...
+}
+```
+
+Update helper functions to accept and pass through `companyName`:
+```typescript
+export const sendApplicationReceivedEmail = async (
+  candidateEmail: string,
+  candidateName: string,
+  jobTitle: string,
+  companyName?: string  // New parameter
+) => {
+  return sendApplicationEmail({
+    to: candidateEmail,
+    candidateName,
+    jobTitle,
+    companyName: companyName || 'Company',
+    type: 'application_received',
+  });
+};
+```
+
+## Files Summary
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `supabase/functions/submit-application/index.ts` | MODIFY | Fetch and use client name for emails |
+| `supabase/functions/send-screening-request/index.ts` | MODIFY | Fetch and use client name for screening emails |
+| `supabase/functions/_shared/email-config.ts` | MODIFY | Update parameter naming in templates |
+| `src/utils/emailService.ts` | MODIFY | Add companyName parameter support |
+
+## Fallback Logic
+
+When determining the company name for emails:
+1. **First**: Use `clients.name` if job has a client assigned
+2. **Second**: Use `organizations.name` as fallback
+3. **Third**: Use generic "Company" as last resort
+
+This ensures:
+- Jobs with clients show client branding (e.g., "Danny Herman Trucking")
+- Jobs without clients fall back to organization name (e.g., "CR England")
+- Missing data shows a generic fallback
+
+## Testing Considerations
+
+After implementation:
+1. Submit a test application for a job with a client assigned
+2. Verify the confirmation email shows the client name, not org name
+3. Trigger a screening request and verify the client name appears
+4. Test a job without a client to verify fallback to organization name
