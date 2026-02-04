@@ -1,156 +1,97 @@
 
-# Premium Square Logo Design with App-Icon Styling
+# Complete Logo Implementation: Pemberton & Premium Styling
 
 ## Overview
 
-Transform all company/client logo displays from circular avatars to a premium **app-icon style** with larger rounded corners (`rounded-2xl`), dark/muted backgrounds, and proper padding. This creates a modern, premium aesthetic matching the reference design.
-
-## Reference Design Analysis
-
-The reference image shows:
-- **Large rounded corners** - approximately `rounded-2xl` (16px radius)
-- **Dark background** - solid dark container
-- **Centered logo** - with adequate padding
-- **Square aspect ratio** - not circular
-- **Premium feel** - modern app-icon aesthetic
-
-## Current State
-
-| Component | Current Styling | Issue |
-|-----------|-----------------|-------|
-| `Avatar` (base) | `rounded-full` | Circular - cuts off rectangular logos |
-| `PublicJobCard.tsx` | `Avatar` with circular styling | Logos appear cropped |
-| `JobDetailsPage.tsx` | `Avatar` with circular styling | Logos appear cropped |
-| `ClientLogoUpload.tsx` | `Avatar` preview - circular | Upload preview misleading |
-| `OrganizationManagement.tsx` | `rounded` (small) | Inconsistent with new design |
-| `ApplicationHeader.tsx` | No logo support yet | Needs to be added |
+This plan addresses two tasks:
+1. **Upload Pemberton logo** and update the database
+2. **Complete the premium app-icon styling** across remaining components
 
 ---
 
-## Implementation Plan
+## Current Status
 
-### Step 1: Create Premium Logo Avatar Component
+### Already Implemented ✅
+The following components already use the premium `LogoAvatar` component with `rounded-2xl` styling:
+- `/jobs` page (`PublicJobCard.tsx`)
+- `/jobs/:id` page (`JobDetailsPage.tsx`)
+- `/apply` pages (`ApplicationHeader.tsx`)
+- Admin client logo upload preview
+- Organization management table
 
-**File**: `src/components/ui/logo-avatar.tsx` (NEW)
+### Missing: Pemberton Logo ⚠️
+The Pemberton client record exists but has no logo uploaded:
+- **Client ID**: `67cadf11-8cce-41c6-8e19-7d2bb0be3b03`
+- **Current logo_url**: `null`
 
-Create a dedicated component for brand/company logos with app-icon styling:
+---
 
-```typescript
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { Building2 } from "lucide-react"
+## Part 1: Upload Pemberton Logo
 
-interface LogoAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: "sm" | "md" | "lg" | "xl"
-}
+### Option A: Admin UI Upload (Recommended)
+1. Navigate to **Admin → Clients → Pemberton Truck Lines Inc**
+2. Use the **Client Logo Upload** tool to upload a PNG/WebP version of the logo
+3. The system will automatically store it in Supabase and update the database
 
-const sizeClasses = {
-  sm: "h-10 w-10",
-  md: "h-12 w-12", 
-  lg: "h-14 w-14",
-  xl: "h-16 w-16"
-}
-
-const LogoAvatar = React.forwardRef<HTMLDivElement, LogoAvatarProps>(
-  ({ className, size = "md", ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-muted/80 border border-border/50",
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    />
-  )
-)
-LogoAvatar.displayName = "LogoAvatar"
-
-const LogoAvatarImage = React.forwardRef<
-  HTMLImageElement,
-  React.ImgHTMLAttributes<HTMLImageElement>
->(({ className, alt, ...props }, ref) => (
-  <img
-    ref={ref}
-    alt={alt}
-    className={cn(
-      "h-full w-full object-contain p-2",
-      className
-    )}
-    {...props}
-  />
-))
-LogoAvatarImage.displayName = "LogoAvatarImage"
-
-interface LogoAvatarFallbackProps extends React.HTMLAttributes<HTMLDivElement> {
-  iconSize?: "sm" | "md" | "lg"
-}
-
-const iconSizeClasses = {
-  sm: "h-5 w-5",
-  md: "h-6 w-6",
-  lg: "h-8 w-8"
-}
-
-const LogoAvatarFallback = React.forwardRef<HTMLDivElement, LogoAvatarFallbackProps>(
-  ({ className, iconSize = "md", children, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "flex h-full w-full items-center justify-center",
-        className
-      )}
-      {...props}
-    >
-      {children || <Building2 className={cn("text-muted-foreground", iconSizeClasses[iconSize])} />}
-    </div>
-  )
-)
-LogoAvatarFallback.displayName = "LogoAvatarFallback"
-
-export { LogoAvatar, LogoAvatarImage, LogoAvatarFallback }
+### Option B: Direct Database Update
+If you have the logo already hosted or in Supabase storage:
+```sql
+UPDATE clients 
+SET logo_url = 'https://[your-storage-url]/pemberton-logo.png'
+WHERE id = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03';
 ```
 
-### Step 2: Update Public Job Card
+### Image Format Note
+The uploaded TIFF file needs conversion to a web-friendly format (PNG, WebP, or JPG) before use. The admin upload tool handles this automatically.
 
-**File**: `src/components/public/PublicJobCard.tsx`
+---
 
-Replace circular Avatar with premium LogoAvatar:
+## Part 2: Complete Premium Logo Styling
 
-```typescript
-// Import change
-import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
+Four additional components need updating to use the `LogoAvatar` component for consistency:
 
-// Replace Avatar usage (around line 87-99)
-<LogoAvatar size="md" className="sm:h-12 sm:w-12">
-  {job.clients?.logo_url ? (
+### File 1: `src/pages/public/ClientsPage.tsx`
+
+**Current**: Custom div container with `rounded-lg`  
+**Change**: Use `LogoAvatar` component for consistency
+
+The `/companies` page client cards should match the premium styling seen on job cards.
+
+### File 2: `src/features/clients/components/ClientsOverviewDashboard.tsx`
+
+**Current**: `rounded` (4px radius) - inconsistent  
+**Change**: Use `LogoAvatar` with `rounded-2xl` (16px radius)
+
+Update the admin clients table to show logos with premium styling.
+
+### File 3: `src/features/candidate/pages/JobDetailPage.tsx`
+
+**Current**: Uses `rounded-lg object-cover` on organization logos  
+**Change**: Use `LogoAvatar` with `object-contain` and proper padding
+
+This ensures candidate-facing job details match the public job details styling.
+
+### File 4: `src/pages/public/SharedVoicePage.tsx`
+
+**Current**: Uses `rounded-full` (circular) - old pattern  
+**Change**: Use `LogoAvatar` with `rounded-2xl` for organization branding
+
+The shared voice conversation page should display organization logos in the premium square format.
+
+---
+
+## Implementation Details
+
+### ClientsPage.tsx Changes
+Replace the logo container div (lines 172-184) with:
+```tsx
+<LogoAvatar size="lg" className="w-full aspect-square">
+  {client.logo_url ? (
     <LogoAvatarImage 
-      src={job.clients.logo_url} 
-      alt={`${companyName} logo`}
+      src={client.logo_url}
+      alt={`${client.name} logo`}
       loading="lazy"
-    />
-  ) : (
-    <LogoAvatarFallback iconSize="md" />
-  )}
-</LogoAvatar>
-```
-
-### Step 3: Update Job Details Page
-
-**File**: `src/pages/public/JobDetailsPage.tsx`
-
-Update the larger header logo:
-
-```typescript
-// Import change
-import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
-
-// Replace Avatar usage (around line 195-206)
-<LogoAvatar size="lg" className="lg:h-16 lg:w-16">
-  {job.clients?.logo_url ? (
-    <LogoAvatarImage 
-      src={job.clients.logo_url} 
-      alt={`${companyName} logo`}
+      className="group-hover:scale-105 transition-transform duration-200"
     />
   ) : (
     <LogoAvatarFallback iconSize="lg" />
@@ -158,143 +99,45 @@ import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui
 </LogoAvatar>
 ```
 
-### Step 4: Update Client Logo Upload Preview
+### ClientsOverviewDashboard.tsx Changes
+Replace the table logo cells (lines 236-247) with:
+```tsx
+<LogoAvatar size="sm" className="w-8 h-8">
+  {client.logo_url ? (
+    <LogoAvatarImage src={client.logo_url} alt={client.name} />
+  ) : (
+    <LogoAvatarFallback iconSize="sm" />
+  )}
+</LogoAvatar>
+```
 
-**File**: `src/features/clients/components/ClientLogoUpload.tsx`
-
-Update the admin preview to match public display:
-
-```typescript
-// Import change
-import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
-
-// Replace Avatar usage (around line 142-153)
-<LogoAvatar size="xl" className="h-20 w-20">
-  {logoUrl ? (
-    <LogoAvatarImage 
-      src={logoUrl} 
-      alt={`${clientName} logo`}
-    />
+### JobDetailPage.tsx (Candidate) Changes
+Replace the organization logo (lines 137-142 and 231-235) with:
+```tsx
+<LogoAvatar size="lg" className="h-16 w-16">
+  {job.organizations?.logo_url ? (
+    <LogoAvatarImage src={job.organizations.logo_url} alt={job.organizations.name} />
   ) : (
     <LogoAvatarFallback iconSize="lg" />
   )}
 </LogoAvatar>
 ```
 
-### Step 5: Update Organization Management Table
-
-**File**: `src/components/organizations/OrganizationManagement.tsx`
-
-Update inline logo display in table:
-
-```typescript
-// Around line 233-235, replace:
-{org.logo_url && (
-  <img src={org.logo_url} alt={org.name} className="w-8 h-8 object-contain rounded" />
-)}
-
-// With:
-{org.logo_url ? (
-  <div className="w-8 h-8 rounded-xl bg-muted/80 border border-border/50 p-1 flex items-center justify-center">
-    <img src={org.logo_url} alt={org.name} className="max-w-full max-h-full object-contain" />
-  </div>
-) : (
-  <div className="w-8 h-8 rounded-xl bg-muted/80 border border-border/50 flex items-center justify-center">
-    <Building2 className="w-4 h-4 text-muted-foreground" />
-  </div>
-)}
-```
-
-### Step 6: Update Application Header for Apply Pages
-
-**File**: `src/components/apply/ApplicationHeader.tsx`
-
-Add logo display support with the new premium styling:
-
-```typescript
-// Add to imports
-import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
-
-// Update interface
-interface ApplicationHeaderProps {
-  jobTitle?: string | null;
-  clientName?: string | null;
-  clientLogoUrl?: string | null;  // NEW
-  location?: string | null;
-  source?: string | null;
-  isLoading?: boolean;
-}
-
-// Update MetadataBadge for client to include logo
-{clientName && (
-  <span className="inline-flex items-center gap-2">
-    {clientLogoUrl ? (
-      <LogoAvatar size="sm" className="h-8 w-8">
-        <LogoAvatarImage src={clientLogoUrl} alt={`${clientName} logo`} />
-      </LogoAvatar>
-    ) : (
-      <Building2 className="h-4 w-4" aria-hidden="true" />
-    )}
-    {clientName}
-  </span>
-)}
-```
-
-### Step 7: Update useApplyContext Hook
-
-**File**: `src/hooks/useApplyContext.ts`
-
-Add `clientLogoUrl` to the context:
-
-```typescript
-interface ApplyContext {
-  jobTitle: string | null;
-  clientName: string | null;
-  clientLogoUrl: string | null;  // NEW
-  location: string | null;
-  jobListingId: string | null;
-  source: string | null;
-  isLoading: boolean;
-}
-
-// In fetch query for public_client_info:
-const { data: clientInfo } = await supabase
-  .from('public_client_info')
-  .select('name, logo_url')  // Add logo_url
-  .eq('id', jobListing.client_id)
-  .maybeSingle();
-
-clientName = clientInfo?.name || null;
-clientLogoUrl = clientInfo?.logo_url || null;  // NEW
-```
-
-### Step 8: Update Apply Pages to Pass Logo URL
-
-**Files**:
-- `src/pages/Apply.tsx`
-- `src/components/apply/detailed/DetailedApplicationForm.tsx`
-
-Pass `clientLogoUrl` from context to `ApplicationHeader`:
-
-```typescript
-const { 
-  jobTitle, 
-  clientName, 
-  clientLogoUrl,  // NEW
-  location, 
-  source,
-  isLoading 
-} = useApplyContext();
-
-// Pass to ApplicationHeader
-<ApplicationHeader 
-  jobTitle={jobTitle}
-  clientName={clientName}
-  clientLogoUrl={clientLogoUrl}  // NEW
-  location={location}
-  source={source}
-  isLoading={isLoading}
-/>
+### SharedVoicePage.tsx Changes
+Replace the circular logo (lines 189-199) with:
+```tsx
+<LogoAvatar size="sm" className="h-10 w-10">
+  {conversation.organization.logo_url ? (
+    <LogoAvatarImage 
+      src={conversation.organization.logo_url} 
+      alt={conversation.organization.name || 'Organization'} 
+    />
+  ) : (
+    <LogoAvatarFallback>
+      <Headphones className="h-5 w-5 text-primary" />
+    </LogoAvatarFallback>
+  )}
+</LogoAvatar>
 ```
 
 ---
@@ -303,54 +146,27 @@ const {
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/components/ui/logo-avatar.tsx` | CREATE | Premium app-icon style logo component |
-| `src/components/public/PublicJobCard.tsx` | MODIFY | Use LogoAvatar for client logos |
-| `src/pages/public/JobDetailsPage.tsx` | MODIFY | Use LogoAvatar for job header |
-| `src/features/clients/components/ClientLogoUpload.tsx` | MODIFY | Square logo preview |
-| `src/components/organizations/OrganizationManagement.tsx` | MODIFY | Premium logo in table |
-| `src/components/apply/ApplicationHeader.tsx` | MODIFY | Add logo display support |
-| `src/hooks/useApplyContext.ts` | MODIFY | Add clientLogoUrl to context |
-| `src/pages/Apply.tsx` | MODIFY | Pass clientLogoUrl to header |
-| `src/components/apply/detailed/DetailedApplicationForm.tsx` | MODIFY | Pass clientLogoUrl to header |
+| `src/pages/public/ClientsPage.tsx` | MODIFY | Update company cards to use LogoAvatar |
+| `src/features/clients/components/ClientsOverviewDashboard.tsx` | MODIFY | Update admin table logos |
+| `src/features/candidate/pages/JobDetailPage.tsx` | MODIFY | Update candidate job detail logos |
+| `src/pages/public/SharedVoicePage.tsx` | MODIFY | Update shared voice page header |
+| **Database** | UPDATE | Add Pemberton logo URL after upload |
 
 ---
 
-## Design Specifications
+## Expected Results
 
-| Property | Value | Rationale |
-|----------|-------|-----------|
-| Border radius | `rounded-2xl` (16px) | Matches modern app-icon aesthetic |
-| Background | `bg-muted/80` | Subtle, professional backdrop |
-| Border | `border border-border/50` | Soft definition without harsh lines |
-| Padding | `p-2` | Logo breathing room within container |
-| Object fit | `object-contain` | Preserves logo aspect ratio |
+### After Implementation:
+1. **Pemberton jobs on `/jobs`** will display the company logo in premium square format
+2. **Pemberton apply pages** (`/apply?job_id=...`) will show the logo next to the client name
+3. **All company/client logos** across the platform will use consistent `rounded-2xl` app-icon styling
+4. **User avatars** (with initials) remain circular to distinguish people from brands
 
----
-
-## Visual Comparison
-
-```text
-BEFORE (Circular)
-    ╭─────╮
-   ╱       ╲
-  │  LOGO  │     Company Name
-   ╲       ╱
-    ╰─────╯
-    
-AFTER (Premium Square with Rounded Corners)
-  ╭─────────╮
-  │         │
-  │  LOGO   │    Company Name
-  │         │
-  ╰─────────╯
-```
-
----
-
-## Technical Notes
-
-- User avatars (showing initials) remain circular to distinguish people from brands
-- The `rounded-2xl` class provides 16px radius - a premium, modern feel
-- `object-contain` ensures logos of various aspect ratios display correctly
-- Internal padding prevents logos from touching the rounded edges
-- Consistent styling across public pages, admin UI, and apply pages
+### Visual Consistency Across:
+- Public job listings (`/jobs`)
+- Job details pages (`/jobs/:id`)
+- Application forms (`/apply`)
+- Companies directory (`/companies`)
+- Admin client management
+- Candidate job views
+- Shared voice conversation pages
