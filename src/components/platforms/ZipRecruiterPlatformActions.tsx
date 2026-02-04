@@ -8,45 +8,50 @@ import { Label } from '@/components/ui/label';
 import { 
   BarChart3, 
   Users, 
-  Download, 
   ExternalLink, 
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Settings
+  Settings,
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const ZipRecruiterPlatformActions: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [companyId, setCompanyId] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [stats, setStats] = useState<any>(null);
+  const [jobPostings, setJobPostings] = useState<any[]>([]);
   const { toast } = useToast();
 
-  const handleConnect = async () => {
-    if (!apiKey || !companyId) {
-      toast({
-        title: "Missing Information",
-        description: "Please provide both API key and Company ID",
-        variant: "destructive"
-      });
-      return;
-    }
-
+  const handleTestConnection = async () => {
     setIsLoading(true);
     try {
-      // Simulate API connection
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast({
-        title: "Connected Successfully",
-        description: "ZipRecruiter integration is now active"
+      const { data, error } = await supabase.functions.invoke('ziprecruiter-integration', {
+        body: { action: 'test_connection' }
       });
-      
-    } catch (error) {
+
+      if (error) throw error;
+
+      if (data?.connected) {
+        setIsConnected(true);
+        toast({
+          title: "Connected Successfully",
+          description: data.message || "ZipRecruiter integration is active"
+        });
+      } else {
+        toast({
+          title: "Connection Issue",
+          description: data?.message || "Could not verify connection",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
       toast({
         title: "Connection Failed",
-        description: "Failed to connect to ZipRecruiter. Please check your credentials.",
+        description: error.message || "Failed to connect to ZipRecruiter",
         variant: "destructive"
       });
     } finally {
@@ -54,8 +59,58 @@ const ZipRecruiterPlatformActions: React.FC = () => {
     }
   };
 
-  const openZipRecruiterDocs = () => {
-    window.open('https://www.ziprecruiter.com/api/documentation', '_blank');
+  const handleFetchAnalytics = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ziprecruiter-integration', {
+        body: { action: 'get_analytics' }
+      });
+
+      if (error) throw error;
+
+      if (data?.totals) {
+        setStats(data.totals);
+        toast({
+          title: "Analytics Retrieved",
+          description: `Fetched data for ${data.period?.days || 30} days`
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Analytics Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFetchJobPostings = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ziprecruiter-integration', {
+        body: { action: 'get_job_postings' }
+      });
+
+      if (error) throw error;
+
+      if (data?.postings) {
+        setJobPostings(data.postings);
+        toast({
+          title: "Job Postings Retrieved",
+          description: `Found ${data.postings.length} job postings`
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Failed to fetch postings",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,70 +138,96 @@ const ZipRecruiterPlatformActions: React.FC = () => {
           </AlertDescription>
         </Alert>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <div className="text-center p-4 bg-muted/50 rounded-lg">
             <BarChart3 className="w-6 h-6 mx-auto mb-2 text-green-600" />
             <div className="text-sm font-medium">Job Postings</div>
-            <div className="text-2xl font-bold text-green-600">0</div>
+            <div className="text-2xl font-bold text-green-600">{jobPostings.length || 0}</div>
           </div>
           
           <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+            <Eye className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+            <div className="text-sm font-medium">Views</div>
+            <div className="text-2xl font-bold text-blue-600">{stats?.views?.toLocaleString() || 0}</div>
+          </div>
+          
+          <div className="text-center p-4 bg-muted/50 rounded-lg">
+            <Users className="w-6 h-6 mx-auto mb-2 text-purple-600" />
             <div className="text-sm font-medium">Applications</div>
-            <div className="text-2xl font-bold text-blue-600">0</div>
+            <div className="text-2xl font-bold text-purple-600">{stats?.applications || 0}</div>
           </div>
-          
+
           <div className="text-center p-4 bg-muted/50 rounded-lg">
-            <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <div className="text-sm font-medium">Response Rate</div>
-            <div className="text-2xl font-bold text-purple-600">0%</div>
+            <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+            <div className="text-sm font-medium">Status</div>
+            <Badge variant={isConnected ? 'default' : 'secondary'} className="mt-1">
+              {isConnected ? 'Connected' : 'Not Connected'}
+            </Badge>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">ZipRecruiter API Key</Label>
-            <Input
-              id="apiKey"
-              type="password"
-              placeholder="Enter your ZipRecruiter API key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">Total Spend</div>
+              <div className="text-xl font-bold">${stats.spend?.toFixed(2) || '0.00'}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">CTR</div>
+              <div className="text-xl font-bold">{stats.ctr || 0}%</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">Conversion Rate</div>
+              <div className="text-xl font-bold">{stats.conversion_rate || 0}%</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm text-muted-foreground">Cost per Application</div>
+              <div className="text-xl font-bold">${stats.cpa || '0.00'}</div>
+            </div>
           </div>
+        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="companyId">Company ID</Label>
-            <Input
-              id="companyId"
-              placeholder="Enter your ZipRecruiter Company ID"
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button 
-            onClick={handleConnect}
-            disabled={isLoading || !apiKey || !companyId}
-            className="flex-1"
+            onClick={handleTestConnection}
+            disabled={isLoading}
+            variant="outline"
           >
             {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
-              </>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <>
-                <Settings className="w-4 h-4 mr-2" />
-                Connect Account
-              </>
+              <Settings className="w-4 h-4 mr-2" />
             )}
+            Test Connection
           </Button>
           
           <Button 
-            onClick={openZipRecruiterDocs}
+            onClick={handleFetchAnalytics}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Fetch Analytics
+          </Button>
+
+          <Button 
+            onClick={handleFetchJobPostings}
+            disabled={isLoading}
+            variant="secondary"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <BarChart3 className="w-4 h-4 mr-2" />
+            )}
+            Get Job Postings
+          </Button>
+          
+          <Button 
+            onClick={() => window.open('https://www.ziprecruiter.com/api/documentation', '_blank')}
             variant="outline"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
@@ -154,11 +235,34 @@ const ZipRecruiterPlatformActions: React.FC = () => {
           </Button>
         </div>
 
+        {jobPostings.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-medium">Active Job Postings</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {jobPostings.map((job) => (
+                <div key={job.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <div>
+                    <p className="font-medium text-sm">{job.title}</p>
+                    <p className="text-xs text-muted-foreground">Posted: {job.posted_date}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={job.status === 'active' ? 'default' : 'secondary'}>
+                      {job.status}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">{job.applications} apps</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <Alert>
-          <CheckCircle2 className="h-4 w-4" />
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Coming Soon:</strong> Automatic job posting synchronization, application tracking, 
-            and performance analytics for your ZipRecruiter campaigns.
+            <strong>ZipRecruiter Integration:</strong> Configure your ZIPRECRUITER_API_KEY in the 
+            environment secrets to enable real job posting sync and analytics. Without credentials, 
+            the system provides simulated data for demonstration.
           </AlertDescription>
         </Alert>
       </CardContent>

@@ -3,15 +3,17 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlatforms } from '@/hooks/usePlatforms';
 import PlatformsTable from '@/components/platforms/PlatformsTable';
 import AddPlatformDialog from '@/components/platforms/AddPlatformDialog';
-import TalrooPlatformActions from '@/components/platforms/TalrooPlatformActions';
+import PlatformActionPanel from '@/components/platforms/PlatformActionPanel';
+import PlatformCredentialsOverview from '@/components/platforms/PlatformCredentialsOverview';
 import { PlatformAccessGuard } from '@/components/admin';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Globe, TrendingUp, Plus } from 'lucide-react';
+import { Globe, TrendingUp, Plus, DollarSign, Rss, Truck, Key, Settings } from 'lucide-react';
 import PageLayout from '@/components/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Zap } from 'lucide-react';
 import { TenstreetNavigationCard } from '@/components/admin/TenstreetNavigationCard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AdNetworks = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -31,9 +33,34 @@ const AdNetworks = () => {
     });
   };
 
+  const [selectedPaidPlatform, setSelectedPaidPlatform] = useState('meta');
+  const [selectedFreePlatform, setSelectedFreePlatform] = useState('google jobs');
+  const [selectedTruckingPlatform, setSelectedTruckingPlatform] = useState('truck driver jobs 411');
+
   const xPlatformConfigured = platforms?.some(p => 
     (p.name.toLowerCase().includes('x') || p.name.toLowerCase().includes('twitter')) && p.api_endpoint
   );
+
+  const paidPlatforms = [
+    { value: 'meta', label: 'Meta (Facebook/Instagram)' },
+    { value: 'indeed', label: 'Indeed' },
+    { value: 'google jobs', label: 'Google Jobs' },
+    { value: 'x', label: 'X (Twitter)' },
+    { value: 'ziprecruiter', label: 'ZipRecruiter' },
+    { value: 'talroo', label: 'Talroo' },
+    { value: 'adzuna', label: 'Adzuna' },
+  ];
+
+  const freePlatforms = [
+    { value: 'google jobs', label: 'Google Jobs' },
+    { value: 'craigslist', label: 'Craigslist' },
+    { value: 'simplyhired', label: 'SimplyHired' },
+    { value: 'glassdoor', label: 'Glassdoor' },
+  ];
+
+  const truckingPlatforms = [
+    { value: 'truck driver jobs 411', label: 'Truck Driver Jobs 411' },
+  ];
 
   if (isLoading) {
     return (
@@ -86,18 +113,30 @@ const AdNetworks = () => {
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Globe className="w-4 h-4" />
-              Overview
+              <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
-            <TabsTrigger value="talroo" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Talroo
+            <TabsTrigger value="paid" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              <span className="hidden sm:inline">Paid</span>
+            </TabsTrigger>
+            <TabsTrigger value="free" className="flex items-center gap-2">
+              <Rss className="w-4 h-4" />
+              <span className="hidden sm:inline">Free</span>
+            </TabsTrigger>
+            <TabsTrigger value="trucking" className="flex items-center gap-2">
+              <Truck className="w-4 h-4" />
+              <span className="hidden sm:inline">Trucking</span>
+            </TabsTrigger>
+            <TabsTrigger value="credentials" className="flex items-center gap-2">
+              <Key className="w-4 h-4" />
+              <span className="hidden sm:inline">Credentials</span>
             </TabsTrigger>
             <TabsTrigger value="integrations" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              ATS Integrations
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">ATS</span>
             </TabsTrigger>
           </TabsList>
 
@@ -108,10 +147,59 @@ const AdNetworks = () => {
             />
           </TabsContent>
 
-          <TabsContent value="talroo" className="space-y-6 mt-6">
-            <PlatformAccessGuard platformName="talroo">
-              <TalrooPlatformActions />
-            </PlatformAccessGuard>
+          <TabsContent value="paid" className="space-y-6 mt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-sm font-medium">Select Platform:</span>
+              <Select value={selectedPaidPlatform} onValueChange={setSelectedPaidPlatform}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Choose a platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paidPlatforms.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <PlatformActionPanel platformName={selectedPaidPlatform} onRefresh={refetch} />
+          </TabsContent>
+
+          <TabsContent value="free" className="space-y-6 mt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-sm font-medium">Select Platform:</span>
+              <Select value={selectedFreePlatform} onValueChange={setSelectedFreePlatform}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Choose a platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {freePlatforms.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <PlatformActionPanel platformName={selectedFreePlatform} onRefresh={refetch} />
+          </TabsContent>
+
+          <TabsContent value="trucking" className="space-y-6 mt-6">
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-sm font-medium">Select Platform:</span>
+              <Select value={selectedTruckingPlatform} onValueChange={setSelectedTruckingPlatform}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Choose a platform" />
+                </SelectTrigger>
+                <SelectContent>
+                  {truckingPlatforms.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <PlatformActionPanel platformName={selectedTruckingPlatform} onRefresh={refetch} />
+          </TabsContent>
+
+          <TabsContent value="credentials" className="space-y-6 mt-6">
+            <PlatformCredentialsOverview />
           </TabsContent>
 
           <TabsContent value="integrations" className="space-y-6 mt-6">
