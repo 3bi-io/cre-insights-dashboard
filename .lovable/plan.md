@@ -1,172 +1,122 @@
 
-# Complete Logo Implementation: Pemberton & Premium Styling
+# Update Client and Organization Logos
 
 ## Overview
 
-This plan addresses two tasks:
-1. **Upload Pemberton logo** and update the database
-2. **Complete the premium app-icon styling** across remaining components
+Add logos for four companies across the entire application:
+- **CR England** (Organization) - Uses `organization-logos` storage bucket
+- **Day and Ross** (Client) - Uses `client-logos` storage bucket
+- **Novco, Inc.** (Client) - Uses `client-logos` storage bucket
+- **Danny Herman Trucking** (Client) - Uses `client-logos` storage bucket (DHT logo)
 
----
+## Database Records
 
-## Current Status
+| Entity Type | Name | ID | Storage Bucket |
+|-------------|------|-----|----------------|
+| Organization | CR England | `682af95c-e95a-4e21-8753-ddef7f8c1749` | organization-logos |
+| Client | Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` | client-logos |
+| Client | Novco, Inc. | `4a9ef1df-dcc9-499c-999a-446bb9a329fc` | client-logos |
+| Client | Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | client-logos |
 
-### Already Implemented ✅
-The following components already use the premium `LogoAvatar` component with `rounded-2xl` styling:
-- `/jobs` page (`PublicJobCard.tsx`)
-- `/jobs/:id` page (`JobDetailsPage.tsx`)
-- `/apply` pages (`ApplicationHeader.tsx`)
-- Admin client logo upload preview
-- Organization management table
+## Implementation Steps
 
-### Missing: Pemberton Logo ⚠️
-The Pemberton client record exists but has no logo uploaded:
-- **Client ID**: `67cadf11-8cce-41c6-8e19-7d2bb0be3b03`
-- **Current logo_url**: `null`
+### Step 1: Copy Logo Files to Project
 
----
+Copy the uploaded logos to `src/assets/logos/` for organization and bundling:
 
-## Part 1: Upload Pemberton Logo
+| Source File | Destination |
+|-------------|-------------|
+| `user-uploads://cre.jpeg` | `src/assets/logos/cr-england.jpeg` |
+| `user-uploads://DayandRoss.jpeg` | `src/assets/logos/day-and-ross.jpeg` |
+| `user-uploads://novco.png` | `src/assets/logos/novco.png` |
+| `user-uploads://dht.png` | `src/assets/logos/danny-herman.png` |
 
-### Option A: Admin UI Upload (Recommended)
-1. Navigate to **Admin → Clients → Pemberton Truck Lines Inc**
-2. Use the **Client Logo Upload** tool to upload a PNG/WebP version of the logo
-3. The system will automatically store it in Supabase and update the database
+### Step 2: Upload to Supabase Storage
 
-### Option B: Direct Database Update
-If you have the logo already hosted or in Supabase storage:
+Upload each logo to the appropriate Supabase storage bucket:
+
+**Organization Logos Bucket (`organization-logos`):**
+- CR England logo
+
+**Client Logos Bucket (`client-logos`):**
+- Day and Ross logo
+- Novco logo
+- Danny Herman (DHT) logo
+
+### Step 3: Update Database Records
+
+Update the `logo_url` column for each entity with the public URL from Supabase Storage.
+
+**Organizations table:**
+```sql
+UPDATE organizations 
+SET logo_url = '[public-url-for-cr-england-logo]'
+WHERE id = '682af95c-e95a-4e21-8753-ddef7f8c1749';
+```
+
+**Clients table:**
 ```sql
 UPDATE clients 
-SET logo_url = 'https://[your-storage-url]/pemberton-logo.png'
-WHERE id = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03';
+SET logo_url = '[public-url-for-day-and-ross-logo]'
+WHERE id = '30ab5f68-258c-4e81-8217-1123c4536259';
+
+UPDATE clients 
+SET logo_url = '[public-url-for-novco-logo]'
+WHERE id = '4a9ef1df-dcc9-499c-999a-446bb9a329fc';
+
+UPDATE clients 
+SET logo_url = '[public-url-for-danny-herman-logo]'
+WHERE id = '1d54e463-4d7f-4a05-8189-3e33d0586dea';
 ```
 
-### Image Format Note
-The uploaded TIFF file needs conversion to a web-friendly format (PNG, WebP, or JPG) before use. The admin upload tool handles this automatically.
+## Where Logos Will Display
 
----
+Once updated, the logos will automatically appear across the entire platform using the premium app-icon styling (`LogoAvatar` component with `rounded-2xl`):
 
-## Part 2: Complete Premium Logo Styling
+### CR England (Organization):
+- Admin sidebar header (via `AppSidebar.tsx`)
+- Organization settings and branding pages
+- Voice agent cards
+- Candidate job detail pages (when viewing CR England jobs)
 
-Four additional components need updating to use the `LogoAvatar` component for consistency:
+### Client Logos (Day and Ross, Novco, Danny Herman):
+- `/jobs` page - Job cards (`PublicJobCard.tsx`)
+- `/jobs/:id` - Job details page (`JobDetailsPage.tsx`)
+- `/apply` pages - Application header (`ApplicationHeader.tsx`)
+- `/companies` page - Company directory (`ClientsPage.tsx`)
+- Admin clients dashboard (`ClientsOverviewDashboard.tsx`)
+- Candidate application cards and job views
 
-### File 1: `src/pages/public/ClientsPage.tsx`
+## Visual Result
 
-**Current**: Custom div container with `rounded-lg`  
-**Change**: Use `LogoAvatar` component for consistency
+All logos will display with the premium app-icon styling:
 
-The `/companies` page client cards should match the premium styling seen on job cards.
+```
+╭─────────────────╮
+│                 │
+│   [LOGO IMG]    │   Company/Client Name
+│                 │
+╰─────────────────╯
 
-### File 2: `src/features/clients/components/ClientsOverviewDashboard.tsx`
-
-**Current**: `rounded` (4px radius) - inconsistent  
-**Change**: Use `LogoAvatar` with `rounded-2xl` (16px radius)
-
-Update the admin clients table to show logos with premium styling.
-
-### File 3: `src/features/candidate/pages/JobDetailPage.tsx`
-
-**Current**: Uses `rounded-lg object-cover` on organization logos  
-**Change**: Use `LogoAvatar` with `object-contain` and proper padding
-
-This ensures candidate-facing job details match the public job details styling.
-
-### File 4: `src/pages/public/SharedVoicePage.tsx`
-
-**Current**: Uses `rounded-full` (circular) - old pattern  
-**Change**: Use `LogoAvatar` with `rounded-2xl` for organization branding
-
-The shared voice conversation page should display organization logos in the premium square format.
-
----
-
-## Implementation Details
-
-### ClientsPage.tsx Changes
-Replace the logo container div (lines 172-184) with:
-```tsx
-<LogoAvatar size="lg" className="w-full aspect-square">
-  {client.logo_url ? (
-    <LogoAvatarImage 
-      src={client.logo_url}
-      alt={`${client.name} logo`}
-      loading="lazy"
-      className="group-hover:scale-105 transition-transform duration-200"
-    />
-  ) : (
-    <LogoAvatarFallback iconSize="lg" />
-  )}
-</LogoAvatar>
+- rounded-2xl (16px radius)
+- bg-muted/80 background
+- object-contain with p-2 padding
+- border border-border/50
 ```
 
-### ClientsOverviewDashboard.tsx Changes
-Replace the table logo cells (lines 236-247) with:
-```tsx
-<LogoAvatar size="sm" className="w-8 h-8">
-  {client.logo_url ? (
-    <LogoAvatarImage src={client.logo_url} alt={client.name} />
-  ) : (
-    <LogoAvatarFallback iconSize="sm" />
-  )}
-</LogoAvatar>
-```
+## Files to Create/Modify
 
-### JobDetailPage.tsx (Candidate) Changes
-Replace the organization logo (lines 137-142 and 231-235) with:
-```tsx
-<LogoAvatar size="lg" className="h-16 w-16">
-  {job.organizations?.logo_url ? (
-    <LogoAvatarImage src={job.organizations.logo_url} alt={job.organizations.name} />
-  ) : (
-    <LogoAvatarFallback iconSize="lg" />
-  )}
-</LogoAvatar>
-```
+| File | Action |
+|------|--------|
+| `src/assets/logos/` | CREATE directory |
+| `src/assets/logos/cr-england.jpeg` | COPY from user-uploads |
+| `src/assets/logos/day-and-ross.jpeg` | COPY from user-uploads |
+| `src/assets/logos/novco.png` | COPY from user-uploads |
+| `src/assets/logos/danny-herman.png` | COPY from user-uploads |
 
-### SharedVoicePage.tsx Changes
-Replace the circular logo (lines 189-199) with:
-```tsx
-<LogoAvatar size="sm" className="h-10 w-10">
-  {conversation.organization.logo_url ? (
-    <LogoAvatarImage 
-      src={conversation.organization.logo_url} 
-      alt={conversation.organization.name || 'Organization'} 
-    />
-  ) : (
-    <LogoAvatarFallback>
-      <Headphones className="h-5 w-5 text-primary" />
-    </LogoAvatarFallback>
-  )}
-</LogoAvatar>
-```
+## Technical Notes
 
----
-
-## Files Summary
-
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/pages/public/ClientsPage.tsx` | MODIFY | Update company cards to use LogoAvatar |
-| `src/features/clients/components/ClientsOverviewDashboard.tsx` | MODIFY | Update admin table logos |
-| `src/features/candidate/pages/JobDetailPage.tsx` | MODIFY | Update candidate job detail logos |
-| `src/pages/public/SharedVoicePage.tsx` | MODIFY | Update shared voice page header |
-| **Database** | UPDATE | Add Pemberton logo URL after upload |
-
----
-
-## Expected Results
-
-### After Implementation:
-1. **Pemberton jobs on `/jobs`** will display the company logo in premium square format
-2. **Pemberton apply pages** (`/apply?job_id=...`) will show the logo next to the client name
-3. **All company/client logos** across the platform will use consistent `rounded-2xl` app-icon styling
-4. **User avatars** (with initials) remain circular to distinguish people from brands
-
-### Visual Consistency Across:
-- Public job listings (`/jobs`)
-- Job details pages (`/jobs/:id`)
-- Application forms (`/apply`)
-- Companies directory (`/companies`)
-- Admin client management
-- Candidate job views
-- Shared voice conversation pages
+- Logo files are stored in `src/assets` for version control and as backup
+- Primary display uses Supabase Storage URLs stored in database `logo_url` columns
+- The `LogoAvatar` component with `object-contain` ensures logos of any aspect ratio display correctly without cropping
+- All logos will be served from Supabase CDN for optimal performance
