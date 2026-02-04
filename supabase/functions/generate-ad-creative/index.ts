@@ -46,6 +46,13 @@ const JOB_TYPE_LABELS: Record<string, string> = {
   team: "Team Driving",
 };
 
+const ASPECT_RATIO_DIMENSIONS: Record<string, { width: number; height: number }> = {
+  "1:1": { width: 1024, height: 1024 },
+  "16:9": { width: 1024, height: 576 },
+  "9:16": { width: 576, height: 1024 },
+  "4:5": { width: 896, height: 1120 },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -58,7 +65,7 @@ serve(async (req) => {
     }
 
     const body: GenerateRequest = await req.json();
-    const { jobType, benefits, companyName, location, salaryRange, customPrompt } = body;
+    const { jobType, benefits, companyName, location, salaryRange, customPrompt, generateImage, aspectRatio } = body;
 
     // Build the prompt for AI
     const benefitsList = benefits
@@ -95,7 +102,7 @@ ${customPrompt ? `Additional instructions: ${customPrompt}` : ""}
 
 Generate engaging ad copy that will attract qualified CDL drivers. Return ONLY valid JSON.`;
 
-    // Call Lovable AI Gateway
+    // Call Lovable AI Gateway for text generation
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -164,11 +171,78 @@ Generate engaging ad copy that will attract qualified CDL drivers. Return ONLY v
       .filter((tag: string) => tag.length > 0)
       .slice(0, 5);
 
+    // Generate image if requested
+    let mediaUrl: string | null = null;
+    
+    if (generateImage) {
+      try {
+        const dimensions = ASPECT_RATIO_DIMENSIONS[aspectRatio || "16:9"] || ASPECT_RATIO_DIMENSIONS["16:9"];
+        
+        const imagePrompt = `Create a professional recruitment advertisement image for a ${jobTypeLabel} truck driver position.
+
+Design requirements:
+- ${aspectRatio || "16:9"} aspect ratio (${dimensions.width}x${dimensions.height} pixels)
+- Professional, modern recruitment marketing style
+- Feature a semi-truck or trucking/transportation imagery
+- Clean, eye-catching design suitable for social media
+- High contrast colors for visibility
+- Professional and corporate appropriate
+- Do NOT include any text, words, or letters in the image (text will be overlaid separately)
+- Focus on imagery only: trucks, roads, landscapes, logistics
+
+Visual elements to incorporate:
+${benefitsList ? `- Visual metaphors for: ${benefitsList}` : "- General trucking industry imagery"}
+${location ? `- Scenic elements suggesting: ${location}` : "- American highway scenery"}
+
+Style: High-quality stock photo style for ${companyName || "a professional trucking company"}'s social media recruitment campaign.`;
+
+        console.log("Generating image with prompt:", imagePrompt);
+
+        const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            messages: [{ role: "user", content: imagePrompt }],
+            modalities: ["image", "text"],
+          }),
+        });
+
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          const generatedImageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+          
+          if (generatedImageUrl) {
+            console.log("Image generated successfully");
+            mediaUrl = generatedImageUrl;
+          } else {
+            console.log("No image URL in response:", JSON.stringify(imageData).substring(0, 500));
+          }
+        } else {
+          const imageError = await imageResponse.text();
+          console.error("Image generation failed:", imageResponse.status, imageError);
+          
+          // Don't fail the whole request if image generation fails
+          if (imageResponse.status === 429) {
+            console.log("Image generation rate limited, continuing without image");
+          } else if (imageResponse.status === 402) {
+            console.log("AI credits exhausted for image generation, continuing without image");
+          }
+        }
+      } catch (imageError) {
+        console.error("Image generation error:", imageError);
+        // Continue without image - don't fail the whole request
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         content: generatedContent,
-        mediaUrl: null, // Image generation would be a separate step
+        mediaUrl,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

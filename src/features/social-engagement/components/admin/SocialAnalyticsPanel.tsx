@@ -1,45 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, TrendingDown, Minus, BarChart3, MessageSquare, Image, Users } from 'lucide-react';
 import { getAllSocialBeacons } from '../../config/socialBeacons.config';
+import { useAnalyticsDashboard, type DateRange } from '../../hooks/useAnalyticsDashboard';
 
 interface SocialAnalyticsPanelProps {
   organizationId?: string | null;
 }
 
 export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsPanelProps) {
+  const [dateRange, setDateRange] = useState<DateRange>('7d');
   const platforms = getAllSocialBeacons();
+  const { analytics, isLoading } = useAnalyticsDashboard(organizationId, dateRange);
 
-  // Mock analytics data - in production, this would come from the database
-  const mockAnalytics = {
-    totalEngagements: 1247,
-    totalImpressions: 45230,
-    autoResponses: 89,
-    adCreatives: 12,
-    engagementRate: 2.76,
-    responseRate: 94.5,
-    byPlatform: {
-      x: { engagements: 456, impressions: 18500, trend: 'up' },
-      facebook: { engagements: 389, impressions: 15200, trend: 'up' },
-      instagram: { engagements: 312, impressions: 8900, trend: 'down' },
-      tiktok: { engagements: 90, impressions: 2630, trend: 'up' },
-      linkedin: { engagements: 234, impressions: 12400, trend: 'up' },
-      reddit: { engagements: 67, impressions: 3100, trend: 'neutral' },
-    },
-  };
-
-  const getTrendIcon = (trend: string) => {
+  const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="h-4 w-4 text-green-600" />;
+        return <TrendingUp className="h-4 w-4 text-success" />;
       case 'down':
-        return <TrendingDown className="h-4 w-4 text-red-600" />;
+        return <TrendingDown className="h-4 w-4 text-destructive" />;
       default:
         return <Minus className="h-4 w-4 text-muted-foreground" />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map(i => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -50,7 +56,7 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
             Track engagement and performance across all social platforms
           </p>
         </div>
-        <Select defaultValue="7d">
+        <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRange)}>
           <SelectTrigger className="w-[140px]">
             <SelectValue />
           </SelectTrigger>
@@ -72,7 +78,7 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
                 <MessageSquare className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockAnalytics.totalEngagements.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{analytics.totalEngagements.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">Total Engagements</p>
               </div>
             </div>
@@ -82,12 +88,12 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="h-12 w-12 rounded-lg bg-info/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockAnalytics.totalImpressions.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Total Impressions</p>
+                <p className="text-2xl font-bold">{analytics.totalImpressions.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Est. Impressions</p>
               </div>
             </div>
           </CardContent>
@@ -96,11 +102,11 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <BarChart3 className="h-6 w-6 text-green-600" />
+              <div className="h-12 w-12 rounded-lg bg-success/10 flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockAnalytics.engagementRate}%</p>
+                <p className="text-2xl font-bold">{analytics.engagementRate}%</p>
                 <p className="text-xs text-muted-foreground">Engagement Rate</p>
               </div>
             </div>
@@ -110,11 +116,11 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <Image className="h-6 w-6 text-purple-600" />
+              <div className="h-12 w-12 rounded-lg bg-accent flex items-center justify-center">
+                <Image className="h-6 w-6 text-accent-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{mockAnalytics.adCreatives}</p>
+                <p className="text-2xl font-bold">{analytics.adCreatives}</p>
                 <p className="text-xs text-muted-foreground">Ad Creatives</p>
               </div>
             </div>
@@ -136,11 +142,13 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
               .filter(p => p.adCreativeSupported || p.autoEngageSupported)
               .map((platform) => {
                 const PlatformIcon = platform.icon;
-                const stats = mockAnalytics.byPlatform[platform.platform as keyof typeof mockAnalytics.byPlatform];
+                const stats = analytics.byPlatform[platform.platform as keyof typeof analytics.byPlatform];
                 
                 if (!stats) return null;
 
-                const engagementRate = ((stats.engagements / stats.impressions) * 100).toFixed(2);
+                const engagementRate = stats.impressions > 0 
+                  ? ((stats.engagements / stats.impressions) * 100).toFixed(2)
+                  : '0.00';
 
                 return (
                   <div 
@@ -180,13 +188,13 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
                           variant="outline"
                           className={
                             stats.trend === 'up' 
-                              ? 'border-green-500/30 text-green-600' 
+                              ? 'border-success/30 text-success' 
                               : stats.trend === 'down'
-                              ? 'border-red-500/30 text-red-600'
+                              ? 'border-destructive/30 text-destructive'
                               : ''
                           }
                         >
-                          {stats.trend === 'up' ? '+12%' : stats.trend === 'down' ? '-5%' : '0%'}
+                          {stats.trend === 'up' ? `+${stats.trendPercentage}%` : stats.trend === 'down' ? `${stats.trendPercentage}%` : '0%'}
                         </Badge>
                       </div>
                     </div>
@@ -209,19 +217,19 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">Total Auto-Responses</span>
-              <span className="font-semibold">{mockAnalytics.autoResponses}</span>
+              <span className="font-semibold">{analytics.autoResponses}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">Response Rate</span>
-              <span className="font-semibold">{mockAnalytics.responseRate}%</span>
+              <span className="font-semibold">{analytics.responseRate}%</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-border">
               <span className="text-sm text-muted-foreground">Avg. Response Time</span>
-              <span className="font-semibold">32s</span>
+              <span className="font-semibold">&lt;30s</span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-sm text-muted-foreground">Queued for Review</span>
-              <span className="font-semibold">3</span>
+              <span className="text-sm text-muted-foreground">Ad Creatives Generated</span>
+              <span className="font-semibold">{analytics.adCreatives}</span>
             </div>
           </CardContent>
         </Card>
@@ -234,34 +242,30 @@ export function SocialAnalyticsPanel({ organizationId = null }: SocialAnalyticsP
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="h-12 w-12 rounded bg-primary/10 flex items-center justify-center text-lg">
-                🚚
+            {analytics.topCreatives.length > 0 ? (
+              analytics.topCreatives.map((creative, idx) => (
+                <div key={creative.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="h-12 w-12 rounded bg-primary/10 flex items-center justify-center text-lg">
+                    {creative.emoji}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm line-clamp-1">{creative.headline}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {creative.engagements} engagements • {creative.ctr}% CTR
+                    </p>
+                  </div>
+                  {idx === 0 && (
+                    <Badge className="bg-success/10 text-success border-success/20">Top</Badge>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Image className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">No creatives yet</p>
+                <p className="text-xs">Generate your first ad creative to see performance</p>
               </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm">Regional CDL-A Driver</p>
-                <p className="text-xs text-muted-foreground">456 engagements • 2.8% CTR</p>
-              </div>
-              <Badge className="bg-green-500/10 text-green-600">Top</Badge>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="h-12 w-12 rounded bg-primary/10 flex items-center justify-center text-lg">
-                💰
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm">$5k Sign-On Bonus</p>
-                <p className="text-xs text-muted-foreground">312 engagements • 2.1% CTR</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="h-12 w-12 rounded bg-primary/10 flex items-center justify-center text-lg">
-                🏠
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm">Home Weekly Routes</p>
-                <p className="text-xs text-muted-foreground">289 engagements • 1.9% CTR</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
