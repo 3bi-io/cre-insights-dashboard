@@ -288,11 +288,11 @@ export const PREHEADER_TEMPLATES = {
   email_change: () => 
     `Verify your new email address to complete the change.`,
   
-  // Screening emails
+  // Screening emails (use companyName for applicant-facing privacy)
   background_check: (applicantName: string) => 
     `A background check has been requested for ${applicantName}.`,
-  employment_application: (orgName: string) => 
-    `Please complete your employment application for ${orgName}.`,
+  employment_application: (companyName: string) => 
+    `Please complete your employment application for ${companyName}.`,
   drug_screening: (applicantName: string) => 
     `A drug screening has been requested for ${applicantName}.`
 } as const;
