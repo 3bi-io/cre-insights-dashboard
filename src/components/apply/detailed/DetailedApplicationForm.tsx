@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Truck } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import { useStepWizard } from '@/hooks/useStepWizard';
 import { useDetailedApplicationForm } from '@/hooks/useDetailedApplicationForm';
+import { useApplyContext } from '@/hooks/useApplyContext';
 import { StepContainer } from '../StepContainer';
 import { StepNavigation } from '../StepNavigation';
 import { StepCompletionFeedback } from '../StepCompletionFeedback';
+import { ApplicationHeader } from '../ApplicationHeader';
 import { DetailedFormProgressIndicator } from './DetailedFormProgressIndicator';
 import { DetailedPersonalSection } from './DetailedPersonalSection';
 import { DetailedContactSection } from './DetailedContactSection';
@@ -48,6 +49,15 @@ export const DetailedApplicationForm = () => {
     discardDraft,
   } = useDetailedApplicationForm();
 
+  const {
+    jobTitle,
+    organizationName,
+    location,
+    logoUrl,
+    source,
+    isLoading: contextLoading,
+  } = useApplyContext();
+
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
 
   const {
@@ -82,17 +92,28 @@ export const DetailedApplicationForm = () => {
   const canProceed = validateStep(activeStep);
   const showDraftBanner = hasDraft && !draftBannerDismissed;
 
+  // Dynamic SEO based on job context
+  const seoContent = useMemo(() => {
+    const title = jobTitle 
+      ? `Apply for ${jobTitle} | CDL Driver Application`
+      : 'Complete Driver Application | CDL Driver Application Form';
+    const description = jobTitle && organizationName
+      ? `Apply for ${jobTitle} at ${organizationName}. Complete driver application with CDL verification and employment history.`
+      : 'Submit your comprehensive driver application with CDL verification, employment history, and background information. Get matched with top trucking companies.';
+    return { title, description };
+  }, [jobTitle, organizationName]);
+
   const breadcrumbData = useMemo(() => buildBreadcrumbSchema([
     { name: 'Home', url: 'https://ats.me/' },
     { name: 'Jobs', url: 'https://ats.me/jobs' },
-    { name: 'Detailed Application', url: 'https://ats.me/apply/detailed' },
-  ]), []);
+    { name: jobTitle || 'Detailed Application', url: 'https://ats.me/apply/detailed' },
+  ]), [jobTitle]);
 
   return (
     <>
       <SEO
-        title="Complete Driver Application | CDL Driver Application Form"
-        description="Submit your comprehensive driver application with CDL verification, employment history, and background information. Get matched with top trucking companies."
+        title={seoContent.title}
+        description={seoContent.description}
         keywords="CDL application, driver application form, trucking job application, complete driver application, employment verification"
         canonical="https://ats.me/apply/detailed"
       />
@@ -101,18 +122,15 @@ export const DetailedApplicationForm = () => {
       <div className="h-full overflow-y-auto bg-gradient-to-br from-background to-muted">
         <div className="min-h-full py-6 sm:py-8 px-4">
         <div className="max-w-3xl mx-auto">
-          {/* Header */}
-          <header className="text-center mb-6 sm:mb-8">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Truck className="w-7 h-7 sm:w-8 sm:h-8 text-primary" aria-hidden="true" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                Complete Application
-              </h1>
-            </div>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Please complete all sections to submit your comprehensive application
-            </p>
-          </header>
+          {/* Dynamic Header with Job Context */}
+          <ApplicationHeader
+            jobTitle={jobTitle || 'Complete Application'}
+            organizationName={organizationName}
+            location={location}
+            logoUrl={logoUrl}
+            source={source}
+            isLoading={contextLoading}
+          />
 
           {/* Draft Restoration Banner */}
           {showDraftBanner && (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
 
 interface ApplyContext {
   jobTitle: string | null;
@@ -58,6 +59,10 @@ export const useApplyContext = (): ApplyContext => {
               name,
               slug,
               logo_url
+            ),
+            clients (
+              id,
+              name
             )
           `)
           .eq('id', jobListingId)
@@ -65,9 +70,17 @@ export const useApplyContext = (): ApplyContext => {
 
         if (jobListing) {
           const org = jobListing.organizations as any;
+          const client = jobListing.clients as any;
+          
+          // Use getDisplayCompanyName for proper branding (e.g., "Hayes Recruiting - ClientName")
+          const displayName = getDisplayCompanyName({
+            clients: client,
+            organizations: org,
+          });
+          
           setContext({
             jobTitle: jobListing.title,
-            organizationName: org?.name || null,
+            organizationName: displayName,
             organizationSlug: org?.slug || null,
             location: jobListing.city && jobListing.state 
               ? `${jobListing.city}, ${jobListing.state}` 
