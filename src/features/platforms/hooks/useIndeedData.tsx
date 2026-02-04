@@ -32,7 +32,7 @@ export const useIndeedData = () => {
       
       const { data: result, error: functionError } = await supabase.functions.invoke('indeed-integration', {
         body: {
-          action: 'getStats',
+          action: 'get_stats',
           employerId,
           dateRange
         }
@@ -62,7 +62,8 @@ export const useIndeedData = () => {
       
       const { data: result, error: functionError } = await supabase.functions.invoke('indeed-integration', {
         body: {
-          action: 'getEmployers'
+          action: 'get_stats',
+          employerId: 'all'
         }
       });
 
