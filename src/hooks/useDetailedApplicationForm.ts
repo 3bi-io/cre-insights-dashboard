@@ -428,7 +428,7 @@ export const useDetailedApplicationForm = () => {
         title: "Application Submitted Successfully!",
         description: "Thank you for your detailed application. We'll review it and be in touch soon.",
       });
-      navigate('/apply/success');
+      navigate('/thank-you');
     },
     onError: (error: Error) => {
       toast({

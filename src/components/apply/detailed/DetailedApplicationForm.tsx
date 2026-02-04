@@ -141,27 +141,33 @@ export const DetailedApplicationForm = () => {
 
           {/* Step Content */}
           <main className="bg-card rounded-2xl border border-border shadow-sm p-5 sm:p-8 mb-6">
-            {STEP_SECTIONS.map(({ id, Component, hasEndorsementToggle }) => (
-              <StepContainer key={id} direction={direction} isActive={activeStep === id}>
-                <Component
-                  formData={formData}
-                  onInputChange={handleInputChange}
-                  isActive={activeStep === id}
-                  {...(hasEndorsementToggle && { onEndorsementToggle: handleEndorsementToggle })}
-                />
-              </StepContainer>
-            ))}
+            <form 
+              onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
+              className="min-h-[400px]"
+              noValidate
+            >
+              {STEP_SECTIONS.map(({ id, Component, hasEndorsementToggle }) => (
+                <StepContainer key={id} direction={direction} isActive={activeStep === id}>
+                  <Component
+                    formData={formData}
+                    onInputChange={handleInputChange}
+                    isActive={activeStep === id}
+                    {...(hasEndorsementToggle && { onEndorsementToggle: handleEndorsementToggle })}
+                  />
+                </StepContainer>
+              ))}
 
-            {/* Navigation */}
-            <StepNavigation
-              onBack={prevStep}
-              onNext={handleNext}
-              onSubmit={handleSubmit}
-              isFirstStep={isFirstStep}
-              isLastStep={isLastStep}
-              isSubmitting={isSubmitting}
-              canProceed={canProceed}
-            />
+              {/* Navigation */}
+              <StepNavigation
+                onBack={prevStep}
+                onNext={handleNext}
+                onSubmit={handleSubmit}
+                isFirstStep={isFirstStep}
+                isLastStep={isLastStep}
+                isSubmitting={isSubmitting}
+                canProceed={canProceed}
+              />
+            </form>
           </main>
 
           {/* Celebration Feedback */}
