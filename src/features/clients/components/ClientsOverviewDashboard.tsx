@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { 
   Building2, 
   Briefcase, 
@@ -234,17 +235,13 @@ export const ClientsOverviewDashboard: React.FC = () => {
                 <TableRow key={client.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {client.logo_url ? (
-                        <img 
-                          src={client.logo_url} 
-                          alt={client.name}
-                          className="w-8 h-8 rounded object-contain bg-muted"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
-                          <Building2 className="w-4 h-4 text-primary" />
-                        </div>
-                      )}
+                      <LogoAvatar size="sm" className="w-8 h-8">
+                        {client.logo_url ? (
+                          <LogoAvatarImage src={client.logo_url} alt={client.name} />
+                        ) : (
+                          <LogoAvatarFallback iconSize="sm" />
+                        )}
+                      </LogoAvatar>
                       <div>
                         <div className="font-medium">{client.name}</div>
                         {(client.city || client.state) && (

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { 
   MapPin, 
   DollarSign, 
@@ -134,13 +135,13 @@ const JobDetailPage = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
-                {job.organizations?.logo_url && (
-                  <img
-                    src={job.organizations.logo_url}
-                    alt={job.organizations.name}
-                    className="h-16 w-16 rounded-lg object-cover border"
-                  />
-                )}
+                <LogoAvatar size="lg" className="h-16 w-16">
+                  {job.organizations?.logo_url ? (
+                    <LogoAvatarImage src={job.organizations.logo_url} alt={job.organizations?.name || 'Company'} />
+                  ) : (
+                    <LogoAvatarFallback iconSize="lg" />
+                  )}
+                </LogoAvatar>
                 <div className="flex-1">
                   <h1 className="text-2xl font-bold mb-1">{job.title || job.job_title}</h1>
                   <p className="text-lg text-muted-foreground">{job.organizations?.name}</p>
@@ -228,13 +229,13 @@ const JobDetailPage = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                {(job.organizations as any)?.logo_url && (
-                  <img
-                    src={(job.organizations as any).logo_url}
-                    alt={(job.organizations as any).name}
-                    className="h-12 w-12 rounded-lg object-cover border"
-                  />
-                )}
+                <LogoAvatar size="md" className="h-12 w-12">
+                  {(job.organizations as any)?.logo_url ? (
+                    <LogoAvatarImage src={(job.organizations as any).logo_url} alt={(job.organizations as any)?.name || 'Company'} />
+                  ) : (
+                    <LogoAvatarFallback iconSize="md" />
+                  )}
+                </LogoAvatar>
                 <div>
                   <p className="font-semibold">{(job.organizations as any)?.name}</p>
                 </div>

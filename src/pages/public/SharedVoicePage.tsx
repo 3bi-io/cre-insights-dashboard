@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { 
   Play, 
   Pause, 
@@ -186,17 +187,18 @@ export default function SharedVoicePage() {
       <header className="border-b bg-card">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            {conversation.organization.logo_url ? (
-              <img
-                src={conversation.organization.logo_url}
-                alt={conversation.organization.name || 'Organization'}
-                className="h-10 w-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Headphones className="h-5 w-5 text-primary" />
-              </div>
-            )}
+            <LogoAvatar size="sm" className="h-10 w-10">
+              {conversation.organization.logo_url ? (
+                <LogoAvatarImage 
+                  src={conversation.organization.logo_url} 
+                  alt={conversation.organization.name || 'Organization'} 
+                />
+              ) : (
+                <LogoAvatarFallback>
+                  <Headphones className="h-5 w-5 text-primary" />
+                </LogoAvatarFallback>
+              )}
+            </LogoAvatar>
             <div>
               <h2 className="font-medium">
                 {conversation.organization.name || 'Voice Conversation'}
