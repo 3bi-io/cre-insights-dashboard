@@ -1,295 +1,283 @@
 
-# /jobs Page Refactoring Plan
 
-## Overview
+# Admin Functions Review and Refactoring Plan
 
-The public `/jobs` page (`src/pages/public/JobsPage.tsx`) is a key entry point for jobseekers. After reviewing the codebase, I've identified several areas for improvement focusing on code organization, performance, maintainability, and alignment with established patterns.
+## Executive Summary
 
-## Current State Analysis
+After thorough analysis of the codebase, I've identified **several inconsistencies and gaps** in admin role handling that need to be addressed to ensure Super Admins and Organization Admins have full control over their respective domains.
 
-### What's Working Well
-- Pagination with infinite scroll via `usePaginatedPublicJobs`
-- Mobile-responsive design with `MobileFilterSheet`
-- SEO implementation with structured data
-- Voice application integration
-- Client and location filtering
+## Current Architecture Overview
 
-### Areas for Improvement
+### Role Hierarchy (from roleUtils.ts)
+```text
++------------------+-------+
+| Role             | Level |
++------------------+-------+
+| viewer / user    |   1   |
+| recruiter        |   2   |
+| moderator        |   3   |
+| admin            |   4   |
+| super_admin      |   5   |
++------------------+-------+
+```
 
-1. **Code Organization**: The page component is 338 lines with inline state management, filtering logic, and rendering all in one file
-2. **Pattern Consistency**: Not using the standardized `DataLoadingStateHandler` component for loading/error/empty states
-3. **Duplicate Logic**: Category filtering happens client-side redundantly (also done in hook)
-4. **Performance**: Locations are computed from loaded jobs rather than fetched from backend
-5. **Type Safety**: Using `any` for job types throughout
-6. **Separation of Concerns**: Filter state management mixed with rendering logic
+### Core Components
+- **RoleGuard** - Protects routes based on exact role matching (not hierarchy-aware)
+- **AdminPageLayout** - Wraps pages with optional role protection
+- **FeatureGuard** - Controls feature access based on organization settings
+- **PlatformAccessGuard** - Controls platform access per organization
+- **hasRoleOrHigher()** - Hierarchy-aware role checking utility
+
+## Identified Issues
+
+### Issue 1: RoleGuard Uses Exact Matching, Not Hierarchy
+**Location:** `src/features/shared/components/RoleGuard.tsx`
+
+**Problem:** RoleGuard checks if `userRole` is included in `requiredRoles` array (exact match) rather than using the hierarchy-aware `hasRoleOrHigher()` utility.
+
+```typescript
+// Current behavior (line 50):
+const hasAccess = userRole && requiredRoles.includes(userRole as UserRole);
+
+// Expected behavior:
+const hasAccess = requiredRoles.some(role => hasRoleOrHigher(userRole, role));
+```
+
+**Impact:** A page protected with `requiredRole="admin"` blocks `super_admin` users unless explicitly listed.
+
+### Issue 2: Missing "recruiter" Role in UI Dialogs
+**Location:** `src/components/admin/UserRoleDialog.tsx` (lines 139-144)
+
+**Problem:** The role selector omits "recruiter" role despite it being a valid role in the hierarchy.
+
+```typescript
+// Current (missing recruiter):
+<SelectItem value="user">User</SelectItem>
+<SelectItem value="moderator">Moderator</SelectItem>
+<SelectItem value="admin">Admin</SelectItem>
+<SelectItem value="super_admin">Super Admin</SelectItem>
+```
+
+**Location:** `src/components/dashboard/organization/UserRoleEditDialog.tsx` (lines 109-113)
+
+Same issue - missing "recruiter" role option.
+
+### Issue 3: UserManagementDialog Limited Role Options
+**Location:** `src/components/admin/UserManagementDialog.tsx` (lines 35, 184-191)
+
+**Problem:** Only offers "user" and "admin" roles for inviting users, missing "recruiter" and "moderator".
+
+### Issue 4: Inconsistent isOrgAdmin Definition
+**Location:** Multiple files use different definitions:
+
+```typescript
+// In useAuth.tsx (line 408):
+const isOrgAdmin = userRole === 'admin' && userType === 'organization';
+
+// In AdminApplicationsPage.tsx (line 38):
+const isOrgAdmin = userRole === 'admin';  // No userType check
+
+// In ApplicationsPage.tsx (line 51):
+const isOrgAdmin = userRole === 'admin' && !isSuperAdmin;
+```
+
+**Impact:** Inconsistent behavior for organization admins across pages.
+
+### Issue 5: Dashboard Routing Lacks Fallback for Moderator/Recruiter
+**Location:** `src/features/dashboard/pages/DashboardPage.tsx` (lines 37-45)
+
+**Problem:** Dashboard routing only handles `super_admin` and `admin` explicitly. Moderators and recruiters fall through to `RegularUserDashboard` which may not give appropriate access.
+
+```typescript
+if (userRole === 'super_admin') {
+  return <SuperAdminDashboard />;
+}
+if (userRole === 'admin') {
+  return <DashboardLayout organizationName={organization?.name} />;
+}
+// Moderators/recruiters get RegularUserDashboard - may be too limited
+return <RegularUserDashboard />;
+```
+
+### Issue 6: Super Admin Not Consistently Granted All Access
+**Location:** `src/components/admin/PlatformAccessGuard.tsx`
+
+**Good Pattern:** Super admins bypass platform access checks correctly (line 30-34).
+
+**Location:** `src/hooks/useOrganizationFeatures.tsx`
+
+**Good Pattern:** Super admins bypass feature checks correctly (line 47-48).
+
+These are correctly implemented but should be verified across all guards.
+
+### Issue 7: UserRoleEditDialog Missing Organization Context
+**Location:** `src/components/dashboard/organization/UserRoleEditDialog.tsx` (lines 47-54)
+
+**Problem:** When updating a role, it doesn't include `organization_id`, which may break organization-scoped roles.
+
+```typescript
+// Current:
+.insert({
+  user_id: userId,
+  role: newRole as 'user' | 'admin' | 'moderator' | 'super_admin'
+});
+
+// Should include:
+.insert({
+  user_id: userId,
+  role: newRole,
+  organization_id: currentOrganization?.id
+});
+```
 
 ## Refactoring Plan
 
-### Phase 1: Extract Custom Hook for Job Page State
+### Phase 1: Fix RoleGuard Hierarchy Logic
+Update RoleGuard to use the hierarchy-aware utility:
 
-Create a dedicated hook `usePublicJobsPage` to encapsulate all state management:
+**File:** `src/features/shared/components/RoleGuard.tsx`
 
-```text
-src/features/jobs/hooks/usePublicJobsPage.ts
-```
+- Import `hasRoleOrHigher` from `@/utils/roleUtils`
+- Replace exact match logic with hierarchy check
+- Ensure super_admin always passes any role check
 
-This hook will manage:
-- Filter states (search, location, client, sort)
-- Integration with `usePaginatedPublicJobs`
-- Location options derived from jobs
-- Client fetching logic
-- Sorting logic (currently inline in component)
+### Phase 2: Standardize isOrgAdmin/isSuperAdmin Helpers
+Create centralized auth helper utilities to eliminate inconsistencies:
 
-### Phase 2: Extract Filter Components
-
-Create reusable filter components in the jobs feature:
-
-```text
-src/features/jobs/components/public/
-├── JobFiltersDesktop.tsx     // Desktop filter row
-├── JobFiltersState.tsx       // Filter state provider/types
-├── JobSortSelect.tsx         // Reusable sort dropdown
-└── index.ts                  // Barrel exports
-```
-
-### Phase 3: Define Proper Types
-
-Create a proper type definition for public job listings:
-
-```text
-src/features/jobs/types/publicJob.ts
-```
-
-This replaces the scattered `any` types with a proper interface that includes:
-- Core job fields
-- Related organization and client data
-- Voice agent availability flag
-- Category information
-
-### Phase 4: Refactor Main Component
-
-Update `JobsPage.tsx` to:
-
-1. Use `DataLoadingStateHandler` for consistent loading/error/empty states
-2. Delegate state management to the new hook
-3. Use extracted filter components
-4. Apply proper TypeScript types
-5. Reduce component size to ~150 lines focused on composition
-
-### Phase 5: Optimize Performance
-
-1. **Memoize filter computations** - Wrap expensive operations in `useMemo`
-2. **Debounce search input** - Already partially implemented but can be standardized
-3. **Move sorting to backend** - Pass sort option to `usePaginatedPublicJobs` hook so sorting happens in the database query rather than client-side
-4. **Lazy load voice panel** - Only import `VoiceApplicationPanel` when voice is actually initiated
-
-### Phase 6: Update Hook Integration
-
-Modify `usePaginatedPublicJobs` to:
-- Accept sort option and apply ordering in the query
-- Use standardized query keys from `queryKeys.ts`
-- Add proper return types
-
-## Technical Details
-
-### New File Structure
-
-```text
-src/features/jobs/
-├── components/
-│   ├── public/
-│   │   ├── JobFiltersDesktop.tsx
-│   │   ├── JobSortSelect.tsx
-│   │   └── index.ts
-│   └── index.ts (update exports)
-├── hooks/
-│   ├── usePublicJobsPage.ts (new)
-│   └── index.ts (update exports)
-├── types/
-│   ├── publicJob.ts (new)
-│   └── index.ts (new)
-└── index.ts (update exports)
-```
-
-### Key Code Changes
-
-**1. Type Definition (publicJob.ts)**
+**New File:** `src/utils/authHelpers.ts`
 
 ```typescript
-export interface PublicJob {
-  id: string;
-  title?: string;
-  job_title?: string;
-  job_summary?: string;
-  description?: string;
-  city?: string;
-  state?: string;
-  location?: string;
-  salary_min?: number | null;
-  salary_max?: number | null;
-  salary_type?: string | null;
-  job_type?: string | null;
-  created_at: string;
-  dest_city?: string;
-  dest_state?: string;
-  organizations?: {
-    id: string;
-    name: string;
-    slug: string;
-    logo_url?: string;
-  } | null;
-  clients?: {
-    id: string;
-    name: string;
-    logo_url?: string;
-  } | null;
-  job_categories?: {
-    name: string;
-  } | null;
-  voiceAgent?: { global: boolean };
+export function isOrganizationAdmin(
+  userRole: string | null, 
+  userType: string | null
+): boolean {
+  return userRole === 'admin' && userType === 'organization';
+}
+
+export function canManageOrganization(
+  userRole: string | null
+): boolean {
+  return userRole === 'admin' || userRole === 'super_admin';
+}
+
+export function canManageUsers(
+  userRole: string | null
+): boolean {
+  return hasRoleOrHigher(userRole, 'admin');
 }
 ```
 
-**2. Hook Integration (usePublicJobsPage.ts)**
+### Phase 3: Update Role Selection Dialogs
+Add missing roles to all user management dialogs:
+
+**Files to update:**
+- `src/components/admin/UserRoleDialog.tsx`
+- `src/components/admin/UserManagementDialog.tsx`
+- `src/components/dashboard/organization/UserRoleEditDialog.tsx`
+
+Add recruiter and moderator options with appropriate descriptions:
 
 ```typescript
-export interface PublicJobsPageState {
-  // Filters
-  searchTerm: string;
-  locationFilter: string;
-  clientFilter: string;
-  sortBy: SortOption;
-  
-  // Setters
-  setSearchTerm: (value: string) => void;
-  setLocationFilter: (value: string) => void;
-  setClientFilter: (value: string) => void;
-  setSortBy: (value: SortOption) => void;
-  
-  // Data
-  jobs: PublicJob[];
-  totalCount: number;
-  locations: string[];
-  clients: { id: string; name: string }[];
-  
-  // Loading states
-  isLoading: boolean;
-  isFetchingMore: boolean;
-  hasMore: boolean;
-  
-  // Actions
-  loadMore: () => void;
-}
+const ROLE_OPTIONS = [
+  { value: 'user', label: 'User', description: 'Basic access' },
+  { value: 'recruiter', label: 'Recruiter', description: 'Manage applications' },
+  { value: 'moderator', label: 'Moderator', description: 'Manage content' },
+  { value: 'admin', label: 'Admin', description: 'Full organization access' },
+  // super_admin only shown to super_admins
+];
 ```
 
-**3. Updated usePaginatedPublicJobs**
+### Phase 4: Fix Organization Context in Role Updates
+Update role dialogs to include organization_id when applicable:
 
-Add sorting to the database query:
+**Files to update:**
+- `src/components/dashboard/organization/UserRoleEditDialog.tsx`
+- `src/components/admin/UserManagementDialog.tsx`
+
+### Phase 5: Improve Dashboard Role Routing
+Update DashboardPage to provide appropriate dashboards for all role levels:
+
+**File:** `src/features/dashboard/pages/DashboardPage.tsx`
 
 ```typescript
-interface UsePaginatedPublicJobsParams {
-  searchTerm?: string;
-  locationFilter?: string;
-  categoryFilter?: string;
-  clientFilter?: string;
-  sortBy?: 'recent' | 'title' | 'salary-high' | 'salary-low';
+if (userRole === 'super_admin') {
+  return <SuperAdminDashboard />;
 }
 
-// In the query:
-const orderConfig = {
-  'recent': { column: 'created_at', ascending: false },
-  'title': { column: 'title', ascending: true },
-  'salary-high': { column: 'salary_max', ascending: false },
-  'salary-low': { column: 'salary_min', ascending: true },
-};
+// Admin and moderator get full organization dashboard
+if (hasRoleOrHigher(userRole, 'moderator')) {
+  return <DashboardLayout organizationName={organization?.name} />;
+}
 
-query = query.order(
-  orderConfig[sortBy].column, 
-  { ascending: orderConfig[sortBy].ascending }
-);
+// Recruiter gets limited dashboard
+if (userRole === 'recruiter') {
+  return <RecruiterDashboard />;
+}
+
+return <RegularUserDashboard />;
 ```
 
-**4. Simplified JobsPage Structure**
+### Phase 6: Create Consolidated Admin Access Control
+Create a centralized hook for all admin access patterns:
+
+**New File:** `src/hooks/useAdminAccess.ts`
 
 ```typescript
-const JobsPage = () => {
-  const pageState = usePublicJobsPage();
-  const voice = useElevenLabsVoice();
-
-  return (
-    <>
-      <SEO ... />
-      <StructuredData ... />
-      
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-6 lg:py-8">
-          <JobsPageHeader 
-            totalCount={pageState.totalCount} 
-          />
-          
-          <MobileFilterSheet {...pageState} />
-          <JobFiltersDesktop {...pageState} />
-          
-          <DataLoadingStateHandler
-            data={pageState.jobs}
-            isLoading={pageState.isLoading}
-            isError={false}
-            emptyTitle="No Jobs Found"
-            emptyDescription="Try adjusting your search criteria"
-            emptyIcon={Building2}
-          >
-            {(jobs) => (
-              <JobsGrid 
-                jobs={jobs}
-                onVoiceApply={voice.startVoiceApplication}
-                isVoiceConnected={voice.isConnected}
-                selectedJobId={voice.selectedJob?.jobId}
-              />
-            )}
-          </DataLoadingStateHandler>
-          
-          {pageState.hasMore && (
-            <LoadMoreButton 
-              onClick={pageState.loadMore}
-              isLoading={pageState.isFetchingMore}
-            />
-          )}
-          
-          <VoiceApplicationPanel {...voice} />
-        </div>
-      </div>
-    </>
-  );
-};
+export function useAdminAccess() {
+  const { userRole, userType, organization } = useAuth();
+  
+  return {
+    // Role checks
+    isSuperAdmin: userRole === 'super_admin',
+    isOrgAdmin: userRole === 'admin' && userType === 'organization',
+    isModeratorOrHigher: hasRoleOrHigher(userRole, 'moderator'),
+    isRecruiterOrHigher: hasRoleOrHigher(userRole, 'recruiter'),
+    
+    // Permission checks
+    canManageOrganization: hasRoleOrHigher(userRole, 'admin'),
+    canManageUsers: hasRoleOrHigher(userRole, 'admin'),
+    canManageJobs: hasRoleOrHigher(userRole, 'recruiter'),
+    canManageApplications: hasRoleOrHigher(userRole, 'recruiter'),
+    canAccessAnalytics: hasRoleOrHigher(userRole, 'moderator'),
+    canAccessAITools: hasRoleOrHigher(userRole, 'moderator'),
+    
+    // Context
+    organizationId: organization?.id,
+    organizationName: organization?.name,
+  };
+}
 ```
-
-## Benefits
-
-1. **Maintainability**: Smaller, focused components are easier to test and modify
-2. **Reusability**: Filter components and hooks can be reused in candidate portal
-3. **Performance**: Server-side sorting reduces client-side computation
-4. **Type Safety**: Proper TypeScript types catch errors at compile time
-5. **Consistency**: Aligns with established patterns like `DataLoadingStateHandler`
-6. **Testing**: Extracted hooks can be unit tested independently
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/pages/public/JobsPage.tsx` | Refactor to use new components and hooks |
-| `src/hooks/usePaginatedPublicJobs.tsx` | Add sort parameter and return types |
-| `src/features/jobs/hooks/usePublicJobsPage.ts` | New file - page state hook |
-| `src/features/jobs/types/publicJob.ts` | New file - type definitions |
-| `src/features/jobs/components/public/JobFiltersDesktop.tsx` | New file - desktop filters |
-| `src/features/jobs/components/public/index.ts` | New file - barrel exports |
-| `src/features/jobs/hooks/index.ts` | Update exports |
-| `src/features/jobs/index.ts` | Update exports |
+| File | Change Type | Priority |
+|------|-------------|----------|
+| `src/features/shared/components/RoleGuard.tsx` | Fix hierarchy logic | High |
+| `src/utils/authHelpers.ts` | New file | High |
+| `src/hooks/useAdminAccess.ts` | New file | High |
+| `src/components/admin/UserRoleDialog.tsx` | Add missing roles | Medium |
+| `src/components/admin/UserManagementDialog.tsx` | Add missing roles | Medium |
+| `src/components/dashboard/organization/UserRoleEditDialog.tsx` | Add missing roles + org context | Medium |
+| `src/features/dashboard/pages/DashboardPage.tsx` | Improve role routing | Medium |
+| `src/features/applications/pages/AdminApplicationsPage.tsx` | Use centralized helpers | Low |
+| `src/features/applications/pages/ApplicationsPage.tsx` | Use centralized helpers | Low |
 
 ## Implementation Order
 
-1. Create type definitions first (foundational)
-2. Update `usePaginatedPublicJobs` with sort support
-3. Create `usePublicJobsPage` hook
-4. Extract filter components
-5. Refactor `JobsPage.tsx` to compose everything
-6. Test end-to-end functionality
+1. Create `authHelpers.ts` with standardized role checks
+2. Create `useAdminAccess.ts` hook
+3. Fix RoleGuard to use hierarchy logic
+4. Update role selection dialogs
+5. Update DashboardPage routing
+6. Migrate existing pages to use centralized helpers
+
+## Testing Recommendations
+
+After implementation, verify:
+
+1. Super admin can access all pages (Organizations, User Management, etc.)
+2. Org admin can manage their organization users, settings, features
+3. Moderator can access Applications, Jobs, AI Tools, Ad Networks
+4. Recruiter can access Applications, Jobs, Clients
+5. User gets limited dashboard with read-only metrics
+
