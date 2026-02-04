@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Upload, X, Building2 } from 'lucide-react';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
+import { Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 
@@ -139,18 +139,16 @@ export const ClientLogoUpload: React.FC<ClientLogoUploadProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <Avatar className="h-20 w-20 border">
+        <LogoAvatar size="xl" className="h-20 w-20">
           {logoUrl ? (
-            <AvatarImage 
+            <LogoAvatarImage 
               src={logoUrl} 
               alt={`${clientName} logo`}
-              className="object-contain p-2 bg-background"
             />
-          ) : null}
-          <AvatarFallback className="bg-muted">
-            <Building2 className="h-8 w-8 text-muted-foreground" />
-          </AvatarFallback>
-        </Avatar>
+          ) : (
+            <LogoAvatarFallback iconSize="lg" />
+          )}
+        </LogoAvatar>
 
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">

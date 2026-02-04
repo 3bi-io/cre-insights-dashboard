@@ -230,9 +230,13 @@ const OrganizationManagement = () => {
                     <TableRow key={org.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {org.logo_url && (
-                            <img src={org.logo_url} alt={org.name} className="w-8 h-8 object-contain rounded" />
-                          )}
+                          <div className="w-8 h-8 rounded-xl bg-muted/80 border border-border/50 p-1 flex items-center justify-center shrink-0">
+                            {org.logo_url ? (
+                              <img src={org.logo_url} alt={org.name} className="max-w-full max-h-full object-contain" />
+                            ) : (
+                              <Building2 className="w-4 h-4 text-muted-foreground" />
+                            )}
+                          </div>
                           <span className="font-medium">{org.name}</span>
                         </div>
                       </TableCell>

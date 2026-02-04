@@ -14,7 +14,8 @@ import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredDa
 const Apply = () => {
   const { 
     jobTitle, 
-    clientName, 
+    clientName,
+    clientLogoUrl,
     location, 
     source,
     isLoading 
@@ -64,6 +65,7 @@ const Apply = () => {
             <ApplicationHeader 
               jobTitle={jobTitle}
               clientName={clientName}
+              clientLogoUrl={clientLogoUrl}
               location={location}
               source={source}
               isLoading={isLoading}
