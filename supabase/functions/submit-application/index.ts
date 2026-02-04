@@ -4,7 +4,8 @@ import {
   normalizePhone, 
   findOrCreateJobListing, 
   insertApplication,
-  getOrganizationFromJobId 
+  getOrganizationFromJobId,
+  getClientIdFromJobId 
 } from "../_shared/application-processor.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts';
@@ -394,14 +395,27 @@ async function resolveOrganizationAndJob(
         .single();
       
       if (org) {
+        // Also lookup client name if we can infer client from job_id
+        let clientName: string | null = null;
+        const inferredClientId = getClientIdFromJobId(jobIdFromPayload, inferredOrgId);
+        if (inferredClientId) {
+          const { data: client } = await supabase
+            .from('clients')
+            .select('name')
+            .eq('id', inferredClientId)
+            .single();
+          clientName = client?.name || null;
+        }
+        
         logger.info('Resolved org from job_id prefix', { 
           jobId: jobIdFromPayload, 
-          org_name: org.name 
+          org_name: org.name,
+          client_name: clientName
         });
         return { 
           organizationId: org.id, 
           organizationName: org.name,
-          clientName: null,
+          clientName,
           externalJobId: jobIdFromPayload, 
           jobTitle: null 
         };
@@ -646,9 +660,12 @@ Deno.serve(async (req) => {
     logger.info('Integration source detection', { detectedSource, explicitSource: formData.source });
 
     // Resolve organization and job details dynamically (source-based routing takes priority)
+    // Normalize job_listing_id to avoid empty string issues
+    const normalizedJobListingId = formData.job_listing_id && formData.job_listing_id.trim() !== '' ? formData.job_listing_id : undefined;
+    
     const { organizationId, organizationName, clientName, externalJobId, jobTitle } = await resolveOrganizationAndJob(
       supabase,
-      formData.job_listing_id,
+      normalizedJobListingId,
       formData.org_slug,
       detectedSource,
       formData.job_id // Pass job_id for prefix-based organization inference
