@@ -20,21 +20,21 @@ const TOTAL_STEPS = 4;
 interface StepConfig {
   id: number;
   Component: React.ComponentType<any>;
-  hasOrgName?: boolean;
+  hasClientName?: boolean;
 }
 
 const STEP_SECTIONS: StepConfig[] = [
   { id: 1, Component: PersonalInfoSection },
   { id: 2, Component: CDLInfoSection },
   { id: 3, Component: BackgroundInfoSection },
-  { id: 4, Component: ConsentSection, hasOrgName: true },
+  { id: 4, Component: ConsentSection, hasClientName: true },
 ];
 
 interface ApplicationFormProps {
-  organizationName?: string | null;
+  clientName?: string | null;
 }
 
-export const ApplicationForm = ({ organizationName }: ApplicationFormProps) => {
+export const ApplicationForm = ({ clientName }: ApplicationFormProps) => {
   const { 
     formData, 
     handleInputChange, 
@@ -179,14 +179,14 @@ export const ApplicationForm = ({ organizationName }: ApplicationFormProps) => {
         
         <form onSubmit={handleFormSubmit} className="min-h-[400px]" noValidate>
           {/* Step Sections */}
-          {STEP_SECTIONS.map(({ id, Component, hasOrgName }) => (
+          {STEP_SECTIONS.map(({ id, Component, hasClientName }) => (
             <StepContainer key={id} direction={direction} isActive={activeStep === id}>
               <Suspense fallback={<ApplicationFormSkeleton />}>
                 <Component 
                   formData={formData} 
                   onInputChange={handleInputChange}
                   isActive={activeStep === id}
-                  {...(hasOrgName && { organizationName })}
+                  {...(hasClientName && { clientName })}
                 />
               </Suspense>
             </StepContainer>

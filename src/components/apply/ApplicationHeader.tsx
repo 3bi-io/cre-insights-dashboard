@@ -4,9 +4,8 @@ import { MapPin, Building2, Share2 } from 'lucide-react';
 
 interface ApplicationHeaderProps {
   jobTitle?: string | null;
-  organizationName?: string | null;
+  clientName?: string | null;
   location?: string | null;
-  logoUrl?: string | null;
   source?: string | null;
   isLoading?: boolean;
 }
@@ -33,7 +32,6 @@ const formatSource = (source: string): string => {
 // Loading skeleton component
 const HeaderSkeleton = memo(() => (
   <div className="text-center mb-6 sm:mb-8" aria-busy="true" aria-label="Loading job details">
-    <Skeleton className="h-16 w-16 rounded-full mx-auto mb-4" />
     <Skeleton className="h-8 w-64 mx-auto mb-2" />
     <Skeleton className="h-5 w-48 mx-auto" />
   </div>
@@ -56,9 +54,8 @@ MetadataBadge.displayName = 'MetadataBadge';
 
 export const ApplicationHeader = memo(({ 
   jobTitle, 
-  organizationName, 
+  clientName, 
   location, 
-  logoUrl,
   source,
   isLoading = false 
 }: ApplicationHeaderProps) => {
@@ -66,29 +63,20 @@ export const ApplicationHeader = memo(({
     return <HeaderSkeleton />;
   }
 
-  const hasContext = jobTitle || organizationName;
+  const hasContext = jobTitle || clientName;
   const displayTitle = jobTitle || 'Driver Application';
 
   return (
     <header className="text-center mb-6 sm:mb-8">
-      {logoUrl && (
-        <img 
-          src={logoUrl} 
-          alt={organizationName ? `${organizationName} logo` : 'Company logo'} 
-          className="h-16 w-auto mx-auto mb-4 object-contain"
-          loading="eager"
-        />
-      )}
-      
       <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 px-4">
         {displayTitle}
       </h1>
       
       {hasContext ? (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-muted-foreground text-base sm:text-sm px-4">
-          {organizationName && (
+          {clientName && (
             <MetadataBadge icon={Building2}>
-              {organizationName}
+              {clientName}
             </MetadataBadge>
           )}
           {location && (

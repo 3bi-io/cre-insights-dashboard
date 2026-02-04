@@ -14,9 +14,8 @@ import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredDa
 const Apply = () => {
   const { 
     jobTitle, 
-    organizationName, 
+    clientName, 
     location, 
-    logoUrl, 
     source,
     isLoading 
   } = useApplyContext();
@@ -24,12 +23,12 @@ const Apply = () => {
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
     const title = jobTitle ? `Apply for ${jobTitle}` : 'Quick Apply';
-    const description = jobTitle && organizationName 
-      ? `Apply for ${jobTitle} at ${organizationName}. Fast, mobile-friendly application. Get a response within 24 hours.`
+    const description = jobTitle && clientName 
+      ? `Apply for ${jobTitle} at ${clientName}. Fast, mobile-friendly application. Get a response within 24 hours.`
       : 'Submit your job application in under 2 minutes. Our streamlined process gets you in front of recruiters faster.';
     
     return { title, description };
-  }, [jobTitle, organizationName]);
+  }, [jobTitle, clientName]);
 
   // Memoize breadcrumb schema
   const breadcrumbData = useMemo(() => {
@@ -64,16 +63,15 @@ const Apply = () => {
             {/* Application Header */}
             <ApplicationHeader 
               jobTitle={jobTitle}
-              organizationName={organizationName}
+              clientName={clientName}
               location={location}
-              logoUrl={logoUrl}
               source={source}
               isLoading={isLoading}
             />
             
             {/* Application Form */}
             <main>
-              <ApplicationForm organizationName={organizationName} />
+              <ApplicationForm clientName={clientName} />
             </main>
             
             {/* Back Navigation */}

@@ -9,7 +9,7 @@ interface ConsentSectionProps {
     privacy: string;
   };
   onInputChange: (name: string, value: string) => void;
-  organizationName?: string | null;
+  clientName?: string | null;
   isActive?: boolean;
 }
 
@@ -90,10 +90,10 @@ const ConsentCard = ({ title, description, icon, value, onToggle, required, hint
 export const ConsentSection = React.memo(({ 
   formData, 
   onInputChange, 
-  organizationName,
+  clientName,
   isActive 
 }: ConsentSectionProps) => {
-  const companyName = organizationName || 'our team';
+  const companyName = clientName || 'our team';
 
   return (
     <div className="space-y-6">
