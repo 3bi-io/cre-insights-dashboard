@@ -19,21 +19,21 @@ const TOTAL_STEPS = 4;
 interface StepConfig {
   id: number;
   Component: React.ComponentType<any>;
-  hasOrgName?: boolean;
+  hasClientName?: boolean;
 }
 
 const STEP_SECTIONS: StepConfig[] = [
   { id: 1, Component: PersonalInfoSection },
   { id: 2, Component: CDLInfoSection },
   { id: 3, Component: BackgroundInfoSection },
-  { id: 4, Component: ConsentSection, hasOrgName: true },
+  { id: 4, Component: ConsentSection, hasClientName: true },
 ];
 
 interface EmbedApplicationFormProps {
-  organizationName?: string | null;
+  clientName?: string | null;
   onSubmitSuccess?: (result: {
     applicationId: string;
-    organizationName?: string;
+    clientName?: string;
     hasVoiceAgent?: boolean;
   }) => void;
 }
@@ -42,7 +42,7 @@ interface EmbedApplicationFormProps {
  * Embed-specific application form that routes to dedicated outbound voice agent
  * Sets source: 'Embed Form' for all submissions
  */
-export const EmbedApplicationForm = ({ organizationName, onSubmitSuccess }: EmbedApplicationFormProps) => {
+export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedApplicationFormProps) => {
   const { 
     formData, 
     handleInputChange, 
@@ -56,7 +56,7 @@ export const EmbedApplicationForm = ({ organizationName, onSubmitSuccess }: Embe
     onSuccess: (data) => {
       onSubmitSuccess?.({
         applicationId: data.applicationId,
-        organizationName: data.organizationName,
+        clientName: data.organizationName, // Backend still uses organizationName
         hasVoiceAgent: data.hasVoiceAgent,
       });
     },
@@ -182,14 +182,14 @@ export const EmbedApplicationForm = ({ organizationName, onSubmitSuccess }: Embe
         <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
         
         <form onSubmit={handleFormSubmit} className="min-h-[400px]" noValidate>
-          {STEP_SECTIONS.map(({ id, Component, hasOrgName }) => (
+          {STEP_SECTIONS.map(({ id, Component, hasClientName }) => (
             <StepContainer key={id} direction={direction} isActive={activeStep === id}>
               <Suspense fallback={<ApplicationFormSkeleton />}>
                 <Component 
                   formData={formData} 
                   onInputChange={handleInputChange}
                   isActive={activeStep === id}
-                  {...(hasOrgName && { organizationName })}
+                  {...(hasClientName && { clientName })}
                 />
               </Suspense>
             </StepContainer>

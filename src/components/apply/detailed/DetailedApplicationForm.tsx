@@ -51,9 +51,8 @@ export const DetailedApplicationForm = () => {
 
   const {
     jobTitle,
-    organizationName,
+    clientName,
     location,
-    logoUrl,
     source,
     isLoading: contextLoading,
   } = useApplyContext();
@@ -97,11 +96,11 @@ export const DetailedApplicationForm = () => {
     const title = jobTitle 
       ? `Apply for ${jobTitle} | CDL Driver Application`
       : 'Complete Driver Application | CDL Driver Application Form';
-    const description = jobTitle && organizationName
-      ? `Apply for ${jobTitle} at ${organizationName}. Complete driver application with CDL verification and employment history.`
+    const description = jobTitle && clientName
+      ? `Apply for ${jobTitle} at ${clientName}. Complete driver application with CDL verification and employment history.`
       : 'Submit your comprehensive driver application with CDL verification, employment history, and background information. Get matched with top trucking companies.';
     return { title, description };
-  }, [jobTitle, organizationName]);
+  }, [jobTitle, clientName]);
 
   const breadcrumbData = useMemo(() => buildBreadcrumbSchema([
     { name: 'Home', url: 'https://ats.me/' },
@@ -125,9 +124,8 @@ export const DetailedApplicationForm = () => {
           {/* Dynamic Header with Job Context */}
           <ApplicationHeader
             jobTitle={jobTitle || 'Complete Application'}
-            organizationName={organizationName}
+            clientName={clientName}
             location={location}
-            logoUrl={logoUrl}
             source={source}
             isLoading={contextLoading}
           />

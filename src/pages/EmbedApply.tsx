@@ -8,7 +8,7 @@ import { useApplyContext } from '@/hooks/useApplyContext';
 
 interface SubmissionResult {
   applicationId: string;
-  organizationName?: string;
+  clientName?: string;
   hasVoiceAgent?: boolean;
 }
 
@@ -22,7 +22,7 @@ interface SubmissionResult {
 const EmbedApply: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { hideBranding, notifyParent, sendHeight } = useEmbedMode();
-  const { organizationName, jobTitle, isLoading: contextLoading } = useApplyContext();
+  const { clientName, jobTitle, isLoading: contextLoading } = useApplyContext();
   
   // Track submission state for inline thank you
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
@@ -57,11 +57,11 @@ const EmbedApply: React.FC = () => {
     setSubmissionResult(result);
     setIsSubmitted(true);
     
-    // Notify parent window
+    // Notify parent window (using organizationName for backward compatibility with embedders)
     notifyParent({
       type: 'application_submitted',
       applicationId: result.applicationId,
-      organizationName: result.organizationName,
+      organizationName: result.clientName,
     });
   }, [notifyParent]);
 
@@ -71,7 +71,7 @@ const EmbedApply: React.FC = () => {
       <div className="min-h-screen bg-background px-6 sm:px-4">
         <EmbedThankYou
           applicationId={submissionResult.applicationId}
-          organizationName={submissionResult.organizationName}
+          clientName={submissionResult.clientName}
           hasVoiceAgent={submissionResult.hasVoiceAgent}
         />
       </div>
@@ -82,12 +82,12 @@ const EmbedApply: React.FC = () => {
     <div className="h-full overflow-y-auto bg-background">
       <div className="container mx-auto px-6 sm:px-4 py-4 sm:py-6">
         <div className="max-w-2xl mx-auto">
-          {/* Header with org/job branding */}
+          {/* Header with client/job branding */}
           <ApplicationHeader />
           
           {/* Embed Application Form - routes to dedicated outbound agent */}
           <EmbedApplicationForm 
-            organizationName={organizationName} 
+            clientName={clientName} 
             onSubmitSuccess={handleSubmissionSuccess}
           />
           

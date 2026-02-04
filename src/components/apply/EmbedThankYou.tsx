@@ -5,25 +5,26 @@ import { useEmbedMode } from '@/hooks/useEmbedMode';
 
 interface EmbedThankYouProps {
   applicationId?: string;
-  organizationName?: string;
+  clientName?: string;
   hasVoiceAgent?: boolean;
 }
 
 export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
   applicationId,
-  organizationName,
+  clientName,
   hasVoiceAgent = false,
 }) => {
   const { notifyParent, hideBranding } = useEmbedMode();
 
   // Notify parent window of successful submission
+  // Note: Using organizationName in postMessage for backward compatibility with embedders
   useEffect(() => {
     notifyParent({
       type: 'application_submitted',
       applicationId,
-      organizationName,
+      organizationName: clientName,
     });
-  }, [applicationId, organizationName, notifyParent]);
+  }, [applicationId, clientName, notifyParent]);
 
   return (
     <div className="py-8 px-4">
@@ -43,8 +44,8 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
           
           <p className="text-muted-foreground mb-6">
             Thank you for applying
-            {organizationName && (
-              <> to <span className="font-semibold text-foreground">{organizationName}</span></>
+            {clientName && (
+              <> to <span className="font-semibold text-foreground">{clientName}</span></>
             )}
             . We've received your application.
           </p>
