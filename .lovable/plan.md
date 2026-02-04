@@ -1,91 +1,245 @@
 
 
-# Add Legal Consent Statement to Application Forms
+# Social Beacons Feature - Complete Review and Refactoring Plan
 
-## Overview
+## Executive Summary
 
-Add the following legal statement to all three application form pages:
+After thorough review of `/social-beacons` (Super Admin Social Beacons), I've identified that while the foundation is solid, **several key features are incomplete or non-functional**, and the UX can be significantly improved. The most critical gaps are:
 
-> *"By submitting this form, you agree we can contact you for follow-ups—via outbound calls, texts, emails, or other digital means—using AI tools or automated systems at the info you shared. Standard rates might apply, and you can opt out anytime."*
+1. **Image generation is not implemented** - The edge function returns `mediaUrl: null` 
+2. **Video generation is not implemented** - Only appears as a UI option
+3. **No saved creatives gallery** - Creatives are saved but not displayed
+4. **Multi-platform preview not available** - Only shows X/Twitter preview
+5. **No export functionality** - Export button exists but does nothing
 
-## Current State
+## Current State Analysis
 
-| Route | Form Component | Consent Section |
-|-------|---------------|-----------------|
-| `/apply` | `ApplicationForm.tsx` | `ConsentSection.tsx` |
-| `/embed/apply` | `EmbedApplicationForm.tsx` | `ConsentSection.tsx` |
-| `/apply/detailed` | `DetailedApplicationForm.tsx` | `DetailedConsentSection.tsx` |
+### What's Working Well
+- Platform credentials verification via `verify-platform-secrets` edge function
+- Platform configuration storage in `social_beacon_configurations` table
+- OAuth flow for LinkedIn, Facebook, Instagram, Twitter
+- Ad copy generation via Lovable AI (text only)
+- Global settings management
+- Analytics panel (mock data)
 
-Both quick apply routes (`/apply` and `/embed/apply`) share the same `ConsentSection.tsx` component, so only **two files** need to be modified.
+### Critical Gaps Identified
 
-## Implementation Plan
+#### Gap 1: Image Generation Not Implemented
+**File:** `supabase/functions/generate-ad-creative/index.ts` (line 171)
+```typescript
+mediaUrl: null, // Image generation would be a separate step
+```
+The edge function generates text but never generates images despite the UI offering AI image generation.
 
-### 1. Update ConsentSection.tsx
+#### Gap 2: No Saved Creatives Gallery
+**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+The `useAdCreative` hook fetches `savedCreatives` but there's no UI component to display them.
 
-Add the legal statement in the summary section at the bottom of the consent form (currently lines 134-139).
-
-**Current:**
-```jsx
-<div className="bg-muted/50 rounded-xl p-4 text-center">
-  <p className="text-sm text-muted-foreground">
-    By submitting, you confirm that the information provided is accurate and complete.
-  </p>
-</div>
+#### Gap 3: Single Platform Preview Only
+**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` (line 260-262)
+```typescript
+<AdPreviewCard 
+  preview={currentPreview}
+  platform="x"  // Hardcoded to X only
+  isLoading={isGenerating}
+/>
 ```
 
-**Updated:**
-```jsx
-<div className="bg-muted/50 rounded-xl p-4 space-y-3">
-  <p className="text-sm text-muted-foreground text-center">
-    By submitting, you confirm that the information provided is accurate and complete.
-  </p>
-  <p className="text-xs text-muted-foreground/80">
-    By submitting this form, you agree we can contact you for follow-ups—via 
-    outbound calls, texts, emails, or other digital means—using AI tools or 
-    automated systems at the info you shared. Standard rates might apply, 
-    and you can opt out anytime.
-  </p>
-</div>
+#### Gap 4: Export Button Non-Functional
+**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` (lines 279-282)
+```typescript
+<Button variant="outline">
+  <Download className="mr-2 h-4 w-4" />
+  Export
+</Button>
+```
+No onClick handler attached.
+
+#### Gap 5: Mock Analytics Data
+**File:** `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx`
+All analytics are hardcoded mock data, not fetched from the database.
+
+## Comprehensive Refactoring Plan
+
+### Phase 1: Implement AI Image Generation
+
+**File to Modify:** `supabase/functions/generate-ad-creative/index.ts`
+
+Add image generation using the Lovable AI Gateway with `google/gemini-2.5-flash-image`:
+
+```typescript
+// After text generation, add image generation:
+if (generateImage) {
+  const imagePrompt = `Create a professional recruitment ad image for a ${jobTypeLabel} truck driver position.
+
+Design requirements:
+- ${aspectRatio} aspect ratio
+- Professional, modern recruitment marketing style
+- Feature trucking/transportation imagery
+- Include visual elements for: ${benefitsList}
+- Eye-catching but corporate appropriate
+- High contrast for social media visibility
+- No text in the image (text will be overlaid)
+
+Style: Professional social media recruitment ad for ${companyName || 'a trucking company'}.`;
+
+  const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash-image",
+      messages: [{ role: "user", content: imagePrompt }],
+      modalities: ["image", "text"],
+    }),
+  });
+
+  if (imageResponse.ok) {
+    const imageData = await imageResponse.json();
+    const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (imageUrl) {
+      // Upload base64 to Supabase Storage and return public URL
+      // Or return base64 directly for client-side display
+    }
+  }
+}
 ```
 
-### 2. Update DetailedConsentSection.tsx
+### Phase 2: Create Saved Creatives Gallery Component
 
-Add a new summary section at the bottom of the consent form (after line 259) with the legal statement.
+**New File:** `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx`
 
-**Add before closing `</div>`:**
-```jsx
-{/* Legal Disclosure */}
-<div className="bg-muted/50 rounded-xl p-4 space-y-3">
-  <p className="text-sm text-muted-foreground text-center">
-    By submitting, you confirm that the information provided is accurate and complete.
-  </p>
-  <p className="text-xs text-muted-foreground/80">
-    By submitting this form, you agree we can contact you for follow-ups—via 
-    outbound calls, texts, emails, or other digital means—using AI tools or 
-    automated systems at the info you shared. Standard rates might apply, 
-    and you can opt out anytime.
-  </p>
-</div>
-```
+Create a gallery component to display saved creatives with:
+- Grid layout of creative cards
+- Quick preview on hover
+- Actions: Edit, Delete, Publish, Duplicate
+- Filter by job type, date, platform
+- Pagination or infinite scroll
+- Empty state with CTA to create first creative
+
+### Phase 3: Multi-Platform Preview
+
+**File to Modify:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+
+Add platform tabs for preview:
+- X (Twitter) - 280 char limit
+- Facebook - Full content
+- Instagram - 2200 char limit
+- LinkedIn - 3000 char limit
+- TikTok - Vertical video focus
+
+**Enhance AdPreviewCard:**
+- Show character count vs. limit
+- Platform-specific styling (dark mode for X, blue for Facebook, etc.)
+- Warning badges when content exceeds limits
+- Platform-specific CTA button styles
+
+### Phase 4: Implement Export Functionality
+
+**File to Modify:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+
+Add export capabilities:
+- Download image as PNG/JPG
+- Export text as formatted clipboard copy
+- Export as JSON for API integration
+- Generate shareable preview link
+
+### Phase 5: Enhance Ad Creative Studio UX
+
+**Complete UX Overhaul:**
+
+1. **Split View Layout:**
+   - Left: Configuration form
+   - Center: Live preview (switchable platforms)
+   - Right: Saved creatives sidebar (collapsible)
+
+2. **Add AI Suggestions Panel:**
+   - Auto-suggest benefits based on job type
+   - Trending hashtags by industry
+   - Optimal posting times by platform
+
+3. **Batch Generation:**
+   - Generate multiple variations at once
+   - A/B test different headlines
+   - Quick regenerate with variations
+
+4. **Template System:**
+   - Save configurations as reusable templates
+   - Organization-wide template library
+   - Quick apply templates
+
+### Phase 6: Connect Real Analytics
+
+**File to Modify:** `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx`
+
+Create hook and queries for:
+- Real engagement data from `social_interactions` table
+- Creative performance from `generated_ad_creatives` table
+- Platform-wise breakdown from actual API responses
+- Time-series charts with Recharts
+
+### Phase 7: Video Generation Support (Future)
+
+Add video generation using external services or AI video APIs:
+- Short-form video for TikTok/Reels
+- Animated text overlays
+- Template-based video creation
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` | Display saved ad creatives |
+| `src/features/social-engagement/components/admin/CreativeCard.tsx` | Individual creative preview card |
+| `src/features/social-engagement/components/admin/PlatformPreviewTabs.tsx` | Multi-platform preview switcher |
+| `src/features/social-engagement/components/admin/ExportMenu.tsx` | Export options dropdown |
+| `src/features/social-engagement/hooks/useAnalyticsDashboard.ts` | Real analytics data fetching |
+| `src/features/social-engagement/utils/platformLimits.ts` | Character limits and validation |
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/apply/ConsentSection.tsx` | Update summary section to include legal statement |
-| `src/components/apply/detailed/DetailedConsentSection.tsx` | Add new legal disclosure section at bottom |
+| `supabase/functions/generate-ad-creative/index.ts` | Add AI image generation |
+| `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` | Complete UX overhaul |
+| `src/features/social-engagement/components/admin/AdPreviewCard.tsx` | Platform-specific styling |
+| `src/features/social-engagement/components/admin/SocialAnalyticsPanel.tsx` | Connect real data |
+| `src/features/social-engagement/pages/SuperAdminSocialBeacons.tsx` | Add Creatives tab |
 
-## Design Considerations
+## Implementation Priority
 
-- The statement uses smaller text (`text-xs`) to distinguish it from the main consent confirmations
-- Slightly muted opacity (`text-muted-foreground/80`) indicates supplementary legal text
-- Placed at the bottom of consent sections, above the submit button
-- Both forms will display the statement consistently
+1. **Critical (Phase 1):** Implement AI image generation - This is the most visible missing feature
+2. **High (Phase 2-3):** Saved creatives gallery + multi-platform preview
+3. **Medium (Phase 4-5):** Export functionality + UX enhancements
+4. **Lower (Phase 6-7):** Real analytics + video generation
 
-## Technical Details
+## Technical Considerations
 
-- No new dependencies required
-- No changes to form validation logic
-- Statement is purely informational (not a required checkbox)
-- Applies to all submission paths including "Skip to Submit" quick flow
+### Image Generation
+- Use `google/gemini-2.5-flash-image` for standard quality
+- Use `google/gemini-3-pro-image-preview` for higher quality (consider as option)
+- Store generated images in Supabase Storage for persistence
+- Return both base64 for immediate preview and storage URL for saving
+
+### Storage Management
+- Create `ad-creatives` storage bucket
+- Implement cleanup for orphaned images
+- Set appropriate RLS policies for organization isolation
+
+### Rate Limiting
+- Add debounce on generate button
+- Show clear feedback for rate limit errors (429)
+- Queue multiple generation requests
+
+## Expected Outcome
+
+After implementation:
+- Users can generate complete ad creatives with AI images
+- Preview how ads will look across all supported platforms
+- Save, manage, and reuse creatives
+- Export creatives for use outside the platform
+- Track real performance metrics
+- Best-in-class social recruitment creative studio
 
