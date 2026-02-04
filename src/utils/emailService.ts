@@ -5,6 +5,7 @@ export interface SendEmailParams {
   to: string;
   candidateName: string;
   jobTitle: string;
+  companyName?: string; // Client name for applicant-facing branded emails
   type: 'application_received' | 'status_update' | 'interview_invitation' | 'offer' | 'rejection';
   additionalData?: {
     status?: string;
@@ -24,7 +25,7 @@ export const sendApplicationEmail = async (params: SendEmailParams): Promise<voi
         subject: getEmailSubject(params.type, params.jobTitle),
         candidateName: params.candidateName,
         jobTitle: params.jobTitle,
-        companyName: 'ATS.me',
+        companyName: params.companyName || 'Company', // Use client name for branded emails
         type: params.type,
         additionalData: params.additionalData,
       },
@@ -63,12 +64,14 @@ const getEmailSubject = (type: string, jobTitle: string): string => {
 export const sendApplicationReceivedEmail = async (
   candidateEmail: string,
   candidateName: string,
-  jobTitle: string
+  jobTitle: string,
+  companyName?: string // Client name for applicant-facing branded emails
 ) => {
   return sendApplicationEmail({
     to: candidateEmail,
     candidateName,
     jobTitle,
+    companyName: companyName || 'Company',
     type: 'application_received',
   });
 };
@@ -78,12 +81,14 @@ export const sendStatusUpdateEmail = async (
   candidateEmail: string,
   candidateName: string,
   jobTitle: string,
-  status: string
+  status: string,
+  companyName?: string // Client name for applicant-facing branded emails
 ) => {
   return sendApplicationEmail({
     to: candidateEmail,
     candidateName,
     jobTitle,
+    companyName: companyName || 'Company',
     type: 'status_update',
     additionalData: { status },
   });
@@ -99,12 +104,14 @@ export const sendInterviewInvitationEmail = async (
     time: string;
     type: string;
     link?: string;
-  }
+  },
+  companyName?: string // Client name for applicant-facing branded emails
 ) => {
   return sendApplicationEmail({
     to: candidateEmail,
     candidateName,
     jobTitle,
+    companyName: companyName || 'Company',
     type: 'interview_invitation',
     additionalData: {
       interviewDate: interviewDetails.date,
@@ -119,12 +126,14 @@ export const sendInterviewInvitationEmail = async (
 export const sendOfferEmail = async (
   candidateEmail: string,
   candidateName: string,
-  jobTitle: string
+  jobTitle: string,
+  companyName?: string // Client name for applicant-facing branded emails
 ) => {
   return sendApplicationEmail({
     to: candidateEmail,
     candidateName,
     jobTitle,
+    companyName: companyName || 'Company',
     type: 'offer',
   });
 };
@@ -134,12 +143,14 @@ export const sendRejectionEmail = async (
   candidateEmail: string,
   candidateName: string,
   jobTitle: string,
-  reason?: string
+  reason?: string,
+  companyName?: string // Client name for applicant-facing branded emails
 ) => {
   return sendApplicationEmail({
     to: candidateEmail,
     candidateName,
     jobTitle,
+    companyName: companyName || 'Company',
     type: 'rejection',
     additionalData: { rejectionReason: reason },
   });

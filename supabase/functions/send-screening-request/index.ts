@@ -283,10 +283,10 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get application details
+    // Get application details (include client for applicant-facing email branding)
     const { data: application, error: appError } = await supabase
       .from('applications')
-      .select('*, job_listings(title, organization_id, organizations(name))')
+      .select('*, job_listings(title, organization_id, client_id, organizations(name), clients(name))')
       .eq('id', applicationId)
       .single();
 
@@ -297,7 +297,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     const applicantName = `${application.first_name || ''} ${application.last_name || ''}`.trim() || 'Applicant';
     const applicantEmail = application.applicant_email;
-    const organizationName = application.job_listings?.organizations?.name || 'Organization';
+    // Use client name for applicant-facing emails (privacy), fallback to org name
+    const clientName = application.job_listings?.clients?.name || 
+                       application.job_listings?.organizations?.name || 
+                       'Company';
 
     // Create screening request record
     const { data: screeningRequest, error: requestError } = await supabase
@@ -329,12 +332,12 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Valid recipient email is required');
     }
 
-    // Generate email content
+    // Generate email content (uses clientName for applicant-facing branding)
     const emailContent = generateScreeningEmail(
       requestType,
       applicantName,
       applicantEmail || '',
-      organizationName,
+      clientName,
       portalLink,
       providerName
     );
