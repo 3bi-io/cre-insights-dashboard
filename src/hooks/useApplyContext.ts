@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface ApplyContext {
   jobTitle: string | null;
   clientName: string | null;
+  clientLogoUrl: string | null;
   location: string | null;
   jobListingId: string | null;
   source: string | null;
@@ -16,6 +17,7 @@ export const useApplyContext = (): ApplyContext => {
   const [context, setContext] = useState<ApplyContext>({
     jobTitle: null,
     clientName: null,
+    clientLogoUrl: null,
     location: null,
     jobListingId: null,
     source: null,
@@ -46,21 +48,24 @@ export const useApplyContext = (): ApplyContext => {
 
         if (jobListing) {
           let clientName: string | null = null;
+          let clientLogoUrl: string | null = null;
 
-          // Step 2: Fetch client name from public_client_info view
+          // Step 2: Fetch client name and logo from public_client_info view
           if (jobListing.client_id) {
             const { data: clientInfo } = await supabase
               .from('public_client_info')
-              .select('name')
+              .select('name, logo_url')
               .eq('id', jobListing.client_id)
               .maybeSingle();
             
             clientName = clientInfo?.name || null;
+            clientLogoUrl = clientInfo?.logo_url || null;
           }
           
           setContext({
             jobTitle: jobListing.title,
             clientName,
+            clientLogoUrl,
             location: jobListing.city && jobListing.state 
               ? `${jobListing.city}, ${jobListing.state}` 
               : null,
@@ -76,6 +81,7 @@ export const useApplyContext = (): ApplyContext => {
       setContext({
         jobTitle: null,
         clientName: null,
+        clientLogoUrl: null,
         location: null,
         jobListingId: null,
         source: utmSource,

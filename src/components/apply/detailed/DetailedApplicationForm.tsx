@@ -52,6 +52,7 @@ export const DetailedApplicationForm = () => {
   const {
     jobTitle,
     clientName,
+    clientLogoUrl,
     location,
     source,
     isLoading: contextLoading,
@@ -125,6 +126,7 @@ export const DetailedApplicationForm = () => {
           <ApplicationHeader
             jobTitle={jobTitle || 'Complete Application'}
             clientName={clientName}
+            clientLogoUrl={clientLogoUrl}
             location={location}
             source={source}
             isLoading={contextLoading}

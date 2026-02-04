@@ -1,10 +1,12 @@
 import React, { memo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { MapPin, Building2, Share2 } from 'lucide-react';
 
 interface ApplicationHeaderProps {
   jobTitle?: string | null;
   clientName?: string | null;
+  clientLogoUrl?: string | null;
   location?: string | null;
   source?: string | null;
   isLoading?: boolean;
@@ -55,6 +57,7 @@ MetadataBadge.displayName = 'MetadataBadge';
 export const ApplicationHeader = memo(({ 
   jobTitle, 
   clientName, 
+  clientLogoUrl,
   location, 
   source,
   isLoading = false 
@@ -75,9 +78,16 @@ export const ApplicationHeader = memo(({
       {hasContext ? (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-muted-foreground text-base sm:text-sm px-4">
           {clientName && (
-            <MetadataBadge icon={Building2}>
+            <span className="inline-flex items-center gap-2">
+              {clientLogoUrl ? (
+                <LogoAvatar size="sm" className="h-8 w-8">
+                  <LogoAvatarImage src={clientLogoUrl} alt={`${clientName} logo`} />
+                </LogoAvatar>
+              ) : (
+                <Building2 className="h-4 w-4" aria-hidden="true" />
+              )}
               {clientName}
-            </MetadataBadge>
+            </span>
           )}
           {location && (
             <MetadataBadge icon={MapPin}>

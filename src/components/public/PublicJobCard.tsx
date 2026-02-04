@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, DollarSign, Building2, Clock, ExternalLink, Mic, Info } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
@@ -84,19 +84,17 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
               </CardTitle>
             </Link>
             <div className="flex items-center gap-3 text-sm sm:text-base text-muted-foreground mb-2">
-              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border">
+              <LogoAvatar size="md" className="sm:h-12 sm:w-12">
                 {job.clients?.logo_url ? (
-                  <AvatarImage 
+                  <LogoAvatarImage 
                     src={job.clients.logo_url} 
                     alt={`${companyName} logo`}
-                    className="object-contain p-1 bg-background"
                     loading="lazy"
                   />
-                ) : null}
-                <AvatarFallback className="bg-muted">
-                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
+                ) : (
+                  <LogoAvatarFallback iconSize="md" />
+                )}
+              </LogoAvatar>
               <span className="font-medium text-foreground">{companyName}</span>
             </div>
             {job.job_categories?.name && (

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { 
   MapPin, DollarSign, Building2, Clock, Briefcase, 
   ArrowLeft, ExternalLink, Share2, Mic 
@@ -192,18 +192,16 @@ const JobDetailsPage: React.FC = () => {
             <CardContent className="p-4 sm:p-6 lg:p-8">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4 lg:mb-6">
-                <Avatar className="h-14 w-14 lg:h-16 lg:w-16 border shrink-0">
+                <LogoAvatar size="lg" className="lg:h-16 lg:w-16">
                   {job.clients?.logo_url ? (
-                    <AvatarImage 
+                    <LogoAvatarImage 
                       src={job.clients.logo_url} 
                       alt={`${companyName} logo`}
-                      className="object-contain p-2 bg-background"
                     />
-                  ) : null}
-                  <AvatarFallback className="bg-muted">
-                    <Building2 className="h-6 w-6 lg:h-8 lg:w-8 text-muted-foreground" />
-                  </AvatarFallback>
-                </Avatar>
+                  ) : (
+                    <LogoAvatarFallback iconSize="lg" />
+                  )}
+                </LogoAvatar>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 lg:mb-2 leading-tight">{displayTitle}</h1>
                   <p className="text-base lg:text-lg text-muted-foreground mb-2 lg:mb-3">{companyName}</p>
