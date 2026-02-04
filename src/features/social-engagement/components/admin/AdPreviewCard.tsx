@@ -18,20 +18,60 @@ const PLATFORM_ICONS: Record<SocialBeaconPlatform, React.ElementType> = {
   x: Twitter,
   facebook: Facebook,
   instagram: Instagram,
-  whatsapp: () => null, // WhatsApp doesn't support ad creatives
+  whatsapp: () => null,
   tiktok: Video,
   reddit: MessageSquare,
   linkedin: Linkedin,
 };
 
-const PLATFORM_STYLES: Record<SocialBeaconPlatform, { bg: string; border: string }> = {
-  x: { bg: 'bg-background', border: 'border-border' },
-  facebook: { bg: 'bg-[hsl(221,44%,97%)]', border: 'border-[hsl(221,44%,41%,0.2)]' },
-  instagram: { bg: 'bg-gradient-to-br from-purple-50 to-pink-50', border: 'border-pink-200' },
-  whatsapp: { bg: 'bg-green-50', border: 'border-green-200' },
-  tiktok: { bg: 'bg-background', border: 'border-border' },
-  reddit: { bg: 'bg-orange-50', border: 'border-orange-200' },
-  linkedin: { bg: 'bg-[hsl(201,100%,97%)]', border: 'border-[hsl(201,100%,35%,0.2)]' },
+const PLATFORM_NAMES: Record<SocialBeaconPlatform, string> = {
+  x: 'X (Twitter)',
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  whatsapp: 'WhatsApp',
+  tiktok: 'TikTok',
+  reddit: 'Reddit',
+  linkedin: 'LinkedIn',
+};
+
+const PLATFORM_STYLES: Record<SocialBeaconPlatform, { bg: string; border: string; accent: string; dark?: boolean }> = {
+  x: { 
+    bg: 'bg-[hsl(0,0%,7%)]', 
+    border: 'border-[hsl(0,0%,20%)]', 
+    accent: 'text-[hsl(0,0%,100%)]',
+    dark: true,
+  },
+  facebook: { 
+    bg: 'bg-[hsl(221,44%,97%)]', 
+    border: 'border-[hsl(221,44%,41%,0.2)]',
+    accent: 'text-[hsl(221,44%,41%)]',
+  },
+  instagram: { 
+    bg: 'bg-gradient-to-br from-[hsl(280,80%,97%)] to-[hsl(340,80%,97%)]', 
+    border: 'border-[hsl(340,70%,70%,0.3)]',
+    accent: 'text-[hsl(340,70%,50%)]',
+  },
+  whatsapp: { 
+    bg: 'bg-[hsl(142,70%,97%)]', 
+    border: 'border-[hsl(142,70%,40%,0.2)]',
+    accent: 'text-[hsl(142,70%,35%)]',
+  },
+  tiktok: { 
+    bg: 'bg-[hsl(0,0%,5%)]', 
+    border: 'border-[hsl(0,0%,20%)]',
+    accent: 'text-[hsl(0,0%,100%)]',
+    dark: true,
+  },
+  reddit: { 
+    bg: 'bg-[hsl(16,100%,97%)]', 
+    border: 'border-[hsl(16,100%,50%,0.2)]',
+    accent: 'text-[hsl(16,100%,50%)]',
+  },
+  linkedin: { 
+    bg: 'bg-[hsl(201,100%,97%)]', 
+    border: 'border-[hsl(201,100%,35%,0.2)]',
+    accent: 'text-[hsl(201,100%,35%)]',
+  },
 };
 
 export function AdPreviewCard({
@@ -42,6 +82,7 @@ export function AdPreviewCard({
 }: AdPreviewCardProps) {
   const PlatformIcon = PLATFORM_ICONS[platform];
   const styles = PLATFORM_STYLES[platform];
+  const isDark = styles.dark;
 
   if (isLoading) {
     return (
@@ -74,7 +115,10 @@ export function AdPreviewCard({
       )}>
         <PlatformIcon className="h-12 w-12 text-muted-foreground/50 mb-4" />
         <p className="text-muted-foreground text-sm">
-          Configure your ad and click "Generate Concept" to see a preview
+          Configure your ad and click "Generate Creative" to see a preview
+        </p>
+        <p className="text-muted-foreground/70 text-xs mt-2">
+          AI will generate copy and an image for your ad
         </p>
       </Card>
     );
@@ -82,37 +126,67 @@ export function AdPreviewCard({
 
   return (
     <Card className={cn(
-      'overflow-hidden',
+      'overflow-hidden transition-all',
       styles.bg,
       styles.border,
       className
     )}>
+      {/* Platform indicator */}
+      <div className={cn(
+        'px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider border-b flex items-center justify-between',
+        isDark ? 'bg-white/5 border-white/10 text-white/60' : 'bg-black/5 border-black/5 text-muted-foreground'
+      )}>
+        <span>{PLATFORM_NAMES[platform]} Preview</span>
+        <Badge variant="outline" className={cn(
+          'text-[9px] px-1.5 py-0',
+          isDark ? 'border-white/20 text-white/60' : ''
+        )}>
+          Sponsored
+        </Badge>
+      </div>
+
       {/* Post Header */}
-      <div className="p-4 flex items-center gap-3 border-b border-border/50">
-        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <PlatformIcon className="h-5 w-5 text-primary" />
+      <div className={cn(
+        'p-4 flex items-center gap-3 border-b',
+        isDark ? 'border-white/10' : 'border-black/5'
+      )}>
+        <div className={cn(
+          'h-10 w-10 rounded-full flex items-center justify-center',
+          isDark ? 'bg-white/10' : 'bg-primary/10'
+        )}>
+          <PlatformIcon className={cn('h-5 w-5', styles.accent)} />
         </div>
         <div>
-          <p className="font-semibold text-sm">Your Company</p>
-          <p className="text-xs text-muted-foreground">Sponsored</p>
+          <p className={cn('font-semibold text-sm', isDark ? 'text-white' : 'text-foreground')}>
+            {preview.config.companyName || 'Your Company'}
+          </p>
+          <p className={cn('text-xs', isDark ? 'text-white/50' : 'text-muted-foreground')}>
+            Sponsored • {preview.config.location || 'United States'}
+          </p>
         </div>
       </div>
 
       {/* Post Content */}
       <div className="p-4 space-y-3">
         {/* Headline */}
-        <h4 className="font-bold text-base leading-tight">
+        <h4 className={cn(
+          'font-bold text-base leading-tight',
+          isDark ? 'text-white' : 'text-foreground'
+        )}>
           {preview.content.headline}
         </h4>
 
         {/* Body */}
-        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+        <p className={cn(
+          'text-sm leading-relaxed whitespace-pre-wrap',
+          isDark ? 'text-white/80' : 'text-muted-foreground'
+        )}>
           {preview.content.body}
         </p>
 
-        {/* Media placeholder */}
+        {/* Media */}
         {preview.mediaUrl ? (
-          <div className="rounded-lg overflow-hidden">
+          <div className="rounded-lg overflow-hidden border border-border/20">
             <img 
               src={preview.mediaUrl} 
               alt="Ad creative" 
@@ -120,14 +194,19 @@ export function AdPreviewCard({
             />
           </div>
         ) : (
-          <div className="rounded-lg bg-muted/50 h-48 flex items-center justify-center border border-dashed border-border">
-            <p className="text-xs text-muted-foreground">
-              {preview.config.mediaType === 'ai_image' 
-                ? 'AI image will be generated' 
-                : preview.config.mediaType === 'ai_video'
-                ? 'AI video will be generated'
-                : 'Upload your media'}
-            </p>
+          <div className={cn(
+            'rounded-lg h-48 flex items-center justify-center border border-dashed',
+            isDark ? 'bg-white/5 border-white/20' : 'bg-muted/50 border-border'
+          )}>
+            <div className="text-center">
+              <p className={cn('text-xs', isDark ? 'text-white/50' : 'text-muted-foreground')}>
+                {preview.config.mediaType === 'ai_image' 
+                  ? '🎨 AI image generating...' 
+                  : preview.config.mediaType === 'ai_video'
+                  ? '🎬 AI video will be generated'
+                  : '📷 Upload your media'}
+              </p>
+            </div>
           </div>
         )}
 
@@ -138,7 +217,12 @@ export function AdPreviewCard({
               <Badge 
                 key={index} 
                 variant="secondary" 
-                className="text-xs font-normal bg-primary/10 text-primary hover:bg-primary/20"
+                className={cn(
+                  'text-xs font-normal',
+                  isDark 
+                    ? 'bg-white/10 text-white/80 hover:bg-white/20 border-none' 
+                    : 'bg-primary/10 text-primary hover:bg-primary/20'
+                )}
               >
                 #{tag}
               </Badge>
@@ -149,18 +233,27 @@ export function AdPreviewCard({
         {/* Call to Action */}
         {preview.content.callToAction && (
           <div className="pt-2">
-            <button className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            <button className={cn(
+              'w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors',
+              isDark 
+                ? 'bg-white text-black hover:bg-white/90' 
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            )}>
               {preview.content.callToAction}
             </button>
           </div>
         )}
       </div>
 
-      {/* Post Footer - Platform specific engagement */}
-      <div className="px-4 py-3 border-t border-border/50 flex items-center justify-between text-muted-foreground text-xs">
+      {/* Post Footer */}
+      <div className={cn(
+        'px-4 py-3 border-t flex items-center justify-between text-xs',
+        isDark ? 'border-white/10 text-white/50' : 'border-black/5 text-muted-foreground'
+      )}>
         <span>❤️ Like</span>
         <span>💬 Comment</span>
         <span>🔄 Share</span>
+        {platform === 'linkedin' && <span>📤 Send</span>}
       </div>
     </Card>
   );
