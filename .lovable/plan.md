@@ -1,229 +1,298 @@
 
 
-## Application Source Review & Organic Traffic Optimization Plan
+## Field Mapping Review for All Application Sources
 
-### Executive Summary ✅ PHASE 1 COMPLETE
+### Executive Summary
 
-After a thorough review of all application sources and traffic collection mechanisms (excluding Meta), I've identified several areas where engagements are properly collected, areas needing improvement, and opportunities to optimize organic traffic sources.
-
-**Completed (Phase 1):**
-- ✅ Added `utm_source`, `utm_medium`, `utm_campaign` columns to applications table
-- ✅ Updated `submit-application` edge function to save UTM parameters
-- ✅ Cleaned up duplicate cron jobs (removed daily/6-hour versions, kept 5-min versions)
-- ✅ Added `organization_id` filter to Indeed XML feed
-- ✅ Fixed feed access logging (now working)
+After a comprehensive review of all field mapping across 5 application sources, I've identified significant data quality gaps and inconsistencies that are impacting recruiter productivity and downstream ATS integration quality.
 
 ---
 
-### Current State Analysis
+### Current Data Quality by Source (Last 30 Days)
 
-#### Application Sources Currently Tracked
+| Source | Total | CDL | Exp | CDL Class | City | Zip | Veteran | Drug |
+|--------|-------|-----|-----|-----------|------|-----|---------|------|
+| **Direct Application** | 75 | 9% | 8% | 0% | 100% | 100% | 8% | 9% |
+| **ZipRecruiter** | 63 | 0% | 0% | 0% | 100% | 100% | 0% | 0% |
+| **Indeed** | 50 | 0% | 0% | 0% | 100% | 100% | 0% | 0% |
+| **ElevenLabs** | 18 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
+| **Embed Form** | 4 | 100% | 100% | 0% | 100% | 100% | 100% | 100% |
 
-| Source | Count (30 days) | Status | Collection Method |
-|--------|-----------------|--------|-------------------|
-| Direct Application | 75 | Active | `submit-application` edge function |
-| ZipRecruiter | 63 | Active | Integration endpoint |
-| Indeed | 48 | Active | `inbound-applications` webhook |
-| ElevenLabs (Voice) | 18 | Active | Voice sync every 5 min |
-| Embed Form | 4 | Active | Referral tracking |
-| CDL Job Cast | 0 (recent) | Syncing | `sync-cdl-feeds` every 5 min |
-
-#### Issues Identified
-
-**1. ZipRecruiter Integration - Simulated Data**
-- The `ziprecruiter-integration` edge function returns simulated analytics and job postings when credentials aren't configured
-- No inbound application webhook exists for ZipRecruiter (applications are manually entered or come through Indeed)
-- **Impact**: 63 applications show "ZipRecruiter" source but the actual collection path is unclear
-
-**2. CDL Job Cast - No Application Sync**
-- The `sync-cdl-feeds` function syncs **jobs only**, not applications
-- The `fetch-application-feeds` function parses XML for applications but isn't called by any cron job
-- Applications from CDL Job Cast partners (Pemberton, Danny Herman, Novco, Day and Ross) may not be automatically ingested
-- **Impact**: Missing automated application collection from CDL partners
-
-**3. Google Jobs - Feed Access Logging Empty**
-- `feed_access_logs` table returns empty results despite having the logging infrastructure
-- Google Jobs XML sitemap feed exists but no crawler activity is being tracked
-- **Impact**: Cannot measure Google Jobs effectiveness
-
-**4. Indeed XML Feed - Missing Organization Filter**
-- The `indeed-xml-feed` function serves all active jobs globally without organization filtering
-- No `organization_id` parameter support like other feeds
-- **Impact**: Cannot segment Indeed feeds by organization
-
-**5. Duplicate Cron Jobs**
-- Both old and new cron jobs are active:
-  - `sync-cdl-feeds-daily` (old) AND `sync-cdl-feeds-5min` (new)
-  - `meta-leads-sync-every-6-hours` (old) AND `meta-leads-sync-5min` (new)
-- **Impact**: Resource waste and potential duplicate processing
-
-**6. Missing UTM Column in Database**
-- Applications table lacks `utm_source` column despite the code attempting to collect it
-- UTM tracking parameters are being sent but likely stored in `referral_source` or lost
+**Key Insight**: Only the Embed Form has comprehensive screening data. Voice applications are missing critical location data. Indeed and ZipRecruiter lack all CDL qualification fields.
 
 ---
 
-### Implementation Plan
+### Source-by-Source Analysis
 
-#### Phase 1: Fix Critical Data Collection Issues
+#### 1. Direct Application (submit-application)
 
-**1.1 Create CDL Applications Sync Cron Job** ✅ DONE
+**Status**: Well-mapped, but frontend forms may not be collecting all fields
 
-Created `sync-cdl-applications-5min` cron job that:
-- Runs every 5 minutes (`*/5 * * * *`)
-- Calls `fetch-application-feeds` to parse XML from CDL Job Cast
-- Forwards parsed applications to `inbound-applications` endpoint with deduplication
+**Field Mapping Quality**: GOOD
 
-**1.2 Add Missing `utm_source` Fields to Applications Table** ✅ DONE
+- Supports 50+ fields including extended CDL data
+- Proper phone normalization
+- UTM tracking (utm_source, utm_medium, utm_campaign)
+- Auto zip-to-city lookup
+- ATS auto-post integration
 
-```sql
-ALTER TABLE applications 
-  ADD COLUMN IF NOT EXISTS utm_source VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS utm_medium VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS utm_campaign VARCHAR(100);
+**Issues Found**:
+| Issue | Severity | Details |
+|-------|----------|---------|
+| Low CDL capture (9%) | Medium | Frontend forms may not prompt for CDL data |
+| No cdl_class capture | Medium | Field exists but always empty |
+| Missing cdl_endorsements | Low | Array field never populated |
+
+**Recommendations**:
+- Audit frontend Quick Apply form to ensure CDL fields are prominently requested
+- Add cdl_class dropdown (A, B, C)
+- Add endorsement checkboxes (Hazmat, Tanker, Doubles/Triples)
+
+---
+
+#### 2. ZipRecruiter Webhook (ziprecruiter-webhook)
+
+**Status**: Functional but incomplete field mapping
+
+**Field Mapping Quality**: MINIMAL
+
+Currently maps:
+```text
+first_name, last_name, email, phone, city, state, zip, source
 ```
 
-Update `submit-application` edge function to persist these fields.
+**Missing Critical Fields**:
+| Field | ZipRecruiter Equivalent | Impact |
+|-------|------------------------|--------|
+| cdl | candidate.cdl_license | Cannot qualify drivers |
+| exp | candidate.years_experience | Cannot screen experience |
+| cdl_class | candidate.cdl_class | Cannot determine license type |
+| resume_url | resume.url | Document not linked |
+| education_level | candidate.education | Missing qualification data |
 
-**1.3 Clean Up Duplicate Cron Jobs** ✅ DONE
+**Recommendations**:
+1. Expand `parseApplicationData` to capture ZipRecruiter's extended candidate fields
+2. Map resume_url to a new `resume_url` column or `notes` field
+3. Add cover_letter to notes
 
-```sql
-SELECT cron.unschedule('sync-cdl-feeds-daily');
-SELECT cron.unschedule('meta-leads-sync-every-6-hours');
+**Proposed Updated Mapping**:
+```typescript
+// Enhanced ZipRecruiter field mapping
+return {
+  // Existing fields...
+  cdl: data.cdl || data.cdl_license || data.has_cdl || '',
+  cdl_class: data.cdl_class || data.license_class || '',
+  exp: data.years_experience || data.experience_years || data.driving_experience || '',
+  education_level: data.education || data.education_level || '',
+  work_authorization: data.work_authorization || data.authorization || '',
+  veteran: data.veteran_status || data.is_veteran || '',
+}
 ```
 
-#### Phase 2: Enhance Feed Tracking
+---
 
-**2.1 Fix Feed Access Logging** ✅ DONE
+#### 3. Indeed Applications (inbound-applications)
 
-Fixed for:
-- ✅ `indeed-xml-feed` - Fixed logging and added `organization_id` parameter support
-- ✅ `google-jobs-xml` - Logging functional
-- ✅ `universal-xml-feed` - IP logging working
+**Status**: Uses generic inbound webhook - limited structured data
 
-**2.2 Add ZipRecruiter Inbound Webhook** ✅ DONE
+**Field Mapping Quality**: BASIC
 
-Created `ziprecruiter-webhook` edge function that handles:
-- Application notifications from ZipRecruiter
-- Candidate data mapping to applications table
-- Source tracking as "ZipRecruiter"
-- Duplicate detection (24-hour window)
-- Job listing matching by ID
+Indeed applications arrive via general webhook with these field aliases:
+```text
+first_name/firstName, last_name/lastName, email, phone, city, state, zip
+```
 
-**2.3 Enhance Indeed XML Feed** ✅ DONE (Phase 1)
+**Missing Fields**: CDL, experience, veteran status, drug screening consent
 
-#### Phase 3: Organic Traffic Optimization
+**Root Cause**: Indeed's standard webhook doesn't include custom screening questions. Their API requires "Indeed Apply" integration with custom questions configured in the Indeed employer dashboard.
 
-**3.1 Google Jobs Schema Improvements** ✅ DONE
-
-Enhanced `JobPosting` schema with:
-- ✅ `experienceRequirements` - Auto-extracted from description
-- ✅ `qualifications` - Extracted from requirements sections
-- ✅ `skills` - CDL/trucking skills detection
-- ✅ `educationRequirements` - Type support added
-- ✅ `responsibilities` - Type support added
-
-Created `src/utils/jobSchemaExtraction.ts` with:
-- `extractExperienceFromDescription()` - Parses experience patterns
-- `extractQualificationsFromDescription()` - Extracts skills and requirements
-
-**3.2 Enhance robots.txt for Better Crawling** ✅ DONE
-
-Added job-specific sitemaps to robots.txt:
-- Google Jobs XML sitemap
-- Indeed XML feed
-- Generate sitemap (dynamic)
-
-**3.3 Implement Google Indexing API Automation** ✅ DONE
-
-Created automated Google Indexing with:
-- `google-indexing-trigger` edge function for async notifications
-- Database trigger `trigger_google_indexing_on_job_change` on job_listings
-- Automatically notifies Google on:
-  - Job created (URL_UPDATED)
-  - Job title/status changed (URL_UPDATED)
-  - Job deactivated or deleted (URL_DELETED)
-- Requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret to be configured
-
-**3.4 Create SEO Dashboard for Organic Metrics** ⏳ (Future)
-
-New component to track:
-- Google Jobs impressions (via Search Console API)
-- Organic traffic by referrer
-- Job page views vs applications (conversion rate)
-- Top-performing job listings organically
+**Recommendations**:
+1. No code changes needed - this is an Indeed platform limitation
+2. Consider Indeed's "Screener Questions" feature in the Indeed employer portal
+3. Add intake form CTA for applicants to complete missing data
 
 ---
 
-### Technical Details
+#### 4. ElevenLabs Voice Applications (sync-voice-applications & inbound-applications)
 
-#### Database Migrations Required
+**Status**: Strong data_collection_results mapping but location data missing
 
-1. **Add UTM tracking columns to applications**
-2. **Remove duplicate cron jobs**
-3. **Create CDL applications sync cron**
+**Field Mapping Quality**: TARGETED CDL FIELDS
 
-#### Edge Functions to Modify
+Currently collects:
+| ElevenLabs Field | Mapped To | Capture Rate |
+|------------------|-----------|--------------|
+| GivenName | first_name | High |
+| FamilyName | last_name | High |
+| PrimaryPhone | phone | 100% |
+| InternetEmailAddress | applicant_email | Medium |
+| PostalCode | zip | 0% (issue!) |
+| Class_A_CDL | cdl | 0% (issue!) |
+| Class_A_CDL_Experience | exp | 0% (issue!) |
+| DriverType | driver_type | Low |
+| CanPassDrug | drug | Low |
+| Veteran_Status | veteran | Low |
+| consentGiven | consent | Low |
 
-| Function | Changes | Status |
-|----------|---------|--------|
-| `submit-application` | Save UTM params | ✅ Done |
-| `indeed-xml-feed` | Add `organization_id` filter | ✅ Done |
-| `fetch-application-feeds` | Connect to inbound pipeline | ✅ Done |
-| `sync-cdl-feeds` | (No change) | ✅ Active |
+**Critical Issues**:
+1. **Zip code not being captured** - 0% capture rate despite field mapping existing
+2. **CDL fields empty** - Either agent not collecting or mapping broken
+3. **City/State never populated** - No zip-to-location lookup for voice
 
-#### New Edge Functions
-
-| Function | Purpose | Status |
-|----------|---------|--------|
-| `ziprecruiter-webhook` | ZipRecruiter application webhook | ✅ Deployed |
-
-#### Frontend Components
-
-| Component | Changes |
-|-----------|---------|
-| `FeedAnalyticsSection` | Show real data when `feed_access_logs` populated |
-| `JobDetailsPage` | Add `experienceRequirements`, `qualifications` schema |
-
----
-
-### Recommended Priorities
-
-1. **High Priority (Immediate)**
-   - Add UTM columns and update submit-application
-   - Remove duplicate cron jobs
-   - Fix feed access logging
-
-2. **Medium Priority (This Week)**
-   - Create CDL applications sync
-   - Enhance JobPosting schema
-   - Add Indeed organization filter
-
-3. **Lower Priority (Future)**
-   - ZipRecruiter webhook
-   - Google Indexing automation
-   - SEO dashboard
+**Recommendations**:
+1. Add zip-to-city lookup in voice sync (like submit-application has)
+2. Audit ElevenLabs agent prompts to ensure CDL questions are asked
+3. Add fallback extraction from transcript if data_collection_results empty
 
 ---
 
-### Organic Traffic Optimization Recommendations
+#### 5. CDL Job Cast (fetch-application-feeds → inbound-applications)
 
-1. **Content Optimization**
-   - Ensure all job descriptions are 200+ words
-   - Include salary information on every job (Google prioritizes)
-   - Add clear location data (city, state, postal code)
+**Status**: XML parsing exists but 0 applications in last 30 days
 
-2. **Technical SEO**
-   - Dynamic sitemap is working correctly
-   - Add sitemap index file for multiple org sitemaps
-   - Implement breadcrumb schema (already present)
+**Field Mapping Quality**: GOOD (when working)
 
-3. **Link Building**
-   - Create shareable job links with UTM parameters
-   - Add social sharing meta tags (already present)
+Current XML field extraction:
+```typescript
+const application = {
+  first_name: extractField('firstname') || extractField('first_name'),
+  last_name: extractField('lastname') || extractField('last_name'),
+  applicant_email: extractField('email'),
+  phone: extractField('phone'),
+  city: extractField('city'),
+  state: extractField('state'),
+  zip: extractField('zip') || extractField('zipcode'),
+  cdl: extractField('cdl') || extractField('cdl_class'),
+  exp: extractField('experience') || extractField('exp'),
+  education_level: extractField('education'),
+  work_authorization: extractField('work_authorization'),
+  source: 'CDL Job Cast',
+};
+```
 
-4. **Conversion Optimization**
-   - Add "Apply with Voice" prominent CTA
-   - Implement one-click apply from Google Jobs (`directApply: true` is set)
-   - Track time-to-apply metrics
+**Issue**: The cron job was just created - need to verify feeds are actively returning application data vs just job listings.
+
+---
+
+#### 6. Outbound ATS (xml-post-adapter for Tenstreet)
+
+**Status**: Comprehensive mapping for outbound data
+
+**Field Mapping Quality**: EXCELLENT
+
+Tenstreet XML builder includes:
+- PersonalData: Name, DOB, Address, Phone, Email
+- Licenses: CDL class, endorsements, expiration, state
+- ApplicationData: Source, status tags
+- DisplayFields: Custom screening questions
+
+**Issues Found**:
+| Issue | Impact |
+|-------|--------|
+| cdl_endorsements rarely populated from inbound | Tenstreet gets empty endorsements |
+| cdl_expiration_date not collected on quick apply | Cannot send license validity |
+| employment_history rarely populated | Work history section empty |
+
+---
+
+### Cross-Source Field Matrix
+
+| Field | Direct App | ZipRecruiter | Indeed | ElevenLabs | CDL Job Cast | Tenstreet Out |
+|-------|------------|--------------|--------|------------|--------------|---------------|
+| first_name | YES | YES | YES | YES | YES | YES |
+| last_name | YES | YES | YES | YES | YES | YES |
+| email | YES | YES | YES | PARTIAL | YES | YES |
+| phone | YES | YES | YES | YES | YES | YES |
+| city | YES | YES | YES | NO | YES | YES |
+| state | YES | YES | YES | NO | YES | YES |
+| zip | YES | YES | YES | NO | YES | YES |
+| cdl | PARTIAL | NO | NO | NO | YES | YES |
+| cdl_class | NO | NO | NO | NO | YES | YES |
+| cdl_endorsements | NO | NO | NO | NO | PARTIAL | YES |
+| exp | PARTIAL | NO | NO | NO | YES | YES |
+| veteran | PARTIAL | NO | NO | PARTIAL | NO | NO |
+| drug | PARTIAL | NO | NO | PARTIAL | NO | NO |
+| consent | PARTIAL | NO | NO | PARTIAL | NO | NO |
+
+---
+
+### Priority Improvements
+
+#### High Priority (Immediate Impact)
+
+1. **Fix ElevenLabs location data capture**
+   - Add zip-to-city/state lookup after sync
+   - Debug why PostalCode from agent is not being saved
+   - Add city/state fields to voice agent prompts
+
+2. **Enhance ZipRecruiter webhook mapping**
+   - Add CDL, experience, education fields
+   - Map resume_url and cover_letter
+
+3. **Audit Quick Apply frontend forms**
+   - Ensure CDL questions are always shown
+   - Add cdl_class and endorsement selection
+
+#### Medium Priority (Quality Improvement)
+
+4. **Create normalized field extraction utility**
+   - Single source of truth for field aliases
+   - Reduce duplicate mapping code across webhooks
+
+5. **Add data quality monitoring**
+   - Dashboard showing field completion rates by source
+   - Alerts when quality drops below threshold
+
+6. **Implement intake form follow-up**
+   - For Indeed/ZipRecruiter with missing CDL data
+   - SMS/email link to complete screening questions
+
+#### Lower Priority (Enhancement)
+
+7. **CDL Job Cast application sync verification**
+   - Confirm feeds return applications (not just jobs)
+   - Test end-to-end flow
+
+8. **Add resume parsing integration**
+   - Extract work history from resume_url
+   - Auto-populate employment_history
+
+---
+
+### Database Schema Observation
+
+The applications table has 77+ columns supporting comprehensive data capture. The issue is not schema - it's source-specific collection gaps:
+
+**Well-utilized columns**: Personal info, location, status, timestamps
+
+**Under-utilized columns**: 
+- cdl_class (0% populated)
+- cdl_endorsements (0% populated)
+- driving_experience_years (rarely used)
+- employment_history (rarely populated)
+- military fields (rarely captured)
+
+---
+
+### Recommended Implementation Order
+
+1. **Phase 1 - Quick Wins (1-2 days)**
+   - Add zip lookup to voice sync
+   - Update ZipRecruiter webhook with expanded mapping
+   - Add CDL fields to Quick Apply form
+
+2. **Phase 2 - Voice Quality (2-3 days)**
+   - Debug ElevenLabs data_collection_results capture
+   - Audit agent prompt for complete CDL collection
+   - Add transcript fallback extraction
+
+3. **Phase 3 - Data Quality Dashboard (3-5 days)**
+   - Create admin view for field completion metrics
+   - Add source quality scoring
+   - Alert on degraded data quality
+
+4. **Phase 4 - Intake Flow (5-7 days)**
+   - Build SMS/email follow-up for incomplete applications
+   - Create mini-form for missing screening data
+   - Auto-trigger based on source and missing fields
 
