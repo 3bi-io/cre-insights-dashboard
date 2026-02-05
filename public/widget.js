@@ -29,7 +29,7 @@
 
   // Read configuration from data attributes
   var token = script.getAttribute('data-token');
-  var containerId = script.getAttribute('data-container') || 'ats-apply-widget';
+  var containerId = script.getAttribute('data-container') || 'apply-widget';
   var baseUrl = script.getAttribute('data-base-url') || 'https://ats.me';
   var minHeight = parseInt(script.getAttribute('data-min-height') || '600', 10);
 

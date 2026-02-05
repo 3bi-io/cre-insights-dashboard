@@ -238,7 +238,7 @@ export function useToggleEmbedTokenActive() {
 /**
  * Generate the widget embed code for a token
  */
-export function generateWidgetCode(token: string, containerId: string = 'ats-apply-widget'): string {
+export function generateWidgetCode(token: string, containerId: string = 'apply-widget'): string {
   return `<!-- ATS.me Application Widget -->
 <div id="${containerId}"></div>
 <script 
@@ -259,7 +259,7 @@ export function generateWidgetCodeWithOptions(
     minHeight?: number;
   } = {}
 ): string {
-  const containerId = options.containerId || 'ats-apply-widget';
+  const containerId = options.containerId || 'apply-widget';
   const minHeightAttr = options.minHeight ? `\n  data-min-height="${options.minHeight}"` : '';
   
   return `<!-- ATS.me Application Widget -->
