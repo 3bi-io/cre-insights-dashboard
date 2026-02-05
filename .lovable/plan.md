@@ -1,53 +1,78 @@
 
 
-## Increase Logo Size on Job Details Page
+## Fix: Pass Logo URL to Thank You Page
 
-### Overview
+### Issue Found
 
-Update the job details page (`/jobs/:id`) to use the hero-style `2xl` logo size (80px), matching the apply pages for consistent branding across all candidate-facing pages.
+The ThankYou page correctly supports displaying a logo via `logoUrl` in the navigation state. However, neither of the application submission hooks actually passes this value:
 
----
+| Hook | Current State Passed | Missing |
+|------|---------------------|---------|
+| `useApplicationForm.ts` | `{ organizationName, hasVoiceAgent }` | `logoUrl` ❌ |
+| `useDetailedApplicationForm.ts` | No state passed at all | Everything ❌ |
 
-### Current vs. Proposed
+### Solution
 
-| Aspect | Current | Proposed |
-|--------|---------|----------|
-| Size | `lg` (56px) with `lg:h-16 lg:w-16` (64px) override | `2xl` (80px) |
-| Fallback icon | `lg` | `xl` (proportional) |
-| Layout | Inline with title | Inline with title (larger) |
+Update both hooks to include `logoUrl` in the navigation state when redirecting to `/thank-you`.
 
 ---
 
 ### Implementation
 
-**File:** `src/pages/public/JobDetailsPage.tsx`
+#### 1. Update useApplicationForm.ts
 
-**Change (line 204-213):**
+**File:** `src/hooks/useApplicationForm.ts` (lines 229-234)
 
-```tsx
+Add `logoUrl` to the navigation state. The hook needs access to the client logo URL from the apply context.
+
+```typescript
 // BEFORE
-<LogoAvatar size="lg" className="lg:h-16 lg:w-16">
-  {job.clients?.logo_url ? (
-    <LogoAvatarImage ... />
-  ) : (
-    <LogoAvatarFallback iconSize="lg" />
-  )}
-</LogoAvatar>
+navigate('/thank-you', { 
+  state: { 
+    organizationName: data.organizationName,
+    hasVoiceAgent: data.hasVoiceAgent
+  } 
+});
 
 // AFTER
-<LogoAvatar size="2xl">
-  {job.clients?.logo_url ? (
-    <LogoAvatarImage ... />
-  ) : (
-    <LogoAvatarFallback iconSize="xl" />
-  )}
-</LogoAvatar>
+navigate('/thank-you', { 
+  state: { 
+    organizationName: data.organizationName,
+    hasVoiceAgent: data.hasVoiceAgent,
+    logoUrl: clientLogoUrl  // Pass from context
+  } 
+});
 ```
 
-**Changes:**
-- Update `size="lg"` to `size="2xl"` (80px, matching apply pages)
-- Remove the `className="lg:h-16 lg:w-16"` override (no longer needed)
-- Update fallback `iconSize` from `lg` to `xl` for proper proportions
+The hook will need to accept `clientLogoUrl` as a parameter or derive it from context.
+
+---
+
+#### 2. Update useDetailedApplicationForm.ts
+
+**File:** `src/hooks/useDetailedApplicationForm.ts` (line 431)
+
+Add full state including logo:
+
+```typescript
+// BEFORE
+navigate('/thank-you');
+
+// AFTER
+navigate('/thank-you', { 
+  state: { 
+    organizationName: clientName,
+    hasVoiceAgent: hasVoiceAgent,
+    logoUrl: clientLogoUrl
+  } 
+});
+```
+
+---
+
+#### 3. Verify Context Provides Logo URL
+
+Check that `useApplyContext` exposes `clientLogoUrl` so both hooks can access it.
 
 ---
 
@@ -55,5 +80,6 @@ Update the job details page (`/jobs/:id`) to use the hero-style `2xl` logo size 
 
 | File | Change |
 |------|--------|
-| `src/pages/public/JobDetailsPage.tsx` | Update LogoAvatar size from `lg` to `2xl` |
+| `src/hooks/useApplicationForm.ts` | Add `logoUrl` to navigation state |
+| `src/hooks/useDetailedApplicationForm.ts` | Add full state with `logoUrl` to navigation |
 
