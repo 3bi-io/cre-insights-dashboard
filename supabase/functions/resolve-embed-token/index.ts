@@ -6,7 +6,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { getServiceClient } from '../_shared/supabase-client.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // This endpoint must allow ANY origin since it's designed for 
 // embedding on third-party websites. Domain security is handled 
@@ -16,6 +16,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
+
+function getServiceClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables');
+  }
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
 interface TokenData {
   id: string;
