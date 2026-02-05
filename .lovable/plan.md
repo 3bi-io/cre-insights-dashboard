@@ -1,304 +1,197 @@
 
 
-## Field Mapping Review for All Application Sources
+## OpenWeatherMap Integration for ElevenLabs Voice Agents
 
-### Executive Summary
+### Overview
 
-After a comprehensive review of all field mapping across 5 application sources, I've identified significant data quality gaps and inconsistencies that are impacting recruiter productivity and downstream ATS integration quality.
-
----
-
-### Current Data Quality by Source (Last 30 Days)
-
-| Source | Total | CDL | Exp | CDL Class | City | Zip | Veteran | Drug |
-|--------|-------|-----|-----|-----------|------|-----|---------|------|
-| **Direct Application** | 75 | 9% | 8% | 0% | 100% | 100% | 8% | 9% |
-| **ZipRecruiter** | 63 | 0% | 0% | 0% | 100% | 100% | 0% | 0% |
-| **Indeed** | 50 | 0% | 0% | 0% | 100% | 100% | 0% | 0% |
-| **ElevenLabs** | 18 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
-| **Embed Form** | 4 | 100% | 100% | 0% | 100% | 100% | 100% | 100% |
-
-**Key Insight**: Only the Embed Form has comprehensive screening data. Voice applications are missing critical location data. Indeed and ZipRecruiter lack all CDL qualification fields.
+This plan adds weather lookup capabilities to your ElevenLabs voice agents, allowing applicants to ask about weather conditions during voice conversations. ElevenLabs supports **Server Tools** (webhooks) that agents can call during conversations to fetch real-time data.
 
 ---
 
-### Source-by-Source Analysis
+### How It Works
 
-#### 1. Direct Application (submit-application)
-
-**Status**: Well-mapped, but frontend forms may not be collecting all fields
-
-**Field Mapping Quality**: GOOD
-
-- Supports 50+ fields including extended CDL data
-- Proper phone normalization
-- UTM tracking (utm_source, utm_medium, utm_campaign)
-- Auto zip-to-city lookup
-- ATS auto-post integration
-
-**Issues Found**:
-| Issue | Severity | Details |
-|-------|----------|---------|
-| Low CDL capture (9%) | Medium | Frontend forms may not prompt for CDL data |
-| No cdl_class capture | Medium | Field exists but always empty |
-| Missing cdl_endorsements | Low | Array field never populated |
-
-**Recommendations**:
-- Audit frontend Quick Apply form to ensure CDL fields are prominently requested
-- Add cdl_class dropdown (A, B, C)
-- Add endorsement checkboxes (Hazmat, Tanker, Doubles/Triples)
-
----
-
-#### 2. ZipRecruiter Webhook (ziprecruiter-webhook)
-
-**Status**: Functional but incomplete field mapping
-
-**Field Mapping Quality**: MINIMAL
-
-Currently maps:
 ```text
-first_name, last_name, email, phone, city, state, zip, source
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        Voice Conversation Flow                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   Applicant: "What's the weather like in Dallas?"                       │
+│                           │                                             │
+│                           ▼                                             │
+│   ┌─────────────────────────────────────────────────────────────┐       │
+│   │              ElevenLabs Voice Agent                         │       │
+│   │   - Recognizes weather question                             │       │
+│   │   - Converts "Dallas" to coordinates (lat/lon)              │       │
+│   │   - Calls configured webhook tool                           │       │
+│   └───────────────────────┬─────────────────────────────────────┘       │
+│                           │                                             │
+│                           ▼                                             │
+│   ┌─────────────────────────────────────────────────────────────┐       │
+│   │        Edge Function: elevenlabs-weather-tool               │       │
+│   │   - Receives lat/lon from ElevenLabs                        │       │
+│   │   - Calls OpenWeatherMap API                                │       │
+│   │   - Returns formatted weather data                          │       │
+│   └───────────────────────┬─────────────────────────────────────┘       │
+│                           │                                             │
+│                           ▼                                             │
+│   Agent: "It's currently 72°F in Dallas with partly cloudy skies."     │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Missing Critical Fields**:
-| Field | ZipRecruiter Equivalent | Impact |
-|-------|------------------------|--------|
-| cdl | candidate.cdl_license | Cannot qualify drivers |
-| exp | candidate.years_experience | Cannot screen experience |
-| cdl_class | candidate.cdl_class | Cannot determine license type |
-| resume_url | resume.url | Document not linked |
-| education_level | candidate.education | Missing qualification data |
+---
 
-**Recommendations**:
-1. Expand `parseApplicationData` to capture ZipRecruiter's extended candidate fields
-2. Map resume_url to a new `resume_url` column or `notes` field
-3. Add cover_letter to notes
+### Implementation Steps
 
-**Proposed Updated Mapping**:
+#### Step 1: Store API Key as Supabase Secret
+
+Add your OpenWeatherMap API key to Supabase secrets:
+- Secret name: `OPENWEATHERMAP_API_KEY`
+- This keeps the key secure and accessible only from edge functions
+
+#### Step 2: Create Weather Tool Edge Function
+
+**New file:** `supabase/functions/elevenlabs-weather-tool/index.ts`
+
+This edge function will:
+- Accept requests from ElevenLabs agents with latitude/longitude parameters
+- Call OpenWeatherMap Current Weather API
+- Return structured weather data for the agent to speak
+
+**Key features:**
+- Supports both coordinates (lat/lon) and city name lookups
+- Returns temperature, conditions, humidity, and wind speed
+- Formatted responses optimized for voice output
+- Rate limiting to prevent abuse
+- Proper error handling with fallback messages
+
+**API endpoint format:**
+```
+POST /functions/v1/elevenlabs-weather-tool
+Body: { "latitude": 32.78, "longitude": -96.80 }
+  -or-
+Body: { "city": "Dallas, TX" }
+```
+
+#### Step 3: Register Function in config.toml
+
+Add the new function to `supabase/config.toml` with JWT verification disabled (ElevenLabs doesn't send auth tokens to webhook tools).
+
+#### Step 4: Configure in ElevenLabs Dashboard
+
+You'll need to configure this webhook tool in the ElevenLabs agent settings:
+
+1. Go to your agent in the ElevenLabs dashboard
+2. Navigate to **Tools** section → **Add Tool**
+3. Select **Webhook** as Tool Type
+4. Configure:
+   - **Name:** `get_weather`
+   - **Description:** `Gets current weather conditions for a location`
+   - **Method:** `POST`
+   - **URL:** `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/elevenlabs-weather-tool`
+5. Add parameters:
+   - `latitude` (number): The latitude coordinate
+   - `longitude` (number): The longitude coordinate
+   - OR `city` (string): City name with optional state/country
+
+#### Step 5: Update Agent System Prompt
+
+Add weather instructions to your agent's system prompt:
+
+```text
+You have access to a weather tool. When users ask about weather conditions, 
+use the get_weather tool to fetch accurate, real-time data. 
+
+For weather requests:
+1. Identify the location the user is asking about
+2. Convert the location to coordinates using your geographic knowledge
+3. Call get_weather with the latitude and longitude
+4. Present the information conversationally, referring to locations by name
+
+Never ask users for coordinates - determine them yourself from location names.
+```
+
+---
+
+### Technical Details
+
+#### Edge Function Implementation
+
 ```typescript
-// Enhanced ZipRecruiter field mapping
-return {
-  // Existing fields...
-  cdl: data.cdl || data.cdl_license || data.has_cdl || '',
-  cdl_class: data.cdl_class || data.license_class || '',
-  exp: data.years_experience || data.experience_years || data.driving_experience || '',
-  education_level: data.education || data.education_level || '',
-  work_authorization: data.work_authorization || data.authorization || '',
-  veteran: data.veteran_status || data.is_veteran || '',
+// supabase/functions/elevenlabs-weather-tool/index.ts
+
+interface WeatherRequest {
+  latitude?: number;
+  longitude?: number;
+  city?: string;
 }
+
+interface WeatherResponse {
+  location: string;
+  temperature: number;
+  temperature_unit: string;
+  conditions: string;
+  humidity: number;
+  wind_speed: number;
+  wind_unit: string;
+  description: string;
+}
+
+// Function will:
+// 1. Parse lat/lon or city from request
+// 2. Call OpenWeatherMap API
+// 3. Format response for voice delivery
+// 4. Handle errors gracefully
 ```
 
----
+#### OpenWeatherMap API Usage
 
-#### 3. Indeed Applications (inbound-applications)
+- **Endpoint:** `https://api.openweathermap.org/data/2.5/weather`
+- **Parameters:** `lat`, `lon`, `appid`, `units=imperial`
+- **Response includes:** temp, conditions, humidity, wind speed
 
-**Status**: Uses generic inbound webhook - limited structured data
+#### Security Considerations
 
-**Field Mapping Quality**: BASIC
-
-Indeed applications arrive via general webhook with these field aliases:
-```text
-first_name/firstName, last_name/lastName, email, phone, city, state, zip
-```
-
-**Missing Fields**: CDL, experience, veteran status, drug screening consent
-
-**Root Cause**: Indeed's standard webhook doesn't include custom screening questions. Their API requires "Indeed Apply" integration with custom questions configured in the Indeed employer dashboard.
-
-**Recommendations**:
-1. No code changes needed - this is an Indeed platform limitation
-2. Consider Indeed's "Screener Questions" feature in the Indeed employer portal
-3. Add intake form CTA for applicants to complete missing data
+- API key stored securely in Supabase secrets (never exposed to frontend)
+- Rate limiting: 60 requests per minute per IP
+- JWT verification disabled for ElevenLabs webhook compatibility
+- Request validation to prevent abuse
 
 ---
 
-#### 4. ElevenLabs Voice Applications (sync-voice-applications & inbound-applications)
+### Files to Create/Modify
 
-**Status**: Strong data_collection_results mapping but location data missing
-
-**Field Mapping Quality**: TARGETED CDL FIELDS
-
-Currently collects:
-| ElevenLabs Field | Mapped To | Capture Rate |
-|------------------|-----------|--------------|
-| GivenName | first_name | High |
-| FamilyName | last_name | High |
-| PrimaryPhone | phone | 100% |
-| InternetEmailAddress | applicant_email | Medium |
-| PostalCode | zip | 0% (issue!) |
-| Class_A_CDL | cdl | 0% (issue!) |
-| Class_A_CDL_Experience | exp | 0% (issue!) |
-| DriverType | driver_type | Low |
-| CanPassDrug | drug | Low |
-| Veteran_Status | veteran | Low |
-| consentGiven | consent | Low |
-
-**Critical Issues**:
-1. **Zip code not being captured** - 0% capture rate despite field mapping existing
-2. **CDL fields empty** - Either agent not collecting or mapping broken
-3. **City/State never populated** - No zip-to-location lookup for voice
-
-**Recommendations**:
-1. Add zip-to-city lookup in voice sync (like submit-application has)
-2. Audit ElevenLabs agent prompts to ensure CDL questions are asked
-3. Add fallback extraction from transcript if data_collection_results empty
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/functions/elevenlabs-weather-tool/index.ts` | Create | Main weather API edge function |
+| `supabase/config.toml` | Modify | Register new function |
 
 ---
 
-#### 5. CDL Job Cast (fetch-application-feeds → inbound-applications)
+### After Implementation
 
-**Status**: XML parsing exists but 0 applications in last 30 days
+Once the code is deployed, you'll need to:
 
-**Field Mapping Quality**: GOOD (when working)
-
-Current XML field extraction:
-```typescript
-const application = {
-  first_name: extractField('firstname') || extractField('first_name'),
-  last_name: extractField('lastname') || extractField('last_name'),
-  applicant_email: extractField('email'),
-  phone: extractField('phone'),
-  city: extractField('city'),
-  state: extractField('state'),
-  zip: extractField('zip') || extractField('zipcode'),
-  cdl: extractField('cdl') || extractField('cdl_class'),
-  exp: extractField('experience') || extractField('exp'),
-  education_level: extractField('education'),
-  work_authorization: extractField('work_authorization'),
-  source: 'CDL Job Cast',
-};
-```
-
-**Issue**: The cron job was just created - need to verify feeds are actively returning application data vs just job listings.
+1. **Provide your API key** - I'll securely store your OpenWeatherMap API key
+2. **Configure in ElevenLabs** - Add the webhook tool to your agent(s)
+3. **Test the integration** - Try asking "What's the weather in Chicago?"
 
 ---
 
-#### 6. Outbound ATS (xml-post-adapter for Tenstreet)
+### Cost Considerations
 
-**Status**: Comprehensive mapping for outbound data
-
-**Field Mapping Quality**: EXCELLENT
-
-Tenstreet XML builder includes:
-- PersonalData: Name, DOB, Address, Phone, Email
-- Licenses: CDL class, endorsements, expiration, state
-- ApplicationData: Source, status tags
-- DisplayFields: Custom screening questions
-
-**Issues Found**:
-| Issue | Impact |
-|-------|--------|
-| cdl_endorsements rarely populated from inbound | Tenstreet gets empty endorsements |
-| cdl_expiration_date not collected on quick apply | Cannot send license validity |
-| employment_history rarely populated | Work history section empty |
+**OpenWeatherMap Pricing:**
+- **Free tier:** 1,000 calls/day, 60 calls/minute
+- Sufficient for typical voice agent usage
+- Upgrade available if needed for high-volume deployments
 
 ---
 
-### Cross-Source Field Matrix
+### Optional Enhancements (Future)
 
-| Field | Direct App | ZipRecruiter | Indeed | ElevenLabs | CDL Job Cast | Tenstreet Out |
-|-------|------------|--------------|--------|------------|--------------|---------------|
-| first_name | YES | YES | YES | YES | YES | YES |
-| last_name | YES | YES | YES | YES | YES | YES |
-| email | YES | YES | YES | PARTIAL | YES | YES |
-| phone | YES | YES | YES | YES | YES | YES |
-| city | YES | YES | YES | NO | YES | YES |
-| state | YES | YES | YES | NO | YES | YES |
-| zip | YES | YES | YES | NO | YES | YES |
-| cdl | PARTIAL | NO | NO | NO | YES | YES |
-| cdl_class | NO | NO | NO | NO | YES | YES |
-| cdl_endorsements | NO | NO | NO | NO | PARTIAL | YES |
-| exp | PARTIAL | NO | NO | NO | YES | YES |
-| veteran | PARTIAL | NO | NO | PARTIAL | NO | NO |
-| drug | PARTIAL | NO | NO | PARTIAL | NO | NO |
-| consent | PARTIAL | NO | NO | PARTIAL | NO | NO |
-
----
-
-### Priority Improvements
-
-#### High Priority (Immediate Impact)
-
-1. **Fix ElevenLabs location data capture**
-   - Add zip-to-city/state lookup after sync
-   - Debug why PostalCode from agent is not being saved
-   - Add city/state fields to voice agent prompts
-
-2. **Enhance ZipRecruiter webhook mapping**
-   - Add CDL, experience, education fields
-   - Map resume_url and cover_letter
-
-3. **Audit Quick Apply frontend forms**
-   - Ensure CDL questions are always shown
-   - Add cdl_class and endorsement selection
-
-#### Medium Priority (Quality Improvement)
-
-4. **Create normalized field extraction utility**
-   - Single source of truth for field aliases
-   - Reduce duplicate mapping code across webhooks
-
-5. **Add data quality monitoring**
-   - Dashboard showing field completion rates by source
-   - Alerts when quality drops below threshold
-
-6. **Implement intake form follow-up**
-   - For Indeed/ZipRecruiter with missing CDL data
-   - SMS/email link to complete screening questions
-
-#### Lower Priority (Enhancement)
-
-7. **CDL Job Cast application sync verification**
-   - Confirm feeds return applications (not just jobs)
-   - Test end-to-end flow
-
-8. **Add resume parsing integration**
-   - Extract work history from resume_url
-   - Auto-populate employment_history
-
----
-
-### Database Schema Observation
-
-The applications table has 77+ columns supporting comprehensive data capture. The issue is not schema - it's source-specific collection gaps:
-
-**Well-utilized columns**: Personal info, location, status, timestamps
-
-**Under-utilized columns**: 
-- cdl_class (0% populated)
-- cdl_endorsements (0% populated)
-- driving_experience_years (rarely used)
-- employment_history (rarely populated)
-- military fields (rarely captured)
-
----
-
-### Recommended Implementation Order
-
-1. **Phase 1 - Quick Wins (1-2 days)** ✅ COMPLETED
-   - ✅ Created shared `supabase/functions/_shared/zip-lookup.ts` utility
-   - ✅ Updated `sync-voice-applications` with zip-to-city lookup + additional CDL fields
-   - ✅ Updated `ziprecruiter-webhook` with CDL, exp, education, veteran, military mapping
-   - ✅ Added CDL class (A/B/C) and endorsements (H, N, P, T, X, S) to Quick Apply form
-
- 2. **Phase 2 - Voice Quality (2-3 days)** ✅ COMPLETED
-    - ✅ Created `supabase/functions/_shared/transcript-parser.ts` for fallback extraction
-    - ✅ Added transcript fallback parsing for ZIP, CDL, exp, drug, veteran, consent, driver_type
-    - ✅ Expanded data_collection field aliases (20+ variations per field)
-    - ✅ Added city/state ZIP lookup to webhook handler
-    - ✅ Updated both `sync-voice-applications` and `elevenlabs-conversation-webhook`
-    - Note: ElevenLabs agent prompts likely need reconfiguration in ElevenLabs dashboard to store structured data
-
-3. **Phase 3 - Data Quality Dashboard (3-5 days)** ✅ COMPLETED
-   - ✅ Created `DataQualityService` with field completion rate calculations
-   - ✅ Created `useDataQuality` hook for fetching metrics
-   - ✅ Built `DataQualityDashboard` component with source breakdowns and alerts
-   - ✅ Added "Data Quality" tab to Super Admin Dashboard
-   - Features: Overall quality score, per-source breakdowns, field completion rates by category, quality alerts for low capture rates
-
-4. **Phase 4 - Intake Flow (5-7 days)**
-   - Build SMS/email follow-up for incomplete applications
-   - Create mini-form for missing screening data
-   - Auto-trigger based on source and missing fields
+- Extended forecasts (next 5 days)
+- Weather alerts and warnings  
+- Historical weather data
+- Air quality information
+- Clothing/driving recommendations based on conditions
 
