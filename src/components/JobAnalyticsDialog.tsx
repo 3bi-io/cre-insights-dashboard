@@ -5,7 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Eye, MousePointer, DollarSign } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Eye, MousePointer, DollarSign, BarChart3, Code } from 'lucide-react';
+import { EmbedTokenGenerator } from '@/features/jobs/components/EmbedTokenGenerator';
 
 interface JobAnalyticsDialogProps {
   job: {
@@ -15,6 +17,7 @@ interface JobAnalyticsDialogProps {
     location?: string;
     created_at: string;
     updated_at: string;
+    organization_id?: string;
     platforms?: { name: string };
     job_categories?: { name: string };
     [key: string]: unknown;
@@ -88,140 +91,171 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Analytics for "{job.title}"
+            Job Details: "{job.title}"
             <Badge className={getStatusColor(job.status)}>
               {job.status}
             </Badge>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
-          {/* Job Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Job Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Publisher:</span> {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name || 'N/A'}
-                </div>
-                <div>
-                  <span className="font-medium">Category:</span> {job.job_categories?.name || 'N/A'}
-                </div>
-                <div>
-                  <span className="font-medium">Location:</span> {job.location || 'N/A'}
-                </div>
-                <div>
-                  <span className="font-medium">Created:</span> {new Date(job.created_at).toLocaleDateString()}
-                </div>
-                <div>
-                  <span className="font-medium">Last Updated:</span> {new Date(job.updated_at).toLocaleDateString()}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Performance Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total Spend</p>
-                    <p className="text-xl font-bold">${totalSpend.toFixed(2)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total Views</p>
-                    <p className="text-xl font-bold">{totalViews.toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <MousePointer className="w-4 h-4 text-purple-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Total Clicks</p>
-                    <p className="text-xl font-bold">{totalClicks.toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-orange-600" />
-                  <div>
-                    <p className="text-sm text-gray-600">Applications</p>
-                    <p className="text-xl font-bold">{totalApplications}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
-          {spendData && spendData.length > 0 && (
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="embed" className="flex items-center gap-2">
+              <Code className="h-4 w-4" />
+              Embed Widgets
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="analytics" className="space-y-6 mt-4">
+            {/* Job Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Recent Daily Performance</CardTitle>
+                <CardTitle className="text-lg">Job Details</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {spendData.slice(0, 7).map((day) => (
-                    <div key={day.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                      <span className="text-sm">{new Date(day.date).toLocaleDateString()}</span>
-                      <div className="flex gap-4 text-sm">
-                        <span>Views: {day.views}</span>
-                        <span>Clicks: {day.clicks}</span>
-                        <span className="font-medium">${Number(day.amount).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Publisher:</span> {job.platforms?.name === 'Indeed' ? 'X' : job.platforms?.name || 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Category:</span> {job.job_categories?.name || 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Location:</span> {job.location || 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Created:</span> {new Date(job.created_at).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Last Updated:</span> {new Date(job.updated_at).toLocaleDateString()}
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Recent Applications */}
-          {applicationsData && applicationsData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Recent Applications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {applicationsData.slice(0, 5).map((application) => (
-                    <div key={application.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
-                      <div>
-                        <span className="font-medium">{getApplicantName(application)}</span>
-                        {application.applicant_email && (
-                          <span className="text-sm text-gray-600 ml-2">({application.applicant_email})</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {new Date(application.applied_at).toLocaleDateString()}
-                      </div>
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Spend</p>
+                      <p className="text-xl font-bold">${totalSpend.toFixed(2)}</p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Views</p>
+                      <p className="text-xl font-bold">{totalViews.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <MousePointer className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Clicks</p>
+                      <p className="text-xl font-bold">{totalClicks.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Applications</p>
+                      <p className="text-xl font-bold">{totalApplications}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Activity */}
+            {spendData && spendData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Daily Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {spendData.slice(0, 7).map((day) => (
+                      <div key={day.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                        <span className="text-sm">{new Date(day.date).toLocaleDateString()}</span>
+                        <div className="flex gap-4 text-sm">
+                          <span>Views: {day.views}</span>
+                          <span>Clicks: {day.clicks}</span>
+                          <span className="font-medium">${Number(day.amount).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recent Applications */}
+            {applicationsData && applicationsData.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Applications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {applicationsData.slice(0, 5).map((application) => (
+                      <div key={application.id} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                        <div>
+                          <span className="font-medium">{getApplicantName(application)}</span>
+                          {application.applicant_email && (
+                            <span className="text-sm text-muted-foreground ml-2">({application.applicant_email})</span>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(application.applied_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="embed" className="mt-4">
+            {job.organization_id ? (
+              <EmbedTokenGenerator
+                jobListingId={job.id}
+                organizationId={job.organization_id}
+                jobTitle={job.title}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-muted-foreground">
+                    Organization information is required to create embed widgets.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
