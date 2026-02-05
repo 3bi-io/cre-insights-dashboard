@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createLogger } from '../_shared/logger.ts'
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const logger = createLogger('fetch-application-feeds')
 
@@ -136,13 +137,105 @@ serve(async (req) => {
           }
           
           logger.info('Parsed applications from XML', { count: applications.length });
-          data = { 
-            feeds: applications, 
-            message: `Found ${applications.length} applications`,
-            source: 'XML',
-            parsed_at: new Date().toISOString(),
-            type: 'applications'
-          };
+          
+          // Forward applications to inbound-applications endpoint
+          if (applications.length > 0) {
+            const supabaseUrl = Deno.env.get('SUPABASE_URL');
+            const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+            
+            if (supabaseUrl && supabaseServiceKey) {
+              const supabase = createClient(supabaseUrl, supabaseServiceKey);
+              let insertedCount = 0;
+              let skippedCount = 0;
+              let errorCount = 0;
+              
+              for (const app of applications) {
+                try {
+                  // Check for duplicate by referencenumber or email+date combo
+                  const { data: existing } = await supabase
+                    .from('applications')
+                    .select('id')
+                    .or(`job_id.eq.${app.referencenumber},and(applicant_email.eq.${app.applicant_email},applied_at.eq.${app.date})`)
+                    .limit(1);
+                  
+                  if (existing && existing.length > 0) {
+                    logger.debug('Skipping duplicate application', { refNum: app.referencenumber });
+                    skippedCount++;
+                    continue;
+                  }
+                  
+                  // Forward to inbound-applications endpoint
+                  const inboundUrl = `${supabaseUrl}/functions/v1/inbound-applications?client_name=cdljobcast`;
+                  const response = await fetch(inboundUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${supabaseServiceKey}`,
+                    },
+                    body: JSON.stringify({
+                      first_name: app.first_name,
+                      last_name: app.last_name,
+                      applicant_email: app.applicant_email,
+                      phone: app.phone,
+                      city: app.city,
+                      state: app.state,
+                      zip: app.zip,
+                      cdl: app.cdl,
+                      exp: app.exp,
+                      age: app.age,
+                      education_level: app.education_level,
+                      work_authorization: app.work_authorization,
+                      source: 'CDL Job Cast',
+                      job_id: app.referencenumber,
+                      job_title: app.job_title,
+                      notes: app.notes,
+                      status: app.status || 'pending',
+                    }),
+                  });
+                  
+                  if (response.ok) {
+                    insertedCount++;
+                    logger.debug('Application forwarded', { refNum: app.referencenumber });
+                  } else {
+                    const errText = await response.text();
+                    logger.warn('Failed to forward application', { refNum: app.referencenumber, error: errText });
+                    errorCount++;
+                  }
+                } catch (appError) {
+                  logger.error('Error processing application', appError);
+                  errorCount++;
+                }
+              }
+              
+              logger.info('Application forwarding complete', { insertedCount, skippedCount, errorCount });
+              
+              data = { 
+                feeds: applications, 
+                message: `Processed ${applications.length} applications: ${insertedCount} inserted, ${skippedCount} skipped, ${errorCount} errors`,
+                source: 'XML',
+                parsed_at: new Date().toISOString(),
+                type: 'applications',
+                stats: { insertedCount, skippedCount, errorCount }
+              };
+            } else {
+              logger.warn('Supabase credentials not available, skipping inbound forwarding');
+              data = { 
+                feeds: applications, 
+                message: `Found ${applications.length} applications (not forwarded - missing credentials)`,
+                source: 'XML',
+                parsed_at: new Date().toISOString(),
+                type: 'applications'
+              };
+            }
+          } else {
+            data = { 
+              feeds: [], 
+              message: 'No applications found in feed',
+              source: 'XML',
+              parsed_at: new Date().toISOString(),
+              type: 'applications'
+            };
+          }
           
         } catch (error) {
           logger.error('Error parsing XML', error);
