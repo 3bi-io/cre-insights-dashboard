@@ -1,194 +1,158 @@
 
-# Fix Client Logo Display Across All Views
+# Add Organization Logo Management for Super Admin
 
-## Problem Summary
+## Summary
 
-The user correctly identified that client logos are not appearing in several views where they should. The issue stems from:
+Add a dedicated logo management button to each organization card on the `/admin/organizations` page, allowing Super Admins to upload, update, or delete organization logos directly without navigating to organization settings.
 
-1. **Missing client data in queries**: Several hooks only fetch organization data but not client data (name, logo_url)
-2. **Inconsistent fallback logic**: Some components properly fallback from `clients.logo_url` to `organizations.logo_url`, but the underlying data queries don't include client information
-3. **Admin JobCard missing logo entirely**: The admin job card component (`src/components/jobs/JobCard.tsx`) doesn't display any logo at all
+## Changes Overview
 
-## Files Requiring Changes
-
-| File | Issue | Fix |
-|------|-------|-----|
-| `src/features/candidate/hooks/useCandidateApplications.ts` | Missing `clients.logo_url` in query | Add `logo_url` to clients select |
-| `src/features/candidate/hooks/useSavedJobs.ts` | Missing `clients` data entirely | Add clients join with name and logo_url |
-| `src/features/candidate/hooks/useJobSearch.ts` | Missing `clients` data entirely | Add clients join with name and logo_url |
-| `src/components/jobs/JobCard.tsx` | No logo display at all | Add CompanyLogo component with client priority |
-| `src/types/common.types.ts` | JobListing.clients missing logo_url | Add logo_url to clients type |
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/components/admin/OrganizationLogoDialog.tsx` | CREATE | New dialog component for logo management |
+| `src/hooks/useAdminDashboardData.tsx` | MODIFY | Add `logo_url` to organizations query |
+| `src/pages/Organizations.tsx` | MODIFY | Add logo button and display current logo |
 
 ## Technical Details
 
-### 1. Fix useCandidateApplications.ts
+### 1. Update useOrganizationsData Query
 
-**Current query (line 50)**:
+**File: `src/hooks/useAdminDashboardData.tsx`**
+
+Update the `OrganizationData` interface and query to include `logo_url`:
+
 ```typescript
-clients(name),
-```
-
-**Updated query**:
-```typescript
-clients(name, logo_url),
-```
-
-**Update interface (line 21-23)**:
-```typescript
-clients?: {
-  name: string;
-  logo_url?: string;
-};
-```
-
-### 2. Fix useSavedJobs.ts
-
-**Current query (lines 40-52)** - Missing clients entirely:
-```typescript
-job_listings!inner(
-  id,
-  title,
-  ...
-  organizations!inner(
-    name,
-    logo_url
-  )
-)
-```
-
-**Updated query**:
-```typescript
-job_listings!inner(
-  id,
-  title,
-  location,
-  city,
-  state,
-  salary_min,
-  salary_max,
-  clients(
-    name,
-    logo_url
-  ),
-  organizations!inner(
-    name,
-    logo_url
-  )
-)
-```
-
-**Update SavedJob interface (lines 11-23)**:
-```typescript
-job_listings: {
+interface OrganizationData {
   id: string;
-  title: string;
-  location?: string;
-  city?: string;
-  state?: string;
-  salary_min?: number;
-  salary_max?: number;
-  clients?: {
-    name: string;
-    logo_url?: string;
-  };
-  organizations: {
-    name: string;
-    logo_url?: string;
-  };
+  name: string;
+  slug: string;
+  logo_url?: string | null;  // ADD
+  created_at: string;
+  subscription_status: string;
+  plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
+  userCount: number;
+  jobCount: number;
+  applicationCount: number;
+  monthlySpend: number;
+}
+```
+
+Update the query select:
+```typescript
+const { data: organizations } = await supabase
+  .from('organizations')
+  .select(`
+    id,
+    name,
+    slug,
+    logo_url,  // ADD
+    created_at,
+    subscription_status,
+    plan_type
+  `);
+```
+
+Update the return mapping:
+```typescript
+return {
+  ...
+  logo_url: org.logo_url,  // ADD
+  ...
 };
 ```
 
-### 3. Fix useJobSearch.ts
+### 2. Create OrganizationLogoDialog Component
 
-**Current query (lines 45-51)** - Missing clients entirely:
+**File: `src/components/admin/OrganizationLogoDialog.tsx`**
+
+Create a new dialog component that wraps the existing `OrganizationLogoUpload`:
+
 ```typescript
-organizations!inner(
-  name,
-  logo_url
-)
+interface OrganizationLogoDialogProps {
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+  };
+  trigger?: React.ReactNode;
+}
 ```
 
-**Updated query**:
+Features:
+- Uses existing `OrganizationLogoUpload` component
+- Invalidates query cache on logo update
+- Shows current logo preview in trigger button
+- Displays organization name in dialog header
+
+### 3. Update Organizations Page
+
+**File: `src/pages/Organizations.tsx`**
+
+Add logo display and management button to each organization card:
+
+**Imports to add:**
 ```typescript
-clients(
-  name,
-  logo_url
-),
-organizations!inner(
-  name,
-  logo_url
-)
-```
-
-### 4. Update Admin JobCard.tsx
-
-Add logo display using the CompanyLogo component with client priority:
-
-**Import**:
-```typescript
+import { OrganizationLogoDialog } from '@/components/admin/OrganizationLogoDialog';
 import { CompanyLogo } from '@/components/shared';
+import { Image as ImageIcon } from 'lucide-react';
 ```
 
-**Add logo in CardHeader (after line 55)**:
+**Update card header to show logo:**
 ```typescript
 <div className="flex items-center gap-3">
   <CompanyLogo
-    logoUrl={job.clients?.logo_url}
-    companyName={job.clients?.name || 'Client'}
+    logoUrl={org.logo_url}
+    companyName={org.name}
     size="sm"
   />
-  <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
+  <div>
+    <CardTitle className="text-base">{org.name}</CardTitle>
+    <CardDescription>{org.slug}</CardDescription>
+  </div>
 </div>
 ```
 
-### 5. Update common.types.ts
-
-**Update JobListing.clients type (lines 135-137)**:
+**Add logo management button to actions:**
 ```typescript
-clients?: {
-  name: string;
-  logo_url?: string;
-};
+<OrganizationLogoDialog organization={org} />
 ```
 
-## Data Flow After Fix
+## Visual Layout After Changes
 
-```text
-Database (job_listings)
-    │
-    ├── client_id ──► clients table ──► { name, logo_url }
-    │
-    └── organization_id ──► organizations table ──► { name, logo_url }
-    
-    
-Component Display Priority:
-    1. clients.logo_url (if available)
-    2. organizations.logo_url (fallback for admin context)
-    3. LogoAvatarFallback (Building2 icon)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  [LOGO]  Organization Name                                      │
+│          organization-slug                                      │
+│                                                                 │
+│  [Features] [Platforms] [Logo] [Edit] [Users] [Delete]         │
+│                                                                 │
+│  Users: 15    Active Jobs: 8    Applications: 234    $5,000    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Views Fixed
+## Query Cache Invalidation
 
-After implementation, client logos will correctly display in:
+When a logo is updated via the dialog:
+1. Call `queryClient.invalidateQueries({ queryKey: ['admin-organizations-data'] })`
+2. This refreshes the organizations list to show the new logo immediately
 
-| View | Component | Current | After |
-|------|-----------|---------|-------|
-| Candidate Dashboard | Recent Applications | No client logo | Client logo shown |
-| Candidate Dashboard | Recommended Jobs | Already working | Confirmed working |
-| Saved Jobs Page | JobCard | No client logo | Client logo shown |
-| Job Search Page | JobCard | No client logo | Client logo shown |
-| Applications Page | ApplicationCard | No client logo | Client logo shown |
-| Admin Jobs Page | JobCard | No logo at all | Client logo shown |
-| Public /jobs | PublicJobCard | Already working | Confirmed working |
+## Component Structure
 
-## Privacy Considerations
-
-All candidate-facing components already use the correct priority:
-```typescript
-logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+```
+OrganizationLogoDialog
+├── Dialog trigger button (ImageIcon + "Logo")
+├── DialogContent
+│   ├── DialogHeader (Organization name)
+│   └── OrganizationLogoUpload (existing component)
+│       ├── Current logo display
+│       ├── Drag-and-drop upload area
+│       └── Delete button
 ```
 
-This ensures:
-- Client logos are shown when available (privacy-safe for candidates)
-- Organization logos only shown as fallback (for jobs without assigned clients)
-- Generic fallback icon for edge cases
+## Benefits
+
+1. **Direct Access**: Super Admins can manage logos without navigating to org settings
+2. **Reuse**: Leverages existing `OrganizationLogoUpload` component
+3. **Visual Feedback**: Logo displayed directly on organization cards
+4. **Consistency**: Uses same upload/delete logic as org settings page
