@@ -27,7 +27,8 @@ import {
   Globe, 
   FolderKanban, 
   Image,
-  Shield
+  Shield,
+  Antenna
 } from 'lucide-react';
 
 // Re-export public navigation for convenience
@@ -224,7 +225,9 @@ export const getNavigationGroups = (options: {
         { path: '/admin/organizations', label: 'Organizations', icon: Building },
         { path: '/admin/user-management', label: 'User Management', icon: UserCog },
         { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss },
-        { path: '/admin/media', label: 'Media Assets', icon: Image }
+        { path: '/admin/media', label: 'Media Assets', icon: Image },
+        { path: '/admin/social-beacons', label: 'Social Beacons', icon: Antenna },
+        { path: '/admin/social-engagement', label: 'Engagement Dashboard', icon: MessageSquare }
       ]
     }] : [])
   ].filter(group => group.items.length > 0); // Filter out empty groups
@@ -282,6 +285,8 @@ export const routeTitles: Record<string, string> = {
   '/admin/driverreach-sync': 'DriverReach Sync Dashboard',
   '/admin/talent': 'Candidate Search',
   '/admin/talent/pools': 'Talent Pools',
+  '/admin/social-beacons': 'Social Beacons',
+  '/admin/social-engagement': 'Social Engagement',
 };
 
 export const getRouteTitle = (pathname: string): string => {

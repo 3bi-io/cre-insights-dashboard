@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface FeatureGuardProps {
-  feature: 'tenstreet_access' | 'openai_access' | 'anthropic_access' | 'grok_access' | 'meta_integration' | 'voice_agent' | 'advanced_analytics' | 'elevenlabs_access' | 'background_check_access';
+  feature: 'tenstreet_access' | 'openai_access' | 'anthropic_access' | 'grok_access' | 'meta_integration' | 'voice_agent' | 'advanced_analytics' | 'elevenlabs_access' | 'background_check_access' | 'social_beacon';
   children: React.ReactNode;
   fallback?: React.ReactNode;
   showUpgrade?: boolean;
@@ -27,7 +27,8 @@ const FEATURE_NAMES = {
   voice_agent: 'Voice Agent',
   advanced_analytics: 'Advanced Analytics',
   elevenlabs_access: 'ElevenLabs Voice AI',
-  background_check_access: 'Background Check Integration'
+  background_check_access: 'Background Check Integration',
+  social_beacon: 'Social Beacon'
 };
 
 export const FeatureGuard: React.FC<FeatureGuardProps> = ({
@@ -121,6 +122,7 @@ export const useFeatureGuard = () => {
     canAccessAdvancedAnalytics: () => hasFeature('advanced_analytics'),
     canAccessElevenLabs: () => hasFeature('elevenlabs_access'),
     canAccessBackgroundChecks: () => hasFeature('background_check_access'),
+    canAccessSocialBeacon: () => hasFeature('social_beacon'),
     hasFeature
   };
 };

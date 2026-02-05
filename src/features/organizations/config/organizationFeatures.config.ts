@@ -1,5 +1,5 @@
 import { FeatureConfig, FeatureKey } from '../types/features.types';
-import { Bot, Megaphone, Share2, BarChart3, Mic, Zap, Brain, Shield } from 'lucide-react';
+import { Bot, Megaphone, Share2, BarChart3, Mic, Zap, Brain, Shield, Antenna } from 'lucide-react';
 
 /**
  * Centralized feature configuration
@@ -78,6 +78,14 @@ export const ORGANIZATION_FEATURES: Record<FeatureKey, FeatureConfig> = {
     category: 'Screening',
     premium: true,
   },
+  social_beacon: {
+    key: 'social_beacon',
+    name: 'social_beacon',
+    label: 'Social Beacon',
+    description: 'AI-powered social media distribution and engagement across platforms',
+    category: 'Social',
+    premium: true,
+  },
 };
 
 /**
@@ -137,6 +145,8 @@ export const getFeatureIcon = (featureName: FeatureKey) => {
       return Zap;
     case 'background_check_access':
       return Shield;
+    case 'social_beacon':
+      return Antenna;
     default:
       return Bot;
   }
@@ -157,6 +167,8 @@ export const getCategoryColor = (category: string) => {
       return 'bg-orange-100 text-orange-800 border-orange-200';
     case 'Screening':
       return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+    case 'Social':
+      return 'bg-pink-100 text-pink-800 border-pink-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
