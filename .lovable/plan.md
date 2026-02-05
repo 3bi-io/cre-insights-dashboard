@@ -127,16 +127,23 @@ Created `src/utils/jobSchemaExtraction.ts` with:
 - `extractExperienceFromDescription()` - Parses experience patterns
 - `extractQualificationsFromDescription()` - Extracts skills and requirements
 
-**3.2 Enhance robots.txt for Better Crawling** ⏳ (Optional)
+**3.2 Enhance robots.txt for Better Crawling** ✅ DONE
 
-Current `robots.txt` is well-configured. Add:
-- Job-specific sitemaps per organization
+Added job-specific sitemaps to robots.txt:
+- Google Jobs XML sitemap
+- Indeed XML feed
+- Generate sitemap (dynamic)
 
-**3.3 Implement Google Indexing API Automation** ⏳ (Future)
+**3.3 Implement Google Indexing API Automation** ✅ DONE
 
-The `google-indexing` edge function exists but isn't automated. Add:
-- Auto-notify Google when jobs are created/updated
-- Trigger on job status change to "inactive" (URL_DELETED)
+Created automated Google Indexing with:
+- `google-indexing-trigger` edge function for async notifications
+- Database trigger `trigger_google_indexing_on_job_change` on job_listings
+- Automatically notifies Google on:
+  - Job created (URL_UPDATED)
+  - Job title/status changed (URL_UPDATED)
+  - Job deactivated or deleted (URL_DELETED)
+- Requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret to be configured
 
 **3.4 Create SEO Dashboard for Organic Metrics** ⏳ (Future)
 
