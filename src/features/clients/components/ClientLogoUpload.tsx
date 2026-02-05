@@ -78,7 +78,23 @@ export const ClientLogoUpload: React.FC<ClientLogoUploadProps> = ({
         .update({ logo_url: publicUrl })
         .eq('id', clientId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        // Clean up uploaded file if DB update fails
+        await supabase.storage.from('client-logos').remove([fileName]);
+        throw new Error(`Database update failed: ${updateError.message}`);
+      }
+
+      // Verify the update was actually applied (RLS may silently block)
+      const { data: verifyData } = await supabase
+        .from('clients')
+        .select('logo_url')
+        .eq('id', clientId)
+        .single();
+
+      if (verifyData?.logo_url !== publicUrl) {
+        await supabase.storage.from('client-logos').remove([fileName]);
+        throw new Error('Logo update was blocked. Check your permissions.');
+      }
 
       setLogoUrl(publicUrl);
       onLogoChange(publicUrl);
