@@ -45,13 +45,6 @@ export const INTERNAL_LINKS: InternalLink[] = [
     priority: 0.8,
   },
   {
-    path: '/voice-demo',
-    label: 'Voice Agent Demo',
-    description: 'Listen to AI voice agent call recordings',
-    category: 'primary',
-    priority: 0.8,
-  },
-  {
     path: '/contact',
     label: 'Contact',
     description: 'Get in touch with our team',
