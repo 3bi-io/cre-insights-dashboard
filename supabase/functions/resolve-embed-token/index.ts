@@ -6,8 +6,16 @@
  */
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
+
+// This endpoint must allow ANY origin since it's designed for 
+// embedding on third-party websites. Domain security is handled 
+// via the allowed_domains column in the token itself.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+};
 
 interface TokenData {
   id: string;
@@ -30,9 +38,6 @@ interface TokenData {
 }
 
 serve(async (req: Request) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
-
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
