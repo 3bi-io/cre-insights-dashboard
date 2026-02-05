@@ -88,6 +88,7 @@ const JobsPage = () => {
         description={`Explore ${totalCount || 200}+ open positions from top companies. Filter by location, company, and category. Apply instantly with Voice Apply technology.`}
         keywords="jobs, careers, job listings, job search, employment opportunities, hiring, open positions, CDL jobs, driver jobs"
         canonical="https://ats.me/jobs"
+        ogImage="https://ats.me/og-jobs.png"
       />
       <StructuredData data={jobListSchema} />
       

@@ -221,6 +221,7 @@ const SitemapPage = () => {
         description="Complete directory of ATS.me pages. Find job listings, features, resources, and platform documentation. Navigate to any section quickly."
         keywords="sitemap, ATS.me pages, navigation, site directory, job board, recruitment platform"
         canonical="https://ats.me/sitemap"
+        ogImage="https://ats.me/og-sitemap.png"
       />
       <StructuredData data={breadcrumbData} />
       {/* Header */}

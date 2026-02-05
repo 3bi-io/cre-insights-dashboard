@@ -186,6 +186,7 @@ const ContactPage = () => {
         description="Have questions about ATS.me? Contact our team for demos, support, or partnership inquiries. We're here to help you transform your recruitment process."
         keywords="contact ATS.me, recruitment support, demo request, ATS inquiry, customer service"
         canonical="https://ats.me/contact"
+        ogImage="https://ats.me/og-contact.png"
       />
       <StructuredData data={[contactPageSchema, faqSchemaData]} />
       <div className="min-h-screen">

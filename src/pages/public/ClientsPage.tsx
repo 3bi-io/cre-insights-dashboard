@@ -38,11 +38,12 @@
  
    return (
      <>
-       <SEO 
-         title="Companies Hiring | Browse Employers"
-         description="Explore companies actively hiring drivers and transportation professionals. Find your next employer and browse open positions."
-         keywords="companies hiring, employers, trucking companies, driver jobs, transportation jobs"
-       />
+        <SEO 
+          title="Companies Hiring | Browse Employers"
+          description="Explore companies actively hiring drivers and transportation professionals. Find your next employer and browse open positions."
+          keywords="companies hiring, employers, trucking companies, driver jobs, transportation jobs"
+          ogImage="https://ats.me/og-clients.png"
+        />
        
        <div className="min-h-screen bg-background">
          <ClientsHero searchTerm={searchTerm} onSearchChange={setSearchTerm} />

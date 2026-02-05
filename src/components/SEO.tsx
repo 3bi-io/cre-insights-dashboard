@@ -1,5 +1,6 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
+import { getOgImageUrl } from '@/utils/ogImageUtils';
 
 interface SEOProps {
   title: string;
@@ -24,7 +25,7 @@ export const SEO: React.FC<SEOProps> = ({
   description,
   keywords,
   canonical,
-  ogImage = 'https://ats.me/og-image.png',
+  ogImage,
   ogType = 'website',
   noindex = false,
   ogImageWidth = 1200,
@@ -38,6 +39,8 @@ export const SEO: React.FC<SEOProps> = ({
 }) => {
   const fullTitle = title.includes('ATS.me') ? title : `${title} - ATS.me`;
   const url = canonical || `https://ats.me${window.location.pathname}`;
+  // Use provided ogImage or determine based on current path
+  const resolvedOgImage = ogImage || getOgImageUrl(window.location.pathname);
 
   return (
     <Helmet>
@@ -55,7 +58,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta property="og:description" content={description} />
       <meta property="og:type" content={ogType} />
       <meta property="og:url" content={url} />
-      <meta property="og:image" content={ogImage} />
+      <meta property="og:image" content={resolvedOgImage} />
       <meta property="og:image:width" content={ogImageWidth.toString()} />
       <meta property="og:image:height" content={ogImageHeight.toString()} />
       <meta property="og:image:alt" content={title} />
@@ -77,7 +80,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:creator" content={twitterCreator} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image" content={resolvedOgImage} />
       <meta name="twitter:image:alt" content={title} />
     </Helmet>
   );

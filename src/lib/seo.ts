@@ -3,6 +3,7 @@
  */
 
 export * from '@/utils/seoUtils';
+export * from '@/utils/ogImageUtils';
 export * from '@/utils/sitemapGenerator';
 export * from '@/utils/internalLinks';
 export * from '@/data/keywords';
