@@ -3183,6 +3183,79 @@ export type Database = {
         }
         Relationships: []
       }
+      embed_tokens: {
+        Row: {
+          allowed_domains: string[] | null
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          impression_count: number
+          is_active: boolean
+          job_listing_id: string
+          organization_id: string
+          token: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          allowed_domains?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          impression_count?: number
+          is_active?: boolean
+          job_listing_id: string
+          organization_id: string
+          token: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          allowed_domains?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          impression_count?: number
+          is_active?: boolean
+          job_listing_id?: string
+          organization_id?: string
+          token?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embed_tokens_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embed_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embed_tokens_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_access_logs: {
         Row: {
           client_id: string | null
@@ -7205,6 +7278,7 @@ export type Database = {
         Args: { _email: string }
         Returns: undefined
       }
+      generate_embed_token: { Args: never; Returns: string }
       generate_share_code: { Args: never; Returns: string }
       generate_short_code: { Args: { length?: number }; Returns: string }
       get_active_ats_connections: {
