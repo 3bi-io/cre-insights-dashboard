@@ -33,6 +33,13 @@ Disallow: /my-jobs
 
 # Sitemap (dynamic generation via edge function)
 Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/generate-sitemap
+
+# Google Jobs XML Sitemap
+Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml
+
+# Indeed XML Feed
+Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/indeed-xml-feed
+
 # Fallback static sitemap
 Sitemap: https://ats.me/sitemap.xml
 

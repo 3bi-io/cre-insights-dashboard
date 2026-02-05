@@ -51,6 +51,9 @@ verify_jwt = false
 [functions.ziprecruiter-webhook]
 verify_jwt = false
 
+[functions.google-indexing-trigger]
+verify_jwt = false
+
 [functions.indeed-integration]
 verify_jwt = true
 
