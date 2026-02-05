@@ -6,6 +6,7 @@ import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand } from './Brand';
 import { Badge } from '@/components/ui/badge';
+import ThemeToggle from '@/components/ThemeToggle';
 import { publicNavigation, type PublicNavItem } from '@/config/publicNavigationConfig';
 import { isActivePath } from '@/utils/navigationUtils';
 
@@ -67,6 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Auth Buttons */}
           {showAuth && (
             <div className="hidden md:flex items-center space-x-3" role="group" aria-label="Authentication">
+              <ThemeToggle />
               <Link to="/auth">
                 <Button 
                   variant="ghost" 
@@ -89,6 +91,8 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button 
@@ -160,6 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </SheetContent>
             </Sheet>
+            </div>
           </div>
         </div>
       </div>
