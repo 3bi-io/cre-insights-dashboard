@@ -16,6 +16,7 @@ interface OrganizationData {
   id: string;
   name: string;
   slug: string;
+   logo_url?: string | null;
   created_at: string;
   subscription_status: string;
   plan_type?: 'free' | 'starter' | 'professional' | 'enterprise';
@@ -122,6 +123,7 @@ export const useOrganizationsData = () => {
           id,
           name,
           slug,
+           logo_url,
           created_at,
           subscription_status,
           plan_type
@@ -177,6 +179,7 @@ export const useOrganizationsData = () => {
             id: org.id,
             name: org.name,
             slug: org.slug,
+             logo_url: org.logo_url,
             created_at: org.created_at,
             subscription_status: org.subscription_status,
             plan_type: org.plan_type as 'free' | 'starter' | 'professional' | 'enterprise' | undefined,

@@ -11,6 +11,8 @@ import { OrganizationFeaturesDialog } from '@/components/admin/OrganizationFeatu
 import { DeleteOrganizationDialog } from '@/components/admin/DeleteOrganizationDialog';
 import { UserManagementDialog } from '@/components/admin/UserManagementDialog';
 import { OrganizationPlatformAccessDialog } from '@/components/admin';
+ import { OrganizationLogoDialog } from '@/components/admin/OrganizationLogoDialog';
+ import { CompanyLogo } from '@/components/shared';
 import AdminPageLayout from '@/features/shared/components/AdminPageLayout';
 import { AdminNavigationDashboard } from '@/components/admin/AdminNavigationDashboard';
 import { AdminEmailUtility } from '@/features/admin/components/AdminEmailUtility';
@@ -81,10 +83,17 @@ const Organizations = () => {
                 <Card key={org.id}>
                   <CardHeader>
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div>
+                       <div className="flex items-center gap-3">
+                         <CompanyLogo
+                           logoUrl={org.logo_url}
+                           companyName={org.name}
+                           size="sm"
+                         />
+                         <div>
                         <CardTitle className="text-base">{org.name}</CardTitle>
                         <CardDescription>{org.slug}</CardDescription>
                       </div>
+                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         {/* PlanBadge removed - all features available */}
                         <OrganizationFeaturesDialog organization={org} />
@@ -96,6 +105,7 @@ const Organizations = () => {
                           <Shield className="w-4 h-4 mr-1" />
                           Platforms
                         </Button>
+                         <OrganizationLogoDialog organization={org} />
                         <EditOrganizationDialog organization={org} />
                         <UserManagementDialog organization={org} />
                         <DeleteOrganizationDialog organization={org} />
