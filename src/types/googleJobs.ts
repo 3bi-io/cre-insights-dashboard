@@ -35,6 +35,19 @@ export interface JobPostingSchemaInput {
   remoteType?: 'fully_remote' | 'hybrid' | 'on_site';
   directApply?: boolean;
   applicationUrl?: string;
+  // Enhanced schema fields for SEO
+  experienceRequirements?: {
+    minimumMonths?: number;
+    preferredMonths?: number;
+    description?: string;
+  };
+  educationRequirements?: {
+    credentialCategory?: string;
+    description?: string;
+  };
+  responsibilities?: string;
+  qualifications?: string;
+  skills?: string[];
 }
 
 export interface FeedValidationResult {

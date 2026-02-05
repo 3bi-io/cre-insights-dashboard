@@ -48,6 +48,8 @@ verify_jwt = false
 [functions.inbound-applications]
 verify_jwt = false
 
+[functions.ziprecruiter-webhook]
+verify_jwt = false
 
 [functions.indeed-integration]
 verify_jwt = true

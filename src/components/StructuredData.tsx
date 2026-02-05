@@ -158,6 +158,50 @@ export const buildJobPostingSchema = (job: JobPostingSchemaInput) => {
     }
   }
 
+  // Experience requirements for better Google Jobs ranking
+  if (job.experienceRequirements) {
+    const expReq = job.experienceRequirements;
+    if (expReq.minimumMonths || expReq.description) {
+      schema.experienceRequirements = {
+        "@type": "OccupationalExperienceRequirements",
+        ...(expReq.minimumMonths && { 
+          "monthsOfExperience": expReq.minimumMonths 
+        }),
+        ...(expReq.description && { 
+          "description": expReq.description 
+        }),
+      };
+    }
+  }
+
+  // Education requirements
+  if (job.educationRequirements) {
+    const eduReq = job.educationRequirements;
+    schema.educationRequirements = {
+      "@type": "EducationalOccupationalCredential",
+      ...(eduReq.credentialCategory && { 
+        "credentialCategory": eduReq.credentialCategory 
+      }),
+      ...(eduReq.description && { 
+        "description": eduReq.description 
+      }),
+    };
+  }
+
+  // Responsibilities and qualifications as separate properties
+  if (job.responsibilities) {
+    schema.responsibilities = job.responsibilities;
+  }
+
+  if (job.qualifications) {
+    schema.qualifications = job.qualifications;
+  }
+
+  // Skills as occupational category enhancement
+  if (job.skills && job.skills.length > 0) {
+    schema.skills = job.skills.join(', ');
+  }
+
   return schema;
 };
 
