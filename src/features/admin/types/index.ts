@@ -94,3 +94,6 @@ export interface AssignRolePayload {
   role: UserRole;
   organization_id?: string;
 }
+ 
+ // Data Quality types
+ export * from './dataQuality';

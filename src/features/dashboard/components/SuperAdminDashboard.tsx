@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Users, CheckCircle, FileText } from 'lucide-react';
+import { Building2, Users, CheckCircle, FileText, Database } from 'lucide-react';
 import { PageLayout } from '@/features/shared';
 import { useSuperAdminDashboardData } from '@/hooks/useSuperAdminDashboardData';
 import { MetricCard } from './shared/MetricCard';
@@ -8,7 +8,7 @@ import { DashboardSkeleton } from './shared/DashboardSkeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { OutboundCallAnalytics } from '@/components/voice/OutboundCallAnalytics';
-import { OverviewTab, OrganizationsTab, SystemTab, SettingsTab } from './tabs';
+import { OverviewTab, OrganizationsTab, SystemTab, SettingsTab, DataQualityTab } from './tabs';
 
 export const SuperAdminDashboard = React.memo(() => {
   const { data: metrics, isLoading } = useSuperAdminDashboardData();
@@ -109,6 +109,7 @@ export const SuperAdminDashboard = React.memo(() => {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="organizations">Organizations</TabsTrigger>
+            <TabsTrigger value="data-quality">Data Quality</TabsTrigger>
             <TabsTrigger value="voice-calls">Voice Calls</TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -125,6 +126,10 @@ export const SuperAdminDashboard = React.memo(() => {
               totalUsers={metrics?.totalUsers || 0}
               topOrganizations={topOrganizations}
             />
+          </TabsContent>
+
+          <TabsContent value="data-quality">
+            <DataQualityTab />
           </TabsContent>
 
           <TabsContent value="voice-calls" className="space-y-4">
