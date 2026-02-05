@@ -44,17 +44,18 @@ const ResourcesPage = () => {
     {
       icon: Users,
       title: 'Creating Your First Job',
-      description: 'Step-by-step job posting walkthrough',
+      description: 'Browse real job listings as examples',
       duration: '8 min read',
-      link: '/demo',
+      link: '/jobs',
       step: 2
     },
     {
       icon: Settings,
       title: 'Account Setup & Configuration',
-      description: 'Configure your organization settings',
+      description: 'Get onboarding help from our team',
       duration: '10 min read',
-      link: '/demo',
+      link: '/contact',
+      badge: 'Contact Us',
       step: 3
     },
     {
@@ -86,13 +87,14 @@ const ResourcesPage = () => {
       icon: BarChart3,
       title: 'Analytics Guide',
       description: 'Understanding your data and metrics',
-      link: '/demo'
+      link: '/features'
     },
     {
       icon: Settings,
       title: 'Admin Configuration',
       description: 'Advanced settings and customization',
-      link: '/demo'
+      link: '/contact',
+      badge: 'Contact Us'
     }
   ];
 
