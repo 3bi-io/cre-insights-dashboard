@@ -73,7 +73,7 @@ const Apply = () => {
             
             {/* Application Form */}
             <main>
-              <ApplicationForm clientName={clientName} />
+              <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} />
             </main>
             
             {/* Back Navigation */}

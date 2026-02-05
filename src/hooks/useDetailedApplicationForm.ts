@@ -224,7 +224,7 @@ const deserializeFormData = (data: SerializableFormData): DetailedFormData => ({
   dotPhysicalDate: data.dotPhysicalDate ? new Date(data.dotPhysicalDate) : null,
 });
 
-export const useDetailedApplicationForm = () => {
+export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -421,14 +421,20 @@ export const useDetailedApplicationForm = () => {
 
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Clear draft on successful submission
       clearDraft();
       toast({
         title: "Application Submitted Successfully!",
         description: "Thank you for your detailed application. We'll review it and be in touch soon.",
       });
-      navigate('/thank-you');
+      navigate('/thank-you', {
+        state: {
+          organizationName: data.organizationName,
+          hasVoiceAgent: data.hasVoiceAgent,
+          logoUrl: clientLogoUrl
+        }
+      });
     },
     onError: (error: Error) => {
       toast({

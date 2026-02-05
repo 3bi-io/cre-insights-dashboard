@@ -37,6 +37,15 @@ const STEP_SECTIONS: StepConfig[] = [
 
 export const DetailedApplicationForm = () => {
   const {
+    jobTitle,
+    clientName,
+    clientLogoUrl,
+    location,
+    source,
+    isLoading: contextLoading,
+  } = useApplyContext();
+
+  const {
     formData,
     handleInputChange,
     handleEndorsementToggle,
@@ -47,16 +56,7 @@ export const DetailedApplicationForm = () => {
     lastSaved,
     restoreDraft,
     discardDraft,
-  } = useDetailedApplicationForm();
-
-  const {
-    jobTitle,
-    clientName,
-    clientLogoUrl,
-    location,
-    source,
-    isLoading: contextLoading,
-  } = useApplyContext();
+  } = useDetailedApplicationForm(clientLogoUrl);
 
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
 
