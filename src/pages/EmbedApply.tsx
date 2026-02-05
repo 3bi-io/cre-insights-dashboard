@@ -9,6 +9,7 @@ import { useApplyContext } from '@/hooks/useApplyContext';
 interface SubmissionResult {
   applicationId: string;
   clientName?: string;
+  clientLogoUrl?: string;
   hasVoiceAgent?: boolean;
 }
 
@@ -22,7 +23,7 @@ interface SubmissionResult {
 const EmbedApply: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { hideBranding, notifyParent, sendHeight } = useEmbedMode();
-  const { clientName, jobTitle, isLoading: contextLoading } = useApplyContext();
+  const { clientName, clientLogoUrl, jobTitle, isLoading: contextLoading } = useApplyContext();
   
   // Track submission state for inline thank you
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
@@ -54,7 +55,11 @@ const EmbedApply: React.FC = () => {
 
   // Handle successful submission (called from within the form)
   const handleSubmissionSuccess = useCallback((result: SubmissionResult) => {
-    setSubmissionResult(result);
+    // Merge context logo with result
+    setSubmissionResult({
+      ...result,
+      clientLogoUrl: result.clientLogoUrl || clientLogoUrl || undefined,
+    });
     setIsSubmitted(true);
     
     // Notify parent window (using organizationName for backward compatibility with embedders)
@@ -63,7 +68,7 @@ const EmbedApply: React.FC = () => {
       applicationId: result.applicationId,
       organizationName: result.clientName,
     });
-  }, [notifyParent]);
+  }, [notifyParent, clientLogoUrl]);
 
   // If submitted, show inline thank you
   if (isSubmitted && submissionResult) {
@@ -72,6 +77,7 @@ const EmbedApply: React.FC = () => {
         <EmbedThankYou
           applicationId={submissionResult.applicationId}
           clientName={submissionResult.clientName}
+          clientLogoUrl={submissionResult.clientLogoUrl}
           hasVoiceAgent={submissionResult.hasVoiceAgent}
         />
       </div>

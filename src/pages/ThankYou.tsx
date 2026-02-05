@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Phone, Clock, ArrowLeft } from "lucide-react";
 import { SEO } from '@/components/SEO';
+import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
+
 interface ThankYouState {
   organizationName?: string;
   hasVoiceAgent?: boolean;
+  logoUrl?: string;
 }
 
 const ThankYou = () => {
@@ -15,6 +18,7 @@ const ThankYou = () => {
   
   const organizationName = state?.organizationName || 'our team';
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
+  const logoUrl = state?.logoUrl;
 
   return (
     <div className="h-full overflow-y-auto bg-background">
@@ -28,7 +32,15 @@ const ThankYou = () => {
           <Card className="text-center">
             <CardContent className="p-8">
               <div className="mb-6">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                {/* Logo above success icon */}
+                {logoUrl && (
+                  <div className="flex justify-center mb-4">
+                    <LogoAvatar size="xl" className="shadow-md">
+                      <LogoAvatarImage src={logoUrl} alt={`${organizationName} logo`} />
+                    </LogoAvatar>
+                  </div>
+                )}
+                <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
                 <h1 className="text-3xl font-bold text-foreground mb-2">Thank You!</h1>
                 <p className="text-lg text-muted-foreground">Your application has been submitted successfully.</p>
               </div>

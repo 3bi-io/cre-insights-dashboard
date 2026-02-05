@@ -3,14 +3,16 @@ import { cn } from "@/lib/utils"
 import { Building2 } from "lucide-react"
 
 interface LogoAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
-  size?: "sm" | "md" | "lg" | "xl"
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl"
 }
 
 const sizeClasses = {
   sm: "h-10 w-10",
   md: "h-12 w-12", 
   lg: "h-14 w-14",
-  xl: "h-16 w-16"
+  xl: "h-16 w-16",
+  "2xl": "h-20 w-20",
+  "3xl": "h-24 w-24"
 }
 
 const LogoAvatar = React.forwardRef<HTMLDivElement, LogoAvatarProps>(
@@ -45,13 +47,15 @@ const LogoAvatarImage = React.forwardRef<
 LogoAvatarImage.displayName = "LogoAvatarImage"
 
 interface LogoAvatarFallbackProps extends React.HTMLAttributes<HTMLDivElement> {
-  iconSize?: "sm" | "md" | "lg"
+  iconSize?: "sm" | "md" | "lg" | "xl" | "2xl"
 }
 
 const iconSizeClasses = {
   sm: "h-5 w-5",
   md: "h-6 w-6",
-  lg: "h-8 w-8"
+  lg: "h-8 w-8",
+  xl: "h-10 w-10",
+  "2xl": "h-12 w-12"
 }
 
 const LogoAvatarFallback = React.forwardRef<HTMLDivElement, LogoAvatarFallbackProps>(

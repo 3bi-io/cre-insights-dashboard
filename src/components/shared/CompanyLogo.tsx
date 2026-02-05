@@ -2,12 +2,12 @@
  import { cn } from '@/lib/utils';
  import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
  
- interface CompanyLogoProps {
-   logoUrl?: string | null;
-   companyName: string;
-   size?: 'sm' | 'md' | 'lg' | 'xl';
-   className?: string;
- }
+interface CompanyLogoProps {
+  logoUrl?: string | null;
+  companyName: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  className?: string;
+}
  
  /**
   * Unified company logo display component
@@ -21,12 +21,14 @@
  }) => {
    const [hasError, setHasError] = useState(false);
  
-   const iconSizeMap: Record<string, 'sm' | 'md' | 'lg'> = {
-     sm: 'sm',
-     md: 'md',
-     lg: 'lg',
-     xl: 'lg',
-   };
+  const iconSizeMap: Record<string, 'sm' | 'md' | 'lg' | 'xl' | '2xl'> = {
+    sm: 'sm',
+    md: 'md',
+    lg: 'lg',
+    xl: 'xl',
+    '2xl': '2xl',
+    '3xl': '2xl',
+  };
  
    const showFallback = !logoUrl || hasError;
  
