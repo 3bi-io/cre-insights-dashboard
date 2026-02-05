@@ -12,6 +12,7 @@ import {
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
+import { extractExperienceFromDescription, extractQualificationsFromDescription } from '@/utils/jobSchemaExtraction';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
@@ -133,6 +134,10 @@ const JobDetailsPage: React.FC = () => {
   };
 
   // Build structured data with enhanced schema
+  // Extract experience and qualifications from description for enhanced schema
+  const experienceData = extractExperienceFromDescription(displayDescription);
+  const qualificationsData = extractQualificationsFromDescription(displayDescription);
+
   const jobPostingSchema = buildJobPostingSchema({
     id: job.id,
     title: displayTitle,
@@ -155,6 +160,10 @@ const JobDetailsPage: React.FC = () => {
     } : undefined,
     directApply: true,
     applicationUrl: `https://ats.me${applyUrl}`,
+    // Enhanced schema fields
+    experienceRequirements: experienceData,
+    qualifications: qualificationsData.summary,
+    skills: qualificationsData.skills,
   });
 
   const breadcrumbSchema = buildBreadcrumbSchema([

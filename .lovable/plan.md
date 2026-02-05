@@ -94,66 +94,51 @@ SELECT cron.unschedule('meta-leads-sync-every-6-hours');
 
 #### Phase 2: Enhance Feed Tracking
 
-**2.1 Fix Feed Access Logging**
+**2.1 Fix Feed Access Logging** ✅ DONE
 
-The `feed_access_logs` table exists but logs weren't being written consistently. ✅ FIXED for:
-
+Fixed for:
 - ✅ `indeed-xml-feed` - Fixed logging and added `organization_id` parameter support
-- ⏳ `google-jobs-xml` - Needs `organization_id` extraction fix
-- ⏳ `universal-xml-feed` - Verify IP logging
+- ✅ `google-jobs-xml` - Logging functional
+- ✅ `universal-xml-feed` - IP logging working
 
-**2.2 Add ZipRecruiter Inbound Webhook**
+**2.2 Add ZipRecruiter Inbound Webhook** ✅ DONE
 
-Create `ziprecruiter-webhook` edge function to handle:
+Created `ziprecruiter-webhook` edge function that handles:
 - Application notifications from ZipRecruiter
 - Candidate data mapping to applications table
 - Source tracking as "ZipRecruiter"
+- Duplicate detection (24-hour window)
+- Job listing matching by ID
 
-**2.3 Enhance Indeed XML Feed** ✅ DONE
-
-Added `organization_id` parameter to filter jobs per organization:
-
-```typescript
-// in indeed-xml-feed/index.ts
-const organizationId = url.searchParams.get('organization_id');
-if (organizationId) {
-  query = query.eq('organization_id', organizationId);
-}
-```
+**2.3 Enhance Indeed XML Feed** ✅ DONE (Phase 1)
 
 #### Phase 3: Organic Traffic Optimization
 
-**3.1 Google Jobs Schema Improvements**
+**3.1 Google Jobs Schema Improvements** ✅ DONE
 
-Current `JobPosting` schema is good but missing some recommended fields:
+Enhanced `JobPosting` schema with:
+- ✅ `experienceRequirements` - Auto-extracted from description
+- ✅ `qualifications` - Extracted from requirements sections
+- ✅ `skills` - CDL/trucking skills detection
+- ✅ `educationRequirements` - Type support added
+- ✅ `responsibilities` - Type support added
 
-| Field | Current | Recommended |
-|-------|---------|-------------|
-| `identifier` | Yes | Yes |
-| `validThrough` | 30 days | Keep |
-| `directApply` | Yes | Yes |
-| `applicantLocationRequirements` | Remote only | Add for all jobs |
-| `experienceRequirements` | Missing | Add |
-| `educationRequirements` | Missing | Add |
-| `responsibilities` | Missing | Add (extract from description) |
-| `qualifications` | Missing | Add (extract from description) |
+Created `src/utils/jobSchemaExtraction.ts` with:
+- `extractExperienceFromDescription()` - Parses experience patterns
+- `extractQualificationsFromDescription()` - Extracts skills and requirements
 
-**3.2 Enhance robots.txt for Better Crawling**
+**3.2 Enhance robots.txt for Better Crawling** ⏳ (Optional)
 
 Current `robots.txt` is well-configured. Add:
+- Job-specific sitemaps per organization
 
-```text
-# Job-specific sitemaps for faster indexing
-Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml?organization_id=YOUR_ORG_ID
-```
-
-**3.3 Implement Google Indexing API Automation**
+**3.3 Implement Google Indexing API Automation** ⏳ (Future)
 
 The `google-indexing` edge function exists but isn't automated. Add:
 - Auto-notify Google when jobs are created/updated
 - Trigger on job status change to "inactive" (URL_DELETED)
 
-**3.4 Create SEO Dashboard for Organic Metrics**
+**3.4 Create SEO Dashboard for Organic Metrics** ⏳ (Future)
 
 New component to track:
 - Google Jobs impressions (via Search Console API)
@@ -173,18 +158,18 @@ New component to track:
 
 #### Edge Functions to Modify
 
-| Function | Changes |
-|----------|---------|
-| `submit-application` | Save `utm_source`, `utm_medium`, `utm_campaign` |
-| `indeed-xml-feed` | Add `organization_id` filter |
-| `fetch-application-feeds` | Connect to inbound pipeline |
-| `sync-cdl-feeds` | (No change - syncs jobs correctly) |
+| Function | Changes | Status |
+|----------|---------|--------|
+| `submit-application` | Save UTM params | ✅ Done |
+| `indeed-xml-feed` | Add `organization_id` filter | ✅ Done |
+| `fetch-application-feeds` | Connect to inbound pipeline | ✅ Done |
+| `sync-cdl-feeds` | (No change) | ✅ Active |
 
-#### New Edge Function
+#### New Edge Functions
 
-| Function | Purpose |
-|----------|---------|
-| `ziprecruiter-webhook` | Handle inbound applications from ZipRecruiter |
+| Function | Purpose | Status |
+|----------|---------|--------|
+| `ziprecruiter-webhook` | ZipRecruiter application webhook | ✅ Deployed |
 
 #### Frontend Components
 
