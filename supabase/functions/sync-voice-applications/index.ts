@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
  import { lookupCityState } from "../_shared/zip-lookup.ts";
+ import { extractFromTranscript, ExtractedData } from "../_shared/transcript-parser.ts";
 
 const logger = createLogger('sync-voice-applications');
 
@@ -199,26 +200,34 @@ serve(async (req) => {
               return undefined;
             };
 
-            const firstName = getValue(['GivenName', 'first_name', 'FirstName']);
-            const lastName = getValue(['FamilyName', 'last_name', 'LastName']);
-            const email = getValue(['InternetEmailAddress', 'email', 'Email'], { normalizeEmail: true });
-            const phone = getValue(['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber']);
-            const zip = getValue(['PostalCode', 'zip', 'Zip', 'ZipCode']);
- 
-             // Lookup city/state from ZIP code if available
-             const { city, state } = await lookupCityState(zip);
+            // Expanded field aliases to handle different ElevenLabs agent configurations
+            const firstName = getValue(['GivenName', 'first_name', 'FirstName', 'given_name', 'firstName', 'name', 'caller_first_name']);
+            const lastName = getValue(['FamilyName', 'last_name', 'LastName', 'family_name', 'lastName', 'caller_last_name']);
+            const email = getValue(['InternetEmailAddress', 'email', 'Email', 'email_address', 'emailAddress', 'caller_email'], { normalizeEmail: true });
+            const phone = getValue(['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber', 'phone_number', 'phoneNumber', 'cell', 'mobile', 'caller_phone']);
+            const zipFromData = getValue(['PostalCode', 'zip', 'Zip', 'ZipCode', 'zip_code', 'zipCode', 'postal_code', 'postalCode']);
 
-            // Must have at least email or phone to create application
-            if (!email && !phone) {
-              continue;
-            }
-
-            // Format transcript
+            // Format and extract transcript for fallback parsing
             const formattedTranscript = transcript
               .map((entry: { role: string; message: string }) =>
                 `${entry.role === 'agent' ? 'Agent' : 'Caller'}: ${entry.message}`
               )
               .join('\n');
+
+            // Extract fallback data from transcript when data_collection_results is incomplete
+            const fallbackData: ExtractedData = extractFromTranscript(formattedTranscript);
+ 
+            // Use data_collection_results first, fall back to transcript extraction
+            const zip = zipFromData || fallbackData.zip;
+
+             // Lookup city/state from ZIP code if available
+             const { city, state } = await lookupCityState(zip);
+
+            // Must have at least email or phone to create application
+            const finalEmail = email || fallbackData.email;
+            if (!finalEmail && !phone) {
+              continue;
+            }
 
             const transcriptParts: string[] = [];
             if (transcriptSummary) {
@@ -268,27 +277,36 @@ serve(async (req) => {
               }
             }
 
+            // CDL and qualification fields - try data_collection first, then transcript fallback
+            const cdlValue = getValue(['Class_A_CDL', 'cdl', 'has_cdl', 'CDL', 'cdl_status', 'hasCDL', 'class_a_cdl']) || fallbackData.cdl;
+            const expValue = getValue(['Class_A_CDL_Experience', 'experience', 'exp', 'months_experience', 'driving_experience', 'cdl_experience', 'experienceMonths']) || fallbackData.exp;
+            const drugValue = getValue(['CanPassDrug', 'drug', 'drug_test', 'can_pass_drug_test', 'drugTest', 'passedDrugTest']) || fallbackData.drug;
+            const veteranValue = getValue(['Veteran_Status', 'veteran', 'is_veteran', 'military', 'served_military', 'veteranStatus']) || fallbackData.veteran;
+            const consentValue = getValue(['consentGiven', 'consent', 'privacy_consent', 'agreed_privacy', 'privacyPolicy']) || fallbackData.consent;
+            const over21Value = getValue(['Over21', 'over_21', 'AgeVerification', 'is_over_21', 'age_verified', 'atLeast21']) || fallbackData.over_21;
+            const driverTypeValue = getValue(['DriverType', 'driver_type', 'driverType', 'employment_type', 'position_type']) || fallbackData.driver_type;
+
             // Create application
             const applicationData = {
               first_name: firstName,
               last_name: lastName,
               full_name: firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName,
-              applicant_email: email,
+              applicant_email: finalEmail,
               phone: phone,
               zip: zip,
                city: city || undefined,
                state: state || undefined,
-              cdl: getValue(['Class_A_CDL', 'cdl']),
-              exp: getValue(['Class_A_CDL_Experience', 'experience']),
-              driver_type: getValue(['DriverType', 'driver_type']),
-              drug: getValue(['CanPassDrug', 'drug']),
-              veteran: getValue(['Veteran_Status', 'veteran']),
-              consent: getValue(['consentGiven', 'consent']),
-               over_21: getValue(['Over21', 'over_21', 'AgeVerification']),
-               hazmat_endorsement: getValue(['Hazmat', 'hazmat_endorsement', 'HazmatEndorsement']),
-               can_pass_drug_test: getValue(['CanPassDrug', 'can_pass_drug_test']),
-               work_authorization: getValue(['WorkAuthorization', 'work_authorization']),
-               cdl_class: getValue(['CDLClass', 'cdl_class', 'LicenseClass']),
+              cdl: cdlValue,
+              exp: expValue,
+              driver_type: driverTypeValue,
+              drug: drugValue,
+              veteran: veteranValue,
+              consent: consentValue,
+              over_21: over21Value,
+              hazmat_endorsement: getValue(['Hazmat', 'hazmat_endorsement', 'HazmatEndorsement', 'hazmat', 'hasHazmat']),
+              can_pass_drug_test: drugValue,
+              work_authorization: getValue(['WorkAuthorization', 'work_authorization', 'workAuthorization', 'authorized_to_work']),
+              cdl_class: getValue(['CDLClass', 'cdl_class', 'LicenseClass', 'license_class', 'cdlClass']),
               source: 'ElevenLabs',
               job_listing_id: jobListingId,
               elevenlabs_call_transcript: transcriptParts.join('\n\n'),
