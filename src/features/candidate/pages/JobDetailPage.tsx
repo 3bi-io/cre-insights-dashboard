@@ -136,14 +136,14 @@ const JobDetailPage = () => {
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                  <CompanyLogo
-                   logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
-                   companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                   logoUrl={job.clients?.logo_url}
+                   companyName={job.clients?.name || 'Company'}
                    size="xl"
                    className="h-16 w-16"
                  />
                 <div className="flex-1">
                   <h1 className="text-2xl font-bold mb-1">{job.title || job.job_title}</h1>
-                   <p className="text-lg text-muted-foreground">{job.clients?.name || job.organizations?.name}</p>
+                   <p className="text-lg text-muted-foreground">{job.clients?.name || 'Company'}</p>
                 </div>
               </div>
 
@@ -229,13 +229,13 @@ const JobDetailPage = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                  <CompanyLogo
-                   logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
-                   companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                   logoUrl={job.clients?.logo_url}
+                   companyName={job.clients?.name || 'Company'}
                    size="md"
                    className="h-12 w-12"
                  />
                 <div>
-                   <p className="font-semibold">{job.clients?.name || job.organizations?.name}</p>
+                   <p className="font-semibold">{job.clients?.name || 'Company'}</p>
                 </div>
               </div>
             </CardContent>
@@ -282,7 +282,7 @@ const JobDetailPage = () => {
                       className="block p-3 rounded-lg border hover:bg-accent transition-colors"
                     >
                       <p className="font-medium text-sm line-clamp-1">{recJob.title}</p>
-                       <p className="text-xs text-muted-foreground">{recJob.clients?.name || recJob.organizations?.name}</p>
+                       <p className="text-xs text-muted-foreground">{recJob.clients?.name || 'Company'}</p>
                       {recJob.city && recJob.state && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {recJob.city}, {recJob.state}

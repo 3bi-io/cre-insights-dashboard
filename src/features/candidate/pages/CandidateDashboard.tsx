@@ -202,7 +202,7 @@ const CandidateDashboard = () => {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{app.job_listings?.title}</h4>
                         <p className="text-sm text-muted-foreground truncate">
-                           {app.job_listings?.clients?.name || app.job_listings?.organizations?.name}
+                           {app.job_listings?.clients?.name || 'Company'}
                         </p>
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -264,14 +264,14 @@ const CandidateDashboard = () => {
                   >
                     <div className="flex items-start gap-3">
                        <CompanyLogo
-                         logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
-                         companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                         logoUrl={job.clients?.logo_url}
+                         companyName={job.clients?.name || 'Company'}
                          size="sm"
                        />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{job.title}</h4>
                         <p className="text-sm text-muted-foreground truncate">
-                           {job.clients?.name || job.organizations?.name}
+                           {job.clients?.name || 'Company'}
                         </p>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                           {job.city && job.state && (

@@ -5,10 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Building2 } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { queryKeys } from '@/lib/queryKeys';
 import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
-
+import { CompanyLogo } from '@/components/shared';
 interface RelatedJobsProps {
   currentJobId: string;
   clientId?: string | null;
@@ -25,7 +25,7 @@ interface RelatedJob {
   state: string | null;
   client_id: string | null;
   organization_id: string | null;
-  clients: { name: string | null } | null;
+  clients: { name: string | null; logo_url: string | null } | null;
   job_categories: { name: string | null } | null;
 }
 
@@ -49,7 +49,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
           state,
           client_id,
           organization_id,
-          clients(name),
+          clients(name, logo_url),
           job_categories(name)
         `)
         .eq('status', 'active')
@@ -94,7 +94,7 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
             state,
             client_id,
             organization_id,
-            clients(name),
+            clients(name, logo_url),
             job_categories(name)
           `)
           .eq('status', 'active')
@@ -153,7 +153,12 @@ export const RelatedJobs: React.FC<RelatedJobsProps> = ({
                     {job.title || job.job_title}
                   </h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Building2 className="w-3 h-3" />
+                    <CompanyLogo
+                      logoUrl={job.clients?.logo_url}
+                      companyName={companyName}
+                      size="sm"
+                      className="w-5 h-5"
+                    />
                     <span className="line-clamp-1">{companyName}</span>
                   </div>
                   {(job.location || (job.city && job.state)) && (

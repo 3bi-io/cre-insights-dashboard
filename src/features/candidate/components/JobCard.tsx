@@ -54,13 +54,13 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
                <CompanyLogo
-                 logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
-                 companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                 logoUrl={job.clients?.logo_url}
+                 companyName={job.clients?.name || 'Company'}
                  size="sm"
                  className="flex-shrink-0"
                />
               <span className="text-sm text-muted-foreground truncate">
-                 {job.clients?.name || job.organizations?.name}
+                 {job.clients?.name || 'Company'}
               </span>
             </div>
             <h3 className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">

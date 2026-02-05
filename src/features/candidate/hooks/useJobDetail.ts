@@ -14,7 +14,6 @@ export const useJobDetail = (jobId: string | undefined) => {
           organizations!inner(
             id,
             name,
-            logo_url,
             slug
            ),
            clients(
@@ -54,8 +53,7 @@ export const useRecommendedJobs = (currentJobId?: string, limit = 3) => {
           salary_min,
           salary_max,
           organizations!inner(
-            name,
-            logo_url
+            name
            ),
            clients(
              name,
