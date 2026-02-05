@@ -2135,6 +2135,45 @@ export type Database = {
           },
         ]
       }
+      candidate_saved_jobs: {
+        Row: {
+          candidate_profile_id: string
+          created_at: string
+          id: string
+          job_listing_id: string
+          notes: string | null
+        }
+        Insert: {
+          candidate_profile_id: string
+          created_at?: string
+          id?: string
+          job_listing_id: string
+          notes?: string | null
+        }
+        Update: {
+          candidate_profile_id?: string
+          created_at?: string
+          id?: string
+          job_listing_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_saved_jobs_candidate_profile_id_fkey"
+            columns: ["candidate_profile_id"]
+            isOneToOne: false
+            referencedRelation: "candidate_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidate_saved_jobs_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidate_scores: {
         Row: {
           ai_analysis: Json

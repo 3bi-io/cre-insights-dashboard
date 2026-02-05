@@ -11,8 +11,6 @@ The following tables use `USING(true)` or `WITH CHECK(true)` RLS policies **by d
 | Table | Policy | Reason |
 |-------|--------|--------|
 | `job_listings` | SELECT with `true` | Public job board - visitors must browse jobs without authentication |
-| `blog_posts` | SELECT with `true` | Public blog content for SEO and visitor engagement |
-| `blog_categories` | SELECT with `true` | Required for blog navigation and filtering |
 | `organizations` | SELECT with `true` (limited fields via view) | Company profiles visible on job listings |
 | `ats_systems` | SELECT with `true` | ATS integration options visible during setup |
 | `background_check_providers` | SELECT with `true` | Provider options visible during configuration |
@@ -22,7 +20,7 @@ The following tables use `USING(true)` or `WITH CHECK(true)` RLS policies **by d
 | Table | Policy | Reason |
 |-------|--------|--------|
 | `applications` | INSERT with validation | Public job applications - anonymous visitors can apply |
-| `visitor_analytics` | INSERT with `true` | Anonymous page view tracking for analytics |
+| `visitor_sessions` | INSERT with `true` | Anonymous page view tracking for analytics |
 | `page_views` | INSERT with `true` | Anonymous visitor analytics collection |
 
 ### Data Protection Measures
@@ -41,10 +39,11 @@ Despite permissive read policies on some tables, sensitive data is protected thr
 All admin/recruiter functionality requires authentication with proper role checks:
 
 - `user_roles` - Role-based access control
-- `recruiter_assignments` - Organization membership
+- `recruiter_profiles` - Recruiter information and assignments
 - `screening_requests` - Background check data
 - `sms_messages` - Communication logs
 - `outbound_calls` - Call recordings and transcripts
+- `candidate_saved_jobs` - User-specific saved job listings
 
 ## Webhook Security
 
@@ -68,4 +67,5 @@ The following Supabase Dashboard settings should be configured:
 ---
 
 *Last reviewed: 2026-01-09*
-*Reviewed by: System audit*
+*Last reviewed: 2026-02-05*
+*Reviewed by: System audit - Updated to reflect actual schema*
