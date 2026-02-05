@@ -32,9 +32,10 @@ const STEP_SECTIONS: StepConfig[] = [
 
 interface ApplicationFormProps {
   clientName?: string | null;
+  clientLogoUrl?: string | null;
 }
 
-export const ApplicationForm = ({ clientName }: ApplicationFormProps) => {
+export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormProps) => {
   const { 
     formData, 
     handleInputChange, 
@@ -44,7 +45,7 @@ export const ApplicationForm = ({ clientName }: ApplicationFormProps) => {
     lastSaved,
     restoreDraft,
     discardDraft,
-  } = useApplicationForm();
+  } = useApplicationForm(clientLogoUrl);
 
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   

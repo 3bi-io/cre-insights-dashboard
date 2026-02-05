@@ -72,7 +72,7 @@ interface SubmitResponse {
   hasVoiceAgent?: boolean;
 }
 
-export const useApplicationForm = () => {
+export const useApplicationForm = (clientLogoUrl?: string | null) => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [currentStep, setCurrentStep] = useState(1);
   const [searchParams] = useSearchParams();
@@ -229,7 +229,8 @@ export const useApplicationForm = () => {
       navigate('/thank-you', { 
         state: { 
           organizationName: data.organizationName,
-          hasVoiceAgent: data.hasVoiceAgent
+          hasVoiceAgent: data.hasVoiceAgent,
+          logoUrl: clientLogoUrl
         } 
       });
     },
