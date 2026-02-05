@@ -23,7 +23,7 @@ interface SubmissionResult {
 const EmbedApply: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { hideBranding, notifyParent, sendHeight } = useEmbedMode();
-  const { clientName, clientLogoUrl, jobTitle, isLoading: contextLoading } = useApplyContext();
+  const { clientName, clientLogoUrl, jobTitle, location, source, isLoading: contextLoading } = useApplyContext();
   
   // Track submission state for inline thank you
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
@@ -89,7 +89,14 @@ const EmbedApply: React.FC = () => {
       <div className="container mx-auto px-6 sm:px-4 py-4 sm:py-6">
         <div className="max-w-2xl mx-auto">
           {/* Header with client/job branding */}
-          <ApplicationHeader />
+          <ApplicationHeader 
+            jobTitle={jobTitle}
+            clientName={clientName}
+            clientLogoUrl={clientLogoUrl}
+            location={location}
+            source={source}
+            isLoading={contextLoading}
+          />
           
           {/* Embed Application Form - routes to dedicated outbound agent */}
           <EmbedApplicationForm 
