@@ -1,17 +1,20 @@
 import React, { useEffect } from 'react';
 import { CheckCircle, Phone, Mail, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
 
 interface EmbedThankYouProps {
   applicationId?: string;
   clientName?: string;
+  clientLogoUrl?: string;
   hasVoiceAgent?: boolean;
 }
 
 export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
   applicationId,
   clientName,
+  clientLogoUrl,
   hasVoiceAgent = false,
 }) => {
   const { notifyParent, hideBranding } = useEmbedMode();
@@ -30,6 +33,15 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
     <div className="py-8 px-4">
       <Card className="max-w-lg mx-auto shadow-lg border-0 bg-background">
         <CardContent className="pt-8 pb-6 text-center">
+          {/* Hero Logo */}
+          {clientLogoUrl && (
+            <div className="flex justify-center mb-4">
+              <LogoAvatar size="xl" className="shadow-md">
+                <LogoAvatarImage src={clientLogoUrl} alt={`${clientName || 'Company'} logo`} />
+              </LogoAvatar>
+            </div>
+          )}
+
           {/* Success Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">

@@ -34,6 +34,7 @@ const formatSource = (source: string): string => {
 // Loading skeleton component
 const HeaderSkeleton = memo(() => (
   <div className="text-center mb-6 sm:mb-8" aria-busy="true" aria-label="Loading job details">
+    <Skeleton className="h-20 w-20 mx-auto mb-4 rounded-2xl" />
     <Skeleton className="h-8 w-64 mx-auto mb-2" />
     <Skeleton className="h-5 w-48 mx-auto" />
   </div>
@@ -71,6 +72,15 @@ export const ApplicationHeader = memo(({
 
   return (
     <header className="text-center mb-6 sm:mb-8">
+      {/* Hero Logo - Centered above title */}
+      {clientLogoUrl && (
+        <div className="flex justify-center mb-4">
+          <LogoAvatar size="2xl" className="shadow-md">
+            <LogoAvatarImage src={clientLogoUrl} alt={`${clientName || 'Company'} logo`} />
+          </LogoAvatar>
+        </div>
+      )}
+
       <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 px-4">
         {displayTitle}
       </h1>
@@ -79,11 +89,7 @@ export const ApplicationHeader = memo(({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-muted-foreground text-base sm:text-sm px-4">
           {clientName && (
             <span className="inline-flex items-center gap-2">
-              {clientLogoUrl ? (
-                <LogoAvatar size="sm" className="h-8 w-8">
-                  <LogoAvatarImage src={clientLogoUrl} alt={`${clientName} logo`} />
-                </LogoAvatar>
-              ) : (
+              {!clientLogoUrl && (
                 <Building2 className="h-4 w-4" aria-hidden="true" />
               )}
               {clientName}
