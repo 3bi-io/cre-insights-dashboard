@@ -15,6 +15,8 @@ interface FormData {
   zip: string;
   over21: string;
   cdl: string;
+  cdlClass: string;
+  cdlEndorsements: string[];
   experience: string;
   drug: string;
   veteran: string;
@@ -43,6 +45,8 @@ const initialFormData: FormData = {
   zip: '',
   over21: '',
   cdl: '',
+  cdlClass: '',
+  cdlEndorsements: [],
   experience: '',
   drug: '',
   veteran: '',
@@ -193,6 +197,8 @@ export const useApplicationForm = () => {
         months: data.experience, // Store as numeric string
         exp: getExperienceValue(data.experience),
         driving_experience_years: drivingExperienceYears,
+        cdl_class: data.cdlClass,
+        cdl_endorsements: data.cdlEndorsements.length > 0 ? data.cdlEndorsements : undefined,
       };
 
       const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application', {
@@ -232,8 +238,8 @@ export const useApplicationForm = () => {
     },
   });
 
-  const handleInputChange = useCallback((name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleInputChange = useCallback((name: string, value: string | string[]) => {
+    setFormData(prev => ({ ...prev, [name]: value } as FormData));
   }, []);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {

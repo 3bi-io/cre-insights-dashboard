@@ -6,6 +6,7 @@
  import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
  import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
  import { createLogger } from "../_shared/logger.ts"
+ import { lookupCityState } from "../_shared/zip-lookup.ts"
  
  const logger = createLogger('ziprecruiter-webhook')
  
@@ -57,30 +58,99 @@
  /**
   * Parse ZipRecruiter application data to our format
   */
- function parseApplicationData(data: Record<string, unknown>): Record<string, unknown> {
+async function parseApplicationData(data: Record<string, unknown>): Promise<Record<string, unknown>> {
    // ZipRecruiter may send data in various formats
    // Map common field variations
+   
+   // Extract zip code first for city/state lookup
+   const zipCode = (data.zip || data.postal_code || data.zipcode || '') as string;
+   const { city: lookupCity, state: lookupState } = await lookupCityState(zipCode);
+   
    return {
+     // Personal info
      first_name: data.first_name || data.firstName || data.candidate_first_name || '',
      last_name: data.last_name || data.lastName || data.candidate_last_name || '',
      applicant_email: data.email || data.applicant_email || data.candidate_email || '',
      phone: data.phone || data.phone_number || data.candidate_phone || '',
-     city: data.city || data.location_city || '',
-     state: data.state || data.location_state || '',
-     zip: data.zip || data.postal_code || data.zipcode || '',
+    
+    // Location - prefer ZipRecruiter data, fall back to lookup
+    city: data.city || data.location_city || lookupCity || '',
+    state: data.state || data.location_state || lookupState || '',
+    zip: zipCode,
+    
+    // Source tracking
      source: 'ZipRecruiter',
+    referral_source: 'ZipRecruiter',
+    
+    // Job info
      job_id: data.job_id || data.jobId || data.external_job_id || '',
      job_title: data.job_title || data.jobTitle || data.position || '',
-     resume_url: data.resume_url || data.resumeUrl || '',
-     cover_letter: data.cover_letter || data.coverLetter || '',
+    
+    // CDL & Experience - critical driver qualification fields
+    cdl: data.cdl || data.cdl_license || data.has_cdl || data.cdl_status || '',
+    cdl_class: data.cdl_class || data.license_class || data.cdl_type || '',
+    exp: data.years_experience || data.experience_years || data.driving_experience || data.experience || '',
+    driving_experience_years: parseExperienceYears(data.years_experience || data.experience_years || data.driving_experience),
+    
+    // Education & qualifications
+    education_level: data.education || data.education_level || data.highest_education || '',
+    work_authorization: data.work_authorization || data.authorization || data.authorized_to_work || '',
+    
+    // Background & screening
+    veteran: data.veteran_status || data.is_veteran || data.veteran || '',
+    military_service: data.military_service || data.served_military || '',
+    
+    // Timing & status
      applied_at: data.applied_at || data.application_date || new Date().toISOString(),
      status: 'pending',
-     notes: data.notes || `Applied via ZipRecruiter on ${new Date().toLocaleDateString()}`,
-     referral_source: 'ZipRecruiter',
+    
+    // Notes - include resume and cover letter URLs
+    notes: buildApplicationNotes(data),
+    
      // Additional ZipRecruiter-specific fields
      ziprecruiter_candidate_id: data.candidate_id || data.candidateId || '',
      ziprecruiter_application_id: data.application_id || data.applicationId || '',
    }
+ }
+ 
+ /**
+  * Parse experience to numeric years
+  */
+ function parseExperienceYears(value: unknown): number | null {
+   if (!value) return null;
+   const str = String(value);
+   const match = str.match(/(\d+)/);
+   if (match) {
+     return parseInt(match[1], 10);
+   }
+   return null;
+ }
+ 
+ /**
+  * Build comprehensive notes field with resume/cover letter info
+  */
+ function buildApplicationNotes(data: Record<string, unknown>): string {
+   const parts: string[] = [];
+   parts.push(`Applied via ZipRecruiter on ${new Date().toLocaleDateString()}`);
+   
+   if (data.resume_url || data.resumeUrl) {
+     parts.push(`Resume: ${data.resume_url || data.resumeUrl}`);
+   }
+   
+   if (data.cover_letter || data.coverLetter) {
+     const coverLetter = String(data.cover_letter || data.coverLetter);
+     if (coverLetter.startsWith('http')) {
+       parts.push(`Cover Letter: ${coverLetter}`);
+     } else {
+       parts.push(`Cover Letter:\n${coverLetter}`);
+     }
+   }
+   
+   if (data.notes) {
+     parts.push(`Additional Notes: ${data.notes}`);
+   }
+   
+   return parts.join('\n\n');
  }
  
  serve(async (req) => {
@@ -149,7 +219,7 @@
  
      // Extract application data (may be nested under 'data', 'application', or 'candidate')
      const applicationData = body.data || body.application || body.candidate || body
-     const parsed = parseApplicationData(applicationData as Record<string, unknown>)
+    const parsed = await parseApplicationData(applicationData as Record<string, unknown>)
  
      logger.info('Application data parsed', { 
        email: parsed.applicant_email,
@@ -205,6 +275,14 @@
          status: 'pending',
          notes: parsed.notes,
          applied_at: parsed.applied_at,
+          cdl: parsed.cdl || null,
+          cdl_class: parsed.cdl_class || null,
+          exp: parsed.exp || null,
+          driving_experience_years: parsed.driving_experience_years || null,
+          education_level: parsed.education_level || null,
+          work_authorization: parsed.work_authorization || null,
+          veteran: parsed.veteran || null,
+          military_service: parsed.military_service || null,
        })
        .select('id')
        .single()

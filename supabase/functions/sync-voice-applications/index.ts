@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
+ import { lookupCityState } from "../_shared/zip-lookup.ts";
 
 const logger = createLogger('sync-voice-applications');
 
@@ -203,6 +204,9 @@ serve(async (req) => {
             const email = getValue(['InternetEmailAddress', 'email', 'Email'], { normalizeEmail: true });
             const phone = getValue(['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber']);
             const zip = getValue(['PostalCode', 'zip', 'Zip', 'ZipCode']);
+ 
+             // Lookup city/state from ZIP code if available
+             const { city, state } = await lookupCityState(zip);
 
             // Must have at least email or phone to create application
             if (!email && !phone) {
@@ -272,12 +276,19 @@ serve(async (req) => {
               applicant_email: email,
               phone: phone,
               zip: zip,
+               city: city || undefined,
+               state: state || undefined,
               cdl: getValue(['Class_A_CDL', 'cdl']),
               exp: getValue(['Class_A_CDL_Experience', 'experience']),
               driver_type: getValue(['DriverType', 'driver_type']),
               drug: getValue(['CanPassDrug', 'drug']),
               veteran: getValue(['Veteran_Status', 'veteran']),
               consent: getValue(['consentGiven', 'consent']),
+               over_21: getValue(['Over21', 'over_21', 'AgeVerification']),
+               hazmat_endorsement: getValue(['Hazmat', 'hazmat_endorsement', 'HazmatEndorsement']),
+               can_pass_drug_test: getValue(['CanPassDrug', 'can_pass_drug_test']),
+               work_authorization: getValue(['WorkAuthorization', 'work_authorization']),
+               cdl_class: getValue(['CDLClass', 'cdl_class', 'LicenseClass']),
               source: 'ElevenLabs',
               job_listing_id: jobListingId,
               elevenlabs_call_transcript: transcriptParts.join('\n\n'),

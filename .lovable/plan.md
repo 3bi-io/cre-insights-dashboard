@@ -276,10 +276,11 @@ The applications table has 77+ columns supporting comprehensive data capture. Th
 
 ### Recommended Implementation Order
 
-1. **Phase 1 - Quick Wins (1-2 days)**
-   - Add zip lookup to voice sync
-   - Update ZipRecruiter webhook with expanded mapping
-   - Add CDL fields to Quick Apply form
+1. **Phase 1 - Quick Wins (1-2 days)** ✅ COMPLETED
+   - ✅ Created shared `supabase/functions/_shared/zip-lookup.ts` utility
+   - ✅ Updated `sync-voice-applications` with zip-to-city lookup + additional CDL fields
+   - ✅ Updated `ziprecruiter-webhook` with CDL, exp, education, veteran, military mapping
+   - ✅ Added CDL class (A/B/C) and endorsements (H, N, P, T, X, S) to Quick Apply form
 
 2. **Phase 2 - Voice Quality (2-3 days)**
    - Debug ElevenLabs data_collection_results capture

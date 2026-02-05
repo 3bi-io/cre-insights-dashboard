@@ -1,14 +1,17 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
-import { Truck, GraduationCap, Clock, Award } from 'lucide-react';
+import { Truck, GraduationCap, Clock, Award, ShieldCheck } from 'lucide-react';
 import { SelectionButtonGroup } from './SelectionButton';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CDLInfoSectionProps {
   formData: {
     cdl: string;
+    cdlClass: string;
+    cdlEndorsements: string[];
     experience: string;
   };
-  onInputChange: (name: string, value: string) => void;
+  onInputChange: (name: string, value: string | string[]) => void;
   isActive?: boolean;
 }
 
@@ -17,6 +20,21 @@ const CDL_OPTIONS = [
   { value: 'Permit', label: 'I have a CDL permit', description: 'Permit holder', icon: <GraduationCap className="h-5 w-5" /> },
   { value: 'InSchool', label: 'Currently in CDL school', description: 'In training now', icon: <GraduationCap className="h-5 w-5" /> },
   { value: 'No', label: 'No CDL-A', description: 'No license yet' },
+];
+
+const CDL_CLASS_OPTIONS = [
+  { value: 'A', label: 'Class A', description: 'Combination vehicles' },
+  { value: 'B', label: 'Class B', description: 'Single vehicles 26,001+ lbs' },
+  { value: 'C', label: 'Class C', description: 'Hazmat/passenger vehicles' },
+];
+
+const CDL_ENDORSEMENTS = [
+  { id: 'H', label: 'H - Hazardous Materials', description: 'Required for hazmat transport' },
+  { id: 'N', label: 'N - Tank Vehicles', description: 'Liquid/gas tankers' },
+  { id: 'P', label: 'P - Passenger', description: 'Buses and passenger vehicles' },
+  { id: 'T', label: 'T - Double/Triple Trailers', description: 'Multiple trailer combinations' },
+  { id: 'X', label: 'X - Hazmat + Tank', description: 'Combined H and N' },
+  { id: 'S', label: 'S - School Bus', description: 'School bus endorsement' },
 ];
 
 const EXPERIENCE_OPTIONS = [
@@ -30,6 +48,17 @@ const EXPERIENCE_OPTIONS = [
 ];
 
 export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }: CDLInfoSectionProps) => {
+  const showClassAndEndorsements = formData.cdl === 'Yes' || formData.cdl === 'Permit';
+  
+  const handleEndorsementChange = (endorsementId: string, checked: boolean) => {
+    const current = formData.cdlEndorsements || [];
+    if (checked) {
+      onInputChange('cdlEndorsements', [...current, endorsementId]);
+    } else {
+      onInputChange('cdlEndorsements', current.filter(e => e !== endorsementId));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Section Header */}
@@ -59,6 +88,52 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }:
           columns={2}
         />
       </div>
+      
+      {/* CDL Class - only show if they have a CDL */}
+      {showClassAndEndorsements && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            CDL Class
+          </Label>
+          <SelectionButtonGroup
+            name="cdl-class"
+            label="CDL Class"
+            options={CDL_CLASS_OPTIONS}
+            value={formData.cdlClass}
+            onChange={(value) => onInputChange('cdlClass', value)}
+            columns={3}
+          />
+        </div>
+      )}
+      
+      {/* Endorsements - only show if they have a CDL */}
+      {showClassAndEndorsements && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Label className="text-sm font-medium">
+            Endorsements <span className="text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {CDL_ENDORSEMENTS.map((endorsement) => (
+              <label
+                key={endorsement.id}
+                className="flex items-start gap-3 p-3 rounded-lg border-2 border-border hover:border-primary/50 cursor-pointer transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+              >
+                <Checkbox
+                  id={`endorsement-${endorsement.id}`}
+                  checked={(formData.cdlEndorsements || []).includes(endorsement.id)}
+                  onCheckedChange={(checked) => handleEndorsementChange(endorsement.id, !!checked)}
+                  className="mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-sm">{endorsement.label}</span>
+                  <p className="text-xs text-muted-foreground">{endorsement.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Experience */}
       <div className="space-y-3">
