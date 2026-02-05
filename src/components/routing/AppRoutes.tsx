@@ -32,6 +32,7 @@ const EmbedApply = React.lazy(() => import("@/pages/EmbedApply"));
 const XApply = React.lazy(() => import("@/pages/XApply"));
 const LinkedInApply = React.lazy(() => import("@/pages/LinkedInApply"));
 const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
+const SocialEmbedApply = React.lazy(() => import("@/pages/SocialEmbedApply"));
 const ShortLinkRedirect = React.lazy(() => import("@/pages/ShortLinkRedirect"));
 const SharedVoicePage = React.lazy(() => import("@/pages/public/SharedVoicePage"));
 
@@ -183,6 +184,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/x/apply/:jobId" element={<RouteWrapper><XApply /></RouteWrapper>} />
       <Route path="/in/apply/:jobId" element={<RouteWrapper><LinkedInApply /></RouteWrapper>} />
       <Route path="/s/:platform/apply/:jobId" element={<RouteWrapper><SocialApply /></RouteWrapper>} />
+      <Route path="/s/:platform/embed/apply" element={<RouteWrapper><SocialEmbedApply /></RouteWrapper>} />
       
       {/* Short Link Redirect */}
       <Route path="/j/:shortCode" element={<RouteWrapper><ShortLinkRedirect /></RouteWrapper>} />
