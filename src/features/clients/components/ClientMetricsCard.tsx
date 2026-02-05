@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Briefcase, Users, TrendingUp, MapPin } from 'lucide-react';
+ import { Briefcase, Users, TrendingUp, MapPin } from 'lucide-react';
 import type { ClientMetrics } from '../hooks/useClientMetrics';
+ import { CompanyLogo } from '@/components/shared';
 
 interface ClientMetricsCardProps {
   client: ClientMetrics;
@@ -16,17 +17,12 @@ export const ClientMetricsCard: React.FC<ClientMetricsCardProps> = ({ client }) 
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            {client.logo_url ? (
-              <img 
-                src={client.logo_url} 
-                alt={client.name}
-                className="w-10 h-10 rounded-lg object-contain bg-muted"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-primary" />
-              </div>
-            )}
+             <CompanyLogo
+               logoUrl={client.logo_url}
+               companyName={client.name}
+               size="sm"
+               className="w-10 h-10"
+             />
             <div>
               <CardTitle className="text-base font-semibold">{client.name}</CardTitle>
               {location && (

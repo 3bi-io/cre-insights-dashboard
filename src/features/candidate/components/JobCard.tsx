@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, DollarSign, Briefcase, Bookmark, BookmarkCheck, Clock } from 'lucide-react';
 import { useSavedJobs } from '../hooks';
 import { format } from 'date-fns';
+ import { CompanyLogo } from '@/components/shared';
 
 interface JobCardProps {
   job: any;
@@ -52,15 +53,14 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onApply, showSaveButton =
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              {job.organizations?.logo_url && (
-                <img 
-                  src={job.organizations.logo_url} 
-                  alt={job.organizations.name}
-                  className="h-8 w-8 rounded object-cover flex-shrink-0"
-                />
-              )}
+               <CompanyLogo
+                 logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+                 companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                 size="sm"
+                 className="flex-shrink-0"
+               />
               <span className="text-sm text-muted-foreground truncate">
-                {job.organizations?.name}
+                 {job.clients?.name || job.organizations?.name}
               </span>
             </div>
             <h3 className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
+ import { CompanyLogo } from '@/components/shared';
 import { 
   MapPin, 
   DollarSign, 
@@ -135,16 +135,15 @@ const JobDetailPage = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
-                <LogoAvatar size="lg" className="h-16 w-16">
-                  {job.organizations?.logo_url ? (
-                    <LogoAvatarImage src={job.organizations.logo_url} alt={job.organizations?.name || 'Company'} />
-                  ) : (
-                    <LogoAvatarFallback iconSize="lg" />
-                  )}
-                </LogoAvatar>
+                 <CompanyLogo
+                   logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+                   companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                   size="xl"
+                   className="h-16 w-16"
+                 />
                 <div className="flex-1">
                   <h1 className="text-2xl font-bold mb-1">{job.title || job.job_title}</h1>
-                  <p className="text-lg text-muted-foreground">{job.organizations?.name}</p>
+                   <p className="text-lg text-muted-foreground">{job.clients?.name || job.organizations?.name}</p>
                 </div>
               </div>
 
@@ -229,15 +228,14 @@ const JobDetailPage = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <LogoAvatar size="md" className="h-12 w-12">
-                  {(job.organizations as any)?.logo_url ? (
-                    <LogoAvatarImage src={(job.organizations as any).logo_url} alt={(job.organizations as any)?.name || 'Company'} />
-                  ) : (
-                    <LogoAvatarFallback iconSize="md" />
-                  )}
-                </LogoAvatar>
+                 <CompanyLogo
+                   logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+                   companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                   size="md"
+                   className="h-12 w-12"
+                 />
                 <div>
-                  <p className="font-semibold">{(job.organizations as any)?.name}</p>
+                   <p className="font-semibold">{job.clients?.name || job.organizations?.name}</p>
                 </div>
               </div>
             </CardContent>
@@ -284,7 +282,7 @@ const JobDetailPage = () => {
                       className="block p-3 rounded-lg border hover:bg-accent transition-colors"
                     >
                       <p className="font-medium text-sm line-clamp-1">{recJob.title}</p>
-                      <p className="text-xs text-muted-foreground">{recJob.organizations?.name}</p>
+                       <p className="text-xs text-muted-foreground">{recJob.clients?.name || recJob.organizations?.name}</p>
                       {recJob.city && recJob.state && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {recJob.city}, {recJob.state}

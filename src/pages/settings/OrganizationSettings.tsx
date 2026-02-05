@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Building, Globe } from 'lucide-react';
+ import { OrganizationLogoUpload } from '@/components/organizations/OrganizationLogoUpload';
 
 const OrganizationSettings = () => {
   const { organization, refreshUser, userRole } = useAuth();
@@ -15,8 +16,7 @@ const OrganizationSettings = () => {
   const [saving, setSaving] = useState(false);
   const [orgData, setOrgData] = useState({
     name: '',
-    slug: '',
-    logo_url: ''
+     slug: ''
   });
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
@@ -25,8 +25,7 @@ const OrganizationSettings = () => {
     if (organization) {
       setOrgData({
         name: organization.name || '',
-        slug: organization.slug || '',
-        logo_url: organization.logo_url || ''
+         slug: organization.slug || ''
       });
     }
   }, [organization]);
@@ -38,8 +37,7 @@ const OrganizationSettings = () => {
     const { error } = await supabase
       .from('organizations')
       .update({
-        name: orgData.name,
-        logo_url: orgData.logo_url || null
+         name: orgData.name
       })
       .eq('id', organization.id);
 
@@ -124,34 +122,6 @@ const OrganizationSettings = () => {
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="logo_url">Logo URL</Label>
-            <Input
-              id="logo_url"
-              value={orgData.logo_url}
-              onChange={(e) => setOrgData({ ...orgData, logo_url: e.target.value })}
-              placeholder="https://example.com/logo.png"
-              disabled={!isAdmin}
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter a URL for your organization's logo
-            </p>
-          </div>
-
-          {orgData.logo_url && (
-            <div className="border rounded-lg p-4">
-              <p className="text-sm font-medium mb-2">Logo Preview</p>
-              <img 
-                src={orgData.logo_url} 
-                alt="Organization logo preview" 
-                className="max-h-16 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            </div>
-          )}
-
           {isAdmin && (
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -160,6 +130,17 @@ const OrganizationSettings = () => {
           )}
         </CardContent>
       </Card>
+ 
+       {/* Logo Upload Section */}
+       {isAdmin && organization && (
+         <OrganizationLogoUpload
+           organizationId={organization.id}
+           organizationSlug={organization.slug}
+           currentLogoUrl={organization.logo_url}
+           onLogoUpdate={refreshUser}
+           disabled={!isAdmin}
+         />
+       )}
     </div>
   );
 };

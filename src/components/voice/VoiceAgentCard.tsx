@@ -19,6 +19,7 @@ import VoiceAgentDialog from './VoiceAgentDialog';
 import { useVoiceAgentConnection, VoiceConnectionStatus, LiveTranscriptPanel, VoiceAgent } from '@/features/elevenlabs';
 import { checkBrowserCompatibility, SUPPORTED_BROWSERS } from '@/features/elevenlabs/utils/browserCompatibility';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
+ import { CompanyLogo } from '@/components/shared';
 
 interface VoiceAgentCardProps {
   agent: VoiceAgent;
@@ -102,13 +103,12 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <CardTitle className="text-lg flex items-center gap-2">
-              {agent.organizations?.logo_url && (
-                <img 
-                  src={agent.organizations.logo_url} 
-                  alt={agent.organizations.name} 
-                  className="w-6 h-6 object-contain rounded"
-                />
-              )}
+               <CompanyLogo
+                 logoUrl={agent.organizations?.logo_url}
+                 companyName={agent.organizations?.name || 'Organization'}
+                 size="sm"
+                 className="w-6 h-6"
+               />
               {agent.agent_name}
             </CardTitle>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

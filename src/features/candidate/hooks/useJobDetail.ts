@@ -16,6 +16,11 @@ export const useJobDetail = (jobId: string | undefined) => {
             name,
             logo_url,
             slug
+           ),
+           clients(
+             id,
+             name,
+             logo_url
           )
         `)
         .eq('id', jobId)
@@ -51,6 +56,10 @@ export const useRecommendedJobs = (currentJobId?: string, limit = 3) => {
           organizations!inner(
             name,
             logo_url
+           ),
+           clients(
+             name,
+             logo_url
           )
         `)
         .eq('status', 'active')
