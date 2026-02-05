@@ -201,14 +201,14 @@ const JobDetailsPage: React.FC = () => {
             <CardContent className="p-4 sm:p-6 lg:p-8">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4 lg:mb-6">
-                <LogoAvatar size="lg" className="lg:h-16 lg:w-16">
+                <LogoAvatar size="2xl">
                   {job.clients?.logo_url ? (
                     <LogoAvatarImage 
                       src={job.clients.logo_url} 
                       alt={`${companyName} logo`}
                     />
                   ) : (
-                    <LogoAvatarFallback iconSize="lg" />
+                    <LogoAvatarFallback iconSize="xl" />
                   )}
                 </LogoAvatar>
                 <div className="flex-1 min-w-0">
