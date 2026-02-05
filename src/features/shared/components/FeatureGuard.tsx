@@ -24,6 +24,7 @@ interface OrganizationFeatures {
   voice_agent?: boolean;
   advanced_analytics?: boolean;
   elevenlabs_access?: boolean;
+  social_beacon?: boolean;
 }
 
 const FeatureGuard: React.FC<FeatureGuardProps> = ({ 

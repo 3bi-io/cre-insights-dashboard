@@ -59,6 +59,7 @@ export const useOrganizationFeatures = () => {
   const hasAdvancedAnalytics = () => hasFeature('advanced_analytics');
   const hasElevenLabsAccess = () => hasFeature('elevenlabs_access');
   const hasBackgroundCheckAccess = () => hasFeature('background_check_access');
+  const hasSocialBeacon = () => hasFeature('social_beacon');
 
   // AI access (OpenAI, Anthropic, or Grok)
   const hasAIAccess = () =>
@@ -86,6 +87,7 @@ export const useOrganizationFeatures = () => {
     hasAdvancedAnalytics,
     hasElevenLabsAccess,
     hasBackgroundCheckAccess,
+    hasSocialBeacon,
     hasAIAccess,
   };
 };

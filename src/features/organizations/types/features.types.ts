@@ -12,12 +12,13 @@ export type FeatureKey =
   | 'voice_agent'
   | 'elevenlabs_access'
   | 'advanced_analytics'
-  | 'background_check_access';
+  | 'background_check_access'
+  | 'social_beacon';
 
 /**
  * Feature category for grouping
  */
-export type FeatureCategory = 'AI' | 'Advertising' | 'Integration' | 'Analytics' | 'Screening';
+export type FeatureCategory = 'AI' | 'Advertising' | 'Integration' | 'Analytics' | 'Screening' | 'Social';
 
 /**
  * Individual feature configuration
