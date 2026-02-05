@@ -870,8 +870,13 @@ Deno.serve(async (req) => {
       ad_id: formData.ad_id || null,
       campaign_id: formData.campaign_id || null,
       adset_id: formData.adset_id || null,
-      referral_source: formData.referral_source || formData.utm_source || null,
-      how_did_you_hear: formData.how_did_you_hear || formData.utm_medium || formData.utm_campaign || null,
+      referral_source: formData.referral_source || null,
+      how_did_you_hear: formData.how_did_you_hear || null,
+      
+      // UTM tracking (dedicated columns)
+      utm_source: formData.utm_source || null,
+      utm_medium: formData.utm_medium || null,
+      utm_campaign: formData.utm_campaign || null,
       
       // Metadata
       source: detectedSource,

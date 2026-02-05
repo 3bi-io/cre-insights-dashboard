@@ -641,6 +641,9 @@ export type Database = {
           tenstreet_sync_status: string | null
           twic_card: string | null
           updated_at: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
           veteran: string | null
           violation_history: string | null
           willing_to_relocate: string | null
@@ -733,6 +736,9 @@ export type Database = {
           tenstreet_sync_status?: string | null
           twic_card?: string | null
           updated_at?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           veteran?: string | null
           violation_history?: string | null
           willing_to_relocate?: string | null
@@ -825,6 +831,9 @@ export type Database = {
           tenstreet_sync_status?: string | null
           twic_card?: string | null
           updated_at?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
           veteran?: string | null
           violation_history?: string | null
           willing_to_relocate?: string | null
