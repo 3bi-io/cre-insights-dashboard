@@ -31,6 +31,7 @@
   var token = script.getAttribute('data-token');
   var containerId = script.getAttribute('data-container') || 'apply-widget';
   var baseUrl = script.getAttribute('data-base-url') || 'https://ats.me';
+  var apiUrl = script.getAttribute('data-api-url') || 'https://auwhcdpppldjlcaxzsme.supabase.co';
   var minHeight = parseInt(script.getAttribute('data-min-height') || '600', 10);
 
   // Validate token
@@ -60,7 +61,7 @@
     container.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;min-height:' + minHeight + 'px;font-family:system-ui,-apple-system,sans-serif;color:#666;"><div style="text-align:center;"><div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#3b82f6;border-radius:50%;animation:ats-spin 1s linear infinite;margin:0 auto 16px;"></div><div>Loading application form...</div></div></div><style>@keyframes ats-spin{to{transform:rotate(360deg)}}</style>';
 
     // Resolve the token
-    var resolveUrl = baseUrl + '/functions/v1/resolve-embed-token?token=' + encodeURIComponent(token);
+    var resolveUrl = apiUrl + '/functions/v1/resolve-embed-token?token=' + encodeURIComponent(token);
     
     fetch(resolveUrl)
       .then(function(response) {
