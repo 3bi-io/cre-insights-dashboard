@@ -73,7 +73,6 @@ const SitemapPage = () => {
         { path: '/features', label: 'Features', icon: <Sparkles className="w-4 h-4" />, description: 'Platform features and capabilities' },
         { path: '/resources', label: 'Resources', icon: <FileText className="w-4 h-4" />, description: 'Guides and documentation' },
         { path: '/contact', label: 'Contact', icon: <Phone className="w-4 h-4" />, description: 'Get in touch with us' },
-        { path: '/demo', label: 'Demo', icon: <Mic className="w-4 h-4" />, description: 'Interactive platform demo' },
         { path: '/sitemap', label: 'Sitemap', icon: <Map className="w-4 h-4" />, description: 'Site navigation directory' },
       ],
     },

@@ -1,4 +1,4 @@
-import { LucideIcon, Briefcase, Building2, Sparkles, Play, BookOpen, Mail } from 'lucide-react';
+import { LucideIcon, Briefcase, Building2, Sparkles, BookOpen, Mail } from 'lucide-react';
 
 export interface PublicNavItem {
   name: string;
@@ -26,12 +26,6 @@ export const publicNavigation: PublicNavItem[] = [
     href: '/features', 
     icon: Sparkles,
     description: 'Platform capabilities'
-  },
-  { 
-    name: 'Demo', 
-    href: '/demo', 
-    icon: Play,
-    description: 'See it in action'
   },
   { 
     name: 'Resources', 
