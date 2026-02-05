@@ -134,6 +134,7 @@ export interface JobListing {
   };
   clients?: {
     name: string;
+    logo_url?: string;
   };
 }
 

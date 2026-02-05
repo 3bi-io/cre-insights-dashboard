@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, MapPin, Eye, Edit, Trash2, DollarSign, Clock, Mic } from 'lucide-react';
 import type { JobListing } from '@/types/common.types';
+import { CompanyLogo } from '@/components/shared';
 
 interface JobCardProps {
   job: JobListing;
@@ -52,7 +53,14 @@ const JobCard: React.FC<JobCardProps> = ({ job, onViewAnalytics, onVoiceApply })
       <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
+            <div className="flex items-center gap-3">
+              <CompanyLogo
+                logoUrl={job.clients?.logo_url}
+                companyName={job.clients?.name || 'Client'}
+                size="sm"
+              />
+              <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
+            </div>
             <div className="text-sm text-gray-600 mt-1 space-y-1">
               <p className="break-words">
                 {job.job_platform_associations?.map(assoc => assoc.platforms?.name).join(', ') || 'No publishers'} • {job.job_categories?.name}

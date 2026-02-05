@@ -44,6 +44,10 @@ export const useJobSearch = () => {
         .from('job_listings')
         .select(`
           *,
+          clients(
+            name,
+            logo_url
+          ),
           organizations!inner(
             name,
             logo_url
