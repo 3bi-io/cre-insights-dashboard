@@ -115,7 +115,7 @@ export function EmbedCodeSnippet({ token, jobTitle }: EmbedCodeSnippetProps) {
             <div className="grid gap-2">
               <div className="flex items-start gap-2">
                 <code className="bg-muted px-1.5 py-0.5 rounded text-xs">data-container</code>
-                <span className="text-muted-foreground">ID of the container element (default: "ats-apply-widget")</span>
+                <span className="text-muted-foreground">ID of the container element (default: "apply-widget")</span>
               </div>
               <div className="flex items-start gap-2">
                 <code className="bg-muted px-1.5 py-0.5 rounded text-xs">data-min-height</code>
