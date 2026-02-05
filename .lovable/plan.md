@@ -1,95 +1,194 @@
 
+# Fix Client Logo Display Across All Views
 
-# Add Super Admin CTA on Organization Settings Page
+## Problem Summary
 
-## Summary
+The user correctly identified that client logos are not appearing in several views where they should. The issue stems from:
 
-Add a Call-to-Action (CTA) card for super admins on the `/settings/organizations` page that links directly to the full Organizations management page (`/admin/organizations`) where they can manage logos for any organization.
+1. **Missing client data in queries**: Several hooks only fetch organization data but not client data (name, logo_url)
+2. **Inconsistent fallback logic**: Some components properly fallback from `clients.logo_url` to `organizations.logo_url`, but the underlying data queries don't include client information
+3. **Admin JobCard missing logo entirely**: The admin job card component (`src/components/jobs/JobCard.tsx`) doesn't display any logo at all
 
-## Current Behavior
+## Files Requiring Changes
 
-- The `OrganizationSettings` page at `/settings/organizations` shows the current user's organization details
-- Super admins can view/edit their own organization here but must navigate separately to `/admin/organizations` to manage other organizations' logos
-- No visual indicator or shortcut exists for super admins
+| File | Issue | Fix |
+|------|-------|-----|
+| `src/features/candidate/hooks/useCandidateApplications.ts` | Missing `clients.logo_url` in query | Add `logo_url` to clients select |
+| `src/features/candidate/hooks/useSavedJobs.ts` | Missing `clients` data entirely | Add clients join with name and logo_url |
+| `src/features/candidate/hooks/useJobSearch.ts` | Missing `clients` data entirely | Add clients join with name and logo_url |
+| `src/components/jobs/JobCard.tsx` | No logo display at all | Add CompanyLogo component with client priority |
+| `src/types/common.types.ts` | JobListing.clients missing logo_url | Add logo_url to clients type |
 
-## Proposed Solution
+## Technical Details
 
-Add a prominent CTA card at the top of the Organization Settings page that:
-1. Only appears for `super_admin` users
-2. Links to `/admin/organizations` where they can manage all organization logos
-3. Uses consistent styling with the existing UI
+### 1. Fix useCandidateApplications.ts
 
-## Technical Changes
-
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/pages/settings/OrganizationSettings.tsx` | MODIFY | Add super admin CTA card with link to `/admin/organizations` |
-
-## Implementation Details
-
-**File: `src/pages/settings/OrganizationSettings.tsx`**
-
-1. Import additional components:
+**Current query (line 50)**:
 ```typescript
-import { Link } from 'react-router-dom';
-import { ExternalLink, Crown } from 'lucide-react';
+clients(name),
 ```
 
-2. Add `isSuperAdmin` check:
+**Updated query**:
 ```typescript
-const isSuperAdmin = userRole === 'super_admin';
+clients(name, logo_url),
 ```
 
-3. Add CTA card after the page header (before the main Card):
+**Update interface (line 21-23)**:
 ```typescript
-{isSuperAdmin && (
-  <Card className="border-primary/20 bg-primary/5">
-    <CardContent className="flex items-center justify-between py-4">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-full bg-primary/10">
-          <Crown className="w-5 h-5 text-primary" />
-        </div>
-        <div>
-          <p className="font-medium">Super Admin Access</p>
-          <p className="text-sm text-muted-foreground">
-            Manage logos and branding for all organizations
-          </p>
-        </div>
-      </div>
-      <Button asChild>
-        <Link to="/admin/organizations">
-          Manage All Organizations
-          <ExternalLink className="w-4 h-4 ml-2" />
-        </Link>
-      </Button>
-    </CardContent>
-  </Card>
-)}
+clients?: {
+  name: string;
+  logo_url?: string;
+};
 ```
 
-## Visual Result
+### 2. Fix useSavedJobs.ts
+
+**Current query (lines 40-52)** - Missing clients entirely:
+```typescript
+job_listings!inner(
+  id,
+  title,
+  ...
+  organizations!inner(
+    name,
+    logo_url
+  )
+)
+```
+
+**Updated query**:
+```typescript
+job_listings!inner(
+  id,
+  title,
+  location,
+  city,
+  state,
+  salary_min,
+  salary_max,
+  clients(
+    name,
+    logo_url
+  ),
+  organizations!inner(
+    name,
+    logo_url
+  )
+)
+```
+
+**Update SavedJob interface (lines 11-23)**:
+```typescript
+job_listings: {
+  id: string;
+  title: string;
+  location?: string;
+  city?: string;
+  state?: string;
+  salary_min?: number;
+  salary_max?: number;
+  clients?: {
+    name: string;
+    logo_url?: string;
+  };
+  organizations: {
+    name: string;
+    logo_url?: string;
+  };
+};
+```
+
+### 3. Fix useJobSearch.ts
+
+**Current query (lines 45-51)** - Missing clients entirely:
+```typescript
+organizations!inner(
+  name,
+  logo_url
+)
+```
+
+**Updated query**:
+```typescript
+clients(
+  name,
+  logo_url
+),
+organizations!inner(
+  name,
+  logo_url
+)
+```
+
+### 4. Update Admin JobCard.tsx
+
+Add logo display using the CompanyLogo component with client priority:
+
+**Import**:
+```typescript
+import { CompanyLogo } from '@/components/shared';
+```
+
+**Add logo in CardHeader (after line 55)**:
+```typescript
+<div className="flex items-center gap-3">
+  <CompanyLogo
+    logoUrl={job.clients?.logo_url}
+    companyName={job.clients?.name || 'Client'}
+    size="sm"
+  />
+  <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
+</div>
+```
+
+### 5. Update common.types.ts
+
+**Update JobListing.clients type (lines 135-137)**:
+```typescript
+clients?: {
+  name: string;
+  logo_url?: string;
+};
+```
+
+## Data Flow After Fix
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ Organization Settings                                        │
-│ Manage your organization's information                       │
-├─────────────────────────────────────────────────────────────┤
-│ 👑 Super Admin Access                                        │ ← NEW (only for super_admin)
-│ Manage logos and branding for all organizations              │
-│                                    [Manage All Organizations]│
-├─────────────────────────────────────────────────────────────┤
-│ Organization Details Card                                    │
-│ ...existing content...                                       │
-├─────────────────────────────────────────────────────────────┤
-│ Logo Upload Card                                             │
-│ ...existing content...                                       │
-└─────────────────────────────────────────────────────────────┘
+Database (job_listings)
+    │
+    ├── client_id ──► clients table ──► { name, logo_url }
+    │
+    └── organization_id ──► organizations table ──► { name, logo_url }
+    
+    
+Component Display Priority:
+    1. clients.logo_url (if available)
+    2. organizations.logo_url (fallback for admin context)
+    3. LogoAvatarFallback (Building2 icon)
 ```
 
-## Benefits
+## Views Fixed
 
-1. **Quick Access**: Super admins can immediately navigate to manage all organization logos
-2. **Context Awareness**: CTA appears only when relevant (super_admin role)
-3. **Consistent UX**: Uses existing card styling with subtle primary color accent
-4. **Non-intrusive**: Doesn't affect the experience for regular admins or users
+After implementation, client logos will correctly display in:
 
+| View | Component | Current | After |
+|------|-----------|---------|-------|
+| Candidate Dashboard | Recent Applications | No client logo | Client logo shown |
+| Candidate Dashboard | Recommended Jobs | Already working | Confirmed working |
+| Saved Jobs Page | JobCard | No client logo | Client logo shown |
+| Job Search Page | JobCard | No client logo | Client logo shown |
+| Applications Page | ApplicationCard | No client logo | Client logo shown |
+| Admin Jobs Page | JobCard | No logo at all | Client logo shown |
+| Public /jobs | PublicJobCard | Already working | Confirmed working |
+
+## Privacy Considerations
+
+All candidate-facing components already use the correct priority:
+```typescript
+logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+```
+
+This ensures:
+- Client logos are shown when available (privacy-safe for candidates)
+- Organization logos only shown as fallback (for jobs without assigned clients)
+- Generic fallback icon for edge cases
