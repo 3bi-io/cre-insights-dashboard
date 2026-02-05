@@ -23,6 +23,7 @@ import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/EmptyState';
 import { ApplicationProgress } from '../components/ApplicationProgress';
 import { format } from 'date-fns';
+ import { CompanyLogo } from '@/components/shared';
 
 const CandidateDashboard = () => {
   const { candidateProfile } = useAuth();
@@ -201,7 +202,7 @@ const CandidateDashboard = () => {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{app.job_listings?.title}</h4>
                         <p className="text-sm text-muted-foreground truncate">
-                          {app.job_listings?.organizations?.name}
+                           {app.job_listings?.clients?.name || app.job_listings?.organizations?.name}
                         </p>
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -262,17 +263,15 @@ const CandidateDashboard = () => {
                     className="block p-3 rounded-lg border hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-start gap-3">
-                      {job.organizations?.logo_url && (
-                        <img
-                          src={job.organizations.logo_url}
-                          alt=""
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      )}
+                       <CompanyLogo
+                         logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+                         companyName={job.clients?.name || job.organizations?.name || 'Company'}
+                         size="sm"
+                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{job.title}</h4>
                         <p className="text-sm text-muted-foreground truncate">
-                          {job.organizations?.name}
+                           {job.clients?.name || job.organizations?.name}
                         </p>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                           {job.city && job.state && (

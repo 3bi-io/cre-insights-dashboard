@@ -7,6 +7,7 @@ import { MapPin, Calendar, MessageSquare, X, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ApplicationProgress } from './ApplicationProgress';
 import { getStatusColor, getStatusLabel } from '@/features/applications/utils/statusColors';
+ import { CompanyLogo } from '@/components/shared';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,17 +56,15 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
-              {job?.organizations?.logo_url && (
-                <img 
-                  src={job.organizations.logo_url} 
-                  alt={job.organizations.name}
-                  className="h-10 w-10 rounded object-cover border"
-                />
-              )}
+               <CompanyLogo
+                 logoUrl={job?.clients?.logo_url || job?.organizations?.logo_url}
+                 companyName={job?.clients?.name || job?.organizations?.name || 'Company'}
+                 size="sm"
+               />
               <div className="min-w-0">
                 <h3 className="text-lg font-semibold truncate">{displayTitle}</h3>
                 <p className="text-sm text-muted-foreground truncate">
-                  {job?.organizations?.name}
+                   {job?.clients?.name || job?.organizations?.name}
                 </p>
               </div>
             </div>

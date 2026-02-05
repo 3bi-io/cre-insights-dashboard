@@ -10,3 +10,4 @@ export { FormWizard, useFormWizard } from './FormWizard';
 export type { WizardStep } from './FormWizard';
 export { DataLoadingStateHandler } from './DataLoadingStateHandler';
 export type { DataLoadingStateHandlerProps } from './DataLoadingStateHandler';
+ export { CompanyLogo } from './CompanyLogo';
