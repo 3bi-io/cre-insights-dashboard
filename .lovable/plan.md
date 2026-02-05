@@ -282,10 +282,13 @@ The applications table has 77+ columns supporting comprehensive data capture. Th
    - ✅ Updated `ziprecruiter-webhook` with CDL, exp, education, veteran, military mapping
    - ✅ Added CDL class (A/B/C) and endorsements (H, N, P, T, X, S) to Quick Apply form
 
-2. **Phase 2 - Voice Quality (2-3 days)**
-   - Debug ElevenLabs data_collection_results capture
-   - Audit agent prompt for complete CDL collection
-   - Add transcript fallback extraction
+ 2. **Phase 2 - Voice Quality (2-3 days)** ✅ COMPLETED
+    - ✅ Created `supabase/functions/_shared/transcript-parser.ts` for fallback extraction
+    - ✅ Added transcript fallback parsing for ZIP, CDL, exp, drug, veteran, consent, driver_type
+    - ✅ Expanded data_collection field aliases (20+ variations per field)
+    - ✅ Added city/state ZIP lookup to webhook handler
+    - ✅ Updated both `sync-voice-applications` and `elevenlabs-conversation-webhook`
+    - Note: ElevenLabs agent prompts likely need reconfiguration in ElevenLabs dashboard to store structured data
 
 3. **Phase 3 - Data Quality Dashboard (3-5 days)**
    - Create admin view for field completion metrics
