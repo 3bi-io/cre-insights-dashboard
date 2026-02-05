@@ -1,197 +1,164 @@
 
-
-## OpenWeatherMap Integration for ElevenLabs Voice Agents
+## Logo Size Enhancement for /apply Pages
 
 ### Overview
 
-This plan adds weather lookup capabilities to your ElevenLabs voice agents, allowing applicants to ask about weather conditions during voice conversations. ElevenLabs supports **Server Tools** (webhooks) that agents can call during conversations to fetch real-time data.
+This refactor increases logo sizes across all apply pages for stronger brand presence following best practices for candidate-facing pages. The current implementation uses a small `h-8 w-8` logo that gets lost next to the job title. We'll create a hero-style branding treatment with prominent logos.
 
 ---
 
-### How It Works
+### Current State Analysis
+
+| Page | Component | Current Logo Size | Issue |
+|------|-----------|-------------------|-------|
+| `/apply` | `ApplicationHeader` | `h-8 w-8` (32px) | Too small, inline with metadata |
+| `/apply/detailed` | `ApplicationHeader` | `h-8 w-8` (32px) | Same component, same issue |
+| `/embed/apply` | `ApplicationHeader` | `h-8 w-8` (32px) | Same component, same issue |
+| `/thank-you` | None | No logo | Missing brand reinforcement |
+| `/embed/apply` (success) | `EmbedThankYou` | None | Missing brand reinforcement |
+
+**Best Practice**: Logos on application landing pages should be 64-96px to establish trust and brand recognition immediately.
+
+---
+
+### Design Solution
+
+#### New Layout Structure
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Voice Conversation Flow                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│   Applicant: "What's the weather like in Dallas?"                       │
-│                           │                                             │
-│                           ▼                                             │
-│   ┌─────────────────────────────────────────────────────────────┐       │
-│   │              ElevenLabs Voice Agent                         │       │
-│   │   - Recognizes weather question                             │       │
-│   │   - Converts "Dallas" to coordinates (lat/lon)              │       │
-│   │   - Calls configured webhook tool                           │       │
-│   └───────────────────────┬─────────────────────────────────────┘       │
-│                           │                                             │
-│                           ▼                                             │
-│   ┌─────────────────────────────────────────────────────────────┐       │
-│   │        Edge Function: elevenlabs-weather-tool               │       │
-│   │   - Receives lat/lon from ElevenLabs                        │       │
-│   │   - Calls OpenWeatherMap API                                │       │
-│   │   - Returns formatted weather data                          │       │
-│   └───────────────────────┬─────────────────────────────────────┘       │
-│                           │                                             │
-│                           ▼                                             │
-│   Agent: "It's currently 72°F in Dallas with partly cloudy skies."     │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+BEFORE (Current):
+┌────────────────────────────────────────────┐
+│           Driver Application               │
+│    [tiny logo] Company Name • Location     │
+└────────────────────────────────────────────┘
+
+AFTER (Proposed):
+┌────────────────────────────────────────────┐
+│         ┌────────────┐                     │
+│         │            │                     │
+│         │   LOGO     │  (80px centered)    │
+│         │            │                     │
+│         └────────────┘                     │
+│                                            │
+│           Driver Application               │
+│         Company Name • Location            │
+└────────────────────────────────────────────┘
 ```
 
 ---
 
-### Implementation Steps
+### Implementation Details
 
-#### Step 1: Store API Key as Supabase Secret
+#### 1. Update LogoAvatar Component Sizes
 
-Add your OpenWeatherMap API key to Supabase secrets:
-- Secret name: `OPENWEATHERMAP_API_KEY`
-- This keeps the key secure and accessible only from edge functions
+Add a new "2xl" size tier for hero-level logo display:
 
-#### Step 2: Create Weather Tool Edge Function
+**File:** `src/components/ui/logo-avatar.tsx`
 
-**New file:** `supabase/functions/elevenlabs-weather-tool/index.ts`
+| Size | Current | New |
+|------|---------|-----|
+| sm | h-10 w-10 (40px) | unchanged |
+| md | h-12 w-12 (48px) | unchanged |
+| lg | h-14 w-14 (56px) | unchanged |
+| xl | h-16 w-16 (64px) | unchanged |
+| **2xl** | N/A | **h-20 w-20 (80px)** |
+| **3xl** | N/A | **h-24 w-24 (96px)** |
 
-This edge function will:
-- Accept requests from ElevenLabs agents with latitude/longitude parameters
-- Call OpenWeatherMap Current Weather API
-- Return structured weather data for the agent to speak
+Update icon fallback sizes accordingly.
 
-**Key features:**
-- Supports both coordinates (lat/lon) and city name lookups
-- Returns temperature, conditions, humidity, and wind speed
-- Formatted responses optimized for voice output
-- Rate limiting to prevent abuse
-- Proper error handling with fallback messages
+---
 
-**API endpoint format:**
-```
-POST /functions/v1/elevenlabs-weather-tool
-Body: { "latitude": 32.78, "longitude": -96.80 }
-  -or-
-Body: { "city": "Dallas, TX" }
-```
+#### 2. Refactor ApplicationHeader Component
 
-#### Step 3: Register Function in config.toml
+**File:** `src/components/apply/ApplicationHeader.tsx`
 
-Add the new function to `supabase/config.toml` with JWT verification disabled (ElevenLabs doesn't send auth tokens to webhook tools).
+Changes:
+- Move logo above the title for hero positioning
+- Increase logo size to "2xl" (80px)
+- Center the logo with proper spacing
+- Keep metadata (location, source) below title
+- Add subtle shadow and better visual hierarchy
 
-#### Step 4: Configure in ElevenLabs Dashboard
-
-You'll need to configure this webhook tool in the ElevenLabs agent settings:
-
-1. Go to your agent in the ElevenLabs dashboard
-2. Navigate to **Tools** section → **Add Tool**
-3. Select **Webhook** as Tool Type
-4. Configure:
-   - **Name:** `get_weather`
-   - **Description:** `Gets current weather conditions for a location`
-   - **Method:** `POST`
-   - **URL:** `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/elevenlabs-weather-tool`
-5. Add parameters:
-   - `latitude` (number): The latitude coordinate
-   - `longitude` (number): The longitude coordinate
-   - OR `city` (string): City name with optional state/country
-
-#### Step 5: Update Agent System Prompt
-
-Add weather instructions to your agent's system prompt:
-
-```text
-You have access to a weather tool. When users ask about weather conditions, 
-use the get_weather tool to fetch accurate, real-time data. 
-
-For weather requests:
-1. Identify the location the user is asking about
-2. Convert the location to coordinates using your geographic knowledge
-3. Call get_weather with the latitude and longitude
-4. Present the information conversationally, referring to locations by name
-
-Never ask users for coordinates - determine them yourself from location names.
+New structure:
+```tsx
+<header className="text-center mb-8">
+  {/* Hero Logo - Centered above title */}
+  {clientLogoUrl && (
+    <div className="flex justify-center mb-4">
+      <LogoAvatar size="2xl" className="shadow-md">
+        <LogoAvatarImage src={clientLogoUrl} alt={`${clientName} logo`} />
+      </LogoAvatar>
+    </div>
+  )}
+  
+  {/* Job Title */}
+  <h1 className="text-2xl sm:text-3xl font-bold mb-2">{displayTitle}</h1>
+  
+  {/* Company & Metadata */}
+  <div className="flex items-center justify-center gap-4 text-muted-foreground">
+    {clientName && <span>{clientName}</span>}
+    {location && <MetadataBadge icon={MapPin}>{location}</MetadataBadge>}
+  </div>
+</header>
 ```
 
 ---
 
-### Technical Details
+#### 3. Add Logo to Thank You Pages
 
-#### Edge Function Implementation
+**File:** `src/pages/ThankYou.tsx`
 
-```typescript
-// supabase/functions/elevenlabs-weather-tool/index.ts
+- Accept optional `logoUrl` in navigation state
+- Display logo above success icon when available
+- Uses "xl" size (64px) for secondary prominence
 
-interface WeatherRequest {
-  latitude?: number;
-  longitude?: number;
-  city?: string;
-}
+**File:** `src/components/apply/EmbedThankYou.tsx`
 
-interface WeatherResponse {
-  location: string;
-  temperature: number;
-  temperature_unit: string;
-  conditions: string;
-  humidity: number;
-  wind_speed: number;
-  wind_unit: string;
-  description: string;
-}
-
-// Function will:
-// 1. Parse lat/lon or city from request
-// 2. Call OpenWeatherMap API
-// 3. Format response for voice delivery
-// 4. Handle errors gracefully
-```
-
-#### OpenWeatherMap API Usage
-
-- **Endpoint:** `https://api.openweathermap.org/data/2.5/weather`
-- **Parameters:** `lat`, `lon`, `appid`, `units=imperial`
-- **Response includes:** temp, conditions, humidity, wind speed
-
-#### Security Considerations
-
-- API key stored securely in Supabase secrets (never exposed to frontend)
-- Rate limiting: 60 requests per minute per IP
-- JWT verification disabled for ElevenLabs webhook compatibility
-- Request validation to prevent abuse
+- Add `clientLogoUrl` prop
+- Display logo in success card header
+- Pass logo from EmbedApply submission result
 
 ---
 
-### Files to Create/Modify
+#### 4. Update Page Components to Pass Logo
 
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/elevenlabs-weather-tool/index.ts` | Create | Main weather API edge function |
-| `supabase/config.toml` | Modify | Register new function |
-
----
-
-### After Implementation
-
-Once the code is deployed, you'll need to:
-
-1. **Provide your API key** - I'll securely store your OpenWeatherMap API key
-2. **Configure in ElevenLabs** - Add the webhook tool to your agent(s)
-3. **Test the integration** - Try asking "What's the weather in Chicago?"
+**Files to update:**
+- `src/pages/Apply.tsx` - Already passes `clientLogoUrl` ✓
+- `src/pages/EmbedApply.tsx` - Add `clientLogoUrl` to context and submission result
+- `src/components/apply/detailed/DetailedApplicationForm.tsx` - Already passes `clientLogoUrl` ✓
 
 ---
 
-### Cost Considerations
+### Files to Modify
 
-**OpenWeatherMap Pricing:**
-- **Free tier:** 1,000 calls/day, 60 calls/minute
-- Sufficient for typical voice agent usage
-- Upgrade available if needed for high-volume deployments
+| File | Changes |
+|------|---------|
+| `src/components/ui/logo-avatar.tsx` | Add 2xl/3xl size tiers |
+| `src/components/apply/ApplicationHeader.tsx` | Hero logo layout, larger size |
+| `src/pages/ThankYou.tsx` | Accept and display logo from state |
+| `src/components/apply/EmbedThankYou.tsx` | Add logo prop and display |
+| `src/pages/EmbedApply.tsx` | Pass clientLogoUrl through submission flow |
+| `src/hooks/useApplyContext.ts` | Verify clientLogoUrl is exposed (may already be) |
 
 ---
 
-### Optional Enhancements (Future)
+### Visual Comparison
 
-- Extended forecasts (next 5 days)
-- Weather alerts and warnings  
-- Historical weather data
-- Air quality information
-- Clothing/driving recommendations based on conditions
+**Mobile (375px)**
+- Logo: 64px (reduced from 80px for mobile)
+- Title: 24px
+- Metadata: 14px
 
+**Desktop (768px+)**
+- Logo: 80px
+- Title: 30px  
+- Metadata: 14px
+
+---
+
+### Technical Notes
+
+- The `LogoAvatar` component already uses `rounded-2xl` and `object-contain` per design system
+- Shadow class `shadow-md` adds depth without being heavy
+- The `p-2` internal padding in `LogoAvatarImage` ensures logos don't touch edges
+- Fallback icon (Building2) scales with the new 2xl/3xl sizes
