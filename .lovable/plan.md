@@ -1,184 +1,194 @@
 
+# Fix Client Logo Display Across All Views
 
-# Logo System Refactoring: Complete Analysis & Recommendations
+## Problem Summary
 
-## Current State Analysis
+The user correctly identified that client logos are not appearing in several views where they should. The issue stems from:
 
-### Storage Buckets
-| Bucket | Purpose | Status |
-|--------|---------|--------|
-| `organization-logos` | Organization branding | Working |
-| `client-logos` | Client/employer branding | Working |
+1. **Missing client data in queries**: Several hooks only fetch organization data but not client data (name, logo_url)
+2. **Inconsistent fallback logic**: Some components properly fallback from `clients.logo_url` to `organizations.logo_url`, but the underlying data queries don't include client information
+3. **Admin JobCard missing logo entirely**: The admin job card component (`src/components/jobs/JobCard.tsx`) doesn't display any logo at all
 
-### Upload Components (Well-Implemented)
-| Component | Location | Target |
-|-----------|----------|--------|
-| `OrganizationLogoUpload` | `src/components/organizations/OrganizationLogoUpload.tsx` | Organizations |
-| `ClientLogoUpload` | `src/features/clients/components/ClientLogoUpload.tsx` | Clients |
-| `useOrganizationLogo` | `src/hooks/useOrganizationLogo.tsx` | Organizations (hook) |
+## Files Requiring Changes
 
-### Display Components
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `LogoAvatar` | `src/components/ui/logo-avatar.tsx` | Consistent logo display container |
-| `Brand` | `src/components/common/Brand.tsx` | Sidebar/header branding |
+| File | Issue | Fix |
+|------|-------|-----|
+| `src/features/candidate/hooks/useCandidateApplications.ts` | Missing `clients.logo_url` in query | Add `logo_url` to clients select |
+| `src/features/candidate/hooks/useSavedJobs.ts` | Missing `clients` data entirely | Add clients join with name and logo_url |
+| `src/features/candidate/hooks/useJobSearch.ts` | Missing `clients` data entirely | Add clients join with name and logo_url |
+| `src/components/jobs/JobCard.tsx` | No logo display at all | Add CompanyLogo component with client priority |
+| `src/types/common.types.ts` | JobListing.clients missing logo_url | Add logo_url to clients type |
 
----
+## Technical Details
 
-## Issues Identified
+### 1. Fix useCandidateApplications.ts
 
-### Issue 1: Inconsistent Logo Display Patterns
-Some components use `LogoAvatar` (correct), while others use raw `<img>` tags with inconsistent styling:
-
-**Using LogoAvatar (Correct)**:
-- `PublicJobCard.tsx` - Uses `LogoAvatar` with client logo
-- `ClientsPage.tsx` - Uses `LogoAvatar` properly
-- `ApplicationHeader.tsx` - Uses `LogoAvatar` properly
-- `ClientLogoUpload.tsx` - Uses `LogoAvatar` for preview
-
-**Using raw `<img>` (Inconsistent)**:
-- `ApplicationCard.tsx` - Uses `<img>` with `job.organizations.logo_url`
-- `JobCard.tsx` - Uses `<img>` with `job.organizations.logo_url`
-- `VoiceAgentCard.tsx` - Uses `<img>` with `agent.organizations.logo_url`
-- `ClientMetricsCard.tsx` - Uses `<img>` with `client.logo_url`
-- `OrganizationSettings.tsx` - Uses `<img>` for logo preview
-- `CandidateDashboard.tsx` - Uses `<img>` with `job.organizations.logo_url`
-- `JobDetailPage.tsx` - Mixed (uses LogoAvatar but references organization logo)
-
-### Issue 2: Wrong Logo Source for Public/Applicant Views
-Several candidate-facing components display the **organization logo** instead of the **client logo**:
-
-| Component | Current Source | Should Be | Privacy Risk |
-|-----------|----------------|-----------|--------------|
-| `ApplicationCard.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
-| `JobCard.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
-| `CandidateDashboard.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
-| `JobDetailPage.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
-
-### Issue 3: OrganizationSettings Uses URL Input Instead of Upload
-`src/pages/settings/OrganizationSettings.tsx` still uses a plain text URL input for logo, while other parts of the app have proper upload functionality.
-
----
-
-## Recommended Refactoring Plan
-
-### Phase 1: Standardize Display Component
-
-**Create a unified `CompanyLogo` component** that handles the fallback logic and standardizes display:
-
-**File: `src/components/shared/CompanyLogo.tsx`**
-
+**Current query (line 50)**:
 ```typescript
-interface CompanyLogoProps {
-  logoUrl?: string | null;
-  companyName: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  className?: string;
-}
+clients(name),
 ```
 
-This component:
-- Wraps `LogoAvatar` internally
-- Provides consistent sizing and styling
-- Handles image error states
-- Shows `LogoAvatarFallback` when no logo
-
-### Phase 2: Fix Privacy-Sensitive Components
-
-Update candidate-facing components to prioritize client logo:
-
-| File | Change |
-|------|--------|
-| `src/features/candidate/components/ApplicationCard.tsx` | Use `job.clients?.logo_url` with fallback to organization |
-| `src/features/candidate/components/JobCard.tsx` | Use `job.clients?.logo_url` with fallback to organization |
-| `src/features/candidate/pages/CandidateDashboard.tsx` | Use client logo when available |
-| `src/features/candidate/pages/JobDetailPage.tsx` | Use client logo as primary |
-
-**Fallback Logic**:
+**Updated query**:
 ```typescript
-const logoUrl = job.clients?.logo_url || job.organizations?.logo_url;
-const companyName = job.clients?.name || job.organizations?.name;
+clients(name, logo_url),
 ```
 
-### Phase 3: Replace Raw `<img>` Tags
-
-Convert all raw `<img>` logo displays to use the standardized component:
-
-| File | Current | Replace With |
-|------|---------|--------------|
-| `ApplicationCard.tsx` | `<img src={job.organizations.logo_url}...` | `<CompanyLogo>` |
-| `JobCard.tsx` | `<img src={job.organizations.logo_url}...` | `<CompanyLogo>` |
-| `VoiceAgentCard.tsx` | `<img src={agent.organizations.logo_url}...` | `<CompanyLogo>` |
-| `ClientMetricsCard.tsx` | `<img src={client.logo_url}...` | `<CompanyLogo>` |
-| `CandidateDashboard.tsx` | `<img src={job.organizations.logo_url}...` | `<CompanyLogo>` |
-
-### Phase 4: Upgrade OrganizationSettings
-
-Replace the URL input in `OrganizationSettings.tsx` with the existing `OrganizationLogoUpload` component:
-
+**Update interface (line 21-23)**:
 ```typescript
-// Before: Text input for logo_url
-<Input id="logo_url" value={orgData.logo_url} ... />
-
-// After: Proper upload component
-<OrganizationLogoUpload
-  organizationId={organization.id}
-  organizationSlug={organization.slug}
-  currentLogoUrl={organization.logo_url}
-  onLogoUpdate={handleLogoUpdate}
-  disabled={!isAdmin}
-/>
+clients?: {
+  name: string;
+  logo_url?: string;
+};
 ```
 
-### Phase 5: Export from Shared Index
+### 2. Fix useSavedJobs.ts
 
-Add the new component to the shared exports:
-
-**File: `src/components/shared/index.ts`**
+**Current query (lines 40-52)** - Missing clients entirely:
 ```typescript
-export { CompanyLogo } from './CompanyLogo';
+job_listings!inner(
+  id,
+  title,
+  ...
+  organizations!inner(
+    name,
+    logo_url
+  )
+)
 ```
 
----
+**Updated query**:
+```typescript
+job_listings!inner(
+  id,
+  title,
+  location,
+  city,
+  state,
+  salary_min,
+  salary_max,
+  clients(
+    name,
+    logo_url
+  ),
+  organizations!inner(
+    name,
+    logo_url
+  )
+)
+```
 
-## Files to Create
+**Update SavedJob interface (lines 11-23)**:
+```typescript
+job_listings: {
+  id: string;
+  title: string;
+  location?: string;
+  city?: string;
+  state?: string;
+  salary_min?: number;
+  salary_max?: number;
+  clients?: {
+    name: string;
+    logo_url?: string;
+  };
+  organizations: {
+    name: string;
+    logo_url?: string;
+  };
+};
+```
 
-| File | Purpose |
-|------|---------|
-| `src/components/shared/CompanyLogo.tsx` | New unified logo display component |
+### 3. Fix useJobSearch.ts
 
-## Files to Modify
+**Current query (lines 45-51)** - Missing clients entirely:
+```typescript
+organizations!inner(
+  name,
+  logo_url
+)
+```
 
-| File | Changes |
-|------|---------|
-| `src/components/shared/index.ts` | Add CompanyLogo export |
-| `src/features/candidate/components/ApplicationCard.tsx` | Use CompanyLogo with client priority |
-| `src/features/candidate/components/JobCard.tsx` | Use CompanyLogo with client priority |
-| `src/features/candidate/pages/CandidateDashboard.tsx` | Use CompanyLogo with client priority |
-| `src/features/candidate/pages/JobDetailPage.tsx` | Use CompanyLogo with client priority |
-| `src/components/voice/VoiceAgentCard.tsx` | Use CompanyLogo (org context is correct here) |
-| `src/features/clients/components/ClientMetricsCard.tsx` | Use CompanyLogo |
-| `src/pages/settings/OrganizationSettings.tsx` | Replace URL input with OrganizationLogoUpload |
+**Updated query**:
+```typescript
+clients(
+  name,
+  logo_url
+),
+organizations!inner(
+  name,
+  logo_url
+)
+```
 
----
+### 4. Update Admin JobCard.tsx
 
-## Benefits
+Add logo display using the CompanyLogo component with client priority:
 
-1. **Consistency**: Single component for all logo displays
-2. **Privacy**: Client logos shown to applicants, not recruiting org logos
-3. **Maintainability**: Centralized styling and behavior
-4. **Better UX**: Proper upload UI instead of manual URL entry
-5. **Error Handling**: Graceful fallbacks for missing/broken images
+**Import**:
+```typescript
+import { CompanyLogo } from '@/components/shared';
+```
 
----
+**Add logo in CardHeader (after line 55)**:
+```typescript
+<div className="flex items-center gap-3">
+  <CompanyLogo
+    logoUrl={job.clients?.logo_url}
+    companyName={job.clients?.name || 'Client'}
+    size="sm"
+  />
+  <CardTitle className="text-lg leading-tight break-words">{displayTitle}</CardTitle>
+</div>
+```
 
-## Testing Checklist
+### 5. Update common.types.ts
 
-After implementation:
-- Verify CR England logo displays correctly in sidebar after upload
-- Confirm `/jobs` page shows client logos (not organization logos)
-- Test `/apply` flow shows client branding
-- Check candidate dashboard displays client logos
-- Verify admin-facing views show appropriate logos (org vs client context)
-- Test OrganizationSettings logo upload/delete flow
+**Update JobListing.clients type (lines 135-137)**:
+```typescript
+clients?: {
+  name: string;
+  logo_url?: string;
+};
+```
 
+## Data Flow After Fix
+
+```text
+Database (job_listings)
+    │
+    ├── client_id ──► clients table ──► { name, logo_url }
+    │
+    └── organization_id ──► organizations table ──► { name, logo_url }
+    
+    
+Component Display Priority:
+    1. clients.logo_url (if available)
+    2. organizations.logo_url (fallback for admin context)
+    3. LogoAvatarFallback (Building2 icon)
+```
+
+## Views Fixed
+
+After implementation, client logos will correctly display in:
+
+| View | Component | Current | After |
+|------|-----------|---------|-------|
+| Candidate Dashboard | Recent Applications | No client logo | Client logo shown |
+| Candidate Dashboard | Recommended Jobs | Already working | Confirmed working |
+| Saved Jobs Page | JobCard | No client logo | Client logo shown |
+| Job Search Page | JobCard | No client logo | Client logo shown |
+| Applications Page | ApplicationCard | No client logo | Client logo shown |
+| Admin Jobs Page | JobCard | No logo at all | Client logo shown |
+| Public /jobs | PublicJobCard | Already working | Confirmed working |
+
+## Privacy Considerations
+
+All candidate-facing components already use the correct priority:
+```typescript
+logoUrl={job.clients?.logo_url || job.organizations?.logo_url}
+```
+
+This ensures:
+- Client logos are shown when available (privacy-safe for candidates)
+- Organization logos only shown as fallback (for jobs without assigned clients)
+- Generic fallback icon for edge cases
