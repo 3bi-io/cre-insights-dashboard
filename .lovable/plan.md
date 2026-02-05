@@ -1,224 +1,184 @@
 
 
-# Add Social Beacon to Super Admin Navigation and Organization Features
+# Logo System Refactoring: Complete Analysis & Recommendations
 
-## Summary
+## Current State Analysis
 
-This plan adds Social Beacon navigation items to the Super Admin menu and registers Social Beacon as an assignable organization feature, enabling administrators to grant or revoke Social Beacon access per organization.
+### Storage Buckets
+| Bucket | Purpose | Status |
+|--------|---------|--------|
+| `organization-logos` | Organization branding | Working |
+| `client-logos` | Client/employer branding | Working |
 
-## Changes Overview
+### Upload Components (Well-Implemented)
+| Component | Location | Target |
+|-----------|----------|--------|
+| `OrganizationLogoUpload` | `src/components/organizations/OrganizationLogoUpload.tsx` | Organizations |
+| `ClientLogoUpload` | `src/features/clients/components/ClientLogoUpload.tsx` | Clients |
+| `useOrganizationLogo` | `src/hooks/useOrganizationLogo.tsx` | Organizations (hook) |
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/features/organizations/types/features.types.ts` | MODIFY | Add `social_beacon` to `FeatureKey` union type |
-| `src/features/organizations/config/organizationFeatures.config.ts` | MODIFY | Add Social Beacon feature configuration |
-| `src/components/FeatureGuard.tsx` | MODIFY | Add `social_beacon` to feature type union and names map |
-| `src/hooks/useOrganizationFeatures.tsx` | MODIFY | Add `hasSocialBeacon()` helper function |
-| `src/config/navigationConfig.ts` | MODIFY | Add Social Beacon navigation items to Super Admin section |
-| `src/config/navigationConfig.ts` | MODIFY | Add route titles for Social Beacon pages |
+### Display Components
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `LogoAvatar` | `src/components/ui/logo-avatar.tsx` | Consistent logo display container |
+| `Brand` | `src/components/common/Brand.tsx` | Sidebar/header branding |
 
-## Technical Details
+---
 
-### 1. Add Feature Type Definition
+## Issues Identified
 
-**File: `src/features/organizations/types/features.types.ts`**
+### Issue 1: Inconsistent Logo Display Patterns
+Some components use `LogoAvatar` (correct), while others use raw `<img>` tags with inconsistent styling:
 
-Add `social_beacon` to the `FeatureKey` type union:
+**Using LogoAvatar (Correct)**:
+- `PublicJobCard.tsx` - Uses `LogoAvatar` with client logo
+- `ClientsPage.tsx` - Uses `LogoAvatar` properly
+- `ApplicationHeader.tsx` - Uses `LogoAvatar` properly
+- `ClientLogoUpload.tsx` - Uses `LogoAvatar` for preview
 
-```typescript
-export type FeatureKey =
-  | 'meta_integration'
-  | 'openai_access'
-  | 'anthropic_access'
-  | 'grok_access'
-  | 'tenstreet_access'
-  | 'voice_agent'
-  | 'elevenlabs_access'
-  | 'advanced_analytics'
-  | 'background_check_access'
-  | 'social_beacon';  // NEW
-```
+**Using raw `<img>` (Inconsistent)**:
+- `ApplicationCard.tsx` - Uses `<img>` with `job.organizations.logo_url`
+- `JobCard.tsx` - Uses `<img>` with `job.organizations.logo_url`
+- `VoiceAgentCard.tsx` - Uses `<img>` with `agent.organizations.logo_url`
+- `ClientMetricsCard.tsx` - Uses `<img>` with `client.logo_url`
+- `OrganizationSettings.tsx` - Uses `<img>` for logo preview
+- `CandidateDashboard.tsx` - Uses `<img>` with `job.organizations.logo_url`
+- `JobDetailPage.tsx` - Mixed (uses LogoAvatar but references organization logo)
 
-Add `'Social'` to the `FeatureCategory` type:
+### Issue 2: Wrong Logo Source for Public/Applicant Views
+Several candidate-facing components display the **organization logo** instead of the **client logo**:
 
-```typescript
-export type FeatureCategory = 'AI' | 'Advertising' | 'Integration' | 'Analytics' | 'Screening' | 'Social';
-```
+| Component | Current Source | Should Be | Privacy Risk |
+|-----------|----------------|-----------|--------------|
+| `ApplicationCard.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
+| `JobCard.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
+| `CandidateDashboard.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
+| `JobDetailPage.tsx` | `job.organizations.logo_url` | `job.clients.logo_url` | Yes - exposes recruiter |
 
-### 2. Add Feature Configuration
+### Issue 3: OrganizationSettings Uses URL Input Instead of Upload
+`src/pages/settings/OrganizationSettings.tsx` still uses a plain text URL input for logo, while other parts of the app have proper upload functionality.
 
-**File: `src/features/organizations/config/organizationFeatures.config.ts`**
+---
 
-Add Social Beacon to the `ORGANIZATION_FEATURES` constant:
+## Recommended Refactoring Plan
 
-```typescript
-social_beacon: {
-  key: 'social_beacon',
-  name: 'social_beacon',
-  label: 'Social Beacon',
-  description: 'AI-powered social media distribution and engagement across platforms',
-  category: 'Social',
-  premium: true,
-},
-```
+### Phase 1: Standardize Display Component
 
-Add icon mapping in `getFeatureIcon`:
+**Create a unified `CompanyLogo` component** that handles the fallback logic and standardizes display:
 
-```typescript
-case 'social_beacon':
-  return Antenna;
-```
-
-Add category color in `getCategoryColor`:
+**File: `src/components/shared/CompanyLogo.tsx`**
 
 ```typescript
-case 'Social':
-  return 'bg-pink-100 text-pink-800 border-pink-200';
-```
-
-Import `Antenna` icon from lucide-react.
-
-### 3. Update FeatureGuard Component
-
-**File: `src/components/FeatureGuard.tsx`**
-
-Update the `FeatureGuardProps` interface feature type:
-
-```typescript
-feature: 'tenstreet_access' | 'openai_access' | 'anthropic_access' | 'grok_access' | 'meta_integration' | 'voice_agent' | 'advanced_analytics' | 'elevenlabs_access' | 'background_check_access' | 'social_beacon';
-```
-
-Add to `FEATURE_NAMES`:
-
-```typescript
-social_beacon: 'Social Beacon'
-```
-
-Add to `useFeatureGuard` hook:
-
-```typescript
-canAccessSocialBeacon: () => hasFeature('social_beacon'),
-```
-
-### 4. Update Organization Features Hook
-
-**File: `src/hooks/useOrganizationFeatures.tsx`**
-
-Add helper function for Social Beacon access:
-
-```typescript
-const hasSocialBeacon = () => hasFeature('social_beacon');
-```
-
-Export in return object:
-
-```typescript
-return {
-  // ... existing exports
-  hasSocialBeacon,
-};
-```
-
-### 5. Add Super Admin Navigation Items
-
-**File: `src/config/navigationConfig.ts`**
-
-Import the `Antenna` icon:
-
-```typescript
-import { ..., Antenna } from 'lucide-react';
-```
-
-Add Social Beacon items to the Super Admin "Administration" group (around line 220):
-
-```typescript
-...(isSuperAdmin ? [{
-  group: "Administration",
-  icon: Building,
-  items: [
-    { path: '/admin/organizations', label: 'Organizations', icon: Building },
-    { path: '/admin/user-management', label: 'User Management', icon: UserCog },
-    { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss },
-    { path: '/admin/media', label: 'Media Assets', icon: Image },
-    { path: '/admin/social-beacons', label: 'Social Beacons', icon: Antenna },  // NEW
-  ]
-}] : [])
-```
-
-Alternatively, create a dedicated "Social" group for Super Admins to better organize social-related items:
-
-```typescript
-...(isSuperAdmin ? [{
-  group: "Social",
-  icon: Antenna,
-  items: [
-    { path: '/admin/social-beacons', label: 'Social Beacons', icon: Antenna },
-    { path: '/admin/social-engagement', label: 'Engagement Dashboard', icon: MessageSquare },
-  ]
-}] : [])
-```
-
-### 6. Add Route Titles
-
-**File: `src/config/navigationConfig.ts`**
-
-Add to `routeTitles`:
-
-```typescript
-'/admin/social-beacons': 'Social Beacons',
-'/admin/social-engagement': 'Social Engagement',
-```
-
-## Navigation Structure (After Changes)
-
-```text
-Administration (Super Admin only)
-├── Organizations
-├── User Management
-├── Feed Management
-├── Media Assets
-└── Social Beacons          <-- NEW
-
-Social (Super Admin only)    <-- NEW GROUP (optional)
-├── Social Beacons
-└── Engagement Dashboard
-```
-
-## Feature Configuration Summary
-
-| Property | Value |
-|----------|-------|
-| Key | `social_beacon` |
-| Label | Social Beacon |
-| Category | Social |
-| Description | AI-powered social media distribution and engagement across platforms |
-| Premium | Yes |
-
-## Database Consideration
-
-The `organization_features` table accepts any string as `feature_name`. Once this code is deployed, Super Admins can enable `social_beacon` for organizations via the Organizations management panel. No database migration is required.
-
-## Usage After Implementation
-
-**Enable for an Organization:**
-1. Super Admin navigates to Organizations
-2. Opens the organization's Features dialog
-3. Toggles "Social Beacon" to enabled
-4. Organization users can now access Social Engagement features
-
-**Access Check in Components:**
-```typescript
-const { hasSocialBeacon } = useOrganizationFeatures();
-
-if (hasSocialBeacon()) {
-  // Show Social Beacon features
+interface CompanyLogoProps {
+  logoUrl?: string | null;
+  companyName: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
 }
 ```
 
-**FeatureGuard Usage:**
+This component:
+- Wraps `LogoAvatar` internally
+- Provides consistent sizing and styling
+- Handles image error states
+- Shows `LogoAvatarFallback` when no logo
+
+### Phase 2: Fix Privacy-Sensitive Components
+
+Update candidate-facing components to prioritize client logo:
+
+| File | Change |
+|------|--------|
+| `src/features/candidate/components/ApplicationCard.tsx` | Use `job.clients?.logo_url` with fallback to organization |
+| `src/features/candidate/components/JobCard.tsx` | Use `job.clients?.logo_url` with fallback to organization |
+| `src/features/candidate/pages/CandidateDashboard.tsx` | Use client logo when available |
+| `src/features/candidate/pages/JobDetailPage.tsx` | Use client logo as primary |
+
+**Fallback Logic**:
 ```typescript
-<FeatureGuard feature="social_beacon" featureName="Social Beacon">
-  <SocialEngagementDashboard />
-</FeatureGuard>
+const logoUrl = job.clients?.logo_url || job.organizations?.logo_url;
+const companyName = job.clients?.name || job.organizations?.name;
 ```
+
+### Phase 3: Replace Raw `<img>` Tags
+
+Convert all raw `<img>` logo displays to use the standardized component:
+
+| File | Current | Replace With |
+|------|---------|--------------|
+| `ApplicationCard.tsx` | `<img src={job.organizations.logo_url}...` | `<CompanyLogo>` |
+| `JobCard.tsx` | `<img src={job.organizations.logo_url}...` | `<CompanyLogo>` |
+| `VoiceAgentCard.tsx` | `<img src={agent.organizations.logo_url}...` | `<CompanyLogo>` |
+| `ClientMetricsCard.tsx` | `<img src={client.logo_url}...` | `<CompanyLogo>` |
+| `CandidateDashboard.tsx` | `<img src={job.organizations.logo_url}...` | `<CompanyLogo>` |
+
+### Phase 4: Upgrade OrganizationSettings
+
+Replace the URL input in `OrganizationSettings.tsx` with the existing `OrganizationLogoUpload` component:
+
+```typescript
+// Before: Text input for logo_url
+<Input id="logo_url" value={orgData.logo_url} ... />
+
+// After: Proper upload component
+<OrganizationLogoUpload
+  organizationId={organization.id}
+  organizationSlug={organization.slug}
+  currentLogoUrl={organization.logo_url}
+  onLogoUpdate={handleLogoUpdate}
+  disabled={!isAdmin}
+/>
+```
+
+### Phase 5: Export from Shared Index
+
+Add the new component to the shared exports:
+
+**File: `src/components/shared/index.ts`**
+```typescript
+export { CompanyLogo } from './CompanyLogo';
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/shared/CompanyLogo.tsx` | New unified logo display component |
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/shared/index.ts` | Add CompanyLogo export |
+| `src/features/candidate/components/ApplicationCard.tsx` | Use CompanyLogo with client priority |
+| `src/features/candidate/components/JobCard.tsx` | Use CompanyLogo with client priority |
+| `src/features/candidate/pages/CandidateDashboard.tsx` | Use CompanyLogo with client priority |
+| `src/features/candidate/pages/JobDetailPage.tsx` | Use CompanyLogo with client priority |
+| `src/components/voice/VoiceAgentCard.tsx` | Use CompanyLogo (org context is correct here) |
+| `src/features/clients/components/ClientMetricsCard.tsx` | Use CompanyLogo |
+| `src/pages/settings/OrganizationSettings.tsx` | Replace URL input with OrganizationLogoUpload |
+
+---
+
+## Benefits
+
+1. **Consistency**: Single component for all logo displays
+2. **Privacy**: Client logos shown to applicants, not recruiting org logos
+3. **Maintainability**: Centralized styling and behavior
+4. **Better UX**: Proper upload UI instead of manual URL entry
+5. **Error Handling**: Graceful fallbacks for missing/broken images
+
+---
+
+## Testing Checklist
+
+After implementation:
+- Verify CR England logo displays correctly in sidebar after upload
+- Confirm `/jobs` page shows client logos (not organization logos)
+- Test `/apply` flow shows client branding
+- Check candidate dashboard displays client logos
+- Verify admin-facing views show appropriate logos (org vs client context)
+- Test OrganizationSettings logo upload/delete flow
 
