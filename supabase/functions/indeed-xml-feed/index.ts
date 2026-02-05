@@ -27,8 +27,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
+    // Parse URL for query parameters
+    const url = new URL(req.url)
+    const organizationId = url.searchParams.get('organization_id')
+
     // Fetch job listings with related data
-    const { data: jobListings, error } = await supabaseClient
+    let query = supabaseClient
       .from('job_listings')
       .select(`
         *,
@@ -38,6 +42,13 @@ serve(async (req) => {
       .eq('status', 'active')
       .eq('is_hidden', false)
       .order('created_at', { ascending: false })
+
+    // Filter by organization_id if provided
+    if (organizationId) {
+      query = query.eq('organization_id', organizationId)
+    }
+
+    const { data: jobListings, error } = await query
 
     if (error) {
       throw error
@@ -56,8 +67,11 @@ serve(async (req) => {
       request_ip: requestIp,
       user_agent: userAgent,
       job_count: jobListings?.length || 0,
-      response_time_ms: responseTime
-    }).catch(err => logger.error('Failed to log feed access', err));
+      response_time_ms: responseTime,
+      organization_id: organizationId || null
+    }).then(({ error }) => {
+      if (error) logger.error('Failed to log feed access', error);
+    });
 
     return new Response(xmlHeader + '\n' + xmlContent, {
       headers: {
