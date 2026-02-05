@@ -57,14 +57,14 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
                <CompanyLogo
-                 logoUrl={job?.clients?.logo_url || job?.organizations?.logo_url}
-                 companyName={job?.clients?.name || job?.organizations?.name || 'Company'}
+                 logoUrl={job?.clients?.logo_url}
+                 companyName={job?.clients?.name || 'Company'}
                  size="sm"
                />
               <div className="min-w-0">
                 <h3 className="text-lg font-semibold truncate">{displayTitle}</h3>
                 <p className="text-sm text-muted-foreground truncate">
-                   {job?.clients?.name || job?.organizations?.name}
+                   {job?.clients?.name || 'Company'}
                 </p>
               </div>
             </div>

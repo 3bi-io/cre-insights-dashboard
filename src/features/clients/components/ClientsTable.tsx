@@ -9,6 +9,7 @@ import { MapPin, Mail, Phone, Building, Eye, MoreHorizontal, Edit, Trash2, Truck
 import { ATSConnectionDialog } from '@/features/ats/components/ATSConnectionDialog';
 import { useATSSystems } from '@/hooks/useATSConnections';
 import { ResponsiveTableWrapper, ResponsiveCardWrapper } from '@/components/ui/responsive-data-display';
+import { CompanyLogo } from '@/components/shared';
 import type { Client, ConsolidatedClient } from '../types/client.types';
 
 interface ClientsTableProps {
@@ -48,7 +49,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
   // Consolidate clients by name to avoid duplicates
   const consolidatedClients = useMemo(() => {
-    const clientMap = new Map<string, ConsolidatedClient & { clientId: string }>();
+    const clientMap = new Map<string, ConsolidatedClient & { clientId: string; logo_url: string | null }>();
 
     clients.forEach(client => {
       const key = client.name;
@@ -57,6 +58,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         clientMap.set(key, {
           name: client.name,
           clientId: client.id, // Store the first client ID for quick actions
+          logo_url: client.logo_url, // Store first logo found
           locations: [],
           totalLocations: 0,
           status: client.status,
@@ -67,6 +69,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
       }
 
       const consolidated = clientMap.get(key)!;
+      
+      // Update logo_url if not set and current client has one
+      if (!consolidated.logo_url && client.logo_url) {
+        consolidated.logo_url = client.logo_url;
+      }
       
       // Add location if not already present
       if (client.city && client.state) {
@@ -143,13 +150,20 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     <Card className="overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-foreground">{client.name}</h4>
-            {client.totalLocations > 1 && (
-              <span className="text-sm text-muted-foreground">
-                {client.totalLocations} locations
-              </span>
-            )}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <CompanyLogo
+              logoUrl={client.logo_url}
+              companyName={client.name}
+              size="md"
+            />
+            <div className="min-w-0">
+              <h4 className="font-medium text-foreground">{client.name}</h4>
+              {client.totalLocations > 1 && (
+                <span className="text-sm text-muted-foreground">
+                  {client.totalLocations} locations
+                </span>
+              )}
+            </div>
           </div>
           <Badge className={getStatusColor(client.status)}>
             {client.status}
@@ -262,13 +276,20 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                 {consolidatedClients.map((client) => (
                   <TableRow key={client.name} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-foreground">{client.name}</span>
-                        {client.totalLocations > 1 && (
-                          <span className="text-sm text-muted-foreground">
-                            {client.totalLocations} locations
-                          </span>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <CompanyLogo
+                          logoUrl={client.logo_url}
+                          companyName={client.name}
+                          size="sm"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">{client.name}</span>
+                          {client.totalLocations > 1 && (
+                            <span className="text-sm text-muted-foreground">
+                              {client.totalLocations} locations
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
