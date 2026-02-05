@@ -16,6 +16,10 @@ interface SavedJob {
     state?: string;
     salary_min?: number;
     salary_max?: number;
+    clients?: {
+      name: string;
+      logo_url?: string;
+    };
     organizations: {
       name: string;
       logo_url?: string;
@@ -45,6 +49,10 @@ async function fetchSavedJobs(candidateProfileId: string): Promise<SavedJob[]> {
         state,
         salary_min,
         salary_max,
+        clients(
+          name,
+          logo_url
+        ),
         organizations!inner(
           name,
           logo_url

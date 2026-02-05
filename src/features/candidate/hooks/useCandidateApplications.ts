@@ -20,6 +20,7 @@ interface CandidateApplication {
     salary_max?: number;
     clients?: {
       name: string;
+      logo_url?: string;
     };
     organizations: {
       name: string;
@@ -47,7 +48,7 @@ async function fetchCandidateApplications(userId: string): Promise<CandidateAppl
         state,
         salary_min,
         salary_max,
-        clients(name),
+        clients(name, logo_url),
         organizations!inner(
           name,
           logo_url
