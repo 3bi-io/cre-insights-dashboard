@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building, Globe } from 'lucide-react';
+import { Loader2, Building, Globe, Crown, ExternalLink } from 'lucide-react';
  import { OrganizationLogoUpload } from '@/components/organizations/OrganizationLogoUpload';
 
 const OrganizationSettings = () => {
@@ -20,6 +21,7 @@ const OrganizationSettings = () => {
   });
 
   const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const isSuperAdmin = userRole === 'super_admin';
 
   useEffect(() => {
     if (organization) {
@@ -83,6 +85,30 @@ const OrganizationSettings = () => {
         <h1 className="text-2xl font-bold">Organization Settings</h1>
         <p className="text-muted-foreground">Manage your organization's information</p>
       </div>
+
+      {isSuperAdmin && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Crown className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium">Super Admin Access</p>
+                <p className="text-sm text-muted-foreground">
+                  Manage logos and branding for all organizations
+                </p>
+              </div>
+            </div>
+            <Button asChild>
+              <Link to="/admin/organizations">
+                Manage All Organizations
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
