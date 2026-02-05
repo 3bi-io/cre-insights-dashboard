@@ -1,170 +1,224 @@
 
-# Update Email Templates: Organization Name → Client Name
 
-## Overview
+# Add Social Beacon to Super Admin Navigation and Organization Features
 
-Change all applicant-facing email templates to display the **Client Name** instead of the **Organization Name**, maintaining privacy about the recruiting organization while showing the brand the applicant is applying to work for.
+## Summary
 
-## Context
+This plan adds Social Beacon navigation items to the Super Admin menu and registers Social Beacon as an assignable organization feature, enabling administrators to grant or revoke Social Beacon access per organization.
 
-Currently, emails to applicants show the recruiting organization (e.g., "Hayes Recruiting Solutions") when they should show the client company (e.g., "Pemberton Truck Lines Inc", "Danny Herman Trucking"). This aligns with the existing privacy model implemented on public job pages.
-
-**Example:**
-- **Before**: "Thank you for applying for the CDL Driver position at Hayes Recruiting Solutions"
-- **After**: "Thank you for applying for the CDL Driver position at Pemberton Truck Lines Inc"
-
-## Email Types & Changes
-
-| Email Type | Current Name | New Name | Reason |
-|------------|--------------|----------|--------|
-| Application Received | Organization Name | Client Name | Applicant-facing |
-| Status Update | Organization Name | Client Name | Applicant-facing |
-| Interview Invitation | Organization Name | Client Name | Applicant-facing |
-| Job Offer | Organization Name | Client Name | Applicant-facing |
-| Rejection | Organization Name | Client Name | Applicant-facing |
-| Screening Request | Organization Name | Client Name | Applicant-facing |
-| **Welcome Email** | Organization Name | **No Change** | Internal admin users |
-| **Invite Email** | Organization Name | **No Change** | Internal admin users |
-
-## Implementation Details
-
-### File 1: `supabase/functions/submit-application/index.ts`
-
-**Changes:**
-1. Update the `resolveOrganizationAndJob` function to also fetch client name from job listings
-2. Rename return value from `organizationName` to `clientName` 
-3. Update the query to include client data: `clients(id, name)`
-4. Pass `clientName` to the confirmation email
-
-**Before (line ~415):**
-```typescript
-.select('organization_id, external_job_id, title, organizations(id, name, slug)')
-```
-
-**After:**
-```typescript
-.select('organization_id, external_job_id, title, client_id, organizations(id, name, slug), clients(id, name)')
-```
-
-**Updated return type:**
-```typescript
-{ organizationId, organizationName, clientName, externalJobId, jobTitle }
-```
-
-**Updated email call (~line 521):**
-```typescript
-companyName: clientName || organizationName,  // Use client name for applicant emails
-```
-
-### File 2: `supabase/functions/send-screening-request/index.ts`
-
-**Changes:**
-Update the application query to include client data and use client name.
-
-**Before (line ~289):**
-```typescript
-.select('*, job_listings(title, organization_id, organizations(name))')
-...
-const organizationName = application.job_listings?.organizations?.name || 'Organization';
-```
-
-**After:**
-```typescript
-.select('*, job_listings(title, organization_id, client_id, organizations(name), clients(name))')
-...
-const clientName = application.job_listings?.clients?.name || 
-                   application.job_listings?.organizations?.name || 
-                   'Company';
-```
-
-Then use `clientName` instead of `organizationName` in the email template generation.
-
-### File 3: `supabase/functions/_shared/email-config.ts`
-
-**Changes:**
-Update preheader templates to use more generic naming.
-
-**Before (line ~294):**
-```typescript
-employment_application: (orgName: string) => 
-  `Please complete your employment application for ${orgName}.`,
-```
-
-**After:**
-```typescript
-employment_application: (companyName: string) => 
-  `Please complete your employment application for ${companyName}.`,
-```
-
-### File 4: `src/utils/emailService.ts`
-
-**Changes:**
-Add `companyName` parameter to the interface and helper functions.
-
-**Before:**
-```typescript
-export interface SendEmailParams {
-  to: string;
-  candidateName: string;
-  jobTitle: string;
-  type: ...
-}
-```
-
-**After:**
-```typescript
-export interface SendEmailParams {
-  to: string;
-  candidateName: string;
-  jobTitle: string;
-  companyName?: string;  // Client name for branded emails
-  type: ...
-}
-```
-
-Update helper functions to accept and pass through `companyName`:
-```typescript
-export const sendApplicationReceivedEmail = async (
-  candidateEmail: string,
-  candidateName: string,
-  jobTitle: string,
-  companyName?: string  // New parameter
-) => {
-  return sendApplicationEmail({
-    to: candidateEmail,
-    candidateName,
-    jobTitle,
-    companyName: companyName || 'Company',
-    type: 'application_received',
-  });
-};
-```
-
-## Files Summary
+## Changes Overview
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `supabase/functions/submit-application/index.ts` | MODIFY | Fetch and use client name for emails |
-| `supabase/functions/send-screening-request/index.ts` | MODIFY | Fetch and use client name for screening emails |
-| `supabase/functions/_shared/email-config.ts` | MODIFY | Update parameter naming in templates |
-| `src/utils/emailService.ts` | MODIFY | Add companyName parameter support |
+| `src/features/organizations/types/features.types.ts` | MODIFY | Add `social_beacon` to `FeatureKey` union type |
+| `src/features/organizations/config/organizationFeatures.config.ts` | MODIFY | Add Social Beacon feature configuration |
+| `src/components/FeatureGuard.tsx` | MODIFY | Add `social_beacon` to feature type union and names map |
+| `src/hooks/useOrganizationFeatures.tsx` | MODIFY | Add `hasSocialBeacon()` helper function |
+| `src/config/navigationConfig.ts` | MODIFY | Add Social Beacon navigation items to Super Admin section |
+| `src/config/navigationConfig.ts` | MODIFY | Add route titles for Social Beacon pages |
 
-## Fallback Logic
+## Technical Details
 
-When determining the company name for emails:
-1. **First**: Use `clients.name` if job has a client assigned
-2. **Second**: Use `organizations.name` as fallback
-3. **Third**: Use generic "Company" as last resort
+### 1. Add Feature Type Definition
 
-This ensures:
-- Jobs with clients show client branding (e.g., "Danny Herman Trucking")
-- Jobs without clients fall back to organization name (e.g., "CR England")
-- Missing data shows a generic fallback
+**File: `src/features/organizations/types/features.types.ts`**
 
-## Testing Considerations
+Add `social_beacon` to the `FeatureKey` type union:
 
-After implementation:
-1. Submit a test application for a job with a client assigned
-2. Verify the confirmation email shows the client name, not org name
-3. Trigger a screening request and verify the client name appears
-4. Test a job without a client to verify fallback to organization name
+```typescript
+export type FeatureKey =
+  | 'meta_integration'
+  | 'openai_access'
+  | 'anthropic_access'
+  | 'grok_access'
+  | 'tenstreet_access'
+  | 'voice_agent'
+  | 'elevenlabs_access'
+  | 'advanced_analytics'
+  | 'background_check_access'
+  | 'social_beacon';  // NEW
+```
+
+Add `'Social'` to the `FeatureCategory` type:
+
+```typescript
+export type FeatureCategory = 'AI' | 'Advertising' | 'Integration' | 'Analytics' | 'Screening' | 'Social';
+```
+
+### 2. Add Feature Configuration
+
+**File: `src/features/organizations/config/organizationFeatures.config.ts`**
+
+Add Social Beacon to the `ORGANIZATION_FEATURES` constant:
+
+```typescript
+social_beacon: {
+  key: 'social_beacon',
+  name: 'social_beacon',
+  label: 'Social Beacon',
+  description: 'AI-powered social media distribution and engagement across platforms',
+  category: 'Social',
+  premium: true,
+},
+```
+
+Add icon mapping in `getFeatureIcon`:
+
+```typescript
+case 'social_beacon':
+  return Antenna;
+```
+
+Add category color in `getCategoryColor`:
+
+```typescript
+case 'Social':
+  return 'bg-pink-100 text-pink-800 border-pink-200';
+```
+
+Import `Antenna` icon from lucide-react.
+
+### 3. Update FeatureGuard Component
+
+**File: `src/components/FeatureGuard.tsx`**
+
+Update the `FeatureGuardProps` interface feature type:
+
+```typescript
+feature: 'tenstreet_access' | 'openai_access' | 'anthropic_access' | 'grok_access' | 'meta_integration' | 'voice_agent' | 'advanced_analytics' | 'elevenlabs_access' | 'background_check_access' | 'social_beacon';
+```
+
+Add to `FEATURE_NAMES`:
+
+```typescript
+social_beacon: 'Social Beacon'
+```
+
+Add to `useFeatureGuard` hook:
+
+```typescript
+canAccessSocialBeacon: () => hasFeature('social_beacon'),
+```
+
+### 4. Update Organization Features Hook
+
+**File: `src/hooks/useOrganizationFeatures.tsx`**
+
+Add helper function for Social Beacon access:
+
+```typescript
+const hasSocialBeacon = () => hasFeature('social_beacon');
+```
+
+Export in return object:
+
+```typescript
+return {
+  // ... existing exports
+  hasSocialBeacon,
+};
+```
+
+### 5. Add Super Admin Navigation Items
+
+**File: `src/config/navigationConfig.ts`**
+
+Import the `Antenna` icon:
+
+```typescript
+import { ..., Antenna } from 'lucide-react';
+```
+
+Add Social Beacon items to the Super Admin "Administration" group (around line 220):
+
+```typescript
+...(isSuperAdmin ? [{
+  group: "Administration",
+  icon: Building,
+  items: [
+    { path: '/admin/organizations', label: 'Organizations', icon: Building },
+    { path: '/admin/user-management', label: 'User Management', icon: UserCog },
+    { path: '/admin/super-admin-feeds', label: 'Feed Management', icon: Rss },
+    { path: '/admin/media', label: 'Media Assets', icon: Image },
+    { path: '/admin/social-beacons', label: 'Social Beacons', icon: Antenna },  // NEW
+  ]
+}] : [])
+```
+
+Alternatively, create a dedicated "Social" group for Super Admins to better organize social-related items:
+
+```typescript
+...(isSuperAdmin ? [{
+  group: "Social",
+  icon: Antenna,
+  items: [
+    { path: '/admin/social-beacons', label: 'Social Beacons', icon: Antenna },
+    { path: '/admin/social-engagement', label: 'Engagement Dashboard', icon: MessageSquare },
+  ]
+}] : [])
+```
+
+### 6. Add Route Titles
+
+**File: `src/config/navigationConfig.ts`**
+
+Add to `routeTitles`:
+
+```typescript
+'/admin/social-beacons': 'Social Beacons',
+'/admin/social-engagement': 'Social Engagement',
+```
+
+## Navigation Structure (After Changes)
+
+```text
+Administration (Super Admin only)
+├── Organizations
+├── User Management
+├── Feed Management
+├── Media Assets
+└── Social Beacons          <-- NEW
+
+Social (Super Admin only)    <-- NEW GROUP (optional)
+├── Social Beacons
+└── Engagement Dashboard
+```
+
+## Feature Configuration Summary
+
+| Property | Value |
+|----------|-------|
+| Key | `social_beacon` |
+| Label | Social Beacon |
+| Category | Social |
+| Description | AI-powered social media distribution and engagement across platforms |
+| Premium | Yes |
+
+## Database Consideration
+
+The `organization_features` table accepts any string as `feature_name`. Once this code is deployed, Super Admins can enable `social_beacon` for organizations via the Organizations management panel. No database migration is required.
+
+## Usage After Implementation
+
+**Enable for an Organization:**
+1. Super Admin navigates to Organizations
+2. Opens the organization's Features dialog
+3. Toggles "Social Beacon" to enabled
+4. Organization users can now access Social Engagement features
+
+**Access Check in Components:**
+```typescript
+const { hasSocialBeacon } = useOrganizationFeatures();
+
+if (hasSocialBeacon()) {
+  // Show Social Beacon features
+}
+```
+
+**FeatureGuard Usage:**
+```typescript
+<FeatureGuard feature="social_beacon" featureName="Social Beacon">
+  <SocialEngagementDashboard />
+</FeatureGuard>
+```
+
