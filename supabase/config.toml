@@ -223,3 +223,27 @@ verify_jwt = false
 
 [functions.generate-ad-creative]
 verify_jwt = true
+
+[functions.email-unsubscribe]
+verify_jwt = false
+
+[functions.get-shared-conversation]
+verify_jwt = false
+
+[functions.social-oauth-callback]
+verify_jwt = false
+
+[functions.social-oauth-init]
+verify_jwt = true
+
+[functions.verify-platform-secrets]
+verify_jwt = true
+
+[functions.x-platform-integration]
+verify_jwt = true
+
+[functions.ziprecruiter-integration]
+verify_jwt = true
+
+[functions.send-test-emails]
+verify_jwt = true
