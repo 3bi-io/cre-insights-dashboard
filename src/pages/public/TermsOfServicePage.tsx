@@ -12,6 +12,7 @@ const TermsOfServicePage = () => {
         description="Terms and conditions for using ATS.me's recruitment platform. Service agreement, usage rights, and responsibilities for users and organizations."
         keywords="terms of service, user agreement, ATS terms"
         canonical="https://ats.me/terms-of-service"
+        ogImage="https://ats.me/og-terms.png"
       />
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">

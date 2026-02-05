@@ -112,11 +112,13 @@ function JobMapPageContent() {
         <meta property="og:description" content="Explore job opportunities across the United States on our interactive map." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://ats.me/map" />
+        <meta property="og:image" content="https://ats.me/og-map.png" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Job Locations Map | ATS.me" />
         <meta name="twitter:description" content="Explore job opportunities across the United States on our interactive map." />
+        <meta name="twitter:image" content="https://ats.me/og-map.png" />
       </Helmet>
 
       {/* Screen Reader Announcements */}

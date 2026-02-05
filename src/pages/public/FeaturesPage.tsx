@@ -66,6 +66,7 @@ const FeaturesPage = () => {
         description="Discover ATS.me's Social Beacon for AI-powered social recruitment across 7 platforms, Voice Apply technology, instant AI callbacks, and 100+ job board integrations."
         keywords="Social Beacon, AI recruitment, social media hiring, Voice Apply, ATS features, AI screening, job board integration"
         canonical="https://ats.me/features"
+        ogImage="https://ats.me/og-features.png"
       />
       <StructuredData data={softwareAppSchema} />
 

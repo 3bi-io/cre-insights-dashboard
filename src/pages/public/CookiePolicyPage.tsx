@@ -13,6 +13,7 @@ const CookiePolicyPage = () => {
         description="Learn how ATS.me uses cookies to enhance your experience. Cookie types, purposes, and how to manage cookie preferences."
         keywords="cookie policy, cookies, website tracking, privacy preferences"
         canonical="https://ats.me/cookie-policy"
+        ogImage="https://ats.me/og-privacy.png"
         noindex={true}
       />
       {/* Hero Section */}

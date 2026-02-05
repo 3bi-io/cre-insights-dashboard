@@ -119,6 +119,7 @@ const DemoPage: React.FC = () => {
         description="Experience ATS.me with interactive voice demos, platform walkthroughs, and see how AI-powered recruitment can transform your hiring process."
         keywords="ATS demo, recruitment software demo, AI hiring demo, voice agent demo, trucking recruitment"
         canonical="https://ats.me/demo"
+        ogImage="https://ats.me/og-demo.png"
         ogType="website"
       />
       <StructuredData data={softwareAppSchema} />

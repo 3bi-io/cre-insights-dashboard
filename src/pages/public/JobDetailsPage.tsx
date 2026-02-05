@@ -179,6 +179,7 @@ const JobDetailsPage: React.FC = () => {
         description={displayDescription?.substring(0, 160) || `Apply for ${displayTitle} at ${companyName}. ${displayLocation ? `Location: ${displayLocation}.` : ''}`}
         keywords={`${displayTitle}, ${companyName}, jobs, careers, ${job.job_categories?.name || ''}`}
         canonical={canonicalUrl}
+        ogImage="https://ats.me/og-jobs.png"
         ogType="article"
         articlePublishedTime={job.created_at}
         articleModifiedTime={job.updated_at}

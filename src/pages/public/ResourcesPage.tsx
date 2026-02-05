@@ -166,6 +166,7 @@ const ResourcesPage = () => {
         description="Comprehensive knowledge base for ATS.me. Quick start guides, API documentation, implementation checklists, and best practices for recruitment teams."
         keywords="ATS documentation, recruitment guides, implementation guide, API docs, ATS.me resources"
         canonical="https://ats.me/resources"
+        ogImage="https://ats.me/og-resources.png"
       />
       <StructuredData data={resourcesSchema} />
       <div className="min-h-screen py-10 md:py-20">
