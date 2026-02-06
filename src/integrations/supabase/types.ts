@@ -1758,6 +1758,54 @@ export type Database = {
           },
         ]
       }
+      campaign_sponsorship_mappings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          jobreferrer: string
+          label: string | null
+          organization_id: string | null
+          tier: Database["public"]["Enums"]["sponsorship_tier"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          jobreferrer: string
+          label?: string | null
+          organization_id?: string | null
+          tier?: Database["public"]["Enums"]["sponsorship_tier"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          jobreferrer?: string
+          label?: string | null
+          organization_id?: string | null
+          tier?: Database["public"]["Enums"]["sponsorship_tier"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sponsorship_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_sponsorship_mappings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           created_at: string
@@ -3654,6 +3702,7 @@ export type Database = {
           salary_max: number | null
           salary_min: number | null
           salary_type: string | null
+          sponsorship_tier: string | null
           state: string | null
           status: string | null
           tenstreet_apply_url: string | null
@@ -3692,6 +3741,7 @@ export type Database = {
           salary_max?: number | null
           salary_min?: number | null
           salary_type?: string | null
+          sponsorship_tier?: string | null
           state?: string | null
           status?: string | null
           tenstreet_apply_url?: string | null
@@ -3730,6 +3780,7 @@ export type Database = {
           salary_max?: number | null
           salary_min?: number | null
           salary_type?: string | null
+          sponsorship_tier?: string | null
           state?: string | null
           status?: string | null
           tenstreet_apply_url?: string | null
@@ -7479,6 +7530,7 @@ export type Database = {
         }[]
       }
       get_spend_chart_data: { Args: never; Returns: Json }
+      get_sponsorship_tier: { Args: { referrer: string }; Returns: string }
       get_user_organization_id: { Args: never; Returns: string }
       get_user_platform_access: {
         Args: { _platform_name: string }
@@ -7552,6 +7604,7 @@ export type Database = {
         | "background_check"
         | "employment_application"
         | "drug_screening"
+      sponsorship_tier: "premium" | "standard" | "organic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7692,6 +7745,7 @@ export const Constants = {
         "employment_application",
         "drug_screening",
       ],
+      sponsorship_tier: ["premium", "standard", "organic"],
     },
   },
 } as const
