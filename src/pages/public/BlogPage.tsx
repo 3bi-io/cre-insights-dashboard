@@ -35,7 +35,7 @@ const BlogPage: React.FC = () => {
         <HeroBackground
           imageSrc={heroBlogImage}
           imageAlt="Recruitment insights and industry blog"
-          overlayVariant="light"
+          overlayVariant="dark"
           minHeight="min-h-[40vh] md:min-h-[50vh]"
         >
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-12 md:py-20">

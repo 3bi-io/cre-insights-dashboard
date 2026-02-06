@@ -75,7 +75,7 @@ const FeaturesPage = () => {
       <HeroBackground
         imageSrc={heroFeaturesImage}
         imageAlt="AI-powered recruitment platform features"
-        overlayVariant="gradient"
+        overlayVariant="dark"
         minHeight="min-h-[50vh] md:min-h-[60vh]"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-10 md:py-16">
