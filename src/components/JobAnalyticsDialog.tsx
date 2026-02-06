@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Eye, MousePointer, DollarSign, BarChart3, Code } from 'lucide-react';
+import { Calendar, Eye, MousePointer, DollarSign, BarChart3, Code, Rss, ExternalLink, Tag, Activity } from 'lucide-react';
 import { EmbedTokenGenerator } from '@/features/jobs/components/EmbedTokenGenerator';
 
 interface JobAnalyticsDialogProps {
@@ -20,6 +21,13 @@ interface JobAnalyticsDialogProps {
     organization_id?: string;
     platforms?: { name: string };
     job_categories?: { name: string };
+    feed_date?: string;
+    jobreferrer?: string;
+    sponsorship_tier?: string;
+    indeed_apply_api_token?: string;
+    indeed_apply_job_id?: string;
+    indeed_apply_post_url?: string;
+    tracking_pixel_url?: string;
     [key: string]: unknown;
   };
   open: boolean;
@@ -99,10 +107,14 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
         </DialogHeader>
         
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="feed-data" className="flex items-center gap-2">
+              <Rss className="h-4 w-4" />
+              Feed Data
             </TabsTrigger>
             <TabsTrigger value="embed" className="flex items-center gap-2">
               <Code className="h-4 w-4" />
@@ -236,6 +248,178 @@ const JobAnalyticsDialog: React.FC<JobAnalyticsDialogProps> = ({ job, open, onOp
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+          
+          <TabsContent value="feed-data" className="space-y-6 mt-4">
+            {/* Feed Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Feed Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-muted-foreground">Feed Date:</span>
+                    <div className="mt-1">
+                      {job.feed_date ? (
+                        <span className="font-medium">{new Date(job.feed_date).toLocaleDateString()}</span>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Not captured</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">System Created:</span>
+                    <div className="mt-1">
+                      <span className="font-medium">{new Date(job.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Campaign Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Tag className="h-4 w-4" />
+                  Campaign Attribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-muted-foreground">Job Referrer:</span>
+                    <div className="mt-1">
+                      {job.jobreferrer ? (
+                        <Badge variant="outline" className="font-mono text-xs">{job.jobreferrer}</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Not captured</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-muted-foreground">Sponsorship Tier:</span>
+                    <div className="mt-1">
+                      {job.sponsorship_tier ? (
+                        <Badge className="text-xs">{job.sponsorship_tier}</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Not mapped</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Indeed Apply Integration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="w-5 h-5 rounded bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">I</span>
+                  </div>
+                  Indeed Apply Integration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {job.indeed_apply_job_id ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400">
+                        Enabled
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 text-sm">
+                      <div>
+                        <span className="font-medium text-muted-foreground">Job ID:</span>
+                        <div className="mt-1 font-mono text-xs bg-muted px-2 py-1 rounded">
+                          {job.indeed_apply_job_id}
+                        </div>
+                      </div>
+                      {job.indeed_apply_api_token && (
+                        <div>
+                          <span className="font-medium text-muted-foreground">API Token:</span>
+                          <div className="mt-1 font-mono text-xs bg-muted px-2 py-1 rounded">
+                            {job.indeed_apply_api_token.substring(0, 8)}...{job.indeed_apply_api_token.slice(-4)}
+                          </div>
+                        </div>
+                      )}
+                      {job.indeed_apply_post_url && (
+                        <div>
+                          <span className="font-medium text-muted-foreground">Post URL:</span>
+                          <div className="mt-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => window.open(job.indeed_apply_post_url as string, '_blank')}
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" />
+                              Open URL
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Badge variant="secondary" className="text-xs">Not configured</Badge>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Indeed Apply data will be captured on next feed sync
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tracking Pixel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  Tracking Pixel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {job.tracking_pixel_url ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-950/30 dark:text-purple-400">
+                        Active
+                      </Badge>
+                    </div>
+                    <div className="text-sm">
+                      <span className="font-medium text-muted-foreground">Pixel URL:</span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <code className="font-mono text-xs bg-muted px-2 py-1 rounded flex-1 truncate">
+                          {job.tracking_pixel_url}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs shrink-0"
+                          onClick={() => window.open(job.tracking_pixel_url as string, '_blank')}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Badge variant="secondary" className="text-xs">Not detected</Badge>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      No tracking pixel found in job description
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
           
           <TabsContent value="embed" className="mt-4">
