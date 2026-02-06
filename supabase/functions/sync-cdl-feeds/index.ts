@@ -80,6 +80,19 @@ interface SyncResult {
   error?: string;
 }
 
+async function getSponsorshipTier(supabase: any, jobreferrer: string | null): Promise<string> {
+  if (!jobreferrer) return 'organic';
+  
+  const { data } = await supabase
+    .from('campaign_sponsorship_mappings')
+    .select('tier')
+    .eq('jobreferrer', jobreferrer)
+    .limit(1)
+    .single();
+    
+  return data?.tier || 'organic';
+}
+
 async function syncClientFeed(
   supabase: any,
   feed: typeof CDL_FEEDS[0],
@@ -170,6 +183,10 @@ async function syncClientFeed(
 
       // For new jobs, we'll set apply_url after insert when we have the ID
       // For existing jobs, we'll update the apply_url during the update
+      
+      // Get sponsorship tier from mapping
+      const sponsorshipTier = await getSponsorshipTier(supabase, job.jobreferrer || null);
+      
       const jobData = {
         title: job.title || 'Untitled Position',
         job_summary: job.description || null,
@@ -195,6 +212,7 @@ async function syncClientFeed(
         // Sponsorship tracking from jobreferrer field
         jobreferrer: job.jobreferrer || null,
         is_sponsored: job.is_sponsored ?? false,
+        sponsorship_tier: sponsorshipTier,
         updated_at: new Date().toISOString()
       };
 
@@ -220,6 +238,7 @@ async function syncClientFeed(
             apply_url: applyUrl, // UTM-enriched internal URL
             jobreferrer: jobData.jobreferrer,
             is_sponsored: jobData.is_sponsored,
+            sponsorship_tier: jobData.sponsorship_tier,
             updated_at: jobData.updated_at
           })
           .eq('id', existingJob.id);
