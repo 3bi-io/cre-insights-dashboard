@@ -17,7 +17,7 @@ const HeroSection = () => {
   return (
     <HeroBackground
       imageSrc={heroHomeImage}
-      imageAlt="Professional trucking and transportation recruitment"
+      imageAlt="AI-powered recruitment platform for essential workforce industries"
       overlayVariant="dark"
       minHeight="min-h-[90vh] md:min-h-screen"
       className="bg-background"
