@@ -10,13 +10,13 @@ export interface PublicNavItem {
 
 export const publicNavigation: PublicNavItem[] = [
   { 
-    name: 'Job List', 
+    name: 'Jobs', 
     href: '/jobs', 
     icon: Briefcase,
     description: 'Browse open positions'
   },
   { 
-    name: 'Employer List', 
+    name: 'Employers', 
     href: '/clients', 
     icon: Building2,
     description: 'Explore hiring companies'
