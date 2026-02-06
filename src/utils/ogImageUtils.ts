@@ -55,6 +55,16 @@ export function getOgImageUrl(pathname: string): string {
     return `${BASE_URL}/og-clients.png`;
   }
 
+  // For blog posts - use default blog OG (specific post images handled by BlogPostPage)
+  if (pathname.startsWith('/blog/')) {
+    return `${BASE_URL}/og-blog.png`;
+  }
+
+  // Blog listing page
+  if (pathname === '/blog') {
+    return `${BASE_URL}/og-blog.png`;
+  }
+
   // Default fallback
   return DEFAULT_OG_IMAGE;
 }
