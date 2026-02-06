@@ -1,16 +1,12 @@
 import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 import { HeroBackground } from '@/components/shared';
 import transportHero from '@/assets/hero/transport-hero.png';
 
 interface ClientsHeroProps {
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
   totalCompanies: number;
 }
 
-export const ClientsHero: React.FC<ClientsHeroProps> = ({ searchTerm, onSearchChange, totalCompanies }) => {
+export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
   return (
     <HeroBackground
       imageSrc={transportHero}
@@ -28,20 +24,9 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ searchTerm, onSearchCh
             Browse top employers in the transportation industry
           </span>
           <div>
-            <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2 mb-4 lg:mb-6">
+            <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
               {totalCompanies.toLocaleString()} Companies Enrolled
             </span>
-          </div>
-          
-          <div className="relative max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search companies by name or location..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-12 h-12 text-base bg-background border-border"
-            />
           </div>
         </div>
       </div>
