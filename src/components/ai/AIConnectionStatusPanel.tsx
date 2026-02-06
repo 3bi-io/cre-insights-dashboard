@@ -26,14 +26,7 @@ const AIConnectionStatusPanel: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (isConnected: boolean, isDiscontinued?: boolean) => {
-    if (isDiscontinued) {
-      return (
-        <Badge variant="secondary" className="bg-muted text-muted-foreground">
-          Discontinued
-        </Badge>
-      );
-    }
+  const getStatusBadge = (isConnected: boolean) => {
     return (
       <Badge variant={isConnected ? "default" : "destructive"}>
         {isConnected ? "Connected" : "Disconnected"}
@@ -113,13 +106,13 @@ const AIConnectionStatusPanel: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-3">
-                {status.latency && status.provider !== 'grok' && (
+                {status.latency && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="w-3 h-3" />
                     {status.latency}ms
                   </div>
                 )}
-                {getStatusBadge(status.isConnected, status.provider === 'grok')}
+                {getStatusBadge(status.isConnected)}
               </div>
             </div>
           ))}
