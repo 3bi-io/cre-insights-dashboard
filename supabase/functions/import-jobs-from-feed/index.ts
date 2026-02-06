@@ -206,7 +206,10 @@ const handler = wrapHandler(async (req: Request) => {
           job_id: job.referencenumber || null,
           client_id: finalClientId || null,
           // Keep client text field for backward compatibility
-          client: job.company || null
+          client: job.company || null,
+          // Sponsorship tracking from jobreferrer field
+          jobreferrer: job.jobreferrer || null,
+          is_sponsored: job.is_sponsored ?? false,
         };
 
         // Check if job already exists by reference number or title + location

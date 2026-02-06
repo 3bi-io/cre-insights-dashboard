@@ -3640,10 +3640,12 @@ export type Database = {
           experience_level: string | null
           id: string
           is_hidden: boolean | null
+          is_sponsored: boolean | null
           job_id: string | null
           job_summary: string | null
           job_title: string | null
           job_type: string | null
+          jobreferrer: string | null
           last_tenstreet_sync: string | null
           location: string | null
           organization_id: string | null
@@ -3676,10 +3678,12 @@ export type Database = {
           experience_level?: string | null
           id?: string
           is_hidden?: boolean | null
+          is_sponsored?: boolean | null
           job_id?: string | null
           job_summary?: string | null
           job_title?: string | null
           job_type?: string | null
+          jobreferrer?: string | null
           last_tenstreet_sync?: string | null
           location?: string | null
           organization_id?: string | null
@@ -3712,10 +3716,12 @@ export type Database = {
           experience_level?: string | null
           id?: string
           is_hidden?: boolean | null
+          is_sponsored?: boolean | null
           job_id?: string | null
           job_summary?: string | null
           job_title?: string | null
           job_type?: string | null
+          jobreferrer?: string | null
           last_tenstreet_sync?: string | null
           location?: string | null
           organization_id?: string | null
