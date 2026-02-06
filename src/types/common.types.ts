@@ -138,6 +138,8 @@ export interface JobListing {
   };
 }
 
+export type IndustryVertical = 'transportation' | 'healthcare' | 'cyber' | 'trades' | 'general';
+
 export interface Organization {
   id: string;
   name: string;
@@ -149,6 +151,7 @@ export interface Organization {
   domain_dns_records?: Record<string, unknown>;
   domain_verification_token?: string;
   domain_deployed_at?: string;
+  industry_vertical?: IndustryVertical;
   // subscription_status and plan_type removed - all features available to all users
   settings?: Record<string, unknown>;
   created_at: string;

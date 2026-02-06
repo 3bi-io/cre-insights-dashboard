@@ -20,6 +20,7 @@ interface CreateOrganizationData {
   name: string;
   slug: string;
   adminEmail?: string;
+  industryVertical?: string;
 }
 
 interface UpdateOrganizationData {
@@ -28,6 +29,7 @@ interface UpdateOrganizationData {
   slug?: string;
   subscription_status?: string;
   settings?: any;
+  industry_vertical?: string;
 }
 
 export const useSuperAdminOrganizations = () => {
@@ -83,6 +85,7 @@ export const useSuperAdminOrganizations = () => {
         _name: data.name,
         _slug: data.slug,
         _admin_email: data.adminEmail || null,
+        _industry_vertical: data.industryVertical || 'transportation',
       });
 
       if (error) throw error;

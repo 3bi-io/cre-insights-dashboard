@@ -37,6 +37,7 @@ interface AuthContextType {
     name: string;
     slug: string;
     logo_url?: string;
+    industry_vertical?: string;
     settings?: Record<string, unknown>;
   } | null;
   candidateProfile: CandidateProfile | null;
@@ -61,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string;
     slug: string;
     logo_url?: string;
+    industry_vertical?: string;
     settings?: Record<string, unknown>;
   } | null>(null);
   const [candidateProfile, setCandidateProfile] = useState<CandidateProfile | null>(null);
@@ -90,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name,
               slug,
               logo_url,
+              industry_vertical,
               settings
             )
           `)

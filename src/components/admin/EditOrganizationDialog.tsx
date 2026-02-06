@@ -5,11 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Edit } from 'lucide-react';
 import { useSuperAdminOrganizations } from '@/hooks/useSuperAdminOrganizations';
+import { IndustryVerticalSelector } from '@/features/organizations/components/IndustryVerticalSelector';
+import { IndustryVertical } from '@/types/common.types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { INDUSTRY_VERTICAL_OPTIONS } from '@/features/organizations/config/industryTemplates.config';
 
 interface Organization {
   id: string;
   name: string;
   slug: string;
+  industry_vertical?: string;
   settings?: Record<string, unknown>;
 }
 
@@ -23,6 +28,7 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
   const [formData, setFormData] = useState({
     name: organization.name,
     slug: organization.slug,
+    industryVertical: (organization.industry_vertical || 'transportation') as IndustryVertical,
   });
 
   const { updateOrganization, isUpdating } = useSuperAdminOrganizations();
@@ -32,6 +38,7 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
       setFormData({
         name: organization.name,
         slug: organization.slug,
+        industryVertical: (organization.industry_vertical || 'transportation') as IndustryVertical,
       });
     }
   }, [open, organization]);
@@ -53,6 +60,10 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
       updates.slug = formData.slug.trim().toLowerCase().replace(/\s+/g, '-');
     }
 
+    if (formData.industryVertical !== organization.industry_vertical) {
+      updates.industry_vertical = formData.industryVertical;
+    }
+
     if (Object.keys(updates).length > 0) {
       updateOrganization({
         id: organization.id,
@@ -72,7 +83,7 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Organization</DialogTitle>
         </DialogHeader>
@@ -99,6 +110,28 @@ export const EditOrganizationDialog = ({ organization, trigger }: EditOrganizati
             />
             <p className="text-xs text-muted-foreground">
               Used in URLs. Only lowercase letters, numbers, and hyphens.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="industryVertical">Industry Vertical</Label>
+            <Select
+              value={formData.industryVertical}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, industryVertical: value as IndustryVertical }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select industry" />
+              </SelectTrigger>
+              <SelectContent>
+                {INDUSTRY_VERTICAL_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Changing the industry vertical does not reset existing platform or feature settings.
             </p>
           </div>
 
