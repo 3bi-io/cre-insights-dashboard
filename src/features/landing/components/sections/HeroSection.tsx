@@ -59,7 +59,7 @@ const HeroSection = () => {
       >
         {/* Badge */}
         <motion.div variants={itemVariants}>
-          <Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors text-xs sm:text-sm">
+          <Badge className="mb-4 md:mb-6 bg-white text-black border-white/20 hover:bg-white/90 transition-colors text-xs sm:text-sm font-semibold">
             {heroContent.badge}
           </Badge>
         </motion.div>
@@ -83,7 +83,7 @@ const HeroSection = () => {
           {heroContent.industryTags?.map((tag) => (
             <span 
               key={tag}
-              className="px-3 py-1.5 text-xs sm:text-sm font-medium text-success bg-success/10 rounded-full border border-success/20"
+              className="px-3 py-1.5 text-xs sm:text-sm font-medium text-black bg-white rounded-full border border-white/20"
             >
               {tag}
             </span>
@@ -93,7 +93,7 @@ const HeroSection = () => {
         {/* Subheadline */}
         <motion.p 
           variants={itemVariants}
-          className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed whitespace-pre-line"
+          className="text-base sm:text-lg md:text-xl text-white mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed whitespace-pre-line"
         >
           {heroContent.subheadline}
         </motion.p>
