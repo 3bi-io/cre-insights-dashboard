@@ -16,7 +16,7 @@ import {
   JobsLoadingSkeleton
 } from '@/features/jobs';
 import type { PublicJob } from '@/features/jobs';
-import voiceHero from '@/assets/hero/voice-hero.png';
+import jobsHero from '@/assets/hero/jobs-hero.png';
 
 const JobsPage = () => {
   const {
@@ -96,8 +96,8 @@ const JobsPage = () => {
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
         <HeroBackground
-          imageSrc={voiceHero}
-          imageAlt="AI voice technology powering modern job applications and recruitment"
+          imageSrc={jobsHero}
+          imageAlt="Diverse workforce professionals representing multiple industries"
           variant="compact"
           overlayVariant="gradient"
           overlayOpacity={55}
