@@ -192,6 +192,9 @@ async function syncClientFeed(
         job_id: jobId,
         client_id: feed.clientId,
         client: feed.clientName,
+        // Sponsorship tracking from jobreferrer field
+        jobreferrer: job.jobreferrer || null,
+        is_sponsored: job.is_sponsored ?? false,
         updated_at: new Date().toISOString()
       };
 
@@ -215,6 +218,8 @@ async function syncClientFeed(
             experience_level: jobData.experience_level,
             url: jobData.url,
             apply_url: applyUrl, // UTM-enriched internal URL
+            jobreferrer: jobData.jobreferrer,
+            is_sponsored: jobData.is_sponsored,
             updated_at: jobData.updated_at
           })
           .eq('id', existingJob.id);

@@ -29,6 +29,9 @@ export interface ParsedJob {
   status?: string;
   type?: string;
   last_updated?: string;
+  // Sponsorship fields
+  jobreferrer?: string;
+  is_sponsored?: boolean;
 }
 
 /**
@@ -90,6 +93,13 @@ export function parseJobFromXML(jobXml: string): ParsedJob {
 
   const salaryText = extractField('salary');
   const salary = parseSalaryRange(salaryText);
+  
+  // Extract jobreferrer for sponsorship tracking
+  const jobreferrer = extractField('jobreferrer') || undefined;
+  
+  // Determine sponsorship status based on jobreferrer presence
+  // Jobs with a jobreferrer are typically sponsored/paid placements
+  const is_sponsored = !!jobreferrer;
 
   return {
     id: extractField('referencenumber') || extractField('id') || undefined,
@@ -112,6 +122,9 @@ export function parseJobFromXML(jobXml: string): ParsedJob {
     education: extractField('education') || undefined,
     country: extractField('country') || undefined,
     postalcode: extractField('postalcode') || undefined,
+    // Sponsorship fields
+    jobreferrer,
+    is_sponsored,
   };
 }
 
