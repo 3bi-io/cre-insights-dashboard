@@ -18,7 +18,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { useBlogPost } from '@/hooks/useBlog';
 import { calculateReadingTime } from '@/utils/seoUtils';
 import { BlogFeaturedImage, BlogShareButtons, RelatedPosts } from '@/components/blog';
-import { getBlogPlaceholderImage } from '@/utils/blogImageUtils';
+import { getBlogPlaceholderImage, getBlogOgImage } from '@/utils/blogImageUtils';
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -62,7 +62,7 @@ const BlogPostPage: React.FC = () => {
   const readingTime = calculateReadingTime(post.content);
   const publishedDate = post.published_at ? new Date(post.published_at).toISOString() : post.created_at;
   const authorName = post.author?.full_name || 'ATS.me Team';
-  const ogImage = post.featured_image || getBlogPlaceholderImage(post.slug);
+  const ogImage = getBlogOgImage(post.slug, post.featured_image);
 
   const articleSchema = buildArticleSchema({
     headline: post.title,
