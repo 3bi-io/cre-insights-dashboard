@@ -93,7 +93,7 @@ const HeroSection = () => {
         {/* Subheadline */}
         <motion.p 
           variants={itemVariants}
-          className="text-base sm:text-lg md:text-xl text-white mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed whitespace-pre-line"
+          className="text-base sm:text-lg md:text-xl text-white font-medium mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed whitespace-pre-line bg-black/50 backdrop-blur-sm rounded-xl px-6 py-4"
         >
           {heroContent.subheadline}
         </motion.p>
