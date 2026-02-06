@@ -1,145 +1,165 @@
 
-
-# Hero Background Image Distribution Plan
+# Hero Section Visual Enhancement Implementation
 
 ## Overview
 
-The 5 uploaded images will be distributed across key public-facing pages to enhance visual appeal while maintaining thematic alignment. Each image will be stored in `src/assets/hero/` and integrated as background images with appropriate overlays for text contrast.
+Transform the homepage hero section into a high-impact, conversion-focused experience with improved visual hierarchy, entrance animations, enhanced background visibility, prominent CTAs, and modern social proof featuring real company logos.
 
 ---
 
-## Image-to-Page Mapping
+## Key Changes Summary
 
-| Image | Theme | Target Page | Rationale |
-|-------|-------|-------------|-----------|
-| Microphone + Sound Waves | Voice/AI Technology | **Landing Page** (HeroSection.tsx) | Core platform value proposition is AI Voice Apply |
-| Social Media Network | Connectivity/Multi-platform | **Features Page** | Social Beacon is the flagship feature |
-| Digital Truck + Circuits | Transportation/Technology | **Companies Page** (ClientsHero.tsx) | Employers focus on transportation industry |
-| Financial Charts | ROI/Business Value | **Demo Page** | Demo shows business value and platform capabilities |
-| Shield + Checkmark | Trust/Security/Compliance | **Contact Page** | Trust signal for prospects reaching out |
+| Area | Current State | Enhanced State |
+|------|---------------|----------------|
+| Headline | `text-7xl` max | `text-8xl` desktop with entrance animation |
+| How It Works | In-hero cards | Moved to separate section below fold |
+| Background | 65% dark overlay | 50% gradient overlay revealing more image |
+| CTA Buttons | Standard styling | Glow effect + enhanced prominence |
+| Social Proof | Generic stars | Company logos carousel + testimonial snippet |
 
 ---
 
-## Implementation Details
+## Phase 1: Move How It Works Below Fold
 
-### Phase 1: Asset Organization
+**File:** `src/features/landing/components/sections/HeroSection.tsx`
 
-Create a new directory structure for hero backgrounds:
+- Remove the "How It Works" cards (lines 97-166) from the hero section
+- This focuses the hero on a single, powerful message
+- The HowItWorksSection already exists as a standalone component that can be added to the page
+
+**File:** `src/pages/public/LandingPage.tsx`
+
+- Import and add `HowItWorksSection` after `StatsSection`
+- Use lazy loading with Suspense for performance
+
+---
+
+## Phase 2: Enhanced Headline with Entrance Animations
+
+**File:** `src/features/landing/components/sections/HeroSection.tsx`
+
+Add framer-motion entrance animations:
 
 ```text
-src/assets/hero/
-  voice-hero.png        (Microphone image)
-  social-hero.png       (Social network image)
-  transport-hero.png    (Digital truck image)
-  roi-hero.png          (Financial charts image)
-  trust-hero.png        (Shield image)
+- Badge: fade-in-up, 0.3s delay
+- Headline: fade-in-up, 0.5s delay  
+- Subheadline: fade-in-up, 0.7s delay
+- CTAs: fade-in-up, 0.9s delay
+- Social proof: fade-in-up, 1.1s delay
 ```
 
-### Phase 2: Create Reusable HeroBackground Component
-
-Build a shared component for consistent hero styling across all pages:
-
-```text
-src/components/shared/HeroBackground.tsx
-```
-
-Component features:
-- Accepts image source as prop
-- Provides consistent overlay variants (dark, gradient, light)
-- Handles responsive behavior (object-cover, object-position)
-- Ensures WCAG contrast for overlaid text
-- Supports optional blur and opacity controls
-
-### Phase 3: Page Updates
-
-**1. Landing Page (src/features/landing/components/sections/HeroSection.tsx)**
-- Import `voice-hero.png` as background
-- Add dark gradient overlay (60-70% opacity)
-- Preserve existing animated gradient blobs on top of image
-
-**2. Features Page (src/pages/public/FeaturesPage.tsx)**
-- Import `social-hero.png` as background
-- Apply gradient overlay from bottom for text readability
-- Update hero section (lines 73-102)
-
-**3. Companies Page (src/components/public/clients/ClientsHero.tsx)**
-- Import `transport-hero.png` as background
-- Add overlay ensuring "Companies Hiring Now" text remains readable
-- Maintain search bar positioning
-
-**4. Demo Page (src/pages/public/DemoPage.tsx)**
-- Import `roi-hero.png` as background
-- Update hero section (lines 129-155)
-- Apply appropriate overlay for demo badge and headings
-
-**5. Contact Page (src/pages/public/ContactPage.tsx)**
-- Import `trust-hero.png` as background
-- Update hero section (lines 231-249)
-- Maintain form visibility with gradient fade
+Increase headline typography:
+- Mobile: `text-4xl` (currently `text-3xl`)
+- Tablet: `text-6xl` (currently `text-5xl`)
+- Desktop: `text-8xl` (currently `text-7xl`)
 
 ---
 
-## Technical Approach
+## Phase 3: Reduce Background Overlay
 
-### HeroBackground Component Props
+**File:** `src/features/landing/components/sections/HeroSection.tsx`
 
+Update HeroBackground props:
+- Change `overlayOpacity={65}` to `overlayOpacity={50}`
+- Switch from `overlayVariant="dark"` to `overlayVariant="gradient"` for a fade effect that reveals more of the voice-hero image at the top
+
+---
+
+## Phase 4: Enhanced CTA Buttons with Glow Effect
+
+**File:** `src/features/landing/components/sections/HeroSection.tsx`
+
+Primary CTA (Jobseekers Browse Here):
+- Add gradient background: `bg-gradient-to-r from-primary to-accent`
+- Add glow shadow: `shadow-[0_0_30px_rgba(var(--primary-rgb),0.5)]`
+- Add hover glow intensification
+- Increase padding and font size for more prominence
+
+Secondary CTA (Employers Start Here):
+- Keep outline variant but enhance border
+- Add subtle glow on hover
+
+---
+
+## Phase 5: Company Logos Social Proof
+
+**File:** `src/features/landing/content/hero.content.ts`
+
+Add company logo references:
 ```text
-interface HeroBackgroundProps {
-  imageSrc: string;
-  imageAlt: string;
-  overlayVariant?: 'dark' | 'gradient' | 'light';
-  overlayOpacity?: number;
-  children: React.ReactNode;
-  className?: string;
+socialProof: {
+  ...existing,
+  logos: [
+    { name: 'CR England', src: '/logos/cr-england.jpeg' },
+    { name: 'Danny Herman', src: '/logos/danny-herman.png' },
+    { name: 'Day & Ross', src: '/logos/day-and-ross.jpeg' },
+    { name: 'Novco', src: '/logos/novco.png' }
+  ],
+  testimonial: {
+    quote: 'Callbacks in under 3 minutes',
+    author: 'Pilot Partner'
+  }
 }
 ```
 
-### Overlay Variants
+**File:** `src/features/landing/components/sections/HeroSection.tsx`
 
-- **dark**: Solid dark overlay (for light-on-dark text)
-- **gradient**: Gradient from bottom (for bottom-positioned content)
-- **light**: Light overlay (for dark-on-light text)
-
-### CSS Approach
-
-Each hero section will use:
-```text
-- position: relative (container)
-- position: absolute, inset-0 (image layer)
-- object-cover, object-center (image sizing)
-- z-index layering (image -> overlay -> content)
-```
+Replace star rating with:
+1. Horizontal logo strip with grayscale filter, hover to color
+2. "Trusted by 50+ companies" text badge
+3. Featured testimonial snippet with quote icon
 
 ---
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/assets/hero/voice-hero.png` | Landing page background |
-| `src/assets/hero/social-hero.png` | Features page background |
-| `src/assets/hero/transport-hero.png` | Companies page background |
-| `src/assets/hero/roi-hero.png` | Demo page background |
-| `src/assets/hero/trust-hero.png` | Contact page background |
-| `src/components/shared/HeroBackground.tsx` | Reusable hero component |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/features/landing/components/sections/HeroSection.tsx` | Add voice-hero background |
-| `src/pages/public/FeaturesPage.tsx` | Add social-hero background |
-| `src/components/public/clients/ClientsHero.tsx` | Add transport-hero background |
-| `src/pages/public/DemoPage.tsx` | Add roi-hero background |
-| `src/pages/public/ContactPage.tsx` | Add trust-hero background |
-| `src/components/shared/index.ts` | Export HeroBackground |
+| `src/features/landing/components/sections/HeroSection.tsx` | Major refactor with animations, reduced overlay, enhanced CTAs, logo social proof |
+| `src/features/landing/content/hero.content.ts` | Add logo references and testimonial data |
+| `src/pages/public/LandingPage.tsx` | Add HowItWorksSection import after StatsSection |
+| `public/logos/` (copy files) | Copy 4 company logos to public folder for accessibility |
+
+---
+
+## Animation Specifications
+
+Using framer-motion with staggered entrance:
+
+```text
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.2 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" }
+  }
+};
+```
 
 ---
 
 ## Accessibility Considerations
 
-- All images include descriptive `alt` text
-- Overlays maintain WCAG AA contrast ratio (4.5:1) for text
-- Images marked as decorative where appropriate (aria-hidden)
-- Animations respect prefers-reduced-motion
+- All animations respect `prefers-reduced-motion`
+- Company logos include proper alt text
+- CTA glow effects maintain WCAG contrast ratios
+- Reduced overlay still ensures 4.5:1 text contrast with `text-foreground`
 
+---
+
+## Expected Visual Result
+
+1. **First impression**: Clean, focused hero with dramatic headline animation
+2. **Background**: Voice-hero image more visible, creating modern tech aesthetic  
+3. **CTAs**: Eye-catching with gradient glow, clear primary action hierarchy
+4. **Social proof**: Professional company logos establish instant credibility
+5. **Below fold**: How It Works section maintains engagement after scroll
