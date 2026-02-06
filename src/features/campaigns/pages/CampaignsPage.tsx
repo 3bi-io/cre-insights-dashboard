@@ -23,7 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { PageLayout } from '@/features/shared';
 import { useCampaigns, useFeedDataCoverage } from '../hooks';
-import { CreateCampaignDialog, CampaignCard, CampaignMappingManager } from '../components';
+import { CreateCampaignDialog, CampaignCard, CampaignMappingManager, FeedSyncStatusCard } from '../components';
 import { Database } from '@/integrations/supabase/types';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 
@@ -282,7 +282,12 @@ const CampaignsPage = () => {
           </TabsContent>
 
           <TabsContent value="mappings" className="space-y-6">
-            <FeedDataCoverageStats />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <FeedDataCoverageStats />
+              </div>
+              <FeedSyncStatusCard />
+            </div>
             <CampaignMappingManager />
           </TabsContent>
         </Tabs>

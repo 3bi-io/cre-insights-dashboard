@@ -3388,6 +3388,132 @@ export type Database = {
           },
         ]
       }
+      feed_quality_alerts: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string | null
+          current_value: number | null
+          id: string
+          message: string | null
+          metric_name: string
+          organization_id: string | null
+          severity: string | null
+          threshold_value: number | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          message?: string | null
+          metric_name: string
+          organization_id?: string | null
+          severity?: string | null
+          threshold_value?: number | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          message?: string | null
+          metric_name?: string
+          organization_id?: string | null
+          severity?: string | null
+          threshold_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_quality_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_quality_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_sync_logs: {
+        Row: {
+          client_id: string | null
+          client_name: string
+          created_at: string | null
+          error: string | null
+          feed_url: string | null
+          id: string
+          jobs_deactivated: number | null
+          jobs_in_feed: number | null
+          jobs_inserted: number | null
+          jobs_updated: number | null
+          jobs_with_feed_data: number | null
+          sync_duration_ms: number | null
+          sync_type: string | null
+          triggered_by: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          client_name: string
+          created_at?: string | null
+          error?: string | null
+          feed_url?: string | null
+          id?: string
+          jobs_deactivated?: number | null
+          jobs_in_feed?: number | null
+          jobs_inserted?: number | null
+          jobs_updated?: number | null
+          jobs_with_feed_data?: number | null
+          sync_duration_ms?: number | null
+          sync_type?: string | null
+          triggered_by?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          client_name?: string
+          created_at?: string | null
+          error?: string | null
+          feed_url?: string | null
+          id?: string
+          jobs_deactivated?: number | null
+          jobs_in_feed?: number | null
+          jobs_inserted?: number | null
+          jobs_updated?: number | null
+          jobs_with_feed_data?: number | null
+          sync_duration_ms?: number | null
+          sync_type?: string | null
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_sync_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_sync_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_ad_creatives: {
         Row: {
           aspect_ratio: string | null
