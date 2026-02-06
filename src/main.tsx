@@ -6,11 +6,13 @@ import './i18n/config' // Initialize i18n
 import { startPerformanceMonitoring } from '@/hooks/usePerformanceMonitor'
 import { initSentry } from '@/utils/sentry'
 import { initAnalytics } from '@/utils/analytics'
+import { initWebVitals } from '@/utils/webVitals'
 
 // Initialize monitoring services (production)
 initSentry();
 initAnalytics();
 startPerformanceMonitoring();
+initWebVitals();
 
 // Suppress noisy third‑party RUM/recorder errors blocked by ad blockers
 // e.g. "Failed to fetch (ingesteer.services-prod.nsvcs.net)", RudderStack, X-Frame-Options
