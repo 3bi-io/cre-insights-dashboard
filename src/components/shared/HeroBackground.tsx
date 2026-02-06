@@ -1,17 +1,36 @@
 /**
  * HeroBackground Component
- * Reusable hero section with background image, overlay variants, and responsive behavior
- * Ensures WCAG contrast for overlaid text
+ * Reusable hero section with responsive background images, overlay gradients, and lazy loading
+ * Ensures WCAG contrast for overlaid text with multiple overlay options
  */
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
+export interface ResponsiveImage {
+  src: string;
+  width: number;
+}
+
 export interface HeroBackgroundProps {
+  /** Primary image source */
   imageSrc: string;
+  /** Alt text for accessibility (used for screen readers even if aria-hidden) */
   imageAlt: string;
-  overlayVariant?: 'dark' | 'gradient' | 'light';
+  /** Optional responsive image sources for srcset */
+  responsiveImages?: ResponsiveImage[];
+  /** Overlay style variant */
+  overlayVariant?: 'dark' | 'gradient' | 'light' | 'radial' | 'vignette';
+  /** Custom overlay opacity (0-100) */
   overlayOpacity?: number;
+  /** Enable lazy loading (default: true for below-fold, false for hero) */
+  lazyLoad?: boolean;
+  /** Image loading priority - eager for above-fold heroes */
+  priority?: boolean;
+  /** Blur placeholder while loading */
+  blurPlaceholder?: boolean;
+  /** Object position for responsive cropping */
+  objectPosition?: string;
   children: React.ReactNode;
   className?: string;
 }
@@ -20,37 +39,119 @@ const overlayStyles = {
   dark: 'bg-background/70',
   gradient: 'bg-gradient-to-t from-background via-background/60 to-transparent',
   light: 'bg-background/40',
+  radial: 'bg-[radial-gradient(ellipse_at_center,transparent_0%,hsl(var(--background)/0.8)_100%)]',
+  vignette: 'bg-[radial-gradient(ellipse_at_center,transparent_30%,hsl(var(--background)/0.9)_100%)]',
 } as const;
 
 export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   imageSrc,
   imageAlt,
+  responsiveImages,
   overlayVariant = 'dark',
   overlayOpacity,
+  lazyLoad = false,
+  priority = true,
+  blurPlaceholder = true,
+  objectPosition = 'center',
   children,
   className,
 }) => {
-  const customOpacity = overlayOpacity !== undefined 
-    ? { opacity: overlayOpacity / 100 } 
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(!lazyLoad);
+  const containerRef = useRef<HTMLElement>(null);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (!lazyLoad || isInView) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' } // Preload 200px before visible
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [lazyLoad, isInView]);
+
+  // Generate srcset from responsive images
+  const srcSet = responsiveImages?.length
+    ? responsiveImages.map(img => `${img.src} ${img.width}w`).join(', ')
     : undefined;
 
+  // Generate sizes attribute for responsive loading
+  const sizes = responsiveImages?.length
+    ? '(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 100vw'
+    : undefined;
+
+  // Custom opacity style
+  const customOpacity = overlayOpacity !== undefined 
+    ? { '--hero-overlay-opacity': overlayOpacity / 100 } as React.CSSProperties
+    : undefined;
+
+  const overlayClassName = overlayOpacity !== undefined
+    ? 'bg-background'
+    : overlayStyles[overlayVariant];
+
   return (
-    <section className={cn('relative overflow-hidden', className)}>
+    <section 
+      ref={containerRef}
+      className={cn('relative overflow-hidden', className)}
+    >
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          className="w-full h-full object-cover object-center"
-          aria-hidden="true"
-          loading="eager"
-        />
+        {isInView && (
+          <img
+            src={imageSrc}
+            srcSet={srcSet}
+            sizes={sizes}
+            alt=""
+            aria-hidden="true"
+            loading={priority ? 'eager' : 'lazy'}
+            decoding={priority ? 'sync' : 'async'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            onLoad={() => setIsLoaded(true)}
+            className={cn(
+              'w-full h-full object-cover transition-opacity duration-500',
+              blurPlaceholder && !isLoaded && 'opacity-0',
+              isLoaded && 'opacity-100'
+            )}
+            style={{ objectPosition }}
+          />
+        )}
+        
+        {/* Blur placeholder background */}
+        {blurPlaceholder && !isLoaded && (
+          <div 
+            className="absolute inset-0 bg-muted animate-pulse"
+            aria-hidden="true"
+          />
+        )}
       </div>
 
-      {/* Overlay Layer */}
+      {/* Primary Overlay Layer */}
       <div 
-        className={cn('absolute inset-0 z-[1]', overlayStyles[overlayVariant])}
-        style={customOpacity}
+        className={cn('absolute inset-0 z-[1]', overlayClassName)}
+        style={overlayOpacity !== undefined ? { opacity: overlayOpacity / 100 } : undefined}
+        aria-hidden="true"
+      />
+
+      {/* Secondary gradient for enhanced text readability */}
+      <div 
+        className="absolute inset-0 z-[2] bg-gradient-to-b from-background/20 via-transparent to-background/40 pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* Subtle vignette for depth */}
+      <div 
+        className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_center,transparent_50%,hsl(var(--background)/0.3)_100%)] pointer-events-none"
         aria-hidden="true"
       />
 
@@ -58,6 +159,9 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
       <div className="relative z-10">
         {children}
       </div>
+
+      {/* Screen reader description */}
+      <span className="sr-only">{imageAlt}</span>
     </section>
   );
 };
