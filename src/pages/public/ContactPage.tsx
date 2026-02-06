@@ -179,6 +179,43 @@ const ContactPage = () => {
     }
   };
 
+  // LocalBusiness schema for local SEO
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "ATS.me",
+    "description": "AI-powered recruitment platform with Voice Apply technology, Tenstreet integration, and predictive analytics.",
+    "url": "https://ats.me",
+    "logo": "https://ats.me/logo.png",
+    "image": "https://ats.me/og-image.png",
+    "telephone": "",
+    "email": "support@ats.me",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "1400 Quintard Ave",
+      "addressLocality": "Anniston",
+      "addressRegion": "AL",
+      "postalCode": "36201",
+      "addressCountry": "US"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "33.6598",
+      "longitude": "-85.8316"
+    },
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      "opens": "09:00",
+      "closes": "17:00"
+    },
+    "priceRange": "$$",
+    "sameAs": [
+      "https://twitter.com/atsme",
+      "https://linkedin.com/company/atsme"
+    ]
+  };
+
   return (
     <>
       <SEO
@@ -188,7 +225,7 @@ const ContactPage = () => {
         canonical="https://ats.me/contact"
         ogImage="https://ats.me/og-contact.png"
       />
-      <StructuredData data={[contactPageSchema, faqSchemaData]} />
+      <StructuredData data={[contactPageSchema, faqSchemaData, localBusinessSchema]} />
       <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">

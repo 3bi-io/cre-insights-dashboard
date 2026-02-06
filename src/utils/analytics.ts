@@ -151,10 +151,11 @@ export const trackFeature = (featureName: string, action: string = 'used') => {
 };
 
 /**
- * Track search queries
+ * Track search queries with zero-results detection for content gap analysis
  */
 export const trackSearch = (query: string, resultCount?: number) => {
-  trackEvent('Search', 'query', query, resultCount);
+  const action = resultCount === 0 ? 'no_results' : 'query';
+  trackEvent('Search', action, query, resultCount);
 };
 
 /**
