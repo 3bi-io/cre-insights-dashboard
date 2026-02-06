@@ -34,6 +34,8 @@
      );
    }, [clients, searchTerm]);
  
+   const totalJobs = clients?.reduce((sum, c) => sum + (c.job_count || 0), 0) || 0;
+ 
    return (
      <>
         <SEO 
@@ -44,7 +46,7 @@
         />
        
        <div className="min-h-screen bg-background">
-         <ClientsHero totalCompanies={clients?.length || 0} />
+         <ClientsHero totalCompanies={clients?.length || 0} totalJobs={totalJobs} />
          
          <section className="py-12">
            <div className="container mx-auto px-4">
