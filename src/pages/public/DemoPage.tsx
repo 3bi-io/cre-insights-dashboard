@@ -543,7 +543,7 @@ const DemoPage: React.FC = () => {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/pricing">View Pricing</Link>
+                <Link to="/contact">Contact Sales</Link>
               </Button>
             </div>
           </div>

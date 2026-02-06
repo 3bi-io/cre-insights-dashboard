@@ -107,7 +107,7 @@ export interface NavGroup {
 
 // Main standalone items
 export const mainNavItems: NavItem[] = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }
+  { path: '/admin', label: 'Dashboard', icon: LayoutDashboard }
 ];
 
 // All navigation groups - source of truth for both desktop and mobile
@@ -192,7 +192,7 @@ export const getNavigationGroups = (options: {
       group: "AI & Voice",
       icon: Bot,
       items: [
-        { path: '/admin/grok', label: 'AI Assistant', icon: Sparkles },
+        { path: '/admin/ai-assistant', label: 'AI Assistant', icon: Sparkles },
         ...(isModerator ? [
           { path: '/admin/ai-tools', label: 'AI Tools', icon: Bot },
           { path: '/admin/ai-analytics', label: 'AI Analytics', icon: BarChart3 }
@@ -248,6 +248,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/meta-analytics': 'Meta Analytics',
   '/admin/ai-configuration': 'AI Configuration',
   '/admin/grok': 'AI Assistant',
+  '/admin/ai-assistant': 'AI Assistant',
   '/admin/elevenlabs-admin': 'Voice Agents',
   '/admin/ai-tools': 'AI Tools',
   '/admin/ai-analytics': 'AI Analytics',

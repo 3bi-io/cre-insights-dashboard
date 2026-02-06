@@ -31,15 +31,15 @@ const Settings = () => {
     >
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="inline-flex w-max sm:w-full sm:grid sm:grid-cols-8 min-w-max">
-            <TabsTrigger value="profile" className="whitespace-nowrap">Profile</TabsTrigger>
-            <TabsTrigger value="security" className="whitespace-nowrap">Security</TabsTrigger>
-            <TabsTrigger value="integrations" className="whitespace-nowrap">Integrations</TabsTrigger>
-            <TabsTrigger value="verifications" className="whitespace-nowrap">Verifications</TabsTrigger>
-            <TabsTrigger value="webhooks" className="whitespace-nowrap">Webhooks</TabsTrigger>
-            <TabsTrigger value="documentation" className="whitespace-nowrap">API Docs</TabsTrigger>
-            <TabsTrigger value="notifications" className="whitespace-nowrap">Notifications</TabsTrigger>
-            <TabsTrigger value="privacy" className="whitespace-nowrap">Privacy</TabsTrigger>
+          <TabsList className="inline-flex w-max sm:w-full sm:grid sm:grid-cols-4 md:grid-cols-8 min-w-max gap-1">
+            <TabsTrigger value="profile" className="whitespace-nowrap text-xs sm:text-sm">Profile</TabsTrigger>
+            <TabsTrigger value="security" className="whitespace-nowrap text-xs sm:text-sm">Security</TabsTrigger>
+            <TabsTrigger value="integrations" className="whitespace-nowrap text-xs sm:text-sm">Integrations</TabsTrigger>
+            <TabsTrigger value="verifications" className="whitespace-nowrap text-xs sm:text-sm">Verifications</TabsTrigger>
+            <TabsTrigger value="webhooks" className="whitespace-nowrap text-xs sm:text-sm">Webhooks</TabsTrigger>
+            <TabsTrigger value="documentation" className="whitespace-nowrap text-xs sm:text-sm">API Docs</TabsTrigger>
+            <TabsTrigger value="notifications" className="whitespace-nowrap text-xs sm:text-sm">Notifications</TabsTrigger>
+            <TabsTrigger value="privacy" className="whitespace-nowrap text-xs sm:text-sm">Privacy</TabsTrigger>
           </TabsList>
         </div>
 

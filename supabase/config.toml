@@ -81,9 +81,6 @@ verify_jwt = true
 [functions.import-applications]
 verify_jwt = true
 
-[functions.grok-chat]
-verify_jwt = true
-
 [functions.visitor-analytics]
 verify_jwt = true
 
@@ -189,7 +186,6 @@ verify_jwt = true
 [functions.admin-update-password]
 verify_jwt = true
 
-
 [functions.fetch-crengland-jobs]
 verify_jwt = true
 
@@ -257,4 +253,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.monitor-feed-quality]
+verify_jwt = false
+
+[functions.ai-analytics-enhanced]
+verify_jwt = true
+
+[functions.resolve-embed-token]
 verify_jwt = false

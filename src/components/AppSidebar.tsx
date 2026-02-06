@@ -40,11 +40,13 @@ const AppSidebar = () => {
   });
 
   const isActive = (path: string) => {
+    if (path === '/admin') {
+      return location.pathname === '/admin' || location.pathname === '/dashboard';
+    }
     if (path === '/dashboard') {
       return location.pathname === '/dashboard' && !location.search;
     }
     if (path.includes('?')) {
-      // Strip hash fragment from path before comparing
       const pathWithoutHash = path.split('#')[0];
       const [basePath, query] = pathWithoutHash.split('?');
       return location.pathname === basePath && location.search === `?${query}`;
