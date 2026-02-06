@@ -3705,6 +3705,45 @@ export type Database = {
           },
         ]
       }
+      industry_templates: {
+        Row: {
+          ai_prompt_hints: Json | null
+          created_at: string | null
+          default_features: Json | null
+          default_platforms: Json | null
+          description: string | null
+          display_name: string
+          icon: string | null
+          id: string
+          updated_at: string | null
+          vertical: string
+        }
+        Insert: {
+          ai_prompt_hints?: Json | null
+          created_at?: string | null
+          default_features?: Json | null
+          default_platforms?: Json | null
+          description?: string | null
+          display_name: string
+          icon?: string | null
+          id?: string
+          updated_at?: string | null
+          vertical: string
+        }
+        Update: {
+          ai_prompt_hints?: Json | null
+          created_at?: string | null
+          default_features?: Json | null
+          default_platforms?: Json | null
+          description?: string | null
+          display_name?: string
+          icon?: string | null
+          id?: string
+          updated_at?: string | null
+          vertical?: string
+        }
+        Relationships: []
+      }
       job_categories: {
         Row: {
           created_at: string
@@ -4951,6 +4990,7 @@ export type Database = {
           domain_status: string | null
           domain_verification_token: string | null
           id: string
+          industry_vertical: string | null
           logo_url: string | null
           name: string
           plan_type: string
@@ -4970,6 +5010,7 @@ export type Database = {
           domain_status?: string | null
           domain_verification_token?: string | null
           id?: string
+          industry_vertical?: string | null
           logo_url?: string | null
           name: string
           plan_type?: string
@@ -4989,6 +5030,7 @@ export type Database = {
           domain_status?: string | null
           domain_verification_token?: string | null
           id?: string
+          industry_vertical?: string | null
           logo_url?: string | null
           name?: string
           plan_type?: string
@@ -7564,6 +7606,10 @@ export type Database = {
       }
     }
     Functions: {
+      apply_industry_template: {
+        Args: { _org_id: string; _reset_existing?: boolean; _vertical: string }
+        Returns: undefined
+      }
       can_access_sensitive_applicant_data: {
         Args: { app_job_listing_id: string }
         Returns: boolean
@@ -7590,10 +7636,20 @@ export type Database = {
         Args: { application_data: Json; created_by_reason?: string }
         Returns: Json
       }
-      create_organization: {
-        Args: { _admin_email?: string; _name: string; _slug: string }
-        Returns: string
-      }
+      create_organization:
+        | {
+            Args: { _admin_email?: string; _name: string; _slug: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _admin_email?: string
+              _industry_vertical?: string
+              _name: string
+              _slug: string
+            }
+            Returns: string
+          }
       ensure_admin_for_email: {
         Args: {
           _email: string

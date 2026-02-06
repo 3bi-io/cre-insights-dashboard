@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { useSuperAdminOrganizations } from '@/hooks/useSuperAdminOrganizations';
+import { IndustryVerticalSelector } from '@/features/organizations/components/IndustryVerticalSelector';
+import { IndustryVertical } from '@/types/common.types';
 
 interface CreateOrganizationDialogProps {
   trigger?: React.ReactNode;
@@ -17,6 +18,7 @@ export const CreateOrganizationDialog = ({ trigger }: CreateOrganizationDialogPr
     name: '',
     slug: '',
     adminEmail: '',
+    industryVertical: 'transportation' as IndustryVertical,
   });
 
   const { createOrganization, isCreating } = useSuperAdminOrganizations();
@@ -32,9 +34,10 @@ export const CreateOrganizationDialog = ({ trigger }: CreateOrganizationDialogPr
       name: formData.name.trim(),
       slug: formData.slug.trim().toLowerCase().replace(/\s+/g, '-'),
       adminEmail: formData.adminEmail.trim() || undefined,
+      industryVertical: formData.industryVertical,
     });
 
-    setFormData({ name: '', slug: '', adminEmail: '' });
+    setFormData({ name: '', slug: '', adminEmail: '', industryVertical: 'transportation' });
     setOpen(false);
   };
 
@@ -59,11 +62,11 @@ export const CreateOrganizationDialog = ({ trigger }: CreateOrganizationDialogPr
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Organization</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">Organization Name *</Label>
             <Input
@@ -101,6 +104,18 @@ export const CreateOrganizationDialog = ({ trigger }: CreateOrganizationDialogPr
             <p className="text-xs text-muted-foreground">
               Optional. If provided, this user will be granted admin access to the organization.
             </p>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Industry Vertical</Label>
+            <p className="text-xs text-muted-foreground">
+              Select an industry to automatically configure platforms, features, and AI settings.
+            </p>
+            <IndustryVerticalSelector
+              value={formData.industryVertical}
+              onChange={(value) => setFormData(prev => ({ ...prev, industryVertical: value }))}
+              compact
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
