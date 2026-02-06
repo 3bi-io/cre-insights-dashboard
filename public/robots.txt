@@ -12,6 +12,8 @@ Allow: /terms-of-service
 Allow: /cookie-policy
 Allow: /demo
 Allow: /sitemap
+Allow: /blog
+Allow: /blog/*
 Allow: /clients
 Allow: /map
 

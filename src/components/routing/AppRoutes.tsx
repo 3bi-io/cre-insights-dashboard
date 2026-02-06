@@ -20,6 +20,8 @@ const CookiePolicyPage = React.lazy(() => import("@/pages/public/CookiePolicyPag
 const SitemapPage = React.lazy(() => import("@/pages/public/SitemapPage"));
 const DemoPage = React.lazy(() => import("@/pages/public/DemoPage"));
 const JobMapPage = React.lazy(() => import("@/pages/public/JobMapPage"));
+const BlogPage = React.lazy(() => import("@/pages/public/BlogPage"));
+const BlogPostPage = React.lazy(() => import("@/pages/public/BlogPostPage"));
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
@@ -167,6 +169,8 @@ const AppRoutes: React.FC = () => {
         <Route path="sitemap" element={<RouteWrapper><SitemapPage /></RouteWrapper>} />
         <Route path="demo" element={<RouteWrapper><DemoPage /></RouteWrapper>} />
         <Route path="map" element={<RouteWrapper><JobMapPage /></RouteWrapper>} />
+        <Route path="blog" element={<RouteWrapper><BlogPage /></RouteWrapper>} />
+        <Route path="blog/:slug" element={<RouteWrapper><BlogPostPage /></RouteWrapper>} />
       </Route>
 
       {/* Voice Agent Demo - redirect to consolidated demo page */}
