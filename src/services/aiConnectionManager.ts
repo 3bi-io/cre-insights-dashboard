@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
-export type AIProvider = 'openai' | 'anthropic' | 'elevenlabs' | 'grok';
+// Active providers only (Grok removed as discontinued)
+export type AIProvider = 'openai' | 'anthropic' | 'elevenlabs';
 
 export interface AIConnectionStatus {
   provider: AIProvider;
@@ -17,18 +18,17 @@ export interface AIProviderConfig {
   model: string;
   testMessage: string;
   timeout: number;
-  discontinued?: boolean;
 }
 
 class AIConnectionManager {
   private connectionStatus: Map<AIProvider, AIConnectionStatus> = new Map();
   private checkInterval: number | null = null;
 
-  // Provider configurations with latest models
+  // Provider configurations - Grok removed (discontinued)
   private providerConfigs: Record<AIProvider, AIProviderConfig> = {
     openai: {
       provider: 'openai',
-      model: 'gpt-4o',
+      model: 'gpt-4.1-2025-04-14',
       testMessage: 'Test connection - respond with "OK"',
       timeout: 10000
     },
@@ -43,13 +43,6 @@ class AIConnectionManager {
       model: 'eleven_multilingual_v2',
       testMessage: 'Test agent connection',
       timeout: 15000
-    },
-    grok: {
-      provider: 'grok',
-      model: 'grok-3',
-      testMessage: 'Test connection - respond with "OK"',
-      timeout: 10000,
-      discontinued: true
     }
   };
 
@@ -92,18 +85,6 @@ class AIConnectionManager {
           // ElevenLabs returns { success: true, data: { signedUrl } } on success
           isConnected = !response.error && response.data?.success === true;
           break;
-          
-        case 'grok':
-          // Grok expects messages array format
-          response = await supabase.functions.invoke('grok-chat', {
-            body: {
-              messages: [{ role: 'user', content: config.testMessage }],
-              model: config.model,
-              stream: false
-            }
-          });
-          isConnected = !response.error && response.data && (response.data.choices || response.data.content);
-          break;
       }
 
       const latency = Date.now() - startTime;
@@ -144,7 +125,8 @@ class AIConnectionManager {
   async checkAllConnections(): Promise<AIConnectionStatus[]> {
     logger.debug('Checking all AI provider connections', undefined, 'AIConnection');
     
-    const providers: AIProvider[] = ['openai', 'anthropic', 'elevenlabs', 'grok'];
+    // Only check active providers (Grok removed)
+    const providers: AIProvider[] = ['openai', 'anthropic', 'elevenlabs'];
     const results = await Promise.allSettled(
       providers.map(provider => this.checkConnection(provider))
     );

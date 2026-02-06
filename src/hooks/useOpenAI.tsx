@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { toast } from 'sonner';
 
 interface OpenAIRequest {
   message: string;
@@ -20,6 +21,7 @@ interface UseOpenAIOptions {
   functionName?: string;
   onSuccess?: (data: OpenAIResponse) => void;
   onError?: (error: Error) => void;
+  showToasts?: boolean;
 }
 
 export const useOpenAI = (options: UseOpenAIOptions = {}) => {
@@ -29,7 +31,8 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
   const {
     functionName = 'openai-chat',
     onSuccess,
-    onError
+    onError,
+    showToasts = true
   } = options;
 
   const invoke = async (request: OpenAIRequest): Promise<OpenAIResponse | null> => {
@@ -43,7 +46,35 @@ export const useOpenAI = (options: UseOpenAIOptions = {}) => {
         body: request
       });
 
+      // Handle HTTP error responses
       if (response.error) {
+        const errorContext = response.error.context as { status?: number } | undefined;
+        const statusCode = errorContext?.status;
+        
+        // Handle rate limiting (429)
+        if (statusCode === 429) {
+          const errorMessage = 'Rate limit exceeded. Please wait a moment before trying again.';
+          if (showToasts) {
+            toast.error('Rate Limit', {
+              description: errorMessage,
+              duration: 5000
+            });
+          }
+          throw new Error(errorMessage);
+        }
+        
+        // Handle payment required (402)
+        if (statusCode === 402) {
+          const errorMessage = 'AI service requires payment. Please check your account billing.';
+          if (showToasts) {
+            toast.error('Payment Required', {
+              description: errorMessage,
+              duration: 5000
+            });
+          }
+          throw new Error(errorMessage);
+        }
+        
         throw new Error(response.error.message);
       }
 
@@ -101,7 +132,7 @@ export const buildOpenAIRequest = (
 ): OpenAIRequest => {
   return {
     message,
-    model: options.model || 'gpt-4o',
+    model: options.model || 'gpt-4.1-2025-04-14',
     systemPrompt: options.systemPrompt,
     includeAnalytics: options.includeAnalytics || false
   };
