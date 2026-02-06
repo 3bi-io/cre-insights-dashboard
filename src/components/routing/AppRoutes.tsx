@@ -282,7 +282,8 @@ const AppRoutes: React.FC = () => {
         <Route path="visitor-analytics" element={<ProtectedRouteWrapper><VisitorAnalytics /></ProtectedRouteWrapper>} />
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
-        <Route path="grok" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
+        <Route path="ai-assistant" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
+        <Route path="grok" element={<Navigate to="/admin/ai-assistant" replace />} />
         
         {/* Talent Routes */}
         <Route path="talent/pools" element={<ProtectedRouteWrapper><TalentPoolsPage /></ProtectedRouteWrapper>} />

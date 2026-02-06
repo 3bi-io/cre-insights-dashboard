@@ -178,7 +178,7 @@ const VoiceAgent = () => {
               <CardTitle className="text-lg">Getting Started</CardTitle>
               <CardDescription>How to configure and use voice agents</CardDescription>
             </div>
-            <Link to="/voice-demo">
+            <Link to="/demo">
               <Button variant="outline" size="sm">
                 <PlayCircle className="h-4 w-4 mr-2" />
                 View Demo Call

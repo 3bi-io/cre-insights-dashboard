@@ -35,7 +35,7 @@ const VoiceAgentDemo: React.FC = () => {
         title="AI Voice Agent Demo - See It In Action"
         description="Listen to real AI-powered outbound call demos. Hear how our voice agent verifies applicant information and handles voicemail scenarios using dynamic variables."
         keywords="AI voice agent, outbound call automation, voice AI demo, recruitment automation, applicant verification, AI voicemail"
-        canonical="https://ats.me/voice-demo"
+        canonical="https://ats.me/demo"
         ogImage="https://ats.me/og-voice-demo.png"
         ogType="website"
       />

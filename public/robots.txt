@@ -10,15 +10,16 @@ Allow: /contact
 Allow: /privacy-policy
 Allow: /terms-of-service
 Allow: /cookie-policy
-Allow: /voice-demo
+Allow: /demo
 Allow: /sitemap
+Allow: /clients
+Allow: /map
 
 # Allow public job pages
 Allow: /jobs
 Allow: /jobs/*
 Allow: /apply
 Allow: /apply/detailed
-Allow: /demo
 
 # Disallow admin and private areas
 Disallow: /admin/
@@ -70,13 +71,12 @@ User-agent: LinkedInBot
 Allow: /
 
 # AI Search Engine Crawlers (Generative AI)
-# These crawlers power AI assistants and search features
 User-agent: GPTBot
 Allow: /
 Allow: /jobs
 Allow: /features
 Allow: /resources
-Allow: /voice-demo
+Allow: /demo
 Disallow: /admin/
 Disallow: /dashboard
 Disallow: /my-jobs
@@ -110,7 +110,7 @@ Allow: /
 Allow: /jobs
 Allow: /features
 Allow: /resources
-Allow: /voice-demo
+Allow: /demo
 Disallow: /admin/
 Disallow: /dashboard
 Crawl-delay: 2
