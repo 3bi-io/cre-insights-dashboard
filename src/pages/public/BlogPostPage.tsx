@@ -168,13 +168,21 @@ const BlogPostPage: React.FC = () => {
           {/* Content */}
           <div
             className="prose prose-lg dark:prose-invert max-w-none mb-12
-              prose-headings:font-semibold prose-headings:text-foreground
-              prose-p:text-foreground/90 prose-p:leading-relaxed
+              prose-headings:font-semibold prose-headings:text-foreground prose-headings:mt-8 prose-headings:mb-4
+              prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b prose-h2:border-border prose-h2:pb-2
+              prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+              prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-4
               prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-              prose-strong:text-foreground
-              prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-              prose-blockquote:border-primary/50 prose-blockquote:text-muted-foreground
-              prose-img:rounded-lg"
+              prose-strong:text-foreground prose-strong:font-semibold
+              prose-ul:my-6 prose-ul:list-disc prose-ul:pl-6 prose-ul:space-y-2
+              prose-ol:my-6 prose-ol:list-decimal prose-ol:pl-6 prose-ol:space-y-2
+              prose-li:text-foreground/90 prose-li:leading-relaxed prose-li:pl-2
+              prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+              prose-blockquote:border-l-4 prose-blockquote:border-primary/50 prose-blockquote:bg-muted/30 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:text-muted-foreground prose-blockquote:italic
+              prose-table:border-collapse prose-table:w-full prose-table:my-6
+              prose-th:bg-muted prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:border prose-th:border-border
+              prose-td:px-4 prose-td:py-2 prose-td:border prose-td:border-border
+              prose-img:rounded-lg prose-img:my-6"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
