@@ -46,7 +46,7 @@
         />
        
        <div className="min-h-screen bg-background">
-         <ClientsHero totalCompanies={clients?.length || 0} totalJobs={totalJobs} />
+         <ClientsHero totalCompanies={clients?.length || 0} />
          
          <section className="py-12">
            <div className="container mx-auto px-4">

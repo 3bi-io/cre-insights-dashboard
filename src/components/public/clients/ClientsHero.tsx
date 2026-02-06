@@ -4,10 +4,9 @@ import transportHero from '@/assets/hero/transport-hero.png';
 
 interface ClientsHeroProps {
   totalCompanies: number;
-  totalJobs: number;
 }
 
-export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies, totalJobs }) => {
+export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
   return (
     <HeroBackground
       imageSrc={transportHero}
@@ -24,12 +23,9 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies, totalJ
           <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2 mb-3">
             Browse top employers in the transportation industry
           </span>
-          <div className="flex flex-wrap gap-3">
+          <div>
             <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
               {totalCompanies.toLocaleString()} Companies Enrolled
-            </span>
-            <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
-              {totalJobs.toLocaleString()} Jobs Available
             </span>
           </div>
         </div>
