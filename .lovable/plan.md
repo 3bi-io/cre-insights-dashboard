@@ -1,58 +1,145 @@
 
 
-# Update Tenstreet Blog Post: Data Delivery Focus
+# Hero Background Image Distribution Plan
 
-## Objective
+## Overview
 
-Revise the Tenstreet integration blog post to exclusively highlight ATS.me's ability to **enhance and deliver data to Tenstreet**, removing all references to pulling information back from the Tenstreet platform.
-
----
-
-## What Changes
-
-### Sections to Remove
-- **Step 3: "Bi-Directional Status Updates"** -- describes status updates flowing back from Tenstreet to ATS.me
-- **Step 4: "Compliance-Ready Hire"** -- describes ATS.me automatically receiving compliance-verified status from Tenstreet
-
-### Sections to Replace With
-- **Step 3: "Enhanced Data Enrichment"** -- focuses on how ATS.me enriches and validates candidate data before delivery, ensuring Tenstreet receives the most complete and accurate information possible
-- **Step 4: "Voice Apply Transcript Delivery"** -- highlights the unique value of delivering full Voice Apply conversation transcripts to Tenstreet, giving compliance teams deeper candidate context than any traditional application form
-
-### Section to Reframe
-- **Main H2 heading** changes from "How ATS.me + Tenstreet Integration Works" to "How ATS.me Enhances Data Delivery to Tenstreet" -- reframes the narrative around outbound data quality
-- **Introductory paragraph under the H2** reworded to describe a one-way pipeline focused on enriching what gets delivered to Tenstreet
-
-### No Changes Needed (Already Delivery-Focused)
-- Step 1 (Candidate Applies via ATS.me) -- about capturing data
-- Step 2 (Automatic Tenstreet Sync) -- about pushing data to Tenstreet
-- Key Benefits section -- mostly about data delivery, minor wording tweak to benefit #2
-- Configuration and Setup section -- unchanged
-- Who Is This For section -- unchanged
-- FAQ section -- already describes one-way delivery; minor update to the retry queue answer to remove any implication of receiving data back
+The 5 uploaded images will be distributed across key public-facing pages to enhance visual appeal while maintaining thematic alignment. Each image will be stored in `src/assets/hero/` and integrated as background images with appropriate overlays for text contrast.
 
 ---
 
-## Technical Implementation
+## Image-to-Page Mapping
 
-A single SQL migration will `UPDATE` the `content` column of the `blog_posts` row where `slug = 'tenstreet-integration-driver-recruitment'`. The full updated HTML content will be provided in the migration, preserving all internal links, formatting, and SEO structure.
+| Image | Theme | Target Page | Rationale |
+|-------|-------|-------------|-----------|
+| Microphone + Sound Waves | Voice/AI Technology | **Landing Page** (HeroSection.tsx) | Core platform value proposition is AI Voice Apply |
+| Social Media Network | Connectivity/Multi-platform | **Features Page** | Social Beacon is the flagship feature |
+| Digital Truck + Circuits | Transportation/Technology | **Companies Page** (ClientsHero.tsx) | Employers focus on transportation industry |
+| Financial Charts | ROI/Business Value | **Demo Page** | Demo shows business value and platform capabilities |
+| Shield + Checkmark | Trust/Security/Compliance | **Contact Page** | Trust signal for prospects reaching out |
 
-### Migration File
-- `supabase/migrations/[timestamp]_update_tenstreet_blog_delivery_focus.sql`
-- Single `UPDATE` statement targeting the existing row by slug
-- Updates `content` and `updated_at` fields only
-- No schema changes required
+---
 
-### Content Diff Summary
+## Implementation Details
 
-| Original | Updated |
-|----------|---------|
-| "seamless pipeline from candidate discovery to compliance-ready hire" | "a powerful data enrichment pipeline that delivers superior candidate information to Tenstreet" |
-| Step 3: Bi-Directional Status Updates | Step 3: AI-Powered Data Enrichment |
-| Step 4: Compliance-Ready Hire (status flows back) | Step 4: Voice Apply Transcript Delivery |
-| Benefit #2: mentions compliance workflows updating ATS.me | Benefit #2: focuses on accelerating Tenstreet's processing with pre-validated data |
+### Phase 1: Asset Organization
 
-### Files Modified
-1. **New migration SQL** -- updates blog_posts content for tenstreet slug
+Create a new directory structure for hero backgrounds:
 
-No frontend code changes are needed since the BlogPostPage renders content dynamically from the database.
+```text
+src/assets/hero/
+  voice-hero.png        (Microphone image)
+  social-hero.png       (Social network image)
+  transport-hero.png    (Digital truck image)
+  roi-hero.png          (Financial charts image)
+  trust-hero.png        (Shield image)
+```
+
+### Phase 2: Create Reusable HeroBackground Component
+
+Build a shared component for consistent hero styling across all pages:
+
+```text
+src/components/shared/HeroBackground.tsx
+```
+
+Component features:
+- Accepts image source as prop
+- Provides consistent overlay variants (dark, gradient, light)
+- Handles responsive behavior (object-cover, object-position)
+- Ensures WCAG contrast for overlaid text
+- Supports optional blur and opacity controls
+
+### Phase 3: Page Updates
+
+**1. Landing Page (src/features/landing/components/sections/HeroSection.tsx)**
+- Import `voice-hero.png` as background
+- Add dark gradient overlay (60-70% opacity)
+- Preserve existing animated gradient blobs on top of image
+
+**2. Features Page (src/pages/public/FeaturesPage.tsx)**
+- Import `social-hero.png` as background
+- Apply gradient overlay from bottom for text readability
+- Update hero section (lines 73-102)
+
+**3. Companies Page (src/components/public/clients/ClientsHero.tsx)**
+- Import `transport-hero.png` as background
+- Add overlay ensuring "Companies Hiring Now" text remains readable
+- Maintain search bar positioning
+
+**4. Demo Page (src/pages/public/DemoPage.tsx)**
+- Import `roi-hero.png` as background
+- Update hero section (lines 129-155)
+- Apply appropriate overlay for demo badge and headings
+
+**5. Contact Page (src/pages/public/ContactPage.tsx)**
+- Import `trust-hero.png` as background
+- Update hero section (lines 231-249)
+- Maintain form visibility with gradient fade
+
+---
+
+## Technical Approach
+
+### HeroBackground Component Props
+
+```text
+interface HeroBackgroundProps {
+  imageSrc: string;
+  imageAlt: string;
+  overlayVariant?: 'dark' | 'gradient' | 'light';
+  overlayOpacity?: number;
+  children: React.ReactNode;
+  className?: string;
+}
+```
+
+### Overlay Variants
+
+- **dark**: Solid dark overlay (for light-on-dark text)
+- **gradient**: Gradient from bottom (for bottom-positioned content)
+- **light**: Light overlay (for dark-on-light text)
+
+### CSS Approach
+
+Each hero section will use:
+```text
+- position: relative (container)
+- position: absolute, inset-0 (image layer)
+- object-cover, object-center (image sizing)
+- z-index layering (image -> overlay -> content)
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/assets/hero/voice-hero.png` | Landing page background |
+| `src/assets/hero/social-hero.png` | Features page background |
+| `src/assets/hero/transport-hero.png` | Companies page background |
+| `src/assets/hero/roi-hero.png` | Demo page background |
+| `src/assets/hero/trust-hero.png` | Contact page background |
+| `src/components/shared/HeroBackground.tsx` | Reusable hero component |
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/features/landing/components/sections/HeroSection.tsx` | Add voice-hero background |
+| `src/pages/public/FeaturesPage.tsx` | Add social-hero background |
+| `src/components/public/clients/ClientsHero.tsx` | Add transport-hero background |
+| `src/pages/public/DemoPage.tsx` | Add roi-hero background |
+| `src/pages/public/ContactPage.tsx` | Add trust-hero background |
+| `src/components/shared/index.ts` | Export HeroBackground |
+
+---
+
+## Accessibility Considerations
+
+- All images include descriptive `alt` text
+- Overlays maintain WCAG AA contrast ratio (4.5:1) for text
+- Images marked as decorative where appropriate (aria-hidden)
+- Animations respect prefers-reduced-motion
 
