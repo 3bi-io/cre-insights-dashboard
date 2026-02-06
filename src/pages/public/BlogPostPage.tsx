@@ -1,6 +1,6 @@
 /**
  * Blog Post Detail Page
- * Individual blog post with Article schema, reading time, and author bio
+ * Individual blog post with Article schema, reading time, author bio, and share buttons
  * Implements E-E-A-T with structured data
  */
 
@@ -13,16 +13,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, User, ArrowLeft, Tag, Share2 } from 'lucide-react';
+import { Calendar, Clock, User, ArrowLeft, Tag } from 'lucide-react';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { useBlogPost } from '@/hooks/useBlog';
 import { calculateReadingTime } from '@/utils/seoUtils';
-import { useToast } from '@/hooks/use-toast';
+import { BlogFeaturedImage, BlogShareButtons, RelatedPosts } from '@/components/blog';
+import { getBlogPlaceholderImage } from '@/utils/blogImageUtils';
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = useBlogPost(slug || '');
-  const { toast } = useToast();
 
   if (!slug) return <Navigate to="/blog" replace />;
 
@@ -32,7 +32,7 @@ const BlogPostPage: React.FC = () => {
         <Skeleton className="h-6 w-48 mb-6" />
         <Skeleton className="h-10 w-3/4 mb-4" />
         <Skeleton className="h-4 w-1/2 mb-8" />
-        <Skeleton className="h-64 w-full mb-6" />
+        <Skeleton className="h-64 w-full mb-6 rounded-xl" />
         <div className="space-y-3">
           {[...Array(8)].map((_, i) => (
             <Skeleton key={i} className="h-4 w-full" />
@@ -62,6 +62,7 @@ const BlogPostPage: React.FC = () => {
   const readingTime = calculateReadingTime(post.content);
   const publishedDate = post.published_at ? new Date(post.published_at).toISOString() : post.created_at;
   const authorName = post.author?.full_name || 'ATS.me Team';
+  const ogImage = post.featured_image || getBlogPlaceholderImage(post.slug);
 
   const articleSchema = buildArticleSchema({
     headline: post.title,
@@ -73,20 +74,6 @@ const BlogPostPage: React.FC = () => {
     publisher: 'ATS.me',
   });
 
-  const handleShare = async () => {
-    const url = `https://ats.me/blog/${post.slug}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: post.title, url });
-      } catch {
-        // User cancelled
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast({ title: 'Link copied!', description: 'Blog post URL copied to clipboard.' });
-    }
-  };
-
   return (
     <>
       <SEO
@@ -94,7 +81,7 @@ const BlogPostPage: React.FC = () => {
         description={post.description || `Read ${post.title} on the ATS.me blog.`}
         keywords={post.tags?.join(', ')}
         canonical={`https://ats.me/blog/${post.slug}`}
-        ogImage={post.featured_image || undefined}
+        ogImage={ogImage}
         ogType="article"
         articlePublishedTime={publishedDate}
         articleModifiedTime={post.updated_at}
@@ -162,23 +149,21 @@ const BlogPostPage: React.FC = () => {
                 )}
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={handleShare} className="min-h-[36px]">
-              <Share2 className="h-4 w-4 mr-1" />
-              Share
-            </Button>
+            <BlogShareButtons
+              title={post.title}
+              slug={post.slug}
+              description={post.description || undefined}
+            />
           </div>
 
           {/* Featured Image */}
-          {post.featured_image && (
-            <div className="mb-8 rounded-xl overflow-hidden border">
-              <img
-                src={post.featured_image}
-                alt={post.title}
-                className="w-full h-auto max-h-[500px] object-cover"
-                loading="eager"
-              />
-            </div>
-          )}
+          <BlogFeaturedImage
+            featuredImage={post.featured_image}
+            slug={post.slug}
+            title={post.title}
+            className="mb-8 rounded-xl border max-h-[500px]"
+            eager
+          />
 
           {/* Content */}
           <div
@@ -206,6 +191,16 @@ const BlogPostPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Bottom Share Bar */}
+          <div className="flex items-center justify-between py-4 px-4 rounded-lg bg-muted/50 mb-8">
+            <span className="text-sm text-muted-foreground">Enjoyed this article? Share it with your network.</span>
+            <BlogShareButtons
+              title={post.title}
+              slug={post.slug}
+              description={post.description || undefined}
+            />
+          </div>
 
           <Separator className="my-8" />
 
@@ -239,8 +234,11 @@ const BlogPostPage: React.FC = () => {
             </Card>
           )}
 
+          {/* Related Posts */}
+          <RelatedPosts currentSlug={post.slug} category={post.category} />
+
           {/* Back to Blog */}
-          <div className="text-center">
+          <div className="text-center mt-12">
             <Button asChild variant="outline" className="min-h-[44px]">
               <Link to="/blog">
                 <ArrowLeft className="mr-2 h-4 w-4" />
