@@ -34,9 +34,7 @@
      );
    }, [clients, searchTerm]);
  
-   const totalJobs = clients?.reduce((sum, c) => sum + (c.job_count || 0), 0) || 0;
- 
-   return (
+    return (
      <>
         <SEO 
           title="Companies Hiring | Browse Employers"
