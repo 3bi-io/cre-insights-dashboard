@@ -14,9 +14,9 @@ export function JobsPageHeader({ totalCount, filteredCount }: JobsPageHeaderProp
       <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
         Find Your Next Opportunity
       </h1>
-      <p className="text-base lg:text-xl text-black/80 mb-4 lg:mb-6">
+      <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2 mb-4 lg:mb-6">
         Discover job openings from top companies
-      </p>
+      </span>
     </div>
   );
 }
