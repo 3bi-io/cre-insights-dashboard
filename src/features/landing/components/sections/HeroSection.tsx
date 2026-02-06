@@ -12,6 +12,9 @@ import { ArrowRight, Search, Zap, Users } from 'lucide-react';
 import { heroContent } from '../../content/hero.content';
 import { HeroBackground } from '@/components/shared';
 import voiceHero from '@/assets/hero/voice-hero.png';
+import cyberHero from '@/assets/hero/cyber-hero.png';
+import tradesHero from '@/assets/hero/trades-hero.png';
+import healthcareHero from '@/assets/hero/healthcare-hero.png';
 
 // Animation variants for staggered entrance
 const containerVariants = {
@@ -36,6 +39,8 @@ const HeroSection = () => {
     <HeroBackground
       imageSrc={voiceHero}
       imageAlt="AI-powered voice technology with sound waves representing Voice Apply recruitment"
+      slideshowImages={[cyberHero, tradesHero, healthcareHero]}
+      slideshowInterval={6000}
       variant="full"
       overlayVariant="gradient"
       overlayOpacity={60}
