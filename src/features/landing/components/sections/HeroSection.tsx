@@ -70,7 +70,7 @@ const HeroSection = () => {
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-playfair font-bold text-foreground mb-4 md:mb-6 leading-[1.1]"
         >
           {heroContent.headline}
-          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <span className="text-white">
             {heroContent.headlineAccent}
           </span>
         </motion.h1>
