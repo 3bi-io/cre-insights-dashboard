@@ -21,7 +21,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
             Companies Hiring Now
           </h1>
           <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2 mb-3">
-            Browse top employers hiring quickly
+            With voice innovation and fraud protection
           </span>
           <div>
             <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
