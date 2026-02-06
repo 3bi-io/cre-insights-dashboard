@@ -98,9 +98,9 @@ const JobsPage = () => {
         <HeroBackground
           imageSrc={voiceHero}
           imageAlt="AI voice technology powering modern job applications and recruitment"
+          variant="compact"
           overlayVariant="gradient"
           overlayOpacity={55}
-          className="py-12 md:py-20"
         >
           <div className="container mx-auto px-4">
             <JobsPageHeader totalCount={totalCount} filteredCount={jobs.length} />

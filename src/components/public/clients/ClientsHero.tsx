@@ -14,9 +14,9 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ searchTerm, onSearchCh
     <HeroBackground
       imageSrc={transportHero}
       imageAlt="Digital transportation technology with connected circuits representing modern fleet operations"
+      variant="compact"
       overlayVariant="dark"
       overlayOpacity={70}
-      className="py-12 md:py-20"
     >
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto">
