@@ -213,6 +213,12 @@ async function syncClientFeed(
         jobreferrer: job.jobreferrer || null,
         is_sponsored: job.is_sponsored ?? false,
         sponsorship_tier: sponsorshipTier,
+        // NEW: Feed data capture fields
+        feed_date: job.feed_date || null,
+        indeed_apply_api_token: job.indeed_apply_api_token || null,
+        indeed_apply_job_id: job.indeed_apply_job_id || null,
+        indeed_apply_post_url: job.indeed_apply_post_url || null,
+        tracking_pixel_url: job.tracking_pixel_url || null,
         updated_at: new Date().toISOString()
       };
 
@@ -239,6 +245,12 @@ async function syncClientFeed(
             jobreferrer: jobData.jobreferrer,
             is_sponsored: jobData.is_sponsored,
             sponsorship_tier: jobData.sponsorship_tier,
+            // NEW: Feed data capture fields
+            feed_date: jobData.feed_date,
+            indeed_apply_api_token: jobData.indeed_apply_api_token,
+            indeed_apply_job_id: jobData.indeed_apply_job_id,
+            indeed_apply_post_url: jobData.indeed_apply_post_url,
+            tracking_pixel_url: jobData.tracking_pixel_url,
             updated_at: jobData.updated_at
           })
           .eq('id', existingJob.id);
