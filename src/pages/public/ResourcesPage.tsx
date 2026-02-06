@@ -178,7 +178,7 @@ const ResourcesPage = () => {
         <HeroBackground
           imageSrc={heroResourcesImage}
           imageAlt="Knowledge base and documentation resources"
-          overlayVariant="light"
+          overlayVariant="dark"
           minHeight="min-h-[40vh] md:min-h-[50vh]"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-10 md:py-16">
