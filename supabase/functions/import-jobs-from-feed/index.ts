@@ -111,9 +111,36 @@ const handler = wrapHandler(async (req: Request) => {
   const superAdminId = profiles[0].id;
   let importedCount = 0;
 
-    // Import each job
-    for (const job of jobs) {
-      try {
+  /**
+   * Generate internal apply URL with UTM parameters for imported jobs
+   */
+  const generateApplyUrl = (jobListingId: string, clientName: string): string => {
+    const baseUrl = 'https://ats.me/apply';
+    
+    // Generate campaign name from client
+    const clientSlug = (clientName || 'unknown')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .substring(0, 30);
+    
+    const quarter = `q${Math.ceil((new Date().getMonth() + 1) / 3)}`;
+    const year = new Date().getFullYear();
+    const campaign = `${clientSlug}_import_${quarter}_${year}`;
+    
+    const params = new URLSearchParams({
+      job_id: jobListingId,
+      utm_source: 'job_feed_import',
+      utm_medium: 'import',
+      utm_campaign: campaign,
+    });
+    
+    return `${baseUrl}?${params.toString()}`;
+  };
+
+  // Import each job
+  for (const job of jobs) {
+    try {
         // Map XML fields to database schema
         const location = job.city && job.state ? `${job.city}, ${job.state}` : 
                         job.city || job.state || null;
@@ -174,7 +201,8 @@ const handler = wrapHandler(async (req: Request) => {
           organization_id: organizationId,
           category_id: defaultCategoryId,
           url: job.url || null,
-          apply_url: job.url || null,
+          // apply_url will be set after insert with UTM-enriched URL
+          apply_url: null as string | null,
           job_id: job.referencenumber || null,
           client_id: finalClientId || null,
           // Keep client text field for backward compatibility
@@ -205,19 +233,35 @@ const handler = wrapHandler(async (req: Request) => {
         }
 
         if (existingJob) {
-          logger.debug('Job already exists, skipping', { title: jobData.title });
+          // Update existing job with UTM-enriched apply URL
+          const applyUrl = generateApplyUrl(existingJob.id, job.company || 'imported');
+          await supabase
+            .from('job_listings')
+            .update({ apply_url: applyUrl, updated_at: new Date().toISOString() })
+            .eq('id', existingJob.id);
+          
+          logger.debug('Updated existing job with UTM apply URL', { title: jobData.title });
           continue;
         }
 
-        const { error: insertError } = await supabase
+        const { data: newJob, error: insertError } = await supabase
           .from('job_listings')
-          .insert(jobData);
+          .insert(jobData)
+          .select('id')
+          .single();
 
         if (insertError) {
           logger.error('Error inserting job', insertError, { title: jobData.title });
-        } else {
+        } else if (newJob) {
+          // Update with UTM-enriched apply URL now that we have the ID
+          const applyUrl = generateApplyUrl(newJob.id, job.company || 'imported');
+          await supabase
+            .from('job_listings')
+            .update({ apply_url: applyUrl })
+            .eq('id', newJob.id);
+          
           importedCount++;
-          logger.debug('Imported job', { title: jobData.title });
+          logger.debug('Imported job with UTM apply URL', { title: jobData.title, applyUrl });
         }
       } catch (jobError) {
         logger.error('Error processing job', jobError);

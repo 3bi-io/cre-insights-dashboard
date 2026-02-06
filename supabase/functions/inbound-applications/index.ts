@@ -559,10 +559,15 @@ const handler = async (req: Request): Promise<Response> => {
       privacy: extractValue(body, ['privacy', 'privacy_policy', 'agree_privacy']),
       convicted_felony: extractValue(body, ['convicted_felony', 'felony', 'criminal_history']),
       
-      source: extractValue(body, ['source', 'utm_source', 'referrer']) || 'CDL Job Cast',
+      source: extractValue(body, ['source', 'referrer']) || 'CDL Job Cast',
       ad_id: extractValue(body, ['ad_id', 'adId', 'advertisement_id']),
-      campaign_id: extractValue(body, ['campaign_id', 'campaignId', 'utm_campaign']),
+      campaign_id: extractValue(body, ['campaign_id', 'campaignId']),
       adset_id: extractValue(body, ['adset_id', 'adsetId', 'ad_set_id']),
+      
+      // UTM parameters for marketing attribution
+      utm_source: extractValue(body, ['utm_source', 'utmSource']),
+      utm_medium: extractValue(body, ['utm_medium', 'utmMedium']),
+      utm_campaign: extractValue(body, ['utm_campaign', 'utmCampaign', 'campaign_name']),
       
       organization_id: extractValue(body, ['organization_id', 'organizationId', 'org_id']),
       organization_slug: extractValue(body, ['organization_slug', 'organizationSlug', 'org_slug']),
@@ -1035,6 +1040,38 @@ const handler = async (req: Request): Promise<Response> => {
       source: applicationData.source
     });
 
+    // ============================================================
+    // UTM PARAMETER RESOLUTION
+    // Priority: Explicit params > URL query params > Source-based defaults
+    // ============================================================
+    let utmSource = applicationData.utm_source || url.searchParams.get('utm_source');
+    let utmMedium = applicationData.utm_medium || url.searchParams.get('utm_medium');
+    let utmCampaign = applicationData.utm_campaign || url.searchParams.get('utm_campaign');
+    
+    // Apply source-based defaults for CDL Job Cast
+    if (applicationData.source === 'CDL Job Cast') {
+      utmSource = utmSource || 'cdl_jobcast';
+      utmMedium = utmMedium || 'job_board';
+      
+      // Auto-generate campaign if not provided
+      if (!utmCampaign) {
+        const clientSlug = (applicationData.client_name || 'unknown')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .substring(0, 30);
+        const quarter = `q${Math.ceil((new Date().getMonth() + 1) / 3)}`;
+        const year = new Date().getFullYear();
+        utmCampaign = `${clientSlug}_${quarter}_${year}`;
+      }
+    }
+
+    logger.info('UTM attribution resolved', {
+      source: applicationData.source,
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      utm_campaign: utmCampaign,
+    });
+
     // Prepare application record
     const applicationRecord = {
       job_listing_id: jobListingId,
@@ -1074,6 +1111,11 @@ const handler = async (req: Request): Promise<Response> => {
       campaign_id: applicationData.campaign_id,
       adset_id: applicationData.adset_id,
       driver_type: applicationData.driver_type,
+      
+      // UTM attribution fields
+      utm_source: utmSource || null,
+      utm_medium: utmMedium || null,
+      utm_campaign: utmCampaign || null,
       
       notes: applicationData.notes,
       status: applicationData.status,
