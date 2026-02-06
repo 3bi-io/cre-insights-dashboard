@@ -5,16 +5,14 @@
  */
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, ArrowRight, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { useBlogPosts, useBlogCategories } from '@/hooks/useBlog';
-import { calculateReadingTime } from '@/utils/seoUtils';
-import { cn } from '@/lib/utils';
+import { BlogPostCard } from '@/components/blog';
 
 const BlogPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -100,65 +98,7 @@ const BlogPage: React.FC = () => {
             ) : posts && posts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {posts.map((post) => (
-                  <Link
-                    key={post.id}
-                    to={`/blog/${post.slug}`}
-                    className="group block"
-                  >
-                    <Card className="h-full overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:border-primary/30">
-                      {post.featured_image && (
-                        <div className="relative h-48 overflow-hidden">
-                          <img
-                            src={post.featured_image}
-                            alt={post.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
-                      <CardContent className={cn("p-6 space-y-3", !post.featured_image && "pt-6")}>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {post.category && (
-                            <Badge variant="secondary" className="text-xs">
-                              {post.category}
-                            </Badge>
-                          )}
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {calculateReadingTime(post.content)} min read
-                          </span>
-                        </div>
-
-                        <h2 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                          {post.title}
-                        </h2>
-
-                        {post.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {post.description}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {post.author?.full_name && (
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {post.author.full_name}
-                              </span>
-                            )}
-                            {post.published_at && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(post.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                              </span>
-                            )}
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                  <BlogPostCard key={post.id} post={post} />
                 ))}
               </div>
             ) : (
