@@ -27,6 +27,8 @@ import TranscriptDisplay from '@/components/voice/demo/TranscriptDisplay';
 import DynamicVariablesCard from '@/components/voice/demo/DynamicVariablesCard';
 import HowItWorksSection from '@/components/voice/demo/HowItWorksSection';
 import { liveCallTranscript, voicemailTranscript, voiceApplyTranscript } from '@/components/voice/demo/transcriptData';
+import { HeroBackground } from '@/components/shared';
+import roiHero from '@/assets/hero/roi-hero.png';
 
 const DemoPage: React.FC = () => {
   const [liveCallTime, setLiveCallTime] = useState(0);
@@ -127,7 +129,13 @@ const DemoPage: React.FC = () => {
 
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-background">
+        <HeroBackground
+          imageSrc={roiHero}
+          imageAlt="Business analytics and ROI charts representing platform value and performance metrics"
+          overlayVariant="dark"
+          overlayOpacity={70}
+          className="py-16 md:py-24"
+        >
           <div className="container mx-auto px-4 text-center">
             <Badge variant="secondary" className="mb-4">
               <Play className="h-3 w-3 mr-1" />
@@ -152,7 +160,7 @@ const DemoPage: React.FC = () => {
               </Button>
             </div>
           </div>
-        </section>
+        </HeroBackground>
 
         {/* Main Demo Tabs */}
         <section className="py-16 container mx-auto px-4">
