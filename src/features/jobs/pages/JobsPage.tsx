@@ -257,6 +257,7 @@ const JobsPage = () => {
             onViewAnalytics={handleViewAnalytics}
             onShowUploadDialog={() => setShowUploadDialog(true)}
             onVoiceApply={handleVoiceApply}
+            onRefresh={refetch}
           />
         ) : (
           <JobGrid
