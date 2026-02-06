@@ -17,6 +17,10 @@ export interface HeroBackgroundProps {
   imageSrc: string;
   /** Alt text for accessibility (used for screen readers even if aria-hidden) */
   imageAlt: string;
+  /** Optional additional images for slideshow rotation */
+  slideshowImages?: string[];
+  /** Slideshow interval in milliseconds (default: 6000) */
+  slideshowInterval?: number;
   /** Optional responsive image sources for srcset */
   responsiveImages?: ResponsiveImage[];
   /** Size variant - 'full' for landing pages, 'compact' for listing pages */
@@ -53,6 +57,8 @@ const variantStyles = {
 export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   imageSrc,
   imageAlt,
+  slideshowImages,
+  slideshowInterval = 6000,
   responsiveImages,
   variant,
   overlayVariant = 'dark',
@@ -66,7 +72,23 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(!lazyLoad);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const containerRef = useRef<HTMLElement>(null);
+
+  // Combine all images for slideshow
+  const allImages = slideshowImages?.length 
+    ? [imageSrc, ...slideshowImages] 
+    : [imageSrc];
+  const hasSlideshow = allImages.length > 1;
+
+  // Slideshow auto-rotation
+  useEffect(() => {
+    if (!hasSlideshow || !isInView) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % allImages.length);
+    }, slideshowInterval);
+    return () => clearInterval(timer);
+  }, [hasSlideshow, isInView, allImages.length, slideshowInterval]);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -122,25 +144,26 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
     >
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0">
-        {isInView && (
+        {isInView && allImages.map((src, index) => (
           <img
-            src={imageSrc}
-            srcSet={srcSet}
-            sizes={sizes}
+            key={src}
+            src={src}
+            srcSet={index === 0 ? srcSet : undefined}
+            sizes={index === 0 ? sizes : undefined}
             alt=""
             aria-hidden="true"
-            loading={priority ? 'eager' : 'lazy'}
-            decoding={priority ? 'sync' : 'async'}
-            fetchPriority={priority ? 'high' : 'auto'}
-            onLoad={() => setIsLoaded(true)}
+            loading={index === 0 && priority ? 'eager' : 'lazy'}
+            decoding={index === 0 && priority ? 'sync' : 'async'}
+            fetchPriority={index === 0 && priority ? 'high' : 'auto'}
+            onLoad={index === 0 ? () => setIsLoaded(true) : undefined}
             className={cn(
-              'w-full h-full object-cover transition-opacity duration-500',
-              blurPlaceholder && !isLoaded && 'opacity-0',
-              isLoaded && 'opacity-100'
+              'absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out',
+              currentSlide === index ? 'opacity-100' : 'opacity-0',
+              index === 0 && blurPlaceholder && !isLoaded && 'opacity-0'
             )}
             style={{ objectPosition }}
           />
-        )}
+        ))}
         
         {/* Blur placeholder background */}
         {blurPlaceholder && !isLoaded && (
