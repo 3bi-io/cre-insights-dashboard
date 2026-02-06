@@ -13,7 +13,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ searchTerm, onSearchCh
   return (
     <HeroBackground
       imageSrc={heroCompaniesImage}
-      imageAlt="Transportation companies hiring CDL drivers"
+      imageAlt="Companies hiring across healthcare, trades, cyber, and transportation"
       overlayVariant="gradient"
       minHeight="min-h-[40vh] md:min-h-[50vh]"
     >
@@ -23,7 +23,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ searchTerm, onSearchCh
             Companies Hiring Now
           </h1>
           <p className="text-lg text-white/80 mb-8">
-            Browse top employers in the transportation industry and discover your next career opportunity
+            Browse top employers hiring for essential workforce roles and discover your next career opportunity
           </p>
           
           <div className="relative max-w-xl mx-auto">
