@@ -44,19 +44,11 @@
      );
    }
  
-   return (
-     <>
-       <div className="flex items-center justify-between mb-6">
-         <p className="text-muted-foreground">
-           Showing <span className="font-medium text-foreground">{clients.length}</span> companies
-         </p>
-       </div>
-       
-       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-         {clients.map((client) => (
-           <ClientCard key={client.id} client={client} />
-         ))}
-       </div>
-     </>
-   );
- };
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+        {clients.map((client) => (
+          <ClientCard key={client.id} client={client} />
+        ))}
+      </div>
+    );
+  };
