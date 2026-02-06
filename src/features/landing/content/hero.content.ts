@@ -1,16 +1,16 @@
 /**
  * Hero Section Content
- * Voice-first messaging highlighting automated callbacks
+ * Voice-first messaging - concise, action-oriented
  */
 
 export const heroContent = {
-  badge: 'AI Voice Interviews Designed for No Resume Jobs',
+  badge: 'AI-Powered Voice Interviews',
   headline: 'Interview',
   headlineAccent: ' Everyone',
-  subheadline: 'Some occupations are not resume driven.\nCritical roles left vacant create real risks.\nEmployers should interview anyone with interest.\nReplace 25 minutes of data entry with 25 minutes of dialogue.',
+  subheadline: 'No resumes. No waiting. Just conversations.\nConnect with every interested candidate in under 3 minutes.',
   cta: {
-    primary: 'Employers Start Here',
-    secondary: 'Search Jobs'
+    primary: 'Search Jobs',
+    secondary: 'For Employers'
   },
   socialProof: {
     companies: 'Trusted by 50+ companies',

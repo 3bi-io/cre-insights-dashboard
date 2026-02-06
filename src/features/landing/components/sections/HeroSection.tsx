@@ -85,7 +85,7 @@ const HeroSection = () => {
               className="min-h-[52px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground px-8 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-[0_0_30px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)] transition-all duration-300"
             >
               <Search className="mr-2 h-5 w-5" />
-              {heroContent.cta.secondary}
+              {heroContent.cta.primary}
             </Button>
           </Link>
           <Link to="/auth">
@@ -94,7 +94,7 @@ const HeroSection = () => {
               size="lg"
               className="min-h-[52px] px-8 sm:px-10 py-4 text-base sm:text-lg font-semibold border-2 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
             >
-              {heroContent.cta.primary}
+              {heroContent.cta.secondary}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>

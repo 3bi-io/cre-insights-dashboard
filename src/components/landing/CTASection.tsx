@@ -21,11 +21,11 @@ const CTASection = () => {
         </Badge>
 
         <h2 className="text-4xl md:text-5xl font-bold mb-6">
-          Ready to Transform Your Hiring Process?
+          Ready to Hire Faster?
         </h2>
         
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Join 50+ companies transforming their hiring. Get instant automated callbacks, 24/7 AI voice agents, and dedicated onboarding support.
+          Join companies that connect with candidates in under 3 minutes. AI voice interviews run 24/7 so you never miss talent.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -50,21 +50,21 @@ const CTASection = () => {
         <div className="grid md:grid-cols-3 gap-8 text-center max-w-3xl mx-auto">
           <div>
             <div className="text-3xl font-bold mb-2">30 Days</div>
-            <div className="text-muted-foreground">Free trial, no credit card</div>
+            <div className="text-muted-foreground">Free trial</div>
           </div>
           <div>
             <div className="text-3xl font-bold mb-2">48 Hours</div>
-            <div className="text-muted-foreground">Average go-live time</div>
+            <div className="text-muted-foreground">To go live</div>
           </div>
           <div>
             <div className="text-3xl font-bold mb-2">Priority</div>
-            <div className="text-muted-foreground">Dedicated onboarding support</div>
+            <div className="text-muted-foreground">Onboarding support</div>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-border/50">
           <p className="text-sm text-muted-foreground">
-            No long-term contracts • Cancel anytime • GDPR compliant
+            No contracts • Cancel anytime • GDPR compliant
           </p>
         </div>
       </div>

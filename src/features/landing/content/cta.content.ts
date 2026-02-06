@@ -5,17 +5,17 @@
 import { CTAStat } from './types';
 
 export const ctaContent = {
-  badge: 'Start Your Free Trial',
-  title: 'Ready to Transform Your Hiring Process?',
-  description: 'Join 50+ companies transforming their hiring. Get instant automated callbacks, 24/7 AI voice agents, and dedicated onboarding support.',
+  badge: 'Get Started Free',
+  title: 'Ready to Hire Faster?',
+  description: 'Join companies that connect with candidates in under 3 minutes. AI voice interviews run 24/7 so you never miss talent.',
   cta: {
     primary: 'Start Free Trial',
-    secondary: 'Contact Sales'
+    secondary: 'Talk to Sales'
   },
   stats: [
-    { value: '30 Days', label: 'Free trial, no credit card' },
-    { value: '48 Hours', label: 'Average go-live time' },
-    { value: 'Priority', label: 'Dedicated onboarding support' }
+    { value: '30 Days', label: 'Free trial' },
+    { value: '48 Hours', label: 'To go live' },
+    { value: 'Priority', label: 'Onboarding support' }
   ] as CTAStat[],
-  footer: 'No long-term contracts • Cancel anytime • GDPR compliant'
+  footer: 'No contracts • Cancel anytime • GDPR compliant'
 };
