@@ -20,6 +20,7 @@ const PublicFooter = () => {
     { to: '/jobs', label: 'Jobs' },
     { to: '/features', label: 'Features' },
     { to: '/resources', label: 'Resources' },
+    { to: '/blog', label: 'Blog' },
   ];
 
   const companyLinks = [

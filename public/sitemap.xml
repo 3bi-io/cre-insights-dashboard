@@ -111,6 +111,14 @@
     <priority>0.3</priority>
   </url>
   
+  <!-- Blog -->
+  <url>
+    <loc>https://ats.me/blog</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
   <!-- Sitemap -->
   <url>
     <loc>https://ats.me/sitemap</loc>

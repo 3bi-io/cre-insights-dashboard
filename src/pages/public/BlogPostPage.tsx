@@ -1,0 +1,257 @@
+/**
+ * Blog Post Detail Page
+ * Individual blog post with Article schema, reading time, and author bio
+ * Implements E-E-A-T with structured data
+ */
+
+import React from 'react';
+import { useParams, Link, Navigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+import { StructuredData, buildArticleSchema } from '@/components/StructuredData';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Calendar, Clock, User, ArrowLeft, Tag, Share2 } from 'lucide-react';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { useBlogPost } from '@/hooks/useBlog';
+import { calculateReadingTime } from '@/utils/seoUtils';
+import { useToast } from '@/hooks/use-toast';
+
+const BlogPostPage: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const { data: post, isLoading, error } = useBlogPost(slug || '');
+  const { toast } = useToast();
+
+  if (!slug) return <Navigate to="/blog" replace />;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Skeleton className="h-6 w-48 mb-6" />
+        <Skeleton className="h-10 w-3/4 mb-4" />
+        <Skeleton className="h-4 w-1/2 mb-8" />
+        <Skeleton className="h-64 w-full mb-6" />
+        <div className="space-y-3">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-4 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !post) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Post Not Found</h1>
+        <p className="text-muted-foreground mb-6">
+          The blog post you're looking for doesn't exist or has been unpublished.
+        </p>
+        <Button asChild>
+          <Link to="/blog">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Blog
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const readingTime = calculateReadingTime(post.content);
+  const publishedDate = post.published_at ? new Date(post.published_at).toISOString() : post.created_at;
+  const authorName = post.author?.full_name || 'ATS.me Team';
+
+  const articleSchema = buildArticleSchema({
+    headline: post.title,
+    description: post.description || post.title,
+    image: post.featured_image || 'https://ats.me/og-image.png',
+    datePublished: publishedDate,
+    dateModified: post.updated_at,
+    author: authorName,
+    publisher: 'ATS.me',
+  });
+
+  const handleShare = async () => {
+    const url = `https://ats.me/blog/${post.slug}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: post.title, url });
+      } catch {
+        // User cancelled
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: 'Link copied!', description: 'Blog post URL copied to clipboard.' });
+    }
+  };
+
+  return (
+    <>
+      <SEO
+        title={`${post.title} | ATS.me Blog`}
+        description={post.description || `Read ${post.title} on the ATS.me blog.`}
+        keywords={post.tags?.join(', ')}
+        canonical={`https://ats.me/blog/${post.slug}`}
+        ogImage={post.featured_image || undefined}
+        ogType="article"
+        articlePublishedTime={publishedDate}
+        articleModifiedTime={post.updated_at}
+        author={authorName}
+      />
+      <StructuredData data={articleSchema} />
+
+      <article className="min-h-screen">
+        {/* Header */}
+        <div className="bg-muted/30 border-b">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <Breadcrumbs
+              items={[
+                { name: 'Blog', path: '/blog' },
+                { name: post.title, path: `/blog/${post.slug}` },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+          {/* Meta info */}
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            {post.category && (
+              <Badge variant="secondary">{post.category}</Badge>
+            )}
+            <span className="text-sm text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              {readingTime} min read
+            </span>
+            {post.published_at && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                {new Date(post.published_at).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+            )}
+          </div>
+
+          {/* Title */}
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 leading-tight">
+            {post.title}
+          </h1>
+
+          {/* Description / subtitle */}
+          {post.description && (
+            <p className="text-lg text-muted-foreground mb-6">
+              {post.description}
+            </p>
+          )}
+
+          {/* Author + Share */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">{authorName}</p>
+                {post.author?.author_title && (
+                  <p className="text-xs text-muted-foreground">{post.author.author_title}</p>
+                )}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleShare} className="min-h-[36px]">
+              <Share2 className="h-4 w-4 mr-1" />
+              Share
+            </Button>
+          </div>
+
+          {/* Featured Image */}
+          {post.featured_image && (
+            <div className="mb-8 rounded-xl overflow-hidden border">
+              <img
+                src={post.featured_image}
+                alt={post.title}
+                className="w-full h-auto max-h-[500px] object-cover"
+                loading="eager"
+              />
+            </div>
+          )}
+
+          {/* Content */}
+          <div
+            className="prose prose-lg dark:prose-invert max-w-none mb-12
+              prose-headings:font-semibold prose-headings:text-foreground
+              prose-p:text-foreground/90 prose-p:leading-relaxed
+              prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+              prose-strong:text-foreground
+              prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+              prose-blockquote:border-primary/50 prose-blockquote:text-muted-foreground
+              prose-img:rounded-lg"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                {post.tags.map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Separator className="my-8" />
+
+          {/* Author Bio - E-E-A-T */}
+          {post.author && (
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-7 w-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">
+                      About {authorName}
+                    </h3>
+                    {post.author.author_title && (
+                      <p className="text-sm text-primary mb-2">{post.author.author_title}</p>
+                    )}
+                    {post.author.author_bio ? (
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {post.author.author_bio}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Contributing author at ATS.me, sharing insights on AI-powered recruitment and HR technology.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Back to Blog */}
+          <div className="text-center">
+            <Button asChild variant="outline" className="min-h-[44px]">
+              <Link to="/blog">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to All Posts
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </article>
+    </>
+  );
+};
+
+export default BlogPostPage;

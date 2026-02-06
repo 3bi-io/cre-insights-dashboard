@@ -1479,6 +1479,62 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          category: string | null
+          content: string
+          created_at: string
+          description: string | null
+          featured_image: string | null
+          id: string
+          published: boolean | null
+          published_at: string | null
+          slug: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          category?: string | null
+          content: string
+          created_at?: string
+          description?: string | null
+          featured_image?: string | null
+          id?: string
+          published?: boolean | null
+          published_at?: string | null
+          slug: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string
+          description?: string | null
+          featured_image?: string | null
+          id?: string
+          published?: boolean | null
+          published_at?: string | null
+          slug?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_allocations: {
         Row: {
           campaign_id: string | null
@@ -5186,6 +5242,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          author_bio: string | null
+          author_title: string | null
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -5197,6 +5255,8 @@ export type Database = {
           user_type: string | null
         }
         Insert: {
+          author_bio?: string | null
+          author_title?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -5208,6 +5268,8 @@ export type Database = {
           user_type?: string | null
         }
         Update: {
+          author_bio?: string | null
+          author_title?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string | null
