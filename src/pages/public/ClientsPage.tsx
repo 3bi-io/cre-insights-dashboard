@@ -46,7 +46,7 @@
         />
        
        <div className="min-h-screen bg-background">
-         <ClientsHero searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+         <ClientsHero searchTerm={searchTerm} onSearchChange={setSearchTerm} totalCompanies={clients?.length || 0} />
          <ClientsStats totalCompanies={clients?.length || 0} totalJobs={totalJobs} />
          
          <section className="py-12">
