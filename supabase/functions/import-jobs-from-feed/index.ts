@@ -210,6 +210,12 @@ const handler = wrapHandler(async (req: Request) => {
           // Sponsorship tracking from jobreferrer field
           jobreferrer: job.jobreferrer || null,
           is_sponsored: job.is_sponsored ?? false,
+          // NEW: Feed data capture fields
+          feed_date: job.feed_date || null,
+          indeed_apply_api_token: job.indeed_apply_api_token || null,
+          indeed_apply_job_id: job.indeed_apply_job_id || null,
+          indeed_apply_post_url: job.indeed_apply_post_url || null,
+          tracking_pixel_url: job.tracking_pixel_url || null,
         };
 
         // Check if job already exists by reference number or title + location

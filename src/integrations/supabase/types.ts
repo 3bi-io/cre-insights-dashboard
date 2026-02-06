@@ -3544,6 +3544,44 @@ export type Database = {
         }
         Relationships: []
       }
+      job_feed_metadata: {
+        Row: {
+          created_at: string
+          extracted_at: string
+          id: string
+          job_listing_id: string
+          raw_feed_xml: string | null
+          raw_indeed_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_at?: string
+          id?: string
+          job_listing_id: string
+          raw_feed_xml?: string | null
+          raw_indeed_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          extracted_at?: string
+          id?: string
+          job_listing_id?: string
+          raw_feed_xml?: string | null
+          raw_indeed_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_feed_metadata_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: true
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_group_assignments: {
         Row: {
           created_at: string
@@ -3686,7 +3724,11 @@ export type Database = {
           dest_city: string | null
           dest_state: string | null
           experience_level: string | null
+          feed_date: string | null
           id: string
+          indeed_apply_api_token: string | null
+          indeed_apply_job_id: string | null
+          indeed_apply_post_url: string | null
           is_hidden: boolean | null
           is_sponsored: boolean | null
           job_id: string | null
@@ -3710,6 +3752,7 @@ export type Database = {
           tenstreet_job_id: string | null
           tenstreet_source: string | null
           title: string
+          tracking_pixel_url: string | null
           updated_at: string
           url: string | null
           user_id: string
@@ -3725,7 +3768,11 @@ export type Database = {
           dest_city?: string | null
           dest_state?: string | null
           experience_level?: string | null
+          feed_date?: string | null
           id?: string
+          indeed_apply_api_token?: string | null
+          indeed_apply_job_id?: string | null
+          indeed_apply_post_url?: string | null
           is_hidden?: boolean | null
           is_sponsored?: boolean | null
           job_id?: string | null
@@ -3749,6 +3796,7 @@ export type Database = {
           tenstreet_job_id?: string | null
           tenstreet_source?: string | null
           title: string
+          tracking_pixel_url?: string | null
           updated_at?: string
           url?: string | null
           user_id: string
@@ -3764,7 +3812,11 @@ export type Database = {
           dest_city?: string | null
           dest_state?: string | null
           experience_level?: string | null
+          feed_date?: string | null
           id?: string
+          indeed_apply_api_token?: string | null
+          indeed_apply_job_id?: string | null
+          indeed_apply_post_url?: string | null
           is_hidden?: boolean | null
           is_sponsored?: boolean | null
           job_id?: string | null
@@ -3788,6 +3840,7 @@ export type Database = {
           tenstreet_job_id?: string | null
           tenstreet_source?: string | null
           title?: string
+          tracking_pixel_url?: string | null
           updated_at?: string
           url?: string | null
           user_id?: string
@@ -7230,6 +7283,36 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_data_coverage: {
+        Row: {
+          campaign_coverage_pct: number | null
+          client_id: string | null
+          date_coverage_pct: number | null
+          indeed_apply_coverage_pct: number | null
+          jobs_with_campaign: number | null
+          jobs_with_date: number | null
+          jobs_with_indeed_apply: number | null
+          jobs_with_tracking: number | null
+          total_jobs: number | null
+          tracking_coverage_pct: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_job_listings_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_job_listings_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
             referencedColumns: ["id"]
           },
         ]
