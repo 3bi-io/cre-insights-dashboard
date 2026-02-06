@@ -1,194 +1,201 @@
 
-# Complete CDL Job Cast Feed Data Capture Plan
 
-This plan addresses all 4 key insights identified in the feed analysis, implementing complete data capture at scale across the job ingestion pipeline.
+# Phase 4 & 5 UI Implementation Plan
 
-## Overview of Key Insights to Capture
-
-| # | Insight | Current State | Action Required |
-|---|---------|---------------|-----------------|
-| 1 | `<jobreferrer>` campaign tracking | Already captured | Enhance with analytics views |
-| 2 | `<date>` posting timestamp | Not captured | Add column + extraction logic |
-| 3 | `<indeed-apply-data>` integration block | Not captured | Parse + store structured data |
-| 4 | Tracking pixel for impressions | Embedded in description | Extract + store for analytics |
+Complete the remaining UI enhancements for the CDL Job Cast Feed Data Capture system by adding feed data visibility to the Job Details dialog, JobTable indicators, enhanced CampaignsPage stats, and a Feed Quality Dashboard card.
 
 ---
 
-## Phase 1: Database Schema Updates
+## Summary of Changes
 
-### 1.1 Add New Columns to `job_listings`
-
-```text
-+-------------------------+------------+----------------------------------------+
-| Column                  | Type       | Purpose                                |
-+-------------------------+------------+----------------------------------------+
-| feed_date               | TIMESTAMP  | Original posting date from XML feed    |
-| indeed_apply_api_token  | TEXT       | Indeed Apply integration token         |
-| indeed_apply_job_id     | TEXT       | Indeed's internal job ID               |
-| indeed_apply_post_url   | TEXT       | Indeed Apply POST endpoint             |
-| tracking_pixel_url      | TEXT       | Extracted 1x1 pixel URL for analytics  |
-+-------------------------+------------+----------------------------------------+
-```
-
-### 1.2 Create Feed Metadata Table
-
-A new `job_feed_metadata` table to store extended feed attributes without bloating the main table:
-
-```text
-+---------------------+------------+------------------------------------------+
-| Column              | Type       | Purpose                                  |
-+---------------------+------------+------------------------------------------+
-| id                  | UUID       | Primary key                              |
-| job_listing_id      | UUID (FK)  | Reference to job_listings                |
-| raw_indeed_data     | JSONB      | Full indeed-apply-data block             |
-| raw_feed_xml        | TEXT       | Optional: original job XML for debugging |
-| extracted_at        | TIMESTAMP  | When data was captured                   |
-+---------------------+------------+------------------------------------------+
-```
-
----
-
-## Phase 2: XML Parser Enhancements
-
-### 2.1 Extend `ParsedJob` Interface
-
-Add new fields to the interface in `supabase/functions/_shared/xml-parser.ts`:
-
-- `feed_date` - from `<date>` node
-- `indeed_apply_api_token` - extracted from `<indeed-apply-data>`
-- `indeed_apply_job_id` - extracted from `<indeed-apply-data>`
-- `indeed_apply_post_url` - extracted from `<indeed-apply-data>`
-- `tracking_pixel_url` - extracted from description via regex
-
-### 2.2 Add New Extraction Functions
-
-1. **`extractIndeedApplyData(jobXml)`** - Parse the `<indeed-apply-data>` block and extract:
-   - `indeed-apply-apiToken`
-   - `indeed-apply-jobId`
-   - `indeed-apply-postUrl`
-
-2. **`extractTrackingPixel(description)`** - Regex to find 1x1 tracking pixel URLs embedded in job descriptions (typically `<img src="..." width="1" height="1">`)
-
-3. **`parseFeedDate(dateString)`** - Normalize date strings from various formats to ISO timestamp
-
-### 2.3 Update `parseJobFromXML()`
-
-Integrate all new extraction functions into the main parsing flow.
-
----
-
-## Phase 3: Sync Function Updates
-
-### 3.1 Update `sync-cdl-feeds/index.ts`
-
-Modify the job data mapping to include:
-
-```text
-{
-  // Existing fields...
-  
-  // NEW: Date tracking
-  feed_date: job.feed_date || null,
-  
-  // NEW: Indeed Apply integration
-  indeed_apply_api_token: job.indeed_apply_api_token || null,
-  indeed_apply_job_id: job.indeed_apply_job_id || null,
-  indeed_apply_post_url: job.indeed_apply_post_url || null,
-  
-  // NEW: Tracking pixel
-  tracking_pixel_url: job.tracking_pixel_url || null,
-}
-```
-
-### 3.2 Update `import-jobs-from-feed/index.ts`
-
-Mirror the same changes for manual feed imports.
-
-### 3.3 Optional: Store Raw Indeed Data in Metadata Table
-
-For jobs with Indeed Apply data, insert a record into `job_feed_metadata` with the full JSONB payload for future extensibility.
+| Component | Enhancement |
+|-----------|-------------|
+| JobTable.tsx | Add feed data indicator icons (Indeed Apply, Tracking, Date) |
+| JobAnalyticsDialog.tsx | Add new "Feed Data" tab showing all captured metadata |
+| CampaignsPage.tsx | Add feed coverage stats to the Sponsorship Mappings tab |
+| DashboardContent.tsx | Add Feed Quality card showing data completeness metrics |
+| New: useFeedDataCoverage.ts | Hook to query the `feed_data_coverage` view |
 
 ---
 
 ## Phase 4: Admin UI Enhancements
 
-### 4.1 Job Details Panel Updates
+### 4.1 Add Feed Data Indicators to JobTable
 
-Extend the job details view to display:
+Update `src/components/jobs/JobTable.tsx` to display small icons indicating feed data availability for each job row.
 
-1. **Feed Date** - Show original posting date vs. system `created_at`
-2. **Indeed Apply Status** - Badge indicating if Indeed Apply integration is available
-3. **Tracking Pixel** - Show if impression tracking is active
+**Changes:**
+- Add new icons from lucide-react: `Calendar`, `ExternalLink`, `Activity`
+- Add a "Feed Data" column after the "Sponsored" column
+- Display indicator icons:
+  - Calendar icon (green) if `feed_date` is present
+  - Indeed "I" badge (blue) if `indeed_apply_job_id` is present
+  - Activity icon (purple) if `tracking_pixel_url` is present
+- Use tooltips to explain each indicator on hover
 
-### 4.2 New "Feed Data" Tab in Job Details
-
-Create a dedicated section showing:
-
-- Raw `jobreferrer` value
-- Indeed Apply configuration (token, job ID, post URL)
-- Tracking pixel URL (clickable link)
-- Last feed sync timestamp
-
-### 4.3 Campaign Analytics Enhancement
-
-Add columns to the Campaigns page showing:
-- Jobs with Indeed Apply enabled (count)
-- Jobs with tracking pixels (count)
-- Feed date distribution (oldest/newest)
-
----
-
-## Phase 5: Analytics & Reporting
-
-### 5.1 Create Analytics Views
-
-SQL views for reporting on feed data quality:
-
+**Visual Design:**
 ```text
-CREATE VIEW feed_data_coverage AS
-SELECT 
-  client_id,
-  COUNT(*) as total_jobs,
-  COUNT(feed_date) as jobs_with_date,
-  COUNT(indeed_apply_job_id) as jobs_with_indeed_apply,
-  COUNT(tracking_pixel_url) as jobs_with_tracking,
-  COUNT(jobreferrer) as jobs_with_campaign
-FROM job_listings
-WHERE status = 'active'
-GROUP BY client_id;
+| ... | Sponsored | Feed Data         | Actions |
+| ... | [Switch]  | [Date][Indeed][Px] | ...     |
 ```
 
-### 5.2 Feed Quality Dashboard Card
+### 4.2 Add "Feed Data" Tab to JobAnalyticsDialog
 
-Add a dashboard widget showing data completeness metrics:
-- % of jobs with complete feed data
-- Indeed Apply adoption rate
-- Campaign attribution coverage
+Update `src/components/JobAnalyticsDialog.tsx` to include a third tab showing raw feed metadata.
+
+**Changes:**
+- Extend the Tabs component from 2 to 3 tabs
+- Add new tab: "Feed Data" with `Rss` icon
+- Tab content displays:
+  - Feed Date (original posting date vs. system created_at)
+  - Campaign Info (jobreferrer value and resolved sponsorship tier)
+  - Indeed Apply Configuration (token, job ID, post URL)
+  - Tracking Pixel URL (clickable link that opens in new tab)
+  - Last sync timestamp
+- Use Card components for visual grouping
+- Show "Not Available" badges for missing data
+
+**Interface Update:**
+```typescript
+// Extend JobAnalyticsDialogProps job type
+interface JobAnalyticsDialogProps {
+  job: {
+    // ... existing fields
+    feed_date?: string;
+    jobreferrer?: string;
+    sponsorship_tier?: string;
+    indeed_apply_api_token?: string;
+    indeed_apply_job_id?: string;
+    indeed_apply_post_url?: string;
+    tracking_pixel_url?: string;
+  };
+}
+```
 
 ---
 
-## Technical Implementation Details
+## Phase 4.3: Enhanced Campaign Stats
 
-### File Changes Summary
+Update `src/features/campaigns/pages/CampaignsPage.tsx` and the Sponsorship Mappings tab to display feed data coverage statistics.
 
-| File | Changes |
-|------|---------|
-| `supabase/migrations/...` | Add new columns to `job_listings`, create `job_feed_metadata` table |
-| `supabase/functions/_shared/xml-parser.ts` | Extend interface, add extraction functions |
-| `supabase/functions/sync-cdl-feeds/index.ts` | Map new fields to database |
-| `supabase/functions/import-jobs-from-feed/index.ts` | Mirror sync function changes |
-| `src/components/jobs/JobTable.tsx` | Display new feed data indicators |
-| `src/features/jobs/components/JobDetailsPanel.tsx` | Add "Feed Data" section (new or existing) |
+**Changes:**
+- Create a new hook: `useFeedDataCoverage` to query the SQL view
+- Add stats cards above the mappings table showing:
+  - Total jobs with Indeed Apply enabled (count + percentage)
+  - Total jobs with tracking pixels (count + percentage)
+  - Campaign attribution coverage (jobs with jobreferrer)
+  - Feed date coverage
+- Use the existing QuickStatsCard or MetricsCard pattern
 
-### Edge Cases Handled
+**New Hook Structure:**
+```typescript
+// src/features/campaigns/hooks/useFeedDataCoverage.ts
+export function useFeedDataCoverage() {
+  return useQuery({
+    queryKey: ['feed-data-coverage'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('feed_data_coverage')
+        .select('*');
+      return aggregateCoverage(data);
+    }
+  });
+}
+```
 
-1. **Missing Indeed Apply Data** - Some jobs may not have this block; handle gracefully with null values
-2. **Multiple Tracking Pixels** - Extract the first valid pixel URL if multiple exist
-3. **Date Format Variations** - Parser handles common formats (ISO, US, European)
-4. **Large XML Payloads** - JSONB storage for raw data limits exposure to schema changes
+---
 
-### Backward Compatibility
+## Phase 5.2: Feed Quality Dashboard Card
 
-- All new columns are nullable with no defaults (except indexes)
-- Existing jobs will have null values until next sync populates them
-- No breaking changes to existing feed processing
+Add a new card to `src/components/dashboard/DashboardContent.tsx` displaying data completeness metrics.
+
+**Changes:**
+- Import and use the `useFeedDataCoverage` hook
+- Add a new Card component in the dashboard grid showing:
+  - Overall feed data quality score (weighted percentage)
+  - Indeed Apply adoption rate (with progress bar)
+  - Campaign attribution coverage (with progress bar)
+  - Tracking pixel coverage (with progress bar)
+- Use color-coded indicators (green >80%, yellow 50-80%, red <50%)
+- Add a "View Details" button linking to Campaigns > Sponsorship Mappings
+
+**Visual Layout:**
+```text
++------------------------------------------+
+| Feed Data Quality         [?] [Refresh]  |
+|------------------------------------------|
+| Overall Score: 72%    [=========---]     |
+|                                          |
+| Indeed Apply:  45%    [====------]       |
+| Campaign Tags: 98%    [==========]       |
+| Tracking:      23%    [==--------]       |
+| Feed Dates:    67%    [======----]       |
+|                                          |
+| [View Campaign Mappings →]               |
++------------------------------------------+
+```
+
+---
+
+## Implementation Sequence
+
+1. **Create useFeedDataCoverage hook** - Shared foundation for stats display
+2. **Update JobTable.tsx** - Add feed data indicator column
+3. **Update JobAnalyticsDialog.tsx** - Add "Feed Data" tab
+4. **Update CampaignsPage.tsx** - Add coverage stats to Sponsorship Mappings
+5. **Update DashboardContent.tsx** - Add Feed Quality card
+
+---
+
+## File Changes Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/features/campaigns/hooks/useFeedDataCoverage.ts` | Create | Hook to query feed_data_coverage view |
+| `src/features/campaigns/hooks/index.ts` | Modify | Export new hook |
+| `src/components/jobs/JobTable.tsx` | Modify | Add Feed Data indicator column |
+| `src/components/JobAnalyticsDialog.tsx` | Modify | Add Feed Data tab |
+| `src/features/campaigns/pages/CampaignsPage.tsx` | Modify | Add coverage stats cards |
+| `src/components/dashboard/DashboardContent.tsx` | Modify | Add Feed Quality dashboard card |
+
+---
+
+## Technical Details
+
+### Feed Data Coverage Hook
+
+The hook will aggregate data from the `feed_data_coverage` SQL view:
+
+```typescript
+interface FeedDataCoverage {
+  totalJobs: number;
+  jobsWithDate: number;
+  jobsWithIndeedApply: number;
+  jobsWithTracking: number;
+  jobsWithCampaign: number;
+  dateCoveragePct: number;
+  indeedApplyCoveragePct: number;
+  trackingCoveragePct: number;
+  campaignCoveragePct: number;
+  overallScore: number; // Weighted average
+}
+```
+
+### JobTable Indicator Icons
+
+Each indicator uses tooltips from the existing Tooltip component:
+
+- `Calendar` icon with `text-green-500` when `feed_date` present
+- Custom "I" badge with `text-blue-500` when `indeed_apply_job_id` present
+- `Activity` icon with `text-purple-500` when `tracking_pixel_url` present
+
+### JobAnalyticsDialog Feed Data Tab
+
+The tab displays data in organized Card sections:
+
+1. **Feed Information** - feed_date, jobreferrer, sponsorship_tier
+2. **Indeed Apply Integration** - api_token (masked), job_id, post_url
+3. **Tracking** - tracking_pixel_url with "Open" button
+
+Missing values show a muted "Not captured" badge rather than empty space.
+
