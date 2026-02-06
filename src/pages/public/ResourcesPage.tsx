@@ -178,9 +178,9 @@ const ResourcesPage = () => {
         <HeroBackground
           imageSrc={trustHero}
           imageAlt="Professional knowledge base and documentation resources for recruitment teams"
+          variant="compact"
           overlayVariant="gradient"
           overlayOpacity={55}
-          className="py-12 md:py-20"
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">

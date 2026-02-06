@@ -35,9 +35,9 @@ const BlogPage: React.FC = () => {
         <HeroBackground
           imageSrc={socialHero}
           imageAlt="Insights and resources for modern recruitment and HR technology"
+          variant="compact"
           overlayVariant="gradient"
           overlayOpacity={55}
-          className="py-12 md:py-20"
         >
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">

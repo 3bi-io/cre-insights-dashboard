@@ -19,6 +19,8 @@ export interface HeroBackgroundProps {
   imageAlt: string;
   /** Optional responsive image sources for srcset */
   responsiveImages?: ResponsiveImage[];
+  /** Size variant - 'full' for landing pages, 'compact' for listing pages */
+  variant?: 'full' | 'compact';
   /** Overlay style variant */
   overlayVariant?: 'dark' | 'gradient' | 'light' | 'radial' | 'vignette';
   /** Custom overlay opacity (0-100) */
@@ -43,10 +45,16 @@ const overlayStyles = {
   vignette: 'bg-[radial-gradient(ellipse_at_center,transparent_30%,hsl(var(--background)/0.9)_100%)]',
 } as const;
 
+const variantStyles = {
+  full: 'min-h-[90vh] md:min-h-screen flex items-center justify-center',
+  compact: 'py-12 md:py-20',
+} as const;
+
 export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   imageSrc,
   imageAlt,
   responsiveImages,
+  variant,
   overlayVariant = 'dark',
   overlayOpacity,
   lazyLoad = false,
@@ -100,10 +108,17 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
     ? 'bg-background'
     : overlayStyles[overlayVariant];
 
+  // Combine variant styles with custom className
+  const combinedClassName = cn(
+    'relative overflow-hidden',
+    variant && variantStyles[variant],
+    className
+  );
+
   return (
     <section 
       ref={containerRef}
-      className={cn('relative overflow-hidden', className)}
+      className={combinedClassName}
     >
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0">
