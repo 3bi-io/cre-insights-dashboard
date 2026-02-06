@@ -36,6 +36,39 @@ const CDL_FEEDS = [
   }
 ];
 
+// Default UTM parameters for CDL Job Cast
+const DEFAULT_UTM = {
+  source: 'cdl_jobcast',
+  medium: 'job_board',
+};
+
+/**
+ * Generate internal apply URL with UTM parameters
+ */
+function generateApplyUrl(jobListingId: string, clientName: string): string {
+  const baseUrl = 'https://ats.me/apply';
+  
+  // Generate campaign name from client
+  const clientSlug = clientName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .substring(0, 30);
+  
+  const quarter = `q${Math.ceil((new Date().getMonth() + 1) / 3)}`;
+  const year = new Date().getFullYear();
+  const campaign = `${clientSlug}_${quarter}_${year}`;
+  
+  const params = new URLSearchParams({
+    job_id: jobListingId,
+    utm_source: DEFAULT_UTM.source,
+    utm_medium: DEFAULT_UTM.medium,
+    utm_campaign: campaign,
+  });
+  
+  return `${baseUrl}?${params.toString()}`;
+}
+
 interface SyncResult {
   clientId: string;
   clientName: string;
@@ -135,6 +168,8 @@ async function syncClientFeed(
       const location = job.city && job.state ? `${job.city}, ${job.state}` : 
                       job.city || job.state || job.location || null;
 
+      // For new jobs, we'll set apply_url after insert when we have the ID
+      // For existing jobs, we'll update the apply_url during the update
       const jobData = {
         title: job.title || 'Untitled Position',
         job_summary: job.description || null,
@@ -152,7 +187,8 @@ async function syncClientFeed(
         organization_id: HAYES_ORG_ID,
         category_id: defaultCategoryId,
         url: job.url || null,
-        apply_url: job.url || null,
+        // UTM-enriched internal apply URL will be set after we have the job listing ID
+        apply_url: null as string | null,
         job_id: jobId,
         client_id: feed.clientId,
         client: feed.clientName,
@@ -162,7 +198,9 @@ async function syncClientFeed(
       const existingJob = existingJobMap.get(jobId);
 
       if (existingJob) {
-        // Update existing job
+        // Update existing job with UTM-enriched apply URL
+        const applyUrl = generateApplyUrl(existingJob.id, feed.clientName);
+        
         const { error: updateError } = await supabase
           .from('job_listings')
           .update({
@@ -176,7 +214,7 @@ async function syncClientFeed(
             salary_type: jobData.salary_type,
             experience_level: jobData.experience_level,
             url: jobData.url,
-            apply_url: jobData.apply_url,
+            apply_url: applyUrl, // UTM-enriched internal URL
             updated_at: jobData.updated_at
           })
           .eq('id', existingJob.id);
@@ -185,6 +223,7 @@ async function syncClientFeed(
           logger.error('Failed to update job', updateError, { clientName: feed.clientName, jobId });
         } else {
           result.jobsUpdated++;
+          logger.debug('Updated job with UTM apply URL', { jobId, applyUrl });
         }
       } else {
         // Check for duplicates by job_id (in case of non-unique constraint)
@@ -196,11 +235,14 @@ async function syncClientFeed(
           .limit(1);
 
         if (duplicates && duplicates.length > 0) {
-          // Update the duplicate instead of inserting
+          // Update the duplicate with UTM-enriched apply URL
+          const applyUrl = generateApplyUrl(duplicates[0].id, feed.clientName);
+          
           const { error: updateError } = await supabase
             .from('job_listings')
             .update({
               ...jobData,
+              apply_url: applyUrl,
               id: undefined // Don't try to update ID
             })
             .eq('id', duplicates[0].id);
@@ -209,15 +251,25 @@ async function syncClientFeed(
             result.jobsUpdated++;
           }
         } else {
-          // Insert new job
-          const { error: insertError } = await supabase
+          // Insert new job (apply_url will be updated after insert)
+          const { data: newJob, error: insertError } = await supabase
             .from('job_listings')
-            .insert(jobData);
+            .insert(jobData)
+            .select('id')
+            .single();
 
           if (insertError) {
             logger.error('Failed to insert job', insertError, { clientName: feed.clientName, jobId });
-          } else {
+          } else if (newJob) {
+            // Update with UTM-enriched apply URL now that we have the ID
+            const applyUrl = generateApplyUrl(newJob.id, feed.clientName);
+            await supabase
+              .from('job_listings')
+              .update({ apply_url: applyUrl })
+              .eq('id', newJob.id);
+            
             result.jobsInserted++;
+            logger.debug('Inserted job with UTM apply URL', { jobId, applyUrl });
           }
         }
       }
