@@ -27,6 +27,8 @@ import { toast } from 'sonner';
 import { generateFeatureGuidePDF, generateImplementationChecklistPDF, generateBestPracticesPDF } from '@/utils/resourcesPdfGenerator';
 import { generateRoiCalculatorXLSX } from '@/utils/roiCalculatorGenerator';
 import { logger } from '@/lib/logger';
+import { HeroBackground } from '@/components/shared';
+import trustHero from '@/assets/hero/trust-hero.png';
 
 const ResourcesPage = () => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -171,21 +173,32 @@ const ResourcesPage = () => {
         ogImage="https://ats.me/og-resources.png"
       />
       <StructuredData data={resourcesSchema} />
-      <div className="min-h-screen py-10 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-10 md:mb-16">
-          <Badge className="mb-3 md:mb-4 bg-primary/10 text-primary border-primary/20">
-            <BookOpen className="h-3 w-3 mr-1 inline" />
-            Knowledge Base
-          </Badge>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 md:mb-6 px-2">
-            Resources & Documentation
-          </h1>
-          <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
-            Everything you need to succeed with ATS.me - guides, tutorials, documentation, and best practices
-          </p>
-        </div>
+      <div className="min-h-screen">
+        {/* Hero Section */}
+        <HeroBackground
+          imageSrc={trustHero}
+          imageAlt="Professional knowledge base and documentation resources for recruitment teams"
+          overlayVariant="gradient"
+          overlayOpacity={55}
+          className="py-12 md:py-20"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <Badge className="mb-3 md:mb-4 bg-primary/10 text-primary border-primary/20">
+                <BookOpen className="h-3 w-3 mr-1 inline" />
+                Knowledge Base
+              </Badge>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 md:mb-6 px-2">
+                Resources & Documentation
+              </h1>
+              <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
+                Everything you need to succeed with ATS.me - guides, tutorials, documentation, and best practices
+              </p>
+            </div>
+          </div>
+        </HeroBackground>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
 
         {/* Getting Started - Numbered steps on mobile */}
         <section className="mb-10 md:mb-16">
@@ -327,7 +340,7 @@ const ResourcesPage = () => {
             </Link>
           </div>
           </section>
-        </div>
+          </div>
       </div>
     </>
   );

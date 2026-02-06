@@ -6,7 +6,7 @@ import { PublicJobCard } from '@/components/public/PublicJobCard';
 import { MobileFilterSheet } from '@/components/public/MobileFilterSheet';
 import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
 import { VoiceApplicationPanel } from '@/features/elevenlabs';
-import { DataLoadingStateHandler } from '@/components/shared/DataLoadingStateHandler';
+import { DataLoadingStateHandler, HeroBackground } from '@/components/shared';
 import { 
   usePublicJobsPage,
   JobFiltersDesktop,
@@ -16,6 +16,7 @@ import {
   JobsLoadingSkeleton
 } from '@/features/jobs';
 import type { PublicJob } from '@/features/jobs';
+import voiceHero from '@/assets/hero/voice-hero.png';
 
 const JobsPage = () => {
   const {
@@ -93,9 +94,20 @@ const JobsPage = () => {
       <StructuredData data={jobListSchema} />
       
       <div className="min-h-screen bg-background">
+        {/* Hero Section */}
+        <HeroBackground
+          imageSrc={voiceHero}
+          imageAlt="AI voice technology powering modern job applications and recruitment"
+          overlayVariant="gradient"
+          overlayOpacity={55}
+          className="py-12 md:py-20"
+        >
+          <div className="container mx-auto px-4">
+            <JobsPageHeader totalCount={totalCount} filteredCount={jobs.length} />
+          </div>
+        </HeroBackground>
+
         <div className="container mx-auto px-4 py-6 lg:py-8">
-          {/* Header */}
-          <JobsPageHeader totalCount={totalCount} filteredCount={jobs.length} />
           
           {/* Mobile Filter Sheet */}
           <MobileFilterSheet
@@ -176,7 +188,7 @@ const JobsPage = () => {
             pendingAgentTranscript={pendingAgentTranscript}
             onEnd={endVoiceApplication}
           />
-        </div>
+          </div>
       </div>
     </>
   );
