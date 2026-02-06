@@ -16,5 +16,5 @@ export const heroContent = {
     companies: 'Trusted by 50+ companies',
     highlight: 'Callbacks in under 3 minutes'
   },
-  industryTags: ['Cyber', 'Healthcare', 'Trades', 'Transportation']
+  industryTags: ['Transportation', 'Cyber', 'Trades', 'Healthcare']
 };
