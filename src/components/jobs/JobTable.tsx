@@ -5,27 +5,63 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles } from 'lucide-react';
 import { CopyApplyLinkButton } from './CopyApplyLinkButton';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface JobTableProps {
   jobs: any[] | undefined;
   onViewAnalytics: (job: any) => void;
   onShowUploadDialog: () => void;
   onVoiceApply?: (job: any) => void;
+  onRefresh?: () => void;
 }
 
-type SortField = 'title' | 'job_id' | 'platform' | 'category' | 'location' | 'status' | 'created_at' | 'salary';
+type SortField = 'title' | 'job_id' | 'platform' | 'category' | 'location' | 'status' | 'created_at' | 'salary' | 'is_sponsored';
 type SortDirection = 'asc' | 'desc';
 
 const JobTable: React.FC<JobTableProps> = ({ 
   jobs, 
   onViewAnalytics, 
   onShowUploadDialog,
-  onVoiceApply 
+  onVoiceApply,
+  onRefresh
 }) => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [updatingSponsorship, setUpdatingSponsorship] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleSponsorshipToggle = async (jobId: string, currentValue: boolean) => {
+    setUpdatingSponsorship(jobId);
+    try {
+      const { error } = await supabase
+        .from('job_listings')
+        .update({ is_sponsored: !currentValue })
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      toast({
+        title: !currentValue ? 'Job marked as sponsored' : 'Job marked as organic',
+        description: !currentValue 
+          ? 'This job will be highlighted in listings'
+          : 'Sponsorship removed from this job',
+      });
+      
+      onRefresh?.();
+    } catch (error) {
+      toast({
+        title: 'Error updating sponsorship',
+        description: error instanceof Error ? error.message : 'Failed to update',
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdatingSponsorship(null);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -108,6 +144,10 @@ const JobTable: React.FC<JobTableProps> = ({
         aValue = new Date(a.created_at);
         bValue = new Date(b.created_at);
         break;
+      case 'is_sponsored':
+        aValue = a.is_sponsored ? 1 : 0;
+        bValue = b.is_sponsored ? 1 : 0;
+        break;
       default:
         return 0;
     }
@@ -121,8 +161,8 @@ const JobTable: React.FC<JobTableProps> = ({
     return (
       <Card>
         <CardContent className="text-center py-12 px-4">
-          <div className="text-gray-500 mb-4">
-            <Plus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <div className="text-muted-foreground mb-4">
+            <Plus className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
             <h3 className="text-lg font-medium mb-2">No job listings found</h3>
             <p className="text-sm sm:text-base">Get started by uploading a CSV file with your job listings.</p>
           </div>
@@ -223,6 +263,17 @@ const JobTable: React.FC<JobTableProps> = ({
                     {getSortIcon('created_at')}
                   </Button>
                 </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    className="h-auto p-0 font-medium hover:bg-transparent flex items-center"
+                    onClick={() => handleSort('is_sponsored')}
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Sponsored
+                    {getSortIcon('is_sponsored')}
+                  </Button>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -291,6 +342,27 @@ const JobTable: React.FC<JobTableProps> = ({
                         {new Date(job.created_at).toLocaleDateString()}
                       </span>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={job.is_sponsored || false}
+                          onCheckedChange={() => handleSponsorshipToggle(job.id, job.is_sponsored || false)}
+                          disabled={updatingSponsorship === job.id}
+                          className="data-[state=checked]:bg-amber-500"
+                        />
+                        {job.is_sponsored && (
+                          <Badge variant="outline" className="text-xs border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-950/20">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Paid
+                          </Badge>
+                        )}
+                        {job.jobreferrer && (
+                          <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={job.jobreferrer}>
+                            {job.jobreferrer}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <CopyApplyLinkButton 
@@ -314,7 +386,7 @@ const JobTable: React.FC<JobTableProps> = ({
                             variant="default"
                             size="sm"
                             onClick={() => onVoiceApply(job)}
-                            className="hidden lg:flex bg-blue-600 hover:bg-blue-700"
+                            className="hidden lg:flex"
                           >
                             <Mic className="w-4 h-4 mr-1" />
                             Voice Apply
@@ -343,7 +415,7 @@ const JobTable: React.FC<JobTableProps> = ({
                               <Edit className="w-4 h-4 mr-2" />
                               Edit Job
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem className="text-destructive">
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete Job
                             </DropdownMenuItem>
