@@ -1,201 +1,192 @@
 
+# AI System Production Release Review
 
-# Phase 4 & 5 UI Implementation Plan
+## Executive Summary
 
-Complete the remaining UI enhancements for the CDL Job Cast Feed Data Capture system by adding feed data visibility to the Job Details dialog, JobTable indicators, enhanced CampaignsPage stats, and a Feed Quality Dashboard card.
-
----
-
-## Summary of Changes
-
-| Component | Enhancement |
-|-----------|-------------|
-| JobTable.tsx | Add feed data indicator icons (Indeed Apply, Tracking, Date) |
-| JobAnalyticsDialog.tsx | Add new "Feed Data" tab showing all captured metadata |
-| CampaignsPage.tsx | Add feed coverage stats to the Sponsorship Mappings tab |
-| DashboardContent.tsx | Add Feed Quality card showing data completeness metrics |
-| New: useFeedDataCoverage.ts | Hook to query the `feed_data_coverage` view |
+The AI infrastructure has been significantly refactored since the previous deployment with a robust multi-provider architecture, comprehensive rate limiting, and structured logging. However, there are several areas requiring attention before production release.
 
 ---
 
-## Phase 4: Admin UI Enhancements
+## Current AI Architecture
 
-### 4.1 Add Feed Data Indicators to JobTable
+### AI Providers Supported
 
-Update `src/components/jobs/JobTable.tsx` to display small icons indicating feed data availability for each job row.
+| Provider | Edge Function | Model | Status |
+|----------|--------------|-------|--------|
+| **Lovable AI Gateway** | `ai-chat` | `google/gemini-2.5-flash` | Active (Primary) |
+| **OpenAI** | `openai-chat` | `gpt-4.1-2025-04-14` | Active |
+| **Anthropic** | `anthropic-chat` | `claude-sonnet-4-20250514` | Active |
+| **Grok (xAI)** | `grok-chat` | `grok-3` | Discontinued (UI reflects this) |
+| **ElevenLabs** | `elevenlabs-agent` | Voice Agent | Active |
 
-**Changes:**
-- Add new icons from lucide-react: `Calendar`, `ExternalLink`, `Activity`
-- Add a "Feed Data" column after the "Sponsored" column
-- Display indicator icons:
-  - Calendar icon (green) if `feed_date` is present
-  - Indeed "I" badge (blue) if `indeed_apply_job_id` is present
-  - Activity icon (purple) if `tracking_pixel_url` is present
-- Use tooltips to explain each indicator on hover
+### Secrets Configured
+All required AI API keys are present:
+- `LOVABLE_API_KEY` (auto-provisioned)
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `XAI_API_KEY`
+- `ELEVENLABS_API_KEY`
+- `GLOBAL_VOICE_AGENT_ID`
 
-**Visual Design:**
-```text
-| ... | Sponsored | Feed Data         | Actions |
-| ... | [Switch]  | [Date][Indeed][Px] | ...     |
+---
+
+## Strengths Identified
+
+### 1. Robust Connection Management
+- **AIConnectionManager** service provides real-time health monitoring across all providers
+- Automatic provider recommendation based on latency
+- Periodic health checks with configurable intervals
+- Graceful fallback between providers in `useAIProviders`
+
+### 2. Comprehensive Rate Limiting
+- Geographic-aware rate limiting (elevated limits for DFW/Alabama developer regions)
+- In-memory rate limiting with automatic cleanup
+- Per-function rate limits configured appropriately:
+  - `ai-chat`: 20 req/min per user
+  - `elevenlabs-agent`: 10 req/min per IP
+  - Other functions: 30-100 req/min
+
+### 3. Security Features
+- **Prompt injection detection** in `ai-chat` function with pattern matching:
+  - Blocks "ignore previous instructions" patterns
+  - Prevents system role impersonation
+  - Validates message array structure
+- **Authentication enforcement** via `enforceAuth()` for authenticated-only AI access
+- **Organization-based agent access control** in ElevenLabs
+
+### 4. Structured Logging
+- Backend: `createLogger()` with JSON-formatted output
+- Frontend: Production-optimized logger with Sentry integration (only warn/error sent to monitoring)
+- All edge functions use consistent logging patterns
+
+### 5. Feature Gating
+- Organization-level feature flags via `useOrganizationFeatures`
+- Tiered access: `openai_access`, `anthropic_access`, `grok_access`, `elevenlabs_access`
+- Super admin bypass for all features
+
+---
+
+## Issues Requiring Attention
+
+### Critical (Must Fix Before Production)
+
+#### 1. Security Definer Views (4 Errors)
+The Supabase linter identified 4 views using `SECURITY DEFINER` which enforces the view creator's permissions rather than the querying user's. This can bypass RLS policies.
+
+**Recommendation**: Convert these views to `SECURITY INVOKER` or carefully audit that the exposure is intentional for specific use cases.
+
+#### 2. Overly Permissive RLS Policies (20+ Warnings)
+Multiple RLS policies use `USING (true)` or `WITH CHECK (true)` for INSERT/UPDATE/DELETE operations, which allows unrestricted modifications.
+
+**Recommendation**: Audit each policy to ensure this is intentional (some may be for system tables or internal operations). Tighten policies where possible.
+
+### High Priority
+
+#### 3. Model Version Inconsistencies
+Different edge functions use different model versions:
+- `openai-chat`: `gpt-4.1-2025-04-14`
+- `data-analysis`: `gpt-4o`
+- `social-ai-service`: `gpt-4o-mini`
+- `meta-spend-analytics`: `gpt-4.1-2025-04-14`
+
+**Recommendation**: Standardize on a consistent model version or document the intentional differences. Consider using environment variables for model selection.
+
+#### 4. Error Response Consistency
+- `openai-chat` returns status 200 even on errors (returns fallback response)
+- `anthropic-chat` returns status 500 on errors
+- `ai-chat` properly returns appropriate status codes (429, 402, 500)
+
+**Recommendation**: Standardize error handling across all AI functions to return appropriate HTTP status codes.
+
+#### 5. Grok Provider Still in Connection Manager
+While Grok is marked as `discontinued: true` in the connection manager, the `grok-chat` function still exists and is invoked during connection checks.
+
+**Recommendation**: Either remove Grok from connection health checks entirely or deprecate the edge function.
+
+### Medium Priority
+
+#### 6. Missing CORS Standardization
+- `openai-chat` and `anthropic-chat` use inline CORS headers
+- `ai-chat` uses shared `getCorsHeaders()` utility
+
+**Recommendation**: Migrate all AI functions to use the shared CORS configuration from `_shared/cors-config.ts`.
+
+#### 7. Rate Limit Handling in Frontend
+The frontend hooks (`useOpenAI`, `useAnthropic`) don't specifically handle 429/402 responses with user-friendly messages.
+
+**Recommendation**: Add explicit handling for rate limit and payment errors in the frontend hooks with toast notifications.
+
+#### 8. Analytics Integration Variability
+- `openai-chat` has analytics context injection via `chatbot-analytics`
+- `anthropic-chat` does not have analytics integration
+- `ai-chat` (Lovable Gateway) does not integrate analytics
+
+**Recommendation**: Standardize analytics integration across AI providers if this feature is needed consistently.
+
+---
+
+## Pre-Production Checklist
+
+### Security
+- [ ] Audit and fix Security Definer views
+- [ ] Review all RLS policies with `USING (true)`
+- [ ] Verify prompt injection patterns are comprehensive
+- [ ] Confirm ElevenLabs organization access controls
+
+### Configuration
+- [ ] Standardize AI model versions across functions
+- [ ] Update CORS handling to use shared utilities
+- [ ] Consider removing Grok from health checks
+
+### Error Handling
+- [ ] Standardize error responses across all AI functions
+- [ ] Add frontend handling for 429/402 responses
+- [ ] Ensure fallback providers work correctly
+
+### Testing
+- [ ] Test AI provider failover scenarios
+- [ ] Verify rate limiting under load
+- [ ] Test organization feature gating
+- [ ] Validate ElevenLabs voice agent connections
+
+### Monitoring
+- [ ] Confirm Sentry integration captures AI errors
+- [ ] Set up alerts for elevated error rates
+- [ ] Configure latency monitoring thresholds
+
+---
+
+## Recommended Production Configuration
+
+### Environment Variables to Verify
+```
+LOVABLE_API_KEY (auto-provisioned)
+OPENAI_API_KEY
+ANTHROPIC_API_KEY  
+ELEVENLABS_API_KEY
+GLOBAL_VOICE_AGENT_ID
+XAI_API_KEY (optional, Grok discontinued)
 ```
 
-### 4.2 Add "Feed Data" Tab to JobAnalyticsDialog
+### Rate Limit Configuration Summary
+| Function | Limit | Window | Geo Boost |
+|----------|-------|--------|-----------|
+| ai-chat | 20 | 1 min | Yes (5x) |
+| openai-chat | Unlimited | - | No |
+| anthropic-chat | Unlimited | - | No |
+| elevenlabs-agent | 10 | 1 min | Yes (5x) |
+| grok-chat | Unlimited | - | No |
 
-Update `src/components/JobAnalyticsDialog.tsx` to include a third tab showing raw feed metadata.
-
-**Changes:**
-- Extend the Tabs component from 2 to 3 tabs
-- Add new tab: "Feed Data" with `Rss` icon
-- Tab content displays:
-  - Feed Date (original posting date vs. system created_at)
-  - Campaign Info (jobreferrer value and resolved sponsorship tier)
-  - Indeed Apply Configuration (token, job ID, post URL)
-  - Tracking Pixel URL (clickable link that opens in new tab)
-  - Last sync timestamp
-- Use Card components for visual grouping
-- Show "Not Available" badges for missing data
-
-**Interface Update:**
-```typescript
-// Extend JobAnalyticsDialogProps job type
-interface JobAnalyticsDialogProps {
-  job: {
-    // ... existing fields
-    feed_date?: string;
-    jobreferrer?: string;
-    sponsorship_tier?: string;
-    indeed_apply_api_token?: string;
-    indeed_apply_job_id?: string;
-    indeed_apply_post_url?: string;
-    tracking_pixel_url?: string;
-  };
-}
-```
+**Note**: `openai-chat` and `anthropic-chat` lack rate limiting - consider adding for production.
 
 ---
 
-## Phase 4.3: Enhanced Campaign Stats
+## Summary
 
-Update `src/features/campaigns/pages/CampaignsPage.tsx` and the Sponsorship Mappings tab to display feed data coverage statistics.
+The AI system is well-architected with strong foundations in connection management, feature gating, and security patterns. The primary concerns for production are:
 
-**Changes:**
-- Create a new hook: `useFeedDataCoverage` to query the SQL view
-- Add stats cards above the mappings table showing:
-  - Total jobs with Indeed Apply enabled (count + percentage)
-  - Total jobs with tracking pixels (count + percentage)
-  - Campaign attribution coverage (jobs with jobreferrer)
-  - Feed date coverage
-- Use the existing QuickStatsCard or MetricsCard pattern
+1. **Security**: Database linter warnings about permissive RLS policies
+2. **Consistency**: Error handling and model version standardization
+3. **Completeness**: Rate limiting on all AI endpoints
 
-**New Hook Structure:**
-```typescript
-// src/features/campaigns/hooks/useFeedDataCoverage.ts
-export function useFeedDataCoverage() {
-  return useQuery({
-    queryKey: ['feed-data-coverage'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('feed_data_coverage')
-        .select('*');
-      return aggregateCoverage(data);
-    }
-  });
-}
-```
-
----
-
-## Phase 5.2: Feed Quality Dashboard Card
-
-Add a new card to `src/components/dashboard/DashboardContent.tsx` displaying data completeness metrics.
-
-**Changes:**
-- Import and use the `useFeedDataCoverage` hook
-- Add a new Card component in the dashboard grid showing:
-  - Overall feed data quality score (weighted percentage)
-  - Indeed Apply adoption rate (with progress bar)
-  - Campaign attribution coverage (with progress bar)
-  - Tracking pixel coverage (with progress bar)
-- Use color-coded indicators (green >80%, yellow 50-80%, red <50%)
-- Add a "View Details" button linking to Campaigns > Sponsorship Mappings
-
-**Visual Layout:**
-```text
-+------------------------------------------+
-| Feed Data Quality         [?] [Refresh]  |
-|------------------------------------------|
-| Overall Score: 72%    [=========---]     |
-|                                          |
-| Indeed Apply:  45%    [====------]       |
-| Campaign Tags: 98%    [==========]       |
-| Tracking:      23%    [==--------]       |
-| Feed Dates:    67%    [======----]       |
-|                                          |
-| [View Campaign Mappings →]               |
-+------------------------------------------+
-```
-
----
-
-## Implementation Sequence
-
-1. **Create useFeedDataCoverage hook** - Shared foundation for stats display
-2. **Update JobTable.tsx** - Add feed data indicator column
-3. **Update JobAnalyticsDialog.tsx** - Add "Feed Data" tab
-4. **Update CampaignsPage.tsx** - Add coverage stats to Sponsorship Mappings
-5. **Update DashboardContent.tsx** - Add Feed Quality card
-
----
-
-## File Changes Summary
-
-| File | Action | Description |
-|------|--------|-------------|
-| `src/features/campaigns/hooks/useFeedDataCoverage.ts` | Create | Hook to query feed_data_coverage view |
-| `src/features/campaigns/hooks/index.ts` | Modify | Export new hook |
-| `src/components/jobs/JobTable.tsx` | Modify | Add Feed Data indicator column |
-| `src/components/JobAnalyticsDialog.tsx` | Modify | Add Feed Data tab |
-| `src/features/campaigns/pages/CampaignsPage.tsx` | Modify | Add coverage stats cards |
-| `src/components/dashboard/DashboardContent.tsx` | Modify | Add Feed Quality dashboard card |
-
----
-
-## Technical Details
-
-### Feed Data Coverage Hook
-
-The hook will aggregate data from the `feed_data_coverage` SQL view:
-
-```typescript
-interface FeedDataCoverage {
-  totalJobs: number;
-  jobsWithDate: number;
-  jobsWithIndeedApply: number;
-  jobsWithTracking: number;
-  jobsWithCampaign: number;
-  dateCoveragePct: number;
-  indeedApplyCoveragePct: number;
-  trackingCoveragePct: number;
-  campaignCoveragePct: number;
-  overallScore: number; // Weighted average
-}
-```
-
-### JobTable Indicator Icons
-
-Each indicator uses tooltips from the existing Tooltip component:
-
-- `Calendar` icon with `text-green-500` when `feed_date` present
-- Custom "I" badge with `text-blue-500` when `indeed_apply_job_id` present
-- `Activity` icon with `text-purple-500` when `tracking_pixel_url` present
-
-### JobAnalyticsDialog Feed Data Tab
-
-The tab displays data in organized Card sections:
-
-1. **Feed Information** - feed_date, jobreferrer, sponsorship_tier
-2. **Indeed Apply Integration** - api_token (masked), job_id, post_url
-3. **Tracking** - tracking_pixel_url with "Open" button
-
-Missing values show a muted "Not captured" badge rather than empty space.
-
+Addressing the critical security issues and standardizing error handling should be prioritized before the production release.
