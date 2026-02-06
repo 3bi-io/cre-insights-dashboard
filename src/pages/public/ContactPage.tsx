@@ -29,8 +29,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
-import { HeroBackground } from '@/components/shared';
-import heroContactImage from '@/assets/heroes/hero-contact.png';
 
 // Client-side validation schema
 const contactFormSchema = z.object({
@@ -229,23 +227,26 @@ const ContactPage = () => {
       />
       <StructuredData data={[contactPageSchema, faqSchemaData, localBusinessSchema]} />
       <div className="min-h-screen">
-      {/* Hero Section with Background Image */}
-      <HeroBackground
-        imageSrc={heroContactImage}
-        imageAlt="Contact ATS.me team"
-        overlayVariant="gradient"
-        minHeight="min-h-[40vh] md:min-h-[50vh]"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-10 md:py-20">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-white mb-3 md:mb-6">
+      {/* Hero Section */}
+      <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+        
+        {/* Floating Elements - reduced motion */}
+        <div className="absolute top-20 left-10 md:left-20 w-48 md:w-72 h-48 md:h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 md:right-20 w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse delay-1000"></div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-3 md:mb-6">
             Get in
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Touch</span>
           </h1>
-          <p className="text-base md:text-xl text-white/80 mb-6 md:mb-8 max-w-3xl mx-auto px-4">
+          <p className="text-base md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
             Ready to transform your hiring process? We're here to help you get started.
           </p>
         </div>
-      </HeroBackground>
+      </section>
 
 
       {/* Contact Form & FAQ */}

@@ -8,11 +8,10 @@ import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { HeroBackground } from '@/components/shared';
-import heroFeaturesImage from '@/assets/heroes/hero-features.jpeg';
 
 // Import shared components and content from landing feature
 import { 
@@ -71,22 +70,25 @@ const FeaturesPage = () => {
       />
       <StructuredData data={softwareAppSchema} />
 
-      {/* Page Hero Section with Background Image */}
-      <HeroBackground
-        imageSrc={heroFeaturesImage}
-        imageAlt="AI-powered recruitment platform features"
-        overlayVariant="dark"
-        minHeight="min-h-[50vh] md:min-h-[60vh]"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-10 md:py-16">
-          <Badge className="mb-4 md:mb-6 bg-white/10 text-white border-white/20">
+      {/* Page Hero Section */}
+      <section className="relative py-10 md:py-16 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 lg:left-20 w-48 lg:w-72 h-48 lg:h-72 bg-primary/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse" />
+        <div className="absolute bottom-20 right-10 lg:right-20 w-64 lg:w-96 h-64 lg:h-96 bg-accent/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse delay-1000" />
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20">
             ✨ Feature-Rich Platform
           </Badge>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-white mb-4 md:mb-6 px-2">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 md:mb-6 px-2">
             Powerful Features for
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Modern Recruiting</span>
           </h1>
-          <p className="text-base md:text-xl text-white/80 mb-6 md:mb-8 max-w-3xl mx-auto px-4">
+          <p className="text-base md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
             From AI-powered social recruitment to voice automation — discover all the tools 
             that make ATS.me the most comprehensive hiring platform.
           </p>
@@ -97,7 +99,7 @@ const FeaturesPage = () => {
             </Button>
           </Link>
         </div>
-      </HeroBackground>
+      </section>
 
       {/* Social Beacon - Featured Product Hero */}
       <FeaturedProductCard

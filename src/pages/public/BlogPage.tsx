@@ -13,8 +13,6 @@ import { Button } from '@/components/ui/button';
 import { BookOpen } from 'lucide-react';
 import { useBlogPosts, useBlogCategories } from '@/hooks/useBlog';
 import { BlogPostCard } from '@/components/blog';
-import { HeroBackground } from '@/components/shared';
-import heroBlogImage from '@/assets/heroes/hero-blog.jpeg';
 
 const BlogPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -31,27 +29,25 @@ const BlogPage: React.FC = () => {
       />
 
       <div className="min-h-screen">
-        {/* Hero with Background Image */}
-        <HeroBackground
-          imageSrc={heroBlogImage}
-          imageAlt="Recruitment insights and industry blog"
-          overlayVariant="dark"
-          minHeight="min-h-[40vh] md:min-h-[50vh]"
-        >
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-12 md:py-20">
-            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-white/20 bg-white/10 text-white text-sm">
+        {/* Hero */}
+        <section className="relative py-12 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+          
+          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm">
               <BookOpen className="h-4 w-4" />
               Insights & Resources
             </div>
-            <h1 className="text-3xl md:text-5xl font-playfair font-bold text-white mb-4">
+            <h1 className="text-3xl md:text-5xl font-playfair font-bold text-foreground mb-4">
               The ATS.me
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Blog</span>
             </h1>
-            <p className="text-base md:text-lg text-white/80 max-w-2xl mx-auto">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Expert insights on AI-powered recruitment, hiring strategies, and the future of HR technology.
             </p>
           </div>
-        </HeroBackground>
+        </section>
 
         {/* Category Filter */}
         {categories && categories.length > 0 && (
