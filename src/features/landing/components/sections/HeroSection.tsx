@@ -10,30 +10,35 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Star, Search } from 'lucide-react';
 import { heroContent } from '../../content/hero.content';
 import { howItWorksContent } from '../../content/howitworks.content';
+import { HeroBackground } from '@/components/shared';
+import voiceHero from '@/assets/hero/voice-hero.png';
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-[90vh] md:min-h-screen flex items-center justify-center overflow-hidden bg-background">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 overflow-hidden">
+    <HeroBackground
+      imageSrc={voiceHero}
+      imageAlt="AI-powered voice technology with sound waves representing Voice Apply recruitment"
+      overlayVariant="dark"
+      overlayOpacity={65}
+      className="min-h-[90vh] md:min-h-screen flex items-center justify-center"
+    >
+      {/* Animated gradient blobs on top of hero image */}
+      <div className="absolute inset-0 overflow-hidden z-[2] pointer-events-none">
         {/* Primary gradient blob - top left */}
-        <div className="absolute -top-40 -left-40 w-80 sm:w-[500px] h-80 sm:h-[500px] bg-primary/20 rounded-full blur-[100px] motion-safe:animate-[float_8s_ease-in-out_infinite]" />
+        <div className="absolute -top-40 -left-40 w-80 sm:w-[500px] h-80 sm:h-[500px] bg-primary/15 rounded-full blur-[100px] motion-safe:animate-[float_8s_ease-in-out_infinite]" />
         
         {/* Accent gradient blob - top right */}
-        <div className="absolute -top-20 -right-20 w-60 sm:w-[400px] h-60 sm:h-[400px] bg-accent/15 rounded-full blur-[80px] motion-safe:animate-[float_10s_ease-in-out_infinite_reverse]" />
+        <div className="absolute -top-20 -right-20 w-60 sm:w-[400px] h-60 sm:h-[400px] bg-accent/10 rounded-full blur-[80px] motion-safe:animate-[float_10s_ease-in-out_infinite_reverse]" />
         
         {/* Secondary gradient blob - bottom center */}
-        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-96 sm:w-[600px] h-96 sm:h-[600px] bg-secondary/10 rounded-full blur-[120px] motion-safe:animate-[float_12s_ease-in-out_infinite]" />
+        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-96 sm:w-[600px] h-96 sm:h-[600px] bg-secondary/8 rounded-full blur-[120px] motion-safe:animate-[float_12s_ease-in-out_infinite]" />
         
         {/* Success accent - bottom right */}
-        <div className="absolute bottom-20 right-10 w-40 sm:w-64 h-40 sm:h-64 bg-success/10 rounded-full blur-[60px] motion-safe:animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-40 sm:w-64 h-40 sm:h-64 bg-success/8 rounded-full blur-[60px] motion-safe:animate-pulse" />
       </div>
 
       {/* Grid pattern overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,white_20%,transparent_70%)]" />
-
-      {/* Subtle radial gradient overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_0%,hsl(var(--background)/0.5)_70%)]" />
+      <div className="absolute inset-0 z-[3] bg-[linear-gradient(hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,white_20%,transparent_70%)] pointer-events-none" />
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-8">
         <div className="max-w-4xl mx-auto">
@@ -175,7 +180,7 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-    </section>
+    </HeroBackground>
   );
 };
 

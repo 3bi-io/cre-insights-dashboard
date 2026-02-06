@@ -29,6 +29,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { HeroBackground } from '@/components/shared';
+import trustHero from '@/assets/hero/trust-hero.png';
 
 // Client-side validation schema
 const contactFormSchema = z.object({
@@ -228,14 +230,16 @@ const ContactPage = () => {
       <StructuredData data={[contactPageSchema, faqSchemaData, localBusinessSchema]} />
       <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-10 md:py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-        
+      <HeroBackground
+        imageSrc={trustHero}
+        imageAlt="Security shield with checkmark representing trust, compliance, and data protection"
+        overlayVariant="dark"
+        overlayOpacity={70}
+        className="py-10 md:py-20"
+      >
         {/* Floating Elements - reduced motion */}
-        <div className="absolute top-20 left-10 md:left-20 w-48 md:w-72 h-48 md:h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 md:right-20 w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse delay-1000"></div>
+        <div className="absolute top-20 left-10 md:left-20 w-48 md:w-72 h-48 md:h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse z-[2] pointer-events-none"></div>
+        <div className="absolute bottom-20 right-10 md:right-20 w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse delay-1000 z-[2] pointer-events-none"></div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-3 md:mb-6">
@@ -246,7 +250,7 @@ const ContactPage = () => {
             Ready to transform your hiring process? We're here to help you get started.
           </p>
         </div>
-      </section>
+      </HeroBackground>
 
 
       {/* Contact Form & FAQ */}

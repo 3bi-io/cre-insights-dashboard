@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { HeroBackground } from '@/components/shared';
+import socialHero from '@/assets/hero/social-hero.png';
 
 // Import shared components and content from landing feature
 import { 
@@ -71,14 +73,16 @@ const FeaturesPage = () => {
       <StructuredData data={softwareAppSchema} />
 
       {/* Page Hero Section */}
-      <section className="relative py-10 md:py-16 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-        
+      <HeroBackground
+        imageSrc={socialHero}
+        imageAlt="Social network connections representing multi-platform recruitment across social media"
+        overlayVariant="dark"
+        overlayOpacity={70}
+        className="py-10 md:py-16"
+      >
         {/* Floating Elements */}
-        <div className="absolute top-20 left-10 lg:left-20 w-48 lg:w-72 h-48 lg:h-72 bg-primary/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse" />
-        <div className="absolute bottom-20 right-10 lg:right-20 w-64 lg:w-96 h-64 lg:h-96 bg-accent/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse delay-1000" />
+        <div className="absolute top-20 left-10 lg:left-20 w-48 lg:w-72 h-48 lg:h-72 bg-primary/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse z-[2] pointer-events-none" />
+        <div className="absolute bottom-20 right-10 lg:right-20 w-64 lg:w-96 h-64 lg:h-96 bg-accent/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse delay-1000 z-[2] pointer-events-none" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20">
@@ -99,7 +103,7 @@ const FeaturesPage = () => {
             </Button>
           </Link>
         </div>
-      </section>
+      </HeroBackground>
 
       {/* Social Beacon - Featured Product Hero */}
       <FeaturedProductCard
