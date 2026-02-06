@@ -109,24 +109,32 @@ serve(async (req) => {
       });
     }
 
-    // Note: Blog posts table not yet implemented
-    // When blog_posts table is created, uncomment:
-    // const { data: blogPosts, error: blogError } = await supabase
-    //   .from('blog_posts')
-    //   .select('slug, updated_at')
-    //   .eq('published', true);
-    // if (!blogError && blogPosts) {
-    //   blogPosts.forEach(post => {
-    //     allUrls.push({
-    //       loc: `https://ats.me/blog/${post.slug}`,
-    //       lastmod: post.updated_at?.split('T')[0],
-    //       changefreq: 'weekly',
-    //       priority: 0.7,
-    //     });
-    //   });
-    // }
+    // Fetch published blog posts for dynamic URLs
+    const { data: blogPosts, error: blogError } = await supabase
+      .from('blog_posts')
+      .select('slug, updated_at')
+      .eq('published', true);
+    if (blogError) {
+      logger.error('Error fetching blog posts for sitemap', blogError);
+    } else if (blogPosts) {
+      // Add blog index page
+      allUrls.push({
+        loc: 'https://ats.me/blog',
+        lastmod: new Date().toISOString().split('T')[0],
+        changefreq: 'daily',
+        priority: 0.8,
+      });
+      blogPosts.forEach(post => {
+        allUrls.push({
+          loc: `https://ats.me/blog/${post.slug}`,
+          lastmod: post.updated_at?.split('T')[0],
+          changefreq: 'weekly',
+          priority: 0.7,
+        });
+      });
+    }
 
-    logger.info('Sitemap generated', { totalUrls: allUrls.length, jobs: jobs?.length || 0 });
+    logger.info('Sitemap generated', { totalUrls: allUrls.length, jobs: jobs?.length || 0, blogPosts: blogPosts?.length || 0 });
 
     const sitemapXML = generateSitemapXML(allUrls);
 

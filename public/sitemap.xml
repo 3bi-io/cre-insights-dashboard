@@ -119,6 +119,42 @@
     <priority>0.8</priority>
   </url>
   
+  <!-- Blog Posts -->
+  <url>
+    <loc>https://ats.me/blog/what-is-voice-apply-technology</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://ats.me/blog/roi-ai-powered-recruitment-2026</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://ats.me/blog/social-beacon-beyond-job-boards</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://ats.me/blog/tenstreet-integration-driver-recruitment</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://ats.me/blog/recruitment-compliance-ai-hiring-2026</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
   <!-- Sitemap -->
   <url>
     <loc>https://ats.me/sitemap</loc>
