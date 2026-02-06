@@ -296,7 +296,17 @@ const JobDetailsPage: React.FC = () => {
                 <div className="mb-6 lg:mb-8">
                   <h2 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4">Job Description</h2>
                   <div 
-                    className="prose prose-sm max-w-none text-muted-foreground text-sm lg:text-base"
+                    className="prose prose-sm lg:prose-base dark:prose-invert max-w-none
+                      prose-headings:font-semibold prose-headings:text-foreground prose-headings:mt-6 prose-headings:mb-3
+                      prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-3
+                      prose-h3:text-base prose-h3:mt-6 prose-h3:mb-2
+                      prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-4
+                      prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                      prose-strong:text-foreground prose-strong:font-semibold
+                      prose-ul:my-4 prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1.5
+                      prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1.5
+                      prose-li:text-foreground/90 prose-li:leading-relaxed
+                      prose-blockquote:border-l-4 prose-blockquote:border-primary/50 prose-blockquote:bg-muted/30 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:text-muted-foreground prose-blockquote:italic"
                     dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
                   />
                 </div>
