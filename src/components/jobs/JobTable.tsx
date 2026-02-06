@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, MoreHorizontal, MapPin, Eye, Edit, Trash2, ChevronUp, ChevronDown, DollarSign, Mic, Link2, Sparkles, Calendar, Activity } from 'lucide-react';
 import { CopyApplyLinkButton } from './CopyApplyLinkButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -274,6 +275,7 @@ const JobTable: React.FC<JobTableProps> = ({
                     {getSortIcon('is_sponsored')}
                   </Button>
                 </TableHead>
+                <TableHead>Feed Data</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -362,6 +364,52 @@ const JobTable: React.FC<JobTableProps> = ({
                           </span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <TooltipProvider>
+                        <div className="flex items-center gap-1">
+                          {job.feed_date && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="p-1 rounded bg-green-100 dark:bg-green-950/30">
+                                  <Calendar className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Feed Date: {new Date(job.feed_date).toLocaleDateString()}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {job.indeed_apply_job_id && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="p-1 rounded bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 leading-none">I</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Indeed Apply Enabled</p>
+                                <p className="text-xs text-muted-foreground">Job ID: {job.indeed_apply_job_id}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {job.tracking_pixel_url && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="p-1 rounded bg-purple-100 dark:bg-purple-950/30">
+                                  <Activity className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Tracking Pixel Active</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {!job.feed_date && !job.indeed_apply_job_id && !job.tracking_pixel_url && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

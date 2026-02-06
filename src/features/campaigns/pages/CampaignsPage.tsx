@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   Plus, 
   Search, 
@@ -12,12 +13,16 @@ import {
   Users,
   AlertCircle,
   Loader2,
-  Settings
+  Settings,
+  Calendar,
+  Activity,
+  Tag,
+  Rss
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { PageLayout } from '@/features/shared';
-import { useCampaigns } from '../hooks/useCampaigns';
+import { useCampaigns, useFeedDataCoverage } from '../hooks';
 import { CreateCampaignDialog, CampaignCard, CampaignMappingManager } from '../components';
 import { Database } from '@/integrations/supabase/types';
 import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
@@ -276,7 +281,8 @@ const CampaignsPage = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="mappings">
+          <TabsContent value="mappings" className="space-y-6">
+            <FeedDataCoverageStats />
             <CampaignMappingManager />
           </TabsContent>
         </Tabs>
@@ -289,6 +295,125 @@ const CampaignsPage = () => {
         isCreating={isCreating}
       />
     </PageLayout>
+  );
+};
+
+// Feed Data Coverage Stats Component
+const FeedDataCoverageStats = () => {
+  const { data: coverage, isLoading } = useFeedDataCoverage();
+
+  const getScoreColor = (pct: number) => {
+    if (pct >= 80) return 'text-green-600';
+    if (pct >= 50) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="animate-pulse space-y-3">
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-8 bg-muted rounded w-1/3"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!coverage) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Rss className="h-5 w-5 text-muted-foreground" />
+        <h3 className="text-lg font-semibold">Feed Data Coverage</h3>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Indeed Apply</CardTitle>
+            <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">I</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getScoreColor(coverage.indeedApplyCoveragePct)}`}>
+              {coverage.indeedApplyCoveragePct.toFixed(0)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {coverage.jobsWithIndeedApply} of {coverage.totalJobs} jobs
+            </p>
+            <Progress 
+              value={coverage.indeedApplyCoveragePct} 
+              className="mt-2 h-1.5"
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Campaign Tags</CardTitle>
+            <Tag className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getScoreColor(coverage.campaignCoveragePct)}`}>
+              {coverage.campaignCoveragePct.toFixed(0)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {coverage.jobsWithCampaign} of {coverage.totalJobs} jobs
+            </p>
+            <Progress 
+              value={coverage.campaignCoveragePct} 
+              className="mt-2 h-1.5"
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tracking Pixels</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getScoreColor(coverage.trackingCoveragePct)}`}>
+              {coverage.trackingCoveragePct.toFixed(0)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {coverage.jobsWithTracking} of {coverage.totalJobs} jobs
+            </p>
+            <Progress 
+              value={coverage.trackingCoveragePct} 
+              className="mt-2 h-1.5"
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Feed Dates</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getScoreColor(coverage.dateCoveragePct)}`}>
+              {coverage.dateCoveragePct.toFixed(0)}%
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {coverage.jobsWithDate} of {coverage.totalJobs} jobs
+            </p>
+            <Progress 
+              value={coverage.dateCoveragePct} 
+              className="mt-2 h-1.5"
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

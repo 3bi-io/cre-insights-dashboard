@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   Loader2, 
   BarChart3, 
@@ -33,7 +34,13 @@ import {
   MapPin,
   Briefcase,
   UserCheck,
-  Zap
+  Zap,
+  Rss,
+  HelpCircle,
+  ArrowRight,
+  Calendar,
+  Activity,
+  Tag
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +53,9 @@ import ComparisonMetrics from '@/components/analytics/ComparisonMetrics';
 import DateRangeFilter from '@/components/platforms/DateRangeFilter';
 import MetricsCard from '@/components/MetricsCard';
 import { useCostPerLead } from '@/hooks/useCostPerLead';
+import { useFeedDataCoverage } from '@/features/campaigns/hooks/useFeedDataCoverage';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 interface AnalyticsData {
   locationConversion: Array<{
@@ -127,6 +136,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 
 const DashboardContent = () => {
   const { organization } = useAuth();
+  const navigate = useNavigate();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [metaAnalyticsData, setMetaAnalyticsData] = useState<MetaAnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -135,6 +145,9 @@ const DashboardContent = () => {
   const [totalApplications, setTotalApplications] = useState<number>(0);
   const [dateRange, setDateRange] = useState('last_30d');
   const { toast } = useToast();
+  
+  // Feed data coverage for the Feed Quality card
+  const { data: feedCoverage, isLoading: feedLoading, refetch: refetchFeedCoverage } = useFeedDataCoverage();
 
 
   const generateAnalytics = async () => {
@@ -303,6 +316,14 @@ const DashboardContent = () => {
         <BudgetSpendChart />
         <TeamActivityTimeline />
       </div>
+
+      {/* Feed Quality Card */}
+      <FeedQualityCard 
+        coverage={feedCoverage} 
+        isLoading={feedLoading} 
+        onRefresh={() => refetchFeedCoverage()}
+        onViewDetails={() => navigate('/campaigns?tab=mappings')}
+      />
 
       {/* Categories Section */}
       <DashboardCategoryTiles />
@@ -607,6 +628,177 @@ const DashboardContent = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// Feed Quality Dashboard Card Component
+interface FeedQualityCardProps {
+  coverage: {
+    totalJobs: number;
+    jobsWithDate: number;
+    jobsWithIndeedApply: number;
+    jobsWithTracking: number;
+    jobsWithCampaign: number;
+    dateCoveragePct: number;
+    indeedApplyCoveragePct: number;
+    trackingCoveragePct: number;
+    campaignCoveragePct: number;
+    overallScore: number;
+  } | undefined;
+  isLoading: boolean;
+  onRefresh: () => void;
+  onViewDetails: () => void;
+}
+
+const FeedQualityCard: React.FC<FeedQualityCardProps> = ({ 
+  coverage, 
+  isLoading, 
+  onRefresh, 
+  onViewDetails 
+}) => {
+  const getScoreColor = (pct: number) => {
+    if (pct >= 80) return 'text-green-600 dark:text-green-400';
+    if (pct >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const getScoreBadge = (pct: number) => {
+    if (pct >= 80) return { label: 'Excellent', variant: 'default' as const };
+    if (pct >= 50) return { label: 'Good', variant: 'secondary' as const };
+    return { label: 'Needs Work', variant: 'destructive' as const };
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2">
+            <Rss className="h-5 w-5" />
+            Feed Data Quality
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!coverage || coverage.totalJobs === 0) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2">
+            <Rss className="h-5 w-5" />
+            Feed Data Quality
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6 text-muted-foreground">
+            <Rss className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No active jobs to analyze</p>
+            <p className="text-sm">Feed quality metrics will appear after jobs are synced</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const badge = getScoreBadge(coverage.overallScore);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <Rss className="h-5 w-5" />
+          Feed Data Quality
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={onRefresh}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Overall Score */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-muted-foreground">Overall Score:</span>
+            <span className={`text-3xl font-bold ${getScoreColor(coverage.overallScore)}`}>
+              {coverage.overallScore.toFixed(0)}%
+            </span>
+            <Badge variant={badge.variant}>{badge.label}</Badge>
+          </div>
+          <span className="text-xs text-muted-foreground">{coverage.totalJobs} active jobs</span>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Indeed Apply */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Indeed Apply</span>
+              <div className="w-5 h-5 rounded bg-blue-100 dark:bg-blue-950/30 flex items-center justify-center">
+                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">I</span>
+              </div>
+            </div>
+            <div className={`text-lg font-bold ${getScoreColor(coverage.indeedApplyCoveragePct)}`}>
+              {coverage.indeedApplyCoveragePct.toFixed(0)}%
+            </div>
+            <Progress value={coverage.indeedApplyCoveragePct} className="h-1.5" />
+          </div>
+
+          {/* Campaign Tags */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Campaign Tags</span>
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className={`text-lg font-bold ${getScoreColor(coverage.campaignCoveragePct)}`}>
+              {coverage.campaignCoveragePct.toFixed(0)}%
+            </div>
+            <Progress value={coverage.campaignCoveragePct} className="h-1.5" />
+          </div>
+
+          {/* Tracking Pixels */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Tracking</span>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className={`text-lg font-bold ${getScoreColor(coverage.trackingCoveragePct)}`}>
+              {coverage.trackingCoveragePct.toFixed(0)}%
+            </div>
+            <Progress value={coverage.trackingCoveragePct} className="h-1.5" />
+          </div>
+
+          {/* Feed Dates */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Feed Dates</span>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className={`text-lg font-bold ${getScoreColor(coverage.dateCoveragePct)}`}>
+              {coverage.dateCoveragePct.toFixed(0)}%
+            </div>
+            <Progress value={coverage.dateCoveragePct} className="h-1.5" />
+          </div>
+        </div>
+
+        {/* View Details Button */}
+        <div className="pt-2">
+          <Button variant="outline" className="w-full" onClick={onViewDetails}>
+            View Campaign Mappings
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
