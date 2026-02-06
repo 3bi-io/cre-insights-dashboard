@@ -15,7 +15,17 @@ export const heroContent = {
   socialProof: {
     rating: '4.8/5',
     companies: 'Trusted by 50+ companies',
-    highlight: 'Fast automated callbacks'
+    highlight: 'Fast automated callbacks',
+    logos: [
+      { name: 'CR England', src: '/logos/cr-england.jpeg' },
+      { name: 'Danny Herman', src: '/logos/danny-herman.png' },
+      { name: 'Day & Ross', src: '/logos/day-and-ross.jpeg' },
+      { name: 'Novco', src: '/logos/novco.png' }
+    ],
+    testimonial: {
+      quote: 'Callbacks in under 3 minutes',
+      author: 'Pilot Partner'
+    }
   },
   industryTags: ['Cyber', 'Healthcare', 'Trades', 'Transportation']
 };
