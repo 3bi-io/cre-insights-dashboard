@@ -187,7 +187,7 @@ const ResourcesPage = () => {
               <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">
                 Knowledge Base
               </span>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
                 Resources & Documentation
               </h1>
               <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">

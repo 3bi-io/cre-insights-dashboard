@@ -11,7 +11,7 @@ interface JobsPageHeaderProps {
 export function JobsPageHeader({ totalCount, filteredCount }: JobsPageHeaderProps) {
   return (
     <div className="mb-6 lg:mb-8">
-      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
         Find Your Next Opportunity
       </h1>
       <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2 mb-3">

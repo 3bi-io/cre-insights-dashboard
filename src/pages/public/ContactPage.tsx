@@ -239,7 +239,7 @@ const ContactPage = () => {
       >
         <div className="container mx-auto px-4">
           <div className="max-w-3xl">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
               Get in
               <span className="text-white"> Touch</span>
             </h1>

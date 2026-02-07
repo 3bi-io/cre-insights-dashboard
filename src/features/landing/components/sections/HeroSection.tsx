@@ -46,7 +46,7 @@ const HeroSection = () => {
         </span>
 
         {/* Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-playfair font-bold text-black mb-4 md:mb-6 leading-[1.1]">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-playfair font-bold text-foreground mb-4 md:mb-6 leading-[1.1]">
           {heroContent.headline}
           <span className="text-white">
             {heroContent.headlineAccent}
