@@ -76,32 +76,23 @@ const FeaturesPage = () => {
       <HeroBackground
         imageSrc={socialHero}
         imageAlt="Social network connections representing multi-platform recruitment across social media"
+        variant="compact"
         overlayVariant="dark"
-        overlayOpacity={70}
-        className="py-10 md:py-16"
+        overlayOpacity={65}
       >
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 lg:left-20 w-48 lg:w-72 h-48 lg:h-72 bg-primary/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse z-[2] pointer-events-none" />
-        <div className="absolute bottom-20 right-10 lg:right-20 w-64 lg:w-96 h-64 lg:h-96 bg-accent/10 rounded-full blur-2xl lg:blur-3xl motion-safe:animate-pulse delay-1000 z-[2] pointer-events-none" />
-        
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20">
-            ✨ Feature-Rich Platform
-          </Badge>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 md:mb-6 px-2">
-            Powerful Features for
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Modern Recruiting</span>
-          </h1>
-          <p className="text-base md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
-            From AI-powered social recruitment to voice automation — discover all the tools 
-            that make ATS.me the most comprehensive hiring platform.
-          </p>
-          <Link to="/auth">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 min-h-[48px] text-base">
-              Start Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl">
+            <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">
+              ✨ Feature-Rich Platform
+            </span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+              Powerful Features for
+              <span className="text-white"> Modern Recruiting</span>
+            </h1>
+            <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
+              AI-powered social recruitment & voice automation
+            </span>
+          </div>
         </div>
       </HeroBackground>
 

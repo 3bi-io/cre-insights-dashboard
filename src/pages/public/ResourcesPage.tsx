@@ -179,21 +179,20 @@ const ResourcesPage = () => {
           imageSrc={trustHero}
           imageAlt="Professional knowledge base and documentation resources for recruitment teams"
           variant="compact"
-          overlayVariant="gradient"
-          overlayOpacity={55}
+          overlayVariant="dark"
+          overlayOpacity={65}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <Badge className="mb-3 md:mb-4 bg-primary/10 text-primary border-primary/20">
-                <BookOpen className="h-3 w-3 mr-1 inline" />
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl">
+              <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">
                 Knowledge Base
-              </Badge>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-4 md:mb-6 px-2">
+              </span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
                 Resources & Documentation
               </h1>
-              <p className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
-                Everything you need to succeed with ATS.me - guides, tutorials, documentation, and best practices
-              </p>
+              <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
+                Guides, tutorials, and best practices for your team
+              </span>
             </div>
           </div>
         </HeroBackground>

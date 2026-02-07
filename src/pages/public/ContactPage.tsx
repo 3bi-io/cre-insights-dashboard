@@ -233,22 +233,20 @@ const ContactPage = () => {
       <HeroBackground
         imageSrc={trustHero}
         imageAlt="Security shield with checkmark representing trust, compliance, and data protection"
+        variant="compact"
         overlayVariant="dark"
-        overlayOpacity={70}
-        className="py-10 md:py-20"
+        overlayOpacity={65}
       >
-        {/* Floating Elements - reduced motion */}
-        <div className="absolute top-20 left-10 md:left-20 w-48 md:w-72 h-48 md:h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse z-[2] pointer-events-none"></div>
-        <div className="absolute bottom-20 right-10 md:right-20 w-64 md:w-96 h-64 md:h-96 bg-accent/10 rounded-full blur-2xl md:blur-3xl motion-safe:animate-pulse delay-1000 z-[2] pointer-events-none"></div>
-        
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground mb-3 md:mb-6">
-            Get in
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Touch</span>
-          </h1>
-          <p className="text-base md:text-xl text-muted-foreground mb-6 md:mb-8 max-w-3xl mx-auto px-4">
-            Ready to transform your hiring process? We're here to help you get started.
-          </p>
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+              Get in
+              <span className="text-white"> Touch</span>
+            </h1>
+            <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
+              We're here to help you get started
+            </span>
+          </div>
         </div>
       </HeroBackground>
 

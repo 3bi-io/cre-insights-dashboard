@@ -13,7 +13,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
       imageAlt="Digital transportation technology with connected circuits representing modern fleet operations"
       variant="compact"
       overlayVariant="dark"
-      overlayOpacity={70}
+      overlayOpacity={65}
     >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl">

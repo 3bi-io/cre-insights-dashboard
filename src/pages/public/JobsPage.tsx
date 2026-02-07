@@ -99,8 +99,8 @@ const JobsPage = () => {
           imageSrc={jobsHero}
           imageAlt="Diverse workforce professionals representing multiple industries"
           variant="compact"
-          overlayVariant="gradient"
-          overlayOpacity={55}
+          overlayVariant="dark"
+          overlayOpacity={65}
         >
           <div className="container mx-auto px-4">
             <JobsPageHeader totalCount={totalCount} filteredCount={jobs.length} />
