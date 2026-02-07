@@ -1,164 +1,252 @@
 
+# Branded Audio Showcase Page
 
-# Dark Mode Hero Section Refactoring Plan
+## Overview
 
-## Problem
-
-The `HeroBackground` component overlay uses `bg-background`, which resolves to:
-- **Light mode**: white (`0 0% 100%`) -- hero text in `text-black` is readable
-- **Dark mode**: near-black (`222.2 84% 4.9%`) -- hero text in `text-black` becomes invisible
-
-This affects **every public-facing hero section** across the platform. The screenshots confirm:
-- Headlines using `text-black` disappear entirely in dark mode
-- Industry tag pills with `text-black bg-white` remain visible (they have their own background)
-- White pill badges (`bg-white text-black`) remain readable
-- The `text-white` accent spans on headlines also vanish against the dark overlay
-
-Additionally, the secondary overlay layers in `HeroBackground.tsx` (gradient-to-b and radial vignette) both reference `hsl(var(--background))`, which compounds the darkening effect in dark mode, making the hero nearly opaque.
+Create an immersive, full-screen audio showcase page at `/audio/:id` that delivers a premium visual experience without navigation. The page will feature animated sound wave visualizations, an audio player with elegant controls, and ATS.me branding -- all optimized for mobile-first interaction.
 
 ---
 
-## Root Cause Analysis
+## Design Vision
 
-The issue originates in the `HeroBackground` component at three layers:
-
-1. **Primary overlay** (line 178-182): Uses `bg-background` with explicit opacity -- becomes black at 65% in dark mode
-2. **Secondary gradient** (line 185-188): `from-background/20 ... to-background/40` adds another dark layer
-3. **Vignette** (line 190-194): `hsl(var(--background)/0.3)` adds a third dark ring
-
-Combined, these three layers stack to produce ~80-85% effective darkness in dark mode, leaving zero contrast for `text-black` content.
-
----
-
-## Solution: Two-Part Fix
-
-### Part 1: Theme-Adaptive Text Colors (All Hero Pages)
-
-Replace all hardcoded `text-black` with `text-foreground` (which resolves to near-black in light mode and near-white in dark mode). Replace `text-white` accent spans with a dedicated class that stays visible in both themes.
-
-| Element | Current Class | Proposed Class |
-|---------|--------------|----------------|
-| Hero headlines | `text-black` | `text-foreground` |
-| Headline accent spans | `text-white` | `text-white dark:text-primary-foreground` (stays white in both) |
-| Industry tag text | `text-black` | `text-foreground` |
-
-White pill badges (`bg-white text-black rounded-full`) remain unchanged -- they carry their own white background and are readable in both modes.
-
-### Part 2: Reduce Dark Mode Overlay Stacking (HeroBackground Component)
-
-Modify the secondary overlay layers to use a fixed neutral instead of the theme `--background` token. This prevents triple-stacking dark overlays in dark mode:
-
-- **Secondary gradient**: Change from `from-background/20 ... to-background/40` to `from-black/10 via-transparent to-black/20` (fixed, theme-independent)
-- **Vignette**: Change from `hsl(var(--background)/0.3)` to `hsl(0 0% 0%/0.15)` (subtle fixed vignette)
-
-This keeps the primary overlay adaptive (it still uses `bg-background` with the configured opacity), but prevents the secondary layers from doubling the darkness in dark mode.
+The page should feel like a high-end music streaming app's "now playing" screen:
+- Full viewport coverage with no scroll
+- Dark, atmospheric background with subtle gradient animation
+- Central play/pause control with animated sound wave visualization
+- Minimalist branding positioned at the bottom
+- Smooth transitions and micro-interactions
+- Safe-area-aware for notched devices
 
 ---
 
-## Page-by-Page Changes
+## Visual Architecture
 
-### 1. HeroBackground Component (`src/components/shared/HeroBackground.tsx`)
-
-| Line | Change |
-|------|--------|
-| 185-188 | Secondary gradient: `from-background/20 via-transparent to-background/40` becomes `from-black/10 via-transparent to-black/20` |
-| 190-194 | Vignette: `hsl(var(--background)/0.3)` becomes `hsl(0 0% 0%/0.15)` |
-
-### 2. Homepage Hero (`src/features/landing/components/sections/HeroSection.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| Badge (line 44) | `text-black bg-white` | `text-black bg-white` (no change -- has own background) |
-| Headline (line 49) | `text-black` | `text-foreground` |
-| Headline accent (line 51) | `text-white` | `text-white` (no change -- white works in both) |
-| Industry tags (line 61) | `text-black bg-white` | `text-black bg-white` (no change) |
-| Subheadline (line 69) | `text-white ... bg-black/50` | No change (already has dark backdrop) |
-| Company count pill (line 75) | `text-black ... bg-white` | No change (has own background) |
-
-### 3. Jobs Page Header (`src/features/jobs/components/public/JobsPageHeader.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| h1 headline (line 13) | `text-black` | `text-foreground` |
-| "Find Your Next Opportunity" subtitle pill (line 15) | `text-black ... bg-white` | No change |
-| Jobs count pill (line 19) | `text-black ... bg-white` | No change |
-
-### 4. Clients/Employers Hero (`src/components/public/clients/ClientsHero.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| h1 headline (line 20) | `text-black` | `text-foreground` |
-| Company count pill (line 23) | `text-black ... bg-white` | No change |
-
-### 5. Features Page (`src/pages/public/FeaturesPage.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| Badge pill (line 85) | `text-black bg-white` | No change |
-| h1 headline (line 88) | `text-black` | `text-foreground` |
-| Accent span (line 90) | `text-white` | `text-white` (no change) |
-| Subheadline pill (line 92) | `text-black bg-white` | No change |
-
-### 6. Blog Page (`src/pages/public/BlogPage.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| Badge pill (line 43) | `text-black bg-white` | No change |
-| h1 headline (line 46) | `text-black` | `text-foreground` |
-| Accent span (line 48) | `text-white` | `text-white` (no change) |
-| Subheadline pill (line 50) | `text-black bg-white` | No change |
-
-### 7. Resources Page (`src/pages/public/ResourcesPage.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| Badge pill (line 187) | `text-black bg-white` | No change |
-| h1 headline (line 190) | `text-black` | `text-foreground` |
-| Subheadline pill (line 193) | `text-black bg-white` | No change |
-
-### 8. Contact Page (`src/pages/public/ContactPage.tsx`)
-
-| Element | Before | After |
-|---------|--------|-------|
-| h1 headline (line 242) | `text-black` | `text-foreground` |
-| Accent span (line 244) | `text-white` | `text-white` (no change) |
-| Subheadline pill (line 246) | `text-black bg-white` | No change |
+```text
++------------------------------------------+
+|                                          |
+|        (subtle animated gradient)        |
+|                                          |
+|                                          |
+|              +--------+                  |
+|              | ▶︎ / ❚❚ |  <-- Large      |
+|              +--------+     play button  |
+|                                          |
+|      |||||||  ||| ||  ||||||||||         |
+|      Sound wave visualization            |
+|                                          |
+|                                          |
+|   ─────●───────────────────────          |
+|   0:45                          3:22     |
+|                                          |
+|                                          |
+|              [🔊 volume]                 |
+|                                          |
+|                                          |
+|         ─────────────────────            |
+|              ATS.me logo                 |
+|                                          |
++------------------------------------------+
+```
 
 ---
 
-## Summary of All File Changes
+## Files to Create
 
-| File | Scope |
-|------|-------|
-| `src/components/shared/HeroBackground.tsx` | Fix secondary overlay layers to use fixed neutral instead of theme token |
-| `src/features/landing/components/sections/HeroSection.tsx` | Headline `text-black` to `text-foreground` |
-| `src/features/jobs/components/public/JobsPageHeader.tsx` | Headline `text-black` to `text-foreground` |
-| `src/components/public/clients/ClientsHero.tsx` | Headline `text-black` to `text-foreground` |
-| `src/pages/public/FeaturesPage.tsx` | Headline `text-black` to `text-foreground` |
-| `src/pages/public/BlogPage.tsx` | Headline `text-black` to `text-foreground` |
-| `src/pages/public/ResourcesPage.tsx` | Headline `text-black` to `text-foreground` |
-| `src/pages/public/ContactPage.tsx` | Headline `text-black` to `text-foreground` |
-| `docs/HERO_VISUAL_CONSISTENCY_GUIDE.md` | Update dark mode guidelines |
+### 1. Audio Showcase Page Component
+**Path**: `src/pages/public/AudioShowcasePage.tsx`
+
+Full-screen page featuring:
+- Dynamic viewport height (`100dvh`) for mobile keyboard/toolbar stability
+- Animated gradient background using CSS keyframes
+- Central circular play/pause button (80x80px mobile, 120x120px desktop)
+- Canvas-based audio waveform visualization synced to audio playback
+- Custom progress slider with minimal styling
+- Current time / duration display
+- Volume toggle (mute/unmute) for simplicity on mobile
+- ATS.me logo at bottom with safe-area bottom padding
+
+### 2. Audio Waveform Visualizer Hook
+**Path**: `src/hooks/useAudioVisualizer.ts`
+
+Custom hook that:
+- Uses Web Audio API (`AudioContext`, `AnalyserNode`)
+- Captures real-time frequency data from playing audio
+- Returns frequency bar heights for rendering
+- Handles cleanup on unmount
+- Falls back gracefully if AudioContext not supported
+
+### 3. Waveform Canvas Component
+**Path**: `src/components/audio/WaveformVisualizer.tsx`
+
+Renders animated waveform:
+- Canvas-based for smooth 60fps animation
+- Responsive sizing (full width, 120px height)
+- Uses `useAudioVisualizer` hook data
+- Gradient-filled bars (primary to accent color)
+- Subtle glow effect on bars
+- Shows static idle state when paused
+
+### 4. Route Registration
+**Path**: Update `src/components/routing/AppRoutes.tsx`
+
+Add standalone route outside of `PublicLayout`:
+```
+/audio/:id
+```
+
+The page will initially use a hardcoded audio URL from `public/audio/` until a database-driven approach is needed.
 
 ---
 
-## What Does NOT Change
+## Audio File Handling
 
-- White pill badge styling (`bg-white text-black rounded-full`) -- these have their own white background and work in both themes
-- Homepage subheadline with `bg-black/50 backdrop-blur-sm` -- already theme-safe
-- Primary overlay logic (still uses `bg-background` with configurable opacity)
-- Background image assignments
-- Hero layout structure (left-aligned `max-w-3xl`)
-- CTA button styling
+The uploaded file (`Audio_for_conversation_conv_3901kgtmahche7nshf9fmfa7de4a.mp3`) will be:
+1. Copied to `public/audio/showcase-conversation.mp3` for static hosting
+2. Referenced in the showcase page component
 
 ---
 
-## Expected Dark Mode Result
+## Animation Specifications
 
-After refactoring, the dark mode hero will render as:
-- Dark overlay at ~65% over the background image (image still partially visible)
-- Headlines in light text (`text-foreground` resolves to near-white `210 40% 98%`)
-- Accent spans in white (high contrast against dark overlay)
-- White pill badges pop against the dark hero (even better contrast than light mode)
-- Reduced secondary overlay stacking prevents the hero from appearing nearly opaque
+### Background Gradient Animation
+CSS keyframe with 3-color gradient shift:
+```css
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+```
+Colors: Deep slate → Primary blue → Secondary purple
 
+### Play Button Pulse
+When playing: subtle `pulse-glow` animation from the existing design system.
+
+### Waveform Bars
+- 32-64 frequency bars depending on viewport width
+- Height animated based on real-time audio frequency data
+- Smooth CSS transitions on height changes
+- Rounded tops for modern aesthetic
+
+### Progress Slider
+Custom styling:
+- Thin track (4px height)
+- Gradient fill for played portion
+- Large thumb (24px) for touch friendliness
+- Glow effect on active state
+
+---
+
+## Mobile-First Considerations
+
+1. **Dynamic Viewport**: Use `100dvh` to prevent layout jump when mobile browser chrome hides
+2. **Safe Areas**: Bottom padding using `pb-[env(safe-area-inset-bottom)]`
+3. **Touch Targets**: Play button 80x80px minimum (exceeds WCAG 44px)
+4. **Simplified Controls**: Volume toggle instead of slider on mobile
+5. **No Scroll**: `overflow-hidden` on container
+6. **Orientation Lock**: Works in both portrait and landscape
+
+---
+
+## Technical Implementation
+
+### Audio Context Setup
+```typescript
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const analyser = audioContext.createAnalyser();
+analyser.fftSize = 128; // 64 frequency bins
+```
+
+### Frequency Visualization
+```typescript
+const dataArray = new Uint8Array(analyser.frequencyBinCount);
+analyser.getByteFrequencyData(dataArray);
+// Map to bar heights
+```
+
+### Responsive Waveform Sizing
+```typescript
+const barCount = isMobile ? 32 : 64;
+const barWidth = canvasWidth / barCount - gap;
+```
+
+---
+
+## Component Structure
+
+```text
+AudioShowcasePage
+├── Background Gradient Layer (div with animated gradient)
+├── Content Container (centered, max-w-lg)
+│   ├── Play/Pause Button (circular, animated)
+│   ├── WaveformVisualizer (canvas component)
+│   ├── Progress Section
+│   │   ├── Custom Slider
+│   │   └── Time Display (current / duration)
+│   ├── Volume Toggle Button
+│   └── Branding Footer (logo + powered by)
+└── Audio Element (hidden, ref-controlled)
+```
+
+---
+
+## Accessibility
+
+- Play/pause button with `aria-label` and screen reader text
+- Progress slider with `aria-valuemin`, `aria-valuemax`, `aria-valuenow`
+- Reduced motion support: disable waveform animation when `prefers-reduced-motion: reduce`
+- High contrast mode: ensure controls visible
+- Keyboard navigation: Space to toggle play, arrows to seek
+
+---
+
+## Dependencies Used
+
+All from existing project:
+- `framer-motion` for micro-animations (already installed)
+- `useResponsiveLayout` for breakpoint detection
+- `cn` utility for conditional classes
+- Radix Slider from UI library
+- Tailwind animations from design system
+
+---
+
+## CSS Additions
+
+Add to `src/index.css`:
+```css
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.audio-showcase-bg {
+  background: linear-gradient(-45deg, #0f172a, #1e3a8a, #4c1d95, #0f172a);
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+```
+
+---
+
+## Files Summary
+
+| File | Purpose |
+|------|---------|
+| `public/audio/showcase-conversation.mp3` | Uploaded audio file (copied from user upload) |
+| `src/pages/public/AudioShowcasePage.tsx` | Main full-screen showcase page |
+| `src/hooks/useAudioVisualizer.ts` | Web Audio API hook for frequency data |
+| `src/components/audio/WaveformVisualizer.tsx` | Canvas-based waveform visualization |
+| `src/components/routing/AppRoutes.tsx` | Add route `/audio/:id` |
+| `src/index.css` | Add gradient-shift keyframe animation |
+
+---
+
+## Route Access
+
+The page will be accessible at:
+```
+/audio/showcase
+```
+
+No navigation, no header, no footer -- just the pure audio experience.
