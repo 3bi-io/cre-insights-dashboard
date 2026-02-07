@@ -1,249 +1,172 @@
 
-# Client-Specific Inbound Endpoints for Hayes Clients
 
-## Overview
+# Hero Section Refactoring Plan
 
-This plan creates dedicated inbound edge function endpoints for each Hayes Recruiting client (Danny Herman, Pemberton, Day and Ross, Novco). These client-specific endpoints will:
-- Narrow job/application matching to the specific client
-- Eliminate the need for job_id prefix matching logic
-- Provide cleaner, more reliable routing
-- Enable client-specific UTM campaigns and tracking
+## Problem Analysis
+
+Reviewing all 7 public-facing hero sections reveals two distinct design languages competing for attention:
+
+### Group A: Modern, High-Contrast (Homepage, Jobs, Employers)
+- Left-aligned content
+- Black text on visible background
+- White pill-shaped badges for data/subtitles
+- Clean, scannable hierarchy
+- Strong readability across devices
+
+### Group B: Legacy Centered Style (Features, Blog, Resources, Contact)
+- Centered layout with semantic color tokens (`text-foreground`, `text-muted-foreground`)
+- shadcn `Badge` component with translucent styling (`bg-primary/10 text-primary`)
+- Gradient accent text (`bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent`)
+- Floating blur blobs on some pages (Features, Contact)
+- Low contrast against dark hero images -- badge text and subheadlines wash out
+
+### Specific Issues Identified
+
+1. **Features page** (IMG_1130): "Feature-Rich Platform" badge is nearly invisible. Gradient accent on "Modern Recruiting" has low contrast against the dark shield image. Floating blur blobs add visual noise.
+
+2. **Resources page** (IMG_1131): "Knowledge Base" badge with BookOpen icon is tiny and translucent. Subheadline text blends into the social-network image. Title uses `text-foreground` which maps to dark mode colors and clashes with the overlay.
+
+3. **Blog page** (IMG_1132): "Insights & Resources" badge barely visible. Gradient accent on "Blog" has weak contrast. Shield image behind is visually heavy for a content page.
+
+4. **Contact page** (IMG_1133): "Get in Touch" headline readable but gradient accent on "Touch" is low contrast. Subheadline text nearly disappears into the social-network background. Floating blur blobs are distracting.
+
+5. **Jobs vs Employers inconsistency**: Jobs uses `overlayVariant="gradient"` at 55% while Employers uses `overlayVariant="dark"` at 70%, creating noticeably different brightness levels for pages that serve the same audience.
 
 ---
 
-## Current State
+## Refactoring Strategy
 
-### Hayes Clients (Confirmed)
-| Client Name | Client ID | CDL Job Cast User Code |
-|-------------|-----------|------------------------|
-| Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | `danny_herman_trucking` |
-| Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` | `Day-and-Ross-1745523293` |
-| Novco, Inc. | `4a9ef1df-dcc9-499c-999a-446bb9a329fc` | `Novco%2C-Inc.-1760547390` |
-| Pemberton Truck Lines Inc | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` | `Pemberton-Truck-Lines-1749741664` |
-| Hayes AI Recruiting | `49dce1cb-4830-440d-8835-6ce59b552012` | (direct jobs) |
+Standardize all hero sections to match the proven Group A pattern (Homepage/Jobs/Employers) with these principles:
 
-### Current Endpoint Architecture
-- **Generic endpoint**: `/functions/v1/cdl-jobcast-inbound` requires query parameters for client routing
-- **Job ID prefix matching**: Uses 5-digit prefix to infer client (fragile, requires maintenance)
-- **sync-cdl-feeds**: Hardcoded client configurations
+- **Left-aligned** content within a `max-w-3xl` container
+- **White pill badges** instead of shadcn Badge component
+- **Explicit `text-black`** for headlines (guaranteed contrast over any overlay)
+- **Remove gradient text** accents -- replace with white text accent spans for headline emphasis
+- **Remove floating blur blobs** -- they add visual noise without value
+- **Standardize overlays** to `overlayVariant="dark"` with `overlayOpacity={65}` for compact pages
 
 ---
 
-## Solution Architecture
+## Page-by-Page Changes
+
+### 1. Features Page (`src/pages/public/FeaturesPage.tsx`)
+
+**Current**: Centered layout, translucent Badge, gradient text, floating blobs
+**Target**: Left-aligned, white pill badge, high-contrast text, no blobs
+
+| Element | Before | After |
+|---------|--------|-------|
+| Layout | `text-center` | Left-aligned `max-w-3xl` |
+| Badge | `<Badge className="bg-primary/10 text-primary">` | `<span className="... text-black bg-white rounded-full ...">` |
+| Headline | `text-foreground` + gradient accent | `text-black` + `text-white` accent |
+| Subheadline | `text-muted-foreground` | `text-black bg-white rounded-full` pill |
+| Overlay | dark, 70% | dark, 65% |
+| Blobs | Present | Removed |
+| CTA button | Present in hero | Moved below hero (keep focus on headline) |
+
+### 2. Blog Page (`src/pages/public/BlogPage.tsx`)
+
+**Current**: Centered, icon badge, gradient text
+**Target**: Left-aligned, white pill badge, clean text
+
+| Element | Before | After |
+|---------|--------|-------|
+| Layout | `text-center` | Left-aligned `max-w-3xl` |
+| Badge | `<Badge>` with BookOpen icon | White pill: "Insights & Resources" |
+| Headline | `text-foreground` + gradient "Blog" | `text-black` + `text-white` "Blog" |
+| Subheadline | `text-muted-foreground` | White pill badge style |
+| Image | social-hero | social-hero (keep) |
+| Overlay | gradient, 55% | dark, 65% |
+
+### 3. Resources Page (`src/pages/public/ResourcesPage.tsx`)
+
+**Current**: Centered, icon badge, semantic colors
+**Target**: Left-aligned, white pill badge, explicit colors
+
+| Element | Before | After |
+|---------|--------|-------|
+| Layout | `text-center` | Left-aligned `max-w-3xl` |
+| Badge | `<Badge>` with BookOpen icon | White pill: "Knowledge Base" |
+| Headline | `text-foreground` | `text-black` |
+| Subheadline | `text-muted-foreground` | White pill badge style |
+| Image | trust-hero | trust-hero (keep) |
+| Overlay | gradient, 55% | dark, 65% |
+
+### 4. Contact Page (`src/pages/public/ContactPage.tsx`)
+
+**Current**: Centered, gradient accent, floating blobs
+**Target**: Left-aligned, white pill badge, clean
+
+| Element | Before | After |
+|---------|--------|-------|
+| Layout | `text-center` | Left-aligned `max-w-3xl` |
+| Headline | `text-foreground` + gradient "Touch" | `text-black` + `text-white` "Touch" |
+| Subheadline | `text-muted-foreground` | White pill badge style |
+| Overlay | dark, 70% | dark, 65% |
+| Blobs | Present | Removed |
+
+### 5. Employers Page (`src/components/public/clients/ClientsHero.tsx`)
+
+**Minor tweak only**: Change overlay to match Jobs page for consistency.
+
+| Element | Before | After |
+|---------|--------|-------|
+| Overlay | dark, 70% | dark, 65% |
+
+### 6. Jobs Page (`src/features/jobs/components/public/JobsPageHeader.tsx`)
+
+**Minor tweak only**: Overlay alignment.
+
+| Element | Before | After |
+|---------|--------|-------|
+| Overlay (in parent) | gradient, 55% | dark, 65% |
+
+### 7. Homepage (`src/features/landing/components/sections/HeroSection.tsx`)
+
+**No changes** -- this is the flagship hero and the design target. Retains `full` variant, slideshow, and gradient overlay at 60%.
+
+---
+
+## Updated Consistency Guide
+
+After refactoring, all compact-variant pages will follow this standard pattern:
 
 ```text
-+--------------------------------------------------+
-|          External Partner (CDL Job Cast)         |
-+--------------------------------------------------+
-           |                    |
-           v                    v
-+---------------------+  +---------------------+
-| /v1/hayes-danny-    |  | /v1/hayes-pemberton-|
-|    herman-inbound   |  |    inbound          |
-+----------+----------+  +----------+----------+
-           |                    |
-           +--------+-----------+
-                    |
-                    v
-         +-----------------------+
-         |  Shared Handler Logic |
-         |  (new _shared module) |
-         +-----------------------+
-                    |
-                    v
-         +-----------------------+
-         | inbound-applications  |
-         +-----------------------+
++----------------------------------------------------------+
+|  [Background Image with dark overlay @ 65%]              |
+|                                                          |
+|  [White Pill Badge]                                      |
+|                                                          |
+|  Headline in Black                                       |
+|  with Accent in White                                    |
+|                                                          |
+|  [White Pill Subheadline]                                |
+|                                                          |
++----------------------------------------------------------+
 ```
 
 ---
 
-## Implementation Details
+## Files to Modify
 
-### Phase 1: Create Shared Client Inbound Handler
-
-Create a new shared module `supabase/functions/_shared/hayes-client-handler.ts` that:
-- Accepts client configuration (ID, name, feed URL, UTM settings)
-- Handles both job sync and application forwarding
-- Returns standardized responses
-
-```typescript
-// New module structure
-interface HayesClientConfig {
-  clientId: string;
-  clientName: string;
-  clientSlug: string;  // URL-safe slug
-  feedUserCode: string;
-  feedBoard: string;
-  utmCampaign?: string;
-}
-
-export function createClientHandler(config: HayesClientConfig) {
-  return wrapHandler(async (req: Request) => {
-    // Pre-configure all routing to this specific client
-    // No need for job_id prefix matching
-  });
-}
-```
-
-### Phase 2: Create Client-Specific Edge Functions
-
-Create 4 new edge functions (one per client):
-
-| Function Name | Client | Endpoint Path |
-|---------------|--------|---------------|
-| `hayes-danny-herman-inbound` | Danny Herman Trucking | `/functions/v1/hayes-danny-herman-inbound` |
-| `hayes-pemberton-inbound` | Pemberton Truck Lines | `/functions/v1/hayes-pemberton-inbound` |
-| `hayes-dayross-inbound` | Day and Ross | `/functions/v1/hayes-dayross-inbound` |
-| `hayes-novco-inbound` | Novco, Inc. | `/functions/v1/hayes-novco-inbound` |
-
-Each function will be minimal, delegating to the shared handler:
-
-```typescript
-// hayes-danny-herman-inbound/index.ts
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClientHandler } from '../_shared/hayes-client-handler.ts';
-
-const handler = createClientHandler({
-  clientId: '1d54e463-4d7f-4a05-8189-3e33d0586dea',
-  clientName: 'Danny Herman Trucking',
-  clientSlug: 'danny-herman',
-  feedUserCode: 'danny_herman_trucking',
-  feedBoard: 'AIRecruiter',
-});
-
-serve(handler);
-```
-
-### Phase 3: Endpoint Capabilities
-
-Each client endpoint will support:
-
-**Jobs Import (GET or action=jobs)**
-```
-GET /functions/v1/hayes-danny-herman-inbound?action=jobs
-```
-- Fetches jobs from client's CDL Job Cast feed
-- Routes all jobs to the specific client
-- Applies client-specific UTM tracking
-
-**Application Forwarding (POST or action=apps)**
-```
-POST /functions/v1/hayes-danny-herman-inbound
-Content-Type: application/json
-
-{
-  "first_name": "John",
-  "last_name": "Doe",
-  "phone": "555-123-4567",
-  "job_id": "14204123456"
-}
-```
-- Auto-routes to client's jobs
-- Falls back to client-specific General Application
-- Applies client UTM attribution
-
-**Auto-Detection (default)**
-- POST with application fields: processes as application
-- GET or empty POST: processes as job sync
-
-### Phase 4: Update Application Processor
-
-Modify `_shared/application-processor.ts` to accept explicit `clientId` parameter that bypasses job_id prefix matching:
-
-```typescript
-export const findOrCreateJobListing = async (
-  supabase: SupabaseClient,
-  params: {
-    // Existing params...
-    clientId?: string | null;  // When provided, skips prefix inference
-    forceClientMatch?: boolean; // When true, only matches within client
-  }
-)
-```
+| File | Scope |
+|------|-------|
+| `src/pages/public/FeaturesPage.tsx` | Hero section rewrite (lines 76-106) |
+| `src/pages/public/BlogPage.tsx` | Hero section rewrite (lines 35-55) |
+| `src/pages/public/ResourcesPage.tsx` | Hero section rewrite (lines 178-199) |
+| `src/pages/public/ContactPage.tsx` | Hero section rewrite (lines 233-253) |
+| `src/components/public/clients/ClientsHero.tsx` | Overlay tweak |
+| `src/pages/public/JobsPage.tsx` | Overlay tweak (parent HeroBackground) |
+| `docs/HERO_VISUAL_CONSISTENCY_GUIDE.md` | Update standards to reflect new pattern |
 
 ---
 
-## Client Endpoint Reference
+## What Does NOT Change
 
-After implementation, the following endpoints will be available:
+- Homepage hero (already the target design)
+- Background image assignments per page
+- HeroBackground component internals
+- Content below the hero sections
+- Mobile responsiveness behavior
+- SEO/structured data
 
-### Danny Herman Trucking
-```
-# Job Sync
-GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-danny-herman-inbound?action=jobs
-
-# Application Submission
-POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-danny-herman-inbound
-```
-
-### Pemberton Truck Lines Inc
-```
-# Job Sync
-GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-pemberton-inbound?action=jobs
-
-# Application Submission
-POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-pemberton-inbound
-```
-
-### Day and Ross
-```
-# Job Sync
-GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-dayross-inbound?action=jobs
-
-# Application Submission
-POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-dayross-inbound
-```
-
-### Novco, Inc.
-```
-# Job Sync
-GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-novco-inbound?action=jobs
-
-# Application Submission
-POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-novco-inbound
-```
-
----
-
-## Technical Details
-
-### Files to Create
-| File | Purpose |
-|------|---------|
-| `supabase/functions/_shared/hayes-client-handler.ts` | Shared handler factory |
-| `supabase/functions/hayes-danny-herman-inbound/index.ts` | Danny Herman endpoint |
-| `supabase/functions/hayes-pemberton-inbound/index.ts` | Pemberton endpoint |
-| `supabase/functions/hayes-dayross-inbound/index.ts` | Day and Ross endpoint |
-| `supabase/functions/hayes-novco-inbound/index.ts` | Novco endpoint |
-
-### Files to Modify
-| File | Change |
-|------|--------|
-| `supabase/functions/_shared/application-processor.ts` | Add `forceClientMatch` parameter |
-
-### Backwards Compatibility
-- Existing `/cdl-jobcast-inbound` endpoint remains functional
-- Job ID prefix matching continues to work as fallback
-- New endpoints are additive, not replacement
-
----
-
-## Implementation Sequence
-
-1. Create shared handler module `hayes-client-handler.ts`
-2. Create Danny Herman endpoint (test first)
-3. Create remaining 3 client endpoints
-4. Update application processor for explicit client matching
-5. Test all endpoints with job sync and application submission
-6. Document endpoints for CDL Job Cast integration team
-
----
-
-## Benefits
-
-1. **Simpler routing**: No job_id prefix maintenance required
-2. **Cleaner URLs**: Partner-friendly endpoint names
-3. **Better tracking**: Client-specific UTM campaigns automatic
-4. **Easier debugging**: Logs clearly show which client endpoint was hit
-5. **Scalability**: Adding new clients only requires one new minimal file
