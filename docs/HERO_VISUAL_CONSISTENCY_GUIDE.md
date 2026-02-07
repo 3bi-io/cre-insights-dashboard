@@ -25,10 +25,27 @@ All compact hero sections follow a **left-aligned, high-contrast** pattern:
 ### Key Principles
 - **Left-aligned** content within a `max-w-3xl` container
 - **White pill badges** (`text-black bg-white rounded-full`) instead of shadcn `Badge`
-- **Explicit `text-black`** for headlines (guaranteed contrast)
+- **`text-foreground`** for headlines (adapts to light/dark mode automatically)
 - **`text-white`** for accent spans in headlines
 - **No gradient text**, no floating blur blobs, no translucent badges
 - **Standardized overlays**: `overlayVariant="dark"` with `overlayOpacity={65}`
+
+---
+
+### Dark Mode Support
+
+Hero sections are fully theme-adaptive:
+
+| Element | Light Mode | Dark Mode |
+|---------|------------|-----------|
+| Headlines (`text-foreground`) | Near-black | Near-white |
+| Accent spans (`text-white`) | White | White |
+| White pill badges (`bg-white text-black`) | White bg, black text | White bg, black text |
+| Overlay (primary) | White at configured opacity | Dark at configured opacity |
+| Overlay (secondary) | Fixed neutral `from-black/10 to-black/20` | Same (theme-independent) |
+| Vignette | Fixed `hsl(0 0% 0%/0.15)` | Same (theme-independent) |
+
+**Important**: The secondary gradient and vignette layers in `HeroBackground` use fixed neutral colors (not theme tokens) to prevent overlay stacking that would make dark mode heroes nearly opaque.
 
 ---
 
@@ -87,7 +104,7 @@ All compact-variant pages use this pattern:
       <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">
         Badge Text
       </span>
-      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
         Headline Text
         <span className="text-white"> Accent</span>
       </h1>
@@ -125,11 +142,13 @@ The homepage retains `full` variant with slideshow and gradient overlay at 60%:
 | ❌ Avoid | ✅ Use Instead |
 |----------|---------------|
 | `<Badge className="bg-primary/10 text-primary">` | `<span className="... text-black bg-white rounded-full ...">` |
-| `text-foreground` / `text-muted-foreground` in heroes | `text-black` / `text-white` |
+| `text-black` for hero headlines | `text-foreground` (theme-adaptive) |
+| `text-muted-foreground` in heroes | `text-foreground` or white pill badge |
 | `bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent` | `text-white` accent span |
 | Floating blur blobs (`bg-primary/10 rounded-full blur-3xl`) | Nothing — remove them |
 | `text-center` layout | Left-aligned `max-w-3xl` container |
 | `overlayVariant="gradient"` on compact pages | `overlayVariant="dark"` at 65% |
+| `from-background/20` in overlay layers | Fixed neutrals `from-black/10` |
 
 ---
 

@@ -183,13 +183,13 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
 
       {/* Secondary gradient for enhanced text readability */}
       <div 
-        className="absolute inset-0 z-[2] bg-gradient-to-b from-background/20 via-transparent to-background/40 pointer-events-none"
+        className="absolute inset-0 z-[2] bg-gradient-to-b from-black/10 via-transparent to-black/20 pointer-events-none"
         aria-hidden="true"
       />
 
       {/* Subtle vignette for depth */}
       <div 
-        className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_center,transparent_50%,hsl(var(--background)/0.3)_100%)] pointer-events-none"
+        className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_center,transparent_50%,hsl(0_0%_0%/0.15)_100%)] pointer-events-none"
         aria-hidden="true"
       />
 

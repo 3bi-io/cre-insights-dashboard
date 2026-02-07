@@ -17,7 +17,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
     >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
             Find Your Next Employer
           </h1>
           <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2 mb-3">
