@@ -14,6 +14,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAudioVisualizer } from '@/hooks/useAudioVisualizer';
 import WaveformVisualizer from '@/components/audio/WaveformVisualizer';
 import LogoIcon from '@/components/common/LogoIcon';
+import voiceInterviewCover from '@/assets/audio/voice-interview-cover.jpg';
 
 // Audio file mapping - hardcoded for now, can be database-driven later
 const AUDIO_FILES: Record<string, string> = {
@@ -167,6 +168,57 @@ const AudioShowcasePage: React.FC = () => {
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 max-w-lg mx-auto w-full">
         
+        {/* Cover Art */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className={cn(
+            'relative rounded-2xl overflow-hidden shadow-2xl mb-8',
+            'ring-1 ring-white/10',
+            isMobile ? 'w-64 h-36' : 'w-80 h-44'
+          )}
+        >
+          <img
+            src={voiceInterviewCover}
+            alt="Voice Interview - Driver and Recruiter conversation"
+            className="w-full h-full object-cover"
+          />
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          
+          {/* Playing indicator */}
+          {isPlaying && (
+            <motion.div
+              className="absolute bottom-3 right-3 flex items-center gap-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <span className="text-white text-xs font-medium uppercase tracking-wider">Playing</span>
+              <div className="flex gap-0.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-0.5 bg-white rounded-full"
+                    animate={{
+                      height: ['8px', '16px', '8px'],
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      repeat: Infinity,
+                      delay: i * 0.15,
+                    }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Title */}
+        <h1 className="text-white text-lg font-semibold mb-1 text-center">Voice Interview</h1>
+        <p className="text-white/60 text-sm mb-6 text-center">Driver Recruitment Conversation</p>
+
         {/* Play/Pause Button */}
         <motion.button
           onClick={togglePlay}
