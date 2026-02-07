@@ -6,6 +6,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,8 @@ import { useAudioVisualizer } from '@/hooks/useAudioVisualizer';
 import WaveformVisualizer from '@/components/audio/WaveformVisualizer';
 import LogoIcon from '@/components/common/LogoIcon';
 import voiceInterviewCover from '@/assets/audio/voice-interview-cover.jpg';
+
+const OG_IMAGE_URL = 'https://ats.me/og-audio.jpg';
 
 // Audio file mapping - hardcoded for now, can be database-driven later
 const AUDIO_FILES: Record<string, string> = {
@@ -156,7 +159,20 @@ const AudioShowcasePage: React.FC = () => {
   }, [togglePlay, toggleMute, currentTime, duration]);
 
   return (
-    <div className="audio-showcase-bg fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col">
+    <>
+      <Helmet>
+        <title>Voice Interview | ATS.me</title>
+        <meta name="description" content="Listen to an AI-powered voice interview between a driver and recruiter. Experience the future of recruitment with ATS.me Voice Apply technology." />
+        <meta property="og:title" content="Voice Interview | ATS.me" />
+        <meta property="og:description" content="Listen to an AI-powered voice interview between a driver and recruiter." />
+        <meta property="og:image" content={OG_IMAGE_URL} />
+        <meta property="og:type" content="music.song" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Voice Interview | ATS.me" />
+        <meta name="twitter:description" content="Listen to an AI-powered voice interview between a driver and recruiter." />
+        <meta name="twitter:image" content={OG_IMAGE_URL} />
+      </Helmet>
+      <div className="audio-showcase-bg fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col">
       {/* Hidden audio element */}
       <audio
         ref={audioRef}
@@ -336,7 +352,8 @@ const AudioShowcasePage: React.FC = () => {
         </div>
         <p className="text-white/40 text-xs">Powered by AI Voice Technology</p>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

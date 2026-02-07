@@ -20,6 +20,7 @@ const STATIC_OG_IMAGES: Record<string, string> = {
   '/privacy-policy': `${BASE_URL}/og-privacy.png`,
   '/terms-of-service': `${BASE_URL}/og-terms.png`,
   '/sitemap': `${BASE_URL}/og-sitemap.png`,
+  '/audio/showcase': `${BASE_URL}/og-audio.jpg`,
 };
 
 /**
@@ -63,6 +64,11 @@ export function getOgImageUrl(pathname: string): string {
   // Blog listing page
   if (pathname === '/blog') {
     return `${BASE_URL}/og-blog.png`;
+  }
+
+  // For audio showcase pages
+  if (pathname.startsWith('/audio/')) {
+    return `${BASE_URL}/og-audio.jpg`;
   }
 
   // Default fallback
