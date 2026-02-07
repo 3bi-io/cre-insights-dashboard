@@ -7,7 +7,6 @@
 import React, { useState } from 'react';
 import { SEO } from '@/components/SEO';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { BookOpen } from 'lucide-react';
@@ -36,21 +35,22 @@ const BlogPage: React.FC = () => {
           imageSrc={socialHero}
           imageAlt="Insights and resources for modern recruitment and HR technology"
           variant="compact"
-          overlayVariant="gradient"
-          overlayOpacity={55}
+          overlayVariant="dark"
+          overlayOpacity={65}
         >
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              <BookOpen className="h-3 w-3 mr-1 inline" />
-              Insights & Resources
-            </Badge>
-            <h1 className="text-3xl md:text-5xl font-playfair font-bold text-foreground mb-4">
-              The ATS.me
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Blog</span>
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-              Expert insights on AI-powered recruitment, hiring strategies, and the future of HR technology.
-            </p>
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl">
+              <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">
+                Insights & Resources
+              </span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+                The ATS.me
+                <span className="text-white"> Blog</span>
+              </h1>
+              <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
+                Expert insights on AI-powered recruitment & HR technology
+              </span>
+            </div>
           </div>
         </HeroBackground>
 

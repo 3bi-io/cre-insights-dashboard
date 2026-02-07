@@ -4,6 +4,34 @@ This document establishes the visual standards for hero sections across all publ
 
 ---
 
+## Design Standard
+
+All compact hero sections follow a **left-aligned, high-contrast** pattern:
+
+```text
++----------------------------------------------------------+
+|  [Background Image with dark overlay @ 65%]              |
+|                                                          |
+|  [White Pill Badge]  (text-black bg-white rounded-full)  |
+|                                                          |
+|  Headline in Black                                       |
+|  with Accent in White                                    |
+|                                                          |
+|  [White Pill Subheadline]                                |
+|                                                          |
++----------------------------------------------------------+
+```
+
+### Key Principles
+- **Left-aligned** content within a `max-w-3xl` container
+- **White pill badges** (`text-black bg-white rounded-full`) instead of shadcn `Badge`
+- **Explicit `text-black`** for headlines (guaranteed contrast)
+- **`text-white`** for accent spans in headlines
+- **No gradient text**, no floating blur blobs, no translucent badges
+- **Standardized overlays**: `overlayVariant="dark"` with `overlayOpacity={65}`
+
+---
+
 ## Component Overview
 
 All hero sections use the `HeroBackground` component from `@/components/shared` which provides:
@@ -20,195 +48,111 @@ All hero images are stored in `src/assets/hero/` and imported as ES6 modules:
 
 | Asset | File | Use Case | Theme |
 |-------|------|----------|-------|
-| Voice Hero | `voice-hero.png` | Homepage, Jobs | AI/Voice technology |
-| Social Hero | `social-hero.png` | Blog, Features | Social connections, content |
+| Voice Hero | `voice-hero.png` | Homepage | AI/Voice technology |
+| Jobs Hero | `jobs-hero.png` | Jobs | Workforce/industry |
+| Social Hero | `social-hero.png` | Blog, Features | Social connections |
 | Trust Hero | `trust-hero.png` | Resources, Contact | Security, compliance |
-| Transport Hero | `transport-hero.png` | Companies/Clients | Industry, fleet operations |
-| ROI Hero | `roi-hero.png` | (Reserved) | Analytics, metrics |
+| Transport Hero | `transport-hero.png` | Companies/Clients | Fleet operations |
 
 ---
 
 ## Page Configuration Matrix
 
-| Page | Route | Variant | Image | Overlay | Opacity | Notes |
-|------|-------|---------|-------|---------|---------|-------|
-| **Homepage** | `/` | `full` | voice-hero | gradient | 60% | Main landing, full viewport |
-| **Jobs** | `/jobs` | `compact` | voice-hero | gradient | 55% | Listing page with filters |
-| **Blog** | `/blog` | `compact` | social-hero | gradient | 55% | Article listing |
-| **Resources** | `/resources` | `compact` | trust-hero | gradient | 55% | Documentation hub |
-| **Features** | `/features` | (custom) | social-hero | dark | 70% | Product showcase |
-| **Contact** | `/contact` | (custom) | trust-hero | dark | 70% | Form-focused page |
-| **Companies** | `/clients` | `compact` | transport-hero | dark | 70% | Employer directory |
+| Page | Route | Variant | Image | Overlay | Opacity | Layout |
+|------|-------|---------|-------|---------|---------|--------|
+| **Homepage** | `/` | `full` | voice-hero | gradient | 60% | Left-aligned, slideshow |
+| **Jobs** | `/jobs` | `compact` | jobs-hero | dark | 65% | Left-aligned |
+| **Blog** | `/blog` | `compact` | social-hero | dark | 65% | Left-aligned |
+| **Resources** | `/resources` | `compact` | trust-hero | dark | 65% | Left-aligned |
+| **Features** | `/features` | `compact` | social-hero | dark | 65% | Left-aligned |
+| **Contact** | `/contact` | `compact` | trust-hero | dark | 65% | Left-aligned |
+| **Companies** | `/clients` | `compact` | transport-hero | dark | 65% | Left-aligned |
 
 ---
 
-## Variant Specifications
+## Compact Hero Template
 
-### Full Variant (`variant="full"`)
-- **Height**: `min-h-[90vh] md:min-h-screen`
-- **Layout**: `flex items-center justify-center`
-- **Use case**: Homepage hero only
-- **Padding**: Content-driven, typically `py-8`
+All compact-variant pages use this pattern:
 
-### Compact Variant (`variant="compact"`)
-- **Height**: `py-12 md:py-20`
-- **Layout**: Standard flow
-- **Use case**: Listing pages, secondary pages
-- **Purpose**: Show hero branding without pushing content too far below fold
-
----
-
-## Overlay Standards
-
-### Gradient Overlay (`overlayVariant="gradient"`)
-```css
-bg-gradient-to-t from-background via-background/60 to-transparent
-```
-- **Best for**: Pages with prominent headlines
-- **Recommended opacity**: 50-60%
-- **Effect**: Reveals more image at top, ensures readability at bottom
-
-### Dark Overlay (`overlayVariant="dark"`)
-```css
-bg-background/70
-```
-- **Best for**: Form pages, product pages
-- **Recommended opacity**: 65-70%
-- **Effect**: Consistent darkening for maximum text contrast
-
-### Light Overlay (`overlayVariant="light"`)
-```css
-bg-background/40
-```
-- **Best for**: Decorative heroes with minimal text
-- **Recommended opacity**: 30-40%
-
----
-
-## Typography Standards
-
-### Hero Headlines (H1)
 ```tsx
-className="text-3xl md:text-4xl lg:text-5xl font-playfair font-bold text-foreground"
-```
-
-### Homepage Headline (Larger)
-```tsx
-className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-playfair font-bold text-foreground leading-[1.1]"
-```
-
-### Gradient Accent Text
-```tsx
-className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
-```
-
-### Subheadline
-```tsx
-className="text-base md:text-xl text-muted-foreground max-w-3xl mx-auto"
+<HeroBackground
+  imageSrc={heroImage}
+  imageAlt="Descriptive alt text"
+  variant="compact"
+  overlayVariant="dark"
+  overlayOpacity={65}
+>
+  <div className="container mx-auto px-4">
+    <div className="max-w-3xl">
+      <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">
+        Badge Text
+      </span>
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-black">
+        Headline Text
+        <span className="text-white"> Accent</span>
+      </h1>
+      <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
+        Subheadline text
+      </span>
+    </div>
+  </div>
+</HeroBackground>
 ```
 
 ---
 
-## Badge Standards
+## Full Hero (Homepage Only)
 
-All hero badges use consistent styling:
+The homepage retains `full` variant with slideshow and gradient overlay at 60%:
 
 ```tsx
-<Badge className="mb-4 md:mb-6 bg-primary/10 text-primary border-primary/20">
-  <Icon className="h-3 w-3 mr-1 inline" />
-  Badge Text
-</Badge>
+<HeroBackground
+  imageSrc={voiceHero}
+  imageAlt="Description"
+  slideshowImages={[cyberHero, tradesHero, healthcareHero]}
+  variant="full"
+  overlayVariant="gradient"
+  overlayOpacity={60}
+>
+  {/* Left-aligned content with industry tags, CTA buttons */}
+</HeroBackground>
 ```
 
 ---
 
-## Animation Standards
+## What NOT To Use
 
-### Staggered Entrance (Homepage Only)
-```tsx
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15, delayChildren: 0.1 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }
-  }
-};
-```
-
-### Floating Gradient Blobs (Optional)
-- Use sparingly on feature-rich pages
-- Always include `motion-safe:animate-*` for accessibility
-- Include `pointer-events-none` and `z-[2]`
+| ❌ Avoid | ✅ Use Instead |
+|----------|---------------|
+| `<Badge className="bg-primary/10 text-primary">` | `<span className="... text-black bg-white rounded-full ...">` |
+| `text-foreground` / `text-muted-foreground` in heroes | `text-black` / `text-white` |
+| `bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent` | `text-white` accent span |
+| Floating blur blobs (`bg-primary/10 rounded-full blur-3xl`) | Nothing — remove them |
+| `text-center` layout | Left-aligned `max-w-3xl` container |
+| `overlayVariant="gradient"` on compact pages | `overlayVariant="dark"` at 65% |
 
 ---
 
 ## Accessibility Requirements
 
 1. **Image Alt Text**: Always provide descriptive `imageAlt` prop
-2. **Contrast**: Minimum 4.5:1 ratio for body text over overlay
-3. **Reduced Motion**: Use `motion-safe:` prefix for animations
+2. **Contrast**: Black text on white pill badges ensures 21:1 ratio
+3. **Reduced Motion**: Use `motion-safe:` prefix for animations (homepage only)
 4. **Screen Reader**: Component includes `<span className="sr-only">{imageAlt}</span>`
-
----
-
-## Usage Examples
-
-### Compact Listing Page
-```tsx
-import { HeroBackground } from '@/components/shared';
-import voiceHero from '@/assets/hero/voice-hero.png';
-
-<HeroBackground
-  imageSrc={voiceHero}
-  imageAlt="Description of the image for accessibility"
-  variant="compact"
-  overlayVariant="gradient"
-  overlayOpacity={55}
->
-  <div className="container mx-auto px-4 text-center">
-    <Badge>...</Badge>
-    <h1>...</h1>
-    <p>...</p>
-  </div>
-</HeroBackground>
-```
-
-### Full Landing Page
-```tsx
-<HeroBackground
-  imageSrc={voiceHero}
-  imageAlt="Description"
-  variant="full"
-  overlayVariant="gradient"
-  overlayOpacity={60}
->
-  <motion.div variants={containerVariants} initial="hidden" animate="visible">
-    {/* Animated content */}
-  </motion.div>
-</HeroBackground>
-```
 
 ---
 
 ## Checklist for New Pages
 
 - [ ] Import appropriate hero image from `@/assets/hero/`
-- [ ] Use `HeroBackground` component
-- [ ] Set `variant` prop (`full` or `compact`)
-- [ ] Choose appropriate `overlayVariant` and `overlayOpacity`
-- [ ] Include descriptive `imageAlt` text
-- [ ] Use semantic typography tokens (`text-foreground`, `text-muted-foreground`)
-- [ ] Test contrast in both light and dark modes
-- [ ] Verify mobile responsiveness
+- [ ] Use `HeroBackground` component with `variant="compact"`
+- [ ] Set `overlayVariant="dark"` and `overlayOpacity={65}`
+- [ ] Use left-aligned layout with `max-w-3xl` container
+- [ ] White pill badge for category label
+- [ ] `text-black` headline with `text-white` accent
+- [ ] White pill subheadline
+- [ ] Test readability on mobile and desktop
+- [ ] No floating blobs or gradient text
 
 ---
 
