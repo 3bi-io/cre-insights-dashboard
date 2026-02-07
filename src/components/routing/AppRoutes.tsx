@@ -37,6 +37,7 @@ const SocialApply = React.lazy(() => import("@/pages/SocialApply"));
 const SocialEmbedApply = React.lazy(() => import("@/pages/SocialEmbedApply"));
 const ShortLinkRedirect = React.lazy(() => import("@/pages/ShortLinkRedirect"));
 const SharedVoicePage = React.lazy(() => import("@/pages/public/SharedVoicePage"));
+const AudioShowcasePage = React.lazy(() => import("@/pages/public/AudioShowcasePage"));
 
 // Main application pages
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
@@ -195,6 +196,9 @@ const AppRoutes: React.FC = () => {
       
       {/* Public Voice Conversation Share */}
       <Route path="/voice/:shareCode" element={<RouteWrapper><SharedVoicePage /></RouteWrapper>} />
+      
+      {/* Audio Showcase - Standalone full-screen experience */}
+      <Route path="/audio/:id" element={<RouteWrapper><AudioShowcasePage /></RouteWrapper>} />
       
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
       
