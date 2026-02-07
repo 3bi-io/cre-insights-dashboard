@@ -1,272 +1,249 @@
 
+# Client-Specific Inbound Endpoints for Hayes Clients
 
-# Industry Template System Implementation Plan
+## Overview
 
-## Executive Summary
-
-This plan adds a new **Industry Vertical Template** feature that allows organizations to select an industry type (Transportation, Healthcare, Cyber, or Trades) during creation or via settings. This selection automatically configures:
-- Default job board platforms relevant to that industry
-- Industry-specific AI prompts and voice agent configurations
-- Pre-enabled features appropriate for the vertical
-- Customized terminology and branding hints
-
----
-
-## Current State Analysis
-
-### What Exists Today
-- **Organization settings**: JSONB `settings` column stores feature toggles
-- **Platform access**: `organization_platform_access` table manages job board enablement
-- **Feature management**: `organization_features` table controls AI/integration access
-- **Hero industry tags**: Marketing badges showing "Transportation, Cyber, Trades, Healthcare" (static display only)
-- **AI settings**: `industry_focus` field exists in `ai_settings` table (user-level, not org-level)
-
-### Gap Identified
-No organization-level industry vertical field exists. Platform and feature defaults are not tied to industry selection.
+This plan creates dedicated inbound edge function endpoints for each Hayes Recruiting client (Danny Herman, Pemberton, Day and Ross, Novco). These client-specific endpoints will:
+- Narrow job/application matching to the specific client
+- Eliminate the need for job_id prefix matching logic
+- Provide cleaner, more reliable routing
+- Enable client-specific UTM campaigns and tracking
 
 ---
 
-## Implementation Overview
+## Current State
+
+### Hayes Clients (Confirmed)
+| Client Name | Client ID | CDL Job Cast User Code |
+|-------------|-----------|------------------------|
+| Danny Herman Trucking | `1d54e463-4d7f-4a05-8189-3e33d0586dea` | `danny_herman_trucking` |
+| Day and Ross | `30ab5f68-258c-4e81-8217-1123c4536259` | `Day-and-Ross-1745523293` |
+| Novco, Inc. | `4a9ef1df-dcc9-499c-999a-446bb9a329fc` | `Novco%2C-Inc.-1760547390` |
+| Pemberton Truck Lines Inc | `67cadf11-8cce-41c6-8e19-7d2bb0be3b03` | `Pemberton-Truck-Lines-1749741664` |
+| Hayes AI Recruiting | `49dce1cb-4830-440d-8835-6ce59b552012` | (direct jobs) |
+
+### Current Endpoint Architecture
+- **Generic endpoint**: `/functions/v1/cdl-jobcast-inbound` requires query parameters for client routing
+- **Job ID prefix matching**: Uses 5-digit prefix to infer client (fragile, requires maintenance)
+- **sync-cdl-feeds**: Hardcoded client configurations
+
+---
+
+## Solution Architecture
 
 ```text
-+---------------------------+
-|   Organization Creation   |
-|   or Settings Update      |
-+-------------+-------------+
-              |
-              v
-+---------------------------+
-|  Industry Vertical Select |
-|  (Transportation, Health- |
-|   care, Cyber, Trades)    |
-+-------------+-------------+
-              |
-              v
-+---------------------------+
-|   Apply Industry Template |
-|   - Platform Presets      |
-|   - Feature Presets       |
-|   - AI Configuration      |
-+---------------------------+
++--------------------------------------------------+
+|          External Partner (CDL Job Cast)         |
++--------------------------------------------------+
+           |                    |
+           v                    v
++---------------------+  +---------------------+
+| /v1/hayes-danny-    |  | /v1/hayes-pemberton-|
+|    herman-inbound   |  |    inbound          |
++----------+----------+  +----------+----------+
+           |                    |
+           +--------+-----------+
+                    |
+                    v
+         +-----------------------+
+         |  Shared Handler Logic |
+         |  (new _shared module) |
+         +-----------------------+
+                    |
+                    v
+         +-----------------------+
+         | inbound-applications  |
+         +-----------------------+
 ```
 
 ---
 
-## Phase 1: Database Schema Changes
+## Implementation Details
 
-### 1.1 Add Industry Vertical Column
+### Phase 1: Create Shared Client Inbound Handler
 
-Add a new column to the `organizations` table:
-
-```sql
-ALTER TABLE organizations 
-ADD COLUMN industry_vertical TEXT DEFAULT 'transportation';
-```
-
-Valid values: `transportation`, `healthcare`, `cyber`, `trades`, `general`
-
-### 1.2 Create Industry Templates Reference Table (Optional Enhancement)
-
-For extensibility, create a reference table storing template configurations:
-
-```sql
-CREATE TABLE industry_templates (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  vertical TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
-  description TEXT,
-  default_platforms JSONB DEFAULT '[]',
-  default_features JSONB DEFAULT '[]',
-  ai_prompt_hints JSONB DEFAULT '{}',
-  icon TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-```
-
-Seed with initial templates for each industry.
-
----
-
-## Phase 2: TypeScript Type Definitions
-
-### 2.1 New Type File: `industryTemplates.types.ts`
+Create a new shared module `supabase/functions/_shared/hayes-client-handler.ts` that:
+- Accepts client configuration (ID, name, feed URL, UTM settings)
+- Handles both job sync and application forwarding
+- Returns standardized responses
 
 ```typescript
-export type IndustryVertical = 
-  | 'transportation' 
-  | 'healthcare' 
-  | 'cyber' 
-  | 'trades' 
-  | 'general';
+// New module structure
+interface HayesClientConfig {
+  clientId: string;
+  clientName: string;
+  clientSlug: string;  // URL-safe slug
+  feedUserCode: string;
+  feedBoard: string;
+  utmCampaign?: string;
+}
 
-export interface IndustryTemplateConfig {
-  vertical: IndustryVertical;
-  displayName: string;
-  description: string;
-  icon: string;
-  defaultPlatforms: string[];
-  defaultFeatures: string[];
-  aiPromptHints: {
-    industryContext: string;
-    terminology: string[];
-    screeningFocus: string[];
-  };
+export function createClientHandler(config: HayesClientConfig) {
+  return wrapHandler(async (req: Request) => {
+    // Pre-configure all routing to this specific client
+    // No need for job_id prefix matching
+  });
 }
 ```
 
-### 2.2 Update Organization Interface
+### Phase 2: Create Client-Specific Edge Functions
 
-Add `industry_vertical` to the `Organization` type in `src/types/common.types.ts`.
+Create 4 new edge functions (one per client):
 
----
+| Function Name | Client | Endpoint Path |
+|---------------|--------|---------------|
+| `hayes-danny-herman-inbound` | Danny Herman Trucking | `/functions/v1/hayes-danny-herman-inbound` |
+| `hayes-pemberton-inbound` | Pemberton Truck Lines | `/functions/v1/hayes-pemberton-inbound` |
+| `hayes-dayross-inbound` | Day and Ross | `/functions/v1/hayes-dayross-inbound` |
+| `hayes-novco-inbound` | Novco, Inc. | `/functions/v1/hayes-novco-inbound` |
 
-## Phase 3: Industry Template Configuration
+Each function will be minimal, delegating to the shared handler:
 
-### 3.1 New Config File: `industryTemplates.config.ts`
+```typescript
+// hayes-danny-herman-inbound/index.ts
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClientHandler } from '../_shared/hayes-client-handler.ts';
 
-Define pre-built configurations for each vertical:
+const handler = createClientHandler({
+  clientId: '1d54e463-4d7f-4a05-8189-3e33d0586dea',
+  clientName: 'Danny Herman Trucking',
+  clientSlug: 'danny-herman',
+  feedUserCode: 'danny_herman_trucking',
+  feedBoard: 'AIRecruiter',
+});
 
-| Vertical | Default Platforms | Default Features | AI Context |
-|----------|------------------|------------------|------------|
-| **Transportation** | Google Jobs, Indeed, Truck Driver Jobs 411, NewJobs4You, RoadWarriors | Voice Agent, Tenstreet, ElevenLabs | CDL requirements, DOT compliance, route experience |
-| **Healthcare** | Google Jobs, Indeed, Glassdoor | Voice Agent, Background Check, Advanced Analytics | Licensure verification, HIPAA awareness, shift flexibility |
-| **Cyber** | Google Jobs, Indeed, LinkedIn (future) | OpenAI, Anthropic, Advanced Analytics | Security clearances, certifications, remote capability |
-| **Trades** | Google Jobs, Indeed, Craigslist | Voice Agent, Background Check | Apprenticeship status, tool ownership, union membership |
-| **General** | Google Jobs, Indeed | Basic features | General screening |
-
----
-
-## Phase 4: UI Components
-
-### 4.1 Industry Selector Component
-
-Create `IndustryVerticalSelector.tsx`:
-- Card-based selector with icons for each industry
-- Visual feedback for selected industry
-- Description of what gets configured
-
-### 4.2 Update Create Organization Dialog
-
-Modify `CreateOrganizationDialog.tsx`:
-- Add industry selector step
-- Pass selected vertical to organization creation
-
-### 4.3 Update Edit Organization Dialog
-
-Modify `EditOrganizationDialog.tsx`:
-- Add industry vertical field (changeable by super_admin)
-- Show current template settings
-
-### 4.4 Organization Settings Tab
-
-Add "Industry Template" section to `OrganizationSettings.tsx`:
-- Display current industry vertical
-- Option to "Reset to Template Defaults" (re-applies platform/feature presets)
-
----
-
-## Phase 5: Backend Logic
-
-### 5.1 Update Organization Creation RPC
-
-Modify `create_organization` database function:
-- Accept `_industry_vertical` parameter
-- After org creation, auto-insert default platform access records
-- Auto-insert default feature records based on template
-
-### 5.2 Apply Template Function
-
-Create new RPC `apply_industry_template`:
-
-```sql
-CREATE FUNCTION apply_industry_template(
-  _org_id UUID, 
-  _vertical TEXT,
-  _reset_existing BOOLEAN DEFAULT false
-) RETURNS void
+serve(handler);
 ```
 
-This function:
-1. If `_reset_existing`, clears current platform/feature settings
-2. Inserts platform access records for the template
-3. Inserts feature records for the template
-4. Updates AI settings defaults if applicable
+### Phase 3: Endpoint Capabilities
 
-### 5.3 Update Organization Service
+Each client endpoint will support:
 
-Modify `OrganizationService.ts`:
-- Add `applyIndustryTemplate()` method
-- Update `createOrganization()` to accept and use industry vertical
+**Jobs Import (GET or action=jobs)**
+```
+GET /functions/v1/hayes-danny-herman-inbound?action=jobs
+```
+- Fetches jobs from client's CDL Job Cast feed
+- Routes all jobs to the specific client
+- Applies client-specific UTM tracking
+
+**Application Forwarding (POST or action=apps)**
+```
+POST /functions/v1/hayes-danny-herman-inbound
+Content-Type: application/json
+
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "phone": "555-123-4567",
+  "job_id": "14204123456"
+}
+```
+- Auto-routes to client's jobs
+- Falls back to client-specific General Application
+- Applies client UTM attribution
+
+**Auto-Detection (default)**
+- POST with application fields: processes as application
+- GET or empty POST: processes as job sync
+
+### Phase 4: Update Application Processor
+
+Modify `_shared/application-processor.ts` to accept explicit `clientId` parameter that bypasses job_id prefix matching:
+
+```typescript
+export const findOrCreateJobListing = async (
+  supabase: SupabaseClient,
+  params: {
+    // Existing params...
+    clientId?: string | null;  // When provided, skips prefix inference
+    forceClientMatch?: boolean; // When true, only matches within client
+  }
+)
+```
 
 ---
 
-## Phase 6: Integration Points
+## Client Endpoint Reference
 
-### 6.1 Voice Agent Configuration
+After implementation, the following endpoints will be available:
 
-When industry vertical is set:
-- Store industry context in organization settings
-- Voice agent prompts reference `settings.industry_context` for screening questions
+### Danny Herman Trucking
+```
+# Job Sync
+GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-danny-herman-inbound?action=jobs
 
-### 6.2 AI Screening Prompts
+# Application Submission
+POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-danny-herman-inbound
+```
 
-The `aiService.ts` already supports `industryFocus`. Connect this to:
-- Pull from organization's `industry_vertical`
-- Use template-defined `aiPromptHints` for context
+### Pemberton Truck Lines Inc
+```
+# Job Sync
+GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-pemberton-inbound?action=jobs
 
-### 6.3 Job Form Defaults
+# Application Submission
+POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-pemberton-inbound
+```
 
-Optionally pre-populate job creation forms:
-- Default job categories based on industry
-- Suggested requirements/qualifications
+### Day and Ross
+```
+# Job Sync
+GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-dayross-inbound?action=jobs
+
+# Application Submission
+POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-dayross-inbound
+```
+
+### Novco, Inc.
+```
+# Job Sync
+GET https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-novco-inbound?action=jobs
+
+# Application Submission
+POST https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/hayes-novco-inbound
+```
 
 ---
 
 ## Technical Details
 
-### File Changes Summary
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `supabase/functions/_shared/hayes-client-handler.ts` | Shared handler factory |
+| `supabase/functions/hayes-danny-herman-inbound/index.ts` | Danny Herman endpoint |
+| `supabase/functions/hayes-pemberton-inbound/index.ts` | Pemberton endpoint |
+| `supabase/functions/hayes-dayross-inbound/index.ts` | Day and Ross endpoint |
+| `supabase/functions/hayes-novco-inbound/index.ts` | Novco endpoint |
 
-| File | Change Type | Purpose |
-|------|-------------|---------|
-| `src/features/organizations/types/industryTemplates.types.ts` | New | Type definitions |
-| `src/features/organizations/config/industryTemplates.config.ts` | New | Template configurations |
-| `src/features/organizations/components/IndustryVerticalSelector.tsx` | New | Selection UI component |
-| `src/types/common.types.ts` | Modify | Add `industry_vertical` to Organization |
-| `src/components/admin/CreateOrganizationDialog.tsx` | Modify | Add industry selection step |
-| `src/components/admin/EditOrganizationDialog.tsx` | Modify | Add industry field |
-| `src/components/organizations/OrganizationSettings.tsx` | Modify | Add industry template tab |
-| `src/features/admin/services/organizationService.ts` | Modify | Add template application logic |
+### Files to Modify
+| File | Change |
+|------|--------|
+| `supabase/functions/_shared/application-processor.ts` | Add `forceClientMatch` parameter |
 
-### Database Changes Summary
-
-| Object | Type | Purpose |
-|--------|------|---------|
-| `organizations.industry_vertical` | Column | Store selected vertical |
-| `industry_templates` | Table (optional) | Store template configurations |
-| `apply_industry_template()` | Function | Apply template defaults to org |
-| `create_organization()` | Function (modify) | Accept and use industry parameter |
+### Backwards Compatibility
+- Existing `/cdl-jobcast-inbound` endpoint remains functional
+- Job ID prefix matching continues to work as fallback
+- New endpoints are additive, not replacement
 
 ---
 
 ## Implementation Sequence
 
-1. **Database Migration**: Add `industry_vertical` column to organizations
-2. **Type Definitions**: Create TypeScript types for industry templates
-3. **Configuration File**: Define template presets for all 4 industries
-4. **Selector Component**: Build the visual industry picker
-5. **Dialog Updates**: Integrate selector into create/edit flows
-6. **Backend Function**: Create `apply_industry_template` RPC
-7. **Service Layer**: Connect frontend to backend template application
-8. **Settings UI**: Add template management to organization settings
-9. **Testing**: Verify template application and platform/feature defaults
+1. Create shared handler module `hayes-client-handler.ts`
+2. Create Danny Herman endpoint (test first)
+3. Create remaining 3 client endpoints
+4. Update application processor for explicit client matching
+5. Test all endpoints with job sync and application submission
+6. Document endpoints for CDL Job Cast integration team
 
 ---
 
-## Notes
+## Benefits
 
-- Existing organizations will default to `transportation` (current implicit vertical)
-- Industry change does NOT auto-reset settings (optional "Reset to Defaults" action)
-- Super admins can override any template-set defaults manually
-- Templates are starting points, not restrictions
-
+1. **Simpler routing**: No job_id prefix maintenance required
+2. **Cleaner URLs**: Partner-friendly endpoint names
+3. **Better tracking**: Client-specific UTM campaigns automatic
+4. **Easier debugging**: Logs clearly show which client endpoint was hit
+5. **Scalability**: Adding new clients only requires one new minimal file
