@@ -73,6 +73,20 @@ const HeroSection = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: jobCount = 0 } = useQuery({
+    queryKey: ['public-job-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('job_listings')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .or('is_hidden.eq.false,is_hidden.is.null');
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   return (
     <HeroBackground
       imageSrc={voiceHero}
@@ -150,10 +164,16 @@ const HeroSection = () => {
           className="flex flex-col items-start gap-3"
         >
           {/* Dynamic company count */}
-          <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
-            <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
-            {companyCount.toLocaleString()} Companies Hiring
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
+              <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
+              {companyCount.toLocaleString()} Companies Hiring
+            </span>
+            <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
+              <span className="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse" />
+              {jobCount.toLocaleString()} Jobs Available
+            </span>
+          </div>
           
           {/* Industry tags - always below company count */}
           <motion.div
