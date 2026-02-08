@@ -13,9 +13,6 @@ const TrustSection = () => {
   return (
     <SectionWrapper variant="muted" className="py-16">
       <div className="text-center mb-12">
-        <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-          {trustContent.badge}
-        </Badge>
         <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
           {trustContent.title}
         </h2>
