@@ -1,81 +1,81 @@
 
-# Add Week-Over-Week Trend Indicators to Applications Overview
+# Add Depth Perception and Subtle Animations to Homepage Hero
 
 ## Overview
 
-Add trend indicators to the status and category cards in the Applications Overview section. Each card will show a small arrow (up/down/neutral) with percentage change comparing this week's count to last week's count.
+Enhance the homepage hero section with cinematic depth effects and subtle animations for each slideshow image, creating a more immersive and engaging first impression.
 
-## Technical Approach
+## Current State
 
-### 1. Extend the `useApplicationStats` Hook
+The HeroBackground component currently:
+- Displays 4 rotating images (voiceHero, cyberHero, tradesHero, healthcareHero)
+- Uses simple opacity crossfade transitions (1 second)
+- Has static overlays for text readability
+- Content is static with no entrance animations
 
-The current hook only fetches aggregate counts. We need to extend it to also calculate week-over-week trends by:
+## Enhancement Strategy
 
-1. Adding `created_at` to the query fields (available in the applications table)
-2. Calculating "this week" vs "last week" counts for each status and category
-3. Computing percentage change: `((current - previous) / previous) * 100`
+We'll add three layers of visual enhancements:
 
-**New Return Type:**
-```typescript
-interface ApplicationStats {
-  total: number;
-  byStatus: Record<string, number>;
-  byCategory: Record<string, number>;
-  // NEW: Trend data
-  statusTrends: Record<string, { current: number; previous: number; percentChange: number }>;
-  categoryTrends: Record<string, { current: number; previous: number; percentChange: number }>;
-}
+1. **Ken Burns Effect** - Subtle zoom/pan animations on each background image
+2. **Parallax Depth Layers** - Multiple overlay layers moving at different speeds
+3. **Content Entrance Animations** - Staggered Framer Motion animations for text elements
+
+---
+
+## Technical Implementation
+
+### 1. Ken Burns Effect on Background Images
+
+Add a subtle scale and position animation to each slide as it becomes active:
+
+```text
+┌─────────────────────────────────────────┐
+│  Image starts at scale(1.05)            │
+│  Slowly zooms to scale(1.15) over 6s    │
+│  Slight pan from center to edge         │
+│  Creates cinematic "breathing" effect   │
+└─────────────────────────────────────────┘
 ```
 
-**Date Calculation:**
-- This week: applications created in the last 7 days
-- Last week: applications created 8-14 days ago
-- Percentage change handles zero-division (shows 0% or "New" indicator)
+**Implementation:**
+- Add CSS keyframe animations for zoom effect
+- Each slide gets a unique animation direction (zoom-in, zoom-out, pan-left, pan-right)
+- Animation runs only while slide is active
+- Use `will-change: transform` for GPU acceleration
 
-### 2. Update `ApplicationsOverview` Component Props
+### 2. Parallax Depth Layers
 
-Add new optional props to receive trend data:
+Add floating gradient orbs and subtle particle effects that create depth:
 
-```typescript
-interface ApplicationsOverviewProps {
-  // ... existing props
-  statusTrends?: Record<string, { current: number; previous: number; percentChange: number }>;
-  categoryTrends?: Record<string, { current: number; previous: number; percentChange: number }>;
-}
+```text
+┌─────────────────────────────────────────┐
+│  Layer 0: Background image (Ken Burns) │
+│  Layer 1: Floating gradient orbs       │
+│  Layer 2: Overlay gradients            │
+│  Layer 3: Subtle particle dust         │
+│  Layer 4: Content (highest z-index)    │
+└─────────────────────────────────────────┘
 ```
 
-### 3. Add Trend Indicator UI to Cards
+**Implementation:**
+- Add 2-3 floating gradient circles with slow drift animation
+- Use `blur-3xl` for soft glow effect
+- Animate with CSS transforms (translateX, translateY)
+- Opacity pulse on 8-10 second cycle
 
-For each status and category card, display a small trend badge below the count:
+### 3. Content Entrance Animations
 
-```
-┌─────────────────┐
-│       12        │  ← Main count
-│    Pending      │  ← Status label
-│   ↑ +25% WoW    │  ← NEW: Trend indicator
-└─────────────────┘
-```
+Use Framer Motion for staggered content reveal:
 
-**Visual Design (following existing patterns from `EnhancedMetricsCard`):**
-- Green arrow up + positive % for growth
-- Red arrow down + negative % for decline  
-- Gray dash + 0% for no change
-- "New" badge if previous week was 0 and current > 0
-
-### 4. Wire Up Data Flow
-
-In `ApplicationsPage.tsx`, pass the new trend props from `globalStats`:
-
-```typescript
-<ApplicationsOverview 
-  statusCounts={statusCounts} 
-  categoryCounts={categoryCounts}
-  totalCount={globalTotalCount}
-  statusTrends={globalStats?.statusTrends}      // NEW
-  categoryTrends={globalStats?.categoryTrends}  // NEW
-  // ... other props
-/>
-```
+| Element | Animation | Delay |
+|---------|-----------|-------|
+| Badge | Fade up + scale | 0.1s |
+| Headline | Fade up | 0.2s |
+| Industry tags | Stagger fade up | 0.3s-0.5s |
+| Subheadline | Fade up | 0.5s |
+| Company count | Fade up + scale | 0.6s |
+| CTA buttons | Fade up | 0.7s |
 
 ---
 
@@ -83,77 +83,150 @@ In `ApplicationsPage.tsx`, pass the new trend props from `globalStats`:
 
 | File | Changes |
 |------|---------|
-| `src/features/applications/hooks/useApplicationStats.ts` | Add `created_at` to query, calculate week-over-week trends for status and category |
-| `src/components/applications/ApplicationsOverview.tsx` | Add trend props, render TrendingUp/TrendingDown icons with percentage |
-| `src/features/applications/pages/ApplicationsPage.tsx` | Pass trend data from globalStats to ApplicationsOverview |
+| `src/components/shared/HeroBackground.tsx` | Add Ken Burns keyframes, parallax layers, floating orbs |
+| `src/features/landing/components/sections/HeroSection.tsx` | Add Framer Motion entrance animations to content |
+| `tailwind.config.ts` | Add new keyframe animations for Ken Burns and float effects |
 
 ---
 
-## Implementation Details
+## Detailed Changes
 
-### Hook Changes (useApplicationStats.ts)
+### HeroBackground.tsx Enhancements
 
+**New Props:**
 ```typescript
-// Add to query
-created_at
+interface HeroBackgroundProps {
+  // ... existing props
+  enableKenBurns?: boolean;     // Enable zoom/pan effect (default: true for slideshow)
+  enableParallaxOrbs?: boolean; // Enable floating depth elements (default: true)
+}
+```
 
-// Add interface
-interface TrendData {
-  current: number;
-  previous: number;
-  percentChange: number;
+**Ken Burns Keyframes:**
+```css
+@keyframes ken-burns-zoom-in {
+  0% { transform: scale(1.0); }
+  100% { transform: scale(1.08); }
 }
 
-// Calculate date boundaries
-const now = new Date();
-const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+@keyframes ken-burns-zoom-out {
+  0% { transform: scale(1.08); }
+  100% { transform: scale(1.0); }
+}
 
-// For each application, bucket into thisWeek/lastWeek
-// Then calculate trends per status/category
+@keyframes ken-burns-pan-left {
+  0% { transform: scale(1.05) translateX(0%); }
+  100% { transform: scale(1.05) translateX(-2%); }
+}
+
+@keyframes ken-burns-pan-right {
+  0% { transform: scale(1.05) translateX(0%); }
+  100% { transform: scale(1.05) translateX(2%); }
+}
 ```
 
-### Component Changes (ApplicationsOverview.tsx)
-
-Import icons:
-```typescript
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+**Floating Orb Depth Elements:**
+```tsx
+{/* Parallax floating orbs for depth */}
+<div className="absolute top-1/4 right-1/4 w-96 h-96 
+  bg-primary/10 rounded-full blur-3xl 
+  animate-float-slow pointer-events-none" 
+/>
+<div className="absolute bottom-1/3 left-1/5 w-64 h-64 
+  bg-accent/10 rounded-full blur-3xl 
+  animate-float-slower pointer-events-none" 
+/>
 ```
 
-Add helper function:
+### HeroSection.tsx Animations
+
+**Import Framer Motion:**
 ```typescript
-const getTrendDisplay = (trend?: TrendData) => {
-  if (!trend) return null;
-  const { percentChange } = trend;
-  
-  if (percentChange > 0) {
-    return (
-      <div className="flex items-center gap-1 text-green-600 text-xs">
-        <TrendingUp className="w-3 h-3" />
-        <span>+{percentChange.toFixed(0)}%</span>
-      </div>
-    );
+import { motion } from 'framer-motion';
+```
+
+**Stagger Container:**
+```typescript
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
   }
-  // ... similar for negative and zero
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' }
+  }
 };
 ```
 
-Render in card:
+**Animated Content Wrapper:**
+```tsx
+<motion.div
+  variants={containerVariants}
+  initial="hidden"
+  animate="visible"
+  className="relative z-10 max-w-5xl mx-auto..."
+>
+  <motion.span variants={itemVariants}>
+    {/* Badge */}
+  </motion.span>
+  <motion.h1 variants={itemVariants}>
+    {/* Headline */}
+  </motion.h1>
+  {/* etc. */}
+</motion.div>
+```
+
+### Tailwind Config Additions
+
 ```typescript
-<div className="text-2xl font-bold">{statusCounts?.[status] || 0}</div>
-<div className="text-sm text-muted-foreground capitalize">{status}</div>
-{getTrendDisplay(statusTrends?.[status])}  // NEW LINE
+keyframes: {
+  // Ken Burns effects
+  'ken-burns-zoom-in': {
+    '0%': { transform: 'scale(1.0)' },
+    '100%': { transform: 'scale(1.08)' }
+  },
+  'ken-burns-zoom-out': {
+    '0%': { transform: 'scale(1.08)' },
+    '100%': { transform: 'scale(1.0)' }
+  },
+  // Floating depth elements
+  'float-slow': {
+    '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+    '50%': { transform: 'translateY(-20px) translateX(10px)' }
+  },
+  'float-slower': {
+    '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+    '50%': { transform: 'translateY(15px) translateX(-15px)' }
+  }
+},
+animation: {
+  'ken-burns-in': 'ken-burns-zoom-in 6s ease-out forwards',
+  'ken-burns-out': 'ken-burns-zoom-out 6s ease-out forwards',
+  'float-slow': 'float-slow 12s ease-in-out infinite',
+  'float-slower': 'float-slower 15s ease-in-out infinite'
+}
 ```
 
 ---
 
-## Expected Result
+## Visual Result
 
-| Status Card | Display |
-|-------------|---------|
-| Pending: 5 (was 3 last week) | `5 Pending ↑+67%` |
-| Reviewed: 2 (was 2 last week) | `2 Reviewed — 0%` |
-| Hired: 1 (was 0 last week) | `1 Hired ✨ New` |
-| Rejected: 0 (was 1 last week) | `0 Rejected ↓-100%` |
+The enhanced hero will feature:
 
-Category cards will follow the same pattern (D, SC, SR, N/A).
+- **Ken Burns zoom** on each background image (matches 6s slideshow interval)
+- **Soft floating orbs** that drift slowly, creating depth perception
+- **Staggered content reveal** on initial load
+- **Smooth crossfades** between slides with synchronized zoom effects
+- **Performance optimized** with GPU-accelerated transforms and `will-change`
+
+All animations respect `prefers-reduced-motion` via the `motion-safe:` Tailwind prefix.
