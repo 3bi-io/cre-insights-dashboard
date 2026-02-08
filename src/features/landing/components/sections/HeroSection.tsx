@@ -147,7 +147,7 @@ const HeroSection = () => {
         {/* Trust signals - compact row */}
         <motion.div 
           variants={itemVariants} 
-          className="flex flex-wrap items-center gap-3"
+          className="flex flex-col items-start gap-3"
         >
           {/* Dynamic company count */}
           <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
@@ -155,17 +155,24 @@ const HeroSection = () => {
             {companyCount.toLocaleString()} Companies Hiring
           </span>
           
-          {/* Industry tags */}
-          {heroContent.industryTags?.map((tag, index) => (
-            <motion.span
-              key={tag}
-              variants={tagVariants}
-              custom={index}
-              className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white/90 bg-white/15 backdrop-blur-sm rounded-full border border-white/20 hover:bg-white/25 transition-colors"
-            >
-              {tag}
-            </motion.span>
-          ))}
+          {/* Industry tags - always below company count */}
+          <motion.div
+            variants={tagContainerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-wrap items-center gap-2"
+          >
+            {heroContent.industryTags?.map((tag, index) => (
+              <motion.span
+                key={tag}
+                variants={tagVariants}
+                custom={index}
+                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white/90 bg-white/15 backdrop-blur-sm rounded-full border border-white/20 hover:bg-white/25 transition-colors"
+              >
+                {tag}
+              </motion.span>
+            ))}
+          </motion.div>
         </motion.div>
       </motion.div>
     </HeroBackground>
