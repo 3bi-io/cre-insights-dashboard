@@ -61,10 +61,10 @@ const HowItWorksSection: React.FC = () => {
         <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
           {howItWorksContent.badge}
         </Badge>
-        <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+        <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
           {howItWorksContent.title}
         </h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
           {howItWorksContent.description}
         </p>
       </div>
