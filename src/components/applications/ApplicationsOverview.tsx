@@ -1,9 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { EmptyStateMessage } from '@/components/shared/EmptyStateMessage';
 
 interface ApplicationsOverviewProps {
   statusCounts?: Record<string, number>;
@@ -65,53 +66,65 @@ const ApplicationsOverview = ({
         </div>
       </div>
 
-      {/* Status Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
-          <Card 
-            key={status}
-            className={cn(
-              "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
-              activeStatusFilter === status && "ring-2 ring-primary border-primary"
-            )}
-            onClick={() => handleStatusClick(status)}
-          >
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-foreground mb-1">
-                {statusCounts?.[status] || 0}
-              </div>
-              <div className="text-sm text-muted-foreground capitalize">{status}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {displayTotal === 0 ? (
+        <EmptyStateMessage
+          icon={Users}
+          title="No applications yet"
+          description="Applications will appear here once candidates start applying to your job listings. Make sure you have active job postings to receive applications."
+          actionLabel="View Job Listings"
+          actionHref="/admin/jobs"
+        />
+      ) : (
+        <>
+          {/* Status Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            {['pending', 'reviewed', 'interviewed', 'hired', 'rejected'].map((status) => (
+              <Card 
+                key={status}
+                className={cn(
+                  "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+                  activeStatusFilter === status && "ring-2 ring-primary border-primary"
+                )}
+                onClick={() => handleStatusClick(status)}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    {statusCounts?.[status] || 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground capitalize">{status}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-      {/* Applicant Categories Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {categories.map((category) => (
-          <Card 
-            key={category.code}
-            className={cn(
-              "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
-              activeCategoryFilter === category.code && "ring-2 ring-primary border-primary"
-            )}
-            onClick={() => handleCategoryClick(category.code)}
-          >
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Badge className={`text-lg font-bold px-3 py-1 ${category.color}`}>
-                  {category.code}
-                </Badge>
-              </div>
-              <div className="text-2xl font-bold text-foreground mb-1">
-                {categoryCounts?.[category.code] || 0}
-              </div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">{category.label}</div>
-              <div className="text-xs text-muted-foreground/70">{category.desc}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+          {/* Applicant Categories Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.map((category) => (
+              <Card 
+                key={category.code}
+                className={cn(
+                  "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+                  activeCategoryFilter === category.code && "ring-2 ring-primary border-primary"
+                )}
+                onClick={() => handleCategoryClick(category.code)}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Badge className={`text-lg font-bold px-3 py-1 ${category.color}`}>
+                      {category.code}
+                    </Badge>
+                  </div>
+                  <div className="text-2xl font-bold text-foreground mb-1">
+                    {categoryCounts?.[category.code] || 0}
+                  </div>
+                  <div className="text-sm font-medium text-muted-foreground mb-1">{category.label}</div>
+                  <div className="text-xs text-muted-foreground/70">{category.desc}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 };
