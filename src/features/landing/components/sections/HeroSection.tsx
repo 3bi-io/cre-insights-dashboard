@@ -150,7 +150,7 @@ const HeroSection = () => {
             <Button
               variant="outline"
               size="lg"
-              className="min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-white/40 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/60 hover:scale-105 transition-all duration-300"
+              className="min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-primary bg-white text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300 shadow-lg"
             >
               {heroContent.cta.secondary}
               <ArrowRight className="ml-2 h-5 w-5" />
