@@ -156,7 +156,7 @@ export const featuresContent = {
     {
       icon: ShieldCheck,
       title: "Fraud Free & Cyber Defense",
-      description: "ATS.me is designed to be the most secure intake for critical positions by defending against bots, malicious actors, and fake profiles."
+      description: "Advanced security with multi-factor authentication, dynamic knowledge-based authentication, identity proofing, and more."
     },
     {
       icon: Bot,
