@@ -155,7 +155,7 @@ export const featuresContent = {
     },
     {
       icon: ShieldCheck,
-      title: "Fraud Free and Secure By Design",
+      title: "Fraud Free & Secure By Design",
       description: "Advanced security with multi-factor authentication, dynamic knowledge-based authentication, identity proofing, and more."
     },
     {
