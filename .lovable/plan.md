@@ -1,99 +1,56 @@
 
+# Add Empty State to Applications Overview
 
-# Fix Applications Overview to Include Orphaned Applications
+## Overview
 
-## Problem Summary
+When the Applications Overview shows zero applications, we'll display a helpful empty state with guidance on how to get started. This provides better UX than showing a grid of zeros.
 
-The Applications Overview dashboard shows **0** for all status and category counts because:
+## Implementation
 
-1. **Database Reality**: 27 total applications exist, but 18 are "orphaned" (have `job_listing_id = NULL`)
-2. **Current Query Issue**: The `useApplicationStats` hook uses `job_listings!inner` which creates an INNER JOIN, automatically excluding any application without a linked job listing
-3. **Result**: Only 9 of 27 applications are counted, and with organization filtering, potentially none are visible
+### File: `src/components/applications/ApplicationsOverview.tsx`
 
-## Solution
+**Changes:**
 
-Change from INNER JOIN to LEFT JOIN by removing the `!inner` modifier from the Supabase query. This will include all applications regardless of whether they have a linked job listing.
+1. **Import the shared EmptyStateMessage component** and the `Users` icon from lucide-react
 
----
+2. **Add empty state condition** - Check if `displayTotal === 0` and render an empty state instead of the stats cards
 
-## Technical Implementation
+3. **Empty state content:**
+   - Icon: Users (representing applicants)
+   - Title: "No applications yet"
+   - Description: "Applications will appear here once candidates start applying to your job listings. Make sure you have active job postings to receive applications."
+   - Action button: "View Job Listings" linking to `/admin/jobs`
 
-### File: `src/features/applications/hooks/useApplicationStats.ts`
+### Visual Behavior
 
-**Change 1: Update the query to use LEFT JOIN**
+| Scenario | Display |
+|----------|---------|
+| `totalCount > 0` | Normal status and category cards |
+| `totalCount === 0` | Centered empty state with icon, message, and CTA |
 
-Replace the current INNER JOIN query:
-```typescript
-let query = supabase
-  .from('applications')
-  .select(`
-    status,
-    cdl,
-    age,
-    exp,
-    months,
-    job_listings!inner(organization_id)  // INNER JOIN - excludes orphans
-  `);
+### Code Structure
+
 ```
-
-With a LEFT JOIN query:
-```typescript
-let query = supabase
-  .from('applications')
-  .select(`
-    status,
-    cdl,
-    age,
-    exp,
-    months,
-    job_listings(organization_id)  // LEFT JOIN - includes orphans
-  `);
+ApplicationsOverview
+├── Header (always visible)
+│   ├── Title "Applications Overview"
+│   └── AI Analytics button + Badge
+│
+└── Conditional Content
+    ├── IF displayTotal > 0
+    │   ├── Status cards grid (pending, reviewed, etc.)
+    │   └── Category cards grid (D, SC, SR, N/A)
+    │
+    └── ELSE (empty state)
+        └── EmptyStateMessage
+            ├── Users icon
+            ├── "No applications yet"
+            ├── Guidance text
+            └── "View Job Listings" button
 ```
-
-**Change 2: Update the organization filter logic**
-
-The current filter won't work correctly with orphaned applications. Update to handle null job_listings:
-
-```typescript
-// Apply org filter if provided (only affects applications WITH job listings)
-if (filters.organizationId && filters.organizationId !== 'all') {
-  query = query.eq('job_listings.organization_id', filters.organizationId);
-}
-```
-
-This filter will automatically exclude orphaned applications when an org filter is active (which is correct behavior since orphans don't belong to any organization).
-
-**Change 3: Update the ApplicationRow interface**
-
-Add the job_listings field to properly type the response:
-```typescript
-interface ApplicationRow {
-  status: string | null;
-  cdl: string | null;
-  age: string | null;
-  exp: string | null;
-  months: string | null;
-  job_listings?: { organization_id: string | null } | null;
-}
-```
-
----
-
-## Expected Outcome
-
-| Metric | Before | After |
-|--------|--------|-------|
-| Total Applications | 0 | 27 |
-| Orphaned included | No | Yes |
-| Org filtering | Broken | Works correctly |
-
-When no organization filter is applied, all 27 applications will be counted. When an organization filter is applied, only applications linked to that organization's job listings will be counted (orphaned applications will be excluded, which is correct).
-
----
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/features/applications/hooks/useApplicationStats.ts` | Remove `!inner` modifier, update interface |
-
+| `src/components/applications/ApplicationsOverview.tsx` | Add conditional empty state when totalCount is 0 |
