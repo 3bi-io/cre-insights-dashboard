@@ -32,7 +32,7 @@ export const trustContent = {
     },
     {
       icon: Rocket,
-      value: '48h',
+      value: '< 48 hours',
       label: 'Go-Live',
       description: 'Average implementation time'
     }
