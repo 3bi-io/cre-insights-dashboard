@@ -9,6 +9,7 @@ import {
   Bot, 
   Zap, 
   Shield, 
+  ShieldCheck,
   BarChart3, 
   Users, 
   Globe, 
@@ -148,9 +149,14 @@ export const featuresContent = {
   // Legacy flat features array for backward compatibility
   features: [
     {
-      icon: Phone,
-      title: "Instant AI Callbacks",
-      description: "Applications trigger automated voice calls within minutes. Never let a hot lead go cold — our AI reaches out before competitors even see the resume."
+      icon: Mic,
+      title: "Voice Apply Technology",
+      description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80% and improving accessibility."
+    },
+    {
+      icon: ShieldCheck,
+      title: "Fraud Free & Cyber Defense",
+      description: "ATS.me is designed to be the most secure intake for critical positions by defending against bots, malicious actors, and fake profiles."
     },
     {
       icon: Bot,
@@ -158,19 +164,14 @@ export const featuresContent = {
       description: "Inbound and outbound voice agents that never sleep. Screen jobseekers, answer questions, and schedule interviews around the clock."
     },
     {
-      icon: Mic,
-      title: "Voice Apply Technology",
-      description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80% and improving accessibility."
+      icon: Shield,
+      title: "Compliance & Security",
+      description: "Enterprise-grade security with full GDPR and EEO compliance, automated audit trails, and role-based access controls for data protection."
     },
     {
       icon: Globe,
       title: "Multi-Channel Distribution",
       description: "Integrate with Tenstreet, Indeed, Glassdoor, Adzuna, Talroo, and 100+ job boards. Automatic posting and real-time application syncing."
-    },
-    {
-      icon: Shield,
-      title: "Compliance & Security",
-      description: "Enterprise-grade security with full GDPR and EEO compliance, automated audit trails, and role-based access controls for data protection."
     }
   ] as Feature[]
 };
