@@ -94,16 +94,16 @@ export const howItWorksContent = {
       highlight: 'Any channel'
     },
     {
-      icon: Bot,
-      title: 'AI Screens & Qualifies',
-      description: 'Instant qualification against your criteria',
-      highlight: 'Real-time'
-    },
-    {
       icon: Phone,
       title: 'Automated Voice Callback',
       description: 'AI calls the jobseeker within minutes',
       highlight: '< 3 min'
+    },
+    {
+      icon: Bot,
+      title: 'AI Screens & Qualifies',
+      description: 'Instant qualification against your criteria',
+      highlight: 'Real-time'
     },
     {
       icon: ClipboardCheck,
