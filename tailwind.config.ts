@@ -230,6 +230,38 @@ export default {
         'spin-slow': {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' }
+        },
+        
+        // Ken Burns effects for hero slideshow
+        'ken-burns-zoom-in': {
+          '0%': { transform: 'scale(1.0)' },
+          '100%': { transform: 'scale(1.08)' }
+        },
+        'ken-burns-zoom-out': {
+          '0%': { transform: 'scale(1.08)' },
+          '100%': { transform: 'scale(1.0)' }
+        },
+        'ken-burns-pan-left': {
+          '0%': { transform: 'scale(1.05) translateX(0%)' },
+          '100%': { transform: 'scale(1.05) translateX(-2%)' }
+        },
+        'ken-burns-pan-right': {
+          '0%': { transform: 'scale(1.05) translateX(0%)' },
+          '100%': { transform: 'scale(1.05) translateX(2%)' }
+        },
+        
+        // Floating depth elements
+        'float-slow': {
+          '0%, 100%': { transform: 'translateY(0) translateX(0)', opacity: '0.6' },
+          '50%': { transform: 'translateY(-20px) translateX(10px)', opacity: '0.8' }
+        },
+        'float-slower': {
+          '0%, 100%': { transform: 'translateY(0) translateX(0)', opacity: '0.5' },
+          '50%': { transform: 'translateY(15px) translateX(-15px)', opacity: '0.7' }
+        },
+        'float-slowest': {
+          '0%, 100%': { transform: 'translateY(0) translateX(0)', opacity: '0.4' },
+          '50%': { transform: 'translateY(-10px) translateX(-8px)', opacity: '0.6' }
         }
       },
       
@@ -251,7 +283,18 @@ export default {
         
         // Combined animations
         'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
-        'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out'
+        'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out',
+        
+        // Ken Burns animations (synced with slideshow interval)
+        'ken-burns-in': 'ken-burns-zoom-in 6s ease-out forwards',
+        'ken-burns-out': 'ken-burns-zoom-out 6s ease-out forwards',
+        'ken-burns-left': 'ken-burns-pan-left 6s ease-out forwards',
+        'ken-burns-right': 'ken-burns-pan-right 6s ease-out forwards',
+        
+        // Floating parallax animations
+        'float-slow': 'float-slow 12s ease-in-out infinite',
+        'float-slower': 'float-slower 15s ease-in-out infinite',
+        'float-slowest': 'float-slowest 18s ease-in-out infinite'
       }
     }
   },
