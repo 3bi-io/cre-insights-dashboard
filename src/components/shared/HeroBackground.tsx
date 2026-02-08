@@ -174,7 +174,6 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
               aria-hidden="true"
               loading={index === 0 && priority ? 'eager' : 'lazy'}
               decoding={index === 0 && priority ? 'sync' : 'async'}
-              fetchPriority={index === 0 && priority ? 'high' : 'auto'}
               onLoad={index === 0 ? () => setIsLoaded(true) : undefined}
               className={cn(
                 'absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out',

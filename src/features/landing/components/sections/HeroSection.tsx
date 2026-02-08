@@ -89,69 +89,44 @@ const HeroSection = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20"
       >
-        {/* Badge */}
+        {/* Badge - compact, high contrast */}
         <motion.span
           variants={itemVariants}
-          className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6"
+          className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-6 shadow-lg"
         >
           {heroContent.badge}
         </motion.span>
 
-        {/* Headline */}
+        {/* Headline - impactful, readable */}
         <motion.h1
           variants={itemVariants}
-          className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-playfair font-bold text-foreground mb-4 md:mb-6 leading-[1.1]"
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-playfair font-bold text-foreground mb-6 leading-[1.1] tracking-tight"
         >
           {heroContent.headline}
-          <span className="text-white">
+          <span className="text-white drop-shadow-lg">
             {heroContent.headlineAccent}
           </span>
         </motion.h1>
 
-        {/* Industry tags */}
-        <motion.div
-          variants={tagContainerVariants}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-wrap items-start gap-2 mb-4 md:mb-6"
-        >
-          {heroContent.industryTags?.map((tag) => (
-            <motion.span
-              key={tag}
-              variants={tagVariants}
-              className="px-3 py-1.5 text-xs sm:text-sm font-medium text-black bg-white rounded-full"
-            >
-              {tag}
-            </motion.span>
-          ))}
-        </motion.div>
-
-        {/* Subheadline */}
+        {/* Subheadline - clear value prop above the fold */}
         <motion.p
           variants={itemVariants}
-          className="text-base sm:text-lg md:text-xl text-white font-medium mb-6 md:mb-8 max-w-2xl leading-relaxed whitespace-pre-line bg-black/50 backdrop-blur-sm rounded-xl px-6 py-4"
+          className="text-lg sm:text-xl md:text-2xl text-white font-medium mb-8 max-w-2xl leading-relaxed whitespace-pre-line bg-black/40 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-xl"
         >
           {heroContent.subheadline}
         </motion.p>
 
-        {/* Dynamic company count */}
-        <motion.div variants={itemVariants} className="mb-6 md:mb-8">
-          <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
-            {companyCount.toLocaleString()} Companies Enrolled
-          </span>
-        </motion.div>
-
-        {/* CTA Buttons */}
+        {/* CTA Buttons - primary action first, prominent */}
         <motion.div
           variants={itemVariants}
-          className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start mb-10 md:mb-14"
+          className="flex flex-col sm:flex-row gap-4 items-start mb-10"
         >
           <Link to="/jobs">
             <Button
               size="lg"
-              className="min-h-[52px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground px-8 sm:px-10 py-4 text-base sm:text-lg font-semibold shadow-[0_0_30px_hsl(var(--primary)/0.3)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.5)] transition-all duration-300"
+              className="min-h-[56px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground px-10 py-5 text-lg font-bold shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.6)] hover:scale-105 transition-all duration-300"
             >
               <Search className="mr-2 h-5 w-5" />
               {heroContent.cta.primary}
@@ -161,12 +136,36 @@ const HeroSection = () => {
             <Button
               variant="outline"
               size="lg"
-              className="min-h-[52px] px-8 sm:px-10 py-4 text-base sm:text-lg font-semibold border-2 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
+              className="min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-white/40 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/60 hover:scale-105 transition-all duration-300"
             >
               {heroContent.cta.secondary}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
+        </motion.div>
+
+        {/* Trust signals - compact row */}
+        <motion.div 
+          variants={itemVariants} 
+          className="flex flex-wrap items-center gap-3"
+        >
+          {/* Dynamic company count */}
+          <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
+            <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
+            {companyCount.toLocaleString()} Companies Hiring
+          </span>
+          
+          {/* Industry tags */}
+          {heroContent.industryTags?.map((tag, index) => (
+            <motion.span
+              key={tag}
+              variants={tagVariants}
+              custom={index}
+              className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white/90 bg-white/15 backdrop-blur-sm rounded-full border border-white/20 hover:bg-white/25 transition-colors"
+            >
+              {tag}
+            </motion.span>
+          ))}
         </motion.div>
       </motion.div>
     </HeroBackground>
