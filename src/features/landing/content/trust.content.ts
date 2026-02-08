@@ -20,9 +20,9 @@ export const trustContent = {
     },
     {
       icon: CheckCircle,
-      value: '95%',
-      label: 'Call Completion',
-      description: 'Reach rate for qualified leads'
+      value: '100%',
+      label: 'Transparency',
+      description: 'Pay, process, and policy'
     },
     {
       icon: Shield,
