@@ -18,6 +18,7 @@ interface ApplicationRow {
   age: string | null;
   exp: string | null;
   months: string | null;
+  job_listings?: { organization_id: string | null } | null;
 }
 
 /**
@@ -37,7 +38,7 @@ export const useApplicationStats = (filters: ApplicationStatsFilters = {}) => {
           age,
           exp,
           months,
-          job_listings!inner(organization_id)
+          job_listings(organization_id)
         `);
 
       // Apply org filter if provided
