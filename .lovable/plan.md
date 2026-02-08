@@ -1,252 +1,99 @@
 
-# Branded Audio Showcase Page
 
-## Overview
+# Fix Applications Overview to Include Orphaned Applications
 
-Create an immersive, full-screen audio showcase page at `/audio/:id` that delivers a premium visual experience without navigation. The page will feature animated sound wave visualizations, an audio player with elegant controls, and ATS.me branding -- all optimized for mobile-first interaction.
+## Problem Summary
 
----
+The Applications Overview dashboard shows **0** for all status and category counts because:
 
-## Design Vision
+1. **Database Reality**: 27 total applications exist, but 18 are "orphaned" (have `job_listing_id = NULL`)
+2. **Current Query Issue**: The `useApplicationStats` hook uses `job_listings!inner` which creates an INNER JOIN, automatically excluding any application without a linked job listing
+3. **Result**: Only 9 of 27 applications are counted, and with organization filtering, potentially none are visible
 
-The page should feel like a high-end music streaming app's "now playing" screen:
-- Full viewport coverage with no scroll
-- Dark, atmospheric background with subtle gradient animation
-- Central play/pause control with animated sound wave visualization
-- Minimalist branding positioned at the bottom
-- Smooth transitions and micro-interactions
-- Safe-area-aware for notched devices
+## Solution
 
----
-
-## Visual Architecture
-
-```text
-+------------------------------------------+
-|                                          |
-|        (subtle animated gradient)        |
-|                                          |
-|                                          |
-|              +--------+                  |
-|              | ▶︎ / ❚❚ |  <-- Large      |
-|              +--------+     play button  |
-|                                          |
-|      |||||||  ||| ||  ||||||||||         |
-|      Sound wave visualization            |
-|                                          |
-|                                          |
-|   ─────●───────────────────────          |
-|   0:45                          3:22     |
-|                                          |
-|                                          |
-|              [🔊 volume]                 |
-|                                          |
-|                                          |
-|         ─────────────────────            |
-|              ATS.me logo                 |
-|                                          |
-+------------------------------------------+
-```
-
----
-
-## Files to Create
-
-### 1. Audio Showcase Page Component
-**Path**: `src/pages/public/AudioShowcasePage.tsx`
-
-Full-screen page featuring:
-- Dynamic viewport height (`100dvh`) for mobile keyboard/toolbar stability
-- Animated gradient background using CSS keyframes
-- Central circular play/pause button (80x80px mobile, 120x120px desktop)
-- Canvas-based audio waveform visualization synced to audio playback
-- Custom progress slider with minimal styling
-- Current time / duration display
-- Volume toggle (mute/unmute) for simplicity on mobile
-- ATS.me logo at bottom with safe-area bottom padding
-
-### 2. Audio Waveform Visualizer Hook
-**Path**: `src/hooks/useAudioVisualizer.ts`
-
-Custom hook that:
-- Uses Web Audio API (`AudioContext`, `AnalyserNode`)
-- Captures real-time frequency data from playing audio
-- Returns frequency bar heights for rendering
-- Handles cleanup on unmount
-- Falls back gracefully if AudioContext not supported
-
-### 3. Waveform Canvas Component
-**Path**: `src/components/audio/WaveformVisualizer.tsx`
-
-Renders animated waveform:
-- Canvas-based for smooth 60fps animation
-- Responsive sizing (full width, 120px height)
-- Uses `useAudioVisualizer` hook data
-- Gradient-filled bars (primary to accent color)
-- Subtle glow effect on bars
-- Shows static idle state when paused
-
-### 4. Route Registration
-**Path**: Update `src/components/routing/AppRoutes.tsx`
-
-Add standalone route outside of `PublicLayout`:
-```
-/audio/:id
-```
-
-The page will initially use a hardcoded audio URL from `public/audio/` until a database-driven approach is needed.
-
----
-
-## Audio File Handling
-
-The uploaded file (`Audio_for_conversation_conv_3901kgtmahche7nshf9fmfa7de4a.mp3`) will be:
-1. Copied to `public/audio/showcase-conversation.mp3` for static hosting
-2. Referenced in the showcase page component
-
----
-
-## Animation Specifications
-
-### Background Gradient Animation
-CSS keyframe with 3-color gradient shift:
-```css
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-```
-Colors: Deep slate → Primary blue → Secondary purple
-
-### Play Button Pulse
-When playing: subtle `pulse-glow` animation from the existing design system.
-
-### Waveform Bars
-- 32-64 frequency bars depending on viewport width
-- Height animated based on real-time audio frequency data
-- Smooth CSS transitions on height changes
-- Rounded tops for modern aesthetic
-
-### Progress Slider
-Custom styling:
-- Thin track (4px height)
-- Gradient fill for played portion
-- Large thumb (24px) for touch friendliness
-- Glow effect on active state
-
----
-
-## Mobile-First Considerations
-
-1. **Dynamic Viewport**: Use `100dvh` to prevent layout jump when mobile browser chrome hides
-2. **Safe Areas**: Bottom padding using `pb-[env(safe-area-inset-bottom)]`
-3. **Touch Targets**: Play button 80x80px minimum (exceeds WCAG 44px)
-4. **Simplified Controls**: Volume toggle instead of slider on mobile
-5. **No Scroll**: `overflow-hidden` on container
-6. **Orientation Lock**: Works in both portrait and landscape
+Change from INNER JOIN to LEFT JOIN by removing the `!inner` modifier from the Supabase query. This will include all applications regardless of whether they have a linked job listing.
 
 ---
 
 ## Technical Implementation
 
-### Audio Context Setup
+### File: `src/features/applications/hooks/useApplicationStats.ts`
+
+**Change 1: Update the query to use LEFT JOIN**
+
+Replace the current INNER JOIN query:
 ```typescript
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const analyser = audioContext.createAnalyser();
-analyser.fftSize = 128; // 64 frequency bins
+let query = supabase
+  .from('applications')
+  .select(`
+    status,
+    cdl,
+    age,
+    exp,
+    months,
+    job_listings!inner(organization_id)  // INNER JOIN - excludes orphans
+  `);
 ```
 
-### Frequency Visualization
+With a LEFT JOIN query:
 ```typescript
-const dataArray = new Uint8Array(analyser.frequencyBinCount);
-analyser.getByteFrequencyData(dataArray);
-// Map to bar heights
+let query = supabase
+  .from('applications')
+  .select(`
+    status,
+    cdl,
+    age,
+    exp,
+    months,
+    job_listings(organization_id)  // LEFT JOIN - includes orphans
+  `);
 ```
 
-### Responsive Waveform Sizing
+**Change 2: Update the organization filter logic**
+
+The current filter won't work correctly with orphaned applications. Update to handle null job_listings:
+
 ```typescript
-const barCount = isMobile ? 32 : 64;
-const barWidth = canvasWidth / barCount - gap;
-```
-
----
-
-## Component Structure
-
-```text
-AudioShowcasePage
-├── Background Gradient Layer (div with animated gradient)
-├── Content Container (centered, max-w-lg)
-│   ├── Play/Pause Button (circular, animated)
-│   ├── WaveformVisualizer (canvas component)
-│   ├── Progress Section
-│   │   ├── Custom Slider
-│   │   └── Time Display (current / duration)
-│   ├── Volume Toggle Button
-│   └── Branding Footer (logo + powered by)
-└── Audio Element (hidden, ref-controlled)
-```
-
----
-
-## Accessibility
-
-- Play/pause button with `aria-label` and screen reader text
-- Progress slider with `aria-valuemin`, `aria-valuemax`, `aria-valuenow`
-- Reduced motion support: disable waveform animation when `prefers-reduced-motion: reduce`
-- High contrast mode: ensure controls visible
-- Keyboard navigation: Space to toggle play, arrows to seek
-
----
-
-## Dependencies Used
-
-All from existing project:
-- `framer-motion` for micro-animations (already installed)
-- `useResponsiveLayout` for breakpoint detection
-- `cn` utility for conditional classes
-- Radix Slider from UI library
-- Tailwind animations from design system
-
----
-
-## CSS Additions
-
-Add to `src/index.css`:
-```css
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+// Apply org filter if provided (only affects applications WITH job listings)
+if (filters.organizationId && filters.organizationId !== 'all') {
+  query = query.eq('job_listings.organization_id', filters.organizationId);
 }
+```
 
-.audio-showcase-bg {
-  background: linear-gradient(-45deg, #0f172a, #1e3a8a, #4c1d95, #0f172a);
-  background-size: 400% 400%;
-  animation: gradient-shift 15s ease infinite;
+This filter will automatically exclude orphaned applications when an org filter is active (which is correct behavior since orphans don't belong to any organization).
+
+**Change 3: Update the ApplicationRow interface**
+
+Add the job_listings field to properly type the response:
+```typescript
+interface ApplicationRow {
+  status: string | null;
+  cdl: string | null;
+  age: string | null;
+  exp: string | null;
+  months: string | null;
+  job_listings?: { organization_id: string | null } | null;
 }
 ```
 
 ---
 
-## Files Summary
+## Expected Outcome
 
-| File | Purpose |
-|------|---------|
-| `public/audio/showcase-conversation.mp3` | Uploaded audio file (copied from user upload) |
-| `src/pages/public/AudioShowcasePage.tsx` | Main full-screen showcase page |
-| `src/hooks/useAudioVisualizer.ts` | Web Audio API hook for frequency data |
-| `src/components/audio/WaveformVisualizer.tsx` | Canvas-based waveform visualization |
-| `src/components/routing/AppRoutes.tsx` | Add route `/audio/:id` |
-| `src/index.css` | Add gradient-shift keyframe animation |
+| Metric | Before | After |
+|--------|--------|-------|
+| Total Applications | 0 | 27 |
+| Orphaned included | No | Yes |
+| Org filtering | Broken | Works correctly |
+
+When no organization filter is applied, all 27 applications will be counted. When an organization filter is applied, only applications linked to that organization's job listings will be counted (orphaned applications will be excluded, which is correct).
 
 ---
 
-## Route Access
+## Files Changed
 
-The page will be accessible at:
-```
-/audio/showcase
-```
+| File | Change |
+|------|--------|
+| `src/features/applications/hooks/useApplicationStats.ts` | Remove `!inner` modifier, update interface |
 
-No navigation, no header, no footer -- just the pure audio experience.
