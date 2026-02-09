@@ -92,6 +92,8 @@ const ApplicationSubmissionSchema = z.object({
   job_listing_id: z.string().uuid('Invalid job listing ID').optional().or(z.literal('')),
   job_id: z.string().max(50, 'Job ID too long').optional(),
   org_slug: z.string().max(100, 'Organization slug too long').optional(),
+  organization_id: z.string().uuid('Invalid organization ID').optional().or(z.literal('')),
+  client_id: z.string().uuid('Invalid client ID').optional().or(z.literal('')),
   
   // Personal extended fields (detailed form)
   prefix: z.string().max(20).optional(),
@@ -366,7 +368,9 @@ async function resolveOrganizationAndJob(
   jobListingId?: string,
   orgSlug?: string,
   detectedSource?: string,
-  jobIdFromPayload?: string
+  jobIdFromPayload?: string,
+  organizationIdDirect?: string,
+  clientIdDirect?: string
 ): Promise<{ organizationId: string; organizationName: string; clientName: string | null; externalJobId: string | null; jobTitle: string | null }> {
   // Priority 0: Source-based organization override (e.g., CDL Job Cast → Hayes)
   if (detectedSource && SOURCE_ORGANIZATION_OVERRIDES[detectedSource]) {
@@ -456,6 +460,29 @@ async function resolveOrganizationAndJob(
     if (org) {
       logger.info('Resolved org from slug', { org_name: org.name });
       return { organizationId: org.id, organizationName: org.name, clientName: null, externalJobId: null, jobTitle: null };
+    }
+  }
+
+  // Priority 3: Direct organization_id from universal apply URL
+  if (organizationIdDirect) {
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('id, name')
+      .eq('id', organizationIdDirect)
+      .single();
+    
+    if (org) {
+      let clientName: string | null = null;
+      if (clientIdDirect) {
+        const { data: client } = await supabase
+          .from('clients')
+          .select('name')
+          .eq('id', clientIdDirect)
+          .single();
+        clientName = client?.name || null;
+      }
+      logger.info('Resolved org from direct organization_id', { org_name: org.name, client_name: clientName });
+      return { organizationId: org.id, organizationName: org.name, clientName, externalJobId: null, jobTitle: null };
     }
   }
   
@@ -668,7 +695,9 @@ Deno.serve(async (req) => {
       normalizedJobListingId,
       formData.org_slug,
       detectedSource,
-      formData.job_id // Pass job_id for prefix-based organization inference
+      formData.job_id, // Pass job_id for prefix-based organization inference
+      formData.organization_id && formData.organization_id.trim() !== '' ? formData.organization_id : undefined,
+      formData.client_id && formData.client_id.trim() !== '' ? formData.client_id : undefined
     );
 
     // Check for duplicate applications within 30 days
