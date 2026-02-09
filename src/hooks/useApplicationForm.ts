@@ -29,6 +29,8 @@ interface FormData {
   job_listing_id: string;
   job_id: string;
   org_slug: string;
+  organization_id: string;
+  client_id: string;
   utm_source: string;
   utm_medium: string;
   utm_campaign: string;
@@ -59,6 +61,8 @@ const initialFormData: FormData = {
   job_listing_id: '',
   job_id: '',
   org_slug: '',
+  organization_id: '',
+  client_id: '',
   utm_source: '',
   utm_medium: '',
   utm_campaign: '',
@@ -108,6 +112,8 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
       job_listing_id: getParam('job_listing_id', 'jobListingId', 'JobListingID', 'job', 'job_id', 'jobId'),
       job_id: getParam('job_id', 'jobId', 'JobID'),
       org_slug: getParam('org', 'organization', 'org_slug'),
+      organization_id: getParam('organization_id', 'organizationId', 'org_id'),
+      client_id: getParam('client_id', 'clientId'),
       utm_source: getParam('utm_source', 'utmSource', 'source'),
       utm_medium: getParam('utm_medium', 'utmMedium', 'medium'),
       utm_campaign: getParam('utm_campaign', 'utmCampaign', 'campaign_name'),
