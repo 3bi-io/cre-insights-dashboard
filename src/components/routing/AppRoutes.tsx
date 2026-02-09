@@ -161,7 +161,7 @@ const AppRoutes: React.FC = () => {
         <Route path="clients" element={<RouteWrapper><PublicClientsPage /></RouteWrapper>} />
         <Route path="companies" element={<Navigate to="/clients" replace />} />
         <Route path="features" element={<RouteWrapper><FeaturesPage /></RouteWrapper>} />
-        <Route path="pricing" element={<Navigate to="/contact" replace />} />
+        
         <Route path="contact" element={<RouteWrapper><ContactPage /></RouteWrapper>} />
         <Route path="resources" element={<RouteWrapper><ResourcesPage /></RouteWrapper>} />
         <Route path="privacy-policy" element={<RouteWrapper><PrivacyPolicyPage /></RouteWrapper>} />
