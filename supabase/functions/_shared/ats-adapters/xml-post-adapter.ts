@@ -341,28 +341,115 @@ export class XMLPostAdapter extends BaseATSAdapter {
   </Licenses>`;
     }
 
-    // Add ApplicationData section per Tenstreet spec
+    // Add ApplicationData section with enriched DisplayFields + CustomQuestions
+    const appReferrer = this.extractBrandName(application.referral_source, application.source);
+    
     xml += `
   <ApplicationData>
-    <AppReferrer>${this.escapeXml(application.source || application.referral_source || 'ATS.me')}</AppReferrer>
-    <StatusTag>${this.escapeXml(application.status || 'New')}</StatusTag>`;
+    <AppReferrer>${this.escapeXml(appReferrer)}</AppReferrer>
+    <StatusTag>New</StatusTag>`;
 
-    // Add DisplayFields inside ApplicationData per spec
-    if (application.custom_questions || application.display_fields) {
-      const customData = application.custom_questions || application.display_fields;
+    // Build DisplayFields from application columns
+    const displayFields: Array<{ prompt: string; value: string }> = [];
+    
+    // Experience Level mapping from months
+    const monthsNum = application.months ? parseInt(String(application.months), 10) : null;
+    if (monthsNum !== null && !isNaN(monthsNum)) {
+      const expLevel = monthsNum >= 12 ? 'Over 1 Year' : (monthsNum >= 3 ? '3-12 Months' : 'Under 3 Months');
+      displayFields.push({ prompt: 'Experience Level', value: expLevel });
+      
+      const years = Math.floor(monthsNum / 12);
+      const expMonthsDisplay = years > 0 ? `${monthsNum} (${years} year${years > 1 ? 's' : ''})` : String(monthsNum);
+      displayFields.push({ prompt: 'Experience Months', value: expMonthsDisplay });
+    } else if (application.exp) {
+      displayFields.push({ prompt: 'Experience Level', value: String(application.exp) });
+    }
+
+    // Veteran Status
+    if (application.veteran) {
+      displayFields.push({ prompt: 'Veteran Status', value: String(application.veteran) });
+    }
+
+    // Driver Type (skip if null)
+    if (application.driver_type) {
+      displayFields.push({ prompt: 'Driver Type', value: String(application.driver_type) });
+    }
+
+    // Apply URL (injected by index.ts)
+    if (application.apply_url) {
+      displayFields.push({ prompt: 'Apply URL', value: `ATS.me(${application.apply_url})` });
+    }
+
+    // Powered By (injected by index.ts)
+    if (application.powered_by) {
+      displayFields.push({ prompt: 'Powered By', value: String(application.powered_by) });
+    }
+
+    // Merge any existing display_fields JSON
+    if (application.display_fields && typeof application.display_fields === 'object') {
+      for (const [key, value] of Object.entries(application.display_fields as Record<string, unknown>)) {
+        if (value !== null && value !== undefined) {
+          displayFields.push({ prompt: key, value: String(value) });
+        }
+      }
+    }
+
+    if (displayFields.length > 0) {
       xml += `
     <DisplayFields>`;
-      for (const [key, value] of Object.entries(customData as Record<string, unknown>)) {
-        if (value !== null && value !== undefined) {
-          xml += `
+      for (const field of displayFields) {
+        xml += `
       <DisplayField>
-        <DisplayPrompt>${this.escapeXml(key)}</DisplayPrompt>
-        <DisplayValue>${this.escapeXml(String(value))}</DisplayValue>
+        <DisplayPrompt>${this.escapeXml(field.prompt)}</DisplayPrompt>
+        <DisplayValue>${this.escapeXml(field.value)}</DisplayValue>
       </DisplayField>`;
-        }
       }
       xml += `
     </DisplayFields>`;
+    }
+
+    // Build CustomQuestions from compliance booleans
+    const customQuestions: Array<{ question: string; answer: string }> = [];
+    
+    const drugAnswer = application.drug || application.can_pass_drug_test;
+    if (drugAnswer) customQuestions.push({ question: 'Can you pass a drug screening?', answer: String(drugAnswer) });
+    
+    const over21Answer = application.over_21 || application.age;
+    if (over21Answer) customQuestions.push({ question: 'Are you over 21 years of age?', answer: String(over21Answer) });
+    
+    if (application.veteran) customQuestions.push({ question: 'Are you a veteran?', answer: String(application.veteran) });
+    
+    const consentAnswer = application.consent;
+    if (consentAnswer) customQuestions.push({ question: 'Do you consent to data processing?', answer: String(consentAnswer) });
+    
+    const privacyAnswer = application.privacy || application.agree_privacy_policy;
+    if (privacyAnswer) customQuestions.push({ question: 'Do you agree to the privacy policy?', answer: String(privacyAnswer) });
+    
+    if (application.consent_to_sms) customQuestions.push({ question: 'Do you consent to SMS communication?', answer: String(application.consent_to_sms) });
+    
+    if (application.background_check_consent) customQuestions.push({ question: 'Do you consent to background check?', answer: String(application.background_check_consent) });
+
+    // Merge any existing custom_questions JSON
+    if (application.custom_questions && typeof application.custom_questions === 'object') {
+      for (const [key, value] of Object.entries(application.custom_questions as Record<string, unknown>)) {
+        if (value !== null && value !== undefined) {
+          customQuestions.push({ question: key, answer: String(value) });
+        }
+      }
+    }
+
+    if (customQuestions.length > 0) {
+      xml += `
+    <CustomQuestions>`;
+      for (const cq of customQuestions) {
+        xml += `
+      <CustomQuestion>
+        <Question>${this.escapeXml(cq.question)}</Question>
+        <Answer>${this.escapeXml(cq.answer)}</Answer>
+      </CustomQuestion>`;
+      }
+      xml += `
+    </CustomQuestions>`;
     }
 
     xml += `
@@ -438,6 +525,36 @@ export class XMLPostAdapter extends BaseATSAdapter {
       success: true,
       message: 'Application sent',
     };
+  }
+
+  /**
+   * Extract clean brand name from referral_source URL
+   */
+  protected extractBrandName(referralSource?: string, fallbackSource?: string): string {
+    const brandMap: Record<string, string> = {
+      'ziprecruiter.com': 'ZipRecruiter',
+      'indeed.com': 'Indeed',
+      'linkedin.com': 'LinkedIn',
+      'facebook.com': 'Facebook',
+      'craigslist.org': 'Craigslist',
+      'google.com': 'Google',
+    };
+
+    if (referralSource) {
+      try {
+        const url = new URL(referralSource);
+        const hostname = url.hostname.replace(/^www\./, '');
+        if (brandMap[hostname]) return brandMap[hostname];
+        // Capitalize first part of domain
+        const domainName = hostname.split('.')[0];
+        return domainName.charAt(0).toUpperCase() + domainName.slice(1);
+      } catch {
+        // Not a valid URL, use as-is
+        return referralSource;
+      }
+    }
+
+    return fallbackSource || 'ATS.me';
   }
 
   /**

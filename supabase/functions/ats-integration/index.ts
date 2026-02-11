@@ -133,6 +133,52 @@ serve(async (req) => {
             );
           }
           appData = app as ApplicationData;
+
+          // Enrich with company_name from job_listing -> organization
+          if (appData.job_listing_id) {
+            const { data: jobData } = await supabase
+              .from('job_listings')
+              .select('organization_id, organizations(name)')
+              .eq('id', appData.job_listing_id)
+              .single();
+
+            if (jobData) {
+              const orgName = (jobData as any).organizations?.name || '';
+              if (!appData.company_name) {
+                appData.company_name = orgName;
+              }
+
+              // Get client name for "Powered By" from ats_connection
+              let clientName = '';
+              if (atsConnection.client_id) {
+                const { data: clientData } = await supabase
+                  .from('clients')
+                  .select('name')
+                  .eq('id', atsConnection.client_id)
+                  .single();
+                clientName = clientData?.name || '';
+              }
+              appData.powered_by = clientName ? `${clientName} AI` : (orgName ? `${orgName} AI` : '');
+
+              // Get apply URL from job_short_links
+              const { data: shortLink } = await supabase
+                .from('job_short_links')
+                .select('short_code')
+                .eq('job_listing_id', appData.job_listing_id)
+                .eq('is_active', true)
+                .limit(1)
+                .single();
+
+              if (shortLink?.short_code) {
+                appData.apply_url = `https://ats.me/j/${shortLink.short_code}`;
+              } else {
+                // Fallback to universal apply URL
+                const orgId = (jobData as any).organization_id || '';
+                const clientId = atsConnection.client_id || '';
+                appData.apply_url = `https://ats.me/apply?organization_id=${orgId}${clientId ? `&client_id=${clientId}` : ''}`;
+              }
+            }
+          }
         } else {
           return new Response(
             JSON.stringify({ success: false, error: 'application_id or application_data is required' }),
