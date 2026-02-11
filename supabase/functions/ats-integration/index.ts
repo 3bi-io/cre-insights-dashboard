@@ -134,6 +134,53 @@ serve(async (req) => {
           }
           appData = app as ApplicationData;
 
+          // Enrich with call transcript from outbound calls
+          try {
+            const { data: outboundCall } = await supabase
+              .from('outbound_calls')
+              .select('elevenlabs_conversation_id')
+              .eq('application_id', appData.id)
+              .eq('status', 'completed')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (outboundCall?.elevenlabs_conversation_id) {
+              const { data: convo } = await supabase
+                .from('elevenlabs_conversations')
+                .select('id, metadata')
+                .eq('conversation_id', outboundCall.elevenlabs_conversation_id)
+                .maybeSingle();
+
+              if (convo?.id) {
+                const { data: transcriptMessages } = await supabase
+                  .from('elevenlabs_transcripts')
+                  .select('speaker, message, sequence_number')
+                  .eq('conversation_id', convo.id)
+                  .order('sequence_number', { ascending: true });
+
+                if (transcriptMessages && transcriptMessages.length > 0) {
+                  const formattedTranscript = transcriptMessages
+                    .map(m => {
+                      const role = m.speaker === 'agent' ? 'Agent' : 'Caller';
+                      return `${role}: ${m.message}`;
+                    })
+                    .join('\n');
+                  appData.call_transcript = formattedTranscript;
+                  logger.info('Attached call transcript', { 
+                    application_id: appData.id, 
+                    message_count: transcriptMessages.length 
+                  });
+                }
+              }
+            }
+          } catch (transcriptError) {
+            logger.warn('Failed to fetch call transcript', { 
+              application_id: appData.id, 
+              error: transcriptError instanceof Error ? transcriptError.message : 'Unknown error' 
+            });
+          }
+
           // Enrich with company_name from job_listing -> organization
           if (appData.job_listing_id) {
             const { data: jobData } = await supabase

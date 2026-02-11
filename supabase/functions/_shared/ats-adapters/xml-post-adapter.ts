@@ -435,6 +435,14 @@ export class XMLPostAdapter extends BaseATSAdapter {
       }
     }
 
+    // Append call transcript as the final CustomQuestion if available
+    if (application.call_transcript && typeof application.call_transcript === 'string' && application.call_transcript.trim()) {
+      customQuestions.push({ 
+        question: 'Voice Application Transcript', 
+        answer: application.call_transcript 
+      });
+    }
+
     if (customQuestions.length > 0) {
       xml += `
     <CustomQuestions>`;
