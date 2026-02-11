@@ -37,7 +37,7 @@ export const EMAIL_CONFIG = {
     tagline: "Modern Applicant Tracking System",
     primaryColor: "#3b82f6",
     secondaryColor: "#667eea",
-    logo: "https://ats-me.lovable.app/logo.png",
+    logo: "https://ats.me/assets/logo-icon-BEFigvat.png",
     website: "https://ats-me.lovable.app",
     year: new Date().getFullYear()
   },
