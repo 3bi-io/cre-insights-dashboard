@@ -1,0 +1,1 @@
+UPDATE clients SET logo_url = 'https://ats-me.lovable.app/logos/danny-herman.png' WHERE id = '1d54e463-4d7f-4a05-8189-3e33d0586dea';
