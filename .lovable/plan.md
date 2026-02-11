@@ -1,145 +1,85 @@
 
 
-## Enrich Tenstreet XML Payload: DisplayFields + CustomQuestions
+## Append Outbound Call Transcript to Tenstreet CustomQuestions
 
 ### Overview
 
-Update two files to produce the exact XML structure you specified, with auto-populated DisplayFields and CustomQuestions from application column data.
+When sending an application to Tenstreet, look up the associated outbound call, retrieve the full transcript from `elevenlabs_transcripts`, and append it as the **last CustomQuestion** in the XML payload.
+
+### Data Path
+
+```text
+applications.id
+  -> outbound_calls.application_id (get elevenlabs_conversation_id)
+    -> elevenlabs_conversations.conversation_id (get internal UUID id)
+      -> elevenlabs_transcripts.conversation_id (get all messages ordered by sequence_number)
+```
 
 ### Changes
 
-**File 1: `supabase/functions/_shared/ats-adapters/xml-post-adapter.ts`**
+**File 1: `supabase/functions/ats-integration/index.ts` (lines ~135-180)**
 
-Replace the `ApplicationData` section (lines 344-370) with new logic that:
+After existing enrichment (company_name, apply_url, powered_by), add a new block:
 
-1. **AppReferrer**: Extract clean brand name from `referral_source` URL
-   - `https://www.ziprecruiter.com/` -> `ZipRecruiter`
-   - `https://www.indeed.com/` -> `Indeed`
-   - Falls back to `source` if `referral_source` is null, then `ATS.me`
+1. Query `outbound_calls` where `application_id = appData.id` and `status = 'completed'` (or any status with a conversation), ordered by `created_at DESC`, limit 1
+2. If found with `elevenlabs_conversation_id`, look up `elevenlabs_conversations` to get the internal UUID `id`
+3. Query `elevenlabs_transcripts` where `conversation_id = {internal_uuid}`, ordered by `sequence_number`
+4. Build a formatted transcript string:
+   ```
+   Agent: Hello Constantine! This is...
+   Caller: Yes, I'm interested...
+   Agent: Great! Can you tell me...
+   ```
+5. Attach to `appData.call_transcript = formattedTranscript`
+6. Also attach any `data_collection_results` from the conversation metadata if available, to supplement existing compliance fields
 
-2. **StatusTag**: Always `New`
+**File 2: `supabase/functions/_shared/ats-adapters/xml-post-adapter.ts` (lines ~427-450)**
 
-3. **DisplayFields** (auto-populated from application columns):
+After the existing CustomQuestions block (consent, privacy, etc.) and before closing the `</CustomQuestions>` tag:
 
-| DisplayPrompt | Source | Example for Constantine |
-|---|---|---|
-| Experience Level | `months` mapped to label | Over 1 Year |
-| Experience Months | `months` + years calc | 48 (4 years) |
-| Veteran Status | `veteran` | No |
-| Driver Type | `driver_type` (skip if null) | -- |
-| Apply URL | `apply_url` injected by index.ts | ATS.me(https://ats.me/j/{short_code}) |
-| Powered By | `powered_by` injected by index.ts | Pemberton AI |
+1. Check if `application.call_transcript` exists and is non-empty
+2. If so, append it as the final CustomQuestion:
+   ```xml
+   <CustomQuestion>
+     <Question>Voice Application Transcript</Question>
+     <Answer>{full transcript text}</Answer>
+   </CustomQuestion>
+   ```
+3. The transcript text will be XML-escaped via the existing `escapeXml()` method
 
-   - Existing JSON `custom_questions`/`display_fields` merged in if present
-   - Null/empty values skipped
+### Expected Output (appended to existing CustomQuestions)
 
-4. **CustomQuestions** (compliance booleans):
-
-| Question | Source Column(s) |
-|---|---|
-| Can you pass a drug screening? | `drug` / `can_pass_drug_test` |
-| Are you over 21 years of age? | `over_21` / `age` |
-| Are you a veteran? | `veteran` |
-| Do you consent to data processing? | `consent` |
-| Do you agree to the privacy policy? | `privacy` / `agree_privacy_policy` |
-| Do you consent to SMS communication? | `consent_to_sms` (skip if null) |
-| Do you consent to background check? | `background_check_consent` (skip if null) |
-
-   - Only non-null answers included
-
-5. **Experience Level mapping**:
-   - `months >= 12` -> "Over 1 Year"
-   - `months >= 3` -> "3-12 Months"
-   - `months < 3` -> "Under 3 Months"
-   - Falls back to raw `exp` value if `months` is null
-
-6. **Referral source brand extraction** (domain to brand name map):
-
-```text
-ziprecruiter.com  -> ZipRecruiter
-indeed.com        -> Indeed
-linkedin.com      -> LinkedIn
-facebook.com      -> Facebook
-craigslist.org    -> Craigslist
-google.com        -> Google
-(other)           -> capitalize domain
+```xml
+<CustomQuestions>
+  <!-- existing compliance questions -->
+  <CustomQuestion>
+    <Question>Can you pass a drug screening?</Question>
+    <Answer>Yes</Answer>
+  </CustomQuestion>
+  <!-- ... other questions ... -->
+  <CustomQuestion>
+    <Question>Voice Application Transcript</Question>
+    <Answer>Agent: Hello Constantine! This is the recruiting team from Pemberton Truck Lines calling about your driving application. Is now a good time to chat?
+Caller: Yes, go ahead.
+Agent: Great! Do you currently hold a Class A CDL?
+Caller: Yes I do.
+...</Answer>
+  </CustomQuestion>
+</CustomQuestions>
 ```
 
-**File 2: `supabase/functions/ats-integration/index.ts`**
+### Edge Cases
 
-Update the `send_application` case (lines 122-135) to enrich `appData` after fetching from database:
-
-1. Join `job_listings` -> `organizations` to get `company_name`
-2. Join `ats_connections` -> `clients` to get the client name for "Powered By" (e.g., "Pemberton AI")
-3. Query `job_short_links` for an active short code for this job listing
-4. Attach to appData before passing to adapter:
-   - `appData.company_name` = org or client name (e.g., "Pemberton Truck Lines Inc")
-   - `appData.apply_url` = `https://ats.me/j/{short_code}` or fallback to `https://ats.me/apply?organization_id=...&client_id=...`
-   - `appData.powered_by` = client name + " AI" (e.g., "Pemberton AI"), or org name + " AI"
-
-### Expected Output for Constantine
-
-```text
-<ApplicationData>
-  <AppReferrer>ZipRecruiter</AppReferrer>
-  <StatusTag>New</StatusTag>
-  <DisplayFields>
-    <DisplayField>
-      <DisplayPrompt>Experience Level</DisplayPrompt>
-      <DisplayValue>Over 1 Year</DisplayValue>
-    </DisplayField>
-    <DisplayField>
-      <DisplayPrompt>Experience Months</DisplayPrompt>
-      <DisplayValue>48 (4 years)</DisplayValue>
-    </DisplayField>
-    <DisplayField>
-      <DisplayPrompt>Veteran Status</DisplayPrompt>
-      <DisplayValue>No</DisplayValue>
-    </DisplayField>
-    <DisplayField>
-      <DisplayPrompt>Apply URL</DisplayPrompt>
-      <DisplayValue>ATS.me(https://ats.me/apply?organization_id=84214b48-...&client_id=67cadf11-...)</DisplayValue>
-    </DisplayField>
-    <DisplayField>
-      <DisplayPrompt>Powered By</DisplayPrompt>
-      <DisplayValue>Pemberton AI</DisplayValue>
-    </DisplayField>
-  </DisplayFields>
-  <CustomQuestions>
-    <CustomQuestion>
-      <Question>Can you pass a drug screening?</Question>
-      <Answer>Yes</Answer>
-    </CustomQuestion>
-    <CustomQuestion>
-      <Question>Are you over 21 years of age?</Question>
-      <Answer>Yes</Answer>
-    </CustomQuestion>
-    <CustomQuestion>
-      <Question>Are you a veteran?</Question>
-      <Answer>No</Answer>
-    </CustomQuestion>
-    <CustomQuestion>
-      <Question>Do you consent to data processing?</Question>
-      <Answer>Yes</Answer>
-    </CustomQuestion>
-    <CustomQuestion>
-      <Question>Do you agree to the privacy policy?</Question>
-      <Answer>Yes</Answer>
-    </CustomQuestion>
-  </CustomQuestions>
-</ApplicationData>
-```
-
-Note: Constantine's job has no active short link, so Apply URL falls back to the universal apply URL with org + client IDs.
+- **No outbound call found**: Skip -- no transcript question added
+- **Call initiated but no transcript yet**: Skip -- transcript array is empty
+- **Multiple outbound calls**: Use the most recent completed call
+- **Very long transcripts**: Include full text (Tenstreet accepts large answer fields)
+- **Constantine's current call**: Status is `initiated` with no transcript data yet -- transcript question will be skipped until a completed call exists
 
 ### Summary
 
-| File | What Changes |
+| File | Change |
 |---|---|
-| `xml-post-adapter.ts` | Lines 344-370: rewrite ApplicationData section with DisplayFields auto-mapping, CustomQuestions, clean referral brand name, StatusTag = "New" |
-| `ats-integration/index.ts` | Lines 122-135: enrich appData with company_name, apply_url, powered_by before passing to adapter |
-
-### After Deployment
-
-Re-send Constantine's application to verify enriched payload.
+| `ats-integration/index.ts` | After line ~180: query outbound_calls -> elevenlabs_conversations -> elevenlabs_transcripts, build formatted transcript string, attach as `appData.call_transcript` |
+| `xml-post-adapter.ts` | After line ~427: if `call_transcript` exists, append as final `<CustomQuestion>` with question "Voice Application Transcript" |
 
