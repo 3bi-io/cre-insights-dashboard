@@ -776,7 +776,7 @@ Deno.serve(async (req) => {
       jobId: formData.job_id,
       jobTitle: 'General Application',
       organizationId: organizationId,
-      clientId: null,
+      clientId: formData.client_id && formData.client_id.trim() !== '' ? formData.client_id : null,
       city,
       state,
       source: 'Direct Application',
