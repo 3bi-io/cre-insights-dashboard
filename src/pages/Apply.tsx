@@ -6,6 +6,7 @@ import { ApplicationForm } from '@/components/apply/ApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
+import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
 
 /**
  * Apply Page - Quick application form for job seekers
@@ -89,6 +90,7 @@ const Apply = () => {
           </div>
         </div>
       </div>
+      <ZipRecruiterPixel />
     </>
   );
 };

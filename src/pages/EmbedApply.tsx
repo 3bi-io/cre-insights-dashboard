@@ -5,6 +5,7 @@ import { EmbedApplicationForm } from '@/components/apply/EmbedApplicationForm';
 import { EmbedThankYou } from '@/components/apply/EmbedThankYou';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
 import { useApplyContext } from '@/hooks/useApplyContext';
+import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
 
 interface SubmissionResult {
   applicationId: string;
@@ -106,6 +107,7 @@ const EmbedApply: React.FC = () => {
           
         </div>
       </div>
+      <ZipRecruiterPixel />
     </div>
   );
 };
