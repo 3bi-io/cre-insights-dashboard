@@ -1,51 +1,66 @@
 
-## Universal Apply URLs with Organization-Level Attribution
 
-### Concept
-Instead of requiring a `job_id`, the apply URL resolves context (branding, client name, logo) from `organization_id` and optionally `client_id`. The originating platform adds UTM parameters for attribution.
+## Fix: Universal Apply URL Routing to Correct Client Job Listing
 
-### Example URLs for Hayes Clients
+### Problem
+When a candidate applies via the universal URL with `client_id=67cadf11...` (Pemberton Truck Lines), the application gets assigned to a "General Application" listing under the "Unassigned" client (`1f3545ff...`) instead of Pemberton's actual job listings.
 
-| Client | Universal Apply URL |
-|---|---|
-| **Hayes (org-level)** | `https://ats-me.lovable.app/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c` |
-| **Danny Herman Trucking** | `https://ats-me.lovable.app/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c&client_id=1d54e463-4d7f-4a05-8189-3e33d0586dea` |
-| **Pemberton Truck Lines** | `https://ats-me.lovable.app/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c&client_id=67cadf11-8cce-41c6-8e19-7d2bb0be3b03` |
-| **Day and Ross** | `https://ats-me.lovable.app/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c&client_id=30ab5f68-258c-4e81-8217-1123c4536259` |
-| **Novco, Inc.** | `https://ats-me.lovable.app/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c&client_id=4a9ef1df-dcc9-499c-999a-446bb9a329fc` |
-| **Hayes AI Recruiting** | `https://ats-me.lovable.app/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c&client_id=49dce1cb-4830-440d-8835-6ce59b552012` |
+**Root cause:** In `submit-application/index.ts` line 779, `clientId` is hardcoded to `null`:
+```text
+const jobListingResult = await findOrCreateJobListing(supabase, {
+  ...
+  clientId: null,   // <-- BUG: should pass the resolved client_id
+  ...
+});
+```
 
-Platform attribution is appended by the source, e.g.:
-`...&client_id=1d54e463-...&utm_source=linkedin&utm_medium=job_board`
+This means `findOrCreateJobListing` cannot scope its "General Application" fallback to Pemberton, and instead picks the first org-wide "General Application" it finds, which belongs to the "Unassigned" client.
 
-### Changes Required
+### Additional Issue: UTM Attribution Missing
+The application record shows `utm_source: null`, `utm_medium: null` even though the URL likely had UTM params. This suggests the Indeed redirect did not append UTM parameters, OR the form data is not being captured. The form data should have `utm_source=indeed` for proper attribution since traffic came from Indeed.
 
-#### 1. Frontend: `src/hooks/useApplyContext.ts`
-- Add `organization_id` and `client_id` URL parameter extraction
-- When no `job_id` is present but `client_id` is, fetch client name and logo from `public_client_info` view
-- When only `organization_id` is present, show a generic application header (no specific client branding)
-- Pass `organization_id` through to the form data so it reaches the backend
+### Fix (2 changes)
 
-#### 2. Frontend: `src/hooks/useApplicationForm.ts`
-- Add `organization_id` and `client_id` to the `FormData` interface and URL parameter capture
-- These values get sent to `submit-application` so the backend can resolve the correct organization without needing a job ID
+#### 1. Pass `client_id` to `findOrCreateJobListing` (submit-application/index.ts, line 779)
 
-#### 3. Backend: `supabase/functions/submit-application/index.ts`
-- In `resolveOrganizationAndJob()`, add a new priority level that accepts `organization_id` directly (between the current org_slug and fallback priorities)
-- If `client_id` is also provided, resolve the client name from it for email branding
-- This ensures applications submitted via universal URLs are correctly attributed to the right organization and client
+Change:
+```text
+clientId: null,
+```
+To:
+```text
+clientId: formData.client_id && formData.client_id.trim() !== '' ? formData.client_id : null,
+```
 
-#### 4. Redeploy
-- Redeploy `submit-application` edge function after changes
+This ensures that when a universal URL provides `client_id`, the job listing resolution:
+- First looks for a client-specific "General Application" listing for Pemberton
+- If none exists, creates one scoped to Pemberton
+- Prevents misrouting to the "Unassigned" client
 
-### Technical Details
+#### 2. Create a Pemberton-specific "General Application" job listing
 
-The resolution priority in `resolveOrganizationAndJob()` becomes:
-1. Source override (existing)
-2. Job ID prefix inference (existing)
-3. `job_listing_id` lookup (existing)
-4. `org_slug` lookup (existing)
-5. **NEW: Direct `organization_id` + optional `client_id`**
-6. Fallback to CR England (existing)
+Since there is no "General Application" listing for Pemberton (`67cadf11...`), one should be created so universal URL applications land correctly. The `findOrCreateJobListing` function will auto-create one if needed (Step 5 in the fallback chain), but only after the fix above is deployed.
 
-On the frontend, `useApplyContext` gains a new branch: if no job is found but `client_id` is present, it queries `public_client_info` directly to get the client name and logo for the header display. No job title or location is shown since no specific job is targeted.
+Alternatively, we can verify the system creates one automatically after the fix.
+
+#### 3. Redeploy `submit-application` edge function
+
+#### 4. Reassign the misrouted application
+
+Update application `352a24fa...` to point to the correct Pemberton General Application listing (once created) or to the matching Greenville, NC listing (`c12eec4e...`).
+
+### Recommended Indeed URL Format
+
+For Indeed job postings, the apply URL should include UTM attribution:
+```text
+https://ats.me/apply?organization_id=84214b48-7b51-45bc-ad7f-723bcf50466c&client_id=67cadf11-8cce-41c6-8e19-7d2bb0be3b03&utm_source=indeed&utm_medium=job_board
+```
+
+### Technical Summary
+
+| Item | Before (Broken) | After (Fixed) |
+|---|---|---|
+| `clientId` passed to `findOrCreateJobListing` | `null` | Resolved from `formData.client_id` |
+| Application routes to | "Unassigned" General Application (`a5bdad6f`) | Pemberton-specific General Application |
+| UTM attribution | Missing | Captured when included in URL |
+
