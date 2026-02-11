@@ -1,100 +1,57 @@
 
 
-## Fix Custom Question Routing + End-to-End Workflow Automation
+## Fix DisplayFields XML Bug + Auto-Post Audit Trail + Re-send Mitchell
 
-### Problem 1: CustomQuestion XML Missing QuestionId
+### Bug 1: Compliance Data and Transcripts Never Sent (Critical)
 
-The Tenstreet API requires every `<CustomQuestion>` to have a `<QuestionId>` tag that matches a pre-configured question in Tenstreet's dashboard for the given CompanyId. The current `xml-post-adapter.ts` (lines 449-454) generates:
+**Root cause:** In `xml-post-adapter.ts`, the `<DisplayFields>` XML block is emitted at lines 394-405, but compliance booleans (drug screening, over 21, consent, etc.) and the call transcript are pushed to the `displayFields` array AFTER the XML has already been written (lines 408-429). These items are added to the array but never appear in the output XML.
 
-```xml
-<CustomQuestion>
-  <Question>Can you pass a drug screening?</Question>
-  <Answer>yes</Answer>
-</CustomQuestion>
-```
+This means **none** of the previous re-sends actually included compliance data or transcripts in the XML payload, despite logging that they were "attached."
 
-But Tenstreet expects:
+**Fix:** Move the compliance and transcript pushes BEFORE the XML emission block. Reorganize lines 350-406 so all `displayFields.push()` calls happen first, then emit the XML once.
 
-```xml
-<CustomQuestion>
-  <QuestionId>drug_screening</QuestionId>
-  <Question>Can you pass a drug screening?</Question>
-  <Answer>yes</Answer>
-</CustomQuestion>
-```
+### Bug 2: Auto-Post Missing `request_payload` in Sync Logs
 
-Without the `<QuestionId>`, Tenstreet returns the warning "Custom Question not found for CompanyId provided" and silently drops the data.
+**Root cause:** In `auto-post-engine.ts` line 220-228, the `ats_sync_logs` insert does not include `request_payload`. The manual re-send path (`ats-integration/index.ts` line 201) does include it via `sanitizePayload()`. This is why Mitchell's sync log had a null payload.
 
-**Solution:** Move all dynamic data (compliance booleans, transcript, etc.) to `<DisplayFields>` instead of `<CustomQuestions>`. DisplayFields do NOT require pre-configuration in Tenstreet -- they appear as read-only info on the applicant's profile. CustomQuestions should only be used when the question IDs are explicitly mapped and known to exist in the company's Tenstreet config.
-
-### Problem 2: Auto-Post Skips Transcript Enrichment
-
-When a new application comes in via `submit-application`, the auto-post flow calls `autoPostToATS()` which passes raw application data directly to the adapter. It does NOT run the transcript enrichment logic (fetching outbound call transcripts from ElevenLabs). That enrichment only exists in `ats-integration/index.ts` for manual re-sends.
-
-For inbound web/voice applications, transcripts won't exist at auto-post time (the call hasn't happened yet). But for follow-up outbound calls that trigger a re-post, the enrichment is needed.
-
-**Solution:** Extract the transcript enrichment logic into a shared helper function and call it from both `ats-integration/index.ts` and `auto-post-engine.ts`.
-
----
+**Fix:** Add `request_payload: sanitizePayload(enrichedData)` to the auto-post sync log insert. Import or inline a `sanitizePayload` helper.
 
 ### Changes
 
 #### File 1: `supabase/functions/_shared/ats-adapters/xml-post-adapter.ts`
 
-**Move compliance booleans and transcript from CustomQuestions to DisplayFields (lines 408-458)**
+Reorganize the DisplayFields section (lines 349-406) so ALL display field items are collected before any XML is emitted:
 
-- Drug screening, over 21, veteran, consent, privacy, SMS consent, background check consent, and call transcript all become DisplayFields
-- Remove the entire CustomQuestions block for dynamic/unmapped questions
-- Keep the CustomQuestions section ONLY if the application has explicit `custom_questions` with proper IDs from field mapping config
+1. Build the array with experience, veteran, driver type, apply URL, powered by, display_fields JSON (existing, lines 350-392)
+2. Add compliance booleans: drug, over 21, consent, privacy, SMS, background check (currently lines 408-424, move up)
+3. Add call transcript (currently line 427-429, move up)
+4. THEN emit the `<DisplayFields>` XML block (currently lines 394-405)
 
-Before (simplified):
-```
-DisplayFields: [Experience Level, Experience Months, Veteran, Apply URL, Powered By]
-CustomQuestions: [drug, over21, veteran, consent, privacy, sms, background, transcript]
-```
+No logic changes -- just reordering so the pushes happen before the XML write.
 
-After:
-```
-DisplayFields: [Experience Level, Experience Months, Veteran, Apply URL, Powered By, 
-                Drug Screening, Over 21, Consent, Privacy, SMS Consent, 
-                Background Check Consent, Voice Transcript]
-CustomQuestions: (only if field mapping defines explicit QuestionIds)
-```
+#### File 2: `supabase/functions/_shared/ats-adapters/auto-post-engine.ts`
 
-#### File 2: `supabase/functions/_shared/ats-adapters/transcript-enrichment.ts` (NEW)
-
-Extract the transcript enrichment logic from `ats-integration/index.ts` into a shared utility:
-
-- `enrichWithTranscript(supabase, appData)` -- queries outbound_calls, fetches transcript from ElevenLabs if needed, returns enriched appData with `call_transcript`
-- Includes the broadened status filter, auto-fetch from ElevenLabs API, and status sync
-
-#### File 3: `supabase/functions/ats-integration/index.ts`
-
-- Replace inline transcript enrichment block (lines 138-254) with a call to the new shared `enrichWithTranscript()` function
-
-#### File 4: `supabase/functions/_shared/ats-adapters/auto-post-engine.ts`
-
-- Import and call `enrichWithTranscript()` before sending to the adapter (after line 164, before `adapter.sendApplication`)
-- This ensures outbound follow-up call transcripts are included when applications are re-posted
+- Add a `sanitizePayload` helper function (same as in `ats-integration/index.ts`)
+- Add `request_payload: sanitizePayload(enrichedData)` to both sync log inserts (success at line 220 and error at line 247)
 
 ### Deployment
 
-Deploy updated edge functions: `ats-integration`, `submit-application` (uses auto-post-engine)
+Deploy `ats-integration` and `submit-application` (which bundles the shared adapters).
 
-### After Deployment
+### Verification
 
-Re-send the 3 applications (Constantine, William, Samuil) to verify:
-- Transcript appears as a DisplayField (not CustomQuestion)
-- No "Custom Question not found" warnings from Tenstreet
-- All data is visible on the applicant profile in Tenstreet
+Re-send all 4 applications (Constantine, William, Samuil, Mitchell) to confirm:
+- Compliance DisplayFields appear in the XML
+- Transcript DisplayField appears in the XML (where available)
+- `ats_sync_logs.request_payload` is populated
+- No Tenstreet warnings
 
 ### End-to-End Workflow Confirmation
 
-After these changes, the complete automated flow for any received application:
+After these fixes, the complete automated pipeline:
 
-1. Application submitted via web form or voice call -> `submit-application`
-2. Auto-post fires immediately -> `autoPostToATS` -> `xml-post-adapter`
-3. If outbound follow-up call happens later -> call completes -> manual or automated re-send triggers `ats-integration`
-4. Both paths now call `enrichWithTranscript()` to fetch and attach any available call transcript
-5. All dynamic data routes through DisplayFields (no Tenstreet config required)
-
+1. Application submitted (web/voice) -> `submit-application` -> `autoPostToATS`
+2. Auto-post enriches with transcript -> builds XML with ALL DisplayFields -> POSTs to Tenstreet
+3. Sync log records full sanitized payload + response
+4. Manual re-sends via `ats-integration` follow the same path
+5. All compliance data and transcripts route correctly through DisplayFields
