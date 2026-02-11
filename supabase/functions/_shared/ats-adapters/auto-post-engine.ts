@@ -11,6 +11,24 @@ import { createLogger } from '../logger.ts';
 
 const logger = createLogger('auto-post-engine');
 
+/**
+ * Sanitize payload for logging - remove sensitive fields like SSN, password, etc.
+ */
+function sanitizePayload(data: Record<string, unknown>): Record<string, unknown> {
+  const sensitiveKeys = ['ssn', 'password', 'government_id', 'secret', 'token'];
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      sanitized[key] = sanitizePayload(value as Record<string, unknown>);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
 interface AutoPostResult {
   connectionId: string;
   atsSlug: string;
@@ -224,7 +242,8 @@ export async function autoPostToATS(
           status: response.success ? 'success' : 'failed',
           error_message: response.error,
           duration_ms: durationMs,
-          response_data: response.data
+          response_data: response.data,
+          request_payload: sanitizePayload(enrichedData as Record<string, unknown>)
         });
 
       } catch (error) {
@@ -250,7 +269,8 @@ export async function autoPostToATS(
           action: 'auto_post',
           status: 'failed',
           error_message: err.message,
-          duration_ms: durationMs
+          duration_ms: durationMs,
+          request_payload: sanitizePayload(applicationData as Record<string, unknown>)
         });
       }
     }

@@ -391,20 +391,6 @@ export class XMLPostAdapter extends BaseATSAdapter {
       }
     }
 
-    if (displayFields.length > 0) {
-      xml += `
-    <DisplayFields>`;
-      for (const field of displayFields) {
-        xml += `
-      <DisplayField>
-        <DisplayPrompt>${this.escapeXml(field.prompt)}</DisplayPrompt>
-        <DisplayValue>${this.escapeXml(field.value)}</DisplayValue>
-      </DisplayField>`;
-      }
-      xml += `
-    </DisplayFields>`;
-    }
-
     // Add compliance booleans as DisplayFields (not CustomQuestions -- Tenstreet requires
     // pre-configured QuestionIds for CustomQuestions, but DisplayFields work without config)
     const drugAnswer = application.drug || application.can_pass_drug_test;
@@ -428,8 +414,20 @@ export class XMLPostAdapter extends BaseATSAdapter {
       displayFields.push({ prompt: 'Voice Application Transcript', value: application.call_transcript });
     }
 
-    // Merge any existing display_fields JSON that weren't already added above
-    // (already handled earlier in the displayFields block)
+    // NOW emit the DisplayFields XML block (after all items have been collected)
+    if (displayFields.length > 0) {
+      xml += `
+    <DisplayFields>`;
+      for (const field of displayFields) {
+        xml += `
+      <DisplayField>
+        <DisplayPrompt>${this.escapeXml(field.prompt)}</DisplayPrompt>
+        <DisplayValue>${this.escapeXml(field.value)}</DisplayValue>
+      </DisplayField>`;
+      }
+      xml += `
+    </DisplayFields>`;
+    }
 
     // Only emit CustomQuestions if the application has explicit custom_questions with QuestionIds
     // from field mapping config -- these are pre-configured in Tenstreet's dashboard
