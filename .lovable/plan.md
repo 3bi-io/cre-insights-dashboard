@@ -1,85 +1,91 @@
 
 
-## Append Outbound Call Transcript to Tenstreet CustomQuestions
+## Fix: Outbound Call Status Sync + Auto-Fetch Transcripts for Tenstreet
 
-### Overview
+### Problem Summary
 
-When sending an application to Tenstreet, look up the associated outbound call, retrieve the full transcript from `elevenlabs_transcripts`, and append it as the **last CustomQuestion** in the XML payload.
+The transcript enrichment for Tenstreet payloads is broken due to two issues:
 
-### Data Path
+1. **Outbound call status stays `initiated` forever** -- The call to ElevenLabs succeeds and the conversation completes (`done`), but the `outbound_calls` record never updates to `completed`. The Tenstreet enrichment code filters on `status = 'completed'`, so it never finds the call.
 
-```text
-applications.id
-  -> outbound_calls.application_id (get elevenlabs_conversation_id)
-    -> elevenlabs_conversations.conversation_id (get internal UUID id)
-      -> elevenlabs_transcripts.conversation_id (get all messages ordered by sequence_number)
+2. **Transcripts are never auto-fetched** -- Even if the status were correct, the `elevenlabs_transcripts` table has 0 rows for these conversations. Transcripts are only stored when someone manually triggers the `get_transcript` action.
+
+### Current Data State (Constantine)
+
+| Table | Record | Status | Issue |
+|---|---|---|---|
+| outbound_calls | 24f4f6ed... | `initiated` | Should be `completed` |
+| elevenlabs_conversations | af0167a2... | `done` | Correct (from ElevenLabs) |
+| elevenlabs_transcripts | (none) | 0 rows | Never fetched |
+
+### Plan
+
+#### Change 1: Broaden status filter in `ats-integration/index.ts`
+
+Currently line 143 filters `.eq('status', 'completed')`. Change to accept any call that has an `elevenlabs_conversation_id` (indicating it actually connected), regardless of status:
+
+```
+- .eq('status', 'completed')
++ .in('status', ['completed', 'initiated', 'in_progress'])
++ .not('elevenlabs_conversation_id', 'is', null)
 ```
 
-### Changes
+This ensures calls like Constantine's (status `initiated` but conversation exists and is `done`) are picked up.
 
-**File 1: `supabase/functions/ats-integration/index.ts` (lines ~135-180)**
+#### Change 2: Auto-fetch transcript inline during Tenstreet enrichment
 
-After existing enrichment (company_name, apply_url, powered_by), add a new block:
+In the same enrichment block in `ats-integration/index.ts`, after finding the conversation record but finding 0 local transcripts, call the ElevenLabs API directly to fetch and store the transcript:
 
-1. Query `outbound_calls` where `application_id = appData.id` and `status = 'completed'` (or any status with a conversation), ordered by `created_at DESC`, limit 1
-2. If found with `elevenlabs_conversation_id`, look up `elevenlabs_conversations` to get the internal UUID `id`
-3. Query `elevenlabs_transcripts` where `conversation_id = {internal_uuid}`, ordered by `sequence_number`
-4. Build a formatted transcript string:
-   ```
-   Agent: Hello Constantine! This is...
-   Caller: Yes, I'm interested...
-   Agent: Great! Can you tell me...
-   ```
-5. Attach to `appData.call_transcript = formattedTranscript`
-6. Also attach any `data_collection_results` from the conversation metadata if available, to supplement existing compliance fields
+1. Check if `elevenlabs_transcripts` has rows for the conversation
+2. If not, fetch from ElevenLabs API: `GET /v1/convai/conversations/{conversation_id}`
+3. Store the transcript messages into `elevenlabs_transcripts` (same upsert logic as `elevenlabs-conversations/index.ts`)
+4. Then use those messages to build the formatted transcript
 
-**File 2: `supabase/functions/_shared/ats-adapters/xml-post-adapter.ts` (lines ~427-450)**
+This eliminates the dependency on a separate manual sync step.
 
-After the existing CustomQuestions block (consent, privacy, etc.) and before closing the `</CustomQuestions>` tag:
+#### Change 3: Sync outbound call status during enrichment
 
-1. Check if `application.call_transcript` exists and is non-empty
-2. If so, append it as the final CustomQuestion:
-   ```xml
-   <CustomQuestion>
-     <Question>Voice Application Transcript</Question>
-     <Answer>{full transcript text}</Answer>
-   </CustomQuestion>
-   ```
-3. The transcript text will be XML-escaped via the existing `escapeXml()` method
+While fetching the conversation from ElevenLabs, also update the `outbound_calls` status to `completed` if the ElevenLabs conversation status is `done`. This fixes the data for future queries and dashboards.
 
-### Expected Output (appended to existing CustomQuestions)
+### Technical Details
 
-```xml
-<CustomQuestions>
-  <!-- existing compliance questions -->
-  <CustomQuestion>
-    <Question>Can you pass a drug screening?</Question>
-    <Answer>Yes</Answer>
-  </CustomQuestion>
-  <!-- ... other questions ... -->
-  <CustomQuestion>
-    <Question>Voice Application Transcript</Question>
-    <Answer>Agent: Hello Constantine! This is the recruiting team from Pemberton Truck Lines calling about your driving application. Is now a good time to chat?
-Caller: Yes, go ahead.
-Agent: Great! Do you currently hold a Class A CDL?
-Caller: Yes I do.
-...</Answer>
-  </CustomQuestion>
-</CustomQuestions>
+**File: `supabase/functions/ats-integration/index.ts` (enrichment block, lines ~137-182)**
+
+Replace the current enrichment block with:
+
+1. Query `outbound_calls` with broadened filter (any status with a conversation_id)
+2. Look up `elevenlabs_conversations` to get internal UUID
+3. Check local `elevenlabs_transcripts` for existing messages
+4. If no local transcripts exist:
+   - Fetch from ElevenLabs API using `ELEVENLABS_API_KEY` secret
+   - Store transcript messages via upsert
+   - Update `outbound_calls.status` to `completed` if ElevenLabs says `done`
+5. Build formatted transcript string and attach to `appData.call_transcript`
+
+**File: `supabase/functions/ats-integration/index.ts` (top of file)**
+
+Add `ELEVENLABS_API_KEY` retrieval from `Deno.env.get()` at the top of the handler (it may already be available or need to be added).
+
+### Data Flow After Fix
+
+```text
+Tenstreet send_application request
+  -> Query outbound_calls (any status with conversation_id)
+  -> Found: Constantine's call (status=initiated, conv=conv_8501...)
+  -> Look up elevenlabs_conversations -> af0167a2...
+  -> Check elevenlabs_transcripts -> 0 rows
+  -> Fetch from ElevenLabs API -> get transcript messages
+  -> Store in elevenlabs_transcripts
+  -> Update outbound_calls.status -> completed
+  -> Build formatted transcript
+  -> Append as CustomQuestion in XML payload
 ```
 
 ### Edge Cases
 
-- **No outbound call found**: Skip -- no transcript question added
-- **Call initiated but no transcript yet**: Skip -- transcript array is empty
-- **Multiple outbound calls**: Use the most recent completed call
-- **Very long transcripts**: Include full text (Tenstreet accepts large answer fields)
-- **Constantine's current call**: Status is `initiated` with no transcript data yet -- transcript question will be skipped until a completed call exists
-
-### Summary
-
-| File | Change |
-|---|---|
-| `ats-integration/index.ts` | After line ~180: query outbound_calls -> elevenlabs_conversations -> elevenlabs_transcripts, build formatted transcript string, attach as `appData.call_transcript` |
-| `xml-post-adapter.ts` | After line ~427: if `call_transcript` exists, append as final `<CustomQuestion>` with question "Voice Application Transcript" |
+- **ElevenLabs API key not available**: Log warning, skip transcript (graceful degradation)
+- **Conversation not found in ElevenLabs**: Skip transcript, log the issue
+- **Transcript already exists locally**: Use local data, no API call needed
+- **Multiple outbound calls for same application**: Use most recent with a conversation_id
+- **Calls without application_id**: Not affected (these are already linked via application_id)
 
