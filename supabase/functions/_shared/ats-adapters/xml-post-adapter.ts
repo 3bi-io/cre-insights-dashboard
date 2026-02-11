@@ -285,9 +285,6 @@ export class XMLPostAdapter extends BaseATSAdapter {
   </Authentication>
   <CompanyId>${this.escapeXml(companyId)}</CompanyId>
   <CompanyName>${this.escapeXml(application.company_name || '')}</CompanyName>
-  <Driver>
-    <DriverId>${this.escapeXml(application.driver_id || application.id || '')}</DriverId>
-  </Driver>
   <PersonalData>
     <PersonName>
       <GivenName>${this.escapeXml(application.first_name || '')}</GivenName>
