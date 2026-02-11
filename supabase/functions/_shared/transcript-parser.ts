@@ -4,17 +4,18 @@
   * when data_collection_results is empty or incomplete
   */
  
- export interface ExtractedData {
-   zip?: string;
-   cdl?: string;
-   exp?: string;
-   over_21?: string;
-   drug?: string;
-   veteran?: string;
-   driver_type?: string;
-   consent?: string;
-   email?: string;
- }
+export interface ExtractedData {
+  zip?: string;
+  cdl?: string;
+  exp?: string;
+  over_21?: string;
+  drug?: string;
+  veteran?: string;
+  driver_type?: string;
+  consent?: string;
+  email?: string;
+  phone?: string;
+}
  
  /**
   * Extract ZIP code from transcript
@@ -107,33 +108,65 @@
      }
    }
  
-   return undefined;
- }
- 
- /**
-  * Extract email from transcript
-  */
- function extractEmail(transcript: string): string | undefined {
-   // Look for email patterns in caller responses
-   const emailPattern = /email[^:]*:\s*([^\n]+)/i;
-   const match = transcript.match(emailPattern);
-   if (match) {
-     // Try to reconstruct email from spoken format
-     const spoken = match[1].trim();
-     // Convert common spoken patterns
-     const normalized = spoken
-       .toLowerCase()
-       .replace(/\s+at\s+/g, '@')
-       .replace(/\s+dot\s+/g, '.')
-       .replace(/\s+/g, '')
-       .replace(/[^\w@.+-]/g, '');
-     
-     if (normalized.includes('@') && normalized.includes('.')) {
-       return normalized;
-     }
-   }
-   return undefined;
- }
+  return undefined;
+}
+
+/**
+ * Extract phone number from transcript and normalize spoken digits
+ */
+function extractPhone(transcript: string): string | undefined {
+  // Look for phone number in caller responses after a phone-related question
+  const phonePatterns = [
+    /(?:phone|number|reach\s*you|contact\s*you|call\s*you)[^\n]*\nCaller:\s*([^\n]+)/i,
+    /(?:phone|cell|mobile)\s*(?:number)?[^:]*:\s*([^\n]+)/i,
+  ];
+
+  for (const pattern of phonePatterns) {
+    const match = transcript.match(pattern);
+    if (match) {
+      const spoken = match[1].trim();
+      
+      // If already contains digits, extract them
+      const digitsOnly = spoken.replace(/\D/g, '');
+      if (digitsOnly.length >= 10) {
+        return digitsOnly.slice(-10); // Take last 10 digits
+      }
+      
+      // Try parsing spoken number words
+      const parsed = parseSpokenNumber(spoken);
+      if (parsed && parsed.length >= 10) {
+        return parsed.slice(-10); // Take last 10 digits
+      }
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Extract email from transcript
+ */
+function extractEmail(transcript: string): string | undefined {
+  // Look for email patterns in caller responses
+  const emailPattern = /email[^:]*:\s*([^\n]+)/i;
+  const match = transcript.match(emailPattern);
+  if (match) {
+    // Try to reconstruct email from spoken format
+    const spoken = match[1].trim();
+    // Convert common spoken patterns
+    const normalized = spoken
+      .toLowerCase()
+      .replace(/\s+at\s+/g, '@')
+      .replace(/\s+dot\s+/g, '.')
+      .replace(/\s+/g, '')
+      .replace(/[^\w@.+-]/g, '');
+    
+    if (normalized.includes('@') && normalized.includes('.')) {
+      return normalized;
+    }
+  }
+  return undefined;
+}
  
  /**
   * Parse spoken numbers to digits
@@ -222,11 +255,14 @@
    // Extract privacy/consent
    data.consent = extractYesNo(transcript, 'privacy\\s*policy');
  
-   // Extract driver type
-   data.driver_type = extractDriverType(transcript);
- 
-   // Extract email
-   data.email = extractEmail(transcript);
- 
-   return data;
- }
+  // Extract driver type
+  data.driver_type = extractDriverType(transcript);
+
+  // Extract email
+  data.email = extractEmail(transcript);
+
+  // Extract phone
+  data.phone = extractPhone(transcript);
+
+  return data;
+}

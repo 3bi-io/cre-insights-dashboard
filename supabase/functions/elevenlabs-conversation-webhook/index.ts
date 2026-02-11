@@ -19,10 +19,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
- import { lookupCityState } from "../_shared/zip-lookup.ts";
- import { extractFromTranscript } from "../_shared/transcript-parser.ts";
+import { lookupCityState } from "../_shared/zip-lookup.ts";
+import { extractFromTranscript } from "../_shared/transcript-parser.ts";
+import { normalizePhone } from "../_shared/phone-utils.ts";
 
 const logger = createLogger('elevenlabs-conversation-webhook');
+
+// Deduplication window
+const DEDUP_WINDOW_HOURS = 24;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,33 +47,80 @@ function getValue(
       
       if (typeof val === 'object') {
         const objVal = val as Record<string, unknown>;
-        // Extract actual value, skip if null/undefined to avoid storing JSON strings
         const extractedValue = objVal.value ?? objVal.answer ?? objVal.text;
         if (extractedValue === null || extractedValue === undefined) {
-          continue; // Skip to next key instead of returning JSON
+          continue;
         }
         result = String(extractedValue).trim();
       } else {
         result = String(val).trim();
       }
       
-      // Apply email normalization if requested
       if (options?.normalizeEmail) {
         const normalized = normalizeSpokenEmail(result);
         if (normalized && isValidEmail(normalized)) {
           return normalized;
         }
-        // If normalization failed but original looks like an email, try it
         if (isValidEmail(result)) {
           return result.toLowerCase();
         }
-        continue; // Skip invalid email, try next key
+        continue;
       }
       
       return result;
     }
   }
   return undefined;
+}
+
+/**
+ * Check if a duplicate application exists within the dedup window
+ */
+async function isDuplicate(
+  supabase: ReturnType<typeof createClient>,
+  email: string | undefined,
+  phone: string | null,
+  jobListingId: string | null,
+): Promise<{ isDup: boolean; existingId?: string }> {
+  if (!email && !phone) return { isDup: false };
+
+  const cutoff = new Date(Date.now() - DEDUP_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+
+  if (email) {
+    let query = supabase
+      .from('applications')
+      .select('id')
+      .eq('applicant_email', email)
+      .gte('created_at', cutoff)
+      .limit(1)
+      .maybeSingle();
+
+    if (jobListingId) {
+      query = query.eq('job_listing_id', jobListingId);
+    }
+
+    const { data } = await query;
+    if (data) return { isDup: true, existingId: data.id };
+  }
+
+  if (phone) {
+    let query = supabase
+      .from('applications')
+      .select('id')
+      .eq('phone', phone)
+      .gte('created_at', cutoff)
+      .limit(1)
+      .maybeSingle();
+
+    if (jobListingId) {
+      query = query.eq('job_listing_id', jobListingId);
+    }
+
+    const { data } = await query;
+    if (data) return { isDup: true, existingId: data.id };
+  }
+
+  return { isDup: false };
 }
 
 interface ElevenLabsWebhookPayload {
@@ -98,7 +149,6 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // Only accept POST requests
     if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ success: false, error: 'Method not allowed' }),
@@ -111,7 +161,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Parse webhook payload
     const payload: ElevenLabsWebhookPayload = await req.json();
     
     logger.info('Received webhook', {
@@ -120,7 +169,6 @@ serve(async (req) => {
       status: payload.status,
     });
 
-    // Validate required fields
     if (!payload.conversation_id || !payload.agent_id) {
       logger.error('Missing required fields', { payload });
       return new Response(
@@ -129,7 +177,7 @@ serve(async (req) => {
       );
     }
 
-    // Look up the voice agent by ElevenLabs agent ID
+    // Look up the voice agent
     const { data: voiceAgent, error: agentError } = await supabase
       .from('voice_agents')
       .select('id, agent_name, organization_id, client_id, is_active')
@@ -146,7 +194,6 @@ serve(async (req) => {
 
     if (!voiceAgent) {
       logger.warn('Unknown agent ID received', { agentId: payload.agent_id });
-      // Still return 200 to prevent ElevenLabs from retrying
       return new Response(
         JSON.stringify({ success: true, message: 'Agent not configured in system' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -186,28 +233,30 @@ serve(async (req) => {
       .map((entry) => `${entry.role === 'agent' ? 'Agent' : 'Caller'}: ${entry.message}`)
       .join('\n');
 
-    // Extract fallback data from transcript when data_collection_results is incomplete
     const fallbackData = extractFromTranscript(formattedTranscript);
 
-    // Extract applicant information with expanded aliases + transcript fallback
+    // Extract applicant information
     const firstName = getValue(dataCollectionResults, ['GivenName', 'first_name', 'FirstName', 'given_name', 'firstName', 'name', 'caller_first_name']);
     const lastName = getValue(dataCollectionResults, ['FamilyName', 'last_name', 'LastName', 'family_name', 'lastName', 'caller_last_name']);
     const emailFromData = getValue(dataCollectionResults, ['InternetEmailAddress', 'email', 'Email', 'email_address', 'emailAddress', 'caller_email'], { normalizeEmail: true });
-    const phone = getValue(dataCollectionResults, ['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber', 'phone_number', 'phoneNumber', 'cell', 'mobile', 'caller_phone']);
+    const rawPhone = getValue(dataCollectionResults, ['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber', 'phone_number', 'phoneNumber', 'cell', 'mobile', 'caller_phone']);
     const zipFromData = getValue(dataCollectionResults, ['PostalCode', 'zip', 'Zip', 'ZipCode', 'postal_code', 'postalCode', 'zipCode']);
 
     // Use data_collection_results first, fall back to transcript extraction
     const email = emailFromData || fallbackData.email;
     const zip = zipFromData || fallbackData.zip;
 
+    // Normalize phone - handle spoken digits
+    const phoneRaw = rawPhone || fallbackData.phone;
+    const normalizedPhone = normalizePhone(phoneRaw);
+
     // Lookup city/state from ZIP code
     const { city, state } = await lookupCityState(zip);
 
-    // Require at least email or phone to create application
-    if (!email && !phone) {
+    // Require at least email or phone
+    if (!email && !normalizedPhone) {
       logger.info('Skipping - no contact info', { conversationId: payload.conversation_id });
       
-      // Still log the conversation for reference
       await supabase.from('elevenlabs_conversations').upsert({
         conversation_id: payload.conversation_id,
         agent_id: payload.agent_id,
@@ -233,28 +282,9 @@ serve(async (req) => {
       );
     }
 
-    const transcriptParts: string[] = [];
-    if (transcriptSummary) {
-      transcriptParts.push(`=== Summary ===\n${transcriptSummary}`);
-    }
-    if (formattedTranscript) {
-      transcriptParts.push(`=== Full Transcript ===\n${formattedTranscript}`);
-    }
-
-    // Build call metadata for notes
-    const callDuration = payload.call_duration_secs;
-    const callStatus = payload.status;
-    const callMetadata = [
-      `Conversation ID: ${payload.conversation_id}`,
-      callDuration ? `Call Duration: ${Math.floor(callDuration / 60)}m ${Math.round(callDuration % 60)}s` : null,
-      callStatus ? `Call Status: ${callStatus}` : null,
-      `Source: Real-time webhook`,
-    ].filter(Boolean).join('\n');
-
     // Find appropriate job listing
     let jobListingId: string | null = null;
 
-    // First, try client-specific job listing
     if (voiceAgent.client_id) {
       const { data: clientJob } = await supabase
         .from('job_listings')
@@ -270,7 +300,6 @@ serve(async (req) => {
       }
     }
 
-    // Fallback to any active job for the organization
     if (!jobListingId) {
       const { data: fallbackJob } = await supabase
         .from('job_listings')
@@ -292,7 +321,63 @@ serve(async (req) => {
       });
     }
 
-    // CDL and qualification fields - try data_collection first, then transcript fallback
+    // Deduplication check - skip if same email/phone applied recently
+    const { isDup, existingId } = await isDuplicate(supabase, email, normalizedPhone, jobListingId);
+    if (isDup) {
+      logger.info('Skipping duplicate application', {
+        conversationId: payload.conversation_id,
+        existingApplicationId: existingId,
+        contact: email || normalizedPhone,
+      });
+
+      // Still log the conversation
+      await supabase.from('elevenlabs_conversations').upsert({
+        conversation_id: payload.conversation_id,
+        agent_id: payload.agent_id,
+        voice_agent_id: voiceAgent.id,
+        organization_id: voiceAgent.organization_id,
+        status: payload.status || 'done',
+        started_at: payload.start_time,
+        ended_at: payload.end_time || new Date().toISOString(),
+        duration_seconds: payload.call_duration_secs,
+        metadata: {
+          source: 'webhook',
+          duplicate_of: existingId,
+          data_collection_results: dataCollectionResults,
+        },
+      }, {
+        onConflict: 'conversation_id',
+        ignoreDuplicates: false,
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Duplicate application skipped',
+          existing_application_id: existingId,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const transcriptParts: string[] = [];
+    if (transcriptSummary) {
+      transcriptParts.push(`=== Summary ===\n${transcriptSummary}`);
+    }
+    if (formattedTranscript) {
+      transcriptParts.push(`=== Full Transcript ===\n${formattedTranscript}`);
+    }
+
+    const callDuration = payload.call_duration_secs;
+    const callStatus = payload.status;
+    const callMetadata = [
+      `Conversation ID: ${payload.conversation_id}`,
+      callDuration ? `Call Duration: ${Math.floor(callDuration / 60)}m ${Math.round(callDuration % 60)}s` : null,
+      callStatus ? `Call Status: ${callStatus}` : null,
+      `Source: Real-time webhook`,
+    ].filter(Boolean).join('\n');
+
+    // CDL and qualification fields
     const cdlValue = getValue(dataCollectionResults, ['Class_A_CDL', 'cdl', 'has_cdl', 'CDL', 'cdl_status', 'hasCDL', 'class_a_cdl']) || fallbackData.cdl;
     const expValue = getValue(dataCollectionResults, ['Class_A_CDL_Experience', 'experience', 'exp', 'months_experience', 'driving_experience', 'cdl_experience', 'experienceMonths']) || fallbackData.exp;
     const drugValue = getValue(dataCollectionResults, ['CanPassDrug', 'drug', 'drug_test', 'can_pass_drug_test', 'drugTest', 'passedDrugTest']) || fallbackData.drug;
@@ -301,13 +386,12 @@ serve(async (req) => {
     const over21Value = getValue(dataCollectionResults, ['Over21', 'over_21', 'AgeVerification', 'is_over_21', 'age_verified', 'atLeast21']) || fallbackData.over_21;
     const driverTypeValue = getValue(dataCollectionResults, ['DriverType', 'driver_type', 'driverType', 'employment_type', 'position_type']) || fallbackData.driver_type;
 
-    // Create the application
     const applicationData = {
       first_name: firstName,
       last_name: lastName,
       full_name: firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName,
       applicant_email: email,
-      phone: phone,
+      phone: normalizedPhone || rawPhone,
       zip: zip,
       city: city || undefined,
       state: state || undefined,
@@ -344,7 +428,7 @@ serve(async (req) => {
       );
     }
 
-    // Also log to elevenlabs_conversations for tracking
+    // Log to elevenlabs_conversations
     await supabase.from('elevenlabs_conversations').upsert({
       conversation_id: payload.conversation_id,
       agent_id: payload.agent_id,
@@ -370,7 +454,7 @@ serve(async (req) => {
       applicationId: newApplication.id,
       conversationId: payload.conversation_id,
       agentName: voiceAgent.agent_name,
-      contact: email || phone,
+      contact: email || normalizedPhone,
       durationMs: duration,
     });
 

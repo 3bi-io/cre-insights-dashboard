@@ -2,18 +2,76 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
- import { lookupCityState } from "../_shared/zip-lookup.ts";
- import { extractFromTranscript, ExtractedData } from "../_shared/transcript-parser.ts";
+import { lookupCityState } from "../_shared/zip-lookup.ts";
+import { extractFromTranscript, ExtractedData } from "../_shared/transcript-parser.ts";
+import { normalizePhone, containsSpokenDigits } from "../_shared/phone-utils.ts";
 
 const logger = createLogger('sync-voice-applications');
 
 // Only sync conversations that started after this timestamp (prevents re-importing historical data)
 const SYNC_CUTOFF_DATE = new Date('2026-01-26T19:00:00Z');
 
+// Deduplication window - skip if same contact applied within this period
+const DEDUP_WINDOW_HOURS = 24;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+/**
+ * Check if a duplicate application exists within the dedup window
+ * Matches by email or normalized phone within the same job listing (or org if no job listing)
+ */
+async function isDuplicate(
+  supabase: ReturnType<typeof createClient>,
+  email: string | undefined,
+  phone: string | null,
+  jobListingId: string | null,
+  organizationId: string | null,
+): Promise<{ isDup: boolean; existingId?: string }> {
+  if (!email && !phone) return { isDup: false };
+
+  const cutoff = new Date(Date.now() - DEDUP_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+
+  // Check by email first
+  if (email) {
+    let query = supabase
+      .from('applications')
+      .select('id')
+      .eq('applicant_email', email)
+      .gte('created_at', cutoff)
+      .limit(1)
+      .maybeSingle();
+
+    if (jobListingId) {
+      query = query.eq('job_listing_id', jobListingId);
+    }
+
+    const { data } = await query;
+    if (data) return { isDup: true, existingId: data.id };
+  }
+
+  // Check by phone
+  if (phone) {
+    let query = supabase
+      .from('applications')
+      .select('id')
+      .eq('phone', phone)
+      .gte('created_at', cutoff)
+      .limit(1)
+      .maybeSingle();
+
+    if (jobListingId) {
+      query = query.eq('job_listing_id', jobListingId);
+    }
+
+    const { data } = await query;
+    if (data) return { isDup: true, existingId: data.id };
+  }
+
+  return { isDup: false };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -63,6 +121,7 @@ serve(async (req) => {
       agents_synced: 0,
       applications_created: 0,
       conversations_processed: 0,
+      duplicates_skipped: 0,
       errors: [] as string[],
       agent_details: [] as Array<{
         agent_name: string;
@@ -109,7 +168,7 @@ serve(async (req) => {
           continue;
         }
 
-        // Get existing applications from this agent to avoid duplicates
+        // Get existing applications from this agent to avoid duplicates by conversation_id
         const { data: existingApps } = await supabase
           .from('applications')
           .select('notes')
@@ -129,13 +188,12 @@ serve(async (req) => {
           const convId = conv.conversation_id;
           syncResults.conversations_processed++;
 
-          // Skip if already processed
+          // Skip if already processed by conversation_id
           if (existingConversationIds.has(convId)) {
             continue;
           }
 
-          // Skip conversations before cutoff date (prevents re-importing historical data)
-          // ElevenLabs uses 'start_time_unix_secs' (Unix timestamp in seconds)
+          // Skip conversations before cutoff date
           const convStartUnix = conv.start_time_unix_secs;
           const convStartTime = convStartUnix ? new Date(convStartUnix * 1000) : null;
           
@@ -168,30 +226,26 @@ serve(async (req) => {
                 if (val !== undefined && val !== null) {
                   let result: string;
                   
-                  // Handle object values (e.g., { value: "string" })
                   if (typeof val === 'object') {
                     const objVal = val as Record<string, unknown>;
-                    // Extract actual value, skip if null/undefined to avoid storing JSON strings
                     const extractedValue = objVal.value ?? objVal.answer ?? objVal.text;
                     if (extractedValue === null || extractedValue === undefined) {
-                      continue; // Skip to next key instead of returning JSON
+                      continue;
                     }
                     result = String(extractedValue).trim();
                   } else {
                     result = String(val).trim();
                   }
                   
-                  // Apply email normalization if requested
                   if (options?.normalizeEmail) {
                     const normalized = normalizeSpokenEmail(result);
                     if (normalized && isValidEmail(normalized)) {
                       return normalized;
                     }
-                    // If normalization failed but original looks like an email, try it
                     if (isValidEmail(result)) {
                       return result.toLowerCase();
                     }
-                    continue; // Skip invalid email, try next key
+                    continue;
                   }
                   
                   return result;
@@ -200,51 +254,35 @@ serve(async (req) => {
               return undefined;
             };
 
-            // Expanded field aliases to handle different ElevenLabs agent configurations
+            // Expanded field aliases
             const firstName = getValue(['GivenName', 'first_name', 'FirstName', 'given_name', 'firstName', 'name', 'caller_first_name']);
             const lastName = getValue(['FamilyName', 'last_name', 'LastName', 'family_name', 'lastName', 'caller_last_name']);
             const email = getValue(['InternetEmailAddress', 'email', 'Email', 'email_address', 'emailAddress', 'caller_email'], { normalizeEmail: true });
-            const phone = getValue(['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber', 'phone_number', 'phoneNumber', 'cell', 'mobile', 'caller_phone']);
+            const rawPhone = getValue(['PrimaryPhone', 'phone', 'Phone', 'PhoneNumber', 'phone_number', 'phoneNumber', 'cell', 'mobile', 'caller_phone']);
             const zipFromData = getValue(['PostalCode', 'zip', 'Zip', 'ZipCode', 'zip_code', 'zipCode', 'postal_code', 'postalCode']);
 
-            // Format and extract transcript for fallback parsing
+            // Format transcript for fallback parsing
             const formattedTranscript = transcript
               .map((entry: { role: string; message: string }) =>
                 `${entry.role === 'agent' ? 'Agent' : 'Caller'}: ${entry.message}`
               )
               .join('\n');
 
-            // Extract fallback data from transcript when data_collection_results is incomplete
             const fallbackData: ExtractedData = extractFromTranscript(formattedTranscript);
- 
-            // Use data_collection_results first, fall back to transcript extraction
+
+            // Normalize phone - handle spoken digits
+            const phoneRaw = rawPhone || (fallbackData.phone ? fallbackData.phone : undefined);
+            const normalizedPhone = normalizePhone(phoneRaw);
+
             const zip = zipFromData || fallbackData.zip;
+            const { city, state } = await lookupCityState(zip);
 
-             // Lookup city/state from ZIP code if available
-             const { city, state } = await lookupCityState(zip);
-
-            // Must have at least email or phone to create application
             const finalEmail = email || fallbackData.email;
-            if (!finalEmail && !phone) {
+            if (!finalEmail && !normalizedPhone) {
               continue;
             }
 
-            const transcriptParts: string[] = [];
-            if (transcriptSummary) {
-              transcriptParts.push(`=== Summary ===\n${transcriptSummary}`);
-            }
-            transcriptParts.push(`=== Full Transcript ===\n${formattedTranscript}`);
-
-            // Build notes
-            const callDuration = convData.call_duration_secs;
-            const callStatus = convData.status;
-            const callMetadata = [
-              `Conversation ID: ${convId}`,
-              callDuration ? `Call Duration: ${Math.floor(callDuration / 60)}m ${Math.round(callDuration % 60)}s` : null,
-              callStatus ? `Call Status: ${callStatus}` : null,
-            ].filter(Boolean).join('\n');
-
-            // Find job listing - prioritize client-specific, then org-level
+            // Find job listing
             let jobListingId: string | null = null;
             
             if (agent.client_id) {
@@ -263,7 +301,6 @@ serve(async (req) => {
             }
 
             if (!jobListingId) {
-              // Fallback to any active job for the org
               const { data: fallbackJob } = await supabase
                 .from('job_listings')
                 .select('id')
@@ -277,7 +314,21 @@ serve(async (req) => {
               }
             }
 
-            // CDL and qualification fields - try data_collection first, then transcript fallback
+            // Deduplication check - skip if same email/phone applied recently
+            const { isDup, existingId } = await isDuplicate(
+              supabase, finalEmail, normalizedPhone, jobListingId, agent.organization_id
+            );
+            if (isDup) {
+              logger.info('Skipping duplicate application', {
+                conversationId: convId,
+                existingApplicationId: existingId,
+                contact: finalEmail || normalizedPhone,
+              });
+              syncResults.duplicates_skipped++;
+              continue;
+            }
+
+            // CDL and qualification fields
             const cdlValue = getValue(['Class_A_CDL', 'cdl', 'has_cdl', 'CDL', 'cdl_status', 'hasCDL', 'class_a_cdl']) || fallbackData.cdl;
             const expValue = getValue(['Class_A_CDL_Experience', 'experience', 'exp', 'months_experience', 'driving_experience', 'cdl_experience', 'experienceMonths']) || fallbackData.exp;
             const drugValue = getValue(['CanPassDrug', 'drug', 'drug_test', 'can_pass_drug_test', 'drugTest', 'passedDrugTest']) || fallbackData.drug;
@@ -286,16 +337,29 @@ serve(async (req) => {
             const over21Value = getValue(['Over21', 'over_21', 'AgeVerification', 'is_over_21', 'age_verified', 'atLeast21']) || fallbackData.over_21;
             const driverTypeValue = getValue(['DriverType', 'driver_type', 'driverType', 'employment_type', 'position_type']) || fallbackData.driver_type;
 
-            // Create application
+            const transcriptParts: string[] = [];
+            if (transcriptSummary) {
+              transcriptParts.push(`=== Summary ===\n${transcriptSummary}`);
+            }
+            transcriptParts.push(`=== Full Transcript ===\n${formattedTranscript}`);
+
+            const callDuration = convData.call_duration_secs;
+            const callStatus = convData.status;
+            const callMetadata = [
+              `Conversation ID: ${convId}`,
+              callDuration ? `Call Duration: ${Math.floor(callDuration / 60)}m ${Math.round(callDuration % 60)}s` : null,
+              callStatus ? `Call Status: ${callStatus}` : null,
+            ].filter(Boolean).join('\n');
+
             const applicationData = {
               first_name: firstName,
               last_name: lastName,
               full_name: firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName,
               applicant_email: finalEmail,
-              phone: phone,
+              phone: normalizedPhone || rawPhone,
               zip: zip,
-               city: city || undefined,
-               state: state || undefined,
+              city: city || undefined,
+              state: state || undefined,
               cdl: cdlValue,
               exp: expValue,
               driver_type: driverTypeValue,
@@ -325,7 +389,7 @@ serve(async (req) => {
               logger.info('Created application from conversation', { 
                 conversationId: convId, 
                 agentName: agent.agent_name,
-                contact: email || phone 
+                contact: finalEmail || normalizedPhone 
               });
             }
 
@@ -349,6 +413,7 @@ serve(async (req) => {
       agentsSynced: syncResults.agents_synced,
       applicationsCreated: syncResults.applications_created,
       conversationsProcessed: syncResults.conversations_processed,
+      duplicatesSkipped: syncResults.duplicates_skipped,
       durationMs: duration,
     });
 
