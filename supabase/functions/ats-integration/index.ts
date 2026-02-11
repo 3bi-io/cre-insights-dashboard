@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createATSAdapter } from '../_shared/ats-adapters/index.ts';
+import { enrichWithTranscript } from '../_shared/ats-adapters/transcript-enrichment.ts';
 import { createLogger } from '../_shared/logger.ts';
 import type { 
   ATSRequest, 
@@ -134,124 +135,8 @@ serve(async (req) => {
           }
           appData = app as ApplicationData;
 
-          // Enrich with call transcript from outbound calls
-          try {
-            // Change 1: Broaden filter - any status with a conversation_id
-            const { data: outboundCall } = await supabase
-              .from('outbound_calls')
-              .select('id, elevenlabs_conversation_id, status')
-              .eq('application_id', appData.id)
-              .in('status', ['completed', 'initiated', 'in_progress'])
-              .not('elevenlabs_conversation_id', 'is', null)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (outboundCall?.elevenlabs_conversation_id) {
-              const { data: convo } = await supabase
-                .from('elevenlabs_conversations')
-                .select('id, conversation_id, metadata')
-                .eq('conversation_id', outboundCall.elevenlabs_conversation_id)
-                .maybeSingle();
-
-              if (convo?.id) {
-                // Check local transcripts first
-                let { data: transcriptMessages } = await supabase
-                  .from('elevenlabs_transcripts')
-                  .select('speaker, message, sequence_number')
-                  .eq('conversation_id', convo.id)
-                  .order('sequence_number', { ascending: true });
-
-                // Change 2: Auto-fetch from ElevenLabs API if no local transcripts
-                if (!transcriptMessages || transcriptMessages.length === 0) {
-                  const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-                  if (ELEVENLABS_API_KEY) {
-                    logger.info('No local transcripts, fetching from ElevenLabs API', {
-                      conversation_id: convo.conversation_id
-                    });
-
-                    try {
-                      const elResponse = await fetch(
-                        `https://api.elevenlabs.io/v1/convai/conversations/${convo.conversation_id}`,
-                        { headers: { 'xi-api-key': ELEVENLABS_API_KEY } }
-                      );
-
-                      if (elResponse.ok) {
-                        const elData = await elResponse.json();
-                        const transcript = elData.transcript || [];
-
-                        if (transcript.length > 0) {
-                          // Store transcript messages
-                          const transcriptRows = transcript.map((msg: any, index: number) => ({
-                            conversation_id: convo.id,
-                            speaker: msg.role === 'agent' ? 'agent' : 'user',
-                            message: msg.message || '',
-                            timestamp: msg.time_in_call_secs
-                              ? new Date(new Date(convo.metadata?.start_time || Date.now()).getTime() + msg.time_in_call_secs * 1000).toISOString()
-                              : new Date().toISOString(),
-                            sequence_number: index + 1,
-                          }));
-
-                          const { error: upsertError } = await supabase
-                            .from('elevenlabs_transcripts')
-                            .upsert(transcriptRows, { onConflict: 'conversation_id,sequence_number' });
-
-                          if (upsertError) {
-                            logger.warn('Failed to store fetched transcripts', { error: upsertError.message });
-                          } else {
-                            logger.info('Stored transcripts from ElevenLabs API', { count: transcriptRows.length });
-                            // Use the fetched data
-                            transcriptMessages = transcriptRows.map((r: any) => ({
-                              speaker: r.speaker,
-                              message: r.message,
-                              sequence_number: r.sequence_number,
-                            }));
-                          }
-                        }
-
-                        // Change 3: Sync outbound call status
-                        if (elData.status === 'done' && outboundCall.status !== 'completed') {
-                          await supabase
-                            .from('outbound_calls')
-                            .update({ status: 'completed' })
-                            .eq('id', outboundCall.id);
-                          logger.info('Updated outbound call status to completed', { call_id: outboundCall.id });
-                        }
-                      } else {
-                        logger.warn('ElevenLabs API returned error', { status: elResponse.status });
-                      }
-                    } catch (apiError) {
-                      logger.warn('ElevenLabs API call failed', {
-                        error: apiError instanceof Error ? apiError.message : 'Unknown'
-                      });
-                    }
-                  } else {
-                    logger.warn('ELEVENLABS_API_KEY not configured, skipping transcript fetch');
-                  }
-                }
-
-                // Build formatted transcript
-                if (transcriptMessages && transcriptMessages.length > 0) {
-                  const formattedTranscript = transcriptMessages
-                    .map(m => {
-                      const role = m.speaker === 'agent' ? 'Agent' : 'Caller';
-                      return `${role}: ${m.message}`;
-                    })
-                    .join('\n');
-                  appData.call_transcript = formattedTranscript;
-                  logger.info('Attached call transcript', { 
-                    application_id: appData.id, 
-                    message_count: transcriptMessages.length 
-                  });
-                }
-              }
-            }
-          } catch (transcriptError) {
-            logger.warn('Failed to fetch call transcript', { 
-              application_id: appData.id, 
-              error: transcriptError instanceof Error ? transcriptError.message : 'Unknown error' 
-            });
-          }
+          // Enrich with call transcript using shared helper
+          appData = await enrichWithTranscript(supabase, appData) as ApplicationData;
 
           // Enrich with company_name from job_listing -> organization
           if (appData.job_listing_id) {
