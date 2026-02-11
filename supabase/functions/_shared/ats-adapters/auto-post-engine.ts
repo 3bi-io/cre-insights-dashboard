@@ -5,6 +5,7 @@
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { createATSAdapter } from './index.ts';
+import { enrichWithTranscript } from './transcript-enrichment.ts';
 import type { ATSSystem, ATSConnection, FieldMapping, ApplicationData, ATSResponse } from './types.ts';
 import { createLogger } from '../logger.ts';
 
@@ -163,8 +164,11 @@ export async function autoPostToATS(
           ...applicationData
         };
 
+        // Enrich with transcript before sending (for re-posts after outbound calls)
+        const enrichedData = await enrichWithTranscript(supabase, appData) as ApplicationData;
+
         logger.info('Sending to ATS', { correlationId, ats: conn.ats_slug });
-        const response = await adapter.sendApplication(appData);
+        const response = await adapter.sendApplication(enrichedData);
         const durationMs = Date.now() - startTime;
 
         const result: AutoPostResult = {

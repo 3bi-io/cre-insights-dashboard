@@ -405,56 +405,55 @@ export class XMLPostAdapter extends BaseATSAdapter {
     </DisplayFields>`;
     }
 
-    // Build CustomQuestions from compliance booleans
-    const customQuestions: Array<{ question: string; answer: string }> = [];
-    
+    // Add compliance booleans as DisplayFields (not CustomQuestions -- Tenstreet requires
+    // pre-configured QuestionIds for CustomQuestions, but DisplayFields work without config)
     const drugAnswer = application.drug || application.can_pass_drug_test;
-    if (drugAnswer) customQuestions.push({ question: 'Can you pass a drug screening?', answer: String(drugAnswer) });
+    if (drugAnswer) displayFields.push({ prompt: 'Drug Screening', value: String(drugAnswer) });
     
     const over21Answer = application.over_21 || application.age;
-    if (over21Answer) customQuestions.push({ question: 'Are you over 21 years of age?', answer: String(over21Answer) });
-    
-    if (application.veteran) customQuestions.push({ question: 'Are you a veteran?', answer: String(application.veteran) });
+    if (over21Answer) displayFields.push({ prompt: 'Over 21', value: String(over21Answer) });
     
     const consentAnswer = application.consent;
-    if (consentAnswer) customQuestions.push({ question: 'Do you consent to data processing?', answer: String(consentAnswer) });
+    if (consentAnswer) displayFields.push({ prompt: 'Consent to Data Processing', value: String(consentAnswer) });
     
     const privacyAnswer = application.privacy || application.agree_privacy_policy;
-    if (privacyAnswer) customQuestions.push({ question: 'Do you agree to the privacy policy?', answer: String(privacyAnswer) });
+    if (privacyAnswer) displayFields.push({ prompt: 'Privacy Policy Agreement', value: String(privacyAnswer) });
     
-    if (application.consent_to_sms) customQuestions.push({ question: 'Do you consent to SMS communication?', answer: String(application.consent_to_sms) });
+    if (application.consent_to_sms) displayFields.push({ prompt: 'SMS Consent', value: String(application.consent_to_sms) });
     
-    if (application.background_check_consent) customQuestions.push({ question: 'Do you consent to background check?', answer: String(application.background_check_consent) });
+    if (application.background_check_consent) displayFields.push({ prompt: 'Background Check Consent', value: String(application.background_check_consent) });
 
-    // Merge any existing custom_questions JSON
+    // Append call transcript as a DisplayField if available
+    if (application.call_transcript && typeof application.call_transcript === 'string' && application.call_transcript.trim()) {
+      displayFields.push({ prompt: 'Voice Application Transcript', value: application.call_transcript });
+    }
+
+    // Merge any existing display_fields JSON that weren't already added above
+    // (already handled earlier in the displayFields block)
+
+    // Only emit CustomQuestions if the application has explicit custom_questions with QuestionIds
+    // from field mapping config -- these are pre-configured in Tenstreet's dashboard
     if (application.custom_questions && typeof application.custom_questions === 'object') {
+      const mappedQuestions: Array<{ questionId: string; question: string; answer: string }> = [];
       for (const [key, value] of Object.entries(application.custom_questions as Record<string, unknown>)) {
         if (value !== null && value !== undefined) {
-          customQuestions.push({ question: key, answer: String(value) });
+          mappedQuestions.push({ questionId: key, question: key, answer: String(value) });
         }
       }
-    }
-
-    // Append call transcript as the final CustomQuestion if available
-    if (application.call_transcript && typeof application.call_transcript === 'string' && application.call_transcript.trim()) {
-      customQuestions.push({ 
-        question: 'Voice Application Transcript', 
-        answer: application.call_transcript 
-      });
-    }
-
-    if (customQuestions.length > 0) {
-      xml += `
-    <CustomQuestions>`;
-      for (const cq of customQuestions) {
+      if (mappedQuestions.length > 0) {
         xml += `
+    <CustomQuestions>`;
+        for (const cq of mappedQuestions) {
+          xml += `
       <CustomQuestion>
+        <QuestionId>${this.escapeXml(cq.questionId)}</QuestionId>
         <Question>${this.escapeXml(cq.question)}</Question>
         <Answer>${this.escapeXml(cq.answer)}</Answer>
       </CustomQuestion>`;
-      }
-      xml += `
+        }
+        xml += `
     </CustomQuestions>`;
+      }
     }
 
     xml += `
