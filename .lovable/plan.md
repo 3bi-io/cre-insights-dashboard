@@ -1,49 +1,100 @@
 
 
-## Re-send 3 Applications to Tenstreet (with Transcript Enrichment)
+## Fix Custom Question Routing + End-to-End Workflow Automation
 
-### Problem
+### Problem 1: CustomQuestion XML Missing QuestionId
 
-The `ats-integration` edge function has `verify_jwt = true` in `config.toml`, which blocks calls without a valid JWT at the infrastructure level -- before the function code even runs. The function itself handles auth gracefully (optional user context), so this gate is unnecessarily restrictive and prevents programmatic re-sends.
+The Tenstreet API requires every `<CustomQuestion>` to have a `<QuestionId>` tag that matches a pre-configured question in Tenstreet's dashboard for the given CompanyId. The current `xml-post-adapter.ts` (lines 449-454) generates:
 
-### Plan
-
-#### Step 1: Set `verify_jwt = false` for `ats-integration`
-
-Update `supabase/config.toml` line 130:
-
-```toml
-[functions.ats-integration]
-verify_jwt = false
+```xml
+<CustomQuestion>
+  <Question>Can you pass a drug screening?</Question>
+  <Answer>yes</Answer>
+</CustomQuestion>
 ```
 
-The function already has its own auth handling (lines 36-45) -- it extracts the user from the Authorization header if present but doesn't fail without it. This is consistent with the project's other edge functions that use the same pattern.
+But Tenstreet expects:
 
-#### Step 2: Deploy and re-send all 3 applications
+```xml
+<CustomQuestion>
+  <QuestionId>drug_screening</QuestionId>
+  <Question>Can you pass a drug screening?</Question>
+  <Answer>yes</Answer>
+</CustomQuestion>
+```
 
-After deployment, call the edge function for each application:
+Without the `<QuestionId>`, Tenstreet returns the warning "Custom Question not found for CompanyId provided" and silently drops the data.
 
-| Applicant | Application ID | Connection ID |
-|---|---|---|
-| Constantine Savalas | `352a24fa-538a-4bda-93e2-9a12cf4be80e` | `f987e55a-703e-4cc1-8370-b283c780f547` |
-| William Caughron | `d8012012-0f9a-4237-a4ec-84a0627d427b` | `f987e55a-703e-4cc1-8370-b283c780f547` |
-| Samuil Volosenco | `53201b0c-07cb-412e-9873-4f455374c75c` | `f987e55a-703e-4cc1-8370-b283c780f547` |
+**Solution:** Move all dynamic data (compliance booleans, transcript, etc.) to `<DisplayFields>` instead of `<CustomQuestions>`. DisplayFields do NOT require pre-configuration in Tenstreet -- they appear as read-only info on the applicant's profile. CustomQuestions should only be used when the question IDs are explicitly mapped and known to exist in the company's Tenstreet config.
 
-Each call will:
-1. Find the outbound call (broadened filter -- any status with a conversation_id)
-2. Auto-fetch transcript from ElevenLabs API if not cached locally
-3. Store transcript in `elevenlabs_transcripts`
-4. Update `outbound_calls.status` to `completed`
-5. Append transcript as final CustomQuestion in the XML payload
-6. POST to Tenstreet
+### Problem 2: Auto-Post Skips Transcript Enrichment
 
-#### Step 3: Verify results
+When a new application comes in via `submit-application`, the auto-post flow calls `autoPostToATS()` which passes raw application data directly to the adapter. It does NOT run the transcript enrichment logic (fetching outbound call transcripts from ElevenLabs). That enrichment only exists in `ats-integration/index.ts` for manual re-sends.
 
-Check `ats_sync_logs` for success/failure and review the response data from Tenstreet.
+For inbound web/voice applications, transcripts won't exist at auto-post time (the call hasn't happened yet). But for follow-up outbound calls that trigger a re-post, the enrichment is needed.
 
-### Files Changed
+**Solution:** Extract the transcript enrichment logic into a shared helper function and call it from both `ats-integration/index.ts` and `auto-post-engine.ts`.
 
-| File | Change |
-|---|---|
-| `supabase/config.toml` | Line 130: `verify_jwt = false` for `ats-integration` |
+---
+
+### Changes
+
+#### File 1: `supabase/functions/_shared/ats-adapters/xml-post-adapter.ts`
+
+**Move compliance booleans and transcript from CustomQuestions to DisplayFields (lines 408-458)**
+
+- Drug screening, over 21, veteran, consent, privacy, SMS consent, background check consent, and call transcript all become DisplayFields
+- Remove the entire CustomQuestions block for dynamic/unmapped questions
+- Keep the CustomQuestions section ONLY if the application has explicit `custom_questions` with proper IDs from field mapping config
+
+Before (simplified):
+```
+DisplayFields: [Experience Level, Experience Months, Veteran, Apply URL, Powered By]
+CustomQuestions: [drug, over21, veteran, consent, privacy, sms, background, transcript]
+```
+
+After:
+```
+DisplayFields: [Experience Level, Experience Months, Veteran, Apply URL, Powered By, 
+                Drug Screening, Over 21, Consent, Privacy, SMS Consent, 
+                Background Check Consent, Voice Transcript]
+CustomQuestions: (only if field mapping defines explicit QuestionIds)
+```
+
+#### File 2: `supabase/functions/_shared/ats-adapters/transcript-enrichment.ts` (NEW)
+
+Extract the transcript enrichment logic from `ats-integration/index.ts` into a shared utility:
+
+- `enrichWithTranscript(supabase, appData)` -- queries outbound_calls, fetches transcript from ElevenLabs if needed, returns enriched appData with `call_transcript`
+- Includes the broadened status filter, auto-fetch from ElevenLabs API, and status sync
+
+#### File 3: `supabase/functions/ats-integration/index.ts`
+
+- Replace inline transcript enrichment block (lines 138-254) with a call to the new shared `enrichWithTranscript()` function
+
+#### File 4: `supabase/functions/_shared/ats-adapters/auto-post-engine.ts`
+
+- Import and call `enrichWithTranscript()` before sending to the adapter (after line 164, before `adapter.sendApplication`)
+- This ensures outbound follow-up call transcripts are included when applications are re-posted
+
+### Deployment
+
+Deploy updated edge functions: `ats-integration`, `submit-application` (uses auto-post-engine)
+
+### After Deployment
+
+Re-send the 3 applications (Constantine, William, Samuil) to verify:
+- Transcript appears as a DisplayField (not CustomQuestion)
+- No "Custom Question not found" warnings from Tenstreet
+- All data is visible on the applicant profile in Tenstreet
+
+### End-to-End Workflow Confirmation
+
+After these changes, the complete automated flow for any received application:
+
+1. Application submitted via web form or voice call -> `submit-application`
+2. Auto-post fires immediately -> `autoPostToATS` -> `xml-post-adapter`
+3. If outbound follow-up call happens later -> call completes -> manual or automated re-send triggers `ats-integration`
+4. Both paths now call `enrichWithTranscript()` to fetch and attach any available call transcript
+5. All dynamic data routes through DisplayFields (no Tenstreet config required)
 
