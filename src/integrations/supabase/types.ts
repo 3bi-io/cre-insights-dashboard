@@ -565,6 +565,7 @@ export type Database = {
           agree_privacy_policy: string | null
           applicant_email: string | null
           applied_at: string | null
+          ats_readiness_score: number | null
           background_check_consent: string | null
           campaign_id: string | null
           can_pass_drug_test: string | null
@@ -600,9 +601,11 @@ export type Database = {
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
           employment_history: Json | null
+          enrichment_status: string | null
           exp: string | null
           felony_details: string | null
           first_name: string | null
+          first_response_at: string | null
           full_name: string | null
           government_id: string | null
           government_id_type: string | null
@@ -660,6 +663,7 @@ export type Database = {
           agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          ats_readiness_score?: number | null
           background_check_consent?: string | null
           campaign_id?: string | null
           can_pass_drug_test?: string | null
@@ -695,9 +699,11 @@ export type Database = {
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           employment_history?: Json | null
+          enrichment_status?: string | null
           exp?: string | null
           felony_details?: string | null
           first_name?: string | null
+          first_response_at?: string | null
           full_name?: string | null
           government_id?: string | null
           government_id_type?: string | null
@@ -755,6 +761,7 @@ export type Database = {
           agree_privacy_policy?: string | null
           applicant_email?: string | null
           applied_at?: string | null
+          ats_readiness_score?: number | null
           background_check_consent?: string | null
           campaign_id?: string | null
           can_pass_drug_test?: string | null
@@ -790,9 +797,11 @@ export type Database = {
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           employment_history?: Json | null
+          enrichment_status?: string | null
           exp?: string | null
           felony_details?: string | null
           first_name?: string | null
+          first_response_at?: string | null
           full_name?: string | null
           government_id?: string | null
           government_id_type?: string | null
@@ -6371,6 +6380,57 @@ export type Database = {
           },
           {
             foreignKeyName: "social_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_cost_config: {
+        Row: {
+          cost_per_click: number | null
+          created_at: string
+          id: string
+          monthly_cost: number | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          cost_per_click?: number | null
+          created_at?: string
+          id?: string
+          monthly_cost?: number | null
+          organization_id: string
+          period_end: string
+          period_start: string
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          cost_per_click?: number | null
+          created_at?: string
+          id?: string
+          monthly_cost?: number | null
+          organization_id?: string
+          period_end?: string
+          period_start?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_cost_config_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_cost_config_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
