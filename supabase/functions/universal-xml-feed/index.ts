@@ -296,13 +296,23 @@ Deno.serve(async (req) => {
   }
 });
 
+// ============ UTILITY: Build apply URL with client context ============
+
+function buildApplyUrl(job: JobListing): string {
+  if (job.apply_url) return job.apply_url;
+  let url = `https://ats.me/apply?job_listing_id=${job.id}`;
+  if (job.organization_id) url += `&organization_id=${job.organization_id}`;
+  if (job.client_id) url += `&client_id=${job.client_id}`;
+  return url;
+}
+
 // ============ XML GENERATORS ============
 
 function generateIndeedXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     
     return `    <job>
       <title>${escapeXML(job.title)}</title>
@@ -333,7 +343,7 @@ function generateIndeedXML(jobs: JobListing[]): string {
 
 function generateGoogleJobsXML(jobs: JobListing[], organizationId: string): string {
   const jobsXML = jobs.map(job => {
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     
     return `  <url>
     <loc>${jobUrl}</loc>
@@ -352,8 +362,8 @@ ${jobsXML}
 function generateTalentXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
-    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
+    const applyUrl = escapeXML(buildApplyUrl(job));
     
     return `  <job>
     <title>${escapeXML(job.title)}</title>
@@ -388,7 +398,7 @@ ${jobsXML}
 function generateCareerJetXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     
     return `  <offer>
@@ -415,7 +425,7 @@ ${jobsXML}
 function generateTrovitXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     
     return `  <ad>
     <id>${escapeXML(job.id)}</id>
@@ -443,8 +453,8 @@ ${jobsXML}
 function generateAdzunaXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
-    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
+    const applyUrl = escapeXML(buildApplyUrl(job));
     
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -476,7 +486,7 @@ function generateDiceXML(jobs: JobListing[]): string {
   // Dice format is similar to Indeed but with tech-specific fields
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     
     return `  <job>
@@ -509,7 +519,7 @@ ${jobsXML}
 function generateJoobleXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     
     return `  <job>
@@ -540,8 +550,8 @@ function generateGenericXML(jobs: JobListing[]): string {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const location = formatLocation(job.location, job.city, job.state);
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
-    const applyUrl = escapeXML(job.apply_url || `https://ats.me/apply/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
+    const applyUrl = escapeXML(buildApplyUrl(job));
     
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -582,7 +592,7 @@ ${jobsXML}
 function generateHcareersXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     return `  <job>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -601,7 +611,7 @@ function generateHcareersXML(jobs: JobListing[]): string {
 function generateSnagajobXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -623,7 +633,7 @@ function generateSnagajobXML(jobs: JobListing[]): string {
 function generateHealthEcareersXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     return `  <position>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -647,7 +657,7 @@ function generateNurseXML(jobs: JobListing[]): string {
 function generateWellfoundXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     return `  <job>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -667,7 +677,7 @@ function generateWellfoundXML(jobs: JobListing[]): string {
 function generateJobRapidoXML(jobs: JobListing[]): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(`https://ats.me/jobs/${job.id}`);
+    const jobUrl = escapeXML(buildApplyUrl(job));
     return `  <job>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>

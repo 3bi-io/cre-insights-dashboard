@@ -3,10 +3,11 @@
   * Handles inbound application notifications from ZipRecruiter
   */
  
- import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
- import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
- import { createLogger } from "../_shared/logger.ts"
- import { lookupCityState } from "../_shared/zip-lookup.ts"
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createLogger } from "../_shared/logger.ts"
+import { lookupCityState } from "../_shared/zip-lookup.ts"
+import { findOrCreateJobListing, getOrganizationFromJobId, getClientIdFromJobId } from "../_shared/application-processor.ts"
  
  const logger = createLogger('ziprecruiter-webhook')
  
@@ -243,20 +244,51 @@ async function parseApplicationData(data: Record<string, unknown>): Promise<Reco
        )
      }
  
-     // Try to find matching job listing
-     let jobListingId: string | null = null
-     if (parsed.job_id) {
-       const { data: jobListing } = await supabase
-         .from('job_listings')
-         .select('id')
-         .or(`id.eq.${parsed.job_id},external_id.eq.${parsed.job_id}`)
-         .limit(1)
-         .single()
- 
-       if (jobListing) {
-         jobListingId = jobListing.id
-       }
-     }
+    // Resolve job listing using client-aware routing
+    let jobListingId: string | null = null
+    const jobIdStr = parsed.job_id ? String(parsed.job_id) : undefined
+    
+    // Infer organization and client from job_id prefix
+    const inferredOrgId = getOrganizationFromJobId(jobIdStr) || undefined
+    const inferredClientId = inferredOrgId ? getClientIdFromJobId(jobIdStr, inferredOrgId) : null
+    
+    logger.info('ZipRecruiter routing context', {
+      jobId: jobIdStr,
+      inferredOrgId,
+      inferredClientId,
+    })
+    
+    if (inferredOrgId) {
+      const result = await findOrCreateJobListing(supabase, {
+        jobId: jobIdStr,
+        jobTitle: parsed.job_title ? String(parsed.job_title) : undefined,
+        organizationId: inferredOrgId,
+        clientId: inferredClientId,
+        city: parsed.city ? String(parsed.city) : undefined,
+        state: parsed.state ? String(parsed.state) : undefined,
+        source: 'ZipRecruiter',
+      })
+      
+      if (result) {
+        jobListingId = result.id
+        logger.info('Resolved job listing via client-aware routing', {
+          jobListingId,
+          matchType: result.matchType,
+        })
+      }
+    } else if (jobIdStr) {
+      // Fallback: try direct ID/external_id match for non-mapped orgs
+      const { data: jobListing } = await supabase
+        .from('job_listings')
+        .select('id')
+        .or(`id.eq.${jobIdStr},external_id.eq.${jobIdStr}`)
+        .limit(1)
+        .single()
+
+      if (jobListing) {
+        jobListingId = jobListing.id
+      }
+    }
  
      // Insert the application
      const { data: newApp, error: insertError } = await supabase
