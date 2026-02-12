@@ -10,3 +10,5 @@ export { ClientLogoUpload } from './ClientLogoUpload';
 export { BulkTenstreetAssignmentDialog } from './BulkTenstreetAssignmentDialog';
 export { default as ClientMetricsCard } from './ClientMetricsCard';
 export { default as ClientsOverviewDashboard } from './ClientsOverviewDashboard';
+export { default as ClientAnalyticsDashboard } from './ClientAnalyticsDashboard';
+export * from './analytics';
