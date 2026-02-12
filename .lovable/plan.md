@@ -1,59 +1,54 @@
 
-## Fix Client Routing for Indeed and ZipRecruiter Applications
 
-### Problem
-Danny Herman and Pemberton are both live on Indeed and ZipRecruiter, but inbound applications are not being routed to the correct client. Two issues exist:
+# Fix Missing Hayes Applications
 
-1. **ZipRecruiter webhook** (`ziprecruiter-webhook/index.ts`) does a naive job lookup (`id` or `external_id` match only) with no organization or client routing. If the `job_id` from ZipRecruiter doesn't exactly match a `job_listings.id`, the application gets `job_listing_id = null` and is orphaned.
+## Root Cause
 
-2. **Indeed XML feed** (`universal-xml-feed/index.ts`) generates apply URLs as `https://ats.me/jobs/{id}` without `client_id` or `organization_id` parameters. If Indeed redirects candidates to the apply page, client context is lost.
+The `usePaginatedApplications` hook in `src/features/applications/hooks/usePaginatedApplications.tsx` uses an embedded resource filter:
 
-### Fix 1: ZipRecruiter Webhook - Add Client-Aware Routing
-
-**File:** `supabase/functions/ziprecruiter-webhook/index.ts`
-
-Replace the naive job lookup (lines 247-259) with the shared `findOrCreateJobListing` function from `application-processor.ts`. This already handles:
-- Job ID prefix-based org/client inference (e.g., prefix `14204` maps to Danny Herman, prefix `14086` maps to Pemberton)
-- Fallback to General Application per client
-- Auto-creation of missing job listings
-
-Changes:
-- Import `findOrCreateJobListing`, `getOrganizationFromJobId`, `getClientIdFromJobId` from `_shared/application-processor.ts`
-- Replace the simple `or(id.eq, external_id.eq)` lookup with `findOrCreateJobListing` call that passes the inferred `organizationId` and `clientId`
-- Pass the resolved `job_listing_id` to the insert statement
-
-### Fix 2: Indeed XML Feed - Include Client Context in Apply URLs
-
-**File:** `supabase/functions/universal-xml-feed/index.ts`
-
-Update the `generateIndeedXML` function (line 305) to build an apply URL that includes `organization_id` and `client_id` when available:
-
+```typescript
+query = query.eq('job_listings.organization_id', filters.organizationId);
 ```
-// Before:
-const jobUrl = `https://ats.me/jobs/${job.id}`;
 
-// After:
-let applyUrl = job.apply_url || `https://ats.me/apply?job_listing_id=${job.id}`;
-if (!job.apply_url) {
-  if (job.organization_id) applyUrl += `&organization_id=${job.organization_id}`;
-  if (job.client_id) applyUrl += `&client_id=${job.client_id}`;
+Without using `!inner` in the select statement, PostgREST does **not** filter parent rows based on embedded resource conditions. This means:
+- For super admins filtering by Hayes org, the filter silently fails -- applications show with `null` job_listings data, which downstream UI code may render as empty/missing.
+- For org admins, `organizationId` is set to `undefined` (RLS handles scoping), so they should see data -- but the embedded `job_listings` data may still be affected.
+
+## Database Verification
+
+- Hayes currently has **13 applications** (7 Pemberton, 5 Danny Herman, 1 Day and Ross)
+- All have valid `job_listing_id` references to Hayes job listings
+- RLS policies are correctly configured
+- No applications were lost -- the 18 previously deleted records were orphaned test entries with `NULL` job_listing_id
+
+## Fix
+
+**File: `src/features/applications/hooks/usePaginatedApplications.tsx`**
+
+1. Change the select statement to use `!inner` join on `job_listings` so that PostgREST correctly filters parent rows when `organizationId` is specified:
+
+```typescript
+// Before
+.select(`*, job_listings(...), recruiters(...)`, { count: 'exact' })
+// ...
+if (filters.organizationId) {
+  query = query.eq('job_listings.organization_id', filters.organizationId);
+}
+
+// After - use !inner join when org filter is active
+const jobJoin = filters.organizationId ? 'job_listings!inner' : 'job_listings';
+.select(`*, ${jobJoin}(...), recruiters(...)`, { count: 'exact' })
+// ...
+if (filters.organizationId) {
+  query = query.eq('job_listings.organization_id', filters.organizationId);
 }
 ```
 
-This ensures that when Indeed redirects a candidate to the apply page, the `submit-application` function receives the full client context.
+2. Since the select string is built inside `queryFn`, we need to make the join type dynamic based on whether `organizationId` is present.
 
-### Fix 3: Apply URL Consistency Across All Feed Formats
+## Technical Details
 
-Apply the same `client_id`/`organization_id` enrichment to the Talent.com, CareerJet, and other feed generators that include `apply_url` fields, so all platforms route correctly.
+- The `!inner` modifier tells PostgREST to perform an INNER JOIN instead of a LEFT JOIN, ensuring only applications with matching job_listings are returned.
+- When no `organizationId` filter is set (org admins relying on RLS), we keep the default LEFT JOIN to avoid accidentally hiding applications with edge-case job_listing states.
+- This is a one-file change with no migration required.
 
-### Technical Details
-
-| Change | File | Impact |
-|--------|------|--------|
-| ZipRecruiter client routing | `supabase/functions/ziprecruiter-webhook/index.ts` | Applications from ZR get correct `client_id` via job_id prefix inference |
-| Indeed apply URL enrichment | `supabase/functions/universal-xml-feed/index.ts` | Indeed redirects carry `client_id` and `organization_id` |
-| Other feed formats | `supabase/functions/universal-xml-feed/index.ts` | All feed platforms route correctly |
-
-### Deployment
-- Redeploy `ziprecruiter-webhook` and `universal-xml-feed` edge functions
-- No database changes required -- the `application-processor.ts` already has the prefix mappings for both Danny Herman (`14204`, `13979`, `13980`) and Pemberton (`14086`, `14230`, `14294`)
