@@ -1,54 +1,59 @@
 
-## Implement Voice Agent Fixes (Items 2-5)
+## Fix Client Routing for Indeed and ZipRecruiter Applications
 
-This plan addresses four issues found during the inbound agent review.
+### Problem
+Danny Herman and Pemberton are both live on Indeed and ZipRecruiter, but inbound applications are not being routed to the correct client. Two issues exist:
 
-### 1. Fix Danny Herman Outbound Agent Flag
+1. **ZipRecruiter webhook** (`ziprecruiter-webhook/index.ts`) does a naive job lookup (`id` or `external_id` match only) with no organization or client routing. If the `job_id` from ZipRecruiter doesn't exactly match a `job_listings.id`, the application gets `job_listing_id = null` and is orphaned.
 
-The "Outbound Agent - Danny Herman" has `is_outbound_enabled = false`, causing the sync-voice-applications poller to incorrectly include it as an inbound agent.
+2. **Indeed XML feed** (`universal-xml-feed/index.ts`) generates apply URLs as `https://ats.me/jobs/{id}` without `client_id` or `organization_id` parameters. If Indeed redirects candidates to the apply page, client context is lost.
 
-**Database update:** Set `is_outbound_enabled = true` for agent ID `0d300a8f-f7b8-4108-9af1-0e20befb321b`.
+### Fix 1: ZipRecruiter Webhook - Add Client-Aware Routing
 
-### 2. Add Phone Number Normalization to Transcript Parser
+**File:** `supabase/functions/ziprecruiter-webhook/index.ts`
 
-Currently, phone numbers like `"eight one seven seven five seven two eight two eight"` are stored as-is. The `parseSpokenNumber` function already exists in the transcript parser but isn't applied to phone fields.
+Replace the naive job lookup (lines 247-259) with the shared `findOrCreateJobListing` function from `application-processor.ts`. This already handles:
+- Job ID prefix-based org/client inference (e.g., prefix `14204` maps to Danny Herman, prefix `14086` maps to Pemberton)
+- Fallback to General Application per client
+- Auto-creation of missing job listings
 
-**Changes to `supabase/functions/_shared/transcript-parser.ts`:**
-- Add a new `phone` field to `ExtractedData` interface
-- Add `extractPhone()` function that finds phone numbers in the transcript and applies `parseSpokenNumber` to convert spoken digits to numeric format
-- Call it from `extractFromTranscript()`
+Changes:
+- Import `findOrCreateJobListing`, `getOrganizationFromJobId`, `getClientIdFromJobId` from `_shared/application-processor.ts`
+- Replace the simple `or(id.eq, external_id.eq)` lookup with `findOrCreateJobListing` call that passes the inferred `organizationId` and `clientId`
+- Pass the resolved `job_listing_id` to the insert statement
 
-**Changes to both edge functions (`sync-voice-applications` and `elevenlabs-conversation-webhook`):**
-- After extracting the phone value from `data_collection_results`, apply spoken-number normalization if it contains word characters (e.g., "eight one seven...")
-- Normalize to E.164 format (+1XXXXXXXXXX) before storing
+### Fix 2: Indeed XML Feed - Include Client Context in Apply URLs
 
-### 3. Assign Independent Inbound Agents to Hayes Recruiting
+**File:** `supabase/functions/universal-xml-feed/index.ts`
 
-The 3 "Independent Inbound Agent" records have `organization_id = NULL`, which prevents the job-listing lookup from finding matches (17/19 applications had `job_listing_id = NULL`).
+Update the `generateIndeedXML` function (line 305) to build an apply URL that includes `organization_id` and `client_id` when available:
 
-**Database update:** Set `organization_id = '84214b48-7b51-45bc-ad7f-723bcf50466c'` (Hayes Recruiting Solutions) for agents:
-- `4c776662-3bd9-4af1-9374-e2d241b62bf2` (Independent Inbound Agent 1)
-- `62f01aa5-08c4-4596-b912-e035ffdd7f45` (Independent Inbound Agent 2)
-- `6b27c708-00fb-43c9-a747-afa7bcd684f7` (Independent Inbound Agent 3)
+```
+// Before:
+const jobUrl = `https://ats.me/jobs/${job.id}`;
 
-### 4. Add Email/Phone Deduplication
+// After:
+let applyUrl = job.apply_url || `https://ats.me/apply?job_listing_id=${job.id}`;
+if (!job.apply_url) {
+  if (job.organization_id) applyUrl += `&organization_id=${job.organization_id}`;
+  if (job.client_id) applyUrl += `&client_id=${job.client_id}`;
+}
+```
 
-Both `sync-voice-applications` and `elevenlabs-conversation-webhook` currently only deduplicate by `conversation_id`. A caller who phones in twice with the same phone/email creates duplicate applications.
+This ensures that when Indeed redirects a candidate to the apply page, the `submit-application` function receives the full client context.
 
-**Changes to both edge functions:**
-- After extracting contact info (email/phone), before inserting, query `applications` table for existing records matching the same email or normalized phone within the same job listing (or same organization if no job listing)
-- If a match is found within the last 24 hours, skip creation and log it as a duplicate
-- This prevents rapid duplicate submissions while still allowing legitimate re-applications after a cooling period
+### Fix 3: Apply URL Consistency Across All Feed Formats
 
-### Technical Summary
+Apply the same `client_id`/`organization_id` enrichment to the Talent.com, CareerJet, and other feed generators that include `apply_url` fields, so all platforms route correctly.
 
-| Change | Files |
-|--------|-------|
-| Danny Herman outbound flag | DB update (migration) |
-| Phone normalization | `_shared/transcript-parser.ts`, `sync-voice-applications/index.ts`, `elevenlabs-conversation-webhook/index.ts` |
-| Assign independent agents to org | DB update (migration) |
-| Email/phone deduplication | `sync-voice-applications/index.ts`, `elevenlabs-conversation-webhook/index.ts` |
+### Technical Details
+
+| Change | File | Impact |
+|--------|------|--------|
+| ZipRecruiter client routing | `supabase/functions/ziprecruiter-webhook/index.ts` | Applications from ZR get correct `client_id` via job_id prefix inference |
+| Indeed apply URL enrichment | `supabase/functions/universal-xml-feed/index.ts` | Indeed redirects carry `client_id` and `organization_id` |
+| Other feed formats | `supabase/functions/universal-xml-feed/index.ts` | All feed platforms route correctly |
 
 ### Deployment
-
-Both `sync-voice-applications` and `elevenlabs-conversation-webhook` edge functions will be redeployed after code changes. The database updates take effect immediately.
+- Redeploy `ziprecruiter-webhook` and `universal-xml-feed` edge functions
+- No database changes required -- the `application-processor.ts` already has the prefix mappings for both Danny Herman (`14204`, `13979`, `13980`) and Pemberton (`14086`, `14230`, `14294`)
