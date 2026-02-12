@@ -24,6 +24,10 @@ const JOB_ID_PREFIX_ORG_MAP: Record<string, string> = {
   '14284': HAYES_ORG_ID, // Novco, Inc.
   '14294': HAYES_ORG_ID, // Pemberton Truck Lines Inc
   '14361': HAYES_ORG_ID, // New Hayes prefix (observed)
+  // CR England clients (ZipRecruiter-style job IDs)
+  '14380': CR_ENGLAND_ORG_ID, // Dollar Tree
+  '14382': CR_ENGLAND_ORG_ID, // Dollar Tree
+  '14383': CR_ENGLAND_ORG_ID, // Dollar Tree
 };
 
 // Job ID prefix → Client ID mapping for Hayes organization (CDL Job Cast integration)
@@ -62,6 +66,14 @@ const CR_ENGLAND_JOB_ID_CLIENT_MAP: Record<string, string> = {
   '911': '0f406b8c-7eb7-4d84-b0d6-1e0ee287b20c',
 };
 
+// CR England 5-digit prefix → Client ID mapping (ZipRecruiter-style job IDs like "14380J14628")
+const CR_ENGLAND_PREFIX_CLIENT_MAP: Record<string, string> = {
+  // Dollar Tree
+  '14380': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+  '14382': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+  '14383': '853d514a-bfe7-44f8-a02a-3f0b10e9642d',
+};
+
 /**
  * Infer organization from job_id prefix
  * Used when source-based routing fails (e.g., Direct Application)
@@ -76,7 +88,7 @@ export const getOrganizationFromJobId = (jobId: string | undefined | null): stri
 
 /**
  * Get client ID from job_id for a specific organization
- * Supports both Hayes (5-digit prefix) and CR England (exact match)
+ * Supports Hayes (5-digit prefix), CR England (exact match + 5-digit prefix)
  */
 export const getClientIdFromJobId = (
   jobId: string | undefined | null, 
@@ -92,8 +104,13 @@ export const getClientIdFromJobId = (
     return HAYES_JOB_ID_CLIENT_MAP[prefix] || null;
   }
   
-  // CR England: Exact job ID match
+  // CR England: Try 5-digit prefix first (ZipRecruiter-style), then exact match
   if (organizationId === CR_ENGLAND_ORG_ID) {
+    if (jobId.length >= 5) {
+      const prefix = jobId.substring(0, 5);
+      const prefixMatch = CR_ENGLAND_PREFIX_CLIENT_MAP[prefix];
+      if (prefixMatch) return prefixMatch;
+    }
     return CR_ENGLAND_JOB_ID_CLIENT_MAP[jobId] || null;
   }
   
