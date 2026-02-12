@@ -10,7 +10,7 @@ import AIImpactDashboard from '@/pages/AIImpactDashboard';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import { OrganizationApplicationsTab } from '@/components/dashboard/organization/OrganizationApplicationsTab';
 import { ApplyPageAnalyticsPage } from '@/features/analytics';
-import { ClientsOverviewDashboard } from '@/features/clients';
+import ClientAnalyticsDashboard from '@/features/clients/components/ClientAnalyticsDashboard';
 
 export interface DashboardTab {
   id: string;
@@ -52,7 +52,7 @@ export const dashboardTabs: DashboardTab[] = [
     id: 'clients',
     label: 'Clients',
     icon: Building2,
-    component: ClientsOverviewDashboard,
+    component: ClientAnalyticsDashboard,
   },
   {
     id: 'users',
