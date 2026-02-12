@@ -1,25 +1,29 @@
- import React, { useState } from 'react';
- import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
- import { Badge } from '@/components/ui/badge';
- import { Button } from '@/components/ui/button';
- import { Progress } from '@/components/ui/progress';
- import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
- import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
- import { 
-   RefreshCw, 
-   AlertTriangle, 
-   CheckCircle2, 
-   TrendingUp, 
-   TrendingDown,
-   Database,
-   Phone,
-   MapPin,
-   FileCheck,
-   Shield
- } from 'lucide-react';
- import { useDataQuality } from '../hooks/useDataQuality';
- import { SourceQualityMetrics, FieldCompletionRate, DataQualityAlert } from '../types/dataQuality';
- import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  RefreshCw, 
+  AlertTriangle, 
+  CheckCircle2, 
+  TrendingUp, 
+  TrendingDown,
+  Database,
+  Phone,
+  MapPin,
+  FileCheck,
+  Shield,
+  Zap,
+  DollarSign
+} from 'lucide-react';
+import { useDataQuality } from '../hooks/useDataQuality';
+import { SourceQualityMetrics, FieldCompletionRate, DataQualityAlert } from '../types/dataQuality';
+import { EnrichmentService } from '../services/enrichmentService';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
  
  const categoryIcons = {
    contact: Phone,
@@ -87,67 +91,106 @@
    );
  };
  
- const SourceCard = ({ source }: { source: SourceQualityMetrics }) => {
-   const [expanded, setExpanded] = useState(false);
-   
-   // Group fields by category
-   const groupedFields = source.fieldCompletionRates.reduce((acc, field) => {
-     if (!acc[field.category]) acc[field.category] = [];
-     acc[field.category].push(field);
-     return acc;
-   }, {} as Record<string, FieldCompletionRate[]>);
- 
-   return (
-     <Card className="overflow-hidden">
-       <CardHeader className="pb-3">
-         <div className="flex items-center justify-between">
-           <div className="flex items-center gap-3">
-             <CardTitle className="text-base">{source.displayName}</CardTitle>
-             <QualityScoreBadge score={source.qualityScore} />
-           </div>
-           <Badge variant="outline" className="font-normal">
-             {source.totalApplications} apps
-           </Badge>
-         </div>
-       </CardHeader>
-       <CardContent className="pt-0">
-         <div className="mb-3">
-           <div className="flex items-center justify-between text-sm mb-1">
-             <span className="text-muted-foreground">Overall Quality</span>
-             <span className="font-medium">{source.qualityScore.toFixed(0)}%</span>
-           </div>
-           <Progress value={source.qualityScore} className="h-2" />
-         </div>
-         
-         <Button 
-           variant="ghost" 
-           size="sm" 
-           className="w-full"
-           onClick={() => setExpanded(!expanded)}
-         >
-           {expanded ? 'Hide Details' : 'Show Field Breakdown'}
-         </Button>
-         
-         {expanded && (
-           <div className="mt-4 space-y-4">
-             {Object.entries(groupedFields).map(([category, fields]) => (
-               <div key={category}>
-                 <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
-                   {category}
-                 </h4>
-                 <div className="space-y-1">
-                   {fields.map(field => (
-                     <FieldCompletionRow key={field.fieldName} field={field} />
-                   ))}
-                 </div>
-               </div>
-             ))}
-           </div>
-         )}
-       </CardContent>
-     </Card>
-   );
- };
+const SourceCard = ({ source }: { source: SourceQualityMetrics }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [enriching, setEnriching] = useState(false);
+  
+  // Group fields by category
+  const groupedFields = source.fieldCompletionRates.reduce((acc, field) => {
+    if (!acc[field.category]) acc[field.category] = [];
+    acc[field.category].push(field);
+    return acc;
+  }, {} as Record<string, FieldCompletionRate[]>);
+
+  // Find fields with low completion for enrichment
+  const lowFields = source.fieldCompletionRates
+    .filter(f => f.completionRate < 70 && ['qualification', 'contact'].includes(f.category))
+    .map(f => f.fieldName);
+
+  const handleTriggerEnrichment = async () => {
+    setEnriching(true);
+    try {
+      const candidates = await EnrichmentService.getEnrichmentCandidates(
+        source.source, lowFields, 25
+      );
+      if (candidates.length === 0) {
+        toast.info('No enrichment candidates found for this source');
+        return;
+      }
+      await EnrichmentService.markForEnrichment(candidates.map(c => c.id));
+      toast.success(`Queued ${candidates.length} applications for enrichment`);
+    } catch (err) {
+      toast.error('Failed to trigger enrichment');
+    } finally {
+      setEnriching(false);
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-base">{source.displayName}</CardTitle>
+            <QualityScoreBadge score={source.qualityScore} />
+          </div>
+          <Badge variant="outline" className="font-normal">
+            {source.totalApplications} apps
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="mb-3">
+          <div className="flex items-center justify-between text-sm mb-1">
+            <span className="text-muted-foreground">Overall Quality</span>
+            <span className="font-medium">{source.qualityScore.toFixed(0)}%</span>
+          </div>
+          <Progress value={source.qualityScore} className="h-2" />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? 'Hide Details' : 'Show Field Breakdown'}
+          </Button>
+          {lowFields.length > 0 && source.totalApplications >= 5 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleTriggerEnrichment}
+              disabled={enriching}
+              className="gap-1"
+            >
+              <Zap className="h-3 w-3" />
+              {enriching ? 'Queuing...' : 'Enrich'}
+            </Button>
+          )}
+        </div>
+        
+        {expanded && (
+          <div className="mt-4 space-y-4">
+            {Object.entries(groupedFields).map(([category, fields]) => (
+              <div key={category}>
+                <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">
+                  {category}
+                </h4>
+                <div className="space-y-1">
+                  {fields.map(field => (
+                    <FieldCompletionRow key={field.fieldName} field={field} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
  
  const AlertCard = ({ alert }: { alert: DataQualityAlert }) => {
    const severityStyles = {
@@ -315,40 +358,118 @@
        )}
  
        {/* Tabs for Sources and Fields */}
-       <Tabs defaultValue="sources" className="w-full">
-         <TabsList>
-           <TabsTrigger value="sources">By Source</TabsTrigger>
-           <TabsTrigger value="fields">By Field</TabsTrigger>
-         </TabsList>
-         
-         <TabsContent value="sources" className="mt-4">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-             {summary.bySource.map(source => (
-               <SourceCard key={source.source} source={source} />
-             ))}
-           </div>
-         </TabsContent>
-         
-         <TabsContent value="fields" className="mt-4">
-           <Card>
-             <CardHeader>
-               <CardTitle>Critical Field Completion Rates</CardTitle>
-               <CardDescription>
-                 Across all {summary.totalApplications} applications in the last {days} days
-               </CardDescription>
-             </CardHeader>
-             <CardContent>
-               <div className="space-y-1">
-                 {summary.criticalFields
-                   .sort((a, b) => a.completionRate - b.completionRate)
-                   .map(field => (
-                     <FieldCompletionRow key={field.fieldName} field={field} />
-                   ))}
-               </div>
-             </CardContent>
-           </Card>
-         </TabsContent>
-       </Tabs>
+        <Tabs defaultValue="sources" className="w-full">
+          <TabsList>
+            <TabsTrigger value="sources">By Source</TabsTrigger>
+            <TabsTrigger value="fields">By Field</TabsTrigger>
+            <TabsTrigger value="ats-readiness">ATS Readiness</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="sources" className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {summary.bySource.map(source => (
+                <SourceCard key={source.source} source={source} />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="fields" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Critical Field Completion Rates</CardTitle>
+                <CardDescription>
+                  Across all {summary.totalApplications} applications in the last {days} days
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  {summary.criticalFields
+                    .sort((a, b) => a.completionRate - b.completionRate)
+                    .map(field => (
+                      <FieldCompletionRow key={field.fieldName} field={field} />
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ats-readiness" className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ATS Readiness Overview
+                  </CardTitle>
+                  <CardDescription>
+                    Percentage of applications ready for auto-post (score ≥ 60%)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    // Estimate readiness from critical field completion
+                    const requiredFields = ['first_name', 'last_name', 'phone', 'applicant_email', 'city', 'state', 'zip'];
+                    const requiredCompletion = summary.criticalFields
+                      .filter(f => requiredFields.includes(f.fieldName));
+                    const avgRequired = requiredCompletion.length > 0
+                      ? requiredCompletion.reduce((s, f) => s + f.completionRate, 0) / requiredCompletion.length
+                      : 0;
+                    const estimatedReady = Math.round(avgRequired);
+                    
+                    return (
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <span className="text-4xl font-bold">{estimatedReady}%</span>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            estimated ATS-ready applications
+                          </p>
+                        </div>
+                        <Progress value={estimatedReady} className="h-3" />
+                        <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                          <div>
+                            <span className="font-medium text-green-600">
+                              {requiredCompletion.filter(f => f.completionRate >= 80).length}
+                            </span>
+                            <p className="text-xs text-muted-foreground">Fields ≥80%</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-yellow-600">
+                              {requiredCompletion.filter(f => f.completionRate >= 60 && f.completionRate < 80).length}
+                            </span>
+                            <p className="text-xs text-muted-foreground">Fields 60-80%</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-red-600">
+                              {requiredCompletion.filter(f => f.completionRate < 60).length}
+                            </span>
+                            <p className="text-xs text-muted-foreground">Fields &lt;60%</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Required Fields for Tenstreet</CardTitle>
+                  <CardDescription>Completion rates for auto-post critical fields</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    {summary.criticalFields
+                      .filter(f => ['first_name', 'last_name', 'phone', 'applicant_email', 'city', 'state', 'zip', 'cdl_class'].includes(f.fieldName))
+                      .sort((a, b) => a.completionRate - b.completionRate)
+                      .map(field => (
+                        <FieldCompletionRow key={field.fieldName} field={field} />
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
      </div>
    );
  };

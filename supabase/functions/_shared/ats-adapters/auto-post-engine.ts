@@ -6,6 +6,7 @@
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { createATSAdapter } from './index.ts';
 import { enrichWithTranscript } from './transcript-enrichment.ts';
+import { calculateReadinessScore } from './readiness-scorer.ts';
 import type { ATSSystem, ATSConnection, FieldMapping, ApplicationData, ATSResponse } from './types.ts';
 import { createLogger } from '../logger.ts';
 
@@ -116,6 +117,47 @@ export async function autoPostToATS(
       }
 
       try {
+        // === ATS Readiness Check ===
+        const readiness = calculateReadinessScore(applicationData, conn.ats_slug, 60);
+        
+        // Store readiness score on the application
+        await supabase
+          .from('applications')
+          .update({ ats_readiness_score: readiness.score } as any)
+          .eq('id', applicationId);
+
+        if (!readiness.isReady) {
+          logger.info('Skipping - low readiness score', { 
+            correlationId, ats: conn.ats_slug, score: readiness.score, 
+            missingRequired: readiness.missingRequired 
+          });
+          
+          // Log skip to ats_sync_logs
+          await supabase.from('ats_sync_logs').insert({
+            ats_connection_id: conn.connection_id,
+            application_id: applicationId,
+            action: 'skipped_low_readiness',
+            status: 'skipped',
+            error_message: `Readiness score ${readiness.score}% below threshold ${readiness.threshold}%`,
+            request_payload: sanitizePayload({ 
+              readiness_score: readiness.score,
+              missing_required: readiness.missingRequired,
+              missing_recommended: readiness.missingRecommended 
+            } as Record<string, unknown>)
+          });
+
+          summary.skipped++;
+          summary.results.push({
+            connectionId: conn.connection_id,
+            atsSlug: conn.ats_slug,
+            atsName: conn.ats_name,
+            success: false,
+            error: `Readiness score too low: ${readiness.score}%`,
+            durationMs: Date.now() - startTime
+          });
+          continue;
+        }
+
         // Build ATS system config
         const system: ATSSystem = {
           id: conn.ats_system_id,
