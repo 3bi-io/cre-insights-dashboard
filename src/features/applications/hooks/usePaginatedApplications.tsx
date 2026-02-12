@@ -16,11 +16,12 @@ export const usePaginatedApplications = (filters: PaginationFilters = {}) => {
   return useInfiniteQuery({
     queryKey: queryKeys.applications.list(filters),
     queryFn: async ({ pageParam = 0 }) => {
+      const jobJoin = filters.organizationId ? 'job_listings!inner' : 'job_listings';
       let query = supabase
         .from('applications')
         .select(`
           *,
-          job_listings(
+          ${jobJoin}(
             id,
             title,
             organization_id,
