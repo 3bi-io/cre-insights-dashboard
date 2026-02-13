@@ -17,7 +17,7 @@ const CDL_FEEDS = [
   {
     clientId: '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
     clientName: 'Pemberton Truck Lines Inc',
-    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Pemberton-Truck-Lines-1749741664&board=ATSme'
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Pemberton-Truck-Lines-1749741664&board=AIRecruiter'
   },
   {
     clientId: '1d54e463-4d7f-4a05-8189-3e33d0586dea',
@@ -27,17 +27,17 @@ const CDL_FEEDS = [
   {
     clientId: '4a9ef1df-dcc9-499c-999a-446bb9a329fc',
     clientName: 'Novco, Inc.',
-    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Novco%2C-Inc.-1760547390&board=ATSme'
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Novco%2C-Inc.-1760547390&board=AIRecruiter'
   },
   {
     clientId: '30ab5f68-258c-4e81-8217-1123c4536259',
     clientName: 'Day and Ross',
-    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Day-and-Ross-1745523293&board=ATSme'
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=Day-and-Ross-1745523293&board=AIRecruiter'
   },
   {
     clientId: 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',
     clientName: 'James Burg Trucking Company',
-    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=James-Burg-Trucking-Company-1770928232&board=ATSme'
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=James-Burg-Trucking-Company-1770928232&board=AIRecruiter'
   }
 ];
 
