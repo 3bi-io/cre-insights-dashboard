@@ -24,6 +24,7 @@ const JOB_ID_PREFIX_ORG_MAP: Record<string, string> = {
   '14284': HAYES_ORG_ID, // Novco, Inc.
   '14294': HAYES_ORG_ID, // Pemberton Truck Lines Inc
   '14361': HAYES_ORG_ID, // New Hayes prefix (observed)
+  '14496': HAYES_ORG_ID, // James Burg Trucking Company
   // CR England clients (ZipRecruiter-style job IDs)
   '14380': CR_ENGLAND_ORG_ID, // Dollar Tree
   '14382': CR_ENGLAND_ORG_ID, // Dollar Tree
@@ -49,6 +50,8 @@ const HAYES_JOB_ID_CLIENT_MAP: Record<string, string> = {
   '14230': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
   '14294': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03',
   '14361': '67cadf11-8cce-41c6-8e19-7d2bb0be3b03', // New Pemberton prefix
+  // James Burg Trucking Company
+  '14496': 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',
 };
 
 // CR England Job ID → Client ID mapping (simple 2-3 digit IDs)
