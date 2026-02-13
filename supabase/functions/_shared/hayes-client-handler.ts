@@ -428,7 +428,7 @@ export const HAYES_CLIENT_CONFIGS: Record<string, HayesClientConfig> = {
     clientId: 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',
     clientName: 'James Burg Trucking Company',
     clientSlug: 'james-burg',
-    feedUserCode: 'PLACEHOLDER',
+    feedUserCode: 'James-Burg-Trucking-1770928232',
     feedBoard: 'AIRecruiter',
   },
 };
