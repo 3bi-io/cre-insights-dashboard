@@ -44,7 +44,7 @@ export const AIFeaturesList = () => {
       enabled: hasVoiceAgent(),
       icon: Phone,
       action: 'Setup Voice Agent',
-      onAction: () => navigate('/admin/voice-agent')
+      onAction: () => navigate('/admin/elevenlabs-admin')
     },
     {
       name: 'ElevenLabs Voice',

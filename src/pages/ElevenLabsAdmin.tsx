@@ -5,8 +5,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Bot, MessageSquare, AudioLines, Volume2, Mic, BarChart3 } from 'lucide-react';
+import { RefreshCw, Bot, MessageSquare, AudioLines, Volume2, Mic, BarChart3, PhoneOutgoing } from 'lucide-react';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
+import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
+import { OutboundCallAnalytics } from '@/components/voice/OutboundCallAnalytics';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { ConversationHistoryTable } from '@/components/voice/ConversationHistoryTable';
 import { ConversationAnalytics } from '@/components/voice/ConversationAnalytics';
@@ -219,6 +221,10 @@ const ElevenLabsAdmin = () => {
               <Volume2 className="h-4 w-4 mr-1" />
               Voices
             </TabsTrigger>
+            <TabsTrigger value="outbound">
+              <PhoneOutgoing className="h-4 w-4 mr-1" />
+              Outbound Calls
+            </TabsTrigger>
             <TabsTrigger value="tts">
               <Mic className="h-4 w-4 mr-1" />
               TTS
@@ -362,6 +368,21 @@ const ElevenLabsAdmin = () => {
                 <VoiceLibrary />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="outbound" className="space-y-4">
+            <div className="space-y-6">
+              <OutboundCallAnalytics />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Call History</CardTitle>
+                  <CardDescription>Recent outbound call activity across all agents</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <OutboundCallHistory maxHeight="600px" />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="tts" className="space-y-4">

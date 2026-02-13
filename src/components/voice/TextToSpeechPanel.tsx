@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { useElevenLabsVoices, useElevenLabsModels, useTextToSpeech } from '@/hooks/useElevenLabsAPI';
+import { useElevenLabsVoices, useTextToSpeech } from '@/hooks/useElevenLabsAPI';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Play, Download, Volume2, StopCircle } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Loader2, Volume2, Download } from 'lucide-react';
 
 const TTS_MODELS = [
   { id: 'eleven_flash_v2_5', name: 'Flash v2.5 (Fastest)', description: 'Ultra-low latency, newest' },
@@ -28,7 +27,6 @@ export function TextToSpeechPanel() {
   const [similarityBoost, setSimilarityBoost] = useState(0.75);
   const [style, setStyle] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -53,34 +51,10 @@ export function TextToSpeechPanel() {
       },
     });
 
-    // Convert base64 to blob
-    const byteCharacters = atob(result.audio);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'audio/mpeg' });
-    
+    // Use data URI approach - browser natively decodes base64 audio without corruption
     if (audioUrl) URL.revokeObjectURL(audioUrl);
-    const url = URL.createObjectURL(blob);
-    setAudioUrl(url);
-  };
-
-  const handlePlay = () => {
-    if (!audioUrl) return;
-    
-    if (isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-      return;
-    }
-
-    const audio = new Audio(audioUrl);
-    audio.onended = () => setIsPlaying(false);
-    audio.play();
-    audioRef.current = audio;
-    setIsPlaying(true);
+    const dataUri = `data:audio/mpeg;base64,${result.audio}`;
+    setAudioUrl(dataUri);
   };
 
   const handleDownload = () => {
@@ -235,25 +209,13 @@ export function TextToSpeechPanel() {
           {audioUrl && (
             <div className="pt-4 border-t space-y-4">
               <h4 className="font-semibold">Generated Audio</h4>
-              <div className="flex gap-2">
-                <Button onClick={handlePlay} variant="outline" className="flex-1">
-                  {isPlaying ? (
-                    <>
-                      <StopCircle className="h-4 w-4 mr-2" />
-                      Stop
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Play
-                    </>
-                  )}
-                </Button>
-                <Button onClick={handleDownload} variant="outline" className="flex-1">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
+              <audio ref={audioRef} controls className="w-full" src={audioUrl}>
+                Your browser does not support the audio element.
+              </audio>
+              <Button onClick={handleDownload} variant="outline" className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download MP3
+              </Button>
             </div>
           )}
         </CardContent>

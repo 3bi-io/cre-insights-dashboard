@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,13 +10,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { User, Bot, Clock, Calendar, AlertCircle, Share2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { User, Bot, Clock, Calendar, AlertCircle, Share2, Copy, Search, FileText, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
 import { ShareConversationDialog } from './ShareConversationDialog';
+import { ConversationAudioPlayer } from './ConversationAudioPlayer';
+import { toast } from 'sonner';
 
 interface Conversation {
   id: string;
@@ -46,10 +49,12 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
   const [loading, setLoading] = useState(true);
   const [transcriptError, setTranscriptError] = useState<string | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (open && conversation) {
       loadConversationData();
+      setSearchQuery('');
     }
   }, [open, conversation]);
 
@@ -62,17 +67,13 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
         fetchAudio(conversation.id),
       ]);
 
-      // If no transcript in DB, fetch from API and then re-query
       if (!transcriptData || transcriptData.length === 0) {
         try {
           const apiResult = await fetchTranscriptFromApiAsync(conversation.conversation_id);
-          
-          // Check if API returned an error
           if (apiResult?.error === 'transcript_not_found') {
             setTranscriptError(apiResult.message || 'Transcript not available from ElevenLabs');
             setTranscript([]);
           } else {
-            // Re-fetch from DB after API stored the data
             const newTranscriptData = await fetchTranscript(conversation.id);
             setTranscript(newTranscriptData || []);
           }
@@ -112,6 +113,24 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
     }
   };
 
+  const filteredTranscript = useMemo(() => {
+    if (!searchQuery.trim()) return transcript;
+    const q = searchQuery.toLowerCase();
+    return transcript.filter(msg => msg.message?.toLowerCase().includes(q));
+  }, [transcript, searchQuery]);
+
+  const wordCount = useMemo(() => {
+    return transcript.reduce((count, msg) => count + (msg.message?.split(/\s+/).length || 0), 0);
+  }, [transcript]);
+
+  const handleCopyTranscript = () => {
+    const text = transcript
+      .map(msg => `[${msg.speaker === 'agent' ? 'Agent' : 'User'}] ${msg.message}`)
+      .join('\n\n');
+    navigator.clipboard.writeText(text);
+    toast.success('Transcript copied to clipboard');
+  };
+
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return 'N/A';
     const mins = Math.floor(seconds / 60);
@@ -122,7 +141,7 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
+      <DialogContent className="max-w-3xl max-h-[85vh]">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -143,52 +162,78 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <Card className="p-4">
+        {/* Stats row */}
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          <Card className="p-3">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Calendar className="h-4 w-4" />
-              <span className="text-sm">Started</span>
+              <Calendar className="h-3.5 w-3.5" />
+              <span className="text-xs">Started</span>
             </div>
             <p className="text-sm font-medium">
               {format(new Date(conversation.started_at), 'HH:mm:ss')}
             </p>
           </Card>
-
-          <Card className="p-4">
+          <Card className="p-3">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm">Duration</span>
+              <Clock className="h-3.5 w-3.5" />
+              <span className="text-xs">Duration</span>
             </div>
             <p className="text-sm font-medium">
               {formatDuration(conversation.duration_seconds)}
             </p>
           </Card>
-
-          <Card className="p-4">
+          <Card className="p-3">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Bot className="h-4 w-4" />
-              <span className="text-sm">Messages</span>
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span className="text-xs">Messages</span>
             </div>
             <p className="text-sm font-medium">{transcript.length}</p>
           </Card>
+          <Card className="p-3">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <FileText className="h-3.5 w-3.5" />
+              <span className="text-xs">Words</span>
+            </div>
+            <p className="text-sm font-medium">{wordCount.toLocaleString()}</p>
+          </Card>
         </div>
 
-        {audio && (
-          <Card className="p-4 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Audio Recording</span>
-              <Badge variant="secondary">{audio.format.toUpperCase()}</Badge>
-            </div>
-            <audio controls className="w-full">
-              <source src={audio.audio_url} type={`audio/${audio.format}`} />
-              Your browser does not support the audio element.
-            </audio>
-          </Card>
-        )}
+        {/* Audio Player */}
+        <Card className="p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">Audio Recording</span>
+            {audio && <Badge variant="secondary">{audio.format?.toUpperCase() || 'MP3'}</Badge>}
+          </div>
+          <ConversationAudioPlayer conversationId={conversation.conversation_id} />
+        </Card>
 
+        {/* Transcript section */}
         <div>
-          <h3 className="font-medium mb-3">Transcript</h3>
-          <ScrollArea className="h-[400px] rounded-md border p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium">Transcript</h3>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search transcript..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9 w-[200px] text-sm"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyTranscript}
+                disabled={transcript.length === 0}
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copy
+              </Button>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[350px] rounded-md border p-4">
             {loading || isFetchingTranscript ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -217,9 +262,13 @@ export const ConversationDetailsDialog: React.FC<ConversationDetailsDialogProps>
                   {isFetchingTranscript ? 'Loading...' : 'Retry Load Transcript'}
                 </Button>
               </div>
+            ) : filteredTranscript.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No messages match "{searchQuery}"</p>
+              </div>
             ) : (
               <div className="space-y-4">
-                {transcript.map((message, index) => (
+                {filteredTranscript.map((message, index) => (
                   <div
                     key={message.id || index}
                     className={`flex gap-3 ${

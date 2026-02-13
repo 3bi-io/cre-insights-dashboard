@@ -714,6 +714,31 @@ serve(async (req) => {
         );
       }
 
+      case 'get_audio_stream': {
+        // Fetch audio for inline playback (no Content-Disposition: attachment)
+        const response = await fetch(
+          `https://api.elevenlabs.io/v1/convai/conversations/${conversationId}/audio`,
+          {
+            headers: {
+              'xi-api-key': ELEVENLABS_API_KEY,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`ElevenLabs API error: ${await response.text()}`);
+        }
+
+        const audioBuffer = await response.arrayBuffer();
+        
+        return new Response(audioBuffer, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'audio/mpeg',
+          },
+        });
+      }
+
       default:
         throw new Error(`Invalid action: ${action}`);
     }
