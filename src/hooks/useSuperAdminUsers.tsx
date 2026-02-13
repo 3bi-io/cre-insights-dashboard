@@ -12,6 +12,7 @@ interface UserWithRole {
   organization_id: string | null;
   organization_name?: string;
   role: string;
+  assigned_client_count: number;
 }
 
 export function useSuperAdminUsers() {
@@ -49,6 +50,21 @@ export function useSuperAdminUsers() {
         throw new Error(rolesError.message);
       }
 
+      // Get client assignment counts
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('user_client_assignments')
+        .select('user_id, client_id');
+
+      if (assignmentsError) {
+        throw new Error(assignmentsError.message);
+      }
+
+      // Count assignments per user
+      const assignmentCounts = new Map<string, number>();
+      assignmentsData?.forEach(a => {
+        assignmentCounts.set(a.user_id, (assignmentCounts.get(a.user_id) || 0) + 1);
+      });
+
       // Combine the data
       return profilesData?.map(user => {
         const userRole = rolesData?.find(role => role.user_id === user.id);
@@ -60,7 +76,8 @@ export function useSuperAdminUsers() {
           created_at: user.created_at,
           organization_id: user.organization_id,
           organization_name: (user.organizations as any)?.name || 'No Organization',
-          role: userRole?.role || 'user'
+          role: userRole?.role || 'user',
+          assigned_client_count: assignmentCounts.get(user.id) || 0,
         };
       }) || [];
     },
