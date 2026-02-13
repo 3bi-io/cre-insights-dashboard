@@ -424,4 +424,11 @@ export const HAYES_CLIENT_CONFIGS: Record<string, HayesClientConfig> = {
     feedUserCode: 'Novco%2C-Inc.-1760547390',
     feedBoard: 'AIRecruiter',
   },
+  'james-burg': {
+    clientId: 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',
+    clientName: 'James Burg Trucking Company',
+    clientSlug: 'james-burg',
+    feedUserCode: 'PLACEHOLDER',
+    feedBoard: 'AIRecruiter',
+  },
 };
