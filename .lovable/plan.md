@@ -1,39 +1,65 @@
 
 
-# Revert Board Parameter to AIRecruiter
+# Add Client Assignment for Admin Users
 
-## Clarification
-`AIRecruiter` is the correct `board` parameter for all CDL Job Cast feed URLs. `ATSme` is the platform/product name, not a feed parameter. The James Burg user code fix (adding "Company") was correct and stays.
+## Overview
+Add the ability to assign admin-level users to specific clients within their organization from the User Management page. Currently, users are assigned to organizations but there is no way to associate them with specific clients. This requires a new database table and a new dialog component.
+
+## Current State
+- Users have `organization_id` on their `profiles` table
+- Clients belong to organizations via `clients.organization_id`
+- No user-to-client mapping exists
+- The User Management page (`/admin/user-management`) has dialogs for role, organization, and password management
 
 ## Changes
 
-### 1. supabase/functions/_shared/hayes-client-handler.ts (line 432)
-- Revert James Burg `feedBoard` from `'ATSme'` back to `'AIRecruiter'`
+### 1. Database: Create `user_client_assignments` table
+A new junction table to map users to their assigned clients:
 
-### 2. supabase/functions/sync-cdl-feeds/index.ts
-Standardize all feed URLs to use `board=AIRecruiter`:
-- **Pemberton** (line 20): `board=ATSme` -> `board=AIRecruiter`
-- **Novco** (line 30): `board=ATSme` -> `board=AIRecruiter`
-- **Day and Ross** (line 35): `board=ATSme` -> `board=AIRecruiter`
-- **James Burg** (line 40): `board=ATSme` -> `board=AIRecruiter`
-- Danny Herman (line 25) already uses `board=AIRecruiter` -- no change needed
+```text
+user_client_assignments
+  - id (uuid, PK)
+  - user_id (uuid, FK -> auth.users, NOT NULL)
+  - client_id (uuid, FK -> clients, NOT NULL)
+  - assigned_at (timestamptz, default now())
+  - assigned_by (uuid, FK -> auth.users)
+  - UNIQUE(user_id, client_id)
+```
 
-### 3. Frontend defaults
-- `src/pages/SuperAdminFeeds.tsx`: Confirm default `boardParam` is `'AIRecruiter'` (should already be correct)
-- `src/features/feeds/components/FeedSourceSelector.tsx` (line 128): Confirm placeholder is `"AIRecruiter"` (should already be correct)
+RLS policies:
+- Super admins can do everything
+- Org admins can view/manage assignments for users in their organization
+- Users can view their own assignments
 
-### 4. Deploy and verify
-- Redeploy `sync-cdl-feeds` and `hayes-jamesburg-inbound`
-- Trigger a manual sync for James Burg to confirm jobs still pull in with `board=AIRecruiter`
+### 2. New Component: `UserClientAssignmentDialog`
+- Dialog triggered from the `UserActionsDropdown` for admin/moderator/recruiter users
+- Shows the user's organization name and lists all clients in that org
+- Checkbox-based multi-select to assign/unassign clients
+- Saves assignments to `user_client_assignments`
 
-## Summary of State After Fix
+### 3. Update `UserActionsDropdown`
+- Add a new "Manage Clients" menu item with a `Briefcase` icon
+- Only visible for users who have an organization assigned (since clients belong to orgs)
+- Passes `onManageClients` callback
 
-| Client | User Code | Board |
-|--------|-----------|-------|
-| Danny Herman | danny_herman_trucking | AIRecruiter |
-| Pemberton | Pemberton-Truck-Lines-1749741664 | AIRecruiter |
-| Day and Ross | Day-and-Ross-1745523293 | AIRecruiter |
-| Novco | Novco%2C-Inc.-1760547390 | AIRecruiter |
-| James Burg | James-Burg-Trucking-Company-1770928232 | AIRecruiter |
+### 4. Update `UserManagement` page
+- Add state for the new client assignment dialog
+- Add handler and pass to `UserActionsDropdown`
+- Display assigned client count in the user row (e.g., "3 clients" badge)
 
-All feeds will consistently use `board=AIRecruiter` across both the shared config and sync function.
+### 5. Update `useSuperAdminUsers` hook
+- Fetch `user_client_assignments` alongside profiles and roles
+- Include assigned client names/count in the returned user data
+
+## Technical Details
+
+### Files to create:
+- `src/components/admin/UserClientAssignmentDialog.tsx` -- multi-select dialog for client assignments
+
+### Files to modify:
+- `src/components/admin/UserActionsDropdown.tsx` -- add "Manage Clients" menu item
+- `src/pages/UserManagement.tsx` -- add dialog state and handler, show client count
+- `src/hooks/useSuperAdminUsers.tsx` -- fetch client assignments data
+
+### Database migration:
+- Create `user_client_assignments` table with RLS policies
