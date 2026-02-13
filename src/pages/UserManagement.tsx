@@ -17,6 +17,7 @@ import { UserActionsDropdown } from '@/components/admin/UserActionsDropdown';
 import { UserRoleDialog } from '@/components/admin/UserRoleDialog';
 import { UserOrganizationDialog } from '@/components/admin/UserOrganizationDialog';
 import { UserPasswordDialog } from '@/components/admin/UserPasswordDialog';
+import { UserClientAssignmentDialog } from '@/components/admin/UserClientAssignmentDialog';
 
 interface SelectedUser {
   id: string;
@@ -36,6 +37,7 @@ const UserManagement = () => {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [orgDialogOpen, setOrgDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
 
   const isLoading = metricsLoading || activityLoading || usersLoading;
 
@@ -52,6 +54,11 @@ const UserManagement = () => {
   const handleResetPassword = (user: SelectedUser) => {
     setSelectedUser(user);
     setPasswordDialogOpen(true);
+  };
+
+  const handleManageClients = (user: SelectedUser) => {
+    setSelectedUser(user);
+    setClientDialogOpen(true);
   };
 
   const pageActions = <SuperAdminInviteDialog />;
@@ -144,6 +151,11 @@ const UserManagement = () => {
                         <Badge variant={user.role === 'admin' || user.role === 'super_admin' ? 'secondary' : 'outline'}>
                           {user.role}
                         </Badge>
+                        {user.assigned_client_count > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            {user.assigned_client_count} client{user.assigned_client_count !== 1 ? 's' : ''}
+                          </Badge>
+                        )}
                         {user.role !== 'super_admin' && (
                           <div className="flex items-center gap-2">
                             <span className={`text-xs ${user.enabled ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -164,6 +176,7 @@ const UserManagement = () => {
                           onEditRole={() => handleEditRole(userForDialog)}
                           onChangeOrganization={() => handleChangeOrganization(userForDialog)}
                           onResetPassword={() => handleResetPassword(userForDialog)}
+                          onManageClients={() => handleManageClients(userForDialog)}
                           disabled={isUpdating}
                         />
                       </div>
@@ -229,6 +242,15 @@ const UserManagement = () => {
         isOpen={passwordDialogOpen}
         onClose={() => {
           setPasswordDialogOpen(false);
+          setSelectedUser(null);
+        }}
+      />
+
+      <UserClientAssignmentDialog
+        user={selectedUser}
+        isOpen={clientDialogOpen}
+        onClose={() => {
+          setClientDialogOpen(false);
           setSelectedUser(null);
         }}
       />

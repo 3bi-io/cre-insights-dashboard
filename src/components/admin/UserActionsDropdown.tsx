@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Shield, Building2, Key, UserCog } from 'lucide-react';
+import { MoreHorizontal, Shield, Building2, Key, UserCog, Briefcase } from 'lucide-react';
 
 interface UserActionsDropdownProps {
   user: {
@@ -21,6 +21,7 @@ interface UserActionsDropdownProps {
   onEditRole: () => void;
   onChangeOrganization: () => void;
   onResetPassword: () => void;
+  onManageClients?: () => void;
   disabled?: boolean;
 }
 
@@ -29,6 +30,7 @@ export const UserActionsDropdown: React.FC<UserActionsDropdownProps> = ({
   onEditRole,
   onChangeOrganization,
   onResetPassword,
+  onManageClients,
   disabled = false,
 }) => {
   const isSuperAdmin = user.role === 'super_admin';
@@ -64,6 +66,16 @@ export const UserActionsDropdown: React.FC<UserActionsDropdownProps> = ({
           <Building2 className="h-4 w-4" />
           Change Organization
         </DropdownMenuItem>
+
+        {user.organization_id && onManageClients && (
+          <DropdownMenuItem 
+            onClick={onManageClients}
+            className="flex items-center gap-2"
+          >
+            <Briefcase className="h-4 w-4" />
+            Manage Clients
+          </DropdownMenuItem>
+        )}
         
         <DropdownMenuSeparator />
         
