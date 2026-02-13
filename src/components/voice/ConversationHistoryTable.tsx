@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Download, Eye, Share2 } from 'lucide-react';
+import { Eye, Share2, ChevronDown, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { ConversationDetailsDialog } from './ConversationDetailsDialog';
 import { ShareConversationDialog } from './ShareConversationDialog';
+import { ConversationAudioPlayer } from './ConversationAudioPlayer';
 
 interface Conversation {
   id: string;
@@ -37,6 +38,7 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
 }) => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [shareConversation, setShareConversation] = useState<Conversation | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return 'N/A';
@@ -45,12 +47,17 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const toggleExpand = (id: string) => {
+    setExpandedRow(prev => prev === id ? null : id);
+  };
+
   return (
     <>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]"></TableHead>
               <TableHead>Date & Time</TableHead>
               <TableHead>Agent</TableHead>
               <TableHead>Organization</TableHead>
@@ -62,58 +69,71 @@ export const ConversationHistoryTable: React.FC<ConversationHistoryTableProps> =
           <TableBody>
             {conversations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No conversations found
                 </TableCell>
               </TableRow>
             ) : (
               conversations.map((conversation) => (
-                <TableRow key={conversation.id}>
-                  <TableCell>
-                    {format(new Date(conversation.started_at), 'MMM d, yyyy HH:mm')}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {conversation.voice_agents?.agent_name || 'Unknown Agent'}
-                  </TableCell>
-                  <TableCell>
-                    {conversation.voice_agents?.organizations?.name || 'N/A'}
-                  </TableCell>
-                  <TableCell>{formatDuration(conversation.duration_seconds)}</TableCell>
-                  <TableCell>
-                    <Badge variant={conversation.status === 'completed' ? 'default' : 'secondary'}>
-                      {conversation.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedConversation(conversation)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShareConversation(conversation)}
-                      >
-                        <Share2 className="h-4 w-4 mr-1" />
-                        Share
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDownloadAudio(conversation.conversation_id)}
-                        disabled={isDownloadingAudio}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Audio
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                <React.Fragment key={conversation.id}>
+                  <TableRow className="cursor-pointer" onClick={() => toggleExpand(conversation.id)}>
+                    <TableCell className="w-[40px]">
+                      {expandedRow === conversation.id ? (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(conversation.started_at), 'MMM d, yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {conversation.voice_agents?.agent_name || 'Unknown Agent'}
+                    </TableCell>
+                    <TableCell>
+                      {conversation.voice_agents?.organizations?.name || 'N/A'}
+                    </TableCell>
+                    <TableCell>{formatDuration(conversation.duration_seconds)}</TableCell>
+                    <TableCell>
+                      <Badge variant={conversation.status === 'completed' ? 'default' : 'secondary'}>
+                        {conversation.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedConversation(conversation)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShareConversation(conversation)}
+                        >
+                          <Share2 className="h-4 w-4 mr-1" />
+                          Share
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {expandedRow === conversation.id && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="bg-muted/50 p-4">
+                        <div className="max-w-xl">
+                          <p className="text-xs text-muted-foreground mb-2">Audio Recording</p>
+                          <ConversationAudioPlayer
+                            conversationId={conversation.conversation_id}
+                            compact
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               ))
             )}
           </TableBody>
