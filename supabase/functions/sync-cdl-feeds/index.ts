@@ -37,7 +37,7 @@ const CDL_FEEDS = [
   {
     clientId: 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52',
     clientName: 'James Burg Trucking Company',
-    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=James-Burg-Trucking-1770928232&board=AIRecruiter'
+    feedUrl: 'https://cdljobcast.com/client/recruiting/getfeeds?user=James-Burg-Trucking-Company-1770928232&board=ATSme'
   }
 ];
 
