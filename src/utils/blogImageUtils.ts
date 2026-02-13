@@ -9,6 +9,7 @@ import roiRecruitmentHero from '@/assets/blog/roi-recruitment-hero.jpg';
 import socialBeaconHero from '@/assets/blog/social-beacon-hero.jpg';
 import tenstreetHero from '@/assets/blog/tenstreet-hero.jpg';
 import complianceHero from '@/assets/blog/compliance-hero.jpg';
+import atsMeThriveHero from '@/assets/blog/ats-me-thrive-hero.jpg';
 
 const BASE_URL = 'https://ats.me';
 
@@ -19,6 +20,7 @@ const BLOG_IMAGE_MAP: Record<string, string> = {
   'social-beacon-beyond-job-boards': socialBeaconHero,
   'tenstreet-integration-driver-recruitment': tenstreetHero,
   'recruitment-compliance-ai-hiring-2026': complianceHero,
+  'why-ats-me-will-thrive-2026': atsMeThriveHero,
 };
 
 /** 
@@ -31,6 +33,7 @@ const BLOG_OG_IMAGE_MAP: Record<string, string> = {
   'social-beacon-beyond-job-boards': `${BASE_URL}/og-blog-social-beacon.png`,
   'tenstreet-integration-driver-recruitment': `${BASE_URL}/og-blog-tenstreet.png`,
   'recruitment-compliance-ai-hiring-2026': `${BASE_URL}/og-blog-compliance.png`,
+  'why-ats-me-will-thrive-2026': `${BASE_URL}/og-blog-ats-me-thrive.png`,
 };
 
 /** Default fallback image for posts without a mapped placeholder */
