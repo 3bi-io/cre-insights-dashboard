@@ -18,18 +18,8 @@ import {
 
 // Icon mapping for benefits
 const BENEFIT_ICONS: Record<string, LucideIcon> = {
-  DollarSign,
-  Home,
-  Truck,
-  Heart,
-  PawPrint,
-  Package,
-  GraduationCap,
-  Shield,
-  Users,
-  Wallet,
-  Gift,
-  HeartPulse,
+  DollarSign, Home, Truck, Heart, PawPrint, Package,
+  GraduationCap, Shield, Users, Wallet, Gift, HeartPulse,
 };
 
 interface BenefitToggleProps {
@@ -57,7 +47,7 @@ export function BenefitToggle({
       onClick={onToggle}
       disabled={disabled}
       className={cn(
-        'flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200',
+        'flex items-center gap-2 px-4 py-3 rounded-lg border transition-all duration-200',
         'text-sm font-medium cursor-pointer',
         'focus:outline-none focus:ring-2 focus:ring-primary/50',
         selected
@@ -91,7 +81,7 @@ export function BenefitToggleGroup({
 }: BenefitToggleGroupProps) {
   return (
     <div 
-      className={cn('grid grid-cols-2 gap-2', className)}
+      className={cn('grid grid-cols-1 sm:grid-cols-2 gap-2', className)}
       role="group"
       aria-label="Select job benefits"
     >

@@ -23,13 +23,17 @@ export function ExportMenu({ preview, disabled }: ExportMenuProps) {
   const [exportedType, setExportedType] = useState<string | null>(null);
 
   const handleCopyText = async () => {
-    const text = `${preview.content.headline}\n\n${preview.content.body}\n\n${preview.content.hashtags.map(t => `#${t}`).join(' ')}`;
-    const success = await copyToClipboard(text);
-    if (success) {
-      setExportedType('text');
-      toast({ title: 'Copied!', description: 'Ad copy copied to clipboard' });
-      setTimeout(() => setExportedType(null), 2000);
-    } else {
+    try {
+      const text = `${preview.content.headline}\n\n${preview.content.body}\n\n${preview.content.hashtags.map(t => `#${t}`).join(' ')}`;
+      const success = await copyToClipboard(text);
+      if (success) {
+        setExportedType('text');
+        toast({ title: 'Copied!', description: 'Ad copy copied to clipboard' });
+        setTimeout(() => setExportedType(null), 2000);
+      } else {
+        toast({ title: 'Failed', description: 'Could not copy to clipboard', variant: 'destructive' });
+      }
+    } catch {
       toast({ title: 'Failed', description: 'Could not copy to clipboard', variant: 'destructive' });
     }
   };
@@ -42,7 +46,6 @@ export function ExportMenu({ preview, disabled }: ExportMenuProps) {
 
     setIsExporting(true);
     try {
-      // For base64 images, create blob and download
       if (preview.mediaUrl.startsWith('data:')) {
         const response = await fetch(preview.mediaUrl);
         const blob = await response.blob();
@@ -60,7 +63,7 @@ export function ExportMenu({ preview, disabled }: ExportMenuProps) {
       setExportedType('image');
       toast({ title: 'Downloaded!', description: 'Image saved successfully' });
       setTimeout(() => setExportedType(null), 2000);
-    } catch (error) {
+    } catch {
       toast({ title: 'Download failed', description: 'Could not download image', variant: 'destructive' });
     } finally {
       setIsExporting(false);
@@ -68,49 +71,59 @@ export function ExportMenu({ preview, disabled }: ExportMenuProps) {
   };
 
   const handleExportJSON = async () => {
-    const exportData = {
-      headline: preview.content.headline,
-      body: preview.content.body,
-      hashtags: preview.content.hashtags,
-      callToAction: preview.content.callToAction,
-      mediaUrl: preview.mediaUrl,
-      config: {
-        jobType: preview.config.jobType,
-        benefits: preview.config.benefits,
-        mediaType: preview.config.mediaType,
-        aspectRatio: preview.config.aspectRatio,
-      },
-      generatedAt: preview.generatedAt,
-    };
+    try {
+      const exportData = {
+        headline: preview.content.headline,
+        body: preview.content.body,
+        hashtags: preview.content.hashtags,
+        callToAction: preview.content.callToAction,
+        mediaUrl: preview.mediaUrl,
+        config: {
+          jobType: preview.config.jobType,
+          benefits: preview.config.benefits,
+          mediaType: preview.config.mediaType,
+          aspectRatio: preview.config.aspectRatio,
+        },
+        generatedAt: preview.generatedAt,
+      };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ad-creative-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ad-creative-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    setExportedType('json');
-    toast({ title: 'Exported!', description: 'JSON file saved successfully' });
-    setTimeout(() => setExportedType(null), 2000);
+      setExportedType('json');
+      toast({ title: 'Exported!', description: 'JSON file saved successfully' });
+      setTimeout(() => setExportedType(null), 2000);
+    } catch {
+      toast({ title: 'Export failed', description: 'Could not export JSON', variant: 'destructive' });
+    }
   };
 
   const handleCopyShareLink = async () => {
-    // In a real implementation, this would generate a shareable preview link
-    const shareData = btoa(JSON.stringify({
-      h: preview.content.headline,
-      b: preview.content.body.substring(0, 100),
-    }));
-    const shareUrl = `${window.location.origin}/preview/ad/${shareData}`;
-    
-    const success = await copyToClipboard(shareUrl);
-    if (success) {
-      setExportedType('link');
-      toast({ title: 'Link copied!', description: 'Share link copied to clipboard' });
-      setTimeout(() => setExportedType(null), 2000);
+    try {
+      // Safe Unicode handling with encodeURIComponent
+      const shareData = btoa(encodeURIComponent(JSON.stringify({
+        h: preview.content.headline,
+        b: preview.content.body.substring(0, 100),
+      })));
+      const shareUrl = `${window.location.origin}/preview/ad/${shareData}`;
+      
+      const success = await copyToClipboard(shareUrl);
+      if (success) {
+        setExportedType('link');
+        toast({ title: 'Link copied!', description: 'Share link copied to clipboard' });
+        setTimeout(() => setExportedType(null), 2000);
+      } else {
+        toast({ title: 'Failed', description: 'Could not copy link', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Failed', description: 'Could not generate share link', variant: 'destructive' });
     }
   };
 
