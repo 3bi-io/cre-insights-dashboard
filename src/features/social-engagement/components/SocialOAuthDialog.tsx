@@ -70,7 +70,7 @@ const PLATFORM_INFO: Record<SocialPlatform, PlatformInfo> = {
     ],
     supported: true,
   },
-  twitter: {
+  x: {
     name: 'X (Twitter)',
     icon: <XIcon className="h-6 w-6" />,
     color: 'text-black dark:text-white',
@@ -188,7 +188,7 @@ export function SocialOAuthDialog({
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {platform === 'twitter' && 'X (Twitter) API access requires an approved developer account. Contact support to enable this integration.'}
+                {platform === 'x' && 'X (Twitter) API access requires an approved developer account. Contact support to enable this integration.'}
                 {platform === 'linkedin' && 'LinkedIn API integration requires partner approval. Contact support to enable this integration.'}
               </AlertDescription>
             </Alert>

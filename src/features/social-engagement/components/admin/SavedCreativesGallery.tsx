@@ -76,9 +76,7 @@ export function SavedCreativesGallery({
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this creative?')) {
-      deleteCreative.mutate(id);
-    }
+    deleteCreative.mutate(id);
   };
 
   const handleDuplicate = (creative: AdCreativeRecord) => {

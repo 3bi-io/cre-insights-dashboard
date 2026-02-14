@@ -57,7 +57,7 @@ const PLATFORM_CONFIG: Record<SocialPlatform, {
     color: 'text-pink-600',
     bgColor: 'bg-gradient-to-r from-purple-100 to-pink-100',
   },
-  twitter: {
+  x: {
     name: 'X (Twitter)',
     icon: <XIcon className="h-5 w-5" />,
     color: 'text-foreground',

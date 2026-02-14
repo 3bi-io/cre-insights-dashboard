@@ -46,7 +46,7 @@ interface InteractionQueueProps {
 const PLATFORM_COLORS: Record<SocialPlatform, string> = {
   facebook: 'bg-blue-500',
   instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
-  twitter: 'bg-black',
+  x: 'bg-black',
   whatsapp: 'bg-green-500',
   linkedin: 'bg-blue-700',
   tiktok: 'bg-black',

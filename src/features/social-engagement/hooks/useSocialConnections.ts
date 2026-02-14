@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export type SocialPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'twitter' | 'linkedin' | 'tiktok' | 'reddit';
+export type SocialPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'x' | 'linkedin' | 'tiktok' | 'reddit';
 
 export interface SocialConnection {
   id: string;
