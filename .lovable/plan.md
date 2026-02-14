@@ -1,26 +1,63 @@
 
 
-# Review: James Burg Trucking Tenstreet Integration (Company ID 1680394)
+## Rolling Truck Wheels Animation
 
-## ✅ COMPLETED - All Issues Fixed
+### Overview
+Create a `TruckWheelSpin` component that overlays animated spinning wheel elements on the transport-hero trucking image, giving the illusion that the truck is driving. This follows the same pattern as the `WeldingSparks` component -- a purely visual CSS overlay positioned to align with the truck wheels in the background image.
 
-### Fix 1: Cross-Posting Bug (Critical) — FIXED
-- **submit-application/index.ts**: Now resolves `client_id` from the job listing and passes it to `autoPostToATS()` via the `clientId` option.
-- **`get_active_ats_connections` DB function**: Updated to strictly filter by `client_id` when provided — no longer falls back to `client_id IS NULL` connections, preventing cross-posting between carriers.
+### Approach
 
-### Fix 2: Missing Source Credential — FIXED
-- James Burg credentials (`89b01bd3-2533-47ad-89ea-196c12f5c136`) updated with `source: 'NationalTruckinNetwork'`.
-- Verified: `{"mode": "PROD", "source": "NationalTruckinNetwork", "password": "***", "client_id": "601", "company_ids": "1680394"}`
+The transport-hero image shows a truck. We will overlay circular elements at the wheel positions that continuously rotate, creating a realistic rolling effect. The animation will be subtle and steady to avoid looking cartoonish.
 
-### Fix 3: Post-Call Tenstreet Re-Sync — IMPLEMENTED
-- **elevenlabs-call-status/index.ts**: When an outbound call reaches `completed` status with an `application_id`, the function now:
-  1. Fetches the application and its job listing (for `client_id` routing)
-  2. Triggers `autoPostToATS()` as a non-blocking background task
-  3. The auto-post engine's `enrichWithTranscript` utility attaches the call transcript before sending to Tenstreet
-- This applies to **all** Hayes clients (Danny Herman, Pemberton, James Burg, Day & Ross), not just James Burg.
+### Implementation Steps
 
-### Deployment Status
-- `submit-application` edge function: ✅ Deployed
-- `elevenlabs-call-status` edge function: ✅ Deployed
-- Database migration (get_active_ats_connections): ✅ Applied
-- James Burg credentials update: ✅ Applied
+**1. Create `src/components/shared/TruckWheelSpin.tsx`**
+- New component following the `WeldingSparks` pattern (absolute positioned overlay, `pointer-events-none`, `aria-hidden`)
+- Takes an `active` prop (always true on the Clients page, or conditional if added to a slideshow later)
+- Renders 2-3 circular overlays positioned at each visible wheel location on the transport-hero image
+- Each wheel overlay will be a semi-transparent circle with radial spoke/tread marks that rotate via CSS animation
+- Includes a subtle motion blur haze near the ground/tires for road movement feel
+
+**2. Add CSS keyframes to `src/index.css`**
+- `@keyframes wheel-roll` -- continuous 360-degree rotation at a steady speed (~3 seconds per revolution)
+- `@keyframes road-blur` -- subtle horizontal shimmer near ground level to sell the movement illusion
+
+**3. Integrate into `ClientsHero.tsx`**
+- Import `TruckWheelSpin` and render it via the `overlayContent` prop on `HeroBackground`
+- Always active since the Clients page only has one static background image
+
+### Wheel Overlay Design
+Each wheel will consist of:
+- An outer ring with a dark tire-colored border and slight radial tread pattern (created via CSS `conic-gradient`)
+- A rotating inner element with spoke lines (also via CSS gradients) to make the spin visible
+- Slight shadow beneath each wheel position for grounding
+- A horizontal streaked blur strip near the bottom edge of the image to simulate road movement
+
+### Technical Details
+
+```text
++----------------------------------------------+
+|            transport-hero.png                 |
+|                                               |
+|      [truck body]                             |
+|                                               |
+|    (wheel-1)              (wheel-2)           |
+|     ~25%, 88%              ~65%, 88%          |
+|                                               |
+|  ~~~ road blur strip across bottom ~~~        |
++----------------------------------------------+
+```
+
+- Wheel positions will be calibrated from the actual image (approximate: left wheel at 25%/88%, right wheel at 65%/88%)
+- Rotation speed: `animation: wheel-roll 2.5s linear infinite` for steady, realistic RPM
+- The tread pattern uses a repeating `conic-gradient` so that rotation is clearly visible even through the overlay
+- Motion-safe media query respected: `motion-safe:animate-...`
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `src/components/shared/TruckWheelSpin.tsx` | New component |
+| `src/index.css` | Add `wheel-roll` and `road-blur` keyframes |
+| `src/components/public/clients/ClientsHero.tsx` | Add `overlayContent` prop with `TruckWheelSpin` |
+| `src/components/shared/index.ts` | Export new component |
+
