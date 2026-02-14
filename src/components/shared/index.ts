@@ -13,3 +13,4 @@ export type { DataLoadingStateHandlerProps } from './DataLoadingStateHandler';
 export { CompanyLogo } from './CompanyLogo';
 export { HeroBackground } from './HeroBackground';
 export type { HeroBackgroundProps } from './HeroBackground';
+export { TruckWheelSpin } from './TruckWheelSpin';
