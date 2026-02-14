@@ -1,189 +1,65 @@
 
 
-## Social Beacon Comprehensive Optimization -- Best-in-Class Refactor
+## Social Beacon Admin UI -- Final Fixes for Production Release
 
-### Overview
+### Status: Nearly Complete (3 issues remaining)
 
-This plan upgrades every Social Beacon component to production-grade quality: upgrading the AI image model from `gemini-2.5-flash-image` to `gemini-3-pro-image-preview` for higher-quality ad creatives, fixing CORS headers, improving mobile responsiveness across all admin panels, and refactoring components for better UX patterns.
-
----
-
-### 1. Edge Function: Upgrade AI Image Model and Fix Issues
-
-**File: `supabase/functions/generate-ad-creative/index.ts`**
-
-| Issue | Fix |
-|-------|-----|
-| Image model uses `gemini-2.5-flash-image` (lower quality) | Upgrade to `google/gemini-3-pro-image-preview` for best-in-class ad images |
-| Text model uses `gemini-2.5-flash` | Upgrade to `google/gemini-3-flash-preview` (latest, faster) |
-| CORS headers missing required Supabase client headers | Add `x-supabase-client-platform`, `x-supabase-client-platform-version`, `x-supabase-client-runtime`, `x-supabase-client-runtime-version` |
-| No 429/402 error handling on image generation branch (silently continues) | Surface rate limit and credit errors to the user with `imageError` field in response |
-| Base64 images returned directly (huge payloads) | Add a warning comment but keep base64 for now (storage upload is a future enhancement) |
-| Tool-calling not used for structured output | Switch text generation to use tool calling for reliable JSON extraction instead of regex parsing |
-
-**Key changes:**
-- Model: `google/gemini-3-flash-preview` for text, `google/gemini-3-pro-image-preview` for images
-- Use tool calling (`tools` + `tool_choice`) to extract headline/body/hashtags/callToAction reliably (no more regex JSON parsing)
-- Add `imageError` field to response so frontend can show "Image generation failed" gracefully
-- Expand CORS headers
+After auditing all 12 Social Beacon admin components, the edge function, and both dashboard pages, the vast majority of the best-in-class refactor has been applied. Three issues slipped through and need to be fixed.
 
 ---
 
-### 2. Ad Creative Studio -- Mobile-First Refactor
+### Issue 1: `SocialEngagementDashboard.tsx` still uses `'twitter'` instead of `'x'`
 
-**File: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`**
+**File:** `src/features/social-engagement/pages/SocialEngagementDashboard.tsx` (line 198)
 
-| Issue | Fix |
-|-------|-----|
-| Two-column grid breaks on mobile | Stack vertically on mobile (`grid-cols-1 lg:grid-cols-2`) |
-| Company details grid is `grid-cols-2` always | Change to `grid-cols-1 sm:grid-cols-2` |
-| Media type / aspect ratio grid is `grid-cols-2` always | Change to `grid-cols-1 sm:grid-cols-2` |
-| No loading feedback on image generation time (can take 10-20s) | Add progress indicator text that updates during generation |
-| No image generation error feedback | Show toast when `imageError` returned from edge function |
-| Benefits require at least 1 to generate (no user hint) | Add helper text showing "Select at least 1 benefit" |
+The connections tab platform list still includes `'twitter'` instead of `'x'`, which means the X/Twitter platform card won't match the connection data that uses the `'x'` key.
+
+**Fix:** Change `'twitter'` to `'x'` in the platform array on line 198.
 
 ---
 
-### 3. Ad Preview Card -- Enhanced Platform Fidelity
+### Issue 2: `SavedCreativesGallery.tsx` still uses `window.confirm` for delete
 
-**File: `src/features/social-engagement/components/admin/AdPreviewCard.tsx`**
+**File:** `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` (line 79)
 
-| Issue | Fix |
-|-------|-----|
-| Footer uses emoji for Like/Comment/Share (not professional) | Replace with Lucide icons (Heart, MessageSquare, Share2, Send) matching each platform |
-| WhatsApp icon renders `null` | Use `MessageCircle` from lucide-react |
-| No image loading/error states | Add `onError` fallback and loading skeleton for images |
-| Missing responsive padding on mobile | Reduce padding on `< sm` screens |
+While `CreativeCard.tsx` was correctly upgraded to use Radix `AlertDialog`, the `SavedCreativesGallery` has its own `handleDelete` that still calls `window.confirm()`. This is inaccessible and inconsistent.
+
+**Fix:** Remove the `window.confirm` wrapper in `handleDelete` and pass the delete directly to `CreativeCard`, which already has its own `AlertDialog` confirmation. The gallery's `handleDelete` should simply call `deleteCreative.mutate(id)` without a redundant confirmation.
 
 ---
 
-### 4. Platform Preview Tabs -- Mobile Fix
+### Issue 3: `OAuthConfigPanel.tsx` uses raw `navigator.clipboard` instead of `copyToClipboard` utility
 
-**File: `src/features/social-engagement/components/admin/PlatformPreviewTabs.tsx`**
+**File:** `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` (lines 29 and 64)
 
-| Issue | Fix |
-|-------|-----|
-| `grid-cols-5` on all screens | Change to scrollable horizontal on mobile with `overflow-x-auto` |
-| Labels hidden on mobile but icons too small without context | Show abbreviated labels (X, FB, IG, LI, TT) on all screens |
+Two clipboard operations use raw `navigator.clipboard.writeText()` instead of the project's centralized `copyToClipboard` utility from `@/utils/assetDownload`, which provides consistent error handling and fallback behavior.
 
----
-
-### 5. Saved Creatives Gallery -- Mobile Optimization
-
-**File: `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| Filter row stacks poorly on small screens | Make search full-width on mobile, filters in a row below |
-| Grid is `sm:grid-cols-2 lg:grid-cols-3` | Change to `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` (already close, verify) |
-| View mode toggle is unnecessary on mobile | Hide view mode on `< sm`, default to grid |
+**Fix:** Import and use `copyToClipboard` from `@/utils/assetDownload` in both locations, matching the pattern already used in `ExportMenu.tsx`.
 
 ---
 
-### 6. Creative Card -- UX Polish
+### What's Already Complete (verified)
 
-**File: `src/features/social-engagement/components/admin/CreativeCard.tsx`**
+| Component | Status |
+|-----------|--------|
+| `generate-ad-creative` edge function | Done -- gemini-3-pro-image-preview, tool calling, CORS, imageError field |
+| `AdCreativeStudio.tsx` | Done -- mobile-first grids, benefit hint text |
+| `AdPreviewCard.tsx` | Done -- Lucide icons for all platforms, WhatsApp fix, image error fallback |
+| `PlatformPreviewTabs.tsx` | Done -- abbreviated labels, horizontal scroll on mobile |
+| `CreativeCard.tsx` | Done -- AlertDialog, benefit labels, proper icons |
+| `BenefitToggle.tsx` | Done -- responsive grid, accessible touch targets |
+| `ExportMenu.tsx` | Done -- safe Unicode handling, clipboard error boundary |
+| `PlatformCredentialsManager.tsx` | Done -- no page reload, explicit mobile grid |
+| `PlatformCredentialCard.tsx` | Done -- proper status badges, feature toggles |
+| `GlobalSettingsPanel.tsx` | Done -- responsive, unsaved changes indicator |
+| `SocialAnalyticsPanel.tsx` | Done -- platform breakdown, auto-response stats |
+| `SuperAdminSocialBeacons.tsx` | Done -- scrollable tabs with icons |
 
-| Issue | Fix |
-|-------|-----|
-| `window.confirm` for delete (not accessible) | Replace with AlertDialog from Radix UI |
-| Benefits show raw IDs like `sign_on_bonus` | Map to human labels using `BENEFIT_LABELS` |
-| No published platforms indicator | Show platform badges from `platforms_published` |
+### Files to Change
 
----
-
-### 7. Export Menu -- Stability
-
-**File: `src/features/social-engagement/components/admin/ExportMenu.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| Share link uses `btoa()` which can fail on Unicode | Use `encodeURIComponent` + base64 safely |
-| No error boundary around clipboard operations | Wrap all clipboard calls in try/catch with fallback |
-
----
-
-### 8. Super Admin Social Beacons Page -- Responsive Tabs
-
-**File: `src/features/social-engagement/pages/SuperAdminSocialBeacons.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| TabsList is `grid-cols-5` on desktop, scrollable on mobile | Already handled with overflow, verify icons don't clip |
-| No visual indicator of which tabs have data | Add dot badge on Analytics tab when data exists |
-
----
-
-### 9. Benefit Toggle Group -- Touch Target Fix
-
-**File: `src/features/social-engagement/components/admin/BenefitToggle.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| `grid-cols-2` always | Change to `grid-cols-1 sm:grid-cols-2` for mobile readability |
-| Touch targets are borderline at `px-3 py-2` | Increase to `px-4 py-3` on mobile for accessibility |
-
----
-
-### 10. Platform Credentials Manager -- Mobile Grid
-
-**File: `src/features/social-engagement/components/admin/PlatformCredentialsManager.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| Grid is `md:grid-cols-2 lg:grid-cols-3` | Add `grid-cols-1` base explicitly |
-| `window.location.reload()` in refresh handler | Remove -- `verifyAllSecrets()` already refreshes data |
-
----
-
-### 11. Social Engagement Dashboard -- Responsive & Polish
-
-**File: `src/features/social-engagement/pages/SocialEngagementDashboard.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| Quick stats grid `md:grid-cols-4` jumps from 1 to 4 | Add `grid-cols-2 md:grid-cols-4` for 2-column on tablets |
-| Connections tab hardcodes `twitter` instead of `x` | Fix to use `x` to match the platform key |
-| Platform list missing `tiktok` and `reddit` | Add all 7 platforms to connections grid |
-
----
-
-### 12. Global Settings Panel -- No Changes Needed
-Already well-structured with responsive grid and proper form patterns.
-
----
-
-### 13. OAuth Config Panel -- Minor Polish
-
-**File: `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx`**
-
-| Issue | Fix |
-|-------|-----|
-| Grid is `md:grid-cols-2` | Already good, verify mobile stacking |
-| Copy button uses raw `navigator.clipboard` | Use the `copyToClipboard` utility for consistent error handling |
-
----
-
-### Files Changed Summary
-
-| File | Type | Key Change |
-|------|------|------------|
-| `supabase/functions/generate-ad-creative/index.ts` | Refactor | Upgrade to `gemini-3-pro-image-preview` + `gemini-3-flash-preview`, tool calling, better error handling |
-| `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` | Refactor | Mobile-first grid, image error feedback, generation progress |
-| `src/features/social-engagement/components/admin/AdPreviewCard.tsx` | Refactor | Platform-accurate footer icons, WhatsApp icon fix, image error states |
-| `src/features/social-engagement/components/admin/PlatformPreviewTabs.tsx` | Refactor | Mobile scrollable tabs with abbreviated labels |
-| `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` | Polish | Mobile filter layout, view mode visibility |
-| `src/features/social-engagement/components/admin/CreativeCard.tsx` | Refactor | AlertDialog for delete, benefit label mapping, platform badges |
-| `src/features/social-engagement/components/admin/ExportMenu.tsx` | Fix | Safe Unicode handling, clipboard error boundary |
-| `src/features/social-engagement/components/admin/BenefitToggle.tsx` | Polish | Mobile-friendly grid and touch targets |
-| `src/features/social-engagement/components/admin/PlatformCredentialsManager.tsx` | Fix | Remove page reload, explicit mobile grid |
-| `src/features/social-engagement/pages/SocialEngagementDashboard.tsx` | Fix | Fix `twitter` to `x`, add missing platforms, responsive stats grid |
-| `src/features/social-engagement/pages/SuperAdminSocialBeacons.tsx` | Polish | Tab indicator badges |
-| `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` | Polish | Consistent clipboard utility |
-
-### Performance Impact
-- Higher quality AI-generated images (Pro model vs Flash)
-- More reliable JSON extraction via tool calling (no regex failures)
-- Better mobile experience across all admin panels
-- Elimination of `window.location.reload()` for smoother UX
+| File | Fix |
+|------|-----|
+| `src/features/social-engagement/pages/SocialEngagementDashboard.tsx` | Change `'twitter'` to `'x'` |
+| `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` | Remove `window.confirm` from `handleDelete` |
+| `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` | Use `copyToClipboard` utility |
 
