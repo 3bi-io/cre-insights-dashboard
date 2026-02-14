@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Search } from 'lucide-react';
 import { heroContent } from '../../content/hero.content';
 import { HeroBackground } from '@/components/shared';
+import { WeldingSparks } from '@/components/shared/WeldingSparks';
 import { supabase } from '@/integrations/supabase/client';
 import voiceHero from '@/assets/hero/voice-hero.png';
 import cyberHero from '@/assets/hero/cyber-hero.png';
@@ -61,6 +62,8 @@ const tagVariants = {
 };
 
 const HeroSection = () => {
+  const [activeSlide, setActiveSlide] = React.useState(0);
+
   const { data: companyCount = 0 } = useQuery({
     queryKey: ['public-company-count'],
     queryFn: async () => {
@@ -98,6 +101,8 @@ const HeroSection = () => {
       overlayOpacity={60}
       enableKenBurns={true}
       enableParallaxOrbs={true}
+      onSlideChange={setActiveSlide}
+      overlayContent={<WeldingSparks active={activeSlide === 2} />}
     >
       <motion.div
         variants={containerVariants}
