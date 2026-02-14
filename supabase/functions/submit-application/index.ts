@@ -944,10 +944,20 @@ Deno.serve(async (req) => {
       sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName)
     );
 
+    // Resolve client_id from the job listing for ATS routing
+    const { data: jobListingForATS } = await supabase
+      .from('job_listings')
+      .select('client_id')
+      .eq('id', jobListingResult.id)
+      .single();
+    const resolvedClientId = jobListingForATS?.client_id || formData.client_id || null;
+
     // Auto-post to ALL configured ATS systems (Tenstreet, DriverReach, etc.)
     // Uses generic ATS adapter pattern - non-blocking background task
     EdgeRuntime.waitUntil(
-      autoPostToATS(supabase, data.id, organizationId, applicationData as Record<string, unknown>)
+      autoPostToATS(supabase, data.id, organizationId, applicationData as Record<string, unknown>, {
+        clientId: resolvedClientId
+      })
         .then((result) => {
           logger.info('ATS auto-post completed', { 
             application_id: data.id,
