@@ -41,6 +41,10 @@ export interface HeroBackgroundProps {
   enableKenBurns?: boolean;
   /** Enable floating parallax orbs for depth perception (default: false) */
   enableParallaxOrbs?: boolean;
+  /** Callback when active slide changes */
+  onSlideChange?: (index: number) => void;
+  /** Custom overlay content rendered at z-[3] above images but below text */
+  overlayContent?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
@@ -81,6 +85,8 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   objectPosition = 'center',
   enableKenBurns = true,
   enableParallaxOrbs = false,
+  onSlideChange,
+  overlayContent,
   children,
   className,
 }) => {
@@ -99,10 +105,14 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   useEffect(() => {
     if (!hasSlideshow || !isInView) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % allImages.length);
+      setCurrentSlide((prev) => {
+        const next = (prev + 1) % allImages.length;
+        onSlideChange?.(next);
+        return next;
+      });
     }, slideshowInterval);
     return () => clearInterval(timer);
-  }, [hasSlideshow, isInView, allImages.length, slideshowInterval]);
+  }, [hasSlideshow, isInView, allImages.length, slideshowInterval, onSlideChange]);
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -239,6 +249,9 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
         className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_center,transparent_50%,hsl(0_0%_0%/0.15)_100%)] pointer-events-none"
         aria-hidden="true"
       />
+
+      {/* Custom overlay content */}
+      {overlayContent}
 
       {/* Content Layer */}
       <div className="relative z-10">
