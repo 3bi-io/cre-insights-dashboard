@@ -1,65 +1,114 @@
 
 
-## Social Beacon Admin UI -- Final Fixes for Production Release
+## Rocket Launch: One-Click Social Beacon Mass Publish
 
-### Status: Nearly Complete (3 issues remaining)
+### Overview
 
-After auditing all 12 Social Beacon admin components, the edge function, and both dashboard pages, the vast majority of the best-in-class refactor has been applied. Three issues slipped through and need to be fixed.
-
----
-
-### Issue 1: `SocialEngagementDashboard.tsx` still uses `'twitter'` instead of `'x'`
-
-**File:** `src/features/social-engagement/pages/SocialEngagementDashboard.tsx` (line 198)
-
-The connections tab platform list still includes `'twitter'` instead of `'x'`, which means the X/Twitter platform card won't match the connection data that uses the `'x'` key.
-
-**Fix:** Change `'twitter'` to `'x'` in the platform array on line 198.
+Create a "Rocket Launch" feature where an admin can trigger mass publishing of all unpublished Social Beacon ad creatives to every connected social platform by sending the rocket emoji or clicking a launch button. This involves a new edge function for server-side orchestration and a frontend trigger integrated into the Ad Creative Studio.
 
 ---
 
-### Issue 2: `SavedCreativesGallery.tsx` still uses `window.confirm` for delete
+### 1. New Edge Function: `launch-social-beacons`
 
-**File:** `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` (line 79)
+**File:** `supabase/functions/launch-social-beacons/index.ts`
 
-While `CreativeCard.tsx` was correctly upgraded to use Radix `AlertDialog`, the `SavedCreativesGallery` has its own `handleDelete` that still calls `window.confirm()`. This is inaccessible and inconsistent.
+This edge function handles the bulk publishing orchestration:
 
-**Fix:** Remove the `window.confirm` wrapper in `handleDelete` and pass the delete directly to `CreativeCard`, which already has its own `AlertDialog` confirmation. The gallery's `handleDelete` should simply call `deleteCreative.mutate(id)` without a redundant confirmation.
+- **Auth:** Verify the caller is an admin or super_admin using `serverAuth.ts`
+- **Fetch targets:** Query `generated_ad_creatives` for all rows where `platforms_published` is empty or incomplete (i.e., status is draft/ready/queued)
+- **Fetch connections:** Query `social_platform_connections` for all active connections (`is_active = true`) with valid access tokens
+- **Platform dispatch:** For each creative x connected platform combination where `adCreativeSupported` is true:
+  - **Facebook/Instagram:** POST to Graph API (`/{page_id}/feed` or `/{ig_user_id}/media`) using stored access token
+  - **X (Twitter):** POST to `https://api.twitter.com/2/tweets` using OAuth tokens
+  - **LinkedIn:** POST to `https://api.linkedin.com/v2/ugcPosts` using access token
+  - **TikTok/Reddit:** Log as "queued" (no posting API credentials typically available yet)
+- **Update records:** After each successful post, append the platform to `platforms_published` array and set `published_at`
+- **Return summary:** `{ launched: number, failed: number, skipped: number, details: [...] }`
+
+**Config:** Add to `supabase/config.toml`:
+```toml
+[functions.launch-social-beacons]
+verify_jwt = false
+```
 
 ---
 
-### Issue 3: `OAuthConfigPanel.tsx` uses raw `navigator.clipboard` instead of `copyToClipboard` utility
+### 2. Frontend: Rocket Launch Trigger
 
-**File:** `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` (lines 29 and 64)
+**File:** `src/features/social-engagement/hooks/useRocketLaunch.ts` (new)
 
-Two clipboard operations use raw `navigator.clipboard.writeText()` instead of the project's centralized `copyToClipboard` utility from `@/utils/assetDownload`, which provides consistent error handling and fallback behavior.
+A custom hook that:
+- Exposes a `launchAll()` mutation that invokes the `launch-social-beacons` edge function
+- Tracks `isLaunching` state and results
+- Shows toast notifications with launch summary
 
-**Fix:** Import and use `copyToClipboard` from `@/utils/assetDownload` in both locations, matching the pattern already used in `ExportMenu.tsx`.
+**File:** `src/features/social-engagement/components/admin/RocketLaunchButton.tsx` (new)
+
+A button component with:
+- Rocket icon and "Launch All" label
+- Confirmation dialog (AlertDialog) before executing: "This will publish X unpublished creatives to all connected platforms. Continue?"
+- Loading state with animated rocket icon during launch
+- Results summary toast showing launched/failed/skipped counts
 
 ---
 
-### What's Already Complete (verified)
+### 3. Integration into Ad Creative Studio
 
-| Component | Status |
-|-----------|--------|
-| `generate-ad-creative` edge function | Done -- gemini-3-pro-image-preview, tool calling, CORS, imageError field |
-| `AdCreativeStudio.tsx` | Done -- mobile-first grids, benefit hint text |
-| `AdPreviewCard.tsx` | Done -- Lucide icons for all platforms, WhatsApp fix, image error fallback |
-| `PlatformPreviewTabs.tsx` | Done -- abbreviated labels, horizontal scroll on mobile |
-| `CreativeCard.tsx` | Done -- AlertDialog, benefit labels, proper icons |
-| `BenefitToggle.tsx` | Done -- responsive grid, accessible touch targets |
-| `ExportMenu.tsx` | Done -- safe Unicode handling, clipboard error boundary |
-| `PlatformCredentialsManager.tsx` | Done -- no page reload, explicit mobile grid |
-| `PlatformCredentialCard.tsx` | Done -- proper status badges, feature toggles |
-| `GlobalSettingsPanel.tsx` | Done -- responsive, unsaved changes indicator |
-| `SocialAnalyticsPanel.tsx` | Done -- platform breakdown, auto-response stats |
-| `SuperAdminSocialBeacons.tsx` | Done -- scrollable tabs with icons |
+**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
 
-### Files to Change
+- Add the `RocketLaunchButton` next to the existing "Create New" button in the gallery tab header
+- Only visible to admin/super_admin roles
 
-| File | Fix |
-|------|-----|
-| `src/features/social-engagement/pages/SocialEngagementDashboard.tsx` | Change `'twitter'` to `'x'` |
-| `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` | Remove `window.confirm` from `handleDelete` |
-| `src/features/social-engagement/components/admin/OAuthConfigPanel.tsx` | Use `copyToClipboard` utility |
+**File:** `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx`
+
+- Add a `RocketLaunchButton` in the gallery header alongside "Create New"
+- Show badge with count of unpublished creatives
+
+---
+
+### 4. Rocket Emoji Input Detection
+
+**File:** `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+
+- Add a hidden keyboard listener on the custom prompt `Textarea`
+- When the value is exactly the rocket emoji, auto-trigger the launch flow (with confirmation dialog)
+- Alternative: Add a small easter-egg detection in the studio that watches for the emoji input anywhere on the page
+
+---
+
+### 5. Database: Add `status` column to `generated_ad_creatives`
+
+**Migration SQL:**
+```sql
+ALTER TABLE generated_ad_creatives 
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'draft';
+
+-- Index for efficient filtering of launchable creatives
+CREATE INDEX IF NOT EXISTS idx_ad_creatives_status 
+  ON generated_ad_creatives(status) 
+  WHERE status IN ('draft', 'ready', 'queued');
+```
+
+This enables filtering by `draft`, `ready`, `queued`, `published`, and `failed` states.
+
+---
+
+### Files Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/functions/launch-social-beacons/index.ts` | Create | Edge function for bulk platform publishing |
+| `supabase/config.toml` | Edit | Add JWT config for new function |
+| `src/features/social-engagement/hooks/useRocketLaunch.ts` | Create | Hook for launching and tracking results |
+| `src/features/social-engagement/components/admin/RocketLaunchButton.tsx` | Create | UI button with confirmation dialog |
+| `src/features/social-engagement/components/admin/AdCreativeStudio.tsx` | Edit | Add rocket button and emoji detection |
+| `src/features/social-engagement/components/admin/SavedCreativesGallery.tsx` | Edit | Add rocket button to gallery header |
+| Database migration | Execute | Add `status` column to `generated_ad_creatives` |
+
+### Security
+
+- Edge function validates admin/super_admin role server-side before executing
+- All platform API calls use stored OAuth tokens from `social_platform_connections`
+- Launch events are logged to `audit_logs` for traceability
+- Confirmation dialog prevents accidental mass publishing
 
