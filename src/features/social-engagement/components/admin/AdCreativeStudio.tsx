@@ -159,7 +159,7 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
                 </div>
 
                 {/* Company Details */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="companyName">Company Name</Label>
                     <Input
@@ -192,7 +192,7 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
 
                 {/* Benefits Selection */}
                 <div className="space-y-2">
-                  <Label>Key Benefits (Select all that apply)</Label>
+                  <Label>Key Benefits <span className="text-xs text-muted-foreground font-normal">(select at least 1)</span></Label>
                   <BenefitToggleGroup
                     benefits={BENEFIT_OPTIONS.map(b => ({ id: b.id, label: b.label, icon: b.icon }))}
                     selectedBenefits={config.benefits}
@@ -202,7 +202,7 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
                 </div>
 
                 {/* Media Type */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="mediaType">Media Type</Label>
                     <Select

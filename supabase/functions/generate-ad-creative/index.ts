@@ -2,8 +2,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const TEXT_MODEL = "google/gemini-3-flash-preview";
+const IMAGE_MODEL = "google/gemini-3-pro-image-preview";
 
 interface GenerateRequest {
   jobType: string;
@@ -14,13 +17,6 @@ interface GenerateRequest {
   customPrompt?: string;
   generateImage?: boolean;
   aspectRatio?: string;
-}
-
-interface GeneratedContent {
-  headline: string;
-  body: string;
-  hashtags: string[];
-  callToAction?: string;
 }
 
 const BENEFIT_LABELS: Record<string, string> = {
@@ -53,6 +49,30 @@ const ASPECT_RATIO_DIMENSIONS: Record<string, { width: number; height: number }>
   "4:5": { width: 896, height: 1120 },
 };
 
+// Tool definition for structured output extraction
+const AD_CREATIVE_TOOL = {
+  type: "function" as const,
+  function: {
+    name: "format_ad_creative",
+    description: "Format the generated ad creative content into structured fields.",
+    parameters: {
+      type: "object",
+      properties: {
+        headline: { type: "string", description: "A compelling headline under 60 characters" },
+        body: { type: "string", description: "The main ad copy, 150-280 characters for social media" },
+        hashtags: { 
+          type: "array", 
+          items: { type: "string" },
+          description: "3-5 relevant hashtags without the hash symbol" 
+        },
+        callToAction: { type: "string", description: "A short call to action like 'Apply Now'" },
+      },
+      required: ["headline", "body", "hashtags", "callToAction"],
+      additionalProperties: false,
+    },
+  },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -67,7 +87,6 @@ serve(async (req) => {
     const body: GenerateRequest = await req.json();
     const { jobType, benefits, companyName, location, salaryRange, customPrompt, generateImage, aspectRatio } = body;
 
-    // Build the prompt for AI
     const benefitsList = benefits
       .map((b) => BENEFIT_LABELS[b] || b)
       .join(", ");
@@ -82,15 +101,7 @@ Your ad copy must:
 - Use industry-relevant language
 - Be authentic and trustworthy
 - Include a clear call to action
-- Be optimized for social media engagement
-
-Format your response as JSON with exactly these fields:
-{
-  "headline": "A compelling headline under 60 characters",
-  "body": "The main ad copy, 150-280 characters for social media",
-  "hashtags": ["relevant", "hashtags", "without-hash-symbol"],
-  "callToAction": "Apply Now" or similar CTA
-}`;
+- Be optimized for social media engagement`;
 
     const userPrompt = `Create a social media job ad for a ${jobTypeLabel} CDL truck driver position.
 
@@ -100,9 +111,9 @@ ${salaryRange ? `Salary: ${salaryRange}` : ""}
 ${benefitsList ? `Key Benefits: ${benefitsList}` : ""}
 ${customPrompt ? `Additional instructions: ${customPrompt}` : ""}
 
-Generate engaging ad copy that will attract qualified CDL drivers. Return ONLY valid JSON.`;
+Generate engaging ad copy that will attract qualified CDL drivers.`;
 
-    // Call Lovable AI Gateway for text generation
+    // Call Lovable AI Gateway with tool calling for structured output
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -110,11 +121,13 @@ Generate engaging ad copy that will attract qualified CDL drivers. Return ONLY v
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: TEXT_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        tools: [AD_CREATIVE_TOOL],
+        tool_choice: { type: "function", function: { name: "format_ad_creative" } },
       }),
     });
 
@@ -139,23 +152,28 @@ Generate engaging ad copy that will attract qualified CDL drivers. Return ONLY v
     }
 
     const aiData = await aiResponse.json();
-    const aiContent = aiData.choices?.[0]?.message?.content;
-
-    if (!aiContent) {
-      throw new Error("No content returned from AI");
+    
+    // Extract structured content from tool call response
+    let generatedContent;
+    try {
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        generatedContent = JSON.parse(toolCall.function.arguments);
+      } else {
+        // Fallback: try parsing from content if tool calling wasn't used
+        const aiContent = aiData.choices?.[0]?.message?.content;
+        if (aiContent) {
+          const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            generatedContent = JSON.parse(jsonMatch[0]);
+          }
+        }
+      }
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
     }
 
-    // Parse the JSON response
-    let generatedContent: GeneratedContent;
-    try {
-      // Extract JSON from the response (in case of markdown formatting)
-      const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("No JSON found in response");
-      }
-      generatedContent = JSON.parse(jsonMatch[0]);
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", aiContent);
+    if (!generatedContent) {
       // Fallback content
       generatedContent = {
         headline: `Now Hiring: ${jobTypeLabel} CDL Drivers`,
@@ -173,6 +191,7 @@ Generate engaging ad copy that will attract qualified CDL drivers. Return ONLY v
 
     // Generate image if requested
     let mediaUrl: string | null = null;
+    let imageError: string | null = null;
     
     if (generateImage) {
       try {
@@ -196,7 +215,7 @@ ${location ? `- Scenic elements suggesting: ${location}` : "- American highway s
 
 Style: High-quality stock photo style for ${companyName || "a professional trucking company"}'s social media recruitment campaign.`;
 
-        console.log("Generating image with prompt:", imagePrompt);
+        console.log("Generating image with model:", IMAGE_MODEL);
 
         const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -205,7 +224,7 @@ Style: High-quality stock photo style for ${companyName || "a professional truck
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-image",
+            model: IMAGE_MODEL,
             messages: [{ role: "user", content: imagePrompt }],
             modalities: ["image", "text"],
           }),
@@ -216,25 +235,27 @@ Style: High-quality stock photo style for ${companyName || "a professional truck
           const generatedImageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
           
           if (generatedImageUrl) {
-            console.log("Image generated successfully");
+            console.log("Image generated successfully with", IMAGE_MODEL);
             mediaUrl = generatedImageUrl;
           } else {
             console.log("No image URL in response:", JSON.stringify(imageData).substring(0, 500));
+            imageError = "Image generation returned no image. Try again.";
           }
         } else {
-          const imageError = await imageResponse.text();
-          console.error("Image generation failed:", imageResponse.status, imageError);
+          const errText = await imageResponse.text();
+          console.error("Image generation failed:", imageResponse.status, errText);
           
-          // Don't fail the whole request if image generation fails
           if (imageResponse.status === 429) {
-            console.log("Image generation rate limited, continuing without image");
+            imageError = "Image generation rate limited. Try again in a moment.";
           } else if (imageResponse.status === 402) {
-            console.log("AI credits exhausted for image generation, continuing without image");
+            imageError = "AI credits exhausted for image generation. Please add credits.";
+          } else {
+            imageError = "Image generation failed. Text content was generated successfully.";
           }
         }
-      } catch (imageError) {
-        console.error("Image generation error:", imageError);
-        // Continue without image - don't fail the whole request
+      } catch (imgErr) {
+        console.error("Image generation error:", imgErr);
+        imageError = "Image generation encountered an error. Text content was generated successfully.";
       }
     }
 
@@ -243,6 +264,7 @@ Style: High-quality stock photo style for ${companyName || "a professional truck
         success: true,
         content: generatedContent,
         mediaUrl,
+        imageError,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -155,7 +155,7 @@ export function SavedCreativesGallery({
               <SelectItem value="team">Team</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex border rounded-md">
+          <div className="hidden sm:flex border rounded-md">
             <Button
               variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
               size="icon"

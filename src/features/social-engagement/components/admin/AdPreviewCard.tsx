@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Twitter, Facebook, Instagram, Video, MessageSquare, Linkedin } from 'lucide-react';
+import { 
+  Twitter, Facebook, Instagram, Video, MessageCircle, Linkedin,
+  Heart, MessageSquare, Share2, Send, Repeat2, Bookmark,
+  Image as ImageIcon,
+} from 'lucide-react';
 import type { GeneratedAd } from '../../types/adCreative.types';
 import type { SocialBeaconPlatform } from '../../config/socialBeacons.config';
 
@@ -18,7 +22,7 @@ const PLATFORM_ICONS: Record<SocialBeaconPlatform, React.ElementType> = {
   x: Twitter,
   facebook: Facebook,
   instagram: Instagram,
-  whatsapp: () => null,
+  whatsapp: MessageCircle,
   tiktok: Video,
   reddit: MessageSquare,
   linkedin: Linkedin,
@@ -74,6 +78,47 @@ const PLATFORM_STYLES: Record<SocialBeaconPlatform, { bg: string; border: string
   },
 };
 
+// Platform-specific footer actions with proper icons
+const PLATFORM_ACTIONS: Record<SocialBeaconPlatform, Array<{ icon: React.ElementType; label: string }>> = {
+  x: [
+    { icon: MessageSquare, label: 'Reply' },
+    { icon: Repeat2, label: 'Repost' },
+    { icon: Heart, label: 'Like' },
+    { icon: Bookmark, label: 'Bookmark' },
+  ],
+  facebook: [
+    { icon: Heart, label: 'Like' },
+    { icon: MessageSquare, label: 'Comment' },
+    { icon: Share2, label: 'Share' },
+  ],
+  instagram: [
+    { icon: Heart, label: 'Like' },
+    { icon: MessageSquare, label: 'Comment' },
+    { icon: Send, label: 'Share' },
+    { icon: Bookmark, label: 'Save' },
+  ],
+  whatsapp: [
+    { icon: Share2, label: 'Forward' },
+  ],
+  tiktok: [
+    { icon: Heart, label: 'Like' },
+    { icon: MessageSquare, label: 'Comment' },
+    { icon: Bookmark, label: 'Save' },
+    { icon: Share2, label: 'Share' },
+  ],
+  reddit: [
+    { icon: Heart, label: 'Upvote' },
+    { icon: MessageSquare, label: 'Comment' },
+    { icon: Share2, label: 'Share' },
+  ],
+  linkedin: [
+    { icon: Heart, label: 'Like' },
+    { icon: MessageSquare, label: 'Comment' },
+    { icon: Repeat2, label: 'Repost' },
+    { icon: Send, label: 'Send' },
+  ],
+};
+
 export function AdPreviewCard({
   preview,
   platform = 'x',
@@ -83,10 +128,12 @@ export function AdPreviewCard({
   const PlatformIcon = PLATFORM_ICONS[platform];
   const styles = PLATFORM_STYLES[platform];
   const isDark = styles.dark;
+  const actions = PLATFORM_ACTIONS[platform];
+  const [imgError, setImgError] = useState(false);
 
   if (isLoading) {
     return (
-      <Card className={cn('p-4 space-y-4', className)}>
+      <Card className={cn('p-3 sm:p-4 space-y-4', className)}>
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="space-y-2">
@@ -109,7 +156,7 @@ export function AdPreviewCard({
   if (!preview) {
     return (
       <Card className={cn(
-        'p-8 flex flex-col items-center justify-center text-center min-h-[300px]',
+        'p-6 sm:p-8 flex flex-col items-center justify-center text-center min-h-[300px]',
         'border-dashed',
         className
       )}>
@@ -147,7 +194,7 @@ export function AdPreviewCard({
 
       {/* Post Header */}
       <div className={cn(
-        'p-4 flex items-center gap-3 border-b',
+        'p-3 sm:p-4 flex items-center gap-3 border-b',
         isDark ? 'border-white/10' : 'border-black/5'
       )}>
         <div className={cn(
@@ -167,7 +214,7 @@ export function AdPreviewCard({
       </div>
 
       {/* Post Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-3">
         {/* Headline */}
         <h4 className={cn(
           'font-bold text-base leading-tight',
@@ -185,12 +232,13 @@ export function AdPreviewCard({
         </p>
 
         {/* Media */}
-        {preview.mediaUrl ? (
+        {preview.mediaUrl && !imgError ? (
           <div className="rounded-lg overflow-hidden border border-border/20">
             <img 
               src={preview.mediaUrl} 
               alt="Ad creative" 
               className="w-full h-auto object-cover"
+              onError={() => setImgError(true)}
             />
           </div>
         ) : (
@@ -198,13 +246,16 @@ export function AdPreviewCard({
             'rounded-lg h-48 flex items-center justify-center border border-dashed',
             isDark ? 'bg-white/5 border-white/20' : 'bg-muted/50 border-border'
           )}>
-            <div className="text-center">
+            <div className="text-center space-y-1">
+              <ImageIcon className={cn('h-8 w-8 mx-auto', isDark ? 'text-white/30' : 'text-muted-foreground/30')} />
               <p className={cn('text-xs', isDark ? 'text-white/50' : 'text-muted-foreground')}>
-                {preview.config.mediaType === 'ai_image' 
-                  ? '🎨 AI image generating...' 
-                  : preview.config.mediaType === 'ai_video'
-                  ? '🎬 AI video will be generated'
-                  : '📷 Upload your media'}
+                {imgError 
+                  ? 'Image failed to load'
+                  : preview.config.mediaType === 'ai_image' 
+                    ? 'AI image will appear here' 
+                    : preview.config.mediaType === 'ai_video'
+                      ? 'AI video will be generated'
+                      : 'Upload your media'}
               </p>
             </div>
           </div>
@@ -245,15 +296,17 @@ export function AdPreviewCard({
         )}
       </div>
 
-      {/* Post Footer */}
+      {/* Post Footer - Platform-accurate icons */}
       <div className={cn(
-        'px-4 py-3 border-t flex items-center justify-between text-xs',
+        'px-3 sm:px-4 py-3 border-t flex items-center justify-between text-xs',
         isDark ? 'border-white/10 text-white/50' : 'border-black/5 text-muted-foreground'
       )}>
-        <span>❤️ Like</span>
-        <span>💬 Comment</span>
-        <span>🔄 Share</span>
-        {platform === 'linkedin' && <span>📤 Send</span>}
+        {actions.map(({ icon: Icon, label }) => (
+          <span key={label} className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+            <Icon className="h-4 w-4" />
+            <span className="hidden sm:inline">{label}</span>
+          </span>
+        ))}
       </div>
     </Card>
   );

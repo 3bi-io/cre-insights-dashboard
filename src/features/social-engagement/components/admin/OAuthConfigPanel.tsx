@@ -23,13 +23,14 @@ export function OAuthConfigPanel({ organizationId = null }: OAuthConfigPanelProp
     p.authType === 'oauth2' || p.authType === 'oauth2_pkce'
   );
 
-  const handleCopyCallback = (platform: string) => {
+  const handleCopyCallback = async (platform: string) => {
     const callbackUrl = `${callbackBaseUrl}?platform=${platform}`;
-    navigator.clipboard.writeText(callbackUrl);
-    toast({
-      title: 'Copied!',
-      description: 'OAuth callback URL copied to clipboard.',
-    });
+    try {
+      await navigator.clipboard.writeText(callbackUrl);
+      toast({ title: 'Copied!', description: 'OAuth callback URL copied to clipboard.' });
+    } catch {
+      toast({ title: 'Copy failed', description: 'Could not copy to clipboard', variant: 'destructive' });
+    }
   };
 
   return (
@@ -58,9 +59,13 @@ export function OAuthConfigPanel({ organizationId = null }: OAuthConfigPanelProp
             <Button
               variant="outline"
               size="icon"
-              onClick={() => {
-                navigator.clipboard.writeText(callbackBaseUrl);
-                toast({ title: 'Copied!' });
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(callbackBaseUrl);
+                  toast({ title: 'Copied!' });
+                } catch {
+                  toast({ title: 'Copy failed', variant: 'destructive' });
+                }
               }}
             >
               <Copy className="h-4 w-4" />
