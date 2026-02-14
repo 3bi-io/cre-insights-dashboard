@@ -3595,6 +3595,7 @@ export type Database = {
           organization_id: string | null
           platforms_published: string[] | null
           published_at: string | null
+          status: string
           updated_at: string | null
         }
         Insert: {
@@ -3612,6 +3613,7 @@ export type Database = {
           organization_id?: string | null
           platforms_published?: string[] | null
           published_at?: string | null
+          status?: string
           updated_at?: string | null
         }
         Update: {
@@ -3629,6 +3631,7 @@ export type Database = {
           organization_id?: string | null
           platforms_published?: string[] | null
           published_at?: string | null
+          status?: string
           updated_at?: string | null
         }
         Relationships: [

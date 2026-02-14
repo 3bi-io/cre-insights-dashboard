@@ -260,3 +260,6 @@ verify_jwt = true
 
 [functions.resolve-embed-token]
 verify_jwt = false
+
+[functions.launch-social-beacons]
+verify_jwt = false

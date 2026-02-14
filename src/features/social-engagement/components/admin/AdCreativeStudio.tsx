@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, Loader2, Save, RotateCcw, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { RocketLaunchButton } from './RocketLaunchButton';
+import { useRocketLaunch } from '../../hooks/useRocketLaunch';
+import { ConfirmationDialog } from '@/components/shared/ConfirmationDialog';
 import { BenefitToggleGroup } from './BenefitToggle';
 import { AdPreviewCard } from './AdPreviewCard';
 import { PlatformPreviewTabs } from './PlatformPreviewTabs';
@@ -48,6 +51,7 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
   const [customPrompt, setCustomPrompt] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState<SocialBeaconPlatform>('x');
   const [activeTab, setActiveTab] = useState<'create' | 'gallery'>('create');
+  const [showRocketConfirm, setShowRocketConfirm] = useState(false);
 
   const { 
     isGenerating, 
@@ -56,7 +60,43 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
     saveCreative, 
     clearPreview,
     setCurrentPreview,
+    savedCreatives,
   } = useAdCreative(organizationId);
+
+  const { launchAll, isLaunching } = useRocketLaunch();
+
+  // Count unpublished creatives
+  const unpublishedCount = savedCreatives.filter(
+    c => !(c as any).status || ['draft', 'ready', 'queued'].includes((c as any).status)
+  ).length;
+
+  // 🚀 Rocket emoji detection on page-level keydown
+  useEffect(() => {
+    let buffer = '';
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const handleKeyDown = () => {
+      // Reset buffer after 500ms of inactivity
+      clearTimeout(timeout);
+      timeout = setTimeout(() => { buffer = ''; }, 500);
+    };
+
+    const handleInput = (e: Event) => {
+      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+      if (target?.value?.includes('🚀')) {
+        target.value = target.value.replace('🚀', '');
+        setShowRocketConfirm(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('input', handleInput);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('input', handleInput);
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const handleBenefitToggle = useCallback((benefitId: string) => {
     setConfig(prev => ({
@@ -110,16 +150,19 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'create' | 'gallery')}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="create">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Create New
-          </TabsTrigger>
-          <TabsTrigger value="gallery">
-            <ImageIcon className="h-4 w-4 mr-2" />
-            Saved Creatives
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="create">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Create New
+            </TabsTrigger>
+            <TabsTrigger value="gallery">
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Saved Creatives
+            </TabsTrigger>
+          </TabsList>
+          <RocketLaunchButton unpublishedCount={unpublishedCount} />
+        </div>
 
         <TabsContent value="create" className="mt-6">
           <div className="grid gap-6 lg:grid-cols-2">
@@ -370,6 +413,20 @@ export function AdCreativeStudio({ organizationId }: AdCreativeStudioProps) {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Rocket emoji confirmation dialog */}
+      <ConfirmationDialog
+        open={showRocketConfirm}
+        onOpenChange={setShowRocketConfirm}
+        title="🚀 Launch All Creatives"
+        description={`This will publish ${unpublishedCount} unpublished creative${unpublishedCount !== 1 ? 's' : ''} to all connected social platforms. Continue?`}
+        confirmLabel="Launch Now"
+        onConfirm={() => {
+          setShowRocketConfirm(false);
+          launchAll();
+        }}
+        isLoading={isLaunching}
+      />
     </div>
   );
 }
