@@ -735,8 +735,8 @@
   to { transform: rotate(360deg); }
 }
 
-/* Road motion blur shimmer */
-@keyframes road-blur {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+/* Road shimmer — opacity-only, compositor-friendly */
+@keyframes road-shimmer {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.08; }
 }

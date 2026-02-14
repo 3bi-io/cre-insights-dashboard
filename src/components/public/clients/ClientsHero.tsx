@@ -14,6 +14,7 @@ export const ClientsHero: React.FC<ClientsHeroProps> = ({ totalCompanies }) => {
       variant="compact"
       overlayVariant="dark"
       overlayOpacity={65}
+      objectPosition="center 60%"
       overlayContent={<TruckWheelSpin active />}
     >
       <div className="container mx-auto px-4">

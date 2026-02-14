@@ -250,8 +250,12 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
         aria-hidden="true"
       />
 
-      {/* Custom overlay content */}
-      {overlayContent}
+      {/* Custom overlay content — paint-isolated */}
+      {overlayContent && (
+        <div className="absolute inset-0 z-[3] pointer-events-none" style={{ contain: 'layout style' }}>
+          {overlayContent}
+        </div>
+      )}
 
       {/* Content Layer */}
       <div className="relative z-10">
