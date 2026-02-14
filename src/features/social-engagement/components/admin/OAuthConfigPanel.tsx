@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { ExternalLink, Copy, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { copyToClipboard } from '@/utils/assetDownload';
 import { getAllSocialBeacons, type SocialBeaconPlatform } from '../../config/socialBeacons.config';
 
 interface OAuthConfigPanelProps {
@@ -25,10 +26,10 @@ export function OAuthConfigPanel({ organizationId = null }: OAuthConfigPanelProp
 
   const handleCopyCallback = async (platform: string) => {
     const callbackUrl = `${callbackBaseUrl}?platform=${platform}`;
-    try {
-      await navigator.clipboard.writeText(callbackUrl);
+    const success = await copyToClipboard(callbackUrl);
+    if (success) {
       toast({ title: 'Copied!', description: 'OAuth callback URL copied to clipboard.' });
-    } catch {
+    } else {
       toast({ title: 'Copy failed', description: 'Could not copy to clipboard', variant: 'destructive' });
     }
   };
@@ -60,12 +61,8 @@ export function OAuthConfigPanel({ organizationId = null }: OAuthConfigPanelProp
               variant="outline"
               size="icon"
               onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(callbackBaseUrl);
-                  toast({ title: 'Copied!' });
-                } catch {
-                  toast({ title: 'Copy failed', variant: 'destructive' });
-                }
+                const success = await copyToClipboard(callbackBaseUrl);
+                toast({ title: success ? 'Copied!' : 'Copy failed', variant: success ? 'default' : 'destructive' });
               }}
             >
               <Copy className="h-4 w-4" />

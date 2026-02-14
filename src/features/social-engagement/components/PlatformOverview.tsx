@@ -39,7 +39,7 @@ const PLATFORM_CONFIG: Record<SocialPlatform, {
 }> = {
   facebook: { name: 'Facebook', icon: Facebook, color: 'text-blue-600', bgColor: 'bg-blue-500/10', description: 'Pages, comments, and Messenger' },
   instagram: { name: 'Instagram', icon: Instagram, color: 'text-pink-600', bgColor: 'bg-pink-500/10', description: 'Comments and direct messages' },
-  twitter: { name: 'X (Twitter)', icon: XIcon, color: 'text-foreground', bgColor: 'bg-foreground/10', description: 'Mentions and direct messages' },
+  x: { name: 'X (Twitter)', icon: XIcon, color: 'text-foreground', bgColor: 'bg-foreground/10', description: 'Mentions and direct messages' },
   whatsapp: { name: 'WhatsApp', icon: MessageCircle, color: 'text-green-600', bgColor: 'bg-green-500/10', description: 'Business messaging' },
   linkedin: { name: 'LinkedIn', icon: Linkedin, color: 'text-blue-700', bgColor: 'bg-blue-700/10', description: 'Company page interactions' },
   tiktok: { name: 'TikTok', icon: Video, color: 'text-foreground', bgColor: 'bg-foreground/10', description: 'Video content engagement' },
@@ -193,14 +193,14 @@ export function PlatformOverview({ organizationId }: PlatformOverviewProps) {
   const platformStats: Record<SocialPlatform, { interactions: number; trend: number; autoResponseRate: number }> = {
     facebook: { interactions: 156, trend: 12, autoResponseRate: 85 },
     instagram: { interactions: 243, trend: 8, autoResponseRate: 72 },
-    twitter: { interactions: 89, trend: -3, autoResponseRate: 68 },
+    x: { interactions: 89, trend: -3, autoResponseRate: 68 },
     whatsapp: { interactions: 67, trend: 15, autoResponseRate: 92 },
     linkedin: { interactions: 45, trend: 5, autoResponseRate: 78 },
     tiktok: { interactions: 0, trend: 0, autoResponseRate: 0 },
     reddit: { interactions: 0, trend: 0, autoResponseRate: 0 },
   };
 
-  const platforms: SocialPlatform[] = ['facebook', 'instagram', 'twitter', 'whatsapp', 'linkedin'];
+  const platforms: SocialPlatform[] = ['facebook', 'instagram', 'x', 'whatsapp', 'linkedin'];
 
   if (isLoading) {
     return (
