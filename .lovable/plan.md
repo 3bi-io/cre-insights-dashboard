@@ -1,26 +1,18 @@
 
 
-# Review: James Burg Trucking Tenstreet Integration (Company ID 1680394)
+# Enhance Trades Hero Welding Sparks
 
-## ✅ COMPLETED - All Issues Fixed
+## What We're Doing
+Using AI image generation to edit the `trades-hero.png` hero slideshow image so the welding torches produce realistic, vibrant sparks -- adding visual drama and authenticity to the trades industry slide.
 
-### Fix 1: Cross-Posting Bug (Critical) — FIXED
-- **submit-application/index.ts**: Now resolves `client_id` from the job listing and passes it to `autoPostToATS()` via the `clientId` option.
-- **`get_active_ats_connections` DB function**: Updated to strictly filter by `client_id` when provided — no longer falls back to `client_id IS NULL` connections, preventing cross-posting between carriers.
+## Approach
+1. **Edit the image** using the Gemini image editing API (`google/gemini-2.5-flash-image`) with a prompt instructing it to enhance the welding sparks to look photorealistic -- brighter, more scattered, with natural light bloom and orange/white hot metal particles.
+2. **Replace the existing file** at `src/assets/hero/trades-hero.png` with the enhanced version.
+3. **No code changes needed** -- the `HeroSection` component already imports and displays `trades-hero.png` in the slideshow rotation.
 
-### Fix 2: Missing Source Credential — FIXED
-- James Burg credentials (`89b01bd3-2533-47ad-89ea-196c12f5c136`) updated with `source: 'NationalTruckinNetwork'`.
-- Verified: `{"mode": "PROD", "source": "NationalTruckinNetwork", "password": "***", "client_id": "601", "company_ids": "1680394"}`
+## Technical Details
+- **File**: `src/assets/hero/trades-hero.png`
+- **Method**: Gemini image edit API with the current image as input
+- **Prompt**: Focus on making welding sparks realistic -- bright white-hot core, orange/yellow scatter, natural motion blur, light bloom on surrounding surfaces
+- **Risk**: Low -- if the result isn't satisfactory, the original can be restored. No code changes involved.
 
-### Fix 3: Post-Call Tenstreet Re-Sync — IMPLEMENTED
-- **elevenlabs-call-status/index.ts**: When an outbound call reaches `completed` status with an `application_id`, the function now:
-  1. Fetches the application and its job listing (for `client_id` routing)
-  2. Triggers `autoPostToATS()` as a non-blocking background task
-  3. The auto-post engine's `enrichWithTranscript` utility attaches the call transcript before sending to Tenstreet
-- This applies to **all** Hayes clients (Danny Herman, Pemberton, James Burg, Day & Ross), not just James Burg.
-
-### Deployment Status
-- `submit-application` edge function: ✅ Deployed
-- `elevenlabs-call-status` edge function: ✅ Deployed
-- Database migration (get_active_ats_connections): ✅ Applied
-- James Burg credentials update: ✅ Applied
