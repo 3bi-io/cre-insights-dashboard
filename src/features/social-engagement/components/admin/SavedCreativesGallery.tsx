@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { CreativeCard } from './CreativeCard';
+import { RocketLaunchButton } from './RocketLaunchButton';
 import { useAdCreative } from '../../hooks/useAdCreative';
 import type { AdCreativeRecord, GeneratedAd } from '../../types/adCreative.types';
 import type { AdCreativeConfig } from '../../types/adCreative.types';
@@ -122,10 +123,17 @@ export function SavedCreativesGallery({
               {savedCreatives.length} creative{savedCreatives.length !== 1 ? 's' : ''} saved
             </CardDescription>
           </div>
-          <Button onClick={onCreateNew} size="sm">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Create New
-          </Button>
+          <div className="flex items-center gap-2">
+            <RocketLaunchButton
+              unpublishedCount={savedCreatives.filter(
+                c => !(c as any).status || ['draft', 'ready', 'queued'].includes((c as any).status)
+              ).length}
+            />
+            <Button onClick={onCreateNew} size="sm">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Create New
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
