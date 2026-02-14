@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createLogger } from '../_shared/logger.ts';
+import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
 
 const logger = createLogger('elevenlabs-call-status');
 
@@ -284,6 +285,58 @@ serve(async (req) => {
             }
           } catch (syncError) {
             logger.error('Error syncing conversation', syncError);
+          }
+        }
+
+        // Re-post to ATS with enriched transcript data after completed call
+        if (mappedStatus === 'completed' && call.application_id) {
+          try {
+            logger.info('Triggering post-call ATS re-sync', { 
+              applicationId: call.application_id, 
+              callId: call.id 
+            });
+
+            // Fetch application data with job listing for client routing
+            const { data: appData } = await supabase
+              .from("applications")
+              .select("*, job_listings!inner(organization_id, client_id)")
+              .eq("id", call.application_id)
+              .single();
+
+            if (appData && appData.job_listings) {
+              const orgId = appData.job_listings.organization_id;
+              const clientId = appData.job_listings.client_id;
+
+              // Store transcript on application before re-posting
+              if (call.elevenlabs_conversation_id) {
+                await supabase
+                  .from("applications")
+                  .update({ 
+                    elevenlabs_call_transcript: `[Transcript pending sync - conversation: ${call.elevenlabs_conversation_id}]`,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq("id", call.application_id);
+              }
+
+              // Re-post with transcript enrichment (the auto-post engine calls enrichWithTranscript)
+              EdgeRuntime.waitUntil(
+                autoPostToATS(supabase, call.application_id, orgId, appData as Record<string, unknown>, {
+                  clientId: clientId
+                })
+                  .then((result) => {
+                    logger.info('Post-call ATS re-sync completed', {
+                      applicationId: call.application_id,
+                      successful: result.successful,
+                      failed: result.failed
+                    });
+                  })
+                  .catch((err) => {
+                    logger.error('Post-call ATS re-sync failed', err);
+                  })
+              );
+            }
+          } catch (resyncError) {
+            logger.error('Error triggering post-call ATS re-sync', resyncError);
           }
         }
 
