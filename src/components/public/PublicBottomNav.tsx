@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MoreHorizontal, X } from 'lucide-react';
+import { MoreHorizontal, X, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -48,6 +48,10 @@ const PublicBottomNav: React.FC = () => {
               <span className={cn("text-[10px] font-medium leading-tight", active && "font-semibold")}>
                 {item.name}
               </span>
+              {/* Animated underline indicator */}
+              {active && (
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-primary rounded-full animate-in fade-in slide-in-from-bottom-1 duration-200" />
+              )}
               {item.isNew && (
                 <span className="absolute top-1.5 right-1/2 translate-x-4 w-1.5 h-1.5 bg-primary rounded-full" />
               )}
@@ -127,6 +131,15 @@ const PublicBottomNav: React.FC = () => {
           </Sheet>
         )}
       </div>
+
+      {/* Floating Voice Apply FAB */}
+      <Link
+        to="/jobs"
+        className="absolute -top-14 right-4 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all active:scale-95 btn-glow"
+        aria-label="Voice Apply"
+      >
+        <Mic className="w-5 h-5" />
+      </Link>
     </nav>
   );
 };
