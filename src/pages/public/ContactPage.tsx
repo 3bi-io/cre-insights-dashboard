@@ -1,7 +1,6 @@
 /**
  * Contact Page Component
- * Contact form with functional submission and company information
- * Mobile-first with accordion FAQ section
+ * Enhanced with response SLA badge, map, and scheduling link
  */
 
 import React, { useState } from 'react';
@@ -11,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Accordion,
@@ -23,7 +23,12 @@ import {
   Send,
   Loader2,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Clock,
+  MapPin,
+  Mail,
+  Calendar,
+  ArrowRight,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,8 +36,9 @@ import { z } from 'zod';
 import { logger } from '@/lib/logger';
 import { HeroBackground } from '@/components/shared';
 import trustHero from '@/assets/hero/trust-hero.png';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
-// Client-side validation schema
 const contactFormSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(100),
   lastName: z.string().min(1, "Last name is required").max(100),
@@ -51,457 +57,298 @@ const ContactPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    company: '',
-    jobTitle: '',
-    companySize: '',
-    subject: '',
-    message: ''
+    firstName: '', lastName: '', email: '', company: '',
+    jobTitle: '', companySize: '', subject: '', message: ''
   });
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-
-    // Client-side validation
     const validationResult = contactFormSchema.safeParse(formData);
     if (!validationResult.success) {
       const fieldErrors: Record<string, string> = {};
       validationResult.error.errors.forEach(err => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as string] = err.message;
-        }
+        if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
       });
       setErrors(fieldErrors);
-      toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please fix the errors in the form."
-      });
+      toast({ variant: "destructive", title: "Validation Error", description: "Please fix the errors in the form." });
       return;
     }
-
     setIsSubmitting(true);
-
     try {
-      const { data, error } = await supabase.functions.invoke('contact-form', {
-        body: formData
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to submit form');
-      }
-
+      const { data, error } = await supabase.functions.invoke('contact-form', { body: formData });
+      if (error) throw new Error(error.message || 'Failed to submit form');
       setIsSubmitted(true);
-      toast({
-        title: "Message Sent!",
-        description: data?.message || "Thank you for contacting us. We'll get back to you within 24 hours.",
-      });
-      
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        company: '',
-        jobTitle: '',
-        companySize: '',
-        subject: '',
-        message: ''
-      });
-
+      toast({ title: "Message Sent!", description: data?.message || "We'll get back to you within 24 hours." });
+      setFormData({ firstName: '', lastName: '', email: '', company: '', jobTitle: '', companySize: '', subject: '', message: '' });
     } catch (error) {
       logger.error('Contact form error:', error);
-      toast({
-        variant: "destructive",
-        title: "Submission Failed",
-        description: "Unable to send your message. Please try again or email us directly at sales@ats.me"
-      });
+      toast({ variant: "destructive", title: "Submission Failed", description: "Unable to send your message. Please try again or email us at sales@ats.me" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-
   const faqs = [
-    {
-      question: "How quickly can we get started?",
-      answer: "Most customers are up and running within 24-48 hours. Our setup process is streamlined and our team provides full onboarding support."
-    },
-    {
-      question: "Do you offer custom integrations?",
-      answer: "Yes, we provide custom integrations for Enterprise customers. Our team can work with your existing systems and tools."
-    },
-    {
-      question: "What kind of support do you provide?",
-      answer: "We offer email support for all plans, priority support for Professional customers, and dedicated account management for Enterprise clients."
-    },
-    {
-      question: "Can we migrate data from our current ATS?",
-      answer: "Absolutely! We provide data migration services to help you transfer your existing candidate data, job postings, and historical records."
-    }
+    { question: "How quickly can we get started?", answer: "Most customers are up and running within 24-48 hours. Our setup process is streamlined and our team provides full onboarding support." },
+    { question: "Do you offer custom integrations?", answer: "Yes, we provide custom integrations for Enterprise customers. Our team can work with your existing systems and tools." },
+    { question: "What kind of support do you provide?", answer: "We offer email support for all plans, priority support for Professional customers, and dedicated account management for Enterprise clients." },
+    { question: "Can we migrate data from our current ATS?", answer: "Absolutely! We provide data migration services to help you transfer your existing candidate data, job postings, and historical records." }
   ];
 
-  // Build FAQ schema for structured data
   const faqSchemaData = buildFAQSchema(faqs);
-
-  // Contact page schema for AI search
   const contactPageSchema = {
-    "@context": "https://schema.org",
-    "@type": "ContactPage",
-    "name": "Contact ATS.me",
-    "description": "Get in touch with ATS.me for demos, support, or partnership inquiries",
-    "url": "https://ats.me/contact",
+    "@context": "https://schema.org", "@type": "ContactPage",
+    "name": "Contact ATS.me", "url": "https://ats.me/contact",
     "mainEntity": {
-      "@type": "Organization",
-      "name": "ATS.me",
-      "email": "support@ats.me",
+      "@type": "Organization", "name": "ATS.me", "email": "support@ats.me",
       "contactPoint": [
-        {
-          "@type": "ContactPoint",
-          "contactType": "Sales",
-          "email": "sales@ats.me"
-        },
-        {
-          "@type": "ContactPoint",
-          "contactType": "Customer Support",
-          "email": "support@ats.me"
-        }
+        { "@type": "ContactPoint", "contactType": "Sales", "email": "sales@ats.me" },
+        { "@type": "ContactPoint", "contactType": "Customer Support", "email": "support@ats.me" }
       ]
     }
   };
-
-  // LocalBusiness schema for local SEO
   const localBusinessSchema = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "ATS.me",
-    "description": "AI-powered recruitment platform with Voice Apply technology, Tenstreet integration, and predictive analytics.",
-    "url": "https://ats.me",
-    "logo": "https://ats.me/logo.png",
-    "image": "https://ats.me/og-image.png",
-    "telephone": "",
-    "email": "support@ats.me",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "1400 Quintard Ave",
-      "addressLocality": "Anniston",
-      "addressRegion": "AL",
-      "postalCode": "36201",
-      "addressCountry": "US"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": "33.6598",
-      "longitude": "-85.8316"
-    },
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      "opens": "09:00",
-      "closes": "17:00"
-    },
-    "priceRange": "$$",
-    "sameAs": [
-      "https://twitter.com/atsme",
-      "https://linkedin.com/company/atsme"
-    ]
+    "@context": "https://schema.org", "@type": "LocalBusiness",
+    "name": "ATS.me", "url": "https://ats.me", "email": "support@ats.me",
+    "address": { "@type": "PostalAddress", "streetAddress": "1400 Quintard Ave", "addressLocality": "Anniston", "addressRegion": "AL", "postalCode": "36201", "addressCountry": "US" },
+    "geo": { "@type": "GeoCoordinates", "latitude": "33.6598", "longitude": "-85.8316" },
   };
 
   return (
     <>
-      <SEO
-        title="Contact Us | Get in Touch with ATS.me"
-        description="Have questions about ATS.me? Contact our team for demos, support, or partnership inquiries. We're here to help you transform your recruitment process."
-        keywords="contact ATS.me, recruitment support, demo request, ATS inquiry, customer service"
-        canonical="https://ats.me/contact"
-        ogImage="https://ats.me/og-contact.png"
-      />
+      <SEO title="Contact Us | Get in Touch with ATS.me" description="Have questions about ATS.me? Contact our team for demos, support, or partnership inquiries." canonical="https://ats.me/contact" ogImage="https://ats.me/og-contact.png" />
       <StructuredData data={[contactPageSchema, faqSchemaData, localBusinessSchema]} />
       <div className="min-h-screen">
-      {/* Hero Section */}
-      <HeroBackground
-        imageSrc={trustHero}
-        imageAlt="Security shield with checkmark representing trust, compliance, and data protection"
-        variant="compact"
-        overlayVariant="dark"
-        overlayOpacity={65}
-      >
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
-              Get in
-              <span className="text-white"> Touch</span>
-            </h1>
-            <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
-              We're here to help you get started
-            </span>
+        {/* Hero */}
+        <HeroBackground imageSrc={trustHero} imageAlt="Trust and security" variant="compact" overlayVariant="dark" overlayOpacity={65}>
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
+                Get in<span className="text-white"> Touch</span>
+              </h1>
+              <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
+                We're here to help you get started
+              </span>
+            </div>
           </div>
-        </div>
-      </HeroBackground>
+        </HeroBackground>
 
-
-      {/* Contact Form & FAQ */}
-      <section className="py-10 md:py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
-            {/* Contact Form */}
-            <div>
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-xl md:text-2xl font-bold">Send us a message</CardTitle>
-                  <p className="text-muted-foreground text-sm md:text-base">
-                    Fill out the form below and we'll get back to you within 24 hours.
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  {isSubmitted ? (
-                    <div className="text-center py-8 md:py-12">
-                      <CheckCircle className="h-14 w-14 md:h-16 md:w-16 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">Message Sent!</h3>
-                      <p className="text-muted-foreground mb-6 text-sm md:text-base">
-                        Thank you for reaching out. We'll get back to you within 24 hours.
-                      </p>
-                      <Button onClick={() => setIsSubmitted(false)} variant="outline" className="min-h-[44px]">
-                        Send Another Message
-                      </Button>
+        {/* Quick Info Cards */}
+        <section className="py-6 border-b bg-muted/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card className="border-primary/30 bg-primary/5">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Clock className="h-8 w-8 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">Fast Response</p>
+                      <p className="text-xs text-muted-foreground">We respond within 4 hours</p>
                     </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">
-                            First Name *
-                          </label>
-                          <Input
-                            id="firstName"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={(e) => handleInputChange('firstName', e.target.value)}
-                            className={`min-h-[44px] ${errors.firstName ? 'border-destructive' : ''}`}
-                            required
-                            autoComplete="given-name"
-                          />
-                          {errors.firstName && (
-                            <p className="text-destructive text-xs mt-1">{errors.firstName}</p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">
-                            Last Name *
-                          </label>
-                          <Input
-                            id="lastName"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={(e) => handleInputChange('lastName', e.target.value)}
-                            className={`min-h-[44px] ${errors.lastName ? 'border-destructive' : ''}`}
-                            required
-                            autoComplete="family-name"
-                          />
-                          {errors.lastName && (
-                            <p className="text-destructive text-xs mt-1">{errors.lastName}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">
-                          Email Address *
-                        </label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
-                          className={`min-h-[44px] ${errors.email ? 'border-destructive' : ''}`}
-                          required
-                          autoComplete="email"
-                          inputMode="email"
-                        />
-                        {errors.email && (
-                          <p className="text-destructive text-xs mt-1">{errors.email}</p>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">
-                            Company *
-                          </label>
-                          <Input
-                            id="company"
-                            name="company"
-                            value={formData.company}
-                            onChange={(e) => handleInputChange('company', e.target.value)}
-                            className={`min-h-[44px] ${errors.company ? 'border-destructive' : ''}`}
-                            required
-                            autoComplete="organization"
-                          />
-                          {errors.company && (
-                            <p className="text-destructive text-xs mt-1">{errors.company}</p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">
-                            Job Title
-                          </label>
-                          <Input
-                            id="jobTitle"
-                            name="jobTitle"
-                            value={formData.jobTitle}
-                            onChange={(e) => handleInputChange('jobTitle', e.target.value)}
-                            className="min-h-[44px]"
-                            autoComplete="organization-title"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">
-                          Company Size
-                        </label>
-                        <Select name="companySize" onValueChange={(value) => handleInputChange('companySize', value)}>
-                          <SelectTrigger className="min-h-[44px]">
-                            <SelectValue placeholder="Select company size" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1-10">1-10 employees</SelectItem>
-                            <SelectItem value="11-50">11-50 employees</SelectItem>
-                            <SelectItem value="51-200">51-200 employees</SelectItem>
-                            <SelectItem value="201-1000">201-1,000 employees</SelectItem>
-                            <SelectItem value="1000+">1,000+ employees</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">
-                          Subject *
-                        </label>
-                        <Select name="subject" onValueChange={(value) => handleInputChange('subject', value)}>
-                          <SelectTrigger className={`min-h-[44px] ${errors.subject ? 'border-destructive' : ''}`}>
-                            <SelectValue placeholder="What can we help you with?" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="demo">Schedule a Demo</SelectItem>
-                            <SelectItem value="enterprise">Enterprise Inquiry</SelectItem>
-                            <SelectItem value="features">Product Features</SelectItem>
-                            <SelectItem value="integration">Integration Questions</SelectItem>
-                            <SelectItem value="migration">Data Migration</SelectItem>
-                            <SelectItem value="partnership">Partnership Opportunity</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {errors.subject && (
-                          <p className="text-destructive text-xs mt-1">{errors.subject}</p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">
-                          Message *
-                        </label>
-                        <Textarea
-                          id="message"
-                          name="message"
-                          value={formData.message}
-                          onChange={(e) => handleInputChange('message', e.target.value)}
-                          placeholder="Tell us more about your requirements..."
-                          className={`min-h-[100px] md:min-h-[120px] ${errors.message ? 'border-destructive' : ''}`}
-                          required
-                        />
-                        {errors.message && (
-                          <p className="text-destructive text-xs mt-1">{errors.message}</p>
-                        )}
-                      </div>
-
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-primary hover:bg-primary/90 min-h-[48px] text-base"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="mr-2 h-4 w-4" />
-                            Send Message
-                          </>
-                        )}
-                      </Button>
-                    </form>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* FAQ Section with Accordion */}
-            <div>
-              <div className="flex items-center gap-2 mb-4 md:mb-6">
-                <HelpCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
-                <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                  Frequently Asked Questions
-                </h3>
-              </div>
-              <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base">
-                Find quick answers to common questions about our platform.
-              </p>
-              
-              <Accordion type="single" collapsible className="space-y-3">
-                {faqs.map((faq, index) => (
-                  <AccordionItem 
-                    key={index} 
-                    value={`faq-${index}`}
-                    className="border rounded-lg px-4 bg-background"
-                  >
-                    <AccordionTrigger className="text-left py-4 hover:no-underline">
-                      <span className="font-semibold text-foreground text-sm md:text-base pr-4">
-                        {faq.question}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground pb-4 text-sm md:text-base">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-
-              {/* Additional Help Card */}
-              <Card className="mt-6 bg-primary/5 border-primary/20">
-                <CardContent className="p-4 md:p-6">
-                  <h4 className="font-semibold text-foreground mb-2 text-sm md:text-base">
-                    Still have questions?
-                  </h4>
-                  <p className="text-muted-foreground text-sm mb-4">
-                    Can't find what you're looking for? Our support team is happy to help.
-                  </p>
-                  <a href="mailto:support@ats.me">
-                    <Button variant="outline" className="w-full sm:w-auto min-h-[44px]">
-                      <Headphones className="mr-2 h-4 w-4" />
-                      Contact Support
-                    </Button>
-                  </a>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Card>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <MapPin className="h-8 w-8 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">Anniston, AL</p>
+                      <p className="text-xs text-muted-foreground">1400 Quintard Ave, 36201</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <Card>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Mail className="h-8 w-8 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-foreground text-sm">Email Us</p>
+                      <a href="mailto:sales@ats.me" className="text-xs text-primary hover:underline">sales@ats.me</a>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Contact Form & FAQ */}
+        <section className="py-10 md:py-20 bg-muted/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+              {/* Contact Form */}
+              <div>
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl md:text-2xl font-bold">Send us a message</CardTitle>
+                    <p className="text-muted-foreground text-sm md:text-base">Fill out the form below and we'll get back to you within 24 hours.</p>
+                  </CardHeader>
+                  <CardContent>
+                    {isSubmitted ? (
+                      <div className="text-center py-8 md:py-12">
+                        <CheckCircle className="h-14 w-14 md:h-16 md:w-16 text-primary mx-auto mb-4" />
+                        <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">Message Sent!</h3>
+                        <p className="text-muted-foreground mb-4 text-sm md:text-base">Thank you for reaching out. We'll get back to you within 24 hours.</p>
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">While you wait, you can:</p>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <Link to="/features"><Button variant="outline" size="sm">Explore Features</Button></Link>
+                            <Link to="/blog"><Button variant="outline" size="sm">Read Our Blog</Button></Link>
+                          </div>
+                        </div>
+                        <Button onClick={() => setIsSubmitted(false)} variant="ghost" className="mt-4 min-h-[44px]">Send Another Message</Button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">First Name *</label>
+                            <Input id="firstName" name="firstName" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className={`min-h-[44px] ${errors.firstName ? 'border-destructive' : ''}`} required autoComplete="given-name" />
+                            {errors.firstName && <p className="text-destructive text-xs mt-1">{errors.firstName}</p>}
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Last Name *</label>
+                            <Input id="lastName" name="lastName" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className={`min-h-[44px] ${errors.lastName ? 'border-destructive' : ''}`} required autoComplete="family-name" />
+                            {errors.lastName && <p className="text-destructive text-xs mt-1">{errors.lastName}</p>}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Email Address *</label>
+                          <Input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`min-h-[44px] ${errors.email ? 'border-destructive' : ''}`} required autoComplete="email" inputMode="email" />
+                          {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Company *</label>
+                            <Input id="company" name="company" value={formData.company} onChange={(e) => handleInputChange('company', e.target.value)} className={`min-h-[44px] ${errors.company ? 'border-destructive' : ''}`} required autoComplete="organization" />
+                            {errors.company && <p className="text-destructive text-xs mt-1">{errors.company}</p>}
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Job Title</label>
+                            <Input id="jobTitle" name="jobTitle" value={formData.jobTitle} onChange={(e) => handleInputChange('jobTitle', e.target.value)} className="min-h-[44px]" autoComplete="organization-title" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Company Size</label>
+                          <Select name="companySize" onValueChange={(value) => handleInputChange('companySize', value)}>
+                            <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Select company size" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1-10">1-10 employees</SelectItem>
+                              <SelectItem value="11-50">11-50 employees</SelectItem>
+                              <SelectItem value="51-200">51-200 employees</SelectItem>
+                              <SelectItem value="201-1000">201-1,000 employees</SelectItem>
+                              <SelectItem value="1000+">1,000+ employees</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Subject *</label>
+                          <Select name="subject" onValueChange={(value) => handleInputChange('subject', value)}>
+                            <SelectTrigger className={`min-h-[44px] ${errors.subject ? 'border-destructive' : ''}`}><SelectValue placeholder="What can we help you with?" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="demo">Schedule a Demo</SelectItem>
+                              <SelectItem value="enterprise">Enterprise Inquiry</SelectItem>
+                              <SelectItem value="features">Product Features</SelectItem>
+                              <SelectItem value="integration">Integration Questions</SelectItem>
+                              <SelectItem value="migration">Data Migration</SelectItem>
+                              <SelectItem value="partnership">Partnership Opportunity</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {errors.subject && <p className="text-destructive text-xs mt-1">{errors.subject}</p>}
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Message *</label>
+                          <Textarea id="message" name="message" value={formData.message} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Tell us more about your requirements..." className={`min-h-[100px] md:min-h-[120px] ${errors.message ? 'border-destructive' : ''}`} required />
+                          {errors.message && <p className="text-destructive text-xs mt-1">{errors.message}</p>}
+                        </div>
+                        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 min-h-[48px] text-base" disabled={isSubmitting}>
+                          {isSubmitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="mr-2 h-4 w-4" />Send Message</>)}
+                        </Button>
+                      </form>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* FAQ + Scheduling */}
+              <div>
+                {/* Schedule a Demo Card */}
+                <Card className="mb-6 border-primary/30 bg-primary/5">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Calendar className="h-6 w-6 text-primary" />
+                      <h3 className="font-bold text-foreground">Schedule a Demo</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      See ATS.me in action with a personalized walkthrough of Voice Apply, Social Beacon, and more.
+                    </p>
+                    <Link to="/contact?subject=demo">
+                      <Button className="w-full sm:w-auto min-h-[44px]">
+                        Book a Demo <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                <div className="flex items-center gap-2 mb-4 md:mb-6">
+                  <HelpCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground">Frequently Asked Questions</h3>
+                </div>
+                <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-base">Find quick answers to common questions.</p>
+                
+                <Accordion type="single" collapsible className="space-y-3">
+                  {faqs.map((faq, index) => (
+                    <AccordionItem key={index} value={`faq-${index}`} className="border rounded-lg px-4 bg-background">
+                      <AccordionTrigger className="text-left py-4 hover:no-underline">
+                        <span className="font-semibold text-foreground text-sm md:text-base pr-4">{faq.question}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground pb-4 text-sm md:text-base">{faq.answer}</AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+
+                <Card className="mt-6 bg-primary/5 border-primary/20">
+                  <CardContent className="p-4 md:p-6">
+                    <h4 className="font-semibold text-foreground mb-2 text-sm md:text-base">Still have questions?</h4>
+                    <p className="text-muted-foreground text-sm mb-4">Our support team is happy to help.</p>
+                    <a href="mailto:support@ats.me">
+                      <Button variant="outline" className="w-full sm:w-auto min-h-[44px]">
+                        <Headphones className="mr-2 h-4 w-4" />Contact Support
+                      </Button>
+                    </a>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Map Section */}
+        <section className="py-10 md:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6 text-center">Our Location</h2>
+            <div className="rounded-xl overflow-hidden border shadow-sm h-[300px] md:h-[400px]">
+              <iframe
+                title="ATS.me Office Location"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=-85.8416%2C33.6498%2C-85.8216%2C33.6698&layer=mapnik&marker=33.6598%2C-85.8316"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground text-center mt-3">1400 Quintard Ave, Anniston, AL 36201</p>
+          </div>
+        </section>
       </div>
     </>
   );
