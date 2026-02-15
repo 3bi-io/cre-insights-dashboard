@@ -263,3 +263,6 @@ verify_jwt = false
 
 [functions.launch-social-beacons]
 verify_jwt = false
+
+[functions.generate-image]
+verify_jwt = true
