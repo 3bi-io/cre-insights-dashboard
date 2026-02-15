@@ -1,265 +1,120 @@
 import React from 'react';
-import { SEO } from '@/components/SEO';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import LegalPageLayout, { type LegalSection } from '@/components/public/LegalPageLayout';
+import { FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
-const TermsOfServicePage = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <SEO
-        title="Terms of Service | User Agreement"
-        description="Terms and conditions for using ATS.me's recruitment platform. Service agreement, usage rights, and responsibilities for users and organizations."
-        keywords="terms of service, user agreement, ATS terms"
-        canonical="https://ats.me/terms-of-service"
-        ogImage="https://ats.me/og-terms.png"
-      />
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-grid-primary/5 bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,white,transparent)]"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-        
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-playfair font-bold text-foreground mb-6">
-            Terms of Service
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8">
-            Last updated: January 2026
-          </p>
-        </div>
-      </section>
+const sections: LegalSection[] = [
+  {
+    id: 'acceptance',
+    title: '1. Acceptance of Terms',
+    content: <p>By accessing or using ATS.me (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, then you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.</p>,
+  },
+  {
+    id: 'description',
+    title: '2. Description of Service',
+    content: (
+      <div className="space-y-3">
+        <p>ATS.me is an applicant tracking system that provides:</p>
+        <ul className="space-y-2 list-disc pl-5">
+          <li>Job posting and management capabilities</li>
+          <li>Application tracking and candidate management</li>
+          <li>AI-powered analytics and insights</li>
+          <li>Integration with third-party platforms</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'accounts',
+    title: '3. User Accounts',
+    content: (
+      <div className="space-y-3">
+        <p>When you create an account with us, you must provide information that is accurate, complete, and current at all times. You are responsible for safeguarding the password and for maintaining the confidentiality of your account.</p>
+        <p>You agree to accept responsibility for all activities that occur under your account or password. You must notify us immediately upon becoming aware of any breach of security or unauthorized use of your account.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'acceptable-use',
+    title: '4. Acceptable Use',
+    content: (
+      <div className="space-y-3">
+        <p>You agree not to use the Service:</p>
+        <ul className="space-y-2 list-disc pl-5">
+          <li>For any unlawful purpose or to solicit others to unlawful acts</li>
+          <li>To violate any international, federal, provincial, or state regulations or laws</li>
+          <li>To transmit or send unsolicited or unauthorized advertising or promotional material</li>
+          <li>To interfere with or circumvent the security features of the Service</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'access',
+    title: '5. Access and Usage',
+    content: (
+      <div className="space-y-3">
+        <p>Access to the Service is provided to authorized users within your organization. Your organization's administrator manages user access and feature availability based on user roles and responsibilities.</p>
+        <p>All registered users have access to platform features appropriate to their role. Feature access is managed by your organization's Super Administrator and may be adjusted at any time.</p>
+      </div>
+    ),
+  },
+  {
+    id: 'ip',
+    title: '6. Intellectual Property Rights',
+    content: <p>The Service and its original content, features, and functionality are and will remain the exclusive property of ATS.me and its licensors. The Service is protected by copyright, trademark, and other laws.</p>,
+  },
+  {
+    id: 'privacy',
+    title: '7. Privacy Policy',
+    content: <p>Your privacy is important to us. Please review our Privacy Policy, which also governs your use of the Service, to understand our practices.</p>,
+  },
+  {
+    id: 'termination',
+    title: '8. Termination',
+    content: <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms. Upon termination, your right to use the Service will cease immediately.</p>,
+  },
+  {
+    id: 'liability',
+    title: '9. Limitation of Liability',
+    content: <p>In no event shall ATS.me, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>,
+  },
+  {
+    id: 'changes',
+    title: '10. Changes to Terms',
+    content: <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days notice prior to any new terms taking effect.</p>,
+  },
+  {
+    id: 'contact',
+    title: '11. Contact Information',
+    content: (
+      <div className="space-y-2">
+        <p>If you have any questions about these Terms of Service, please contact us at:</p>
+        <p className="text-foreground font-medium">Email: legal@ats.me</p>
+        <p className="text-foreground font-medium">Address: ATS.me Legal Department</p>
+      </div>
+    ),
+  },
+];
 
-      {/* Content Section */}
-      <section className="py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-8">
-            
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                By accessing and using ATS.me, you agree to be bound by these Terms of Service. 
-                Please read them carefully.
-              </AlertDescription>
-            </Alert>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>1. Acceptance of Terms</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  By accessing or using ATS.me (the "Service"), you agree to be bound by these 
-                  Terms of Service ("Terms"). If you disagree with any part of these terms, then 
-                  you may not access the Service. These Terms apply to all visitors, users, and 
-                  others who access or use the Service.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>2. Description of Service</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  ATS.me is an applicant tracking system that provides:
-                </p>
-                <ul className="space-y-3">
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      Job posting and management capabilities
-                    </p>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      Application tracking and candidate management
-                    </p>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      AI-powered analytics and insights
-                    </p>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      Integration with third-party platforms
-                    </p>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>3. User Accounts</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  When you create an account with us, you must provide information that is 
-                  accurate, complete, and current at all times. You are responsible for 
-                  safeguarding the password and for maintaining the confidentiality of your account.
-                </p>
-                <p className="text-muted-foreground">
-                  You agree to accept responsibility for all activities that occur under your 
-                  account or password. You must notify us immediately upon becoming aware of 
-                  any breach of security or unauthorized use of your account.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>4. Acceptable Use</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  You agree not to use the Service:
-                </p>
-                <ul className="space-y-3">
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      For any unlawful purpose or to solicit others to unlawful acts
-                    </p>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      To violate any international, federal, provincial, or state regulations or laws
-                    </p>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      To transmit or send unsolicited or unauthorized advertising or promotional material
-                    </p>
-                  </li>
-                  <li className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-muted-foreground">
-                      To interfere with or circumvent the security features of the Service
-                    </p>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>5. Access and Usage</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  Access to the Service is provided to authorized users within your organization. 
-                  Your organization's administrator manages user access and feature availability 
-                  based on user roles and responsibilities.
-                </p>
-                <p className="text-muted-foreground">
-                  All registered users have access to platform features appropriate to their role. 
-                  Feature access is managed by your organization's Super Administrator and may be 
-                  adjusted at any time to meet your organization's needs.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>6. Intellectual Property Rights</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  The Service and its original content, features, and functionality are and will 
-                  remain the exclusive property of ATS.me and its licensors. The Service is 
-                  protected by copyright, trademark, and other laws. Our trademarks and trade 
-                  dress may not be used in connection with any product or service without our 
-                  prior written consent.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>7. Privacy Policy</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Your privacy is important to us. Please review our Privacy Policy, which also 
-                  governs your use of the Service, to understand our practices.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>8. Termination</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  We may terminate or suspend your account immediately, without prior notice or 
-                  liability, for any reason whatsoever, including without limitation if you breach 
-                  the Terms. Upon termination, your right to use the Service will cease immediately. 
-                  If you wish to terminate your account, you may simply discontinue using the Service.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>9. Limitation of Liability</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  In no event shall ATS.me, nor its directors, employees, partners, agents, 
-                  suppliers, or affiliates, be liable for any indirect, incidental, special, 
-                  consequential, or punitive damages, including without limitation, loss of profits, 
-                  data, use, goodwill, or other intangible losses, resulting from your use of the Service.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>10. Changes to Terms</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  We reserve the right, at our sole discretion, to modify or replace these Terms 
-                  at any time. If a revision is material, we will try to provide at least 30 days 
-                  notice prior to any new terms taking effect. What constitutes a material change 
-                  will be determined at our sole discretion.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>11. Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  If you have any questions about these Terms of Service, please contact us at:
-                </p>
-                <div className="space-y-2">
-                  <p className="text-foreground font-medium">Email: legal@ats.me</p>
-                  <p className="text-foreground font-medium">Address: ATS.me Legal Department</p>
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-};
+const TermsOfServicePage = () => (
+  <LegalPageLayout
+    title="Terms of Service"
+    lastUpdated="January 2026"
+    icon={<FileText className="h-14 w-14 text-primary mx-auto" />}
+    seoTitle="Terms of Service | User Agreement"
+    seoDescription="Terms and conditions for using ATS.me's recruitment platform. Service agreement, usage rights, and responsibilities."
+    canonical="https://ats.me/terms-of-service"
+    breadcrumbPath="/terms-of-service"
+    sections={sections}
+    introAlert={
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>By accessing and using ATS.me, you agree to be bound by these Terms of Service. Please read them carefully.</AlertDescription>
+      </Alert>
+    }
+  />
+);
 
 export default TermsOfServicePage;
