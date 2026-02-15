@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
 import { 
   MapPin, DollarSign, Building2, Clock, Briefcase, 
-  ArrowLeft, ExternalLink, Share2, Mic 
+  ArrowLeft, ExternalLink, Share2, Mic, Linkedin, Copy, Check
 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
@@ -20,12 +20,13 @@ import { VoiceApplicationPanel } from '@/features/elevenlabs';
 import { useToast } from '@/hooks/use-toast';
 import { sanitizers } from '@/utils/validation';
 import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
+import { toast } from 'sonner';
 
 const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { data: job, isLoading, error } = useJobDetails(id);
+  const [copied, setCopied] = React.useState(false);
   
   const {
     isConnected,
@@ -41,18 +42,24 @@ const JobDetailsPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
+        <div className="container mx-auto px-4 py-6 lg:py-8 max-w-6xl">
           <Skeleton className="h-5 w-32 mb-4 lg:mb-6" />
-          <Card>
-            <CardContent className="p-6 lg:p-8">
-              <Skeleton className="h-8 lg:h-10 w-3/4 mb-3 lg:mb-4" />
-              <Skeleton className="h-5 lg:h-6 w-1/2 mb-4 lg:mb-6" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-full mb-2" />
-              <Skeleton className="h-4 w-2/3 mb-6 lg:mb-8" />
-              <Skeleton className="h-12 w-full lg:w-48" />
-            </CardContent>
-          </Card>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardContent className="p-6 lg:p-8">
+                  <Skeleton className="h-8 w-3/4 mb-3" />
+                  <Skeleton className="h-5 w-1/2 mb-6" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
+            </div>
+            <div>
+              <Skeleton className="h-64 rounded-xl" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -61,19 +68,13 @@ const JobDetailsPage: React.FC = () => {
   if (error || !job) {
     return (
       <div className="min-h-screen bg-background">
-        <SEO
-          title="Job Not Found"
-          description="The job listing you're looking for is no longer available."
-          noindex
-        />
+        <SEO title="Job Not Found" description="The job listing you're looking for is no longer available." noindex />
         <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
           <Card>
             <CardContent className="p-6 lg:p-8 text-center">
-              <Building2 className="w-12 h-12 lg:w-16 lg:h-16 mx-auto mb-4 text-muted-foreground/50" />
+              <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
               <h1 className="text-xl lg:text-2xl font-bold mb-2">Job Not Found</h1>
-              <p className="text-sm lg:text-base text-muted-foreground mb-6">
-                This job listing is no longer available.
-              </p>
+              <p className="text-muted-foreground mb-6">This job listing is no longer available.</p>
               <Button onClick={() => navigate('/jobs')}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Browse All Jobs
@@ -108,21 +109,29 @@ const JobDetailsPage: React.FC = () => {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: displayTitle,
-          text: `Check out this job: ${displayTitle} at ${companyName}`,
-          url: canonicalUrl,
-        });
-      } catch (err) {
-        // User cancelled or error
-      }
+        await navigator.share({ title: displayTitle, text: `Check out this job: ${displayTitle} at ${companyName}`, url: canonicalUrl });
+      } catch {}
     } else {
-      navigator.clipboard.writeText(canonicalUrl);
+      handleCopyLink();
     }
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(canonicalUrl);
+    setCopied(true);
+    toast.success('Link copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareOnLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`, '_blank');
+  };
+
+  const shareOnX = () => {
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`${displayTitle} at ${companyName}`)}&url=${encodeURIComponent(canonicalUrl)}`, '_blank');
+  };
+
   const handleVoiceApply = () => {
-    // Global voice agent - always available for all jobs
     startVoiceApplication({
       jobId: job.id,
       jobTitle: displayTitle,
@@ -133,34 +142,22 @@ const JobDetailsPage: React.FC = () => {
     });
   };
 
-  // Build structured data with enhanced schema
-  // Extract experience and qualifications from description for enhanced schema
   const experienceData = extractExperienceFromDescription(displayDescription);
   const qualificationsData = extractQualificationsFromDescription(displayDescription);
 
   const jobPostingSchema = buildJobPostingSchema({
-    id: job.id,
-    title: displayTitle,
-    description: displayDescription,
+    id: job.id, title: displayTitle, description: displayDescription,
     datePosted: job.created_at,
     validThrough: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     employmentType: job.job_type || 'FULL_TIME',
     hiringOrganization: companyName,
     hiringOrganizationLogo: job.clients?.logo_url,
-    jobLocation: displayLocation ? {
-      city: job.city || '',
-      state: job.state || '',
-      country: 'US',
-    } : undefined,
+    jobLocation: displayLocation ? { city: job.city || '', state: job.state || '', country: 'US' } : undefined,
     baseSalary: (job.salary_min || job.salary_max) ? {
-      minValue: job.salary_min || undefined,
-      maxValue: job.salary_max || undefined,
-      currency: 'USD',
-      unitText: getSalaryUnitText(job.salary_type),
+      minValue: job.salary_min || undefined, maxValue: job.salary_max || undefined,
+      currency: 'USD', unitText: getSalaryUnitText(job.salary_type),
     } : undefined,
-    directApply: true,
-    applicationUrl: `https://ats.me${applyUrl}`,
-    // Enhanced schema fields
+    directApply: true, applicationUrl: `https://ats.me${applyUrl}`,
     experienceRequirements: experienceData,
     qualifications: qualificationsData.summary,
     skills: qualificationsData.skills,
@@ -178,17 +175,14 @@ const JobDetailsPage: React.FC = () => {
         title={`${displayTitle} at ${companyName}`}
         description={displayDescription?.substring(0, 160) || `Apply for ${displayTitle} at ${companyName}. ${displayLocation ? `Location: ${displayLocation}.` : ''}`}
         keywords={`${displayTitle}, ${companyName}, jobs, careers, ${job.job_categories?.name || ''}`}
-        canonical={canonicalUrl}
-        ogImage="https://ats.me/og-jobs.png"
-        ogType="article"
-        articlePublishedTime={job.created_at}
-        articleModifiedTime={job.updated_at}
+        canonical={canonicalUrl} ogImage="https://ats.me/og-jobs.png" ogType="article"
+        articlePublishedTime={job.created_at} articleModifiedTime={job.updated_at}
       />
       <StructuredData data={[jobPostingSchema, breadcrumbSchema]} />
 
-      <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
-        {/* Breadcrumb - Horizontally scrollable on mobile */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 lg:mb-6 overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
+      <div className="container mx-auto px-4 py-6 lg:py-8 max-w-6xl">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 lg:mb-6 overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide" aria-label="Breadcrumb">
           <Link to="/" className="hover:text-foreground transition-colors shrink-0">Home</Link>
           <span className="shrink-0">/</span>
           <Link to="/jobs" className="hover:text-foreground transition-colors shrink-0">Jobs</Link>
@@ -196,182 +190,208 @@ const JobDetailsPage: React.FC = () => {
           <span className="text-foreground truncate max-w-[200px] lg:max-w-none">{displayTitle}</span>
         </nav>
 
-        <div className="space-y-4 lg:space-y-6">
-          {/* Main Job Card */}
-          <Card>
-            <CardContent className="p-4 sm:p-6 lg:p-8">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4 lg:mb-6">
-                <LogoAvatar size="2xl">
-                  {job.clients?.logo_url ? (
-                    <LogoAvatarImage 
-                      src={job.clients.logo_url} 
-                      alt={`${companyName} logo`}
-                    />
-                  ) : (
-                    <LogoAvatarFallback iconSize="xl" />
+        {/* 2-Column Layout: Content + Sticky Sidebar */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Content (left 2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardContent className="p-4 sm:p-6 lg:p-8">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
+                  <LogoAvatar size="2xl">
+                    {job.clients?.logo_url ? (
+                      <LogoAvatarImage src={job.clients.logo_url} alt={`${companyName} logo`} />
+                    ) : (
+                      <LogoAvatarFallback iconSize="xl" />
+                    )}
+                  </LogoAvatar>
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 leading-tight">{displayTitle}</h1>
+                    <p className="text-base lg:text-lg text-muted-foreground mb-3">{companyName}</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {job.job_categories?.name && <Badge variant="secondary">{job.job_categories.name}</Badge>}
+                      {job.job_type && <Badge variant="outline">{job.job_type}</Badge>}
+                      {job.experience_level && <Badge variant="outline">{job.experience_level}</Badge>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Info Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-muted/50 rounded-xl">
+                  {displayLocation && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Location</p>
+                        <p className="font-medium text-sm truncate">{displayLocation}</p>
+                      </div>
+                    </div>
                   )}
-                </LogoAvatar>
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 lg:mb-2 leading-tight">{displayTitle}</h1>
-                  <p className="text-base lg:text-lg text-muted-foreground mb-2 lg:mb-3">{companyName}</p>
-                  {/* Horizontally scrollable badges on mobile */}
-                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-                    {job.job_categories?.name && (
-                      <Badge variant="secondary" className="shrink-0">{job.job_categories.name}</Badge>
-                    )}
-                    {job.job_type && (
-                      <Badge variant="outline" className="shrink-0">{job.job_type}</Badge>
-                    )}
-                    {job.experience_level && (
-                      <Badge variant="outline" className="shrink-0">{job.experience_level}</Badge>
-                    )}
+                  {salary && (
+                    <div className="flex items-start gap-2">
+                      <DollarSign className="w-4 h-4 text-success/70 flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Salary</p>
+                        <p className="font-medium text-sm truncate">{salary}</p>
+                      </div>
+                    </div>
+                  )}
+                  {job.job_type && (
+                    <div className="flex items-start gap-2">
+                      <Briefcase className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Type</p>
+                        <p className="font-medium text-sm">{job.job_type}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Posted</p>
+                      <p className="font-medium text-sm">{new Date(job.created_at).toLocaleDateString()}</p>
+                    </div>
                   </div>
                 </div>
-                <Button variant="outline" size="icon" onClick={handleShare} className="shrink-0 hidden sm:flex">
-                  <Share2 className="h-4 w-4" />
+
+                {/* Route Info */}
+                {job.dest_city && job.dest_state && (
+                  <div className="mb-6 p-4 border rounded-lg">
+                    <h3 className="font-semibold text-sm mb-1">Route Information</h3>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">Destination:</span> {job.dest_city}, {job.dest_state}
+                    </p>
+                  </div>
+                )}
+
+                {/* Description */}
+                {displayDescription && (
+                  <div>
+                    <h2 className="text-lg lg:text-xl font-semibold mb-4">Job Description</h2>
+                    <div 
+                      className="prose prose-sm lg:prose-base dark:prose-invert max-w-none
+                        prose-headings:font-semibold prose-headings:text-foreground
+                        prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-4
+                        prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                        prose-ul:my-4 prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1.5
+                        prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1.5
+                        prose-li:text-foreground/90 prose-li:leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Related Jobs */}
+            <RelatedJobs currentJobId={job.id} clientId={job.client_id} categoryId={job.category_id} organizationId={job.organization_id} />
+
+            <div className="text-center pb-4">
+              <Link to="/jobs">
+                <Button variant="ghost" className="min-h-[44px]">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to All Jobs
                 </Button>
-              </div>
+              </Link>
+            </div>
+          </div>
 
-              {/* Job Details - Grid with better mobile spacing */}
-              <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6 p-3 lg:p-4 bg-muted/50 rounded-lg">
-                {displayLocation && (
-                  <div className="flex items-start gap-2 lg:gap-3">
-                    <MapPin className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-xs lg:text-sm text-muted-foreground">Location</p>
-                      <p className="font-medium text-sm lg:text-base truncate">{displayLocation}</p>
+          {/* Sticky Sidebar (right 1/3 - desktop only) */}
+          <div className="hidden lg:block">
+            <div className="sticky top-20 space-y-4">
+              {/* Apply Card */}
+              <Card className="border-primary/20 shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="text-center">
+                    <LogoAvatar size="xl" className="mx-auto mb-3">
+                      {job.clients?.logo_url ? (
+                        <LogoAvatarImage src={job.clients.logo_url} alt={`${companyName} logo`} />
+                      ) : (
+                        <LogoAvatarFallback iconSize="lg" />
+                      )}
+                    </LogoAvatar>
+                    <h3 className="font-semibold text-lg">{displayTitle}</h3>
+                    <p className="text-sm text-muted-foreground">{companyName}</p>
+                  </div>
+
+                  {salary && (
+                    <div className="flex items-center gap-2 justify-center text-sm bg-success/10 text-success rounded-lg px-3 py-2">
+                      <DollarSign className="h-4 w-4" />
+                      <span className="font-semibold">{salary}</span>
                     </div>
-                  </div>
-                )}
-                {salary && (
-                  <div className="flex items-start gap-2 lg:gap-3">
-                    <DollarSign className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-xs lg:text-sm text-muted-foreground">Salary</p>
-                      <p className="font-medium text-sm lg:text-base truncate">{salary}</p>
+                  )}
+
+                  {displayLocation && (
+                    <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span>{displayLocation}</span>
                     </div>
-                  </div>
-                )}
-                {job.job_type && (
-                  <div className="flex items-start gap-2 lg:gap-3">
-                    <Briefcase className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-xs lg:text-sm text-muted-foreground">Job Type</p>
-                      <p className="font-medium text-sm lg:text-base">{job.job_type}</p>
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-start gap-2 lg:gap-3">
-                  <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-xs lg:text-sm text-muted-foreground">Posted</p>
-                    <p className="font-medium text-sm lg:text-base">{new Date(job.created_at).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              </div>
+                  )}
 
-              {/* Mobile Share Button */}
-              <Button 
-                variant="outline" 
-                className="w-full mb-4 sm:hidden" 
-                onClick={handleShare}
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Share Job
-              </Button>
+                  <Link to={applyUrl} className="block">
+                    <Button className="w-full min-h-[48px] text-base font-semibold" size="lg">
+                      Apply Now
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
 
-              {/* Route Info */}
-              {job.dest_city && job.dest_state && (
-                <div className="mb-4 lg:mb-6 p-3 lg:p-4 border rounded-lg">
-                  <h3 className="font-semibold text-sm lg:text-base mb-1 lg:mb-2">Route Information</h3>
-                  <p className="text-sm lg:text-base text-muted-foreground">
-                    <span className="font-medium text-foreground">Destination:</span> {job.dest_city}, {job.dest_state}
-                  </p>
-                </div>
-              )}
-
-              {/* Description */}
-              {displayDescription && (
-                <div className="mb-6 lg:mb-8">
-                  <h2 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4">Job Description</h2>
-                  <div 
-                    className="prose prose-sm lg:prose-base dark:prose-invert max-w-none
-                      prose-headings:font-semibold prose-headings:text-foreground prose-headings:mt-6 prose-headings:mb-3
-                      prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-3
-                      prose-h3:text-base prose-h3:mt-6 prose-h3:mb-2
-                      prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-4
-                      prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                      prose-strong:text-foreground prose-strong:font-semibold
-                      prose-ul:my-4 prose-ul:list-disc prose-ul:pl-5 prose-ul:space-y-1.5
-                      prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1.5
-                      prose-li:text-foreground/90 prose-li:leading-relaxed
-                      prose-blockquote:border-l-4 prose-blockquote:border-primary/50 prose-blockquote:bg-muted/30 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:text-muted-foreground prose-blockquote:italic"
-                    dangerouslySetInnerHTML={{ __html: sanitizers.sanitizeHtml(displayDescription) }}
-                  />
-                </div>
-              )}
-
-              {/* Desktop CTA Buttons */}
-              <div className="hidden lg:flex gap-3 pt-4 border-t">
-                <Link to={applyUrl} className="flex-1">
-                  <Button className="w-full" size="lg">
-                    Apply Now
-                    <ExternalLink className="w-4 h-4 ml-2" />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleVoiceApply}
+                    disabled={isConnected}
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    Apply with Voice
                   </Button>
-                </Link>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={handleVoiceApply}
-                  disabled={isConnected}
-                  className="flex-1"
-                >
-                  <Mic className="w-4 h-4 mr-2" />
-                  Apply with Voice
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Related Jobs */}
-          <RelatedJobs
-            currentJobId={job.id}
-            clientId={job.client_id}
-            categoryId={job.category_id}
-            organizationId={job.organization_id}
-          />
-
-          {/* Back to Jobs */}
-          <div className="text-center pb-4">
-            <Link to="/jobs">
-              <Button variant="ghost" className="min-h-[44px]">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to All Jobs
-              </Button>
-            </Link>
+              {/* Share Card */}
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">Share this job</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={shareOnLinkedIn} className="flex-1" aria-label="Share on LinkedIn">
+                      <Linkedin className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={shareOnX} className="flex-1" aria-label="Share on X">
+                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1" aria-label="Copy link">
+                      {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:hidden" aria-label="Share">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
-        {/* Sticky Mobile CTA */}
-        <StickyApplyCTA
-          applyUrl={applyUrl}
-          onVoiceApply={handleVoiceApply}
-          isVoiceConnected={isConnected}
-          jobTitle={displayTitle}
-          showVoiceButton={true}
-        />
+        {/* Mobile share row */}
+        <div className="flex gap-2 mt-4 lg:hidden">
+          <Button variant="outline" size="sm" onClick={shareOnLinkedIn} className="flex-1">
+            <Linkedin className="h-4 w-4 mr-1.5" /> LinkedIn
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1">
+            {copied ? <Check className="h-4 w-4 mr-1.5 text-success" /> : <Copy className="h-4 w-4 mr-1.5" />}
+            {copied ? 'Copied' : 'Copy Link'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleShare} className="flex-1">
+            <Share2 className="h-4 w-4 mr-1.5" /> Share
+          </Button>
+        </div>
 
-        {/* Voice Application Panel with Transcripts */}
-        <VoiceApplicationPanel
-          isConnected={isConnected}
-          isSpeaking={isSpeaking}
-          selectedJob={selectedJob}
-          transcripts={transcripts}
-          pendingUserTranscript={pendingUserTranscript}
-          pendingAgentTranscript={pendingAgentTranscript}
-          onEnd={endVoiceApplication}
-        />
+        {/* Sticky Mobile CTA */}
+        <StickyApplyCTA applyUrl={applyUrl} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
+
+        {/* Voice Application Panel */}
+        <VoiceApplicationPanel isConnected={isConnected} isSpeaking={isSpeaking} selectedJob={selectedJob} transcripts={transcripts} pendingUserTranscript={pendingUserTranscript} pendingAgentTranscript={pendingAgentTranscript} onEnd={endVoiceApplication} />
       </div>
     </div>
   );
