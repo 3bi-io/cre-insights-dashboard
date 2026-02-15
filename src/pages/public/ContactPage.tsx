@@ -113,17 +113,15 @@ const ContactPage = () => {
       ]
     }
   };
-  const localBusinessSchema = {
-    "@context": "https://schema.org", "@type": "LocalBusiness",
+  const organizationSchema = {
+    "@context": "https://schema.org", "@type": "Organization",
     "name": "ATS.me", "url": "https://ats.me", "email": "support@ats.me",
-    "address": { "@type": "PostalAddress", "streetAddress": "1400 Quintard Ave", "addressLocality": "Anniston", "addressRegion": "AL", "postalCode": "36201", "addressCountry": "US" },
-    "geo": { "@type": "GeoCoordinates", "latitude": "33.6598", "longitude": "-85.8316" },
   };
 
   return (
     <>
       <SEO title="Contact Us | Get in Touch with ATS.me" description="Have questions about ATS.me? Contact our team for demos, support, or partnership inquiries." canonical="https://ats.me/contact" ogImage="https://ats.me/og-contact.png" />
-      <StructuredData data={[contactPageSchema, faqSchemaData, localBusinessSchema]} />
+      <StructuredData data={[contactPageSchema, faqSchemaData, organizationSchema]} />
       <div className="min-h-screen">
         {/* Hero */}
         <HeroBackground imageSrc={trustHero} imageAlt="Trust and security" variant="compact" overlayVariant="dark" overlayOpacity={65}>
@@ -159,8 +157,8 @@ const ContactPage = () => {
                   <CardContent className="p-4 flex items-center gap-3">
                     <MapPin className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-foreground text-sm">Anniston, AL</p>
-                      <p className="text-xs text-muted-foreground">1400 Quintard Ave, 36201</p>
+                      <p className="font-semibold text-foreground text-sm">Remote First</p>
+                      <p className="text-xs text-muted-foreground">No physical office</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -332,23 +330,6 @@ const ContactPage = () => {
           </div>
         </section>
 
-        {/* Map Section */}
-        <section className="py-10 md:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6 text-center">Our Location</h2>
-            <div className="rounded-xl overflow-hidden border shadow-sm h-[300px] md:h-[400px]">
-              <iframe
-                title="ATS.me Office Location"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=-85.8416%2C33.6498%2C-85.8216%2C33.6698&layer=mapnik&marker=33.6598%2C-85.8316"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-              />
-            </div>
-            <p className="text-sm text-muted-foreground text-center mt-3">1400 Quintard Ave, Anniston, AL 36201</p>
-          </div>
-        </section>
       </div>
     </>
   );
