@@ -1,56 +1,65 @@
 
 
-## Founders Pass Landing Page
+## Add Images to Founders Pass Page
 
-A new public page at `/founders-pass` presenting the limited-time, performance-based pricing offer. This page is purely informational and conversion-focused — no billing logic, just a clear breakdown and CTA to sign up.
+Enhance the Founders Pass page with relevant, professional imagery to increase visual impact and conversion potential. Images will be generated using the AI image generation API (via edge function) and stored in Supabase storage, then referenced by URL on the page.
 
-### Page Structure
+### Image Placements
 
-**1. Hero Banner**
-- "Founders Pass" headline with a "Limited Time" badge
-- Tagline: "Pay only when it works. $0 to start."
-- Primary CTA: "Claim Your Founders Pass" (links to `/auth?plan=founders`)
-- Secondary CTA: "Talk to Us" (links to `/contact?subject=founders-pass`)
+**1. Hero Section -- Background/Accent Image**
+- A professional, high-quality image of diverse people in a workplace setting (aligned with the branding pivot to real-world photography style)
+- Applied as a subtle background or side accent behind the hero text
+- Semi-transparent overlay to maintain text readability
 
-**2. Pricing Breakdown (3-column card layout)**
+**2. Pricing Section -- Decorative Illustration**
+- A clean, modern illustration or graphic representing performance-based value (e.g., upward metrics, connected nodes)
+- Placed as a subtle accent near the pricing summary line
 
-| Service | Cost | Description |
-|---------|------|-------------|
-| Per Apply | $1 | Every application received on your jobs |
-| ATS Delivery | $1 | Comprehensive workflow delivery to your internal ATS |
-| Voice Agent (Optional) | $1 | AI outbound follow-up and fulfillment calls |
+**3. How It Works Section -- Step Icons/Illustrations**
+- Three small contextual illustrations for each step:
+  - Step 1: Person at a laptop signing up
+  - Step 2: Job listings going live across channels
+  - Step 3: Dollar/performance metric visual
+- Replace or complement the current numbered circles
 
-- Footer note: "All in, $3 per apply for the best end-to-end solution available today."
-- Explicit callout: applies are billed per submission, not filtered by qualification criteria, since what counts as "qualified" varies by client and role.
+**4. OG Image for Social Sharing**
+- A dedicated `og-founders-pass.png` in `/public/` for link previews
+- Branded with "Founders Pass -- $3/Apply" messaging
 
-**3. What's Included (zero-cost onboarding section)**
-- Free signup
-- Free onboarding
-- Bring your own publishers/vendors — ATS.me supports inbound and outbound traffic from any third-party source
-- No marketing spend required (optional marketing services available)
-- No contracts, cancel anytime
+### Technical Approach
 
-**4. How It Works (3-step visual)**
-1. Sign up free and onboard your company
-2. Post your jobs — they go live across your chosen channels
-3. Pay $1-$3 per apply as candidates come in
+**New edge function: `generate-image`**
+- Accepts a text prompt, calls the Nano banana image generation API
+- Uploads the resulting image to a Supabase storage bucket (e.g., `page-assets`)
+- Returns the public URL
+- This allows generating images on-demand without storing base64 in the database
 
-**5. CTA Footer**
-- Urgency messaging: "Founders Pass is a limited-time offer for early adopters"
-- Final CTA button
+**Storage bucket: `page-assets`**
+- Create a public Supabase storage bucket for page imagery
+- Store generated images with descriptive filenames (e.g., `founders-pass-hero.webp`)
 
-### Technical Details
+**Page updates (`FoundersPassPage.tsx`)**
+- Add hero background image with dark gradient overlay for text contrast
+- Add step illustrations in the "How It Works" section
+- Add OG image meta tag via the SEO component
 
-**New files:**
-- `src/pages/public/FoundersPassPage.tsx` — page component following existing public page patterns (SEO component, StructuredData, motion animations)
-- `src/features/landing/content/foundersPass.content.ts` — all copy/content centralized
+**New file: `src/features/landing/components/FoundersPassHero.tsx`**
+- Extract hero section into its own component to manage image loading and responsive `srcset`
 
-**Modified files:**
-- `src/components/routing/AppRoutes.tsx` — add `/founders-pass` route under PublicLayout
-- `src/config/publicNavigationConfig.ts` — optionally add nav link (or keep it unlisted, accessible by direct URL only)
-- `src/features/landing/components/sections/CTASection.tsx` — update CTA text from "Start Free Trial" to reference Founders Pass; update footer copy to remove "No contracts" placeholder stats
-- `src/features/landing/content/cta.content.ts` — update stats and CTA labels to reflect Founders Pass pricing
-- `src/features/landing/content/hero.content.ts` — remove the `socialProof.companies: "Trusted by 50+ companies"` fake claim (already removed from UI but still in content file)
-- `src/utils/sitemapGenerator.ts` — add `/founders-pass` entry
+### Files to Create/Modify
 
-**No database or edge function changes.** This is a frontend-only, content-driven page. Usage-based billing metering would be a separate future task.
+| File | Action |
+|------|--------|
+| `supabase/functions/generate-image/index.ts` | Create -- edge function for AI image generation |
+| `src/pages/public/FoundersPassPage.tsx` | Modify -- add image elements to hero, steps, and OG meta |
+| `public/og-founders-pass.png` | Create -- generated OG image for social previews |
+| Supabase storage bucket `page-assets` | Create -- public bucket for generated images |
+
+### Generation Prompts (for AI image model)
+
+1. **Hero**: "Professional photo of a diverse team in a modern logistics office reviewing applicant data on screens, warm lighting, shallow depth of field, corporate editorial style"
+2. **Step 1**: "Clean minimal illustration of a person signing up on a laptop, flat design, blue and white color scheme"
+3. **Step 2**: "Clean minimal illustration of job listings broadcasting across multiple channels, flat design, blue and white color scheme"
+4. **Step 3**: "Clean minimal illustration of a performance dashboard showing cost per application metrics, flat design, blue and white color scheme"
+5. **OG Image**: "Marketing banner reading 'Founders Pass' with '$3 per apply' subtitle, dark gradient background, modern tech aesthetic, 1200x630px"
+
