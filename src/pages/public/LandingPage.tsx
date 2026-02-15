@@ -25,7 +25,7 @@ const LandingPage = () => {
     <main className="min-h-screen">
       <SEO
         title="AI Voice Recruitment Platform | Kanban Pipeline & Talent Pools | ATS.me"
-        description="Hire faster with AI voice technology, visual Kanban pipeline, and talent pool management. Automated callbacks within minutes, 24/7 AI voice agents, complete activity tracking. Trusted by 50+ companies."
+        description="Hire faster with AI voice technology, visual Kanban pipeline, and talent pool management. Automated callbacks within minutes, 24/7 AI voice agents, complete activity tracking."
         keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, ATS software, Tenstreet integration, recruitment automation, kanban pipeline, talent pools, activity tracking"
         canonical="https://ats.me/"
       />
