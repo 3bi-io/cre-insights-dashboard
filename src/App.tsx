@@ -10,6 +10,7 @@ import GlobalErrorBoundary from "@/components/error/GlobalErrorBoundary";
 import { FeatureProvider } from "@/features/shared/components/FeatureProvider";
 import { logger } from "@/lib/logger";
 import AppRoutes from "@/components/routing/AppRoutes";
+import CommandPalette from "@/components/CommandPalette";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { cleanupCorruptedAuthState } from "@/utils/authRecovery";
 import { GeoBlockingProvider } from "@/contexts/GeoBlockingContext";
@@ -75,6 +76,7 @@ const App = React.memo(() => {
                     <TooltipProvider>
                       <Toaster />
                       <Sonner />
+                      <CommandPalette />
                       <AppContent />
                     </TooltipProvider>
                   </FeatureProvider>
