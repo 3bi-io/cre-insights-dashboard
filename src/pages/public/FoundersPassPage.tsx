@@ -14,6 +14,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Check, Clock, DollarSign, Headphones, Send, Zap } from 'lucide-react';
 import { foundersPassContent as c } from '@/features/landing/content/foundersPass.content';
 
+import heroImage from '@/assets/founders-pass-hero.jpg';
+import step1Image from '@/assets/founders-step1-signup.png';
+import step2Image from '@/assets/founders-step2-broadcast.png';
+import step3Image from '@/assets/founders-step3-metrics.png';
+
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
@@ -24,6 +29,7 @@ const fadeUp = {
 };
 
 const pricingIcons = [DollarSign, Send, Headphones];
+const stepImages = [step1Image, step2Image, step3Image];
 
 const FoundersPassPage = () => {
   const navigate = useNavigate();
@@ -35,14 +41,28 @@ const FoundersPassPage = () => {
         description="Limited-time Founders Pass: free signup, free onboarding, $1 per apply, $1 ATS delivery, $1 optional Voice Agent. Pay only when it works."
         keywords="founders pass, performance pricing, pay per apply, recruitment platform, ATS, AI voice agent"
         canonical="https://ats.me/founders-pass"
+        ogImage="/og-founders-pass.png"
       />
       <StructuredData data={buildWebSiteSchema()} />
 
-      {/* Hero */}
-      <section className="relative py-24 md:py-32 px-4 bg-gradient-to-br from-primary/10 via-background to-primary/5 overflow-hidden">
+      {/* Hero with background image */}
+      <section className="relative py-24 md:py-32 px-4 overflow-hidden">
+        {/* Background image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={heroImage}
+            alt="Diverse team reviewing applicant data in a modern logistics office"
+            className="w-full h-full object-cover object-center"
+            loading="eager"
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/80 to-background/70" />
+          <div className="absolute inset-0 bg-primary/5" />
+        </div>
+
         <div className="container mx-auto max-w-4xl text-center relative z-10">
           <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0}>
-            <Badge variant="outline" className="mb-6 text-sm px-4 py-2 border-primary/40">
+            <Badge variant="outline" className="mb-6 text-sm px-4 py-2 border-primary/40 bg-background/80 backdrop-blur-sm">
               <Clock className="h-4 w-4 mr-2" />
               {c.badge}
             </Badge>
@@ -92,7 +112,7 @@ const FoundersPassPage = () => {
             <Button
               size="lg"
               variant="outline"
-              className="text-lg px-8 py-6"
+              className="text-lg px-8 py-6 bg-background/60 backdrop-blur-sm"
               onClick={() => navigate(c.cta.secondaryPath)}
             >
               {c.cta.secondary}
@@ -223,8 +243,13 @@ const FoundersPassPage = () => {
                 variants={fadeUp}
                 custom={i + 1}
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground text-xl font-bold mb-4">
-                  {step.step}
+                <div className="w-24 h-24 mx-auto mb-5 rounded-2xl overflow-hidden bg-primary/5 p-2">
+                  <img
+                    src={stepImages[i]}
+                    alt={step.title}
+                    className="w-full h-full object-contain rounded-xl"
+                    loading="lazy"
+                  />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
                 <p className="text-muted-foreground">{step.description}</p>
