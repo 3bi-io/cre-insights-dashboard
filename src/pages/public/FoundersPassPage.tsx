@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Check, Clock, DollarSign, Headphones, Send, Zap } from 'lucide-react';
 import { foundersPassContent as c } from '@/features/landing/content/foundersPass.content';
+import { FoundersPassVoiceCTA } from '@/features/landing/components/FoundersPassVoiceCTA';
 
 import heroImage from '@/assets/founders-pass-hero.jpg';
 import step1Image from '@/assets/founders-step1-signup.png';
@@ -105,10 +106,7 @@ const FoundersPassPage = () => {
             variants={fadeUp}
             custom={4}
           >
-            <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate(c.cta.primaryPath)}>
-              {c.cta.primary}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <FoundersPassVoiceCTA variant="hero" />
             <Button
               size="lg"
               variant="outline"
@@ -272,10 +270,7 @@ const FoundersPassPage = () => {
             <Zap className="h-8 w-8 text-primary mx-auto mb-4" />
             <p className="text-lg font-medium text-muted-foreground mb-8">{c.urgency}</p>
 
-            <Button size="lg" className="text-lg px-10 py-6" onClick={() => navigate(c.cta.primaryPath)}>
-              {c.cta.primary}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <FoundersPassVoiceCTA variant="footer" />
 
             <p className="mt-8 text-sm text-muted-foreground">{c.footer}</p>
           </motion.div>
