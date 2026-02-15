@@ -1,5 +1,6 @@
 import React from 'react';
-import { Building2 } from 'lucide-react';
+import { Building2, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
@@ -137,6 +138,42 @@ const JobsPage = () => {
             locations={locations}
             clients={clients}
           />
+
+          {/* Active filter chips */}
+          {(searchTerm || locationFilter || clientFilter) && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {searchTerm && (
+                <Badge variant="secondary" className="pl-3 pr-1.5 py-1.5 text-sm flex items-center gap-1.5">
+                  Search: "{searchTerm}"
+                  <button onClick={() => setSearchTerm('')} className="ml-1 hover:bg-muted rounded-full p-0.5" aria-label="Clear search">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {locationFilter && (
+                <Badge variant="secondary" className="pl-3 pr-1.5 py-1.5 text-sm flex items-center gap-1.5">
+                  📍 {locationFilter}
+                  <button onClick={() => setLocationFilter('')} className="ml-1 hover:bg-muted rounded-full p-0.5" aria-label="Clear location filter">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {clientFilter && (
+                <Badge variant="secondary" className="pl-3 pr-1.5 py-1.5 text-sm flex items-center gap-1.5">
+                  🏢 {clients.find(c => c.id === clientFilter)?.name || clientFilter}
+                  <button onClick={() => setClientFilter('')} className="ml-1 hover:bg-muted rounded-full p-0.5" aria-label="Clear company filter">
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              <button 
+                onClick={() => { setSearchTerm(''); setLocationFilter(''); setClientFilter(''); }}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
 
           {/* Results Count */}
           <JobsResultsCount filteredCount={jobs.length} totalCount={totalCount} />
