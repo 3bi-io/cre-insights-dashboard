@@ -11,6 +11,7 @@ import StatsSection from '@/features/landing/components/sections/StatsSection';
 import { LoadingSkeleton } from '@/features/landing/components/shared/LoadingSkeleton';
 
 // Lazy load sections below the fold for better performance
+const ClientLogoMarquee = lazy(() => import('@/features/landing/components/shared/ClientLogoMarquee'));
 const HowItWorksSection = lazy(() => import('@/features/landing/components/sections/HowItWorksSection'));
 const FeaturesSection = lazy(() => import('@/features/landing/components/sections/FeaturesSection'));
 const IntegrationsSection = lazy(() => import('@/features/landing/components/sections/IntegrationsSection'));
@@ -33,6 +34,11 @@ const LandingPage = () => {
       {/* Above the fold - loaded immediately */}
       <HeroSection />
       <StatsSection />
+
+      {/* Social proof logo marquee */}
+      <Suspense fallback={<LoadingSkeleton variant="section" />}>
+        <ClientLogoMarquee />
+      </Suspense>
       
       {/* How It Works - moved below fold */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
