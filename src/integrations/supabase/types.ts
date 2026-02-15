@@ -5537,6 +5537,57 @@ export type Database = {
           },
         ]
       }
+      saved_filters: {
+        Row: {
+          created_at: string
+          filter_config: Json
+          id: string
+          is_default: boolean
+          name: string
+          organization_id: string | null
+          updated_at: string
+          user_id: string
+          view_type: string
+        }
+        Insert: {
+          created_at?: string
+          filter_config?: Json
+          id?: string
+          is_default?: boolean
+          name: string
+          organization_id?: string | null
+          updated_at?: string
+          user_id: string
+          view_type?: string
+        }
+        Update: {
+          created_at?: string
+          filter_config?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          organization_id?: string | null
+          updated_at?: string
+          user_id?: string
+          view_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_filters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_filters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       screening_requests: {
         Row: {
           application_id: string

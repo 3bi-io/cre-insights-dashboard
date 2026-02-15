@@ -15,3 +15,5 @@ export { HeroBackground } from './HeroBackground';
 export type { HeroBackgroundProps } from './HeroBackground';
 export { TruckWheelSpin } from './TruckWheelSpin';
 export { WeldingSparks } from './WeldingSparks';
+export { LiveRegion, useLiveAnnouncer } from './LiveRegion';
+export { FocusTrap } from './FocusTrap';
