@@ -18,19 +18,7 @@ interface FoundersPassVoiceCTAProps {
   className?: string;
 }
 
-const FOUNDERS_PASS_CONTEXT = {
-  useGlobalAgent: true,
-  jobContext: {
-    jobTitle: 'Founders Pass Inquiry',
-    company: 'ATS.me',
-    candidateName: 'there',
-    jobDescription: 'The visitor is interested in the Founders Pass — a limited-time performance-based pricing offer at $3/apply. Help them sign up by collecting their company name, contact info (name, email, phone), fleet size, and any questions they have about the platform.',
-    requirements: 'No requirements — this is a free signup conversation.',
-    benefits: 'Free onboarding, $1 per apply, $1 ATS delivery, $1 optional voice agent, no contracts, cancel anytime.',
-    location: 'Remote / nationwide',
-    salary: 'N/A — this is a vendor pricing inquiry',
-  },
-};
+const FOUNDERS_PASS_AGENT_ID = 'agent_2501khhvkybyfasbhrtp61s0xvcp';
 
 export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
   variant = 'hero',
@@ -69,7 +57,7 @@ export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
   const handleStart = useCallback(async () => {
     setDialogOpen(true);
     try {
-      await connect(null, FOUNDERS_PASS_CONTEXT);
+      await connect(FOUNDERS_PASS_AGENT_ID);
     } catch {
       // Error handled by hook
     }
