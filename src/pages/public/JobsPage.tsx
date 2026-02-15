@@ -1,4 +1,5 @@
 import React from 'react';
+import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Building2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/SEO';
@@ -78,6 +79,11 @@ const JobsPage = () => {
     }))
   };
 
+  const breadcrumbs = buildBreadcrumbSchema([
+    { name: 'Home', href: '/' },
+    { name: 'Jobs', href: '/jobs' },
+  ]);
+
   // Show loading skeleton for initial load
   if (isLoading) {
     return <JobsLoadingSkeleton />;
@@ -92,7 +98,7 @@ const JobsPage = () => {
         canonical="https://ats.me/jobs"
         ogImage="https://ats.me/og-jobs.png"
       />
-      <StructuredData data={jobListSchema} />
+      <StructuredData data={[jobListSchema, breadcrumbs]} />
       
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
