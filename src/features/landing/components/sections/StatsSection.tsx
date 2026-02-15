@@ -1,19 +1,28 @@
 /**
  * Stats Section Component
- * Displays key statistics with 4-column layout
+ * Animated count-up stats with dot-grid background pattern
  */
 
 import React from 'react';
 import { SectionWrapper } from '../shared/SectionWrapper';
-import { StatCard } from '../shared/StatCard';
+import { CountUpStatCard } from '../shared/CountUpStatCard';
 import { statsContent } from '../../content/stats.content';
+import { Clock, Bot, PhoneCall, Rocket } from 'lucide-react';
+
+const statIcons = [Clock, Bot, PhoneCall, Rocket];
 
 const StatsSection = () => {
   return (
-    <SectionWrapper variant="muted" className="py-12 md:py-16">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+    <SectionWrapper variant="default" className="py-14 md:py-20 bg-dot-pattern relative">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {statsContent.map((stat, index) => (
-          <StatCard key={index} value={stat.number} label={stat.label} />
+          <CountUpStatCard
+            key={index}
+            value={stat.number}
+            label={stat.label}
+            icon={statIcons[index]}
+            delay={index * 150}
+          />
         ))}
       </div>
     </SectionWrapper>

@@ -740,3 +740,24 @@
   0%, 100% { opacity: 0.03; }
   50% { opacity: 0.08; }
 }
+
+/* Marquee infinite scroll animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+  width: max-content;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Dot grid pattern background */
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, hsl(var(--primary) / 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
