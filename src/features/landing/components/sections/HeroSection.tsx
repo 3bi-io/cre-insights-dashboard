@@ -99,7 +99,6 @@ const HeroSection = () => {
       variant="full"
       overlayVariant="gradient"
       overlayOpacity={60}
-      enableKenBurns={true}
       enableParallaxOrbs={true}
       onSlideChange={setActiveSlide}
       overlayContent={<WeldingSparks active={activeSlide === 2} />}
