@@ -1,272 +1,247 @@
 
 
-## The Ultimate ATS Platform Refactor: Best-in-Class Applicant Tracking System
+## The Next Chapter: Complete Public-Facing Platform Reimagination
 
-This is a systematic, phased plan to elevate every layer of the platform -- from database and edge functions to UI components and accessibility -- into the most advanced end-to-end applicant tracking solution available today.
-
----
-
-### Phase 1: Candidate Experience Revolution
-
-**Goal:** Make the applicant-facing experience frictionless, mobile-first, and best-in-class.
-
-**1A. Smart Apply Flow Upgrade**
-- Add resume/file upload with drag-and-drop to the `/apply` page (Supabase Storage bucket)
-- Auto-parse uploaded resumes via a new `parse-resume` edge function (extract name, email, phone, experience, skills)
-- Pre-fill form fields from parsed resume data -- candidates see their info instantly
-- Add a progress bar to the multi-step form showing completion percentage
-- Add real-time field validation with inline success/error indicators
-
-**1B. Candidate Portal Overhaul (`/my-jobs`)**
-- Add a visual pipeline tracker to `MyApplicationsPage` showing exactly where each application stands (Applied > Screening > Interview > Offer)
-- Add real-time status notifications via Supabase Realtime subscriptions on the `applications` table
-- Add an interview calendar view with date/time confirmations
-- Add a document vault where candidates can manage uploaded documents (license, certifications, medical cards)
-- Add a messaging center with read receipts between candidates and recruiters on `MessagesPage`
-
-**1C. Job Discovery Enhancement**
-- Add salary range filters, distance/radius search, and CDL class filters to `JobSearchPage`
-- Add a "Match Score" badge on each job card showing how well a candidate's profile matches the job requirements
-- Add "Similar Jobs" recommendations powered by job metadata comparison
-- Add one-click "Easy Apply" for returning candidates using saved profile data
+A systematic, best-in-class refactor of every public-facing page, component, and content layer to represent the most advanced, polished ATS platform on the market.
 
 ---
 
-### Phase 2: Recruiter Command Center
+### 1. Global Navigation Overhaul
 
-**Goal:** Give recruiters a powerful, efficient workspace that eliminates context switching.
+**Header (`src/components/common/Header.tsx`)**
+- Add a mega-menu dropdown for "Features" showing categorized feature highlights with icons (AI Voice, Social Beacon, Pipeline, Integrations)
+- Add a "Demo" CTA button with distinct styling (gradient background, pulse animation) replacing the generic "Start Free Trial"
+- Add announcement bar above the header for promotions/launches (dismissible, stored in localStorage)
+- Add logo transition: compact on scroll with smooth height animation (h-14 to h-12)
 
-**2A. Unified Inbox**
-- Create a new `/admin/inbox` page consolidating all candidate communications (emails, SMS, voice transcripts, screening results) into a single timeline view
-- Add quick-reply templates with merge fields (candidate name, job title, company)
-- Add communication scheduling (send email/SMS at optimal times)
-- Wire into existing `useCommunicationLogs` hook and `send-sms`/`send-application-email` edge functions
+**Bottom Nav (`src/components/public/PublicBottomNav.tsx`)**
+- Add a floating "Apply" FAB (Floating Action Button) with a mic icon that persists across all public pages for instant voice apply access
+- Add subtle haptic-style press animation on nav items
+- Add active indicator as an animated underline rather than just color change
 
-**2B. Application Detail Drawer Upgrade**
-- Replace the current details dialog with a full-width slide-over drawer
-- Add tabbed sections: Overview, Timeline, Documents, Communications, Screening, ATS Sync
-- Add inline status change with one-click actions (Advance, Reject, Schedule Interview)
-- Add recruiter notes with @mention support for team collaboration
-- Add ATS readiness score visualization with a radial progress chart
-- Display data quality indicators showing which fields are missing
-
-**2C. Kanban Board Enhancement**
-- Upgrade `KanbanBoard.tsx` with drag-and-drop between columns using `@dnd-kit`
-- Add swimlanes by job listing or client for multi-pipeline views
-- Add card previews showing candidate photo, key qualifications, and days-in-stage
-- Add column WIP (Work In Progress) limits with visual warnings
-- Add bulk drag (select multiple cards, move together)
-
-**2D. Advanced Search and Filtering**
-- Add a global command palette (Cmd+K) for instant navigation and search across applications, jobs, clients, and candidates
-- Add saved filter presets that recruiters can name and reuse
-- Add boolean search support (e.g., "CDL-A AND hazmat AND NOT felony")
-- Add date range pickers for applied_at, updated_at filtering
+**Footer (`src/components/public/PublicFooter.tsx`)**
+- Add social media links (X, LinkedIn, Facebook) with brand icons
+- Add a newsletter signup inline form (email input + subscribe button)
+- Add "Trusted by X companies" badge in footer
+- Add SOC2/compliance badges placeholder row
+- Restructure to 4-column layout: Product, Solutions, Company, Legal
 
 ---
 
-### Phase 3: Analytics and Intelligence Engine
+### 2. Homepage Revolution (`LandingPage.tsx` + all sections)
 
-**Goal:** Provide actionable insights that drive better hiring decisions.
+**Hero Section (`HeroSection.tsx`)**
+- Replace slideshow with a single cinematic background video loop (WebM/MP4 with image fallback) showing diverse professionals
+- Add animated counter for "Companies Hiring" and "Jobs Available" (count-up animation on viewport entry)
+- Add a live "Recent Hires" ticker/marquee below the CTAs showing real-time placement activity
+- Upgrade headline typography: add gradient text effect on the accent word
+- Add a secondary micro-CTA: "Watch 60-second demo" with play icon linking to `/demo`
 
-**3A. Executive Dashboard**
-- Create a new "Executive" tab in `dashboardConfig.tsx` with:
-  - Time-to-hire funnel visualization (days from apply to hire by stage)
-  - Source effectiveness matrix (cost-per-hire by source, using `source_cost_config`)
-  - Recruiter performance leaderboard (applications processed, response times, hire rates)
-  - Pipeline velocity chart (applications moving through stages over time)
-  - Predictive analytics: estimated time-to-fill based on historical data
+**Stats Section (`StatsSection.tsx`)**
+- Convert from static numbers to animated count-up values triggered on scroll into view
+- Add subtle icon animations (pulse, bounce) per stat card
+- Add a background pattern (dot grid or subtle gradient mesh)
 
-**3B. Real-Time Activity Feed**
-- Create a live activity stream on the dashboard showing platform-wide events
-- Use Supabase Realtime on `candidate_activities` table
-- Show new applications, status changes, ATS sync results, interview schedules
-- Add filtering by event type, client, job, recruiter
+**How It Works Section (`HowItWorksSection.tsx`)**
+- Add an animated progress connector line between steps that fills as user scrolls
+- Add hover state that expands each card to show a mini-illustration or screenshot
+- Add step timing labels ("Under 3 min", "Instant", "24/7") as prominent badges
 
-**3C. Compliance and Audit Dashboard**
-- Create a new `/admin/compliance` page surfacing `audit_logs` data
-- Show PII access patterns, unauthorized access attempts
-- Add EEOC/OFCCP-style reporting templates (applicant demographics by stage)
-- Export audit trails as PDF/CSV for regulatory requirements
+**Features Section (`FeaturesSection.tsx`)**
+- Upgrade from icon-only cards to cards with screenshot/illustration thumbnails
+- Add "Learn more" links per feature card routing to `/features#section-id`
+- Group into tabs: "For Candidates" / "For Employers" to show audience-specific value
 
----
+**Trust Section (`TrustSection.tsx`)**
+- Add real client logos in a scrolling marquee (using existing `public_client_info` data)
+- Add a testimonial carousel with 3 rotating quotes
+- Add star rating visualization (4.8/5 stars with review count)
 
-### Phase 4: ATS Integration Hub Upgrade
+**CTA Section (`CTASection.tsx`)**
+- Add a comparison table: "Before ATS.me" vs "After ATS.me" with checkmarks
+- Add a ROI calculator teaser ("Save $X per hire - See your ROI")
+- Add urgency: "Join X companies already hiring smarter"
 
-**Goal:** Make the ATS Command Center a true integration powerhouse.
-
-**4A. Multi-ATS Orchestration**
-- Upgrade `ATSConnectionsDashboard` to show real-time sync health with heartbeat indicators
-- Add retry queue visualization for failed ATS deliveries with one-click re-send
-- Add field mapping configuration UI (map platform fields to ATS-specific fields per connection)
-- Add webhook event log viewer with request/response inspection
-
-**4B. Bi-Directional Sync**
-- Create a new `ats-inbound-sync` edge function to pull status updates FROM ATS systems back into the platform
-- Update application status automatically when ATS status changes (e.g., Tenstreet marks "Hired")
-- Add conflict resolution UI when platform and ATS statuses diverge
-
-**4C. Integration Marketplace**
-- Add a visual "marketplace" tab to ATS Command Center showing all available integrations
-- Show connection status, sync stats, and one-click setup for each
-- Add DriverReach, Tenstreet, and future ATS systems as installable cards
-- Include partner job boards (Indeed, ZipRecruiter, CDL Job Cast) with feed health indicators
+**New Section: Social Proof Logos**
+- Add a dedicated "Trusted By" section with scrolling client logos between Stats and How It Works
+- Pull logos dynamically from `public_client_info` view
 
 ---
 
-### Phase 5: AI and Automation Layer
+### 3. Jobs Page Elevation (`JobsPage.tsx`)
 
-**Goal:** Make AI a first-class, always-present assistant throughout the platform.
+**Search Experience**
+- Add an autocomplete/typeahead to the search input suggesting job titles and companies as user types
+- Add filter chips that appear below the search bar showing active filters with dismiss (x) buttons
+- Add a map/list toggle to switch between card grid and the existing `/jobs/map` view
+- Add "Save Search" button for logged-in users
 
-**5A. AI Candidate Scoring**
-- Create a new `score-candidate` edge function that evaluates applications against job requirements
-- Score dimensions: qualification match, experience relevance, location proximity, CDL endorsement match
-- Display score as a color-coded badge on application cards and Kanban cards
-- Add "AI Recommended" sorting option to the applications list
+**Job Cards (`PublicJobCard.tsx`)**
+- Add hover elevation with subtle card lift animation
+- Add "New" badge for jobs posted in the last 48 hours
+- Add a "Quick Apply" one-click button for candidates with saved profiles
+- Add estimated salary range visualization as a mini bar chart
+- Add company rating stars if available
+- Reduce button stack: combine "View Details" and "Apply Now" into a single primary "View & Apply" CTA with a secondary "Quick Apply" chip
 
-**5B. AI-Powered Job Description Generator**
-- Add an "AI Write" button to the job creation form
-- Call the existing `openai-chat` or `anthropic-chat` edge function with job context
-- Generate optimized job descriptions with SEO-friendly titles, structured requirements, and compelling benefits
-- Include industry-specific templates based on `industry_vertical`
-
-**5C. Smart Automation Rules**
-- Create a rules engine UI at `/admin/automations` for no-code workflow automation
-- Example rules: "When application score > 80 AND CDL-A, auto-advance to screening"
-- "When application pending > 48 hours, notify assigned recruiter"
-- "When ATS sync fails 3 times, escalate to admin"
-- Store rules in a new `automation_rules` table, execute via a `process-automation-rules` edge function
-
-**5D. Voice Agent Enhancement**
-- Add call outcome tracking to ElevenLabs integration (connected, voicemail, no answer, callback requested)
-- Add scheduled callback queue management
-- Display voice transcripts inline in the application detail drawer
-- Add sentiment analysis on call transcripts via AI
+**Results UX**
+- Add sort indicator showing current sort with arrow icon
+- Add "X new jobs since your last visit" banner for returning visitors (localStorage)
+- Add infinite scroll option as alternative to "Load More" button
 
 ---
 
-### Phase 6: Platform-Wide UX and Accessibility
+### 4. Job Details Page (`JobDetailsPage.tsx`)
 
-**Goal:** Achieve WCAG 2.1 AA compliance and a premium, consistent design system.
-
-**6A. Accessibility Audit and Fixes**
-- Add `aria-label`, `aria-describedby`, and `role` attributes to all interactive components
-- Ensure all forms have visible labels (not just placeholders)
-- Add focus trap management to all dialogs and drawers
-- Ensure color contrast meets 4.5:1 minimum ratio across all themes
-- Add screen reader announcements for dynamic content changes (toast notifications, list updates)
-- Extend `SkipLinks` component to include skip-to-filters, skip-to-results sections
-
-**6B. Design System Polish**
-- Standardize all loading states using `DataLoadingStateHandler` and skeleton patterns
-- Add consistent empty states with `EmptyStateIllustration` across all list/table views
-- Standardize all error boundaries with retry actions
-- Add micro-interactions: button press feedback, card hover elevations, smooth page transitions
-- Implement consistent toast patterns (success = green, error = red, info = blue, warning = amber)
-
-**6C. Mobile Excellence**
-- Optimize all admin pages for tablet/mobile with responsive breakpoints
-- Add swipe gestures on Kanban cards (swipe right = advance, swipe left = reject)
-- Add pull-to-refresh on all list views
-- Ensure bottom navigation doesn't overlap content on any page
-- Add haptic feedback patterns for mobile interactions via Capacitor
-
-**6D. Performance Optimization**
-- Implement virtual scrolling for applications list (hundreds of items)
-- Add image lazy loading with blur-up placeholders for all avatars and logos
-- Implement route-based code splitting for all admin pages
-- Add service worker for offline support on critical pages
-- Optimize React Query cache strategies: staleTime tuning per data type
+- Add a sticky sidebar on desktop (lg+) with: company logo, apply button, salary, location, and share buttons
+- Add structured "Requirements" and "Benefits" sections with icon-tagged items instead of raw HTML
+- Add "Similar Jobs" carousel at the bottom (already has `RelatedJobs`, enhance with horizontal scroll cards)
+- Add social share buttons: LinkedIn, X, copy link with toast confirmation
+- Add "Report this job" link for compliance
+- Add breadcrumb navigation: Home > Jobs > [Job Title]
+- Add "Apply" CTA that transforms into a sticky bottom bar on mobile scroll
 
 ---
 
-### Phase 7: Multi-Tenant and Enterprise Features
+### 5. Employers/Clients Page (`ClientsPage.tsx`)
 
-**Goal:** Make the platform enterprise-ready with team collaboration and org management.
-
-**7A. Team Collaboration**
-- Add real-time presence indicators (who is viewing which application)
-- Add application locking (prevent two recruiters from editing simultaneously)
-- Add @mention notifications in application notes
-- Add team assignment with workload balancing suggestions
-
-**7B. Role-Based Dashboards**
-- Customize dashboard layout per role: Super Admin sees platform-wide metrics, Admin sees org metrics, Recruiter sees their pipeline
-- Add configurable widget grid where users can arrange dashboard cards
-- Add per-user notification preferences for each event type
-
-**7C. White-Label Support**
-- Add organization-level theme customization (primary color, logo, favicon)
-- Apply branding to candidate-facing pages dynamically based on `organization_id`
-- Add custom domain support configuration UI in organization settings
+- Add industry filter tabs (Transportation, Healthcare, Cyber, Trades, All)
+- Add company cards with: logo, name, location, job count, and a "View Jobs" CTA
+- Add hover state showing a brief company description
+- Add alphabetical quick-jump navigation (A-Z sidebar)
+- Add "Featured Employers" spotlight row at the top for premium clients
+- Add a "Become a Partner" CTA banner at the bottom
 
 ---
 
-### Phase 8: Edge Function Hardening
+### 6. Features Page (`FeaturesPage.tsx`)
 
-**Goal:** Make all 80+ edge functions production-grade, monitored, and resilient.
-
-**8A. Standardized Error Handling**
-- Add structured error response format across all edge functions: `{ error: string, code: string, details?: any }`
-- Add request ID tracing (generate UUID per request, include in all logs)
-- Add rate limiting middleware using existing patterns (30 req/min)
-
-**8B. Health and Monitoring**
-- Create a `health-check` edge function that tests connectivity to all external APIs
-- Add a `/admin/system-health` dashboard showing edge function status, error rates, response times
-- Add alerting rules: if error rate exceeds threshold, surface in admin dashboard
-
-**8C. Idempotency and Retry Logic**
-- Add idempotency keys to `submit-application`, `ats-integration`, and webhook functions
-- Implement exponential backoff for failed external API calls
-- Add dead-letter queue pattern for permanently failed operations
+- Add interactive demo previews: embedded screenshots/GIFs for each feature section that animate on hover
+- Add a comparison table: "ATS.me vs Competitors" with feature checkmarks
+- Add pricing preview section with 3 tiers (Free, Pro, Enterprise) and "Contact Sales" for Enterprise
+- Add a video testimonial embed section
+- Add anchor navigation: sticky left sidebar on desktop listing all feature sections with scroll-spy highlighting
 
 ---
 
-### Database Migrations Required
+### 7. Demo Page (`DemoPage.tsx`)
 
-```text
-1. resume_uploads table (candidate_id, file_path, parsed_data, created_at)
-2. interview_schedules table (application_id, scheduled_at, type, location, notes)
-3. automation_rules table (organization_id, trigger, conditions, actions, enabled)
-4. automation_executions table (rule_id, application_id, result, executed_at)
-5. candidate_scores table (application_id, overall_score, dimensions, scored_at)
-6. message_threads table (application_id, messages, read_receipts)
-7. saved_filters table (user_id, name, filter_config)
-8. Add match_score column to applications
-9. Add days_in_stage computed tracking to applications
-10. Add presence_tracking table for real-time collaboration
-```
+- Add an interactive product tour: clickable hotspots on a screenshot walkthrough
+- Add a live sandbox embed showing the Kanban board with sample data
+- Add calendar scheduling integration (Calendly embed or native form) for personalized demos
+- Add video player with chaptered demo video (Voice Apply, Kanban, Analytics, ATS Sync)
+- Add "Try it yourself" CTA linking to a sandbox/trial environment
 
 ---
 
-### Implementation Priority Order
+### 8. Blog Page (`BlogPage.tsx`)
 
-| Priority | Phase | Impact | Effort |
-|----------|-------|--------|--------|
-| 1 | Phase 6A - Accessibility | Critical | Medium |
-| 2 | Phase 2B - Application Detail Drawer | High | Medium |
-| 3 | Phase 2C - Kanban Enhancement | High | Medium |
-| 4 | Phase 2D - Command Palette + Saved Filters | High | Low |
-| 5 | Phase 1A - Smart Apply + Resume Parse | High | High |
-| 6 | Phase 3A - Executive Dashboard | High | Medium |
-| 7 | Phase 5A - AI Candidate Scoring | High | Medium |
-| 8 | Phase 4A - ATS Hub Upgrade | Medium | Medium |
-| 9 | Phase 5C - Automation Rules | High | High |
-| 10 | Phase 1B - Candidate Portal | Medium | High |
-| 11 | Phase 8 - Edge Function Hardening | Critical | Medium |
-| 12 | Phase 7 - Enterprise Features | Medium | High |
+- Add featured/pinned post hero card at the top (larger, with image)
+- Add reading time estimates on cards
+- Add category pills as horizontal scroll on mobile
+- Add search functionality for blog posts
+- Add "Related Posts" sidebar on individual post pages
+- Add author avatar and bio card at the bottom of each post
+- Add social share buttons on each post
+- Add "Subscribe to our newsletter" inline CTA between posts
 
 ---
 
-### Files Summary (Key New/Modified)
+### 9. Resources Page (`ResourcesPage.tsx`)
 
-| Category | New Files | Modified Files |
-|----------|-----------|----------------|
-| Edge Functions | `parse-resume`, `score-candidate`, `process-automation-rules`, `ats-inbound-sync`, `health-check` | `submit-application`, `ats-integration`, all webhook functions |
-| Hooks | `useCommandPalette`, `useSavedFilters`, `useRealtimePresence`, `useCandidateScore`, `useInterviewSchedule` | `usePaginatedApplications`, `useKanbanBoard`, `useApplicationActivities` |
-| Components | `CommandPalette`, `ApplicationDrawer`, `PipelineTracker`, `ExecutiveDashboard`, `AutomationRulesBuilder`, `SystemHealthDashboard` | `KanbanBoard`, `ApplicationsList`, `DashboardTabs`, all form components |
-| Pages | `/admin/inbox`, `/admin/automations`, `/admin/compliance`, `/admin/system-health` | `/admin/applications`, `/admin/ats-command`, `/my-jobs/*` |
+- Add resource type tabs: Guides, Templates, Tools, Webinars
+- Add download count badges on downloadable resources
+- Add a search bar for resources
+- Add "Most Popular" sorting option
+- Add resource cards with thumbnail previews
+- Add gated content pattern: show preview, require email for full download
 
-This plan touches every layer of the stack and can be implemented incrementally, phase by phase, with each phase delivering standalone value. Each phase should be approved individually before implementation begins.
+---
+
+### 10. Contact Page (`ContactPage.tsx`)
+
+- Add a live chat widget trigger button (or Intercom-style)
+- Add office location with embedded map (Leaflet, already installed)
+- Add response time SLA badge: "We respond within 4 hours"
+- Add team member cards showing who will handle each inquiry type
+- Add scheduling link for direct demo bookings
+- Enhance the success state with next-steps guidance and links
+
+---
+
+### 11. Legal Pages (Privacy, Terms, Cookies)
+
+- Add table of contents sidebar with scroll-spy navigation
+- Add "Last Updated" date prominently displayed
+- Add collapsible/accordion sections for long legal text
+- Add "Download as PDF" button
+- Add print-friendly stylesheet
+
+---
+
+### 12. Design System Consistency Pass
+
+**Typography**
+- Standardize all hero headlines to use `font-playfair` for headings across every page
+- Standardize body text to `text-base` / `text-lg` consistently
+- Add a gradient text utility class for accent headlines
+
+**Animations**
+- Standardize all section entrance animations to use the same Framer Motion variants (containerVariants/itemVariants from HeroSection)
+- Add scroll-triggered fade-in for all below-fold content sections
+- Add page transition animations between routes (fade or slide)
+
+**Color and Contrast**
+- Audit all pill badges for WCAG 4.5:1 contrast
+- Standardize CTA button styles: primary = gradient, secondary = outline with border-2
+- Add hover glow effect to all primary CTAs consistently
+
+**Spacing**
+- Standardize all section padding: `py-16 md:py-24` for major sections
+- Standardize container max-widths: `max-w-7xl` for content, `max-w-4xl` for text-heavy pages
+
+---
+
+### 13. Performance and SEO
+
+- Add `loading="lazy"` and `decoding="async"` to all images below the fold
+- Add `fetchpriority="high"` to above-fold hero images
+- Implement route-level code splitting for all public pages (already partially done with lazy imports)
+- Add OpenGraph images for every page (Blog, Resources, Demo, Clients)
+- Add breadcrumb structured data to Jobs, Blog, and Resources pages
+- Add FAQ structured data to Contact and Features pages
+- Optimize LCP by inlining critical CSS for the hero section
+
+---
+
+### Implementation Priority
+
+| Priority | Area | Impact | Effort |
+|----------|------|--------|--------|
+| 1 | Homepage Hero + Stats animations | Highest | Medium |
+| 2 | Job Cards + Search UX upgrade | High | Medium |
+| 3 | Header mega-menu + floating FAB | High | Medium |
+| 4 | Trust Section client logos marquee | High | Low |
+| 5 | Footer restructure + social links | Medium | Low |
+| 6 | Job Details sticky sidebar | High | Medium |
+| 7 | Features page comparison table | Medium | Medium |
+| 8 | Blog featured post + search | Medium | Medium |
+| 9 | Clients page filters + featured row | Medium | Medium |
+| 10 | Contact page map + scheduling | Medium | Medium |
+| 11 | Design system consistency pass | High | Low |
+| 12 | Performance + SEO polish | High | Low |
+
+---
+
+### Files Summary
+
+| Category | Files to Create | Files to Modify |
+|----------|----------------|-----------------|
+| Components | `AnnouncementBar`, `MegaMenu`, `FloatingApplyFAB`, `ClientLogoMarquee`, `CountUpStat`, `ComparisonTable`, `NewsletterSignup` | `Header`, `PublicBottomNav`, `PublicFooter`, `PublicJobCard`, `HeroBackground` |
+| Pages | None (all existing) | `LandingPage`, `JobsPage`, `JobDetailsPage`, `ClientsPage`, `FeaturesPage`, `DemoPage`, `BlogPage`, `ResourcesPage`, `ContactPage` |
+| Sections | `SocialProofSection` | `HeroSection`, `StatsSection`, `HowItWorksSection`, `FeaturesSection`, `TrustSection`, `CTASection` |
+| Content | Updated content files | `hero.content.ts`, `stats.content.ts`, `trust.content.ts`, `cta.content.ts` |
+| Utilities | `useCountUp`, `useScrollSpy` hooks | Existing animation utilities |
+
+Each area delivers standalone visual and functional improvement. Implementation should proceed in priority order, with each batch deployable independently.
 
