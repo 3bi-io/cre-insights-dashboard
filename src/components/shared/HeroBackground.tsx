@@ -37,8 +37,6 @@ export interface HeroBackgroundProps {
   blurPlaceholder?: boolean;
   /** Object position for responsive cropping */
   objectPosition?: string;
-  /** Enable Ken Burns zoom/pan effect on images (default: true for slideshow) */
-  enableKenBurns?: boolean;
   /** Enable floating parallax orbs for depth perception (default: false) */
   enableParallaxOrbs?: boolean;
   /** Callback when active slide changes */
@@ -62,13 +60,6 @@ const variantStyles = {
   compact: 'py-12 md:py-20',
 } as const;
 
-// Ken Burns animation variants for each slide
-const kenBurnsVariants = [
-  'animate-ken-burns-in',
-  'animate-ken-burns-left',
-  'animate-ken-burns-out',
-  'animate-ken-burns-right',
-];
 
 export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   imageSrc,
@@ -83,7 +74,7 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
   priority = true,
   blurPlaceholder = true,
   objectPosition = 'center',
-  enableKenBurns = true,
+  
   enableParallaxOrbs = false,
   onSlideChange,
   overlayContent,
@@ -170,10 +161,6 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
       <div className="absolute inset-0 z-0 overflow-hidden">
         {isInView && allImages.map((src, index) => {
           const isActive = currentSlide === index;
-          const kenBurnsClass = enableKenBurns && hasSlideshow && isActive
-            ? kenBurnsVariants[index % kenBurnsVariants.length]
-            : '';
-          
           return (
             <img
               key={src}
@@ -189,8 +176,6 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
                 'absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out',
                 isActive ? 'opacity-100' : 'opacity-0',
                 index === 0 && blurPlaceholder && !isLoaded && 'opacity-0',
-                kenBurnsClass,
-                enableKenBurns && 'will-change-transform'
               )}
               style={{ objectPosition }}
             />
