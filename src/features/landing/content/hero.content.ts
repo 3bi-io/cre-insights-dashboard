@@ -13,7 +13,6 @@ export const heroContent = {
     secondary: 'For Employers'
   },
   socialProof: {
-    companies: 'Trusted by 50+ companies',
     highlight: 'Callbacks in under 3 minutes'
   },
   industryTags: ['Transportation', 'Cyber', 'Trades', 'Healthcare']

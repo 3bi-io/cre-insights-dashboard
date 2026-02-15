@@ -5,16 +5,18 @@
 import { CTAStat } from './types';
 
 export const ctaContent = {
-  badge: 'Get Started Free',
+  badge: 'Founders Pass — Limited Time',
   title: 'Ready to Hire Faster?',
-  description: 'Join companies that connect with candidates in under 3 minutes. AI voice interviews run 24/7 so you never miss talent.',
+  description: '$0 to start. Pay only $1–$3 per apply. The best end-to-end recruitment solution available today.',
   cta: {
-    primary: 'Start Free Trial',
-    secondary: 'Talk to Sales'
+    primary: 'Claim Your Founders Pass',
+    primaryPath: '/founders-pass',
+    secondary: 'Talk to Us',
+    secondaryPath: '/contact?subject=founders-pass'
   },
   stats: [
-    { value: '30 Days', label: 'Free trial' },
-    { value: '48 Hours', label: 'To go live' },
+    { value: '$0', label: 'To get started' },
+    { value: '$1–$3', label: 'Per apply' },
     { value: 'Priority', label: 'Onboarding support' }
   ] as CTAStat[],
   footer: 'No contracts • Cancel anytime • GDPR compliant'

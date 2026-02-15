@@ -22,6 +22,7 @@ const DemoPage = React.lazy(() => import("@/pages/public/DemoPage"));
 const JobMapPage = React.lazy(() => import("@/pages/public/JobMapPage"));
 const BlogPage = React.lazy(() => import("@/pages/public/BlogPage"));
 const BlogPostPage = React.lazy(() => import("@/pages/public/BlogPostPage"));
+const FoundersPassPage = React.lazy(() => import("@/pages/public/FoundersPassPage"));
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
@@ -172,6 +173,7 @@ const AppRoutes: React.FC = () => {
         <Route path="map" element={<RouteWrapper><JobMapPage /></RouteWrapper>} />
         <Route path="blog" element={<RouteWrapper><BlogPage /></RouteWrapper>} />
         <Route path="blog/:slug" element={<RouteWrapper><BlogPostPage /></RouteWrapper>} />
+        <Route path="founders-pass" element={<RouteWrapper><FoundersPassPage /></RouteWrapper>} />
       </Route>
 
       {/* Voice Agent Demo - redirect to consolidated demo page */}
