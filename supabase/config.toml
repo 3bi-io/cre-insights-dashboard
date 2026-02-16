@@ -266,3 +266,6 @@ verify_jwt = false
 
 [functions.generate-image]
 verify_jwt = true
+
+[functions.generate-founders-pass-creative]
+verify_jwt = false
