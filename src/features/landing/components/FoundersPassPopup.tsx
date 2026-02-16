@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import headerBg from '@/assets/founders-pass-header-bg.jpg';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Zap } from 'lucide-react';
@@ -60,16 +61,22 @@ export const FoundersPassPopup: React.FC = () => {
               transition={{ duration: 0.25, ease: 'easeOut' }}
             >
               {/* Gradient header */}
-              <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-5 text-primary-foreground">
-                <span className="inline-block text-xs font-semibold uppercase tracking-wider bg-primary-foreground/20 rounded-full px-3 py-1 mb-3">
-                  {foundersPassContent.badge}
-                </span>
-                <DialogTitle className="text-2xl font-bold font-playfair text-primary-foreground">
-                  {foundersPassContent.headline}
-                </DialogTitle>
-                <DialogDescription className="text-primary-foreground/90 mt-1 text-sm">
-                  {foundersPassContent.tagline}
-                </DialogDescription>
+              <div
+                className="relative px-6 py-5 text-white bg-cover bg-center"
+                style={{ backgroundImage: `url(${headerBg})` }}
+              >
+                <div className="absolute inset-0 bg-primary/60" />
+                <div className="relative z-10">
+                  <span className="inline-block text-xs font-semibold uppercase tracking-wider bg-white/20 rounded-full px-3 py-1 mb-3">
+                    {foundersPassContent.badge}
+                  </span>
+                  <DialogTitle className="text-2xl font-bold font-playfair text-white">
+                    {foundersPassContent.headline}
+                  </DialogTitle>
+                  <DialogDescription className="text-white/90 mt-1 text-sm">
+                    {foundersPassContent.tagline}
+                  </DialogDescription>
+                </div>
               </div>
 
               {/* Pricing pills */}
