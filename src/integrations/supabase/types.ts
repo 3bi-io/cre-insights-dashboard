@@ -4718,6 +4718,63 @@ export type Database = {
           },
         ]
       }
+      organization_call_settings: {
+        Row: {
+          auto_follow_up_enabled: boolean
+          business_days: number[]
+          business_hours_end: string
+          business_hours_start: string
+          business_hours_timezone: string
+          created_at: string
+          follow_up_delay_hours: number
+          id: string
+          max_attempts: number
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          auto_follow_up_enabled?: boolean
+          business_days?: number[]
+          business_hours_end?: string
+          business_hours_start?: string
+          business_hours_timezone?: string
+          created_at?: string
+          follow_up_delay_hours?: number
+          id?: string
+          max_attempts?: number
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          auto_follow_up_enabled?: boolean
+          business_days?: number[]
+          business_hours_end?: string
+          business_hours_start?: string
+          business_hours_timezone?: string
+          created_at?: string
+          follow_up_delay_hours?: number
+          id?: string
+          max_attempts?: number
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_call_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_call_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_features: {
         Row: {
           created_at: string
