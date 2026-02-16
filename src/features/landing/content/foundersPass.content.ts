@@ -70,7 +70,7 @@ export const foundersPassContent = {
 
   cta: {
     primary: 'Claim Your Founders Pass',
-    primaryPath: '/auth?plan=founders',
+    primaryPath: '/founders-pass',
     secondary: 'Talk to Us',
     secondaryPath: '/contact?subject=founders-pass',
   },
