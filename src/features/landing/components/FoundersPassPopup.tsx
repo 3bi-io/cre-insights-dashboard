@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import headerBg from '@/assets/founders-pass-header-bg.jpg';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Zap } from 'lucide-react';
+import { X, Check, Zap, ArrowRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -110,16 +110,38 @@ export const FoundersPassPopup: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="px-6 pb-5 space-y-2">
-                <Button onClick={handleCTA} className="w-full" size="lg">
+              <div className="px-6 pb-5 space-y-3">
+                <p className="text-xs text-center text-primary font-semibold tracking-wide">
+                  {foundersPassContent.urgency}
+                </p>
+                <Button
+                  onClick={handleCTA}
+                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-[0_0_20px_hsl(var(--primary)/0.4)] animate-pulse-glow group"
+                  size="lg"
+                >
                   {foundersPassContent.cta.primary}
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                  onClick={() => {
+                    handleDismiss();
+                    navigate(foundersPassContent.cta.secondaryPath);
+                  }}
+                >
+                  {foundersPassContent.cta.secondary}
                 </Button>
                 <button
                   onClick={handleDismiss}
-                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+                  className="w-full text-center text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-0.5"
                 >
                   Maybe later
                 </button>
+                <p className="text-[11px] text-center text-muted-foreground/50 pt-1">
+                  {foundersPassContent.footer}
+                </p>
               </div>
             </motion.div>
           )}
