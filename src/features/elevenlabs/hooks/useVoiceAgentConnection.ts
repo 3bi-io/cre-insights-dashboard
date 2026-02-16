@@ -208,10 +208,11 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
   const getSignedUrl = useCallback(async (agentId: string | null, context?: any): Promise<SignedUrlResponse> => {
     try {
       const useGlobalAgent = context?.useGlobalAgent || false;
-      logger.debug('Requesting signed URL', { agentId, useGlobalAgent }, 'VoiceAgentConnection');
+      const directAgentId = context?.directAgentId || undefined;
+      logger.debug('Requesting signed URL', { agentId, useGlobalAgent, directAgentId }, 'VoiceAgentConnection');
       
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: { agentId, useGlobalAgent }
+        body: { agentId, useGlobalAgent, directAgentId }
       });
 
       if (error) {
