@@ -122,17 +122,6 @@ export const FoundersPassPopup: React.FC = () => {
                   {foundersPassContent.cta.primary}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  size="sm"
-                  onClick={() => {
-                    handleDismiss();
-                    navigate(foundersPassContent.cta.secondaryPath);
-                  }}
-                >
-                  {foundersPassContent.cta.secondary}
-                </Button>
                 <button
                   onClick={handleDismiss}
                   className="w-full text-center text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors py-0.5"
