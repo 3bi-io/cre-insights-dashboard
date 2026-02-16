@@ -1,65 +1,39 @@
 
 
-## Add Images to Founders Pass Page
+# Founders Pass Popup Modal for Landing Page
 
-Enhance the Founders Pass page with relevant, professional imagery to increase visual impact and conversion potential. Images will be generated using the AI image generation API (via edge function) and stored in Supabase storage, then referenced by URL on the page.
+## Overview
+Create a timed popup modal on the homepage (`/`) that promotes the Founders Pass offer. The modal appears after a short delay, is dismissible, and remembers if the user has already seen/dismissed it (via localStorage) so it doesn't annoy repeat visitors.
 
-### Image Placements
+## Behavior
+- Appears **5 seconds** after the landing page loads
+- Dismissible via close button or clicking outside
+- Once dismissed, a localStorage flag (`founders-pass-popup-dismissed`) prevents it from showing again for **7 days**
+- Includes a primary CTA ("Claim Your Founders Pass") linking to `/founders-pass` and a secondary dismiss option
+- Uses existing Radix Dialog component for accessibility
 
-**1. Hero Section -- Background/Accent Image**
-- A professional, high-quality image of diverse people in a workplace setting (aligned with the branding pivot to real-world photography style)
-- Applied as a subtle background or side accent behind the hero text
-- Semi-transparent overlay to maintain text readability
+## Design
+- Gradient accent header with the "Limited Time Offer" badge
+- Headline: "Founders Pass"
+- Tagline: "Pay only when it works. $0 to start."
+- Three compact pricing pills ($1 Per Apply, $1 ATS Delivery, $1 Voice Agent)
+- Key bullet points from the included benefits
+- Primary CTA button + "Maybe later" dismiss link
+- Framer Motion entrance animation (scale + fade)
 
-**2. Pricing Section -- Decorative Illustration**
-- A clean, modern illustration or graphic representing performance-based value (e.g., upward metrics, connected nodes)
-- Placed as a subtle accent near the pricing summary line
+---
 
-**3. How It Works Section -- Step Icons/Illustrations**
-- Three small contextual illustrations for each step:
-  - Step 1: Person at a laptop signing up
-  - Step 2: Job listings going live across channels
-  - Step 3: Dollar/performance metric visual
-- Replace or complement the current numbered circles
+## Technical Details
 
-**4. OG Image for Social Sharing**
-- A dedicated `og-founders-pass.png` in `/public/` for link previews
-- Branded with "Founders Pass -- $3/Apply" messaging
+### New File: `src/features/landing/components/FoundersPassPopup.tsx`
+- Uses `Dialog` from `@/components/ui/dialog`
+- Uses `framer-motion` for entrance animation
+- Uses `useNavigate` for CTA navigation
+- Reads/writes `localStorage` key `founders-pass-popup-dismissed` with a timestamp
+- `useEffect` with `setTimeout(5000)` to trigger open state
+- Content sourced from `foundersPassContent` in `foundersPass.content.ts`
 
-### Technical Approach
-
-**New edge function: `generate-image`**
-- Accepts a text prompt, calls the Nano banana image generation API
-- Uploads the resulting image to a Supabase storage bucket (e.g., `page-assets`)
-- Returns the public URL
-- This allows generating images on-demand without storing base64 in the database
-
-**Storage bucket: `page-assets`**
-- Create a public Supabase storage bucket for page imagery
-- Store generated images with descriptive filenames (e.g., `founders-pass-hero.webp`)
-
-**Page updates (`FoundersPassPage.tsx`)**
-- Add hero background image with dark gradient overlay for text contrast
-- Add step illustrations in the "How It Works" section
-- Add OG image meta tag via the SEO component
-
-**New file: `src/features/landing/components/FoundersPassHero.tsx`**
-- Extract hero section into its own component to manage image loading and responsive `srcset`
-
-### Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `supabase/functions/generate-image/index.ts` | Create -- edge function for AI image generation |
-| `src/pages/public/FoundersPassPage.tsx` | Modify -- add image elements to hero, steps, and OG meta |
-| `public/og-founders-pass.png` | Create -- generated OG image for social previews |
-| Supabase storage bucket `page-assets` | Create -- public bucket for generated images |
-
-### Generation Prompts (for AI image model)
-
-1. **Hero**: "Professional photo of a diverse team in a modern logistics office reviewing applicant data on screens, warm lighting, shallow depth of field, corporate editorial style"
-2. **Step 1**: "Clean minimal illustration of a person signing up on a laptop, flat design, blue and white color scheme"
-3. **Step 2**: "Clean minimal illustration of job listings broadcasting across multiple channels, flat design, blue and white color scheme"
-4. **Step 3**: "Clean minimal illustration of a performance dashboard showing cost per application metrics, flat design, blue and white color scheme"
-5. **OG Image**: "Marketing banner reading 'Founders Pass' with '$3 per apply' subtitle, dark gradient background, modern tech aesthetic, 1200x630px"
+### Modified File: `src/pages/public/LandingPage.tsx`
+- Import and render `<FoundersPassPopup />` inside the `<main>` element
+- No lazy loading needed since it's a lightweight dialog component with its own delay logic
 
