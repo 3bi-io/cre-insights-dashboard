@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import AppSidebar from './AppSidebar';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import ThemeToggle from './ThemeToggle';
 import { useIsMobile } from '@/hooks/use-mobile';
 import ChatBot from '@/components/chat/MobileChatBot';
@@ -154,7 +155,9 @@ const LayoutContent = () => {
           className="flex-1 h-full pb-16 md:pb-0"
         >
           <main id="main-content" className="min-h-full p-4 md:p-6" tabIndex={-1}>
-            <Outlet />
+            <ErrorBoundary name="AdminLayout" level="error" fallbackProps={{ title: 'Something went wrong', description: 'This page encountered an error. Please try again.' }}>
+              <Outlet />
+            </ErrorBoundary>
           </main>
         </PullToRefresh>
         
