@@ -166,6 +166,20 @@ serve(async (req) => {
       const limit = Math.min(body.limit || 10, 50);
       logger.info(`Processing queued outbound calls (limit: ${limit})`);
 
+      // Promote scheduled calls whose scheduled_at has passed to queued
+      const { data: promoted, error: promoteError } = await supabase
+        .from('outbound_calls')
+        .update({ status: 'queued', updated_at: new Date().toISOString() })
+        .eq('status', 'scheduled')
+        .lte('scheduled_at', new Date().toISOString())
+        .select('id');
+
+      if (promoteError) {
+        logger.warn('Failed to promote scheduled calls', { error: promoteError });
+      } else if (promoted && promoted.length > 0) {
+        logger.info(`Promoted ${promoted.length} scheduled calls to queued`);
+      }
+
       const { data: queuedCalls, error: fetchError } = await supabase
         .from('outbound_calls')
         .select('id')

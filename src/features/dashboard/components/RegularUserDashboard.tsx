@@ -17,9 +17,9 @@ export const RegularUserDashboard = React.memo(() => {
   const { data: metrics, isLoading } = useUserDashboardData();
 
   const quickActions = useMemo(() => [
-    { label: 'View Applications', href: '/admin/applications', icon: FileText },
-    { label: 'Manage Jobs', href: '/admin/jobs', icon: Briefcase },
-    { label: 'View AI Analytics', href: '/admin/ai-analytics', icon: BarChart3 },
+    { label: 'View Applications', href: '/dashboard?tab=applications', icon: FileText },
+    { label: 'Browse Jobs', href: '/my-jobs', icon: Briefcase },
+    { label: 'View Dashboard', href: '/dashboard', icon: BarChart3 },
   ], []);
 
   const sortedApplications = useMemo(() => 
