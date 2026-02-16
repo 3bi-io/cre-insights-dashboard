@@ -7992,6 +7992,10 @@ export type Database = {
       }
       get_current_user_role: { Args: never; Returns: string }
       get_dashboard_metrics: { Args: never; Returns: Json }
+      get_next_business_hours_start: {
+        Args: { p_org_id?: string }
+        Returns: string
+      }
       get_org_id_by_slug: { Args: { _slug: string }; Returns: string }
       get_organization_applications: {
         Args: { _limit?: number; _offset?: number; _org_id: string }
@@ -8102,6 +8106,10 @@ export type Database = {
         Returns: undefined
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_within_business_hours: {
+        Args: { p_org_id?: string }
+        Returns: boolean
+      }
       normalize_phone_number: { Args: { phone_input: string }; Returns: string }
       organization_has_platform_access: {
         Args: { _org_id: string; _platform_name: string }
