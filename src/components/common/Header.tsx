@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import ThemeToggle from '@/components/ThemeToggle';
 import { publicNavigation, type PublicNavItem } from '@/config/publicNavigationConfig';
 import { isActivePath } from '@/utils/navigationUtils';
-import { Mic, Bot, BarChart3, Link2, Sparkles, X, ChevronDown, Play } from 'lucide-react';
+import { Mic, Bot, BarChart3, Link2, Sparkles, X, ChevronDown } from 'lucide-react';
 
 interface HeaderProps {
   navigation?: PublicNavItem[];
@@ -186,15 +186,6 @@ export const Header: React.FC<HeaderProps> = ({
                       className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
                       Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/demo">
-                    <Button 
-                      size="sm" 
-                      className="min-h-[44px] text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-md hover:shadow-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    >
-                      <Play className="h-3.5 w-3.5 mr-1.5 fill-current" />
-                      Get Demo
                     </Button>
                   </Link>
                 </>
