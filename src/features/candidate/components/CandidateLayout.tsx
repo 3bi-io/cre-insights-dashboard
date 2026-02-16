@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SkipLinks } from '@/components/shared/SkipLinks';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { LogOut, Settings, Bell, ChevronRight, Search, Home, Briefcase, Bookmark, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/components/common';
@@ -206,7 +207,9 @@ const CandidateLayout = () => {
 
         {/* Main Content */}
         <main id="main-content" className="flex-1 overflow-y-auto pb-20 md:pb-0" tabIndex={-1}>
-          <Outlet />
+          <ErrorBoundary name="CandidatePortal" level="error" fallbackProps={{ title: 'Something went wrong', description: 'This page encountered an error. Please try again.' }}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

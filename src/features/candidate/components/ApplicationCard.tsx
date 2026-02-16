@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Calendar, MessageSquare, X, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, X, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { ApplicationProgress } from './ApplicationProgress';
 import { getStatusColor, getStatusLabel } from '@/features/applications/utils/statusColors';
@@ -149,12 +149,6 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link to="/my-jobs/messages">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Message
-            </Link>
-          </Button>
           <Button variant="outline" size="sm" className="flex-1" asChild>
             <Link to={`/my-jobs/job/${job?.id}`}>
               <ExternalLink className="h-4 w-4 mr-2" />

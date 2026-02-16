@@ -48,7 +48,7 @@ const CandidateLayout = React.lazy(() => import("@/features/candidate").then(m =
 const MyApplicationsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MyApplicationsPage })));
 const JobSearchPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.JobSearchPage })));
 const SavedJobsPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.SavedJobsPage })));
-const MessagesPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.MessagesPage })));
+
 const ProfilePage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.ProfilePage })));
 const JobDetailPage = React.lazy(() => import("@/features/candidate").then(m => ({ default: m.JobDetailPage })));
 const GrokChatPage = React.lazy(() => import("@/features/ai-chat").then(m => ({ default: m.GrokChatPage })));
@@ -230,7 +230,7 @@ const AppRoutes: React.FC = () => {
         <Route path="applications" element={<RouteWrapper><MyApplicationsPage /></RouteWrapper>} />
         <Route path="search" element={<RouteWrapper><JobSearchPage /></RouteWrapper>} />
         <Route path="saved" element={<RouteWrapper><SavedJobsPage /></RouteWrapper>} />
-        <Route path="messages" element={<RouteWrapper><MessagesPage /></RouteWrapper>} />
+        <Route path="messages" element={<Navigate to="/my-jobs/notifications" replace />} />
         <Route path="profile" element={<RouteWrapper><ProfilePage /></RouteWrapper>} />
         <Route path="job/:jobId" element={<RouteWrapper><JobDetailPage /></RouteWrapper>} />
         <Route path="settings" element={<RouteWrapper><CandidateAccountSettings /></RouteWrapper>} />

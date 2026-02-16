@@ -6,6 +6,7 @@ import {
   Bookmark,
   User,
   MessageSquare,
+  Bell as BellIcon,
   LayoutDashboard, 
   BriefcaseIcon, 
   Users, 
@@ -75,11 +76,10 @@ export const candidateNavigation: CandidateNavItem[] = [
     description: 'Manage your profile'
   },
   { 
-    name: 'Messages', 
-    href: '/my-jobs/messages', 
-    icon: MessageSquare,
-    badge: 'Soon',
-    description: 'Recruiter messages'
+    name: 'Notifications', 
+    href: '/my-jobs/notifications', 
+    icon: BellIcon,
+    description: 'Notification preferences'
   }
 ];
 

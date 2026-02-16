@@ -153,13 +153,13 @@ const CandidateDashboard = () => {
           </Card>
         </Link>
 
-        <Link to="/my-jobs/messages">
+        <Link to="/my-jobs/notifications">
           <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-sm text-muted-foreground">Unread Messages</p>
+                  <p className="text-2xl font-bold">⚙️</p>
+                  <p className="text-sm text-muted-foreground">Notifications</p>
                 </div>
                 <Bell className="h-8 w-8 text-muted-foreground" />
               </div>
