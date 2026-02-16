@@ -36,12 +36,16 @@ Deno.serve(async (req) => {
       return errorResponse('Too many requests. Please try again later.', 429, undefined, origin ?? undefined);
     }
 
-    const { agentId, useGlobalAgent } = await req.json();
+    const { agentId, useGlobalAgent, directAgentId } = await req.json();
 
     // Determine effective agent ID
     let effectiveAgentId: string;
 
-    if (useGlobalAgent) {
+    if (directAgentId) {
+      // Direct mode - use the provided ElevenLabs agent ID without DB lookup
+      effectiveAgentId = directAgentId;
+      logger.info('Using direct agent ID', { agentId: effectiveAgentId.substring(0, 8) + '...' });
+    } else if (useGlobalAgent) {
       // Global agent mode - use system-configured agent for all jobs
       const globalAgentId = Deno.env.get('GLOBAL_VOICE_AGENT_ID');
       if (!globalAgentId) {

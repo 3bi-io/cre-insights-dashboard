@@ -18,7 +18,7 @@ interface FoundersPassVoiceCTAProps {
   className?: string;
 }
 
-
+const FOUNDERS_PASS_AGENT_ID = 'agent_2501khhvkybyfasbhrtp61s0xvcp';
 
 export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
   variant = 'hero',
@@ -57,7 +57,7 @@ export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
   const handleStart = useCallback(async () => {
     setDialogOpen(true);
     try {
-      await connect(null, { useGlobalAgent: true });
+      await connect(null, { directAgentId: FOUNDERS_PASS_AGENT_ID });
     } catch {
       // Error handled by hook
     }
