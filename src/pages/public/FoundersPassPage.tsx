@@ -1,17 +1,15 @@
 /**
  * Founders Pass Landing Page
- * Performance-based pricing for early adopters
+ * Performance-based pricing for early adopters — mobile-first, best-in-class UX
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildWebSiteSchema } from '@/components/StructuredData';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Check, Clock, DollarSign, Headphones, Send, Zap } from 'lucide-react';
+import { Check, Clock, DollarSign, Headphones, Send, Zap } from 'lucide-react';
 import { foundersPassContent as c } from '@/features/landing/content/foundersPass.content';
 import { FoundersPassVoiceCTA } from '@/features/landing/components/FoundersPassVoiceCTA';
 
@@ -21,11 +19,11 @@ import step2Image from '@/assets/founders-step2-broadcast.png';
 import step3Image from '@/assets/founders-step3-metrics.png';
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.5 },
+    transition: { delay: i * 0.08, duration: 0.45, ease: 'easeOut' as const },
   }),
 };
 
@@ -33,8 +31,6 @@ const pricingIcons = [DollarSign, Send, Headphones];
 const stepImages = [step1Image, step2Image, step3Image];
 
 const FoundersPassPage = () => {
-  const navigate = useNavigate();
-
   return (
     <main className="min-h-screen">
       <SEO
@@ -46,9 +42,9 @@ const FoundersPassPage = () => {
       />
       <StructuredData data={buildWebSiteSchema()} />
 
-      {/* Hero with background image */}
-      <section className="relative py-24 md:py-32 px-4 overflow-hidden">
-        {/* Background image */}
+      {/* ── Hero ── */}
+      <section className="relative min-h-[85dvh] sm:min-h-[70dvh] flex items-center px-5 sm:px-6 overflow-hidden">
+        {/* Background */}
         <div className="absolute inset-0 z-0">
           <img
             src={heroImage}
@@ -57,20 +53,20 @@ const FoundersPassPage = () => {
             loading="eager"
             fetchPriority="high"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/80 to-background/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/85 to-background/75 sm:bg-gradient-to-br sm:from-background/90 sm:via-background/80 sm:to-background/70" />
           <div className="absolute inset-0 bg-primary/5" />
         </div>
 
-        <div className="container mx-auto max-w-4xl text-center relative z-10">
+        <div className="container mx-auto max-w-4xl text-center relative z-10 py-16 sm:py-24">
           <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0}>
-            <Badge variant="outline" className="mb-6 text-sm px-4 py-2 border-primary/40 bg-background/80 backdrop-blur-sm">
-              <Clock className="h-4 w-4 mr-2" />
+            <Badge variant="outline" className="mb-5 sm:mb-6 text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 border-primary/40 bg-background/80 backdrop-blur-sm">
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               {c.badge}
             </Badge>
           </motion.div>
 
           <motion.h1
-            className="font-playfair text-5xl md:text-7xl font-bold mb-4 tracking-tight"
+            className="font-playfair text-4xl sm:text-5xl md:text-7xl font-bold mb-3 sm:mb-4 tracking-tight"
             initial="hidden"
             animate="visible"
             variants={fadeUp}
@@ -80,7 +76,7 @@ const FoundersPassPage = () => {
           </motion.h1>
 
           <motion.p
-            className="text-2xl md:text-3xl font-medium text-primary mb-4"
+            className="text-xl sm:text-2xl md:text-3xl font-medium text-primary mb-3 sm:mb-4"
             initial="hidden"
             animate="visible"
             variants={fadeUp}
@@ -90,7 +86,7 @@ const FoundersPassPage = () => {
           </motion.p>
 
           <motion.p
-            className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10"
+            className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 px-2"
             initial="hidden"
             animate="visible"
             variants={fadeUp}
@@ -100,43 +96,37 @@ const FoundersPassPage = () => {
           </motion.p>
 
           <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
             initial="hidden"
             animate="visible"
             variants={fadeUp}
             custom={4}
           >
             <FoundersPassVoiceCTA variant="hero" />
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6 bg-background/60 backdrop-blur-sm"
-              onClick={() => navigate(c.cta.secondaryPath)}
-            >
-              {c.cta.secondary}
-            </Button>
           </motion.div>
         </div>
       </section>
 
-      {/* Pricing Breakdown */}
-      <section className="py-20 px-4">
+      {/* ── Pricing Breakdown ── */}
+      <section className="py-16 sm:py-20 px-5 sm:px-6">
         <div className="container mx-auto max-w-5xl">
           <motion.div
-            className="text-center mb-14"
+            className="text-center mb-10 sm:mb-14"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            viewport={{ once: true, margin: '-40px' }}
             variants={fadeUp}
             custom={0}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Performance-Based Pricing</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+              Simple, Performance-Based Pricing
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
               No upfront costs. No subscriptions. Pay only when candidates apply.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             {c.pricing.map((tier, i) => {
               const Icon = pricingIcons[i];
               return (
@@ -144,24 +134,24 @@ const FoundersPassPage = () => {
                   key={tier.service}
                   initial="hidden"
                   whileInView="visible"
-                  viewport={{ once: true }}
+                  viewport={{ once: true, margin: '-20px' }}
                   variants={fadeUp}
                   custom={i + 1}
                 >
-                  <Card className="h-full border-border/60 hover:border-primary/40 transition-colors">
-                    <CardContent className="p-8 text-center">
-                      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-5">
-                        <Icon className="h-7 w-7 text-primary" />
+                  <Card className="h-full border-border/60 hover:border-primary/40 hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-6 sm:p-8 text-center">
+                      <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 mb-4 sm:mb-5">
+                        <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
                       </div>
                       {tier.badge && (
                         <Badge variant="secondary" className="mb-3 text-xs">
                           {tier.badge}
                         </Badge>
                       )}
-                      <div className="text-5xl font-bold mb-1">{tier.cost}</div>
-                      <div className="text-sm text-muted-foreground mb-4">per apply</div>
-                      <h3 className="text-xl font-semibold mb-2">{tier.service}</h3>
-                      <p className="text-muted-foreground text-sm mb-4">{tier.description}</p>
+                      <div className="text-4xl sm:text-5xl font-bold mb-1">{tier.cost}</div>
+                      <div className="text-sm text-muted-foreground mb-3 sm:mb-4">per apply</div>
+                      <h3 className="text-lg sm:text-xl font-semibold mb-2">{tier.service}</h3>
+                      <p className="text-muted-foreground text-sm mb-3 sm:mb-4">{tier.description}</p>
                       <p className="text-xs text-muted-foreground/70 leading-relaxed">{tier.note}</p>
                     </CardContent>
                   </Card>
@@ -171,7 +161,7 @@ const FoundersPassPage = () => {
           </div>
 
           <motion.p
-            className="text-center mt-10 text-lg font-semibold text-primary"
+            className="text-center mt-8 sm:mt-10 text-base sm:text-lg font-semibold text-primary"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -183,11 +173,11 @@ const FoundersPassPage = () => {
         </div>
       </section>
 
-      {/* What's Included */}
-      <section className="py-20 px-4 bg-muted/30">
+      {/* ── What's Included ── */}
+      <section className="py-16 sm:py-20 px-5 sm:px-6 bg-muted/30">
         <div className="container mx-auto max-w-3xl">
           <motion.h2
-            className="text-3xl md:text-4xl font-bold text-center mb-12"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 sm:mb-12"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -197,30 +187,30 @@ const FoundersPassPage = () => {
             Everything Included — Zero Cost to Start
           </motion.h2>
 
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {c.included.map((item, i) => (
               <motion.div
                 key={i}
-                className="flex items-start gap-3"
+                className="flex items-start gap-3 p-3 sm:p-0 rounded-lg bg-background/60 sm:bg-transparent"
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
                 variants={fadeUp}
-                custom={i * 0.5}
+                custom={i * 0.4}
               >
                 <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <span className="text-foreground">{item}</span>
+                <span className="text-foreground text-sm sm:text-base">{item}</span>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 px-4">
+      {/* ── How It Works ── */}
+      <section className="py-16 sm:py-20 px-5 sm:px-6">
         <div className="container mx-auto max-w-4xl">
           <motion.h2
-            className="text-3xl md:text-4xl font-bold text-center mb-14"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-10 sm:mb-14"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
@@ -230,35 +220,41 @@ const FoundersPassPage = () => {
             How It Works
           </motion.h2>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="flex flex-col sm:grid sm:grid-cols-3 gap-10 sm:gap-8">
             {c.steps.map((step, i) => (
               <motion.div
                 key={step.step}
-                className="text-center"
+                className="flex sm:flex-col items-start sm:items-center sm:text-center gap-4 sm:gap-0"
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true }}
+                viewport={{ once: true, margin: '-20px' }}
                 variants={fadeUp}
                 custom={i + 1}
               >
-                <div className="w-24 h-24 mx-auto mb-5 rounded-2xl overflow-hidden bg-primary/5 p-2">
+                {/* Step image */}
+                <div className="w-16 h-16 sm:w-24 sm:h-24 shrink-0 sm:mx-auto sm:mb-5 rounded-xl sm:rounded-2xl overflow-hidden bg-primary/5 p-1.5 sm:p-2">
                   <img
                     src={stepImages[i]}
                     alt={step.title}
-                    className="w-full h-full object-contain rounded-xl"
+                    className="w-full h-full object-contain rounded-lg sm:rounded-xl"
                     loading="lazy"
                   />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                <p className="text-muted-foreground">{step.description}</p>
+                <div>
+                  <div className="text-xs font-bold text-primary uppercase tracking-wider mb-1 sm:mb-0">
+                    Step {step.step}
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-1 sm:mb-2">{step.title}</h3>
+                  <p className="text-muted-foreground text-sm sm:text-base">{step.description}</p>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Footer */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 via-background to-primary/5">
+      {/* ── CTA Footer ── */}
+      <section className="py-16 sm:py-20 px-5 sm:px-6 bg-gradient-to-br from-primary/10 via-background to-primary/5">
         <div className="container mx-auto max-w-3xl text-center">
           <motion.div
             initial="hidden"
@@ -267,12 +263,14 @@ const FoundersPassPage = () => {
             variants={fadeUp}
             custom={0}
           >
-            <Zap className="h-8 w-8 text-primary mx-auto mb-4" />
-            <p className="text-lg font-medium text-muted-foreground mb-8">{c.urgency}</p>
+            <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-primary mx-auto mb-4" />
+            <p className="text-base sm:text-lg font-medium text-muted-foreground mb-6 sm:mb-8">{c.urgency}</p>
 
             <FoundersPassVoiceCTA variant="footer" />
 
-            <p className="mt-8 text-sm text-muted-foreground">{c.footer}</p>
+            <p className="mt-6 sm:mt-8 text-xs sm:text-sm text-muted-foreground pb-[env(safe-area-inset-bottom)]">
+              {c.footer}
+            </p>
           </motion.div>
         </div>
       </section>
