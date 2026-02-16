@@ -85,6 +85,9 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
         connectionTimeoutRef.current = null;
       }
       
+      // Set volume to maximum so users can hear the agent
+      conversation.setVolume({ volume: 1 });
+
       setIsConnected(true);
       setIsConnecting(false);
       setConnectionProgress('connected');
