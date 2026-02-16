@@ -58,9 +58,9 @@ export const Header: React.FC<HeaderProps> = ({
       {announcementVisible && (
         <div className="relative bg-primary text-primary-foreground text-center text-xs sm:text-sm py-2 px-8">
           <span className="font-medium">
-            🎉 New: AI Voice Interviews are live —{' '}
-            <Link to="/features" className="underline hover:no-underline font-semibold">
-              See how it works
+            🚀 Limited Time: Founders Pass — $1/apply, zero upfront cost —{' '}
+            <Link to="/founders-pass" className="underline hover:no-underline font-semibold">
+              Claim yours now
             </Link>
           </span>
           <button
