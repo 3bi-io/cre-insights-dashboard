@@ -1,39 +1,23 @@
 
+# Enhance Founders Pass Modal CTA
 
-# Founders Pass Popup Modal for Landing Page
+## Changes
 
-## Overview
-Create a timed popup modal on the homepage (`/`) that promotes the Founders Pass offer. The modal appears after a short delay, is dismissible, and remembers if the user has already seen/dismissed it (via localStorage) so it doesn't annoy repeat visitors.
+Upgrade the bottom CTA section of the popup modal to be more visually compelling and conversion-focused:
 
-## Behavior
-- Appears **5 seconds** after the landing page loads
-- Dismissible via close button or clicking outside
-- Once dismissed, a localStorage flag (`founders-pass-popup-dismissed`) prevents it from showing again for **7 days**
-- Includes a primary CTA ("Claim Your Founders Pass") linking to `/founders-pass` and a secondary dismiss option
-- Uses existing Radix Dialog component for accessibility
-
-## Design
-- Gradient accent header with the "Limited Time Offer" badge
-- Headline: "Founders Pass"
-- Tagline: "Pay only when it works. $0 to start."
-- Three compact pricing pills ($1 Per Apply, $1 ATS Delivery, $1 Voice Agent)
-- Key bullet points from the included benefits
-- Primary CTA button + "Maybe later" dismiss link
-- Framer Motion entrance animation (scale + fade)
-
----
+1. **Primary CTA Button**: Add a pulsing glow effect, an arrow icon (ArrowRight), and a gradient background to draw attention.
+2. **Urgency line**: Add the `foundersPassContent.urgency` text above the button as a small urgency nudge.
+3. **Secondary CTA**: Replace plain "Maybe later" with a styled link to the "Talk to Us" contact page (using `foundersPassContent.cta.secondary` / `secondaryPath`), keeping a subtle "Maybe later" dismiss below it.
+4. **Footer trust line**: Add the `foundersPassContent.footer` ("No contracts - Cancel anytime - GDPR compliant") at the very bottom for trust reinforcement.
 
 ## Technical Details
 
-### New File: `src/features/landing/components/FoundersPassPopup.tsx`
-- Uses `Dialog` from `@/components/ui/dialog`
-- Uses `framer-motion` for entrance animation
-- Uses `useNavigate` for CTA navigation
-- Reads/writes `localStorage` key `founders-pass-popup-dismissed` with a timestamp
-- `useEffect` with `setTimeout(5000)` to trigger open state
-- Content sourced from `foundersPassContent` in `foundersPass.content.ts`
+### Modified File: `src/features/landing/components/FoundersPassPopup.tsx`
 
-### Modified File: `src/pages/public/LandingPage.tsx`
-- Import and render `<FoundersPassPopup />` inside the `<main>` element
-- No lazy loading needed since it's a lightweight dialog component with its own delay logic
-
+- Import `ArrowRight` from `lucide-react`
+- Replace the Actions section (lines 112-123) with:
+  - Urgency text from `foundersPassContent.urgency`
+  - Primary button with `ArrowRight` icon, animated glow via Tailwind `animate-pulse` shadow, and gradient styling
+  - A secondary "Talk to Us" link button navigating to `foundersPassContent.cta.secondaryPath`
+  - Subtle "Maybe later" dismiss text
+  - Trust footer text from `foundersPassContent.footer`
