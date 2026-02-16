@@ -12,36 +12,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { foundersPassContent } from '../content/foundersPass.content';
 
-const STORAGE_KEY = 'founders-pass-popup-dismissed';
-const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const SHOW_DELAY_MS = 5000;
-
-function isDismissed(): boolean {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-    const timestamp = Number(raw);
-    return Date.now() - timestamp < DISMISS_DURATION_MS;
-  } catch {
-    return false;
-  }
-}
 
 export const FoundersPassPopup: React.FC = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isDismissed()) return;
     const timer = setTimeout(() => setOpen(true), SHOW_DELAY_MS);
     return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = useCallback(() => {
     setOpen(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, String(Date.now()));
-    } catch { /* noop */ }
   }, []);
 
   const handleCTA = useCallback(() => {
@@ -51,18 +34,18 @@ export const FoundersPassPopup: React.FC = () => {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleDismiss(); }}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-0 shadow-2xl">
+      <DialogContent className="max-w-[92vw] sm:max-w-md p-0 overflow-hidden border-0 shadow-2xl backdrop-blur-sm">
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
             >
               {/* Gradient header */}
               <div
-                className="relative px-6 py-5 text-white bg-cover bg-center"
+                className="relative px-4 sm:px-6 py-5 text-white bg-cover bg-center"
                 style={{ backgroundImage: `url(${headerBg})` }}
               >
                 <div className="absolute inset-0 bg-primary/60" />
@@ -70,7 +53,7 @@ export const FoundersPassPopup: React.FC = () => {
                   <span className="inline-block text-xs font-semibold uppercase tracking-wider bg-white/20 rounded-full px-3 py-1 mb-3">
                     {foundersPassContent.badge}
                   </span>
-                  <DialogTitle className="text-2xl font-bold font-playfair text-white">
+                  <DialogTitle className="text-2xl sm:text-3xl font-bold font-playfair text-white">
                     {foundersPassContent.headline}
                   </DialogTitle>
                   <DialogDescription className="text-white/90 mt-1 text-sm">
@@ -80,8 +63,8 @@ export const FoundersPassPopup: React.FC = () => {
               </div>
 
               {/* Pricing pills */}
-              <div className="px-6 pt-5 pb-3">
-                <div className="flex gap-2 flex-wrap">
+              <div className="px-4 sm:px-6 pt-5 pb-3">
+                <div className="flex flex-col sm:flex-row gap-2">
                   {foundersPassContent.pricing.map((item) => (
                     <div
                       key={item.service}
@@ -98,7 +81,7 @@ export const FoundersPassPopup: React.FC = () => {
               </div>
 
               {/* Benefits */}
-              <div className="px-6 pb-4">
+              <div className="px-4 sm:px-6 pb-4">
                 <ul className="space-y-1.5">
                   {foundersPassContent.included.slice(0, 4).map((benefit) => (
                     <li key={benefit} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -110,13 +93,13 @@ export const FoundersPassPopup: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="px-6 pb-5 space-y-3">
+              <div className="px-4 sm:px-6 pb-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-3">
                 <p className="text-xs text-center text-primary font-semibold tracking-wide">
                   {foundersPassContent.urgency}
                 </p>
                 <Button
                   onClick={handleCTA}
-                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-[0_0_20px_hsl(var(--primary)/0.4)] animate-pulse-glow group"
+                  className="w-full text-base py-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-[0_0_20px_hsl(var(--primary)/0.4)] animate-pulse-glow group"
                   size="lg"
                 >
                   {foundersPassContent.cta.primary}
