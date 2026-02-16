@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Users, FileText, Building2 } from 'lucide-react';
+import { Bot, Users, FileText, Building2, Settings, Palette } from 'lucide-react';
 import { OrganizationOverview } from '@/components/dashboard/organization/OrganizationOverview';
 import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
@@ -59,6 +59,28 @@ export const dashboardTabs: DashboardTab[] = [
     label: 'Users',
     icon: Users,
     component: OrganizationUserManagement,
+  },
+  {
+    id: 'features',
+    label: 'Features',
+    icon: Settings,
+    component: OrganizationFeatureStatus,
+  },
+  {
+    id: 'branding',
+    label: 'Branding',
+    icon: Palette,
+    component: OrganizationBrandingPanel,
+  },
+  {
+    id: 'ai',
+    label: 'AI Features',
+    icon: Bot,
+    component: AIFeaturesPanel,
+    featureGuard: {
+      feature: 'anthropic_access',
+      featureName: 'AI Features',
+    },
   },
   {
     id: 'ai-impact',
