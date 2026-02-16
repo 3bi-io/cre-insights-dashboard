@@ -5126,6 +5126,7 @@ export type Database = {
           organization_id: string | null
           phone_number: string
           retry_count: number | null
+          scheduled_at: string | null
           status: string
           updated_at: string
           voice_agent_id: string | null
@@ -5143,6 +5144,7 @@ export type Database = {
           organization_id?: string | null
           phone_number: string
           retry_count?: number | null
+          scheduled_at?: string | null
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
@@ -5160,6 +5162,7 @@ export type Database = {
           organization_id?: string | null
           phone_number?: string
           retry_count?: number | null
+          scheduled_at?: string | null
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
