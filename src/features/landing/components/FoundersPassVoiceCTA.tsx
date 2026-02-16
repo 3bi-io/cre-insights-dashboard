@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 interface FoundersPassVoiceCTAProps {
   variant?: 'hero' | 'footer';
   className?: string;
+  /** Optional secondary CTA rendered alongside the primary button */
+  secondaryCTA?: React.ReactNode;
 }
 
 const FOUNDERS_PASS_AGENT_ID = 'agent_2501khhvkybyfasbhrtp61s0xvcp';
@@ -23,6 +25,7 @@ const FOUNDERS_PASS_AGENT_ID = 'agent_2501khhvkybyfasbhrtp61s0xvcp';
 export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
   variant = 'hero',
   className,
+  secondaryCTA,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -93,7 +96,7 @@ export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
       <Button
         size="lg"
         className={cn(
-          'text-lg px-8 py-6',
+          'text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 min-h-[48px]',
           variant === 'footer' && 'px-10',
           className,
         )}
@@ -103,6 +106,8 @@ export const FoundersPassVoiceCTA: React.FC<FoundersPassVoiceCTAProps> = ({
         Claim Your Founders Pass
         <ArrowRight className="ml-2 h-5 w-5" />
       </Button>
+
+      {secondaryCTA}
 
       {/* Voice Agent Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => {
