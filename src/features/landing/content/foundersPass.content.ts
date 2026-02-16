@@ -10,6 +10,11 @@ export const foundersPassContent = {
   description:
     'The best end-to-end recruitment solution available today — free to join, free to onboard, and you only pay when candidates apply.',
 
+  hero: {
+    socialProof: 'Join 50+ fleets already onboarding',
+    priceAnchor: 'All-in: $3 per apply',
+  },
+
   pricing: [
     {
       service: 'Per Apply',
@@ -31,6 +36,8 @@ export const foundersPassContent = {
       note: 'Engage candidates with 24/7 AI voice agents for screening and scheduling.',
     },
   ],
+
+  comparisonNote: '$1 + $1 + $1 = $3 per apply — no hidden fees.',
 
   summary: 'All in, $3 per apply for the best end-to-end solution available today.',
 
