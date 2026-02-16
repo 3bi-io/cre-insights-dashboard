@@ -1,83 +1,31 @@
 
 
-# Comprehensive Platform Review and Refactoring Plan
+# Fix Broken Cron Jobs #3 and #8
 
-## Status: Phase 3 Complete ✅
+## Problem
 
----
+Two cron jobs have broken configurations preventing them from successfully calling their edge functions:
 
-## CRITICAL: Broken Infrastructure — ✅ Fixed (Phase 1)
+| Job | Name | Issue |
+|-----|------|-------|
+| #3 | `process-outbound-call-queue` | Uses `current_setting('supabase.anon_key', true)` which resolves to NULL at cron execution time |
+| #8 | `meta-leads-sync-5min` | Missing `Authorization` header entirely |
 
-### 1. Cron Job #3 (process-outbound-call-queue) — ⚠️ Manual SQL Required
-Edge function updated with scheduled-to-queued promotion logic. Cron job SQL fix must be run manually in Supabase SQL Editor (table owned by supabase_admin).
+The other 5 jobs (#4, #6, #7, #9, #10) are correctly configured with hardcoded Bearer tokens.
 
-### 2. Meta Leads Cron Job Missing Auth Header — ⚠️ Manual SQL Required
-Same ownership restriction. SQL provided for manual execution.
+## Solution
 
----
+Use the **unschedule + re-schedule** approach (avoids the `supabase_admin` ownership issue with `cron.alter_job`):
 
-## HIGH PRIORITY: Functional Gaps — ✅ Fixed (Phase 2)
+### Step 1: Fix Job #3 -- Outbound Call Queue
 
-### 3. Outbound Call Pipeline — ✅ 
-Edge function now promotes `scheduled` calls to `queued` when `scheduled_at <= now()`.
-
-### 4. Candidate Portal Messages Page — ✅ Fixed (Phase 3)
-Removed placeholder page. Navigation now points to Notifications. `/my-jobs/messages` redirects to `/my-jobs/notifications`.
-
-### 5. DashboardLayout Tab Routing — ✅ Fixed (Phase 2)
-Consolidated to use `dashboardConfig.tsx` tab system exclusively.
-
-### 6. RegularUserDashboard Quick Actions — ✅ Fixed (Phase 2)
-Quick actions now link to user-accessible dashboard tabs, not admin pages.
-
----
-
-## MEDIUM PRIORITY — Partially Complete
-
-### 7. Unused Hook Calls — ✅ Fixed (Phase 2)
-Removed unused `useAIProviders()` and `useAIConnectionManager()` from AIToolsPage.
-
-### 8. Navigation Config Role Guards — Verified
-ProtectedRoute handles auth-level gating. Navigation config handles visibility with role hierarchy.
-
-### 9. `has_role` DB Function — ⚠️ Known limitation
-Super admins with `organization_id = NULL` may not match via `has_role('admin')`. Mitigated by `is_super_admin()` having a separate path.
-
-### 10. Screening/BGC Feature UI — Verified
-Nav config includes `/admin/settings?tab=verifications` for admin users.
-
----
-
-## PHASE 3: Polish and Consistency — ✅ Complete
-
-### 11. Messages Page Cleanup — ✅
-- Removed `MessagesPage.tsx` placeholder
-- Updated `candidateNavigation` to show Notifications instead of Messages
-- Added redirect from `/my-jobs/messages` → `/my-jobs/notifications`
-- Updated CandidateDashboard quick stats card
-- Removed Message button from ApplicationCard
-- Updated SitemapPage
-
-### 12. Error Boundaries — ✅
-- Added `ErrorBoundary` wrapper around `<Outlet>` in both `CandidateLayout` and admin `Layout`
-- App-level `GlobalErrorBoundary` already existed
-
-### 13. Candidate Portal Verification — ✅
-- NotificationsPage: Functional with save/load preferences
-- SavedJobsPage: Functional with sorting and expired job detection
-- AccountSettings: Functional with password change and privacy settings
-
----
-
-## Remaining Manual Actions
-
-Run these in Supabase SQL Editor:
-
-**Cron #3 (Outbound Call Queue):**
 ```sql
-SELECT cron.alter_job(
-  3,
-  command := $$
+SELECT cron.unschedule('process-outbound-call-queue');
+
+SELECT cron.schedule(
+  'process-outbound-call-queue',
+  '* * * * *',
+  $$
   SELECT net.http_post(
     url := 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/elevenlabs-outbound-call',
     headers := jsonb_build_object(
@@ -90,11 +38,15 @@ SELECT cron.alter_job(
 );
 ```
 
-**Cron #8 (Meta Leads):**
+### Step 2: Fix Job #8 -- Meta Leads Sync
+
 ```sql
-SELECT cron.alter_job(
-  8,
-  command := $$
+SELECT cron.unschedule('meta-leads-sync-5min');
+
+SELECT cron.schedule(
+  'meta-leads-sync-5min',
+  '*/5 * * * *',
+  $$
   SELECT net.http_post(
     url := 'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/meta-leads-cron',
     headers := jsonb_build_object(
@@ -106,3 +58,15 @@ SELECT cron.alter_job(
   $$
 );
 ```
+
+## Technical Notes
+
+- The `unschedule` function works by job **name** (not ID), which avoids the ownership issue that blocked `alter_job`
+- The new jobs will be owned by the current user (`postgres`), making future modifications straightforward
+- Schedules are preserved exactly: every 1 minute for #3, every 5 minutes for #8
+- No code file changes needed -- this is purely a database-level fix via migration tool
+
+## Verification
+
+After execution, query `cron.job` to confirm both jobs now have hardcoded Bearer tokens in their commands.
+
