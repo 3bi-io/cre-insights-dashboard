@@ -4,9 +4,9 @@
 
 ## What
 
-Insert a new inbound voice agent row for James Burg Trucking, matching the pattern of existing client-specific inbound agents (Danny Herman, Pemberton, Day and Ross).
+Insert a new inbound voice agent for James Burg Trucking into the `voice_agents` table via SQL migration.
 
-## Details
+## SQL Migration
 
 ```sql
 INSERT INTO voice_agents (
@@ -32,10 +32,13 @@ INSERT INTO voice_agents (
 );
 ```
 
-- Organization: Hayes Recruiting (`84214b48...`)
-- Client: James Burg Trucking (`b2a29507...`)
-- Both `agent_id` and `elevenlabs_agent_id` set to the provided ID
-- `is_outbound_enabled = false` (inbound only)
-- `is_active = true`
+## Details
 
-No code changes needed -- the existing client-aware routing logic in the inbound endpoints will automatically pick up this agent for James Burg job listings.
+- **Organization:** Hayes Recruiting (`84214b48-7b51-45bc-ad7f-723bcf50466c`)
+- **Client:** James Burg Trucking (`b2a29507-32a6-4f5e-85d6-a7e6ffac3c52`)
+- **Agent ID:** `agent_2101kgttq4rsef5sx07bbzgbt8my` (both `agent_id` and `elevenlabs_agent_id`)
+- **Inbound only:** `is_outbound_enabled = false`
+- **Active:** `is_active = true`
+
+No code changes needed. The existing `hayes-jamesburg-inbound` edge function and client-aware routing logic will automatically use this agent for James Burg job listings.
+
