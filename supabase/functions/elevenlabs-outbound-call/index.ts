@@ -180,6 +180,20 @@ serve(async (req) => {
         logger.info(`Promoted ${promoted.length} scheduled calls to queued`);
       }
 
+      // Safety net: also promote scheduled calls with NULL scheduled_at
+      const { data: promotedNull, error: promoteNullError } = await supabase
+        .from('outbound_calls')
+        .update({ status: 'queued', updated_at: new Date().toISOString() })
+        .eq('status', 'scheduled')
+        .is('scheduled_at', null)
+        .select('id');
+
+      if (promoteNullError) {
+        logger.warn('Failed to promote NULL scheduled_at calls', { error: promoteNullError });
+      } else if (promotedNull && promotedNull.length > 0) {
+        logger.info(`Promoted ${promotedNull.length} NULL scheduled_at calls to queued`);
+      }
+
       const { data: queuedCalls, error: fetchError } = await supabase
         .from('outbound_calls')
         .select('id')
