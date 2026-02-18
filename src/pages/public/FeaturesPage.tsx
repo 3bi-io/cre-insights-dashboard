@@ -34,16 +34,16 @@ const sections = [
 ];
 
 const comparisonData = [
-  { feature: 'AI Voice Interviews', atsme: true, traditional: false },
-  { feature: 'Social Beacon Distribution', atsme: true, traditional: false },
+  { feature: 'Voice Apply Technology', atsme: true, traditional: false },
   { feature: 'Instant AI Callbacks', atsme: true, traditional: false },
   { feature: '24/7 Candidate Engagement', atsme: true, traditional: false },
+  { feature: 'AI Voice Interviews', atsme: true, traditional: false },
+  { feature: 'Social Beacon Distribution', atsme: true, traditional: false },
+  { feature: 'Predictive Analytics', atsme: true, traditional: false },
   { feature: 'Visual Kanban Pipeline', atsme: true, traditional: true },
   { feature: 'Multi-Platform Job Posting', atsme: true, traditional: true },
   { feature: 'Resume Parsing', atsme: true, traditional: true },
-  { feature: 'Predictive Analytics', atsme: true, traditional: false },
   { feature: 'Automated Compliance', atsme: true, traditional: false },
-  { feature: 'Voice Apply Technology', atsme: true, traditional: false },
 ];
 
 const featureFaqs = [
@@ -69,13 +69,13 @@ const FeaturesPage = () => {
     "operatingSystem": "Web",
     "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "50" },
     "featureList": [
+      "Voice Apply Technology",
+      "Instant AI Callbacks",
+      "24/7 AI Voice Agents",
       "Social Beacon - AI-Powered Social Recruitment",
       "Multi-Platform Social Distribution",
       "AI Ad Creative Studio",
-      "Instant AI Callbacks",
-      "24/7 AI Voice Agents",
       "Visual Kanban Pipeline",
-      "Voice Apply Technology",
     ],
     "description": "AI-powered applicant tracking system with Social Beacon, Voice Apply, and instant callback features.",
     "url": "https://ats.me/features"
@@ -174,7 +174,7 @@ const FeaturesPage = () => {
                 <div className="space-y-2 md:space-y-3">
                   {feature.features.map((item, idx) => (
                     <div key={idx} className="flex items-start space-x-2 md:space-x-3">
-                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
                       <span className="text-muted-foreground text-sm md:text-base">{item}</span>
                     </div>
                   ))}
@@ -228,7 +228,7 @@ const FeaturesPage = () => {
                     <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                       <td className="p-4 text-foreground font-medium">{row.feature}</td>
                       <td className="p-4 text-center">
-                        <Check className="h-5 w-5 text-green-500 mx-auto" />
+                        <Check className="h-5 w-5 text-emerald-500 mx-auto" />
                       </td>
                       <td className="p-4 text-center">
                         {row.traditional ? (
