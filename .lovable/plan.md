@@ -1,113 +1,100 @@
 
-# Features Page Verification & Refactor
+# FeaturesPage Refactor — Remove Social Beacon, Elevate Core AI Narrative
 
-## Verification Results
+## What Is Being Changed and Why
 
-The priority reorder applied in the previous step has been confirmed correct on the live page:
+The Social Beacon section currently occupies the top slot on `/features` — above everything else, including Voice Apply Technology, which is the platform's #1 differentiator. Social Beacon has its own dedicated product page and dashboard. Giving it prime position on the features page creates two problems:
 
-- Core AI section order: Voice Apply Technology → Instant AI Callbacks → 24/7 AI Voice Agents → AI-Powered Analytics → Visual Kanban Pipeline → Talent Pool Management
-- Capabilities grid order: Multi-Platform Distribution → Automated Workflows → AI Writing Assistant → Team Collaboration → Communication Hub → Activity Timeline → Performance Insights → Enterprise Security → Mobile-First Design
+1. It buries the platform's core AI stack (Voice Apply, Instant Callbacks, AI Voice Agents) below the fold
+2. It duplicates content that already has a dedicated home, creating page bloat
 
-However, four issues were found that need to be resolved.
+The refactor removes the Social Beacon featured component, restructures the page around the AI voice stack, and elevates the overall UX to "best in class" standards.
 
 ---
 
-## Issues Found
+## Section-by-Section Plan
 
-### Issue 1 — Orphaned Dead File (Low risk, clean-up)
+### 1. Hero Section — Rewrite Copy
 
-`src/components/landing/FeaturesSection.tsx` is not imported anywhere in the application. The landing page (`LandingPage.tsx`) uses `src/features/landing/components/sections/FeaturesSection.tsx` exclusively. The old file contains a hardcoded, out-of-date feature list with an older design pattern. It should be deleted to prevent future confusion.
+Current hero copy is generic: "Powerful Features for Modern Recruiting." This will be replaced with a hero that leads with the AI voice narrative — the specific, measurable differentiator.
 
-### Issue 2 — Comparison Table Priority is Inconsistent
+New headline: **"The AI Recruitment Platform Built for Speed"**
+New subline: **"Voice Apply. Instant Callbacks. 24/7 AI Agents."**
 
-In `FeaturesPage.tsx`, the comparison table rows currently order features like this:
+The hero badge and CTA will also be updated to reflect the core platform story.
 
-| Position | Feature |
-|---|---|
-| 1 | AI Voice Interviews |
-| 2 | Social Beacon Distribution |
-| 3 | Instant AI Callbacks |
-| 4 | 24/7 Candidate Engagement |
-| 5 | Visual Kanban Pipeline |
-| 6 | Multi-Platform Job Posting |
-| 7 | Resume Parsing |
-| 8 | Predictive Analytics |
-| 9 | Automated Compliance |
-| **10** | **Voice Apply Technology** |
+### 2. Remove Social Beacon Section
 
-Voice Apply Technology — the platform's #1 differentiator — is in last place. It should be at the top of the table. The recommended order leads with the AI-exclusive features (where ATS.me wins and traditional ATS loses), then shows parity features, and closes with security and compliance:
+The `<div id="social-beacon">` block containing `<FeaturedProductCard>` will be removed entirely. The `socialBeaconContent` import and the `FeaturedProductCard` import will also be removed since they are no longer used on this page.
 
-| Position | Feature | ATS.me | Traditional |
-|---|---|---|---|
-| 1 | Voice Apply Technology | ✓ | ✗ |
-| 2 | Instant AI Callbacks | ✓ | ✗ |
-| 3 | 24/7 Candidate Engagement | ✓ | ✗ |
-| 4 | AI Voice Interviews | ✓ | ✗ |
-| 5 | Social Beacon Distribution | ✓ | ✗ |
-| 6 | Predictive Analytics | ✓ | ✗ |
-| 7 | Visual Kanban Pipeline | ✓ | ✓ |
-| 8 | Multi-Platform Job Posting | ✓ | ✓ |
-| 9 | Resume Parsing | ✓ | ✓ |
-| 10 | Automated Compliance | ✓ | ✗ |
+### 3. Remove "Social Beacon" from Scroll-Spy Navigation
 
-This groups the "ATS.me wins" rows at the top for maximum impact.
+The `sections` array currently leads with `{ id: 'social-beacon', label: 'Social Beacon' }`. This entry will be removed. The updated nav will be:
 
-### Issue 3 — Landing Page Tab Section Has Weak "For Employers" Tab
+```text
+Core AI  →  Capabilities  →  Comparison  →  Integrations
+```
 
-The legacy `features` array in `features.content.ts` (used by the tabbed `FeaturesSection` on the landing page) has only 5 items. The tab logic does `slice(0, 3)` for candidates and `slice(3)` for employers, leaving only 2 employer features (Multi-Channel Distribution, Compliance & Security). This is an inadequate showing for the employer audience tab.
+### 4. Upgrade Core AI Features Section — Add Stats Bar
 
-The fix is to expand this legacy array to 6 entries — 3 candidate-facing and 3 employer-facing — so both tabs show a balanced set of 3 cards:
+The alternating text/visual layout is good but the visual side (icon on gradient background) is a missed opportunity. A "quick wins" stats bar will be added above the features list to set the stage with hard numbers before users read the feature details:
 
-- Candidates (first 3): Voice Apply Technology, 24/7 AI Voice Agents, Fraud Free & Secure By Design
-- Employers (last 3): Multi-Channel Distribution, Automated Workflows, AI-Powered Analytics
+- 80% faster applications (Voice Apply)
+- < 3 min callback time (Instant Callbacks)
+- 24/7 coverage (AI Voice Agents)
 
-### Issue 4 — Structured Data Schema Priority is Inconsistent
+These are already in the `primaryFeatures[].features` bullet points — this surfaces them as headline metrics first.
 
-The `featureList` in the `softwareAppSchema` object in `FeaturesPage.tsx` currently lists "Instant AI Callbacks" and "24/7 AI Voice Agents" before "Voice Apply Technology." This is consumed by search engines and should reflect the platform's priority order.
+### 5. Add a "Social Beacon" Entry to the Capabilities Grid (Not a Featured Block)
 
-Current order in schema:
-1. Social Beacon
-2. Multi-Platform Social Distribution
-3. AI Ad Creative Studio
-4. Instant AI Callbacks
-5. 24/7 AI Voice Agents
-6. Visual Kanban Pipeline
-7. Voice Apply Technology
+Social Beacon should not disappear from the page entirely — it's a real feature. Instead of a full hero-style section, it will become one `IconFeatureCard` entry in the Capabilities grid, in its correct priority position (after the core AI features). This keeps Social Beacon discoverable on `/features` without dominating above the AI voice stack.
 
-Recommended order:
-1. Voice Apply Technology
-2. Instant AI Callbacks
-3. 24/7 AI Voice Agents
-4. Social Beacon
-5. Multi-Platform Social Distribution
-6. AI Ad Creative Studio
-7. Visual Kanban Pipeline
+The card will be inserted as item #5 in the secondary features grid (after Multi-Platform Distribution, Automated Workflows, AI Writing Assistant, and Team Collaboration) since Social Beacon is a distribution-class feature.
+
+### 6. Update SEO and Structured Data
+
+- `<SEO title>` updated to remove "Social Beacon" from the primary title slot: **"Features | Voice Apply, AI Callbacks & Smart Recruiting"**
+- `<SEO description>` rewritten to lead with Voice Apply and AI Callbacks
+- `softwareAppSchema` description updated to match
+
+### 7. Update the Comparison Table Header
+
+The section subtitle currently reads "See why leading companies are switching to AI-powered recruitment." This is a missed opportunity. It will be updated to: **"See what you get that traditional ATS platforms simply can't offer."** — more pointed and conversion-focused.
+
+### 8. Final CTA Copy Update
+
+The CTA gradient section currently says "Get started today and see how ATS.me can transform your hiring process with AI-powered social recruitment and voice automation." Now that Social Beacon is de-featured, this will be updated to lead with voice: **"Experience AI-powered voice recruitment, instant callbacks, and smart hiring automation — all in one platform."**
 
 ---
 
 ## Technical Changes
 
-### File 1: `src/pages/public/FeaturesPage.tsx`
+### File: `src/pages/public/FeaturesPage.tsx`
 
-Two changes:
+All changes are in this single file:
 
-**a) Reorder `comparisonData` array** — move Voice Apply Technology to row 1, group all ATS.me-exclusive wins at the top, parity features in the middle.
+1. Remove `socialHero` asset import
+2. Remove `socialBeaconContent` and `FeaturedProductCard` from the `@/features/landing` import
+3. Remove the `social-beacon` entry from the `sections` array
+4. Replace `HeroBackground` with a clean in-page hero div (Voice Apply narrative copy)
+5. Delete the entire Social Beacon `<div id="social-beacon">` block
+6. Add a 3-stat highlight bar above the Core AI features list
+7. Add Social Beacon as an `IconFeatureCard` into `secondaryFeatures` display (inline, not via content file edit)
+8. Update `<SEO>` title, description, and keywords
+9. Update `softwareAppSchema` description
+10. Update comparison table section subtitle
+11. Update final CTA body copy
 
-**b) Reorder `softwareAppSchema.featureList`** — move "Voice Apply Technology" to the first position.
+### File: `src/features/landing/content/features.content.ts`
 
-### File 2: `src/features/landing/content/features.content.ts`
-
-**Expand the legacy `features` array** from 5 to 6 entries — add "Automated Workflows" as the 6th entry (employer-facing) so the employer tab shows 3 cards instead of 2. The first 3 entries stay candidate-facing, the last 3 become employer-facing.
-
-### File 3: `src/components/landing/FeaturesSection.tsx`
-
-**Delete this file** — it is orphaned and unused. No import paths need updating.
+Add Social Beacon as item #5 in `secondaryFeatures` array (between Team Collaboration and Communication Hub), using the `Globe` or `Sparkles` icon with "Social Beacon" as the title and a one-line description pointing to the platform capability.
 
 ---
 
 ## No Changes Needed
 
-- Scroll-spy nav section order: correct (Social Beacon → Core AI → Capabilities → Comparison → Integrations)
-- Primary features order: correct (Voice Apply first)
-- Secondary features order: correct (Multi-Platform Distribution first)
-- Component structure, routing, styling, animations: all sound
+- `FeaturedProductCard` component — not deleted (used elsewhere or may be reused)
+- `socialBeaconContent` content file — not deleted (used on other pages)
+- Scroll-spy hook logic — unchanged
+- Comparison table data and order — already correct from previous refactor
+- All other sections (Capabilities grid, Comparison, Integrations, CTA) — structure unchanged, copy only lightly updated
