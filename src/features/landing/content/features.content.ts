@@ -120,6 +120,11 @@ export const featuresContent = {
       description: "Real-time collaboration with notes and @mentions"
     },
     {
+      icon: Phone,
+      title: "Social Beacon",
+      description: "AI-powered social recruitment across 7 platforms, 24/7"
+    },
+    {
       icon: MessageSquare,
       title: "Communication Hub",
       description: "Email, SMS, and call history in one place"
