@@ -4651,6 +4651,54 @@ export type Database = {
           },
         ]
       }
+      org_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          label: string | null
+          last_used_at: string | null
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          last_used_at?: string | null
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          last_used_at?: string | null
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_api_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_api_keys_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_bgc_connections: {
         Row: {
           created_at: string | null

@@ -269,3 +269,6 @@ verify_jwt = true
 
 [functions.generate-founders-pass-creative]
 verify_jwt = false
+
+[functions.organization-api]
+verify_jwt = false
