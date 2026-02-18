@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { usePaginatedPublicJobs } from '@/hooks/usePaginatedPublicJobs';
 import { queryKeys } from '@/lib/queryKeys';
@@ -37,10 +38,12 @@ export interface UsePublicJobsPageReturn {
  * Encapsulates filter state, pagination, and derived data
  */
 export function usePublicJobsPage(): UsePublicJobsPageReturn {
-  // Filter state
+  const [searchParams] = useSearchParams();
+
+  // Filter state — initialise clientFilter from URL ?client= param
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [clientFilter, setClientFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState(() => searchParams.get('client') ?? '');
   const [sortBy, setSortBy] = useState<PublicJobSortOption>('recent');
 
   // Fetch paginated jobs with filters and sorting
