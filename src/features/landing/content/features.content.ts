@@ -147,6 +147,7 @@ export const featuresContent = {
   ] as Feature[],
   
   // Legacy flat features array for backward compatibility
+  // First 3 = candidate-facing, last 3 = employer-facing (used by landing page tab filter)
   features: [
     {
       icon: Mic,
@@ -169,9 +170,14 @@ export const featuresContent = {
       description: "Integrate with Tenstreet, Indeed, Glassdoor, Adzuna, Talroo, and 100+ job boards. Automatic posting and real-time application syncing."
     },
     {
-      icon: Shield,
-      title: "Compliance & Security",
-      description: "Enterprise-grade security with full GDPR and EEO compliance, automated audit trails, and role-based access controls for data protection."
+      icon: Zap,
+      title: "Automated Workflows",
+      description: "Smart interview scheduling, status updates, and background check requests that reduce manual work by 95% while maintaining quality."
+    },
+    {
+      icon: BarChart3,
+      title: "AI-Powered Analytics",
+      description: "Track cost-per-hire by source, predict time-to-hire trends, identify drop-off points, and compare publisher ROI with real-time ML predictions."
     }
   ] as Feature[]
 };
