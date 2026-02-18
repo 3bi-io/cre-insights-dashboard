@@ -1,156 +1,176 @@
 
 
-# Remove Business Hours Gating -- Always Call Immediately
+# Push Data to hayesairecruiting.com via Public API
 
 ## Summary
 
-Currently, outbound calls created outside business hours (before 9 AM or after 4:30 PM CST, Mon-Fri) are set to `scheduled` status and delayed until the next business morning. This change removes that gating so calls always go out immediately. The ElevenLabs agent's prompt (configured in their web UI) will handle after-hours behavior -- asking for a preferred callback time and attempting to connect with a recruiter.
+Hayes AI Recruiting wants to display their clients' jobs and application data on their own website (hayesairecruiting.com), not on the ats.me dashboard. The solution is to create a **secure public API edge function** that hayesairecruiting.com can call to fetch their data, authenticated via an API key.
 
-## Changes
+## Architecture
 
-### 1. Update Database Trigger Function
+The external website (hayesairecruiting.com) makes fetch requests to a new edge function on your Supabase backend. The function validates an API key, then returns Hayes-specific data (clients, jobs, applications) in JSON format that their frontend can render however they want.
 
-Replace `trigger_application_insert_outbound_call()` to always set status to `queued` (never `scheduled`). Remove all references to `is_within_business_hours()`, `get_next_business_hours_start()`, and `scheduled_at` logic.
+```text
+hayesairecruiting.com (their site)
+       |
+       | fetch() with API key header
+       v
+[organization-api] edge function
+       |
+       | Validates API key against org_api_keys table
+       | Queries clients, job_listings, applications
+       v
+Returns JSON payload
+```
 
-The key change in every insert block:
-- Before: Check business hours, conditionally set `queued` or `scheduled`
-- After: Always set `queued`, `scheduled_at = NULL`
+## What Gets Built
 
-### 2. Add `is_after_hours` Dynamic Variable to Edge Function
+### 1. Database: `org_api_keys` Table
 
-In `supabase/functions/elevenlabs-outbound-call/index.ts`, add a new dynamic variable `is_after_hours` to the `buildDynamicVariables` function. This computes whether the current time is outside 9:00 AM - 4:30 PM Central Time (Mon-Fri) and passes `"yes"` or `"no"` to ElevenLabs so the agent prompt can branch its behavior.
+A new table to store API keys for organizations that want external API access.
 
-Also add `current_time_cst` so the agent knows the exact time for context.
+```sql
+CREATE TABLE public.org_api_keys (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  api_key TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+  label TEXT DEFAULT 'Default',
+  is_active BOOLEAN DEFAULT true,
+  last_used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
 
-### 3. ElevenLabs Agent Prompt Update (Manual -- Outside Code)
+ALTER TABLE org_api_keys ENABLE ROW LEVEL SECURITY;
 
-After deploying, you will need to update each outbound agent's system prompt in the ElevenLabs web UI to include after-hours logic using the new `{{is_after_hours}}` dynamic variable. Example prompt addition:
+-- Only org admins can manage their keys
+CREATE POLICY "Admins manage own org API keys" ON org_api_keys
+  FOR ALL TO authenticated
+  USING (
+    organization_id = get_user_organization_id()
+    AND (has_role(auth.uid(), 'admin') OR is_super_admin(auth.uid()))
+  );
+```
 
-> If `{{is_after_hours}}` is "yes": Let the applicant know you're calling about their application. Mention that your recruiting team is currently unavailable but will be available tomorrow morning after 9 AM Central Time. Ask the applicant: "What time in the morning works best for a recruiter to call you back?" Collect their preferred callback time and confirm it. If `{{is_after_hours}}` is "no": Proceed with the normal screening flow and attempt to connect them with a recruiter.
+### 2. Edge Function: `organization-api`
+
+A new edge function (`supabase/functions/organization-api/index.ts`) with these endpoints:
+
+- **GET /clients** -- Returns list of clients with job counts and application counts
+- **GET /jobs?client_id=...** -- Returns jobs for a specific client (or all)
+- **GET /applications?client_id=...&status=...** -- Returns applications with filters
+- **GET /stats** -- Returns summary KPIs (total apps, by status, by client, trends)
+
+Authentication: `x-api-key` header validated against `org_api_keys` table.
+
+CORS: Configured to allow requests from `hayesairecruiting.com`.
+
+### 3. Admin UI: API Key Management
+
+A small component on the dashboard (under Settings or a new "Integrations" tab) where Hayes admins can:
+- Generate an API key
+- Copy it to clipboard
+- Revoke/regenerate keys
+- See last used timestamp
+
+### 4. What Hayes Gets
+
+After deployment, Hayes receives:
+1. An API key (generated from the dashboard)
+2. API endpoint URLs they can call from their website
+3. Example fetch code they can drop into their site
+
+Example usage from their website:
+```javascript
+const response = await fetch(
+  'https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/organization-api/clients',
+  { headers: { 'x-api-key': 'their_api_key_here' } }
+);
+const data = await response.json();
+// Render client cards, job listings, application stats
+```
 
 ## Technical Details
 
-### Database Migration (SQL)
+### Edge Function Response Shapes
 
-```sql
-CREATE OR REPLACE FUNCTION public.trigger_application_insert_outbound_call()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-DECLARE
-  v_org_id UUID;
-  v_client_id UUID;
-  v_voice_agent_id UUID;
-BEGIN
-  IF NEW.phone IS NOT NULL AND NEW.phone != '' AND length(NEW.phone) >= 10 THEN
-
-    -- PRIORITY 0: Embed Form submissions
-    IF NEW.source = 'Embed Form' THEN
-      SELECT id INTO v_voice_agent_id
-      FROM voice_agents
-      WHERE agent_id = 'agent_3201kfp75kshfgwr1kfs310715z3'
-        AND is_outbound_enabled = true
-        AND agent_phone_number_id IS NOT NULL
-        AND is_active = true
-      LIMIT 1;
-
-      IF v_voice_agent_id IS NOT NULL THEN
-        INSERT INTO outbound_calls (
-          application_id, voice_agent_id, organization_id,
-          phone_number, status, scheduled_at, metadata
-        ) VALUES (
-          NEW.id, v_voice_agent_id, NULL,
-          NEW.phone, 'queued', NULL,
-          jsonb_build_object(
-            'applicant_name', COALESCE(NEW.first_name, '') || ' ' || COALESCE(NEW.last_name, ''),
-            'triggered_by', 'embed_form_submission',
-            'source', 'Embed Form'
-          )
-        );
-        RETURN NEW;
-      END IF;
-    END IF;
-
-    -- Get org and client from job listing
-    SELECT jl.organization_id, jl.client_id INTO v_org_id, v_client_id
-    FROM job_listings jl WHERE jl.id = NEW.job_listing_id;
-
-    -- PRIORITY 1: Client-specific agent
-    IF v_client_id IS NOT NULL THEN
-      SELECT id INTO v_voice_agent_id
-      FROM voice_agents
-      WHERE organization_id = v_org_id AND client_id = v_client_id
-        AND is_outbound_enabled = true AND agent_phone_number_id IS NOT NULL AND is_active = true
-      LIMIT 1;
-    END IF;
-
-    -- PRIORITY 2: Org-level agent
-    IF v_voice_agent_id IS NULL AND v_org_id IS NOT NULL THEN
-      SELECT id INTO v_voice_agent_id
-      FROM voice_agents
-      WHERE organization_id = v_org_id AND client_id IS NULL
-        AND is_outbound_enabled = true AND agent_phone_number_id IS NOT NULL AND is_active = true
-      LIMIT 1;
-    END IF;
-
-    -- PRIORITY 3: Platform default
-    IF v_voice_agent_id IS NULL THEN
-      SELECT id INTO v_voice_agent_id
-      FROM voice_agents
-      WHERE is_platform_default = true
-        AND is_outbound_enabled = true AND agent_phone_number_id IS NOT NULL AND is_active = true
-      LIMIT 1;
-    END IF;
-
-    -- Always queue immediately
-    IF v_voice_agent_id IS NOT NULL THEN
-      INSERT INTO outbound_calls (
-        application_id, voice_agent_id, organization_id,
-        phone_number, status, scheduled_at, metadata
-      ) VALUES (
-        NEW.id, v_voice_agent_id, v_org_id,
-        NEW.phone, 'queued', NULL,
-        jsonb_build_object(
-          'applicant_name', COALESCE(NEW.first_name, '') || ' ' || COALESCE(NEW.last_name, ''),
-          'triggered_by', 'application_submission',
-          'source', COALESCE(NEW.source, 'unknown'),
-          'client_id', v_client_id
-        )
-      );
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
+**GET /clients**
+```json
+{
+  "clients": [
+    {
+      "id": "...",
+      "name": "Danny Herman Trucking",
+      "city": "Mountain City",
+      "state": "TN",
+      "active_jobs": 12,
+      "total_applications": 32,
+      "applications_this_month": 8
+    }
+  ]
+}
 ```
 
-### Edge Function Change (`buildDynamicVariables`)
-
-Add after the existing variables:
-
-```typescript
-// After-hours detection (CST = UTC-6, CDT = UTC-5)
-const nowUtc = new Date();
-const cstOffset = -6; // Use -5 during CDT if needed
-const nowCst = new Date(nowUtc.getTime() + cstOffset * 60 * 60 * 1000);
-const hour = nowCst.getHours();
-const minute = nowCst.getMinutes();
-const dayOfWeek = nowCst.getDay(); // 0=Sun, 6=Sat
-const timeInMinutes = hour * 60 + minute;
-const isBusinessDay = dayOfWeek >= 1 && dayOfWeek <= 5;
-const isBusinessHours = isBusinessDay && timeInMinutes >= 540 && timeInMinutes < 990;
-// 540 = 9:00 AM, 990 = 4:30 PM
-
-vars.is_after_hours = isBusinessHours ? 'no' : 'yes';
-vars.current_time_cst = nowCst.toLocaleTimeString('en-US', {
-  hour: 'numeric', minute: '2-digit', hour12: true
-});
+**GET /jobs?client_id=xxx**
+```json
+{
+  "jobs": [
+    {
+      "id": "...",
+      "title": "OTR CDL-A Driver",
+      "location": "Mountain City, TN",
+      "status": "active",
+      "application_count": 5,
+      "created_at": "2026-02-01T..."
+    }
+  ]
+}
 ```
 
-## Post-Deployment Action Required
+**GET /applications?client_id=xxx**
+```json
+{
+  "applications": [
+    {
+      "id": "...",
+      "first_name": "John",
+      "last_name": "Doe",
+      "status": "pending",
+      "applied_at": "2026-02-17T...",
+      "job_title": "OTR CDL-A Driver",
+      "client_name": "Danny Herman Trucking",
+      "source": "Indeed"
+    }
+  ],
+  "total": 32
+}
+```
 
-After this deploys, update each outbound agent's system prompt in the **ElevenLabs dashboard** to use the `{{is_after_hours}}` variable for after-hours callback scheduling behavior.
+**GET /stats**
+```json
+{
+  "total_clients": 6,
+  "active_jobs": 45,
+  "total_applications": 57,
+  "applications_by_status": { "pending": 30, "reviewed": 12, "hired": 5 },
+  "applications_by_client": { "Danny Herman Trucking": 32, "Pemberton": 20 },
+  "applications_this_week": 8
+}
+```
+
+### Security
+
+- No PII fields (SSN, DOB, government ID) are ever returned via this API
+- API key is validated server-side on every request
+- `last_used_at` is updated on each call for audit
+- Keys can be revoked instantly from the dashboard
+- CORS restricted to hayesairecruiting.com (plus wildcard for dev)
+
+### Files Created/Modified
+
+1. **New**: `supabase/functions/organization-api/index.ts` -- The API edge function
+2. **New**: SQL migration for `org_api_keys` table
+3. **New**: `src/components/dashboard/organization/APIKeyManager.tsx` -- UI for key management
+4. **Modified**: `src/features/dashboard/config/dashboardConfig.tsx` -- Add API/Integrations tab
+5. **Modified**: `supabase/config.toml` -- Add `verify_jwt = false` for the new function
 
