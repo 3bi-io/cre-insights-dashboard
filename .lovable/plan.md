@@ -1,105 +1,113 @@
 
-# Features Page Priority Reorder
+# Features Page Verification & Refactor
 
-## Current State
+## Verification Results
 
-The features page (`FeaturesPage.tsx`) and its content file (`features.content.ts`) display features in this current order:
+The priority reorder applied in the previous step has been confirmed correct on the live page:
 
-### Primary Features (Core AI section) — current order:
-1. Instant AI Callbacks
-2. 24/7 AI Voice Agents
-3. Visual Kanban Pipeline
-4. Talent Pool Management
-5. Voice Apply Technology
-6. AI-Powered Analytics
+- Core AI section order: Voice Apply Technology → Instant AI Callbacks → 24/7 AI Voice Agents → AI-Powered Analytics → Visual Kanban Pipeline → Talent Pool Management
+- Capabilities grid order: Multi-Platform Distribution → Automated Workflows → AI Writing Assistant → Team Collaboration → Communication Hub → Activity Timeline → Performance Insights → Enterprise Security → Mobile-First Design
 
-### Secondary Features (Capabilities grid) — current order:
-1. Activity Timeline
-2. Communication Hub
-3. Automated Workflows
-4. Enterprise Security
-5. Team Collaboration
-6. Multi-Platform Distribution
-7. AI Writing Assistant
-8. Performance Insights
-9. Mobile-First Design
+However, four issues were found that need to be resolved.
 
-### Scroll-Spy Nav sections — current order:
+---
+
+## Issues Found
+
+### Issue 1 — Orphaned Dead File (Low risk, clean-up)
+
+`src/components/landing/FeaturesSection.tsx` is not imported anywhere in the application. The landing page (`LandingPage.tsx`) uses `src/features/landing/components/sections/FeaturesSection.tsx` exclusively. The old file contains a hardcoded, out-of-date feature list with an older design pattern. It should be deleted to prevent future confusion.
+
+### Issue 2 — Comparison Table Priority is Inconsistent
+
+In `FeaturesPage.tsx`, the comparison table rows currently order features like this:
+
+| Position | Feature |
+|---|---|
+| 1 | AI Voice Interviews |
+| 2 | Social Beacon Distribution |
+| 3 | Instant AI Callbacks |
+| 4 | 24/7 Candidate Engagement |
+| 5 | Visual Kanban Pipeline |
+| 6 | Multi-Platform Job Posting |
+| 7 | Resume Parsing |
+| 8 | Predictive Analytics |
+| 9 | Automated Compliance |
+| **10** | **Voice Apply Technology** |
+
+Voice Apply Technology — the platform's #1 differentiator — is in last place. It should be at the top of the table. The recommended order leads with the AI-exclusive features (where ATS.me wins and traditional ATS loses), then shows parity features, and closes with security and compliance:
+
+| Position | Feature | ATS.me | Traditional |
+|---|---|---|---|
+| 1 | Voice Apply Technology | ✓ | ✗ |
+| 2 | Instant AI Callbacks | ✓ | ✗ |
+| 3 | 24/7 Candidate Engagement | ✓ | ✗ |
+| 4 | AI Voice Interviews | ✓ | ✗ |
+| 5 | Social Beacon Distribution | ✓ | ✗ |
+| 6 | Predictive Analytics | ✓ | ✗ |
+| 7 | Visual Kanban Pipeline | ✓ | ✓ |
+| 8 | Multi-Platform Job Posting | ✓ | ✓ |
+| 9 | Resume Parsing | ✓ | ✓ |
+| 10 | Automated Compliance | ✓ | ✗ |
+
+This groups the "ATS.me wins" rows at the top for maximum impact.
+
+### Issue 3 — Landing Page Tab Section Has Weak "For Employers" Tab
+
+The legacy `features` array in `features.content.ts` (used by the tabbed `FeaturesSection` on the landing page) has only 5 items. The tab logic does `slice(0, 3)` for candidates and `slice(3)` for employers, leaving only 2 employer features (Multi-Channel Distribution, Compliance & Security). This is an inadequate showing for the employer audience tab.
+
+The fix is to expand this legacy array to 6 entries — 3 candidate-facing and 3 employer-facing — so both tabs show a balanced set of 3 cards:
+
+- Candidates (first 3): Voice Apply Technology, 24/7 AI Voice Agents, Fraud Free & Secure By Design
+- Employers (last 3): Multi-Channel Distribution, Automated Workflows, AI-Powered Analytics
+
+### Issue 4 — Structured Data Schema Priority is Inconsistent
+
+The `featureList` in the `softwareAppSchema` object in `FeaturesPage.tsx` currently lists "Instant AI Callbacks" and "24/7 AI Voice Agents" before "Voice Apply Technology." This is consumed by search engines and should reflect the platform's priority order.
+
+Current order in schema:
 1. Social Beacon
-2. Core AI
-3. Capabilities
-4. Comparison
-5. Integrations
+2. Multi-Platform Social Distribution
+3. AI Ad Creative Studio
+4. Instant AI Callbacks
+5. 24/7 AI Voice Agents
+6. Visual Kanban Pipeline
+7. Voice Apply Technology
 
-### Landing Page FeaturesSection (`FeaturesSection.tsx`) — current order:
+Recommended order:
 1. Voice Apply Technology
-2. AI-Powered Analytics
-3. Automated Screening & Workflows
-4. Compliance & Security
-5. Advanced Reporting & Insights
-6. Full Lifecycle Management
-7. Multi-Channel Distribution
+2. Instant AI Callbacks
+3. 24/7 AI Voice Agents
+4. Social Beacon
+5. Multi-Platform Social Distribution
+6. AI Ad Creative Studio
+7. Visual Kanban Pipeline
 
 ---
 
-## Recommended Priority Order
+## Technical Changes
 
-Based on the platform's 2026 positioning strategy (Voice Apply, AI Voice Agents, Social Beacon, API-first), the refactor roadmap (Candidate Experience → Recruiter Command Center → Analytics), and what differentiates ATS.me from legacy ATS platforms in competitive contexts, the optimal order is:
+### File 1: `src/pages/public/FeaturesPage.tsx`
 
-### Primary Features — recommended order:
+Two changes:
 
-| # | Feature | Reason |
-|---|---|---|
-| 1 | **Voice Apply Technology** | The #1 differentiator. 80% faster applications is a hard metric that stops scrolling. Opens with candidate impact. |
-| 2 | **Instant AI Callbacks** | Pairs directly with Voice Apply — the employer-side response to candidate applications. Reinforces speed story. |
-| 3 | **24/7 AI Voice Agents** | Extends the AI voice narrative. Inbound + outbound coverage completes the loop. |
-| 4 | **AI-Powered Analytics** | Moves decision-making story forward. Recruiters and executives both care about ROI data after understanding the AI tools. |
-| 5 | **Visual Kanban Pipeline** | Grounds the experience in familiar recruiter workflow. Good bridge between AI excitement and practical tooling. |
-| 6 | **Talent Pool Management** | Longest-term value feature. Best placed last so it's the "and we even do this" feature. |
+**a) Reorder `comparisonData` array** — move Voice Apply Technology to row 1, group all ATS.me-exclusive wins at the top, parity features in the middle.
 
-**Key change:** Voice Apply is moved to #1 because it is named in the platform's top four technology pillars and directly speaks to the candidate experience (which is Phase 1 of the refactor roadmap). Currently it is buried at #5, which is the weakest position in a 6-item list.
+**b) Reorder `softwareAppSchema.featureList`** — move "Voice Apply Technology" to the first position.
 
-### Secondary Features — recommended order:
+### File 2: `src/features/landing/content/features.content.ts`
 
-| # | Feature | Reason |
-|---|---|---|
-| 1 | **Multi-Platform Distribution** | Directly tied to the API-first pillar. Recruiters see immediate job posting ROI. |
-| 2 | **Automated Workflows** | High-volume hiring audiences (trucking, CDL) need to see time savings immediately. |
-| 3 | **AI Writing Assistant** | Natural follow-on from distribution — write great JDs and push them everywhere. |
-| 4 | **Team Collaboration** | Supports the enterprise and multi-recruiter use case. |
-| 5 | **Communication Hub** | Unified comms is a key ATS differentiator vs spreadsheets. |
-| 6 | **Activity Timeline** | Deep operational tool — better after the high-value features. |
-| 7 | **Performance Insights** | Recruiter productivity metrics suit managers reviewing the platform. |
-| 8 | **Enterprise Security** | Important but rarely a lead. Trust is built, not led with. |
-| 9 | **Mobile-First Design** | Good closing note — reassures users but not a primary buying signal. |
+**Expand the legacy `features` array** from 5 to 6 entries — add "Automated Workflows" as the 6th entry (employer-facing) so the employer tab shows 3 cards instead of 2. The first 3 entries stay candidate-facing, the last 3 become employer-facing.
 
-### Landing Page FeaturesSection — recommended order:
+### File 3: `src/components/landing/FeaturesSection.tsx`
 
-| # | Feature | Reason |
-|---|---|---|
-| 1 | **Voice Apply Technology** | Must match the full features page — lead with the brand flagship. |
-| 2 | **Automated Screening & Workflows** | Immediate time savings — highest pain point for busy recruiters. |
-| 3 | **AI-Powered Analytics** | Data-driven hiring is the second buying signal for managers. |
-| 4 | **Multi-Channel Distribution** | Ties to the API-first pillar and Tenstreet/job board integrations. |
-| 5 | **Full Lifecycle Management** | Demonstrates breadth — "we replace your whole stack." |
-| 6 | **Advanced Reporting & Insights** | Supports the Analytics pillar for executive buyers. |
-| 7 | **Compliance & Security** | Trust-builder — best placed last as a reassuring closer. |
-
-### Scroll-Spy Nav — no change needed
-The current section order (Social Beacon → Core AI → Capabilities → Comparison → Integrations) follows a logical narrative arc: flagship product → core tools → full capabilities → proof → ecosystem. This order is sound and should be kept.
+**Delete this file** — it is orphaned and unused. No import paths need updating.
 
 ---
 
-## Technical Changes Required
+## No Changes Needed
 
-All changes are in two content files only:
-
-1. **`src/features/landing/content/features.content.ts`**
-   - Reorder the `primaryFeatures` array (move Voice Apply to index 0, Instant Callbacks to 1, etc.)
-   - Reorder the `secondaryFeatures` array (move Multi-Platform Distribution to index 0, etc.)
-   - Reorder the legacy `features` array in the same file (used by landing page FeaturesSection)
-
-2. **`src/components/landing/FeaturesSection.tsx`**
-   - Reorder the inline `features` array to match the recommended landing page order above.
-
-No component logic, routing, styling, or schema changes are needed. The page renders features in array order, so reordering the arrays is all that is required.
+- Scroll-spy nav section order: correct (Social Beacon → Core AI → Capabilities → Comparison → Integrations)
+- Primary features order: correct (Voice Apply first)
+- Secondary features order: correct (Multi-Platform Distribution first)
+- Component structure, routing, styling, animations: all sound
