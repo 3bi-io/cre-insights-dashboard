@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CheckCircle, X, Check, Mic, Phone, Bot, Zap } from 'lucide-react';
+import featuresHero from '@/assets/hero/features-hero.jpg';
 import { motion } from 'framer-motion';
 import { useScrollSpy } from '@/hooks/useScrollSpy';
 
@@ -114,44 +115,63 @@ const FeaturesPage = () => {
       </nav>
 
       {/* Page Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/10 pt-24 pb-16 md:pt-32 md:pb-24">
-        {/* Decorative blobs */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/10 pt-24 pb-0 md:pt-28 md:pb-0">
+        {/* Decorative blob — left only, image takes right side */}
+        <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-primary/8 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="max-w-3xl"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Badge className="mb-5 bg-primary/15 text-primary border-primary/25 text-sm px-4 py-1.5">
-              ✨ AI-Powered Platform
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair font-bold tracking-tight text-foreground mb-4 leading-tight">
-              The AI Recruitment Platform{' '}
-              <span className="text-primary">Built for Speed</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-3 font-medium">
-              Voice Apply. Instant Callbacks. 24/7 AI Agents.
-            </p>
-            <p className="text-base text-muted-foreground mb-8 max-w-2xl">
-              From application to offer in record time — AI-driven recruitment that finds and screens candidates while you focus on what matters.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link to="/auth">
-                <Button size="lg" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
-                  Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/contact">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
-                  Talk to Sales
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
+            {/* Left: copy */}
+            <motion.div
+              className="pb-12 md:pb-16 lg:pb-20"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Badge className="mb-5 bg-primary/15 text-primary border-primary/25 text-sm px-4 py-1.5">
+                ✨ AI-Powered Platform
+              </Badge>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair font-bold tracking-tight text-foreground mb-4 leading-tight">
+                The AI Recruitment Platform{' '}
+                <span className="text-primary">Built for Speed</span>
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground mb-3 font-medium">
+                Voice Apply. Instant Callbacks. 24/7 AI Agents.
+              </p>
+              <p className="text-base text-muted-foreground mb-8 max-w-xl">
+                From application to offer in record time — AI-driven recruitment that finds and screens candidates while you focus on what matters.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link to="/auth">
+                  <Button size="lg" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
+                    Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
+                    Talk to Sales
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Right: hero image */}
+            <motion.div
+              className="relative hidden lg:flex items-end justify-end"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+            >
+              {/* Glow behind image */}
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-primary/20 via-primary/5 to-transparent rounded-t-3xl pointer-events-none" />
+              <img
+                src={featuresHero}
+                alt="Professional recruiter using AI voice technology with sound wave visualizations"
+                className="relative w-full max-w-lg xl:max-w-xl object-contain object-bottom drop-shadow-2xl"
+                loading="eager"
+              />
+            </motion.div>
+          </div>
         </div>
       </section>
 
