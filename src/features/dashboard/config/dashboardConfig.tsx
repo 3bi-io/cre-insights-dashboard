@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Users, FileText, Building2, Settings, Palette } from 'lucide-react';
+import { Bot, Users, FileText, Building2, Settings, Palette, Key } from 'lucide-react';
 import { OrganizationOverview } from '@/components/dashboard/organization/OrganizationOverview';
 import { OrganizationBrandingPanel } from '@/components/dashboard/organization/OrganizationBrandingPanel';
 import { OrganizationFeatureStatus } from '@/components/dashboard/organization/OrganizationFeatureStatus';
@@ -11,6 +11,7 @@ import DashboardContent from '@/components/dashboard/DashboardContent';
 import { OrganizationApplicationsTab } from '@/components/dashboard/organization/OrganizationApplicationsTab';
 import { ApplyPageAnalyticsPage } from '@/features/analytics';
 import ClientAnalyticsDashboard from '@/features/clients/components/ClientAnalyticsDashboard';
+import { APIKeyManager } from '@/components/dashboard/organization/APIKeyManager';
 
 export interface DashboardTab {
   id: string;
@@ -101,5 +102,11 @@ export const dashboardTabs: DashboardTab[] = [
     label: 'Apply Analytics',
     icon: FileText,
     component: ApplyPageAnalyticsPage,
+  },
+  {
+    id: 'api-keys',
+    label: 'API Keys',
+    icon: Key,
+    component: APIKeyManager,
   },
 ];
