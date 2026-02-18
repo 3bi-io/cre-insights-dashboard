@@ -30,6 +30,17 @@ export const featuresContent = {
   // Primary features (AI-powered, high-impact) - shown with detailed view
   primaryFeatures: [
     {
+      icon: Mic,
+      title: "Voice Apply Technology",
+      description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80%.",
+      features: [
+        "80% faster applications",
+        "Improved accessibility",
+        "Higher completion rates",
+        "Mobile-optimized experience"
+      ]
+    },
+    {
       icon: Phone,
       title: "Instant AI Callbacks",
       description: "Applications trigger automated voice calls within minutes. Never let a hot lead go cold — our AI reaches out before competitors even see the resume.",
@@ -49,6 +60,17 @@ export const featuresContent = {
         "Inbound call handling",
         "Outbound screening calls",
         "Multi-language support"
+      ]
+    },
+    {
+      icon: BarChart3,
+      title: "AI-Powered Analytics",
+      description: "Track cost-per-hire by source, predict time-to-hire trends, identify jobseeker drop-off points, and compare publisher ROI.",
+      features: [
+        "Real-time hiring metrics",
+        "Predictive analytics",
+        "Source ROI tracking",
+        "Custom report builder"
       ]
     },
     {
@@ -72,42 +94,15 @@ export const featuresContent = {
         "Pool organization tools",
         "Notes & tagging"
       ]
-    },
-    {
-      icon: Mic,
-      title: "Voice Apply Technology",
-      description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80%.",
-      features: [
-        "80% faster applications",
-        "Improved accessibility",
-        "Higher completion rates",
-        "Mobile-optimized experience"
-      ]
-    },
-    {
-      icon: BarChart3,
-      title: "AI-Powered Analytics",
-      description: "Track cost-per-hire by source, predict time-to-hire trends, identify jobseeker drop-off points, and compare publisher ROI.",
-      features: [
-        "Real-time hiring metrics",
-        "Predictive analytics",
-        "Source ROI tracking",
-        "Custom report builder"
-      ]
     }
   ] as DetailedFeature[],
   
   // Secondary features (platform capabilities) - shown in compact grid
   secondaryFeatures: [
     {
-      icon: History,
-      title: "Activity Timeline",
-      description: "Complete history of all candidate interactions"
-    },
-    {
-      icon: MessageSquare,
-      title: "Communication Hub",
-      description: "Email, SMS, and call history in one place"
+      icon: Globe,
+      title: "Multi-Platform Distribution",
+      description: "One-click posting to 100+ job boards"
     },
     {
       icon: Zap,
@@ -115,9 +110,9 @@ export const featuresContent = {
       description: "Smart interview scheduling and status updates"
     },
     {
-      icon: Shield,
-      title: "Enterprise Security",
-      description: "SOC 2 compliant with role-based access controls"
+      icon: Sparkles,
+      title: "AI Writing Assistant",
+      description: "Generate compelling job descriptions instantly"
     },
     {
       icon: Users,
@@ -125,19 +120,24 @@ export const featuresContent = {
       description: "Real-time collaboration with notes and @mentions"
     },
     {
-      icon: Globe,
-      title: "Multi-Platform Distribution",
-      description: "One-click posting to 100+ job boards"
+      icon: MessageSquare,
+      title: "Communication Hub",
+      description: "Email, SMS, and call history in one place"
     },
     {
-      icon: Sparkles,
-      title: "AI Writing Assistant",
-      description: "Generate compelling job descriptions instantly"
+      icon: History,
+      title: "Activity Timeline",
+      description: "Complete history of all candidate interactions"
     },
     {
       icon: TrendingUp,
       title: "Performance Insights",
       description: "Track recruiter productivity and outcomes"
+    },
+    {
+      icon: Shield,
+      title: "Enterprise Security",
+      description: "SOC 2 compliant with role-based access controls"
     },
     {
       icon: Smartphone,
@@ -154,24 +154,24 @@ export const featuresContent = {
       description: "Revolutionary voice-powered application process. Jobseekers apply using natural speech, reducing application time by 80% and improving accessibility."
     },
     {
-      icon: ShieldCheck,
-      title: "Fraud Free & Secure By Design",
-      description: "Advanced security with multi-factor authentication, dynamic knowledge-based authentication, identity proofing, and more."
-    },
-    {
       icon: Bot,
       title: "24/7 AI Voice Agents",
       description: "Inbound and outbound voice agents that never sleep. Screen jobseekers, answer questions, and schedule interviews around the clock."
     },
     {
-      icon: Shield,
-      title: "Compliance & Security",
-      description: "Enterprise-grade security with full GDPR and EEO compliance, automated audit trails, and role-based access controls for data protection."
+      icon: ShieldCheck,
+      title: "Fraud Free & Secure By Design",
+      description: "Advanced security with multi-factor authentication, dynamic knowledge-based authentication, identity proofing, and more."
     },
     {
       icon: Globe,
       title: "Multi-Channel Distribution",
       description: "Integrate with Tenstreet, Indeed, Glassdoor, Adzuna, Talroo, and 100+ job boards. Automatic posting and real-time application syncing."
+    },
+    {
+      icon: Shield,
+      title: "Compliance & Security",
+      description: "Enterprise-grade security with full GDPR and EEO compliance, automated audit trails, and role-based access controls for data protection."
     }
   ] as Feature[]
 };
