@@ -1,112 +1,168 @@
 
-# Remove Global Geo-Restriction — Keep Only US Sanctions/Watch List Countries Blocked
+# Geo-Restricted Application Simulation for Non-Americas Users
 
-## Advisory: What Is Changing & Why
+## What Is Being Built & Why
 
-The current system uses an **allow-list** approach — only countries explicitly listed (Americas + Spain + Armenia) can access the platform, and everyone else is blocked by default. You've asked to flip this to a **block-list** approach — everyone can access **except** countries on the US sanctions/watch list (OFAC-designated programs).
+Users outside North and South America can currently browse all job listings but — once the old allow-list was removed — they can technically reach and submit the real `/apply` form. The request is to:
 
----
-
-## US Sanctions Watch List (OFAC) — Countries to Keep Blocked
-
-Based on current OFAC comprehensive and critical embargo programs, the following countries will remain blocked:
-
-| Country | ISO Code | Sanction Level |
-|---|---|---|
-| Russia | RU | Critical / Hybrid Embargo |
-| Iran | IR | Full Embargo |
-| Cuba | CU | Full Embargo |
-| North Korea | KP | Full Embargo |
-| Syria | SY | Full Embargo |
-| Belarus | BY | Highly Restrictive |
-
-**Regional territories also blocked:**
-- Crimea, Donetsk People's Republic, Luhansk People's Republic — these are sub-national territories within Ukraine under Russian occupation; geo-IP databases may return `UA` for these, so they cannot be precisely blocked by country code alone. A note will be added in comments.
-
-**Not blocking (list-based only, no country embargo):**
-- Yemen (`YE`), Sudan (`SD`), Zimbabwe (`ZW`) — these use SDN (Specially Designated Nationals) targeted lists against specific individuals/entities, not country-wide bans. Blocking these entire countries is not required.
-- Venezuela (`VE`) — currently on the original allow-list; sanctions target the government, not general commercial activity. Will remain accessible.
-- Afghanistan (`AF`) — targeted against Taliban entities, not a blanket country ban.
+1. **Let them browse everything** — jobs, features, clients, etc. — without any restriction.
+2. **When they try to apply**, show them a **simulation mode** of the full application wizard, clearly labeled as a demo due to geo-restrictions, and **never submit real data** to the database.
+3. At the end of the simulation, show a polished "simulation complete" screen explaining why real submission isn't available from their region.
 
 ---
 
-## What Changes
+## How "Non-Americas" Is Detected
 
-### 1. `supabase/functions/_shared/geo-blocking.ts`
+The `GeoBlockingContext` already exposes `countryCode` to all components. The OFAC block-list approach (current state) only blocks 6 sanctioned countries — it does not track whether someone is from Americas vs. elsewhere.
 
-Switch from allow-list to **block-list** logic:
+We need to **add a new derived flag** to the context: `isOutsideAmericas`. This is computed client-side from the `countryCode` returned by the existing `geo-check` edge function — no backend changes needed.
 
-- **Remove** the large `ALLOWED_COUNTRY_CODES` set
-- **Add** a small `BLOCKED_COUNTRY_CODES` set with: `RU`, `IR`, `CU`, `KP`, `SY`, `BY`
-- **Change** `isCountryAllowed()` → `isCountryBlocked()` — returns `true` if the country is on the block list
-- **Update** `checkGeoAccess()`:
-  - If geo lookup fails → **fail open** (allow access) instead of fail-closed, since we're no longer PII-restricting by region — only blocking sanctions countries
-  - If country code is unknown → **allow access** (open world policy)
-  - If country is in the block list → **deny**
-  - All other countries → **allow**
-- **Update** `getAllowedRegionsDescription()` message to reflect new policy
+### Americas Country Codes (ISO 3166-1 alpha-2)
 
-### 2. `supabase/functions/geo-check/index.ts`
+North America: `US`, `CA`, `MX`, `GT`, `BZ`, `HN`, `SV`, `NI`, `CR`, `PA`
+Caribbean: `CU` (blocked anyway), `JM`, `HT`, `DO`, `PR`, `TT`, `BB`, `LC`, `VC`, `GD`, `AG`, `KN`, `BS`, `TC`, `KY`, `VG`, `VI`, `AW`, `CW`, `BQ`, `MF`, `SX`, `AI`, `MS`, `GP`, `MQ`, `MF`, `BL`, `DM`
+South America: `CO`, `VE`, `GY`, `SR`, `BR`, `EC`, `PE`, `BO`, `CL`, `AR`, `UY`, `PY`, `FK`, `GF`
+Other: `GL` (Greenland/Denmark, geographically Americas)
 
-- Update the response messaging to reflect the new open-world policy
-- The Lovable preview bypass remains unchanged
-
-### 3. `src/contexts/GeoBlockingContext.tsx`
-
-- Change the **fail-closed** error handling to **fail-open** — if the geo-check edge function errors, allow the user through (since the default is now "allow all except sanctions countries")
-- Update log messages to reflect new policy
-
-### 4. `src/pages/RegionBlocked.tsx`
-
-- Update the copy to reflect that the restriction is due to **US sanctions compliance** rather than a regional data-protection policy
-- Update the contact email section to reflect the sanctions reason
+> Previously `ES` (Spain) and `AM` (Armenia) were on the allow-list. These are geographically outside the Americas. Under the new policy they get "simulate" mode.
 
 ---
 
-## Behavior Comparison
+## Architecture
 
 ```text
-BEFORE (Allow-List):
-  Unknown country → BLOCKED
-  EU country → BLOCKED
-  Asia/Pacific → BLOCKED
-  Russia → BLOCKED (was already on allow-list exclusion)
-  Iran → BLOCKED
-  Cuba → BLOCKED (was in the allow-list!)
+GeoBlockingContext
+  ├── isBlocked          → Full hard block (OFAC sanctioned)
+  ├── isOutsideAmericas  → NEW: soft restriction (simulate apply)
+  └── countryCode        → already exposed
 
-AFTER (Block-List):
-  Unknown country → ALLOWED
-  EU country → ALLOWED
-  Asia/Pacific → ALLOWED
-  Russia → BLOCKED
-  Iran → BLOCKED
-  North Korea → BLOCKED
-  Syria → BLOCKED
-  Belarus → BLOCKED
-  Cuba → BLOCKED (was previously ALLOWED — this tightens that)
+Apply Page (/apply)
+  └── ApplicationForm
+        └── reads isOutsideAmericas from context
+              ├── false → Real form (existing behavior)
+              └── true  → SimulatedApplicationForm (new component)
+
+/apply/detailed
+  └── DetailedApplicationForm
+        └── same isOutsideAmericas check → SimulatedApplicationForm
 ```
 
-> **Note on Cuba:** Cuba was actually in the original `ALLOWED_COUNTRY_CODES` list, but it is under a US Full Embargo. The new policy correctly blocks it.
+---
+
+## Files to Create or Modify
+
+### 1. `src/contexts/GeoBlockingContext.tsx` — Add `isOutsideAmericas`
+
+- Add `AMERICAS_COUNTRY_CODES` set (all North + South American ISO codes).
+- Add `isOutsideAmericas: boolean` field to `GeoBlockingState` and `GeoBlockingContextType`.
+- Compute `isOutsideAmericas = countryCode !== null && !AMERICAS_COUNTRY_CODES.has(countryCode)` after a successful geo-check.
+- Fail-open: if `countryCode` is `null` (lookup failed), `isOutsideAmericas = false` (don't restrict unknown users).
+- The Lovable preview bypass already returns `countryCode: 'US'`, so preview always gets `isOutsideAmericas = false`.
+
+### 2. `src/components/apply/SimulatedApplicationForm.tsx` — New Component
+
+A **pixel-perfect replica** of `ApplicationForm` that:
+- Renders all 4 real steps (PersonalInfoSection, CDLInfoSection, BackgroundInfoSection, ConsentSection) — same layout, same fields.
+- Uses `useStepWizard` for navigation — the user walks through every step normally.
+- Accepts input and shows validation — feels identical to the real form.
+- Has a **persistent amber banner** at the top of the card:
+  ```
+  🌐 Simulation Mode — Geo Restriction Active
+  Applications from [Country] are view-only. This is a demo of the application experience.
+  Data entered here will NOT be submitted.
+  ```
+- On "Submit Application" click on the final step: navigates to a new **SimulationCompleteScreen** instead of calling the real submit endpoint.
+- The submit button text changes to **"Complete Simulation"** on the final step.
+- No draft persistence (data is never saved).
+- No `ZipRecruiterPixel` fires.
+
+### 3. `src/components/apply/SimulationCompleteScreen.tsx` — New Component
+
+Shown after the user "completes" the simulated application. It mirrors the real ThankYou screen's card layout but with:
+- A globe/info icon (not a check mark).
+- Headline: **"Simulation Complete"**
+- Sub-copy: "You've previewed the full CDL driver application process. Unfortunately, applications from [Country] cannot be submitted at this time as this platform currently serves employers and job seekers in the Americas."
+- A clear call-to-action: "View Available Jobs" → `/jobs` and "Learn More About ATS.me" → `/features`.
+- **No** confirmation emails or voice agent calls are triggered.
+
+### 4. `src/pages/Apply.tsx` — Wire Simulation Mode
+
+- Import `useGeoBlocking` and read `isOutsideAmericas`.
+- If `isOutsideAmericas === true`, render `<SimulatedApplicationForm>` instead of `<ApplicationForm>`.
+- The `ApplicationHeader` (job title, client logo, location) is still shown above both — the experience looks real up until the banner.
+
+### 5. `src/components/apply/detailed/DetailedApplicationForm.tsx` — Wire Simulation Mode
+
+- Same pattern: import `useGeoBlocking`, check `isOutsideAmericas`.
+- Swap in `<SimulatedApplicationForm variant="detailed">` which shows all 6 detailed steps.
+- Or reuse `SimulatedApplicationForm` with a prop to render either 4-step or 6-step variant.
+
+### 6. `src/components/apply/ApplicationForm.tsx` — No change needed
+
+The gate lives at the page level (`Apply.tsx`), so `ApplicationForm` itself doesn't need to change.
 
 ---
 
-## Important Notes
+## User Flow Diagram
 
-1. **Fail-open vs fail-closed:** Since the new policy is "allow the world, block a small list," failing open on geo-lookup errors is correct and consistent. Previously, failing closed protected against accidentally granting access to non-Americas regions. That concern no longer applies.
-
-2. **Venezuela remains accessible** — OFAC sanctions target the Venezuelan government/specific entities, not all commercial activity. General License provisions allow normal business transactions.
-
-3. **Session cache** will be cleared automatically after the existing 30-minute TTL. Users who visited before this change and cached an "allowed" result will stay allowed. Users cached as "blocked" who are now in allowed countries will need to wait up to 30 minutes or clear session storage.
-
-4. **Crimea/DNR/LNR** — These territories cannot be reliably blocked by country code because IP databases return `UA` (Ukraine). A comment will document this limitation.
-
-5. **This is not legal advice.** The OFAC list changes frequently. You should periodically review [https://ofac.treasury.gov/sanctions-programs-and-country-information](https://ofac.treasury.gov/sanctions-programs-and-country-information) to keep the block list current.
+```text
+User (non-Americas) clicks "Apply Now" on a job listing
+        ↓
+/apply page loads
+        ↓
+useGeoBlocking() → isOutsideAmericas = true
+        ↓
+ApplicationHeader (job title, logo) renders normally
+        ↓
+SimulatedApplicationForm renders
+  ┌─────────────────────────────────────────┐
+  │  🌐 SIMULATION MODE banner (amber)      │
+  │  Step 1 — Personal Info (real fields)   │
+  │  [Continue] →                           │
+  │  Step 2 — CDL Info (real fields)        │
+  │  [Continue] →                           │
+  │  Step 3 — Background (real fields)      │
+  │  [Continue] →                           │
+  │  Step 4 — Consent (real fields)         │
+  │  [Complete Simulation] button            │
+  └─────────────────────────────────────────┘
+        ↓
+SimulationCompleteScreen
+  ┌─────────────────────────────────────────┐
+  │  🌐 Simulation Complete                 │
+  │  "You've previewed the application..."  │
+  │  [View Jobs] [Learn More]               │
+  └─────────────────────────────────────────┘
+```
 
 ---
 
-## Files to Change
+## Technical Details
 
-- `supabase/functions/_shared/geo-blocking.ts` — Core logic flip (allow-list → block-list)
-- `supabase/functions/geo-check/index.ts` — Update messaging
-- `src/contexts/GeoBlockingContext.tsx` — Fail-open on error
-- `src/pages/RegionBlocked.tsx` — Update blocked-page copy
+- `SimulatedApplicationForm` shares all existing step components (`PersonalInfoSection`, `CDLInfoSection`, etc.) — no duplication of form fields.
+- Uses `useStepWizard` and `useApplicationForm`'s `formData`/`handleInputChange` for state, but overrides `handleSubmit` to never call the API.
+- The simulation banner uses `Alert` from the UI library with an amber/warning variant.
+- `isOutsideAmericas` is cached in sessionStorage alongside the existing `geo_blocking_result` cache — computed at cache-write time so it's available instantly on revisit.
+- The Lovable preview bypass (`countryCode: 'US'`) means the simulation will never fire during development.
+
+---
+
+## Edge Cases Handled
+
+- **Geo lookup failure** → `isOutsideAmericas = false` → real form shown (fail-open, consistent with OFAC policy).
+- **OFAC-sanctioned country** → `isBlocked = true` → hard block page shown, never reaches /apply.
+- **US/Canada/Mexico** → `isOutsideAmericas = false` → real form.
+- **Spain, Armenia, EU, Asia, Africa** → `isOutsideAmericas = true` → simulation mode.
+- **Lovable preview** → `countryCode = 'US'` → always real form.
+
+---
+
+## Summary of Files Changed
+
+| File | Action |
+|---|---|
+| `src/contexts/GeoBlockingContext.tsx` | Add `isOutsideAmericas` flag + `AMERICAS_COUNTRY_CODES` set |
+| `src/components/apply/SimulatedApplicationForm.tsx` | Create — full 4-step simulation wrapper |
+| `src/components/apply/SimulationCompleteScreen.tsx` | Create — post-simulation success-like screen |
+| `src/pages/Apply.tsx` | Wire: render SimulatedApplicationForm if `isOutsideAmericas` |
+| `src/components/apply/detailed/DetailedApplicationForm.tsx` | Wire: same gate for 6-step detailed form |
