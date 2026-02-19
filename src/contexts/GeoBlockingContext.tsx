@@ -38,6 +38,9 @@ interface GeoBlockingState {
 
 interface GeoBlockingContextType extends GeoBlockingState {
   recheckLocation: () => Promise<void>;
+  /** Super-admin dev toggle: forces simulation mode without altering real geo detection */
+  simulationModeOverride: boolean;
+  setSimulationOverride: (enabled: boolean) => void;
 }
 
 const GeoBlockingContext = createContext<GeoBlockingContextType | null>(null);
@@ -50,6 +53,8 @@ interface CachedResult {
   expiresAt: number;
 }
 
+const SIM_OVERRIDE_KEY = 'geo_sim_override';
+
 export function GeoBlockingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GeoBlockingState>({
     isChecking: true,
@@ -61,6 +66,15 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
     message: null,
     allowedRegions: null,
   });
+
+  const [simulationModeOverride, setSimulationModeOverride] = useState<boolean>(() => {
+    try { return localStorage.getItem(SIM_OVERRIDE_KEY) === 'true'; } catch { return false; }
+  });
+
+  const setSimulationOverride = useCallback((enabled: boolean) => {
+    try { localStorage.setItem(SIM_OVERRIDE_KEY, String(enabled)); } catch { /* noop */ }
+    setSimulationModeOverride(enabled);
+  }, []);
 
   const checkLocation = useCallback(async () => {
     // Check session cache first
@@ -169,7 +183,11 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
 
   const value: GeoBlockingContextType = {
     ...state,
+    // Override isOutsideAmericas when super-admin simulation toggle is active
+    isOutsideAmericas: simulationModeOverride || state.isOutsideAmericas,
     recheckLocation: checkLocation,
+    simulationModeOverride,
+    setSimulationOverride,
   };
 
   return (
