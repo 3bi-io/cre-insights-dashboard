@@ -26,9 +26,12 @@ const OutboundCallRequestSchema = z.object({
 type OutboundCallRequest = z.infer<typeof OutboundCallRequestSchema>;
 
 interface ElevenLabsOutboundResponse {
-  call_sid: string;
+  call_sid?: string;
+  callSid?: string;
   conversation_id?: string;
-  status: string;
+  status?: string;
+  success?: boolean;
+  message?: string;
 }
 
 interface ProcessQueueResult {
@@ -656,8 +659,11 @@ async function processOutboundCall(
     try {
       elevenLabsData = JSON.parse(responseText);
     } catch {
-      elevenLabsData = { call_sid: 'unknown', status: 'initiated' };
+      elevenLabsData = { status: 'initiated' };
     }
+
+    // Normalize callSid (ElevenLabs returns camelCase "callSid", not snake_case)
+    const callSid = elevenLabsData.callSid || elevenLabsData.call_sid || null;
 
     // Update call record with success
     if (callRecord) {
@@ -665,21 +671,21 @@ async function processOutboundCall(
         .from('outbound_calls')
         .update({
           status: 'initiated',
-          call_sid: elevenLabsData.call_sid,
+          call_sid: callSid,
           elevenlabs_conversation_id: elevenLabsData.conversation_id,
           updated_at: new Date().toISOString()
         })
         .eq('id', callRecord.id);
     }
 
-    logger.info('Outbound call initiated successfully', { call_sid: elevenLabsData.call_sid });
+    logger.info('Outbound call initiated successfully', { call_sid: callSid, conversation_id: elevenLabsData.conversation_id });
 
     return {
       success: true,
       data: {
         success: true,
         call_id: callRecord?.id,
-        call_sid: elevenLabsData.call_sid,
+        call_sid: callSid,
         conversation_id: elevenLabsData.conversation_id,
         phone_number: normalizedPhone,
         message: 'Outbound call initiated successfully'
