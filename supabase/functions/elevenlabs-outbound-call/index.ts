@@ -119,8 +119,14 @@ serve(async (req) => {
           let durationSeconds = null;
           
           if (elStatus === 'done' || elStatus === 'ended') {
-            mappedStatus = 'completed';
             durationSeconds = convData.metadata?.call_duration_secs || null;
+            // If call ended with 0 or no duration, driver didn't answer
+            if (!durationSeconds || durationSeconds <= 0) {
+              mappedStatus = 'no_answer';
+              logger.info(`Call ${call.id} ended with no duration - marking as no_answer`);
+            } else {
+              mappedStatus = 'completed';
+            }
           } else if (elStatus === 'failed' || elStatus === 'error') {
             mappedStatus = 'failed';
           } else if (elStatus === 'no-answer') {
