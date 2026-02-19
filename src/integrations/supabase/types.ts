@@ -5891,6 +5891,51 @@ export type Database = {
           },
         ]
       }
+      simulation_events: {
+        Row: {
+          country: string | null
+          country_code: string | null
+          created_at: string
+          event_type: string
+          id: string
+          job_listing_id: string | null
+          metadata: Json | null
+          session_id: string
+          step_name: string | null
+          step_number: number | null
+          time_on_step_ms: number | null
+          total_steps_completed: number | null
+        }
+        Insert: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          job_listing_id?: string | null
+          metadata?: Json | null
+          session_id: string
+          step_name?: string | null
+          step_number?: number | null
+          time_on_step_ms?: number | null
+          total_steps_completed?: number | null
+        }
+        Update: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          job_listing_id?: string | null
+          metadata?: Json | null
+          session_id?: string
+          step_name?: string | null
+          step_number?: number | null
+          time_on_step_ms?: number | null
+          total_steps_completed?: number | null
+        }
+        Relationships: []
+      }
       sms_conversations: {
         Row: {
           application_id: string

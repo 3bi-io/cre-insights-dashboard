@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Users, CheckCircle, FileText, Database } from 'lucide-react';
+import { Building2, Users, CheckCircle, FileText, Globe } from 'lucide-react';
 import { PageLayout } from '@/features/shared';
 import { useSuperAdminDashboardData } from '@/hooks/useSuperAdminDashboardData';
 import { MetricCard } from './shared/MetricCard';
@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { OutboundCallAnalytics } from '@/components/voice/OutboundCallAnalytics';
 import { OverviewTab, OrganizationsTab, SystemTab, SettingsTab, DataQualityTab } from './tabs';
+import { SimulationAnalyticsPanel } from './SimulationAnalyticsPanel';
 
 export const SuperAdminDashboard = React.memo(() => {
   const { data: metrics, isLoading } = useSuperAdminDashboardData();
@@ -106,11 +107,15 @@ export const SuperAdminDashboard = React.memo(() => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="organizations">Organizations</TabsTrigger>
             <TabsTrigger value="data-quality">Data Quality</TabsTrigger>
             <TabsTrigger value="voice-calls">Voice Calls</TabsTrigger>
+            <TabsTrigger value="geo-simulation" className="gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Geo Simulation
+            </TabsTrigger>
             <TabsTrigger value="system">System</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -134,6 +139,10 @@ export const SuperAdminDashboard = React.memo(() => {
 
           <TabsContent value="voice-calls" className="space-y-4">
             <OutboundCallAnalytics />
+          </TabsContent>
+
+          <TabsContent value="geo-simulation" className="space-y-4">
+            <SimulationAnalyticsPanel />
           </TabsContent>
           
           <TabsContent value="system">

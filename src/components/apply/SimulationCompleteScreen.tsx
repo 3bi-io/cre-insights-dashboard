@@ -20,9 +20,10 @@ interface SimulationCompleteScreenProps {
   country?: string | null;
   countryCode?: string | null;
   jobListingId?: string | null;
-  /** Pre-fill email from the sim form (Step 1 personal info) */
   prefillEmail?: string;
   prefillName?: string;
+  /** Called after a successful waitlist insert so the parent can log the analytics event */
+  onWaitlistJoined?: () => void;
 }
 
 export const SimulationCompleteScreen = ({
@@ -31,6 +32,7 @@ export const SimulationCompleteScreen = ({
   jobListingId,
   prefillEmail = '',
   prefillName = '',
+  onWaitlistJoined,
 }: SimulationCompleteScreenProps) => {
   const countryLabel = country ? `from ${country}` : 'from your region';
 
@@ -62,6 +64,7 @@ export const SimulationCompleteScreen = ({
 
       if (error) throw error;
       setSubmitted(true);
+      onWaitlistJoined?.(); // notify parent to log analytics event
       toast.success("You're on the waitlist! We'll reach out when international hiring opens.");
     } catch (err) {
       console.error('Waitlist insert error:', err);

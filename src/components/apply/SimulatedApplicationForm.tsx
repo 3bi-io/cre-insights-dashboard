@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Globe } from 'lucide-react';
 import { useStepWizard } from '@/hooks/useStepWizard';
+import { useSimulationAnalytics } from '@/hooks/useSimulationAnalytics';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
@@ -65,6 +66,23 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
   const [formData, setFormData] = useState<SimFormData>(initialFormData);
   const [simComplete, setSimComplete] = useState(false);
 
+  const analytics = useSimulationAnalytics({ country, countryCode, jobListingId });
+
+  // Track session start once on mount, drop-off on unmount if not completed
+  const simCompleteRef = useRef(false);
+  const activeStepRef = useRef(1);
+  const completedCountRef = useRef(0);
+
+  useEffect(() => {
+    analytics.trackSessionStart();
+    return () => {
+      if (!simCompleteRef.current) {
+        analytics.trackDropoff(activeStepRef.current, completedCountRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleInputChange = useCallback((name: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [name]: value } as SimFormData));
   }, []);
@@ -126,17 +144,25 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
     return checks[activeStep] ?? false;
   }, [formData, activeStep]);
 
+  // Keep refs in sync with reactive state for the unmount cleanup
+  useEffect(() => { activeStepRef.current = activeStep; }, [activeStep]);
+  useEffect(() => { completedCountRef.current = completedSteps.size; }, [completedSteps]);
+
   const handleNext = useCallback(() => {
     if (validateStep(activeStep)) {
+      analytics.trackStepComplete(activeStep, completedSteps.size + 1);
       nextStep();
     }
-  }, [activeStep, validateStep, nextStep]);
+  }, [activeStep, completedSteps, validateStep, nextStep, analytics]);
 
   const handleSimulationSubmit = useCallback(() => {
     if (validateStep(TOTAL_STEPS)) {
+      analytics.trackStepComplete(TOTAL_STEPS, TOTAL_STEPS);
+      analytics.trackSimulationComplete();
+      simCompleteRef.current = true;
       setSimComplete(true);
     }
-  }, [validateStep]);
+  }, [validateStep, analytics]);
 
   if (simComplete) {
     return (
@@ -146,6 +172,7 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
         jobListingId={jobListingId}
         prefillEmail={formData.email}
         prefillName={`${formData.firstName} ${formData.lastName}`.trim()}
+        onWaitlistJoined={analytics.trackWaitlistJoined}
       />
     );
   }
