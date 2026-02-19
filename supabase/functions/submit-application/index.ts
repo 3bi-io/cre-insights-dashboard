@@ -792,11 +792,18 @@ Deno.serve(async (req) => {
 
     // Resolve organization and job details dynamically (source-based routing takes priority)
     // Normalize job_listing_id to avoid empty string issues
-    const normalizedJobListingId = formData.job_listing_id && formData.job_listing_id.trim() !== '' ? formData.job_listing_id : undefined;
-    
+    const EMBED_FORM_JOB_LISTING_ID = '4c3cfad9-4641-4830-ad97-11589e8f8cd4';
+
+    // Override: All Embed Form submissions must associate with the dedicated job listing
+    const resolvedJobListingId = detectedSource === 'Embed Form'
+      ? EMBED_FORM_JOB_LISTING_ID
+      : (formData.job_listing_id && formData.job_listing_id.trim() !== ''
+          ? formData.job_listing_id
+          : undefined);
+
     const { organizationId, organizationName, clientName, externalJobId, jobTitle } = await resolveOrganizationAndJob(
       supabase,
-      normalizedJobListingId,
+      resolvedJobListingId,
       formData.org_slug,
       detectedSource,
       formData.job_id, // Pass job_id for prefix-based organization inference
@@ -808,7 +815,7 @@ Deno.serve(async (req) => {
     const { isDuplicate, existingApplicationDate } = await checkDuplicateApplication(
       supabase,
       applicantEmail,
-      formData.job_listing_id || null
+      resolvedJobListingId || null
     );
 
     if (isDuplicate) {
@@ -876,7 +883,7 @@ Deno.serve(async (req) => {
 
     // Get or create a job listing for the application using shared processor
     const jobListingResult = await findOrCreateJobListing(supabase, {
-      jobListingId: formData.job_listing_id,
+      jobListingId: resolvedJobListingId,
       jobId: formData.job_id,
       jobTitle: 'General Application',
       organizationId: organizationId,
