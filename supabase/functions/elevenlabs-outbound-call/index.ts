@@ -82,7 +82,7 @@ serve(async (req) => {
         .from('outbound_calls')
         .select('id, elevenlabs_conversation_id, voice_agent_id, created_at')
         .eq('status', 'initiated')
-        .lt('updated_at', tenMinutesAgo)
+        .lt('created_at', tenMinutesAgo)
         .not('elevenlabs_conversation_id', 'is', null)
         .limit(20);
 
@@ -136,6 +136,25 @@ serve(async (req) => {
             mappedStatus = 'no_answer';
           } else if (elStatus === 'busy') {
             mappedStatus = 'busy';
+          } else {
+            // If ElevenLabs still reports non-terminal status but the call is 30+ min old, force no_answer
+            const callAgeMs = Date.now() - new Date(call.created_at).getTime();
+            const thirtyMinMs = 30 * 60 * 1000;
+            if (callAgeMs > thirtyMinMs) {
+              mappedStatus = 'no_answer';
+              logger.info(`Call ${call.id} is ${Math.round(callAgeMs / 60000)}min old with ElevenLabs status "${elStatus}" - forcing no_answer`);
+            } else {
+              logger.info(`Call ${call.id} still has ElevenLabs status "${elStatus}" (age: ${Math.round(callAgeMs / 60000)}min) - keeping initiated`);
+            }
+          }
+
+          // Only update the DB if status actually changed (avoid resetting updated_at)
+          if (mappedStatus === 'initiated') {
+            // Status unchanged - skip DB update to preserve updated_at for the 10-min filter
+            synced++;
+            syncResults.push({ call_id: call.id, status: 'unchanged', new_status: mappedStatus });
+            logger.info(`Skipping DB update for call ${call.id} - status unchanged (initiated)`);
+            continue;
           }
 
           const { error: updateError } = await supabase
