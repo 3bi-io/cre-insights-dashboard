@@ -305,6 +305,15 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
 
   const submitApplication = useMutation({
     mutationFn: async (data: DetailedFormData) => {
+      // Capture URL tracking parameters
+      const getParam = (...names: string[]): string | undefined => {
+        for (const name of names) {
+          const value = searchParams.get(name);
+          if (value) return value;
+        }
+        return undefined;
+      };
+
       // Build application payload matching edge function schema
       const applicationData = {
         // Required fields
@@ -316,6 +325,17 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
         // Job reference - pass both for resolution by edge function
         job_listing_id: jobId || undefined,
         job_id: jobId || undefined,
+        
+        // URL tracking parameters (source attribution)
+        utm_source: getParam('utm_source', 'utmSource', 'source'),
+        utm_medium: getParam('utm_medium', 'utmMedium', 'medium'),
+        utm_campaign: getParam('utm_campaign', 'utmCampaign', 'campaign_name'),
+        ad_id: getParam('ad_id', 'adId', 'AdID', 'ad'),
+        campaign_id: getParam('campaign_id', 'campaignId', 'CampaignID', 'campaign'),
+        adset_id: getParam('adset_id', 'adsetId', 'AdsetID', 'adset'),
+        organization_id: getParam('organization_id', 'organizationId', 'org_id'),
+        client_id: getParam('client_id', 'clientId'),
+        referral_source: document.referrer || undefined,
         
         // Location
         city: data.city || undefined,
@@ -386,7 +406,6 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
         
         // Application details
         how_did_you_hear: data.howDidYouHear || undefined,
-        referral_source: data.referralSource || undefined,
         
         // Consents (convert booleans to strings for consistency)
         over21: data.over21 || undefined,

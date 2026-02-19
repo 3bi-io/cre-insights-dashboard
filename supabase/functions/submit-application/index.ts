@@ -38,17 +38,108 @@ const SOURCE_ORGANIZATION_OVERRIDES: Record<string, string> = {
   'CDL Job Cast': '84214b48-7b51-45bc-ad7f-723bcf50466c', // Hayes Recruiting Solutions
 };
 
+// ============================================================
+// REFERRER → SOURCE CLASSIFICATION
+// Maps document.referrer domains to human-readable source names
+// ============================================================
+const REFERRER_SOURCE_MAP: Record<string, string> = {
+  'ziprecruiter.com': 'ZipRecruiter',
+  'indeed.com': 'Indeed',
+  'facebook.com': 'Facebook',
+  'l.facebook.com': 'Facebook',
+  'lm.facebook.com': 'Facebook',
+  'fb.com': 'Facebook',
+  'instagram.com': 'Instagram',
+  'l.instagram.com': 'Instagram',
+  'linkedin.com': 'LinkedIn',
+  'google.com': 'Google',
+  'google.co': 'Google',
+  'bing.com': 'Bing',
+  'yahoo.com': 'Yahoo',
+  'duckduckgo.com': 'DuckDuckGo',
+  'craigslist.org': 'Craigslist',
+  'glassdoor.com': 'Glassdoor',
+  'snagajob.com': 'Snagajob',
+  'jooble.org': 'Jooble',
+  'monster.com': 'Monster',
+  'careerbuilder.com': 'CareerBuilder',
+  'truckingtruth.com': 'TruckingTruth',
+  'cdljobs.com': 'CDL Jobs',
+  'truckdrivingjobs.com': 'Truck Driving Jobs',
+  'hayesairecruiting.com': 'Company Website',
+  'twitter.com': 'Twitter/X',
+  'x.com': 'Twitter/X',
+  't.co': 'Twitter/X',
+  'tiktok.com': 'TikTok',
+};
+
+// Maps utm_source values to normalized source names
+const UTM_SOURCE_MAP: Record<string, string> = {
+  'fb': 'Facebook',
+  'facebook': 'Facebook',
+  'ig': 'Instagram',
+  'instagram': 'Instagram',
+  'google': 'Google',
+  'google_ads': 'Google Ads',
+  'gads': 'Google Ads',
+  'bing': 'Bing',
+  'linkedin': 'LinkedIn',
+  'indeed': 'Indeed',
+  'ziprecruiter': 'ZipRecruiter',
+  'craigslist': 'Craigslist',
+  'tiktok': 'TikTok',
+  'twitter': 'Twitter/X',
+  'x': 'Twitter/X',
+  'email': 'Email',
+  'sms': 'SMS',
+  'text': 'SMS',
+};
+
 /**
- * Detect integration source from request headers or explicit source field
- * Priority: explicit source in body > header detection > fallback
+ * Classify source from document.referrer URL
  */
-const detectIntegrationSource = (req: Request, explicitSource?: string): string => {
+const classifyFromReferrer = (referrerUrl: string): string | null => {
+  if (!referrerUrl || referrerUrl.trim() === '') return null;
+  try {
+    const hostname = new URL(referrerUrl).hostname.toLowerCase().replace(/^www\./, '');
+    for (const [domain, source] of Object.entries(REFERRER_SOURCE_MAP)) {
+      if (hostname === domain || hostname.endsWith('.' + domain)) {
+        return source;
+      }
+    }
+    // Unknown referrer — return the domain for visibility
+    return hostname;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Classify source from utm_source parameter
+ */
+const classifyFromUtmSource = (utmSource: string): string | null => {
+  if (!utmSource || utmSource.trim() === '') return null;
+  const normalized = utmSource.toLowerCase().trim();
+  return UTM_SOURCE_MAP[normalized] || utmSource; // Return raw value if no mapping
+};
+
+/**
+ * Detect integration source from request headers, UTM params, or referrer
+ * Priority: explicit source > header detection > utm_source > referral_source > fallback
+ */
+const detectIntegrationSource = (
+  req: Request, 
+  explicitSource?: string,
+  utmSource?: string,
+  referralSource?: string
+): string => {
   // Priority 1: Explicit source passed from frontend (e.g., Embed Form)
   if (explicitSource && explicitSource.trim() !== '') {
     logger.info('Using explicit source from request body', { source: explicitSource });
     return explicitSource;
   }
 
+  // Priority 2: Header-based detection (integration partners)
   const origin = req.headers.get('origin') || '';
   const referer = req.headers.get('referer') || '';
   const userAgent = req.headers.get('user-agent') || '';
@@ -59,6 +150,20 @@ const detectIntegrationSource = (req: Request, explicitSource?: string): string 
       logger.info('Detected integration source from headers', { source: config.source, matchedDomain: domain });
       return config.source;
     }
+  }
+
+  // Priority 3: utm_source from URL parameters
+  const utmClassified = classifyFromUtmSource(utmSource || '');
+  if (utmClassified) {
+    logger.info('Classified source from utm_source', { utm_source: utmSource, classified: utmClassified });
+    return utmClassified;
+  }
+
+  // Priority 4: document.referrer captured by frontend
+  const referrerClassified = classifyFromReferrer(referralSource || '');
+  if (referrerClassified) {
+    logger.info('Classified source from referrer', { referrer: referralSource, classified: referrerClassified });
+    return referrerClassified;
   }
   
   return 'Direct Application';
@@ -681,10 +786,9 @@ Deno.serve(async (req) => {
     
     const applicantEmail = (formData.email || formData.applicant_email || '').toLowerCase();
 
-    // Detect integration source from request headers or explicit source field
-    // Explicit source from body takes priority (e.g., 'Embed Form' from /embed/apply)
-    const detectedSource = detectIntegrationSource(req, formData.source);
-    logger.info('Integration source detection', { detectedSource, explicitSource: formData.source });
+    // Detect integration source from headers, UTM params, referrer, or explicit source
+    const detectedSource = detectIntegrationSource(req, formData.source, formData.utm_source, formData.referral_source);
+    logger.info('Integration source detection', { detectedSource, explicitSource: formData.source, utm_source: formData.utm_source, referral_source: formData.referral_source });
 
     // Resolve organization and job details dynamically (source-based routing takes priority)
     // Normalize job_listing_id to avoid empty string issues
