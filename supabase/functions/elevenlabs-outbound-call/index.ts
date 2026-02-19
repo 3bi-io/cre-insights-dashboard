@@ -789,6 +789,22 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
+  // Business hours context for agent after-hours logic (CST = America/Chicago)
+  const nowCST = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const hour = nowCST.getHours();
+  const minute = nowCST.getMinutes();
+  const currentTimeCST = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const dayOfWeek = nowCST.getDay(); // 0=Sun, 6=Sat
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+  const isWithinBusinessHours = isWeekday && (hour > 9 || (hour === 9 && minute >= 0)) && (hour < 16 || (hour === 16 && minute < 30));
+  
+  vars.is_after_hours = isWithinBusinessHours ? 'no' : 'yes';
+  vars.current_time_cst = currentTimeCST;
+  vars.is_weekend = !isWeekday ? 'yes' : 'no';
+  vars.business_hours_note = isWithinBusinessHours 
+    ? 'Currently within business hours (9:00 AM - 4:30 PM CST). Recruiter transfer is available.'
+    : 'Currently outside business hours (9:00 AM - 4:30 PM CST). Do NOT attempt to transfer to a recruiter. Instead, let the driver know a recruiter will call them back after 9 AM CST on the next business day.';
+
   // Job context inference
   vars.job_requires_cdl = inferCDLRequirement(jobListing);
   vars.job_cdl_class = inferCDLClass(jobListing);
