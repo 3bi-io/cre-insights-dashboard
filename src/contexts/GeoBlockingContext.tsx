@@ -2,15 +2,33 @@
  * Geo-Blocking Context Provider
  * Checks visitor location and blocks access from OFAC-sanctioned countries.
  * Open-world policy: allow all countries by default, block only sanctioned ones.
+ * Non-Americas users get simulation mode on apply pages (cannot submit real applications).
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+
+// All ISO 3166-1 alpha-2 codes considered part of the Americas
+const AMERICAS_COUNTRY_CODES = new Set([
+  // North America
+  'US', 'CA', 'MX', 'GT', 'BZ', 'HN', 'SV', 'NI', 'CR', 'PA',
+  // Caribbean
+  'JM', 'HT', 'DO', 'PR', 'TT', 'BB', 'LC', 'VC', 'GD', 'AG', 'KN',
+  'BS', 'TC', 'KY', 'VG', 'VI', 'AW', 'CW', 'BQ', 'MF', 'SX', 'AI',
+  'MS', 'GP', 'MQ', 'BL', 'DM',
+  // South America
+  'CO', 'VE', 'GY', 'SR', 'BR', 'EC', 'PE', 'BO', 'CL', 'AR', 'UY',
+  'PY', 'FK', 'GF',
+  // Other geographically Americas
+  'GL',
+]);
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
 interface GeoBlockingState {
   isChecking: boolean;
   isBlocked: boolean;
+  /** True when country is known and NOT in the Americas — triggers simulation mode on apply pages */
+  isOutsideAmericas: boolean;
   countryCode: string | null;
   country: string | null;
   reason: string | null;
@@ -36,6 +54,7 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GeoBlockingState>({
     isChecking: true,
     isBlocked: false,
+    isOutsideAmericas: false,
     countryCode: null,
     country: null,
     reason: null,
@@ -74,6 +93,7 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         const allowedState: GeoBlockingState = {
           isChecking: false,
           isBlocked: false,
+          isOutsideAmericas: false,
           countryCode: null,
           country: null,
           reason: 'lookup_failed',
@@ -93,10 +113,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         blockedRegions?: string;
       };
 
+      const resolvedCode = result.countryCode;
+      const isOutsideAmericas = resolvedCode !== null && !AMERICAS_COUNTRY_CODES.has(resolvedCode);
+
       const newState: GeoBlockingState = {
         isChecking: false,
         isBlocked: !result.allowed,
-        countryCode: result.countryCode,
+        isOutsideAmericas,
+        countryCode: resolvedCode,
         country: result.country,
         reason: result.reason,
         message: result.message || null,
@@ -129,6 +153,7 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
       setState({
         isChecking: false,
         isBlocked: false,
+        isOutsideAmericas: false,
         countryCode: null,
         country: null,
         reason: 'lookup_failed',

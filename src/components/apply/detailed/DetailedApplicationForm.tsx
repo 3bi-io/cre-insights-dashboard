@@ -4,6 +4,8 @@ import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredDa
 import { useStepWizard } from '@/hooks/useStepWizard';
 import { useDetailedApplicationForm } from '@/hooks/useDetailedApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
+import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
+import { SimulatedApplicationForm } from '../SimulatedApplicationForm';
 import { StepContainer } from '../StepContainer';
 import { StepNavigation } from '../StepNavigation';
 import { StepCompletionFeedback } from '../StepCompletionFeedback';
@@ -44,6 +46,8 @@ export const DetailedApplicationForm = () => {
     source,
     isLoading: contextLoading,
   } = useApplyContext();
+
+  const { isOutsideAmericas, country } = useGeoBlocking();
 
   const {
     formData,
@@ -108,6 +112,38 @@ export const DetailedApplicationForm = () => {
     { name: 'Jobs', url: 'https://ats.me/jobs' },
     { name: jobTitle || 'Detailed Application', url: 'https://ats.me/apply/detailed' },
   ]), [jobTitle]);
+
+  // For non-Americas users, show simulation mode instead of the real form
+  if (isOutsideAmericas) {
+    return (
+      <>
+        <SEO
+          title={seoContent.title}
+          description={seoContent.description}
+          keywords="CDL application, driver application form, trucking job application"
+          canonical="https://ats.me/apply/detailed"
+        />
+        <StructuredData data={breadcrumbData} />
+        <div className="h-full overflow-y-auto bg-gradient-to-br from-background to-muted">
+          <div className="min-h-full py-6 sm:py-8 px-4">
+            <div className="max-w-3xl mx-auto">
+              <ApplicationHeader
+                jobTitle={jobTitle || 'Complete Application'}
+                clientName={clientName}
+                clientLogoUrl={clientLogoUrl}
+                location={location}
+                source={source}
+                isLoading={contextLoading}
+              />
+              <main className="mt-6">
+                <SimulatedApplicationForm clientName={clientName} country={country} />
+              </main>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
