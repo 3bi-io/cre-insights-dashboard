@@ -57,9 +57,11 @@ const initialFormData: SimFormData = {
 interface SimulatedApplicationFormProps {
   clientName?: string | null;
   country?: string | null;
+  countryCode?: string | null;
+  jobListingId?: string | null;
 }
 
-export const SimulatedApplicationForm = ({ clientName, country }: SimulatedApplicationFormProps) => {
+export const SimulatedApplicationForm = ({ clientName, country, countryCode, jobListingId }: SimulatedApplicationFormProps) => {
   const [formData, setFormData] = useState<SimFormData>(initialFormData);
   const [simComplete, setSimComplete] = useState(false);
 
@@ -137,7 +139,15 @@ export const SimulatedApplicationForm = ({ clientName, country }: SimulatedAppli
   }, [validateStep]);
 
   if (simComplete) {
-    return <SimulationCompleteScreen country={country} />;
+    return (
+      <SimulationCompleteScreen
+        country={country}
+        countryCode={countryCode}
+        jobListingId={jobListingId}
+        prefillEmail={formData.email}
+        prefillName={`${formData.firstName} ${formData.lastName}`.trim()}
+      />
+    );
   }
 
   const STEP_SECTIONS = [

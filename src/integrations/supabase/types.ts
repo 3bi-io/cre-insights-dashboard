@@ -3756,6 +3756,47 @@ export type Database = {
         }
         Relationships: []
       }
+      international_waitlist: {
+        Row: {
+          country: string | null
+          country_code: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          job_listing_id: string | null
+          message: string | null
+        }
+        Insert: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          job_listing_id?: string | null
+          message?: string | null
+        }
+        Update: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          job_listing_id?: string | null
+          message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "international_waitlist_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_categories: {
         Row: {
           created_at: string

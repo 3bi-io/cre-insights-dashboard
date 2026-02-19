@@ -21,10 +21,11 @@ const Apply = () => {
     clientLogoUrl,
     location, 
     source,
+    jobListingId,
     isLoading 
   } = useApplyContext();
 
-  const { isOutsideAmericas, country } = useGeoBlocking();
+  const { isOutsideAmericas, country, countryCode } = useGeoBlocking();
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
@@ -79,7 +80,12 @@ const Apply = () => {
             {/* Application Form — simulation mode for non-Americas users */}
             <main>
               {isOutsideAmericas ? (
-                <SimulatedApplicationForm clientName={clientName} country={country} />
+                <SimulatedApplicationForm
+                  clientName={clientName}
+                  country={country}
+                  countryCode={countryCode}
+                  jobListingId={jobListingId}
+                />
               ) : (
                 <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} />
               )}
