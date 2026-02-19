@@ -175,6 +175,53 @@ serve(async (req) => {
             synced++;
             syncResults.push({ call_id: call.id, status: 'synced', new_status: mappedStatus });
             logger.info(`Synced call ${call.id}`, { new_status: mappedStatus });
+
+            // Auto-retry on no_answer: queue a new call immediately
+            if (mappedStatus === 'no_answer' || mappedStatus === 'busy') {
+              // Fetch full call details for retry
+              const { data: fullCall } = await supabase
+                .from('outbound_calls')
+                .select('application_id, voice_agent_id, organization_id, phone_number, metadata, retry_count')
+                .eq('id', call.id)
+                .single();
+
+              if (fullCall) {
+                const currentRetry = (fullCall.retry_count as number) || 0;
+                const MAX_RETRY = 3;
+
+                if (currentRetry < MAX_RETRY - 1) {
+                  const retryMetadata = {
+                    ...(fullCall.metadata as Record<string, unknown> || {}),
+                    retry_of: call.id,
+                    retry_attempt: currentRetry + 1,
+                    triggered_by: 'auto_retry_no_answer',
+                  };
+
+                  const { data: newCall, error: retryError } = await supabase
+                    .from('outbound_calls')
+                    .insert({
+                      application_id: fullCall.application_id,
+                      voice_agent_id: fullCall.voice_agent_id,
+                      organization_id: fullCall.organization_id,
+                      phone_number: fullCall.phone_number,
+                      status: 'queued',
+                      retry_count: currentRetry + 1,
+                      metadata: retryMetadata,
+                    })
+                    .select('id')
+                    .single();
+
+                  if (retryError) {
+                    logger.error(`Failed to queue retry for call ${call.id}`, { error: retryError });
+                  } else {
+                    logger.info(`Queued immediate retry for no_answer call ${call.id} → new call ${newCall?.id} (attempt ${currentRetry + 2}/${MAX_RETRY})`);
+                    syncResults.push({ call_id: newCall?.id || 'unknown', status: 'retry_queued', new_status: 'queued' });
+                  }
+                } else {
+                  logger.info(`Call ${call.id} reached max retries (${MAX_RETRY}) - no further retries`);
+                }
+              }
+            }
           }
 
           await new Promise(resolve => setTimeout(resolve, 200));
