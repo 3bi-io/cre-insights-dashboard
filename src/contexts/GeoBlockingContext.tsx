@@ -1,6 +1,7 @@
 /**
  * Geo-Blocking Context Provider
- * Checks visitor location and blocks access from outside North/South America
+ * Checks visitor location and blocks access from OFAC-sanctioned countries.
+ * Open-world policy: allow all countries by default, block only sanctioned ones.
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
@@ -68,18 +69,18 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        logger.error('Geo-check function error', error, { context: 'GeoBlocking' });
-        // Fail closed - block on error
-        const blockedState: GeoBlockingState = {
+        logger.warn('Geo-check function error — failing open (OFAC block-list policy)', { context: 'GeoBlocking' });
+        // Fail open — open-world policy means errors should not block access
+        const allowedState: GeoBlockingState = {
           isChecking: false,
-          isBlocked: true,
+          isBlocked: false,
           countryCode: null,
           country: null,
           reason: 'lookup_failed',
-          message: 'Unable to verify your location. Please try again later.',
+          message: null,
           allowedRegions: null,
         };
-        setState(blockedState);
+        setState(allowedState);
         return;
       }
 
@@ -89,7 +90,7 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         country: string | null;
         reason: string;
         message?: string;
-        allowedRegions?: string;
+        blockedRegions?: string;
       };
 
       const newState: GeoBlockingState = {
@@ -99,7 +100,7 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         country: result.country,
         reason: result.reason,
         message: result.message || null,
-        allowedRegions: result.allowedRegions || null,
+        allowedRegions: result.blockedRegions || null,
       };
 
       setState(newState);
@@ -116,22 +117,22 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
       }
 
       if (!result.allowed) {
-        logger.warn('Access blocked - restricted region', { 
+        logger.warn('Access blocked - OFAC sanctioned country', { 
           countryCode: result.countryCode,
           country: result.country,
           context: 'GeoBlocking' 
         });
       }
     } catch (err) {
-      logger.error('Geo-check request failed', err, { context: 'GeoBlocking' });
-      // Fail closed
+      logger.warn('Geo-check request failed — failing open (OFAC block-list policy)', { context: 'GeoBlocking' });
+      // Fail open — open-world policy
       setState({
         isChecking: false,
-        isBlocked: true,
+        isBlocked: false,
         countryCode: null,
         country: null,
         reason: 'lookup_failed',
-        message: 'Unable to verify your location. Please try again later.',
+        message: null,
         allowedRegions: null,
       });
     }

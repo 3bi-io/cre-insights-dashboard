@@ -1,7 +1,7 @@
 /**
  * Geo-Check Edge Function
- * Validates visitor geographic location for access control
- * Protects PII by restricting access to North/South America only
+ * Validates visitor geographic location for OFAC sanctions compliance.
+ * Open-world policy: allow all countries except OFAC-sanctioned ones.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -56,7 +56,7 @@ serve(async (req) => {
     // Perform geo lookup
     const geo = await getGeoLocation(ip);
     
-    // Check access
+    // Check against OFAC sanctions block list
     const result: GeoBlockResult = checkGeoAccess(geo);
     
     const duration = Date.now() - startTime;
@@ -71,7 +71,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         ...result,
-        allowedRegions: result.allowed ? undefined : getAllowedRegionsDescription(),
+        blockedRegions: result.allowed ? undefined : getAllowedRegionsDescription(),
         checkedAt: new Date().toISOString(),
       }),
       {
@@ -82,18 +82,17 @@ serve(async (req) => {
   } catch (error) {
     logger.error('Geo check error', error);
     
-    // Fail closed - block access on error for PII protection
+    // Fail open — on error, allow access (open-world sanctions policy)
     return new Response(
       JSON.stringify({
-        allowed: false,
+        allowed: true,
         countryCode: null,
         country: null,
         reason: 'lookup_failed',
-        message: 'Unable to verify your location. Please try again later.',
-        allowedRegions: getAllowedRegionsDescription(),
+        checkedAt: new Date().toISOString(),
       }),
       {
-        status: 403,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
