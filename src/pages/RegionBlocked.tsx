@@ -1,11 +1,11 @@
 /**
  * Region Blocked Page
- * Firm alert page for visitors from restricted geographic regions
- * No navigation options provided to prevent circumvention attempts
+ * Shown to visitors from OFAC-sanctioned countries.
+ * No navigation options provided to prevent circumvention attempts.
  */
 
 import React from 'react';
-import { GlobeIcon, ShieldAlert, Mail } from 'lucide-react';
+import { GlobeIcon, ShieldAlert, Mail, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -13,13 +13,13 @@ import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { SEO } from '@/components/SEO';
 
 const RegionBlocked: React.FC = () => {
-  const { country, countryCode, allowedRegions, message } = useGeoBlocking();
+  const { country, countryCode, message } = useGeoBlocking();
 
   return (
     <>
       <SEO 
         title="Access Restricted"
-        description="This platform is not available in your region."
+        description="This platform is not available in your region due to US sanctions compliance."
         noindex={true}
       />
       
@@ -50,40 +50,48 @@ const RegionBlocked: React.FC = () => {
           <CardContent className="space-y-6">
             <Alert variant="destructive" className="border-destructive/50">
               <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Geographic Restriction</AlertTitle>
+              <AlertTitle>US Sanctions Compliance</AlertTitle>
               <AlertDescription>
-                {message || 'For data protection and regulatory compliance, access to this platform is restricted based on geographic location.'}
+                {message || 'Access to this platform is restricted in your country due to US Office of Foreign Assets Control (OFAC) sanctions regulations.'}
               </AlertDescription>
             </Alert>
 
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
-                Due to strict data protection requirements and regulatory compliance 
-                for handling personally identifiable information (PII), this platform 
-                is only available to users in:
+                In compliance with US federal law and OFAC regulations, this platform 
+                is unavailable in countries subject to comprehensive US sanctions programs.
               </p>
               
               <div className="bg-muted/50 rounded-lg p-3 border">
-                <p className="font-medium text-foreground">
-                  {allowedRegions || 'North America and South America'}
+                <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">
+                  Sanctioned Countries
                 </p>
-                <p className="text-xs mt-1">
-                  Including Greenland, Canada, the United States, Mexico, Central America, 
-                  the Caribbean, and all South American countries.
+                <p className="text-sm">
+                  Russia, Iran, Cuba, North Korea, Syria, and Belarus
                 </p>
               </div>
+
+              <a
+                href="https://ofac.treasury.gov/sanctions-programs-and-country-information"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" />
+                OFAC Sanctions Programs & Country Information
+              </a>
             </div>
 
             <Separator />
 
             <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
-                If you believe this is an error or have a legitimate business inquiry, 
-                please contact our compliance team:
+                If you believe this restriction has been applied in error or have a 
+                legitimate compliance inquiry, please contact our team:
               </p>
               
               <a 
-                href="mailto:compliance@ats.me?subject=Geographic%20Access%20Request"
+                href="mailto:compliance@ats.me?subject=OFAC%20Sanctions%20Access%20Inquiry"
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
               >
                 <Mail className="w-4 h-4" />

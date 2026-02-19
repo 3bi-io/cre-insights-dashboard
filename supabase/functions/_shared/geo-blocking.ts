@@ -1,6 +1,9 @@
 /**
- * Geo-Blocking Configuration for PII Protection
- * Restricts access to North and South America only
+ * Geo-Blocking Configuration — OFAC Sanctions Compliance
+ * Block-list approach: allow the world, block US-sanctioned countries only.
+ *
+ * Reference: https://ofac.treasury.gov/sanctions-programs-and-country-information
+ * IMPORTANT: The OFAC list changes. Review periodically to keep this list current.
  */
 
 import { createLogger } from './logger.ts';
@@ -9,85 +12,39 @@ import { GeoLocation } from './geo-lookup.ts';
 const logger = createLogger('geo-blocking');
 
 /**
- * Complete list of allowed country codes (ISO 3166-1 Alpha-2)
- * North America + Central America + Caribbean + South America
+ * OFAC-sanctioned countries subject to comprehensive/critical US embargoes.
+ * Only countries with COUNTRY-WIDE bans are listed here (not SDN-targeted lists).
+ *
+ * Blocked:
+ *   RU — Russia         (Critical / Hybrid Embargo)
+ *   IR — Iran           (Full Embargo)
+ *   CU — Cuba           (Full Embargo — note: was incorrectly on allow-list previously)
+ *   KP — North Korea    (Full Embargo)
+ *   SY — Syria          (Full Embargo)
+ *   BY — Belarus        (Highly Restrictive)
+ *
+ * NOT blocked (SDN/targeted, not country-wide):
+ *   YE — Yemen, SD — Sudan, ZW — Zimbabwe, AF — Afghanistan, VE — Venezuela
+ *
+ * Crimea / DNR / LNR: Cannot be reliably blocked by country code.
+ * Geo-IP databases return UA (Ukraine) for these occupied territories.
+ * No country-code-based solution exists for sub-national blocking.
  */
-export const ALLOWED_COUNTRY_CODES = new Set([
-  // North America - Core
-  'US', // United States
-  'CA', // Canada
-  'MX', // Mexico
-  'GL', // Greenland
-  
-  // Central America
-  'BZ', // Belize
-  'CR', // Costa Rica
-  'SV', // El Salvador
-  'GT', // Guatemala
-  'HN', // Honduras
-  'NI', // Nicaragua
-  'PA', // Panama
-  
-  // Caribbean (all territories)
-  'AG', // Antigua and Barbuda
-  'AI', // Anguilla
-  'AN', // Netherlands Antilles (legacy)
-  'AW', // Aruba
-  'BB', // Barbados
-  'BL', // Saint Barthélemy
-  'BM', // Bermuda
-  'BQ', // Bonaire, Sint Eustatius and Saba
-  'BS', // Bahamas
+export const BLOCKED_COUNTRY_CODES = new Set([
+  'RU', // Russia
+  'IR', // Iran
   'CU', // Cuba
-  'CW', // Curaçao
-  'DM', // Dominica
-  'DO', // Dominican Republic
-  'GD', // Grenada
-  'GP', // Guadeloupe
-  'HT', // Haiti
-  'JM', // Jamaica
-  'KN', // Saint Kitts and Nevis
-  'KY', // Cayman Islands
-  'LC', // Saint Lucia
-  'MF', // Saint Martin (French)
-  'MQ', // Martinique
-  'MS', // Montserrat
-  'PM', // Saint Pierre and Miquelon
-  'PR', // Puerto Rico
-  'SX', // Sint Maarten (Dutch)
-  'TC', // Turks and Caicos Islands
-  'TT', // Trinidad and Tobago
-  'VC', // Saint Vincent and the Grenadines
-  'VG', // British Virgin Islands
-  'VI', // U.S. Virgin Islands
-  
-  // South America
-  'AR', // Argentina
-  'BO', // Bolivia
-  'BR', // Brazil
-  'CL', // Chile
-  'CO', // Colombia
-  'EC', // Ecuador
-  'FK', // Falkland Islands
-  'GF', // French Guiana
-  'GY', // Guyana
-  'PY', // Paraguay
-  'PE', // Peru
-  'SR', // Suriname
-  'UY', // Uruguay
-  'VE', // Venezuela
-  
-  // Europe (Exceptions)
-  'ES', // Spain
-  'AM', // Armenia
+  'KP', // North Korea
+  'SY', // Syria
+  'BY', // Belarus
 ]);
 
 /**
- * Check if a country code is in the allowed list
+ * Check if a country code is on the OFAC sanctions block list
  */
-export function isCountryAllowed(countryCode: string | null | undefined): boolean {
+export function isCountryBlocked(countryCode: string | null | undefined): boolean {
   if (!countryCode) return false;
-  return ALLOWED_COUNTRY_CODES.has(countryCode.toUpperCase());
+  return BLOCKED_COUNTRY_CODES.has(countryCode.toUpperCase());
 }
 
 /**
@@ -102,58 +59,60 @@ export interface GeoBlockResult {
 }
 
 /**
- * Check if a geo location is allowed access
+ * Check if a geo location is allowed access.
+ * Policy: ALLOW all countries EXCEPT those on the OFAC sanctions block list.
+ * Fail-open: if geo lookup fails or country is unknown, allow access.
  */
 export function checkGeoAccess(geo: GeoLocation | null): GeoBlockResult {
-  // If geo lookup failed, block access (fail-closed for PII protection)
+  // If geo lookup failed — fail open (open-world policy, not PII-restricted)
   if (!geo || !geo.success) {
-    logger.warn('Geo lookup failed - blocking access (fail-closed)', { geo });
+    logger.warn('Geo lookup failed - failing open (sanctions block-list policy)', { geo });
     return {
-      allowed: false,
+      allowed: true,
       countryCode: null,
       country: null,
       reason: 'lookup_failed',
-      message: 'Unable to verify your location. Access denied for security.',
     };
   }
 
   const countryCode = geo.countryCode?.toUpperCase() || null;
   const country = geo.country || null;
 
+  // Unknown location — fail open
   if (!countryCode) {
-    logger.warn('No country code in geo response - blocking access', { geo });
+    logger.warn('No country code in geo response - failing open', { geo });
     return {
-      allowed: false,
+      allowed: true,
       countryCode: null,
       country: null,
       reason: 'unknown_location',
-      message: 'Unable to determine your location. Access denied.',
     };
   }
 
-  if (isCountryAllowed(countryCode)) {
-    logger.debug('Access allowed', { countryCode, country });
+  // Check OFAC sanctions block list
+  if (isCountryBlocked(countryCode)) {
+    logger.warn('Access blocked - OFAC sanctioned country', { countryCode, country });
     return {
-      allowed: true,
+      allowed: false,
       countryCode,
       country,
-      reason: 'allowed',
+      reason: 'blocked_region',
+      message: `Access is not available in ${country || countryCode} due to US sanctions compliance requirements.`,
     };
   }
 
-  logger.warn('Access blocked - restricted region', { countryCode, country });
+  logger.debug('Access allowed', { countryCode, country });
   return {
-    allowed: false,
+    allowed: true,
     countryCode,
     country,
-    reason: 'blocked_region',
-    message: `Access is not available in ${country || countryCode}. This platform is restricted to North and South America for data protection compliance.`,
+    reason: 'allowed',
   };
 }
 
 /**
- * Get a user-friendly region name for the allowed areas
+ * Get a description of blocked regions for the blocked-access page
  */
 export function getAllowedRegionsDescription(): string {
-  return 'North America (including Greenland, Canada, USA, Mexico, Central America, and the Caribbean), South America, Spain, and Armenia';
+  return 'All countries except those subject to US OFAC sanctions (Russia, Iran, Cuba, North Korea, Syria, and Belarus)';
 }
