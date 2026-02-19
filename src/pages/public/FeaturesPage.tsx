@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CheckCircle, X, Check, Mic, Phone, Bot, Zap } from 'lucide-react';
-import featuresHero from '@/assets/hero/features-hero.jpg';
+import featuresHeroBg from '@/assets/hero/features-hero-bg.jpg';
 import { motion } from 'framer-motion';
 import { useScrollSpy } from '@/hooks/useScrollSpy';
 
@@ -114,64 +114,53 @@ const FeaturesPage = () => {
         ))}
       </nav>
 
-      {/* Page Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/10 pt-24 pb-0 md:pt-28 md:pb-0">
-        {/* Decorative blob — left only, image takes right side */}
-        <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-primary/8 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+      {/* Page Hero — full-bleed background */}
+      <section className="relative overflow-hidden min-h-[560px] md:min-h-[640px] flex items-center">
+        {/* Background image */}
+        <img
+          src={featuresHeroBg}
+          alt="AI recruitment platform hero — professional recruiter with AI voice technology"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          loading="eager"
+        />
+        {/* Dark gradient overlay for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/20" />
+        {/* Subtle bottom fade to page background */}
+        <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-background to-transparent" />
 
-        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
-            {/* Left: copy */}
-            <motion.div
-              className="pb-12 md:pb-16 lg:pb-20"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Badge className="mb-5 bg-primary/15 text-primary border-primary/25 text-sm px-4 py-1.5">
-                ✨ AI-Powered Platform
-              </Badge>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair font-bold tracking-tight text-foreground mb-4 leading-tight">
-                The AI Recruitment Platform{' '}
-                <span className="text-primary">Built for Speed</span>
-              </h1>
-              <p className="text-lg md:text-xl text-muted-foreground mb-3 font-medium">
-                Voice Apply. Instant Callbacks. 24/7 AI Agents.
-              </p>
-              <p className="text-base text-muted-foreground mb-8 max-w-xl">
-                From application to offer in record time — AI-driven recruitment that finds and screens candidates while you focus on what matters.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/auth">
-                  <Button size="lg" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
-                    Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/contact">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
-                    Talk to Sales
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Right: hero image */}
-            <motion.div
-              className="relative hidden lg:flex items-end justify-end"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-            >
-              {/* Glow behind image */}
-              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-primary/20 via-primary/5 to-transparent rounded-t-3xl pointer-events-none" />
-              <img
-                src={featuresHero}
-                alt="Professional recruiter using AI voice technology with sound wave visualizations"
-                className="relative w-full max-w-lg xl:max-w-xl object-contain object-bottom drop-shadow-2xl"
-                loading="eager"
-              />
-            </motion.div>
-          </div>
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+          <motion.div
+            className="max-w-2xl"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+          >
+            <Badge className="mb-5 bg-white/15 text-white border-white/25 text-sm px-4 py-1.5 backdrop-blur-sm">
+              ✨ AI-Powered Platform
+            </Badge>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-playfair font-bold tracking-tight text-white mb-4 leading-tight">
+              The AI Recruitment Platform{' '}
+              <span className="text-primary">Built for Speed</span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/85 mb-3 font-medium">
+              Voice Apply. Instant Callbacks. 24/7 AI Agents.
+            </p>
+            <p className="text-base text-white/70 mb-8 max-w-xl">
+              From application to offer in record time — AI-driven recruitment that finds and screens candidates while you focus on what matters.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link to="/auth">
+                <Button size="lg" className="w-full sm:w-auto px-8 min-h-[52px] text-base">
+                  Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/contact">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 min-h-[52px] text-base bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
+                  Talk to Sales
+                </Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
