@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
+import { SimulatedApplicationForm } from '@/components/apply/SimulatedApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
+import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredData';
 import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
@@ -21,6 +23,8 @@ const Apply = () => {
     source,
     isLoading 
   } = useApplyContext();
+
+  const { isOutsideAmericas, country } = useGeoBlocking();
 
   // Memoize SEO content to prevent unnecessary recalculations
   const seoContent = useMemo(() => {
@@ -72,9 +76,13 @@ const Apply = () => {
               isLoading={isLoading}
             />
             
-            {/* Application Form */}
+            {/* Application Form — simulation mode for non-Americas users */}
             <main>
-              <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} />
+              {isOutsideAmericas ? (
+                <SimulatedApplicationForm clientName={clientName} country={country} />
+              ) : (
+                <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} />
+              )}
             </main>
             
             {/* Back Navigation */}
@@ -90,7 +98,8 @@ const Apply = () => {
           </div>
         </div>
       </div>
-      <ZipRecruiterPixel />
+      {/* Only fire pixel for real (non-simulated) submissions */}
+      {!isOutsideAmericas && <ZipRecruiterPixel />}
     </>
   );
 };
