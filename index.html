@@ -5,6 +5,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     
+    <!-- Google Search Console Verification (replace YOUR_CODE with actual verification code from GSC) -->
+    <!-- <meta name="google-site-verification" content="YOUR_GSC_VERIFICATION_CODE" /> -->
+
     <!-- Primary Meta Tags -->
     <title>Apply AI - AI-Powered Recruitment Platform | Pilot Program Now Open</title>
     <meta name="title" content="Apply AI - AI-Powered Recruitment Platform | Pilot Program Now Open" />
@@ -54,11 +57,11 @@
     <!-- LinkedIn -->
     <meta property="og:image:alt" content="Apply AI - AI-Powered Recruitment Platform Dashboard" />
     
-    <!-- Structured Data - Organization -->
+    <!-- Structured Data - Organization + LocalBusiness -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": ["Organization", "LocalBusiness"],
       "name": "Apply AI",
       "url": "https://applyai.jobs",
       "logo": "https://applyai.jobs/logo.png",
@@ -83,13 +86,18 @@
           "areaServed": "US"
         }
       ],
-    "address": {
+      "address": {
         "@type": "PostalAddress",
         "streetAddress": "1400 Quintard Ave",
         "addressLocality": "Anniston",
         "addressRegion": "AL",
         "postalCode": "36201",
         "addressCountry": "US"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 33.6598,
+        "longitude": -85.8313
       },
       "foundingDate": "2024",
       "numberOfEmployees": {
@@ -129,11 +137,6 @@
         "@type": "Offer",
         "price": "299",
         "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "50"
       },
       "description": "AI-powered recruitment platform with Voice Apply technology, Tenstreet integration, predictive analytics, and 100+ job board distribution. Join our pilot program with early adopter pricing."
     }
