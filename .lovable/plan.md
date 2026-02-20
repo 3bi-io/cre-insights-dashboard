@@ -1,88 +1,100 @@
 
-# Generate Missing OG Images for All Pages
 
-## Problem
-The `ogImageUtils.ts` file references 10 page-specific OG images that **do not exist** in the `/public` directory. When these pages are shared on social media (LinkedIn, X, Facebook, iMessage), they either show a broken image or fall back to a generic preview.
+# Email Template Audit and Refactoring Plan
 
-### Missing OG Images
-| Route | Expected File | Status |
-|---|---|---|
-| `/features` | `og-features.png` | Missing |
-| `/jobs` | `og-jobs.png` | Missing |
-| `/clients` | `og-clients.png` | Missing |
-| `/contact` | `og-contact.png` | Missing |
-| `/resources` | `og-resources.png` | Missing |
-| `/demo` | `og-demo.png` | Missing |
-| `/map` | `og-map.png` | Missing |
-| `/privacy-policy` | `og-privacy.png` | Missing |
-| `/terms-of-service` | `og-terms.png` | Missing |
-| `/sitemap` | `og-sitemap.png` | Missing |
+## Summary of Issues Found
 
-### Existing OG Images (no action needed)
-`og-image.png` (homepage default), `og-audio.jpg`, `og-blog.png`, `og-blog-*.png` variants, `og-founders-pass.png`, `og-social.png`, `og-voice-demo.png`
+After reviewing all 7 email-sending edge functions and the shared email config, I identified several inconsistencies that hurt the user experience and brand integrity.
 
 ---
 
-## Approach
+## Issues by Category
 
-Use the existing `generate-image` edge function to create all 10 missing OG images. Each image will be generated with the **pro model** (`google/gemini-3-pro-image-preview`) for higher quality, then stored in the `page-assets` Supabase storage bucket. After generation, `ogImageUtils.ts` will be updated to point to the Supabase storage URLs instead of the non-existent `/public` paths.
+### 1. Old Brand Name "ATS.me" Still Present (Critical)
 
-### Brand Guidelines for Image Generation
-- **Dimensions:** 1200x630px (OG standard)
-- **Primary color:** Blue (`hsl(220, 85%, 55%)` / approx `#2563EB`)
-- **Secondary color:** Purple (`hsl(260, 75%, 65%)`)
-- **Accent:** Teal (`hsl(175, 80%, 45%)`)
-- **Font reference:** Space Grotesk / Inter
-- **Style:** Professional, clean, modern SaaS aesthetic with the "Apply AI" brand name prominent
-- **Logo:** The icon features three vertical bars (equalizer-style) inside a rounded blue rectangle
+The platform rebranded to "Apply AI" but several files still reference the old name:
 
-### Image Prompts (one per page)
+- **send-magic-link/index.ts**
+  - Line 146: Subject says `"Magic Link Login Access - ATS.me"`
+  - Line 243: Subject says `"Administrator Magic Link Login - ATS.me"`
 
-Each prompt will follow a consistent template:
+- **send-test-emails/index.ts** (13 occurrences)
+  - Line 33: Subject `"[TEST] Welcome to ATS.me!"`
+  - Line 41: Header `"Welcome to ATS.me! 🎉"`, logo alt `"ATS.me - Welcome"`
+  - Line 44: Body text `"on ATS.me!"`
+  - Line 65: Subject `"...on ATS.me"`
+  - Line 73: Logo alt `"ATS.me - Team Invitation"`, header/body references
+  - Line 76-79: Body text references "ATS.me"
+  - Line 107, 137, 167, 200, 229: Logo alt text all say `"ATS.me - ..."`
+  - Lines 192, 200, 203, 205: Subject and body say `"ATS.me"` / `"Sign In to ATS.me"`
 
-> Create a professional 1200x630 Open Graph social sharing image for [PAGE PURPOSE]. Use a dark navy-to-blue gradient background (#0f172a to #2563EB). Include the text "Apply AI" prominently in white bold sans-serif font, with a tagline "[PAGE TAGLINE]" below it in lighter text. Add subtle tech-inspired geometric patterns or grid lines. Include a simplified icon representing [PAGE CONCEPT]. Clean, modern SaaS branding style. No photographs of people.
+### 2. Missing Logo in Headers
 
-Specific prompts per page:
-1. **Features** -- tagline: "AI-Powered Recruitment Features", icon: feature grid/dashboard
-2. **Jobs** -- tagline: "Browse Open Positions", icon: briefcase/job board
-3. **Clients** -- tagline: "Trusted by Leading Companies", icon: handshake/building
-4. **Contact** -- tagline: "Get in Touch", icon: envelope/chat bubble
-5. **Resources** -- tagline: "Guides, Tools & Insights", icon: book/lightbulb
-6. **Demo** -- tagline: "See Apply AI in Action", icon: play button/screen
-7. **Map** -- tagline: "Jobs Near You", icon: map pin/globe
-8. **Privacy** -- tagline: "Your Privacy Matters", icon: shield/lock
-9. **Terms** -- tagline: "Terms of Service", icon: document/gavel
-10. **Sitemap** -- tagline: "Site Navigation", icon: sitemap/tree
+- **send-magic-link/index.ts** (line 46-48): Uses a manually constructed header div instead of the shared `getEmailHeader()` helper, so the Apply AI logo is NOT shown in magic link emails. All other email types display the logo.
 
----
+- **send-screening-request/index.ts** (lines 110, 148, 189): Each screening type builds its own header manually instead of using `getEmailHeader()`, so logos are missing from all screening emails.
 
-## Implementation Steps
+### 3. Missing replyTo on Some Emails
 
-### Step 1: Create a batch generation edge function
-Create a new edge function `generate-og-images` that loops through all 10 prompts, calls the AI image model for each, uploads them to `page-assets` storage, and returns all URLs. This avoids calling the edge function 10 separate times manually.
+- **send-application-email/index.ts** (line 332): Does NOT include a `replyTo` field. Applicants who reply go nowhere instead of reaching support.
+- **send-screening-request/index.ts** (line 352): No `replyTo` set for screening emails.
+- **send-test-emails/index.ts** (line 274): No `replyTo` on any test emails.
 
-### Step 2: Update `ogImageUtils.ts`
-Replace the `BASE_URL + /og-*.png` references with the actual Supabase storage public URLs returned from generation. This ensures social crawlers can access the images at stable, publicly accessible URLs.
+### 4. Inconsistent Default Company Name Fallback
 
-### Step 3: Update `index.html`
-The homepage `og:image` meta tag in `index.html` currently points to a Google Cloud Storage URL. This will remain unchanged since `og-image.png` already exists, but we will verify consistency.
+- **send-application-email/index.ts** (line 76): Falls back to `"Apply AI"` -- but this is an applicant-facing email that should show the employer (client) name. The fallback should be `"Company"` per the privacy branding rules.
 
-### Step 4: Verify with social debuggers
-After deployment, the URLs can be validated using Facebook's Sharing Debugger, X Card Validator, and LinkedIn Post Inspector.
+### 5. send-welcome-email References Old Branding
+
+- **send-welcome-email/index.ts** (line 73): Login link says `"applyai.jobs/auth"` as text, which is correct, but references "Apply AI" in quick start guide features which include internal platform features applicants wouldn't see. This is fine since welcome emails are admin-facing (internal users only).
+
+### 6. send-magic-link Redirect URL Uses Dev Domain
+
+- **send-magic-link/index.ts** (lines 127, 225): The redirect URL is constructed by replacing `supabase.co` with `lovableproject.com`, which is the preview/dev domain, not production. Magic link recipients land on the dev URL instead of `applyai.jobs`.
 
 ---
 
-## Files to Create/Modify
+## Implementation Plan
 
-| File | Action |
-|---|---|
-| `supabase/functions/generate-og-images/index.ts` | **Create** -- batch generation function |
-| `src/utils/ogImageUtils.ts` | **Modify** -- update URLs to Supabase storage paths |
+### Step 1: Fix send-magic-link/index.ts
+- Replace all "ATS.me" references with "Apply AI"
+- Use `getEmailHeader()` with `showLogo: true` instead of the manual header div
+- Add `replyTo: getReplyTo('support')` to email sends
+- Fix redirect URL to use `EMAIL_CONFIG.brand.website` (`https://applyai.jobs`) instead of the dev domain pattern
+
+### Step 2: Fix send-application-email/index.ts
+- Change default `companyName` fallback from `"Apply AI"` to `"Company"` (line 76) to maintain employer privacy on applicant-facing emails
+- Add `replyTo: getReplyTo('support')` to the email send call
+
+### Step 3: Fix send-screening-request/index.ts
+- Replace manual header divs with `getEmailHeader()` calls with `showLogo: true` for all 3 screening types (background_check, employment_application, drug_screening)
+- Use shared `baseEmailStyles` and `contentStyles` from email-config instead of locally redefined copies
+- Add `replyTo: getReplyTo('support')` to the email send
+
+### Step 4: Fix send-test-emails/index.ts
+- Replace all 13+ "ATS.me" references with "Apply AI"
+- Update all logo alt text from "ATS.me - ..." to "Apply AI - ..."
+- Update all email subjects from "[TEST] ... ATS.me" to "[TEST] ... Apply AI"
+
+### Step 5: Verify no other files reference old branding
+- Confirm `email-config.ts`, `send-invite-email`, `send-welcome-email`, `auth-email-templates`, and `contact-form` already use "Apply AI" correctly (verified -- they do)
 
 ---
 
-## Risk & Considerations
-- AI-generated images may need manual review for quality; the pro model produces better results but is slower
-- Each image generation takes 10-30 seconds; batch of 10 could take 2-5 minutes total
-- Storage bucket `page-assets` is already public, so URLs will be immediately accessible to social crawlers
-- If any generation fails, the function will return partial results and can be re-run for failures only
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `supabase/functions/send-magic-link/index.ts` | Fix branding, add logo, fix redirect URL, add replyTo |
+| `supabase/functions/send-application-email/index.ts` | Fix company fallback, add replyTo |
+| `supabase/functions/send-screening-request/index.ts` | Use shared header with logo, remove duplicate styles, add replyTo |
+| `supabase/functions/send-test-emails/index.ts` | Replace all "ATS.me" with "Apply AI" (13+ occurrences) |
+
+## Files Already Correct (No Changes Needed)
+
+- `supabase/functions/_shared/email-config.ts`
+- `supabase/functions/send-invite-email/index.ts`
+- `supabase/functions/send-welcome-email/index.ts`
+- `supabase/functions/auth-email-templates/index.ts`
+- `supabase/functions/contact-form/index.ts`
+
