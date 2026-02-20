@@ -159,7 +159,7 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
               size="lg"
               variant="default"
             >
-              View & Apply
+              View Details
               <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
             </Button>
           </Link>

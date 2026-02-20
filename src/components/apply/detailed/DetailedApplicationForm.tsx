@@ -108,9 +108,9 @@ export const DetailedApplicationForm = () => {
   }, [jobTitle, clientName]);
 
   const breadcrumbData = useMemo(() => buildBreadcrumbSchema([
-    { name: 'Home', url: 'https://ats.me/' },
-    { name: 'Jobs', url: 'https://ats.me/jobs' },
-    { name: jobTitle || 'Detailed Application', url: 'https://ats.me/apply/detailed' },
+    { name: 'Home', url: 'https://applyai.jobs/' },
+    { name: 'Jobs', url: 'https://applyai.jobs/jobs' },
+    { name: jobTitle || 'Detailed Application', url: 'https://applyai.jobs/apply/detailed' },
   ]), [jobTitle]);
 
   // For non-Americas users, show simulation mode instead of the real form
@@ -121,7 +121,7 @@ export const DetailedApplicationForm = () => {
           title={seoContent.title}
           description={seoContent.description}
           keywords="CDL application, driver application form, trucking job application"
-          canonical="https://ats.me/apply/detailed"
+          canonical="https://applyai.jobs/apply/detailed"
         />
         <StructuredData data={breadcrumbData} />
         <div className="h-full overflow-y-auto bg-gradient-to-br from-background to-muted">
@@ -151,7 +151,7 @@ export const DetailedApplicationForm = () => {
         title={seoContent.title}
         description={seoContent.description}
         keywords="CDL application, driver application form, trucking job application, complete driver application, employment verification"
-        canonical="https://ats.me/apply/detailed"
+        canonical="https://applyai.jobs/apply/detailed"
       />
       <StructuredData data={breadcrumbData} />
       
