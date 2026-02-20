@@ -5,6 +5,7 @@ import { EmbedApplicationForm } from '@/components/apply/EmbedApplicationForm';
 import { EmbedThankYou } from '@/components/apply/EmbedThankYou';
 import { useEmbedMode } from '@/hooks/useEmbedMode';
 import { useApplyContext } from '@/hooks/useApplyContext';
+import { useTheme } from '@/components/ThemeProvider';
 import ZipRecruiterPixel from '@/components/tracking/ZipRecruiterPixel';
 
 interface SubmissionResult {
@@ -25,29 +26,21 @@ const EmbedApply: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { hideBranding, notifyParent, sendHeight } = useEmbedMode();
   const { clientName, clientLogoUrl, jobTitle, location, source, isLoading: contextLoading } = useApplyContext();
-  
+  const { setTheme } = useTheme();
+
   // Track submission state for inline thank you
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Force light mode on mount
+  // Force light mode — set via ThemeProvider so it wins over any saved user preference.
+  // Also set colorScheme on body so native form elements (inputs, selects) render light.
   useEffect(() => {
-    const root = document.documentElement;
-    const originalClasses = root.className;
-    
-    // Remove dark mode, add light mode
-    root.classList.remove('dark');
-    root.classList.add('light');
-    
-    // Also set color-scheme for form elements
+    setTheme('light');
     document.body.style.colorScheme = 'light';
-
-    // Cleanup on unmount
     return () => {
-      root.className = originalClasses;
       document.body.style.colorScheme = '';
     };
-  }, []);
+  }, [setTheme]);
 
   // Send height updates when content changes
   useEffect(() => {
