@@ -11,7 +11,7 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse } from '../_shared/response.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { createLogger } from '../_shared/logger.ts';
-import { getSender, getReviewBcc, baseEmailStyles, contentStyles, getEmailFooter } from '../_shared/email-config.ts';
+import { getSender, getReviewBcc, baseEmailStyles, contentStyles, getEmailFooter, getEmailHeader, getPreheaderText } from '../_shared/email-config.ts';
 
 const logger = createLogger('contact-form');
 
@@ -40,9 +40,8 @@ const generateAdminNotificationEmail = (data: z.infer<typeof ContactFormSchema>)
         <title>New Contact Form Submission</title>
       </head>
       <body style="${baseEmailStyles}">
-        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">📬 New Contact Form Submission</h1>
-        </div>
+        ${getPreheaderText(`New contact form submission from ${data.firstName} ${data.lastName} at ${data.company}`)}
+        ${getEmailHeader("📬 New Contact Form Submission", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: "Apply AI - Contact Form" })}
         <div style="${contentStyles}">
           <p style="font-size: 16px; margin-bottom: 20px;">A new contact form submission has been received:</p>
           

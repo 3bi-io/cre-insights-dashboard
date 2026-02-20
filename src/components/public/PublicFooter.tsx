@@ -15,16 +15,36 @@ import { toast } from 'sonner';
 const PublicFooter = () => {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleSection = (section: string) => {
     setOpenSection(openSection === section ? null : section);
   };
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    toast.success('Thanks for subscribing! We\'ll keep you updated.');
-    setEmail('');
+    if (!email || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(
+        `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/newsletter-subscribe`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source: 'footer' }),
+        }
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Subscription failed');
+      }
+      toast.success('Thanks for subscribing! Check your inbox for a welcome email.');
+      setEmail('');
+    } catch (err: any) {
+      toast.error(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const productLinks = [
@@ -144,7 +164,7 @@ const PublicFooter = () => {
                 className="h-10 text-sm bg-background"
                 aria-label="Email for newsletter"
               />
-              <Button type="submit" size="sm" className="h-10 px-4 shrink-0">
+              <Button type="submit" size="sm" className="h-10 px-4 shrink-0" disabled={isSubmitting}>
                 <Send className="h-4 w-4" />
                 <span className="sr-only">Subscribe</span>
               </Button>
