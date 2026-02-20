@@ -151,7 +151,62 @@ async function syncClientFeed(
     logger.info('Parsed jobs from feed', { clientName: feed.clientName, count: jobs.length });
 
     if (jobs.length === 0) {
-      logger.info('No jobs in feed, skipping sync', { clientName: feed.clientName });
+      logger.info('Feed returned 0 jobs, checking consecutive empty syncs', { clientName: feed.clientName });
+      
+      // Check how many consecutive syncs returned 0 jobs
+      const { data: recentLogs } = await supabase
+        .from('feed_sync_logs')
+        .select('jobs_in_feed')
+        .eq('client_id', feed.clientId)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      const consecutiveEmpty = (recentLogs || []).filter((l: any) => l.jobs_in_feed === 0).length;
+      // Current sync (not yet logged) is also 0, so total = consecutiveEmpty + 1
+      const totalConsecutiveEmpty = consecutiveEmpty + 1;
+
+      if (totalConsecutiveEmpty >= 3) {
+        logger.warn('Feed empty for 3+ consecutive syncs, deactivating stale jobs', {
+          clientName: feed.clientName,
+          consecutiveEmpty: totalConsecutiveEmpty
+        });
+
+        // Deactivate all active jobs for this client
+        const { data: staleJobs } = await supabase
+          .from('job_listings')
+          .select('id')
+          .eq('client_id', feed.clientId)
+          .eq('organization_id', HAYES_ORG_ID)
+          .eq('status', 'active');
+
+        const staleIds = (staleJobs || []).map((j: any) => j.id);
+        if (staleIds.length > 0) {
+          const BATCH_SIZE = 50;
+          for (let i = 0; i < staleIds.length; i += BATCH_SIZE) {
+            const batch = staleIds.slice(i, i + BATCH_SIZE);
+            const { error: deactErr } = await supabase
+              .from('job_listings')
+              .update({ status: 'inactive', updated_at: new Date().toISOString() })
+              .in('id', batch);
+            if (deactErr) {
+              logger.error('Failed to deactivate stale jobs', deactErr, { clientName: feed.clientName });
+            } else {
+              result.jobsDeactivated += batch.length;
+            }
+          }
+          logger.info('Deactivated stale jobs from empty feed', {
+            clientName: feed.clientName,
+            count: result.jobsDeactivated
+          });
+        }
+      } else {
+        logger.info('Feed empty but below threshold, skipping deactivation', {
+          clientName: feed.clientName,
+          consecutiveEmpty: totalConsecutiveEmpty,
+          threshold: 3
+        });
+      }
+
       result.durationMs = Date.now() - startTime;
       return result;
     }
@@ -349,11 +404,36 @@ async function syncClientFeed(
       }
     }
 
+    // Normalize any apply URLs that don't use applyai.jobs domain
+    const { data: nonNormalizedJobs } = await supabase
+      .from('job_listings')
+      .select('id, apply_url')
+      .eq('client_id', feed.clientId)
+      .eq('organization_id', HAYES_ORG_ID)
+      .eq('status', 'active')
+      .not('apply_url', 'is', null);
+
+    let urlsNormalized = 0;
+    for (const j of (nonNormalizedJobs || [])) {
+      if (j.apply_url && !j.apply_url.startsWith('https://applyai.jobs/')) {
+        const normalizedUrl = generateApplyUrl(j.id, feed.clientName);
+        await supabase
+          .from('job_listings')
+          .update({ apply_url: normalizedUrl })
+          .eq('id', j.id);
+        urlsNormalized++;
+      }
+    }
+    if (urlsNormalized > 0) {
+      logger.info('Normalized apply URLs to applyai.jobs', { clientName: feed.clientName, count: urlsNormalized });
+    }
+
     logger.info('Sync complete', { 
       clientName: feed.clientName, 
       inserted: result.jobsInserted, 
       updated: result.jobsUpdated, 
-      deactivated: result.jobsDeactivated 
+      deactivated: result.jobsDeactivated,
+      urlsNormalized
     });
 
   } catch (error) {
