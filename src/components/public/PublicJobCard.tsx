@@ -153,14 +153,26 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
 
         {/* Consolidated CTA */}
         <div className="pt-4 border-t space-y-2">
-          <Link to={`/jobs/${job.id}`} className="block">
+          {/* Primary CTA — direct apply */}
+          <Link to={applyUrl} className="block">
             <Button 
-              className="w-full min-h-[48px] text-base font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-colors" 
+              className="w-full min-h-[48px] text-base font-semibold" 
               size="lg"
               variant="default"
             >
-              View Details
+              Apply Now
               <ExternalLink className="w-4 h-4 ml-2" aria-hidden="true" />
+            </Button>
+          </Link>
+
+          {/* Secondary CTA — view full details */}
+          <Link to={`/jobs/${job.id}`} className="block">
+            <Button 
+              className="w-full" 
+              size="default"
+              variant="outline"
+            >
+              View Details
             </Button>
           </Link>
           
