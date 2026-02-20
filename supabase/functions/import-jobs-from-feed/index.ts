@@ -115,7 +115,7 @@ const handler = wrapHandler(async (req: Request) => {
    * Generate internal apply URL with UTM parameters for imported jobs
    */
   const generateApplyUrl = (jobListingId: string, clientName: string): string => {
-    const baseUrl = 'https://ats.me/apply';
+    const baseUrl = 'https://applyai.jobs/apply';
     
     // Generate campaign name from client
     const clientSlug = (clientName || 'unknown')

@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const displayName = userName || to.split('@')[0];
-    const orgName = organizationName || "ATS.me";
+    const orgName = organizationName || "Apply AI";
 
     // Generate preheader text
     const preheaderText = PREHEADER_TEMPLATES.welcome(orgName);
@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Welcome to ATS.me! 🎉", { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "ATS.me - Welcome" })}
+          ${getEmailHeader("Welcome to Apply AI! 🎉", { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "Apply AI - Welcome" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">
@@ -66,13 +66,13 @@ const handler = async (req: Request): Promise<Response> => {
             </p>
             
             <p style="font-size: 16px; margin-bottom: 20px;">
-              Welcome to <strong>${orgName}</strong> on ATS.me! Your account is ready and you can start using the platform right away.
+              Welcome to <strong>${orgName}</strong> on Apply AI! Your account is ready and you can start using the platform right away.
             </p>
             
             <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
               <h3 style="margin: 0 0 12px 0; color: #1e40af;">🚀 Quick Start Guide</h3>
               <ol style="margin: 0; padding-left: 20px; color: #374151;">
-                <li style="margin-bottom: 8px;"><strong>Log in</strong> to your dashboard at <a href="${EMAIL_CONFIG.brand.website}/auth" style="color: #3b82f6;">ats.me/auth</a></li>
+                <li style="margin-bottom: 8px;"><strong>Log in</strong> to your dashboard at <a href="${EMAIL_CONFIG.brand.website}/auth" style="color: #3b82f6;">applyai.jobs/auth</a></li>
                 <li style="margin-bottom: 8px;"><strong>Complete your profile</strong> in Settings</li>
                 <li style="margin-bottom: 8px;"><strong>Explore the dashboard</strong> to manage applications</li>
                 <li style="margin-bottom: 8px;"><strong>Set up integrations</strong> for ATS connections</li>
@@ -108,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <p style="font-size: 16px; margin-top: 20px;">
               Best regards,<br>
-              <strong>The ATS.me Team</strong>
+              <strong>The Apply AI Team</strong>
             </p>
           </div>
           
@@ -123,7 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
       to: [to],
       bcc: getReviewBcc(),
       replyTo: getReplyTo('support'),
-      subject: `Welcome to ${orgName} on ATS.me! 🎉`,
+      subject: `Welcome to ${orgName} on Apply AI! 🎉`,
       html: htmlContent,
     });
 

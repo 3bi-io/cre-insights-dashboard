@@ -59,8 +59,7 @@ const detectIntegrationSource = (origin: string | null, referer: string | null, 
  */
 const isNativeApplyForm = (origin: string | null, referer: string | null): boolean => {
   const combined = `${origin || ''} ${referer || ''}`.toLowerCase();
-  return combined.includes('ats.me') || 
-         combined.includes('ats-me.lovable.app') || 
+  return combined.includes('applyai.jobs') || 
          combined.includes('localhost');
 };
 

@@ -44,7 +44,7 @@ serve(async (req) => {
     const errorDescription = url.searchParams.get('error_description');
 
     // Get the frontend URL for redirects
-    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://ats-me.lovable.app';
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://applyai.jobs';
 
     if (error) {
       console.error('OAuth error from provider:', error, errorDescription);
@@ -323,7 +323,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('OAuth callback error:', error);
-    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://ats-me.lovable.app';
+    const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://applyai.jobs';
     return Response.redirect(
       `${frontendUrl}/social-engagement?error=callback_error`,
       302

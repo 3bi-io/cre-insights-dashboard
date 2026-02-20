@@ -37,7 +37,7 @@ const DemoPage: React.FC = () => {
   const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "ATS.me",
+    "name": "Apply AI",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "description": "AI-powered recruitment platform with voice technology for instant candidate engagement",
@@ -117,11 +117,11 @@ const DemoPage: React.FC = () => {
   return (
     <>
       <SEO
-        title="Interactive Demo | ATS.me AI Recruitment Platform"
-        description="Experience ATS.me with interactive voice demos, platform walkthroughs, and see how AI-powered recruitment can transform your hiring process."
+        title="Interactive Demo | Apply AI Recruitment Platform"
+        description="Experience Apply AI with interactive voice demos, platform walkthroughs, and see how AI-powered recruitment can transform your hiring process."
         keywords="ATS demo, recruitment software demo, AI hiring demo, voice agent demo, trucking recruitment"
-        canonical="https://ats.me/demo"
-        ogImage="https://ats.me/og-demo.png"
+        canonical="https://applyai.jobs/demo"
+        ogImage="https://applyai.jobs/og-demo.png"
         ogType="website"
       />
       <StructuredData data={softwareAppSchema} />
@@ -142,7 +142,7 @@ const DemoPage: React.FC = () => {
               Interactive Demo
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-              Experience ATS.me in Action
+              Experience Apply AI in Action
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Explore our AI-powered recruitment platform with interactive demos, audio samples, 

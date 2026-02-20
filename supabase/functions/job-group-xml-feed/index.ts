@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
 });
 
 // Base URL for job pages - configurable via environment variable
-const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://ats.me';
+const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://applyai.jobs';
 
 // Generate Google Jobs XML format (sitemap pointing to job pages with JSON-LD)
 function generateGoogleJobsXML(jobs: any[], jobGroup: any): string {

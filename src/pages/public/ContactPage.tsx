@@ -88,7 +88,7 @@ const ContactPage = () => {
       setFormData({ firstName: '', lastName: '', email: '', company: '', jobTitle: '', companySize: '', subject: '', message: '' });
     } catch (error) {
       logger.error('Contact form error:', error);
-      toast({ variant: "destructive", title: "Submission Failed", description: "Unable to send your message. Please try again or email us at sales@ats.me" });
+      toast({ variant: "destructive", title: "Submission Failed", description: "Unable to send your message. Please try again or email us at sales@applyai.jobs" });
     } finally {
       setIsSubmitting(false);
     }
@@ -104,23 +104,23 @@ const ContactPage = () => {
   const faqSchemaData = buildFAQSchema(faqs);
   const contactPageSchema = {
     "@context": "https://schema.org", "@type": "ContactPage",
-    "name": "Contact ATS.me", "url": "https://ats.me/contact",
+    "name": "Contact Apply AI", "url": "https://applyai.jobs/contact",
     "mainEntity": {
-      "@type": "Organization", "name": "ATS.me", "email": "support@ats.me",
+      "@type": "Organization", "name": "Apply AI", "email": "support@applyai.jobs",
       "contactPoint": [
-        { "@type": "ContactPoint", "contactType": "Sales", "email": "sales@ats.me" },
-        { "@type": "ContactPoint", "contactType": "Customer Support", "email": "support@ats.me" }
+        { "@type": "ContactPoint", "contactType": "Sales", "email": "sales@applyai.jobs" },
+        { "@type": "ContactPoint", "contactType": "Customer Support", "email": "support@applyai.jobs" }
       ]
     }
   };
   const organizationSchema = {
     "@context": "https://schema.org", "@type": "Organization",
-    "name": "ATS.me", "url": "https://ats.me", "email": "support@ats.me",
+    "name": "Apply AI", "url": "https://applyai.jobs", "email": "support@applyai.jobs",
   };
 
   return (
     <>
-      <SEO title="Contact Us | Get in Touch with ATS.me" description="Have questions about ATS.me? Contact our team for demos, support, or partnership inquiries." canonical="https://ats.me/contact" ogImage="https://ats.me/og-contact.png" />
+      <SEO title="Contact Us | Get in Touch with Apply AI" description="Have questions about Apply AI? Contact our team for demos, support, or partnership inquiries." canonical="https://applyai.jobs/contact" ogImage="https://applyai.jobs/og-contact.png" />
       <StructuredData data={[contactPageSchema, faqSchemaData, organizationSchema]} />
       <div className="min-h-screen">
         {/* Hero */}
@@ -169,7 +169,7 @@ const ContactPage = () => {
                     <Mail className="h-8 w-8 text-primary flex-shrink-0" />
                     <div>
                       <p className="font-semibold text-foreground text-sm">Email Us</p>
-                      <a href="mailto:sales@ats.me" className="text-xs text-primary hover:underline">sales@ats.me</a>
+                      <a href="mailto:sales@applyai.jobs" className="text-xs text-primary hover:underline">sales@applyai.jobs</a>
                     </div>
                   </CardContent>
                 </Card>
