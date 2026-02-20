@@ -1,56 +1,67 @@
 
-## Force All Embed Form Submissions to Job ID `4c3cfad9-4641-4830-ad97-11589e8f8cd4`
+## Fix Outbound Call Issues: Stale Scheduled Calls and Rapid-Fire Retry Spam Prevention
 
 ### Problem
-Applications from `/embed/apply` currently resolve their job listing dynamically — based on whatever `job_listing_id` or `job_id` is passed in the URL. If those parameters are missing or incorrect, the submission may land on the wrong job or fall back to a generic one.
+1. An old scheduled call for Donnel Torrey (from the previous business-hours-gating logic) is set to fire at 9 AM CST tomorrow, even though Donnel already completed a 116-second call. This will cause an unwanted duplicate call.
+2. Calls are being placed by ElevenLabs/Twilio successfully (conversation IDs and call SIDs are returned), but showing 0-second duration. Rapid back-to-back retries (within minutes) are likely causing carrier-level spam filtering, preventing the recipient's phone from actually ringing.
 
-The goal is to guarantee that **every submission where `source = 'Embed Form'`** always associates with job ID `4c3cfad9-4641-4830-ad97-11589e8f8cd4` ("CDL A Truck Driver - Regional Southeast Runs", Hayes org).
+### Changes
 
----
+#### 1. Clean Up Stale Scheduled Calls (Database)
+- Cancel the orphaned scheduled call for Donnel Torrey (`61801eff`) that has `scheduled_at = 2026-02-20 15:00:00 UTC` and `business_hours_gated = true`.
+- Add a broader cleanup: cancel any `scheduled` calls where the same `application_id` already has a `completed` call, preventing duplicate follow-ups to people who already spoke with the agent.
 
-### Root Cause
-In `supabase/functions/submit-application/index.ts`, the `findOrCreateJobListing` call uses `formData.job_listing_id` passed from the client, which comes from URL parameters. If the embed widget doesn't pass it, or passes something else, the job association can drift.
+#### 2. Add Retry Delay to Auto-Retry Logic (Edge Function)
+**File:** `supabase/functions/elevenlabs-outbound-call/index.ts`
 
----
+In the sync section (around line 178), change the auto-retry from creating an immediate `queued` call to creating a `scheduled` call with a delay:
 
-### Solution: Hardcode the Override in the Edge Function
+- Instead of `status: 'queued'`, set `status: 'scheduled'`
+- Add `scheduled_at: NOW() + 15 minutes` for the first retry, `NOW() + 30 minutes` for the second retry
+- This spacing prevents carrier spam filters from blocking rapid successive calls to the same number
+- The existing queue processor already promotes `scheduled` calls whose `scheduled_at` has passed (lines 244-270)
 
-In `submit-application/index.ts`, add a **source-based job listing override** immediately before the `findOrCreateJobListing` call (around line 877). When `detectedSource === 'Embed Form'` (which is already set on every embed submission), force `job_listing_id` to the correct UUID before resolving.
+#### 3. Skip Retries When a Completed Call Exists (Edge Function)
+**File:** `supabase/functions/elevenlabs-outbound-call/index.ts`
 
-**Target file:** `supabase/functions/submit-application/index.ts`
-
-**Change at lines ~793–888:**
-
-```text
-// Before findOrCreateJobListing is called (~line 877):
-
-const EMBED_FORM_JOB_LISTING_ID = '4c3cfad9-4641-4830-ad97-11589e8f8cd4';
-
-// Override: All Embed Form submissions must associate with the dedicated job listing
-const resolvedJobListingId = detectedSource === 'Embed Form'
-  ? EMBED_FORM_JOB_LISTING_ID
-  : (formData.job_listing_id && formData.job_listing_id.trim() !== '' 
-      ? formData.job_listing_id 
-      : undefined);
-```
-
-Then pass `resolvedJobListingId` instead of `formData.job_listing_id` in:
-1. `resolveOrganizationAndJob(...)` — so org, client, and job title are correctly resolved from the Hayes job
-2. `findOrCreateJobListing(...)` — so the application lands on the correct job listing row
-3. `checkDuplicateApplication(...)` — so duplicate detection is scoped to the correct job
-
----
+Before creating an auto-retry (around line 178), check if a `completed` call already exists for the same `application_id`. If so, skip the retry entirely -- the candidate already talked to the agent.
 
 ### Technical Details
 
-- **Target job listing:** `4c3cfad9-4641-4830-ad97-11589e8f8cd4`  
-  Title: CDL A Truck Driver - Regional Southeast Runs  
-  Org: Hayes (`84214b48-7b51-45bc-ad7f-723bcf50466c`)  
-  Client ID: `49dce1cb-4830-440d-8835-6ce59b552012`  
-  Status: active
+The auto-retry block (lines 178-223) currently inserts with:
+```
+status: 'queued'
+```
 
-- **Detection:** Uses the already-existing `detectedSource` variable which is set to `'Embed Form'` for all embed widget submissions (via `formData.source` passed from `useEmbedApplicationForm.ts`)
+It will change to:
+```
+status: 'scheduled',
+scheduled_at: new Date(Date.now() + (currentRetry + 1) * 15 * 60 * 1000).toISOString()
+```
 
-- **No frontend changes needed** — the fix is entirely in the edge function, making it server-side and authoritative regardless of what URL parameters are passed
+A new check before the retry insert:
+```typescript
+// Don't retry if a completed call already exists for this application
+const { data: completedCall } = await supabase
+  .from('outbound_calls')
+  .select('id')
+  .eq('application_id', fullCall.application_id)
+  .eq('status', 'completed')
+  .limit(1)
+  .single();
 
-- **Deploy required:** The edge function `submit-application` will need to be redeployed after the change
+if (completedCall) {
+  logger.info(`Skipping retry - completed call exists for application`);
+  // skip retry
+}
+```
+
+And a one-time SQL cleanup:
+```sql
+UPDATE outbound_calls 
+SET status = 'cancelled', error_message = 'Cancelled: stale scheduled call from old gating logic'
+WHERE status = 'scheduled' 
+  AND application_id IN (
+    SELECT application_id FROM outbound_calls WHERE status = 'completed'
+  );
+```
