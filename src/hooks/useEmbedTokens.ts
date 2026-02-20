@@ -54,7 +54,6 @@ export function useEmbedTokensForJob(jobListingId: string | undefined) {
     queryFn: async () => {
       if (!jobListingId) return [];
       
-      // Use type assertion since embed_tokens table types may not be generated yet
       const { data, error } = await (supabase
         .from('embed_tokens' as any)
         .select('*')
@@ -77,7 +76,6 @@ export function useEmbedTokensForOrganization(organizationId: string | undefined
     queryFn: async () => {
       if (!organizationId) return [];
       
-      // Use type assertion since embed_tokens table types may not be generated yet
       const { data, error } = await (supabase
         .from('embed_tokens' as any)
         .select(`
@@ -118,7 +116,6 @@ export function useCreateEmbedToken() {
         expires_at: params.expires_at || null,
       };
       
-      // Use type assertion since embed_tokens table types may not be generated yet
       const { data, error } = await (supabase
         .from('embed_tokens' as any)
         .insert(insertData as any)
@@ -156,7 +153,6 @@ export function useUpdateEmbedToken() {
     mutationFn: async (params: UpdateEmbedTokenParams) => {
       const { id, ...updates } = params;
       
-      // Use type assertion since embed_tokens table types may not be generated yet
       const { data, error } = await (supabase
         .from('embed_tokens' as any)
         .update(updates as any)
@@ -193,7 +189,6 @@ export function useDeleteEmbedToken() {
 
   return useMutation({
     mutationFn: async (tokenId: string) => {
-      // Use type assertion since embed_tokens table types may not be generated yet
       const { error } = await (supabase
         .from('embed_tokens' as any)
         .delete()
@@ -239,10 +234,10 @@ export function useToggleEmbedTokenActive() {
  * Generate the widget embed code for a token
  */
 export function generateWidgetCode(token: string, containerId: string = 'apply-widget'): string {
-  return `<!-- ATS.me Application Widget -->
+  return `<!-- Apply AI Application Widget -->
 <div id="${containerId}"></div>
 <script 
-  src="https://ats.me/widget.js" 
+  src="https://apply.jobs/widget.js" 
   data-token="${token}"
   data-container="${containerId}"
   async
@@ -262,10 +257,10 @@ export function generateWidgetCodeWithOptions(
   const containerId = options.containerId || 'apply-widget';
   const minHeightAttr = options.minHeight ? `\n  data-min-height="${options.minHeight}"` : '';
   
-  return `<!-- ATS.me Application Widget -->
+  return `<!-- Apply AI Application Widget -->
 <div id="${containerId}"></div>
 <script 
-  src="https://ats.me/widget.js" 
+  src="https://apply.jobs/widget.js" 
   data-token="${token}"
   data-container="${containerId}"${minHeightAttr}
   async

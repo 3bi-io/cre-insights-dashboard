@@ -11,7 +11,7 @@ import tenstreetHero from '@/assets/blog/tenstreet-hero.jpg';
 import complianceHero from '@/assets/blog/compliance-hero.jpg';
 import atsMeThriveHero from '@/assets/blog/ats-me-thrive-hero.jpg';
 
-const BASE_URL = 'https://ats.me';
+const BASE_URL = 'https://apply.jobs';
 
 /** Map of blog slugs to their generated placeholder images (for rendering) */
 const BLOG_IMAGE_MAP: Record<string, string> = {

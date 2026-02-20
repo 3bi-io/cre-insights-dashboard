@@ -21,7 +21,7 @@ export function useSEO(options: UseSEOOptions = {}) {
     // Update canonical link on route change
     const canonicalLink = document.querySelector('link[rel="canonical"]');
     if (canonicalLink) {
-      canonicalLink.setAttribute('href', `https://ats.me${location.pathname}`);
+      canonicalLink.setAttribute('href', `https://apply.jobs${location.pathname}`);
     }
 
     // Check if page should be indexed

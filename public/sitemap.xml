@@ -3,162 +3,162 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://ats.me/</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   
   <!-- Jobs (Public Listings) -->
   <url>
-    <loc>https://ats.me/jobs</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/jobs</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   
   <!-- Demo -->
   <url>
-    <loc>https://ats.me/demo</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/demo</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   
   <!-- Features -->
   <url>
-    <loc>https://ats.me/features</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/features</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   
   <!-- Clients -->
   <url>
-    <loc>https://ats.me/clients</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/clients</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Job Map -->
   <url>
-    <loc>https://ats.me/map</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/map</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Apply -->
   <url>
-    <loc>https://ats.me/apply</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/apply</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Apply Detailed -->
   <url>
-    <loc>https://ats.me/apply/detailed</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/apply/detailed</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Contact -->
   <url>
-    <loc>https://ats.me/contact</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/contact</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   
   <!-- Resources -->
   <url>
-    <loc>https://ats.me/resources</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/resources</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Authentication -->
   <url>
-    <loc>https://ats.me/auth</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/auth</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   
   <!-- Legal Pages -->
   <url>
-    <loc>https://ats.me/privacy-policy</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/privacy-policy</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
-    <loc>https://ats.me/terms-of-service</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/terms-of-service</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
-    <loc>https://ats.me/cookie-policy</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/cookie-policy</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <!-- Blog -->
   <url>
-    <loc>https://ats.me/blog</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/blog</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
   <!-- Blog Posts -->
   <url>
-    <loc>https://ats.me/blog/what-is-voice-apply-technology</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/blog/what-is-voice-apply-technology</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://ats.me/blog/roi-ai-powered-recruitment-2026</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/blog/roi-ai-powered-recruitment-2026</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://ats.me/blog/social-beacon-beyond-job-boards</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/blog/social-beacon-beyond-job-boards</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://ats.me/blog/tenstreet-integration-driver-recruitment</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/blog/tenstreet-integration-driver-recruitment</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://ats.me/blog/recruitment-compliance-ai-hiring-2026</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/blog/recruitment-compliance-ai-hiring-2026</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <!-- Sitemap -->
   <url>
-    <loc>https://ats.me/sitemap</loc>
-    <lastmod>2026-02-06</lastmod>
+    <loc>https://apply.jobs/sitemap</loc>
+    <lastmod>2026-02-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

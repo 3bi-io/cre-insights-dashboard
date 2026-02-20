@@ -90,7 +90,7 @@ const JobDetailsPage: React.FC = () => {
   const displayLocation = job.location || (job.city && job.state ? `${job.city}, ${job.state}` : '');
   const displayDescription = job.job_summary || job.job_description || '';
   const companyName = getDisplayCompanyName(job);
-  const canonicalUrl = `https://ats.me/jobs/${job.id}`;
+  const canonicalUrl = `https://apply.jobs/jobs/${job.id}`;
   const applyUrl = `/apply?job_id=${job.id}`;
 
   const formatSalary = (min: number | null, max: number | null, type: string | null) => {
@@ -157,15 +157,15 @@ const JobDetailsPage: React.FC = () => {
       minValue: job.salary_min || undefined, maxValue: job.salary_max || undefined,
       currency: 'USD', unitText: getSalaryUnitText(job.salary_type),
     } : undefined,
-    directApply: true, applicationUrl: `https://ats.me${applyUrl}`,
+    directApply: true, applicationUrl: `https://apply.jobs${applyUrl}`,
     experienceRequirements: experienceData,
     qualifications: qualificationsData.summary,
     skills: qualificationsData.skills,
   });
 
   const breadcrumbSchema = buildBreadcrumbSchema([
-    { name: 'Home', url: 'https://ats.me' },
-    { name: 'Jobs', url: 'https://ats.me/jobs' },
+    { name: 'Home', url: 'https://apply.jobs' },
+    { name: 'Jobs', url: 'https://apply.jobs/jobs' },
     { name: displayTitle, url: canonicalUrl },
   ]);
 

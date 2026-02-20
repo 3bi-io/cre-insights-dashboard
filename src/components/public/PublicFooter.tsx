@@ -193,7 +193,7 @@ const PublicFooter = () => {
         <div className="mt-6 pt-6 border-t border-border/50">
           <div className="flex flex-col-reverse lg:flex-row justify-between items-center gap-4">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} ATS.me. All rights reserved.
+              © {new Date().getFullYear()} Apply AI. All rights reserved.
             </p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               {legalLinks.map((link) => (

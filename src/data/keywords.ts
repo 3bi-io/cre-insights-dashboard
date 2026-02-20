@@ -12,10 +12,10 @@ export interface PageKeywords {
 export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
   home: {
     primary: [
-      'applicant tracking system',
-      'ATS software',
       'AI recruitment platform',
+      'Apply AI',
       'AI hiring software',
+      'voice recruitment platform',
     ],
     secondary: [
       'recruitment software',
@@ -25,16 +25,16 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
       'talent acquisition software',
     ],
     longTail: [
-      'best AI-powered ATS 2025',
-      'applicant tracking system with AI analytics',
-      'ATS software with voice apply',
+      'best AI-powered recruitment platform 2026',
+      'AI recruitment with voice apply',
+      'recruitment platform with voice apply',
       'recruitment platform with Tenstreet integration',
-      'affordable ATS for small business',
+      'affordable AI hiring software',
     ],
   },
   features: {
     primary: [
-      'ATS features',
+      'Apply AI features',
       'recruitment software features',
       'hiring platform capabilities',
     ],
@@ -46,7 +46,7 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
       'recruitment analytics',
     ],
     longTail: [
-      'ATS with voice apply technology',
+      'recruitment platform with voice apply technology',
       'AI-powered candidate screening',
       'automated interview scheduling',
       'multi-channel job posting',
@@ -55,29 +55,29 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
   },
   demo: {
     primary: [
-      'ATS demo',
+      'Apply AI demo',
       'recruitment software demo',
-      'free ATS trial',
+      'free recruitment trial',
     ],
     secondary: [
-      'test drive ATS',
-      'try ATS software',
+      'test drive recruitment software',
+      'try AI hiring software',
       'recruitment platform demo',
-      'ATS product tour',
+      'product tour',
     ],
     longTail: [
-      'request ATS demo',
+      'request Apply AI demo',
       'schedule recruitment software demo',
-      'see ATS in action',
-      'personalized ATS demo',
-      'free trial applicant tracking system',
+      'see AI hiring in action',
+      'personalized recruitment demo',
+      'free trial AI recruitment platform',
     ],
   },
   resources: {
     primary: [
       'recruitment resources',
       'hiring guides',
-      'ATS tutorials',
+      'recruitment tutorials',
     ],
     secondary: [
       'HR best practices',
@@ -86,8 +86,8 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
       'talent acquisition resources',
     ],
     longTail: [
-      'how to implement ATS',
-      'recruitment best practices 2025',
+      'how to implement AI recruitment',
+      'recruitment best practices 2026',
       'reduce time to hire',
       'improve candidate experience',
       'hiring metrics to track',
@@ -95,18 +95,18 @@ export const TARGET_KEYWORDS: Record<string, PageKeywords> = {
   },
   contact: {
     primary: [
-      'contact ATS.me',
+      'contact Apply AI',
       'recruitment software support',
     ],
     secondary: [
-      'ATS sales inquiry',
+      'Apply AI sales inquiry',
       'customer support',
-      'get help with ATS',
+      'get help with recruitment software',
     ],
     longTail: [
-      'talk to ATS sales team',
+      'talk to Apply AI sales team',
       'schedule consultation recruitment software',
-      'get in touch ATS support',
+      'get in touch Apply AI support',
     ],
   },
 };

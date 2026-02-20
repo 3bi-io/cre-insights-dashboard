@@ -103,12 +103,12 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
               <p className="text-xs text-muted-foreground">
                 Powered by{' '}
                 <a 
-                  href="https://ats.me" 
+                  href="https://apply.jobs" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  ATS.me
+                  Apply AI
                 </a>
               </p>
             </div>
