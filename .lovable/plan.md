@@ -1,100 +1,145 @@
 
 
-# Email Template Audit and Refactoring Plan
+# Comprehensive Platform Email Audit and Remediation Plan
 
-## Summary of Issues Found
+## Audit Scope
 
-After reviewing all 7 email-sending edge functions and the shared email config, I identified several inconsistencies that hurt the user experience and brand integrity.
+Reviewed all 9 email-sending edge functions, the shared email config, the email unsubscribe system, and all frontend email touchpoints (newsletter, contact form, blog CTA).
 
 ---
 
-## Issues by Category
+## Current Status: What's Working Correctly
 
-### 1. Old Brand Name "ATS.me" Still Present (Critical)
+These components are fully correct and need no changes:
 
-The platform rebranded to "Apply AI" but several files still reference the old name:
+| Component | Status |
+|-----------|--------|
+| `_shared/email-config.ts` | Correct branding, logos, helpers all reference "Apply AI" |
+| `send-magic-link/index.ts` | Fixed in prior refactor -- uses shared header, logo, replyTo, correct redirect URL |
+| `send-application-email/index.ts` | Fixed in prior refactor -- "Company" fallback, replyTo present |
+| `send-screening-request/index.ts` | Fixed in prior refactor -- shared header with logo, replyTo, shared styles |
+| `send-test-emails/index.ts` | Fixed in prior refactor -- all "ATS.me" replaced with `EMAIL_CONFIG.brand.name` |
+| `send-invite-email/index.ts` | Correct -- uses shared header, logo, replyTo, preheader, correct branding |
+| `send-welcome-email/index.ts` | Correct -- uses shared header, logo, replyTo, preheader, correct branding |
+| `contact-form/index.ts` | Correct -- uses shared styles, footer, replyTo set to submitter's email |
+| `email-unsubscribe/index.ts` | Correct -- CAN-SPAM compliant, branded pages, preference management |
+| Contact page frontend (`ContactPage.tsx`) | Correct -- calls edge function, Zod validation matches backend |
 
-- **send-magic-link/index.ts**
-  - Line 146: Subject says `"Magic Link Login Access - ATS.me"`
-  - Line 243: Subject says `"Administrator Magic Link Login - ATS.me"`
+---
 
-- **send-test-emails/index.ts** (13 occurrences)
-  - Line 33: Subject `"[TEST] Welcome to ATS.me!"`
-  - Line 41: Header `"Welcome to ATS.me! 🎉"`, logo alt `"ATS.me - Welcome"`
-  - Line 44: Body text `"on ATS.me!"`
-  - Line 65: Subject `"...on ATS.me"`
-  - Line 73: Logo alt `"ATS.me - Team Invitation"`, header/body references
-  - Line 76-79: Body text references "ATS.me"
-  - Line 107, 137, 167, 200, 229: Logo alt text all say `"ATS.me - ..."`
-  - Lines 192, 200, 203, 205: Subject and body say `"ATS.me"` / `"Sign In to ATS.me"`
+## Issues Found
 
-### 2. Missing Logo in Headers
+### Issue 1: `auth-email-templates/index.ts` -- Missing `replyTo` (Medium)
 
-- **send-magic-link/index.ts** (line 46-48): Uses a manually constructed header div instead of the shared `getEmailHeader()` helper, so the Apply AI logo is NOT shown in magic link emails. All other email types display the logo.
+The Supabase auth hook email handler sends signup confirmations, password resets, magic links, email change confirmations, and invites but does NOT include a `replyTo` field. Users who reply to these emails get a bounce.
 
-- **send-screening-request/index.ts** (lines 110, 148, 189): Each screening type builds its own header manually instead of using `getEmailHeader()`, so logos are missing from all screening emails.
+**Fix:** Add `replyTo: getReplyTo('support')` to the `resend.emails.send` call. The `getReplyTo` import is already available but unused.
 
-### 3. Missing replyTo on Some Emails
+### Issue 2: Newsletter Signup is a No-Op (High)
 
-- **send-application-email/index.ts** (line 332): Does NOT include a `replyTo` field. Applicants who reply go nowhere instead of reaching support.
-- **send-screening-request/index.ts** (line 352): No `replyTo` set for screening emails.
-- **send-test-emails/index.ts** (line 274): No `replyTo` on any test emails.
+Both the footer (`PublicFooter.tsx`) and blog page (`BlogPage.tsx`) have newsletter signup forms that do nothing:
 
-### 4. Inconsistent Default Company Name Fallback
+- **Footer**: `handleNewsletterSubmit` just shows a toast "Thanks for subscribing!" and clears the input. The email is never stored or sent anywhere.
+- **Blog page**: The subscribe form has no `onSubmit` handler at all -- clicking "Subscribe" does nothing.
 
-- **send-application-email/index.ts** (line 76): Falls back to `"Apply AI"` -- but this is an applicant-facing email that should show the employer (client) name. The fallback should be `"Company"` per the privacy branding rules.
+Users see a success message but never receive any emails, and the email address is discarded.
 
-### 5. send-welcome-email References Old Branding
+**Fix:** Create a `newsletter-subscribe` edge function that stores the email in a `newsletter_subscribers` table and sends a welcome/confirmation email. Connect both frontend forms to call it.
 
-- **send-welcome-email/index.ts** (line 73): Login link says `"applyai.jobs/auth"` as text, which is correct, but references "Apply AI" in quick start guide features which include internal platform features applicants wouldn't see. This is fine since welcome emails are admin-facing (internal users only).
+### Issue 3: Contact Form Missing Logo in Header (Low)
 
-### 6. send-magic-link Redirect URL Uses Dev Domain
+The contact form admin notification email (`contact-form/index.ts`) manually builds its header div instead of using `getEmailHeader()`. This means:
+- No Apply AI logo appears in the header
+- The gradient style is hardcoded rather than using the shared config
 
-- **send-magic-link/index.ts** (lines 127, 225): The redirect URL is constructed by replacing `supabase.co` with `lovableproject.com`, which is the preview/dev domain, not production. Magic link recipients land on the dev URL instead of `applyai.jobs`.
+This is admin-internal only, so it's low priority but inconsistent with all other emails.
+
+**Fix:** Replace the manual header div with `getEmailHeader("New Contact Form Submission", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: "Apply AI - Contact Form" })`.
+
+### Issue 4: Contact Form Missing Preheader Text (Low)
+
+The contact form notification email doesn't include preheader text. All other emails use `getPreheaderText()` for better email client preview.
+
+**Fix:** Add `getPreheaderText("New contact form submission from [name] at [company]")` to the template.
 
 ---
 
 ## Implementation Plan
 
-### Step 1: Fix send-magic-link/index.ts
-- Replace all "ATS.me" references with "Apply AI"
-- Use `getEmailHeader()` with `showLogo: true` instead of the manual header div
-- Add `replyTo: getReplyTo('support')` to email sends
-- Fix redirect URL to use `EMAIL_CONFIG.brand.website` (`https://applyai.jobs`) instead of the dev domain pattern
+### Step 1: Fix auth-email-templates replyTo
 
-### Step 2: Fix send-application-email/index.ts
-- Change default `companyName` fallback from `"Apply AI"` to `"Company"` (line 76) to maintain employer privacy on applicant-facing emails
-- Add `replyTo: getReplyTo('support')` to the email send call
+**File:** `supabase/functions/auth-email-templates/index.ts`
 
-### Step 3: Fix send-screening-request/index.ts
-- Replace manual header divs with `getEmailHeader()` calls with `showLogo: true` for all 3 screening types (background_check, employment_application, drug_screening)
-- Use shared `baseEmailStyles` and `contentStyles` from email-config instead of locally redefined copies
-- Add `replyTo: getReplyTo('support')` to the email send
+Add `replyTo` import (already imported but unused -- `getReplyTo` is imported) and add to the send call:
 
-### Step 4: Fix send-test-emails/index.ts
-- Replace all 13+ "ATS.me" references with "Apply AI"
-- Update all logo alt text from "ATS.me - ..." to "Apply AI - ..."
-- Update all email subjects from "[TEST] ... ATS.me" to "[TEST] ... Apply AI"
+```
+replyTo: getReplyTo('support'),
+```
 
-### Step 5: Verify no other files reference old branding
-- Confirm `email-config.ts`, `send-invite-email`, `send-welcome-email`, `auth-email-templates`, and `contact-form` already use "Apply AI" correctly (verified -- they do)
+This is a one-line addition at line 449 in the `resend.emails.send` call.
+
+### Step 2: Create newsletter subscription backend
+
+**Database:** Create a `newsletter_subscribers` table:
+- `id` (uuid, primary key)
+- `email` (text, unique, not null)
+- `subscribed_at` (timestamptz, default now())
+- `unsubscribed_at` (timestamptz, nullable)
+- `source` (text -- "footer", "blog", etc.)
+- RLS: allow anonymous inserts, restrict reads to admins
+
+**New Edge Function:** `supabase/functions/newsletter-subscribe/index.ts`
+- Accept `{ email, source }` POST request
+- Validate email format with Zod
+- Upsert into `newsletter_subscribers` (re-subscribe if previously unsubscribed)
+- Send a brief welcome email via Resend confirming the subscription
+- Rate limit: 5 requests per minute per IP
+- `verify_jwt = false` (public endpoint)
+
+### Step 3: Connect frontend newsletter forms
+
+**File:** `src/components/public/PublicFooter.tsx`
+- Update `handleNewsletterSubmit` to call the `newsletter-subscribe` edge function
+- Show loading state during submission
+- Show error message if it fails
+
+**File:** `src/pages/public/BlogPage.tsx`
+- Add state and submit handler for the blog newsletter form
+- Call the same `newsletter-subscribe` edge function with `source: "blog"`
+
+### Step 4: Fix contact form email template
+
+**File:** `supabase/functions/contact-form/index.ts`
+- Import `getEmailHeader` and `getPreheaderText` from shared config
+- Replace manual header div with `getEmailHeader()` call
+- Add preheader text with submitter name and company
+
+### Step 5: Deploy and verify
+
+Deploy all modified edge functions:
+- `auth-email-templates`
+- `newsletter-subscribe` (new)
+- `contact-form`
 
 ---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/newsletter-subscribe/index.ts` | Newsletter subscription handler |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/send-magic-link/index.ts` | Fix branding, add logo, fix redirect URL, add replyTo |
-| `supabase/functions/send-application-email/index.ts` | Fix company fallback, add replyTo |
-| `supabase/functions/send-screening-request/index.ts` | Use shared header with logo, remove duplicate styles, add replyTo |
-| `supabase/functions/send-test-emails/index.ts` | Replace all "ATS.me" with "Apply AI" (13+ occurrences) |
+| `supabase/functions/auth-email-templates/index.ts` | Add replyTo to email send |
+| `supabase/functions/contact-form/index.ts` | Use shared header with logo, add preheader |
+| `src/components/public/PublicFooter.tsx` | Wire newsletter form to edge function |
+| `src/pages/public/BlogPage.tsx` | Wire blog newsletter form to edge function |
+| `supabase/config.toml` | Add newsletter-subscribe function config |
 
-## Files Already Correct (No Changes Needed)
+## Database Migration
 
-- `supabase/functions/_shared/email-config.ts`
-- `supabase/functions/send-invite-email/index.ts`
-- `supabase/functions/send-welcome-email/index.ts`
-- `supabase/functions/auth-email-templates/index.ts`
-- `supabase/functions/contact-form/index.ts`
+Create `newsletter_subscribers` table with appropriate columns and RLS policies.
 
