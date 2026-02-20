@@ -65,7 +65,7 @@ const ClientsPage = () => {
         title="Companies Hiring | Browse Employers"
         description="Explore companies actively hiring. Find your next employer and browse open positions."
         keywords="companies hiring, employers, trucking companies, driver jobs, transportation jobs"
-        ogImage="https://ats.me/og-clients.png"
+        ogImage="https://applyai.jobs/og-clients.png"
       />
        
       <div className="min-h-screen bg-background">

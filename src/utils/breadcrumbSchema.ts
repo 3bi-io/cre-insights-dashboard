@@ -15,6 +15,6 @@ export const buildBreadcrumbSchema = (items: BreadcrumbItem[]) => ({
     "@type": "ListItem",
     "position": index + 1,
     "name": item.name,
-    "item": `https://ats.me${item.href}`,
+    "item": `https://applyai.jobs${item.href}`,
   })),
 });

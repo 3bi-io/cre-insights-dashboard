@@ -55,7 +55,7 @@ const ResourcesPage = () => {
   ];
 
   const downloads = [
-    { id: 'feature-guide', title: 'ATS.me Feature Guide', size: '~50 KB', format: 'PDF', generator: generateFeatureGuidePDF, downloads: 234, type: 'guides' as const },
+    { id: 'feature-guide', title: 'Apply AI Feature Guide', size: '~50 KB', format: 'PDF', generator: generateFeatureGuidePDF, downloads: 234, type: 'guides' as const },
     { id: 'implementation', title: 'Implementation Checklist', size: '~45 KB', format: 'PDF', generator: generateImplementationChecklistPDF, downloads: 189, type: 'templates' as const },
     { id: 'roi-calculator', title: 'ROI Calculator Template', size: '~20 KB', format: 'XLSX', generator: generateRoiCalculatorXLSX, downloads: 312, type: 'templates' as const },
     { id: 'best-practices', title: 'Best Practices Guide', size: '~55 KB', format: 'PDF', generator: generateBestPracticesPDF, downloads: 156, type: 'guides' as const },
@@ -112,7 +112,7 @@ const ResourcesPage = () => {
   const resourcesSchema = useMemo(() => ({
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "ATS.me Resources & Documentation",
+    "name": "Apply AI Resources & Documentation",
     "numberOfItems": downloads.length,
     "itemListElement": downloads.map((item, index) => ({
       "@type": "ListItem", "position": index + 1,
@@ -122,7 +122,7 @@ const ResourcesPage = () => {
 
   return (
     <>
-      <SEO title="Resources & Documentation | Guides & Best Practices" description="Comprehensive knowledge base for ATS.me. Quick start guides, API docs, and downloadable resources." canonical="https://ats.me/resources" ogImage="https://ats.me/og-resources.png" />
+      <SEO title="Resources & Documentation | Guides & Best Practices" description="Comprehensive knowledge base for Apply AI. Quick start guides, API docs, and downloadable resources." canonical="https://applyai.jobs/resources" ogImage="https://applyai.jobs/og-resources.png" />
       <StructuredData data={[resourcesSchema, breadcrumbs]} />
       <div className="min-h-screen animate-page-in">
         <HeroBackground imageSrc={trustHero} imageAlt="Professional knowledge base and documentation" variant="compact" overlayVariant="dark" overlayOpacity={65}>

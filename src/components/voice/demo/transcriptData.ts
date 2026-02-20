@@ -38,8 +38,8 @@ export const voicemailTranscript: TranscriptEntry[] = [
 // Complete candidate intake with qualification screening
 export const voiceApplyTranscript: TranscriptEntry[] = [
   { startTime: 0, endTime: 3, speaker: 'agent', text: "Hi there, I'm an AI recruiting assistant." },
-  { startTime: 3, endTime: 5, speaker: 'agent', text: "Welcome to ATS.me." },
-  { startTime: 5, endTime: 14, speaker: 'agent', text: "I'm here to help you explore various opportunities with ATS.me, one of America's fastest growing AI recruiting solutions." },
+  { startTime: 3, endTime: 5, speaker: 'agent', text: "Welcome to Apply AI." },
+  { startTime: 5, endTime: 14, speaker: 'agent', text: "I'm here to help you explore various opportunities with Apply AI, one of America's fastest growing AI recruiting solutions." },
   { startTime: 14, endTime: 17, speaker: 'agent', text: "Are you ready to get started with your application?" },
   { startTime: 17, endTime: 18, speaker: 'applicant', text: "Yes." },
   { startTime: 18, endTime: 21, speaker: 'agent', text: "Great! Let's get started." },
@@ -92,7 +92,7 @@ export const voiceApplyTranscript: TranscriptEntry[] = [
   { startTime: 276, endTime: 284, speaker: 'agent', text: "They'll contact you at 214-555-0147 or via email at cody.forbes@email.com." },
   { startTime: 284, endTime: 292, speaker: 'agent', text: "Is there anything else you'd like to know about the process or any questions I can answer for you?" },
   { startTime: 292, endTime: 298, speaker: 'applicant', text: "No, I think that covers everything. Thank you." },
-  { startTime: 298, endTime: 306, speaker: 'agent', text: "You're welcome, Cody! We appreciate you taking the time to apply with ATS.me." },
+  { startTime: 298, endTime: 306, speaker: 'agent', text: "You're welcome, Cody! We appreciate you taking the time to apply with Apply AI." },
   { startTime: 306, endTime: 314, speaker: 'agent', text: "Thank you for your service, and we look forward to helping you find your next driving opportunity." },
   { startTime: 314, endTime: 318, speaker: 'agent', text: "Have a great day!" },
   { startTime: 318, endTime: 320, speaker: 'applicant', text: "You too, thanks!" },

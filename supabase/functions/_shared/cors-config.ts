@@ -12,9 +12,8 @@
 
 export const ALLOWED_ORIGINS = [
   // Production domains
-  'https://ats.me',
-  'https://www.ats.me',
-  'https://ats-me.lovable.app',
+  'https://applyai.jobs',
+  'https://www.applyai.jobs',
   
   // Supabase project URL
   'https://auwhcdpppldjlcaxzsme.supabase.co',
@@ -62,7 +61,7 @@ export function getCorsHeaders(origin?: string | null): Record<string, string> {
   const isAllowed = origin && isOriginAllowed(origin);
   
   return {
-    'Access-Control-Allow-Origin': isAllowed && origin ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Origin': isAllowed && origin ? origin : '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',

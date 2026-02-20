@@ -51,7 +51,7 @@ const DEFAULT_UTM = {
  * Generate internal apply URL with UTM parameters
  */
 function generateApplyUrl(jobListingId: string, clientName: string): string {
-  const baseUrl = 'https://ats.me/apply';
+  const baseUrl = 'https://applyai.jobs/apply';
   
   // Generate campaign name from client
   const clientSlug = clientName

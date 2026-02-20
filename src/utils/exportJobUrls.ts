@@ -12,7 +12,7 @@ interface JobData {
   state: string | null;
 }
 
-const BASE_URL = 'https://ats.me';
+const BASE_URL = 'https://applyai.jobs';
 
 export const generateJobUrlsCsv = async (): Promise<string> => {
   const { data: jobs, error } = await supabase

@@ -61,26 +61,26 @@ const BlogPostPage: React.FC = () => {
 
   const readingTime = calculateReadingTime(post.content);
   const publishedDate = post.published_at ? new Date(post.published_at).toISOString() : post.created_at;
-  const authorName = post.author?.full_name || 'ATS.me Team';
+  const authorName = post.author?.full_name || 'Apply AI Team';
   const ogImage = getBlogOgImage(post.slug, post.featured_image);
 
   const articleSchema = buildArticleSchema({
     headline: post.title,
     description: post.description || post.title,
-    image: post.featured_image || 'https://ats.me/og-image.png',
+    image: post.featured_image || 'https://applyai.jobs/og-image.png',
     datePublished: publishedDate,
     dateModified: post.updated_at,
     author: authorName,
-    publisher: 'ATS.me',
+    publisher: 'Apply AI',
   });
 
   return (
     <>
       <SEO
-        title={`${post.title} | ATS.me Blog`}
-        description={post.description || `Read ${post.title} on the ATS.me blog.`}
+        title={`${post.title} | Apply AI Blog`}
+        description={post.description || `Read ${post.title} on the Apply AI blog.`}
         keywords={post.tags?.join(', ')}
-        canonical={`https://ats.me/blog/${post.slug}`}
+        canonical={`https://applyai.jobs/blog/${post.slug}`}
         ogImage={ogImage}
         ogType="article"
         articlePublishedTime={publishedDate}
@@ -233,7 +233,7 @@ const BlogPostPage: React.FC = () => {
                       </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        Contributing author at ATS.me, sharing insights on AI-powered recruitment and HR technology.
+                        Contributing author at Apply AI, sharing insights on AI-powered recruitment and HR technology.
                       </p>
                     )}
                   </div>

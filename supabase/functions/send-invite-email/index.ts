@@ -84,7 +84,7 @@ serve(async (req: Request): Promise<Response> => {
       <body style="${baseEmailStyles} background-color: #f3f4f6;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("You're Invited! 🎉", { gradient: "#3b82f6 0%, #8b5cf6 100%", showLogo: true, logoAlt: "ATS.me - Team Invitation" })}
+          ${getEmailHeader("You're Invited! 🎉", { gradient: "#3b82f6 0%, #8b5cf6 100%", showLogo: true, logoAlt: "Apply AI - Team Invitation" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; color: #374151; margin-bottom: 24px;">

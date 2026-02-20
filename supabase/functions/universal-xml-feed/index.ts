@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
 
 function buildApplyUrl(job: JobListing): string {
   if (job.apply_url) return job.apply_url;
-  let url = `https://ats.me/apply?job_listing_id=${job.id}`;
+  let url = `https://applyai.jobs/apply?job_listing_id=${job.id}`;
   if (job.organization_id) url += `&organization_id=${job.organization_id}`;
   if (job.client_id) url += `&client_id=${job.client_id}`;
   return url;
@@ -334,8 +334,8 @@ function generateIndeedXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <source>
-  <publisher>ATS.me</publisher>
-  <publisherurl>https://ats.me</publisherurl>
+  <publisher>Apply AI</publisher>
+  <publisherurl>https://applyai.jobs</publisherurl>
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
   ${jobsXML}
 </source>`;
@@ -388,8 +388,8 @@ function generateTalentXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <jobs>
-  <publisher>ATS.me</publisher>
-  <publisherurl>https://ats.me</publisherurl>
+  <publisher>Apply AI</publisher>
+  <publisherurl>https://applyai.jobs</publisherurl>
   <lastBuildDate>${new Date().toISOString()}</lastBuildDate>
 ${jobsXML}
 </jobs>`;
@@ -416,7 +416,7 @@ function generateCareerJetXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <jobs>
-  <publisher>ATS.me</publisher>
+  <publisher>Apply AI</publisher>
   <last_build_date>${new Date().toISOString()}</last_build_date>
 ${jobsXML}
 </jobs>`;
@@ -476,7 +476,7 @@ function generateAdzunaXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <jobs>
-  <publisher>ATS.me</publisher>
+  <publisher>Apply AI</publisher>
   <generated>${new Date().toISOString()}</generated>
 ${jobsXML}
 </jobs>`;
@@ -510,7 +510,7 @@ function generateDiceXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <dice_jobs>
-  <publisher>ATS.me</publisher>
+  <publisher>Apply AI</publisher>
   <generated>${new Date().toISOString()}</generated>
 ${jobsXML}
 </dice_jobs>`;
@@ -539,7 +539,7 @@ function generateJoobleXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <jobs>
-  <source>ATS.me</source>
+  <source>Apply AI</source>
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${jobsXML}
 </jobs>`;
@@ -580,7 +580,7 @@ function generateGenericXML(jobs: JobListing[]): string {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <jobs>
-  <publisher>ATS.me</publisher>
+  <publisher>Apply AI</publisher>
   <generated>${new Date().toISOString()}</generated>
   <count>${jobs.length}</count>
 ${jobsXML}
@@ -605,7 +605,7 @@ function generateHcareersXML(jobs: JobListing[]): string {
     <industry>hospitality</industry>
   </job>`;
   }).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <publisher>ATS.me</publisher>\n${jobsXML}\n</jobs>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <publisher>Apply AI</publisher>\n${jobsXML}\n</jobs>`;
 }
 
 function generateSnagajobXML(jobs: JobListing[]): string {
@@ -627,7 +627,7 @@ function generateSnagajobXML(jobs: JobListing[]): string {
     ${job.job_type ? `<schedule>${escapeXML(job.job_type)}</schedule>` : ''}
   </job>`;
   }).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>ATS.me</source>\n${jobsXML}\n</jobs>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>Apply AI</source>\n${jobsXML}\n</jobs>`;
 }
 
 function generateHealthEcareersXML(jobs: JobListing[]): string {
@@ -671,7 +671,7 @@ function generateWellfoundXML(jobs: JobListing[]): string {
     ${job.salary_max ? `<salary_max>${job.salary_max}</salary_max>` : ''}
   </job>`;
   }).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>ATS.me</source>\n${jobsXML}\n</jobs>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>Apply AI</source>\n${jobsXML}\n</jobs>`;
 }
 
 function generateJobRapidoXML(jobs: JobListing[]): string {
