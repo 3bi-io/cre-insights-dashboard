@@ -73,7 +73,7 @@ function getPreheader(type: string, jobTitle: string, status?: string): string {
 }
 
 const getEmailTemplate = (request: EmailRequest): string => {
-  const { type, candidateName, jobTitle, companyName = "ATS.me", additionalData } = request;
+  const { type, candidateName, jobTitle, companyName = "Apply AI", additionalData } = request;
   
   // Sanitize all inputs
   const safeName = sanitizeInput(candidateName);
