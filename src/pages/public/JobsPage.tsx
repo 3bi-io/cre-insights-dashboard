@@ -56,7 +56,7 @@ const JobsPage = () => {
   const jobListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "Job Listings on ATS.me",
+    "name": "Job Listings on Apply AI",
     "description": "Browse open positions from top companies",
     "numberOfItems": totalCount || 0,
     "itemListElement": (jobs || []).slice(0, 10).map((job, index) => ({
@@ -74,7 +74,7 @@ const JobsPage = () => {
           "@type": "Place",
           "address": job.location || "Multiple Locations"
         },
-        "url": `https://ats.me/jobs/${job.id}`
+        "url": `https://apply.jobs/jobs/${job.id}`
       }
     }))
   };
@@ -95,8 +95,8 @@ const JobsPage = () => {
         title="Browse Jobs | Find Your Next Career Opportunity"
         description={`Explore ${totalCount || 200}+ open positions from top companies. Filter by location, company, and category. Apply instantly with Voice Apply technology.`}
         keywords="jobs, careers, job listings, job search, employment opportunities, hiring, open positions, CDL jobs, driver jobs"
-        canonical="https://ats.me/jobs"
-        ogImage="https://ats.me/og-jobs.png"
+        canonical="https://apply.jobs/jobs"
+        ogImage="https://apply.jobs/og-jobs.png"
       />
       <StructuredData data={[jobListSchema, breadcrumbs]} />
       

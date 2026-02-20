@@ -8,14 +8,14 @@ const sections: LegalSection[] = [
   {
     id: 'acceptance',
     title: '1. Acceptance of Terms',
-    content: <p>By accessing or using ATS.me (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, then you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.</p>,
+    content: <p>By accessing or using Apply AI (the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, then you may not access the Service. These Terms apply to all visitors, users, and others who access or use the Service.</p>,
   },
   {
     id: 'description',
     title: '2. Description of Service',
     content: (
       <div className="space-y-3">
-        <p>ATS.me is an applicant tracking system that provides:</p>
+        <p>Apply AI is an applicant tracking system that provides:</p>
         <ul className="space-y-2 list-disc pl-5">
           <li>Job posting and management capabilities</li>
           <li>Application tracking and candidate management</li>
@@ -63,7 +63,7 @@ const sections: LegalSection[] = [
   {
     id: 'ip',
     title: '6. Intellectual Property Rights',
-    content: <p>The Service and its original content, features, and functionality are and will remain the exclusive property of ATS.me and its licensors. The Service is protected by copyright, trademark, and other laws.</p>,
+    content: <p>The Service and its original content, features, and functionality are and will remain the exclusive property of Apply AI and its licensors. The Service is protected by copyright, trademark, and other laws.</p>,
   },
   {
     id: 'privacy',
@@ -78,7 +78,7 @@ const sections: LegalSection[] = [
   {
     id: 'liability',
     title: '9. Limitation of Liability',
-    content: <p>In no event shall ATS.me, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>,
+    content: <p>In no event shall Apply AI, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.</p>,
   },
   {
     id: 'changes',
@@ -91,8 +91,8 @@ const sections: LegalSection[] = [
     content: (
       <div className="space-y-2">
         <p>If you have any questions about these Terms of Service, please contact us at:</p>
-        <p className="text-foreground font-medium">Email: legal@ats.me</p>
-        <p className="text-foreground font-medium">Address: ATS.me Legal Department</p>
+        <p className="text-foreground font-medium">Email: legal@apply.jobs</p>
+        <p className="text-foreground font-medium">Address: Apply AI Legal Department</p>
       </div>
     ),
   },
@@ -104,14 +104,14 @@ const TermsOfServicePage = () => (
     lastUpdated="January 2026"
     icon={<FileText className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Terms of Service | User Agreement"
-    seoDescription="Terms and conditions for using ATS.me's recruitment platform. Service agreement, usage rights, and responsibilities."
-    canonical="https://ats.me/terms-of-service"
+    seoDescription="Terms and conditions for using Apply AI's recruitment platform. Service agreement, usage rights, and responsibilities."
+    canonical="https://apply.jobs/terms-of-service"
     breadcrumbPath="/terms-of-service"
     sections={sections}
     introAlert={
       <Alert>
         <Info className="h-4 w-4" />
-        <AlertDescription>By accessing and using ATS.me, you agree to be bound by these Terms of Service. Please read them carefully.</AlertDescription>
+        <AlertDescription>By accessing and using Apply AI, you agree to be bound by these Terms of Service. Please read them carefully.</AlertDescription>
       </Alert>
     }
   />

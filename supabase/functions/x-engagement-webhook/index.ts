@@ -367,7 +367,7 @@ async function handleXAutoResponse(
     intent: classification.intent,
     sentiment: classification.sentiment,
     extractedEntities: classification.extractedEntities,
-    applyUrl: `https://ats.me/${org.slug}/apply`,
+    applyUrl: `https://apply.jobs/${org.slug}/apply`,
   });
   
   if (!responseResult.success || !responseResult.content) {
@@ -436,7 +436,7 @@ async function handleXDMAutoResponse(
     intent: classification.intent,
     sentiment: classification.sentiment,
     extractedEntities: classification.extractedEntities,
-    applyUrl: `https://ats.me/${org.slug}/apply`,
+    applyUrl: `https://apply.jobs/${org.slug}/apply`,
   });
   
   if (!responseResult.success || !responseResult.content) {

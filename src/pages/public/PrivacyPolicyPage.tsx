@@ -14,7 +14,7 @@ const sections: LegalSection[] = [
         </div>
         <div>
           <h4 className="font-semibold text-foreground mb-2">Usage Information</h4>
-          <p>We automatically collect information about how you use ATS.me, including your interactions with the platform, features used, and performance metrics to improve our services.</p>
+          <p>We automatically collect information about how you use Apply AI, including your interactions with the platform, features used, and performance metrics to improve our services.</p>
         </div>
         <div>
           <h4 className="font-semibold text-foreground mb-2">Device Information</h4>
@@ -78,8 +78,8 @@ const sections: LegalSection[] = [
     content: (
       <div className="space-y-2">
         <p>If you have any questions about this Privacy Policy or our data practices, please contact us at:</p>
-        <p className="text-foreground font-medium">Email: privacy@ats.me</p>
-        <p className="text-foreground font-medium">Address: ATS.me Privacy Office</p>
+        <p className="text-foreground font-medium">Email: privacy@apply.jobs</p>
+        <p className="text-foreground font-medium">Address: Apply AI Privacy Office</p>
       </div>
     ),
   },
@@ -91,8 +91,8 @@ const PrivacyPolicyPage = () => (
     lastUpdated="January 2026"
     icon={<Shield className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Privacy Policy | Data Protection & GDPR Compliance"
-    seoDescription="ATS.me's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform."
-    canonical="https://ats.me/privacy-policy"
+    seoDescription="Apply AI's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform."
+    canonical="https://apply.jobs/privacy-policy"
     breadcrumbPath="/privacy-policy"
     sections={sections}
   />

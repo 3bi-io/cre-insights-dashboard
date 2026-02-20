@@ -92,7 +92,7 @@ const sections: LegalSection[] = [
     content: (
       <div className="space-y-2">
         <p>If you have any questions about our use of cookies, please contact us at:</p>
-        <p className="text-foreground font-medium">Email: privacy@ats.me</p>
+        <p className="text-foreground font-medium">Email: privacy@apply.jobs</p>
         <p className="text-foreground font-medium">Subject: Cookie Policy Inquiry</p>
       </div>
     ),
@@ -105,14 +105,14 @@ const CookiePolicyPage = () => (
     lastUpdated="January 2026"
     icon={<Cookie className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Cookie Policy | How We Use Cookies"
-    seoDescription="Learn how ATS.me uses cookies to enhance your experience. Cookie types, purposes, and how to manage cookie preferences."
-    canonical="https://ats.me/cookie-policy"
+    seoDescription="Learn how Apply AI uses cookies to enhance your experience. Cookie types, purposes, and how to manage cookie preferences."
+    canonical="https://apply.jobs/cookie-policy"
     breadcrumbPath="/cookie-policy"
     sections={sections}
     introAlert={
       <Alert>
         <Cookie className="h-4 w-4" />
-        <AlertDescription>This Cookie Policy explains how ATS.me uses cookies and similar technologies to recognize you when you visit our platform.</AlertDescription>
+        <AlertDescription>This Cookie Policy explains how Apply AI uses cookies and similar technologies to recognize you when you visit our platform.</AlertDescription>
       </Alert>
     }
   />

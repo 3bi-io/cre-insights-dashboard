@@ -17,7 +17,7 @@ import WaveformVisualizer from '@/components/audio/WaveformVisualizer';
 import LogoIcon from '@/components/common/LogoIcon';
 import voiceInterviewCover from '@/assets/audio/voice-interview-cover.jpg';
 
-const OG_IMAGE_URL = 'https://ats.me/og-audio.jpg';
+const OG_IMAGE_URL = 'https://apply.jobs/og-audio.jpg';
 
 // Audio file mapping - hardcoded for now, can be database-driven later
 const AUDIO_FILES: Record<string, string> = {
@@ -161,14 +161,14 @@ const AudioShowcasePage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Voice Interview | ATS.me</title>
-        <meta name="description" content="Listen to an AI-powered voice interview between a driver and recruiter. Experience the future of recruitment with ATS.me Voice Apply technology." />
-        <meta property="og:title" content="Voice Interview | ATS.me" />
+        <title>Voice Interview | Apply AI</title>
+        <meta name="description" content="Listen to an AI-powered voice interview between a driver and recruiter. Experience the future of recruitment with Apply AI Voice Apply technology." />
+        <meta property="og:title" content="Voice Interview | Apply AI" />
         <meta property="og:description" content="Listen to an AI-powered voice interview between a driver and recruiter." />
         <meta property="og:image" content={OG_IMAGE_URL} />
         <meta property="og:type" content="music.song" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Voice Interview | ATS.me" />
+        <meta name="twitter:title" content="Voice Interview | Apply AI" />
         <meta name="twitter:description" content="Listen to an AI-powered voice interview between a driver and recruiter." />
         <meta name="twitter:image" content={OG_IMAGE_URL} />
       </Helmet>
@@ -348,7 +348,7 @@ const AudioShowcasePage: React.FC = () => {
       )}>
         <div className="flex items-center gap-2 opacity-60 hover:opacity-80 transition-opacity">
           <LogoIcon size="sm" />
-          <span className="text-white/80 text-sm font-medium">ATS.me</span>
+          <span className="text-white/80 text-sm font-medium">Apply AI</span>
         </div>
         <p className="text-white/40 text-xs">Powered by AI Voice Technology</p>
       </div>

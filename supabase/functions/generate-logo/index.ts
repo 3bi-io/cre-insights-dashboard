@@ -25,7 +25,7 @@ serve(async (req) => {
     let prompt = '';
     
     if (type === 'icon') {
-      prompt = `Create a professional, modern logo icon for "ATS.me" - an AI-powered voice recruitment platform. 
+      prompt = `Create a professional, modern logo icon for "Apply AI" - an AI-powered voice recruitment platform. 
 
 Design requirements:
 - Clean, minimal square icon design (no text)
@@ -40,16 +40,16 @@ Design requirements:
 
 Style: Minimalist tech logo, similar to modern SaaS company icons. Think Slack, Notion, or Linear logo simplicity.`;
     } else if (type === 'horizontal') {
-      prompt = `Create a professional horizontal logo for "ATS.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a professional horizontal logo for "Apply AI" - an AI-powered voice recruitment platform.
 
 Design requirements:
-- Icon on the left side + "ATS.me" text on the right
+- Icon on the left side + "Apply AI" text on the right
 - The icon should represent AI voice technology (soundwave + neural nodes)
-- Text "ATS.me" in clean, modern sans-serif font (like Inter or SF Pro)
+- Text "Apply AI" in clean, modern sans-serif font (like Inter or SF Pro)
 - Use vibrant blue (#3b82f6) as primary color with emerald green (#10b981) accent
 - Dark text version for light backgrounds
 - Modern, tech-forward, trustworthy aesthetic
-- Correct spelling: "ATS.me" with the period before "me"
+- Correct spelling: "Apply AI"
 - 16:9 aspect ratio suitable for website headers
 - Solid white background
 - Professional and corporate appropriate

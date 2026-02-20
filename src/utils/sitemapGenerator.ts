@@ -12,63 +12,63 @@ export interface SitemapUrl {
 
 export const STATIC_ROUTES: SitemapUrl[] = [
   {
-    loc: 'https://ats.me/',
+    loc: 'https://apply.jobs/',
     changefreq: 'daily',
     priority: 1.0,
   },
   {
-    loc: 'https://ats.me/jobs',
+    loc: 'https://apply.jobs/jobs',
     changefreq: 'daily',
     priority: 0.9,
   },
   {
-    loc: 'https://ats.me/features',
+    loc: 'https://apply.jobs/features',
     changefreq: 'weekly',
     priority: 0.9,
   },
   // Pricing page removed - all features available to all users
   {
-    loc: 'https://ats.me/apply',
+    loc: 'https://apply.jobs/apply',
     changefreq: 'weekly',
     priority: 0.7,
   },
   {
-    loc: 'https://ats.me/resources',
+    loc: 'https://apply.jobs/resources',
     changefreq: 'weekly',
     priority: 0.7,
   },
   {
-    loc: 'https://ats.me/contact',
+    loc: 'https://apply.jobs/contact',
     changefreq: 'monthly',
     priority: 0.8,
   },
   {
-    loc: 'https://ats.me/auth',
+    loc: 'https://apply.jobs/auth',
     changefreq: 'monthly',
     priority: 0.6,
   },
   {
-    loc: 'https://ats.me/privacy-policy',
+    loc: 'https://apply.jobs/privacy-policy',
     changefreq: 'yearly',
     priority: 0.3,
   },
   {
-    loc: 'https://ats.me/terms-of-service',
+    loc: 'https://apply.jobs/terms-of-service',
     changefreq: 'yearly',
     priority: 0.3,
   },
   {
-    loc: 'https://ats.me/cookie-policy',
+    loc: 'https://apply.jobs/cookie-policy',
     changefreq: 'yearly',
     priority: 0.3,
   },
   {
-    loc: 'https://ats.me/sitemap',
+    loc: 'https://apply.jobs/sitemap',
     changefreq: 'monthly',
     priority: 0.5,
   },
   {
-    loc: 'https://ats.me/founders-pass',
+    loc: 'https://apply.jobs/founders-pass',
     changefreq: 'weekly',
     priority: 0.9,
   },

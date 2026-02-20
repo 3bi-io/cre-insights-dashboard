@@ -374,7 +374,7 @@ export class XMLPostAdapter extends BaseATSAdapter {
 
     // Apply URL (injected by index.ts)
     if (application.apply_url) {
-      displayFields.push({ prompt: 'Apply URL', value: `ATS.me(${application.apply_url})` });
+      displayFields.push({ prompt: 'Apply URL', value: `Apply AI(${application.apply_url})` });
     }
 
     // Powered By (injected by index.ts)

@@ -140,7 +140,7 @@ function generateSignupEmail(confirmationUrl: string, email: string): string {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("Confirm Your Email ✉️", { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "ATS.me - Confirm Email" })}
+          ${getEmailHeader("Confirm Your Email ✉️", { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "Apply AI - Confirm Email" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Welcome to ${EMAIL_CONFIG.brand.name}!</p>
@@ -187,7 +187,7 @@ function generatePasswordResetEmail(resetUrl: string): string {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("Reset Your Password 🔑", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: "ATS.me - Password Reset" })}
+          ${getEmailHeader("Reset Your Password 🔑", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: "Apply AI - Password Reset" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Hi there,</p>
@@ -235,7 +235,7 @@ function generateMagicLinkEmail(magicLink: string): string {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("Sign In Link 🔐", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: "ATS.me - Magic Link" })}
+          ${getEmailHeader("Sign In Link 🔐", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: "Apply AI - Magic Link" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Hello,</p>
@@ -283,7 +283,7 @@ function generateEmailChangeEmail(confirmationUrl: string, newEmail: string): st
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("Confirm Email Change 📧", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: "ATS.me - Email Change" })}
+          ${getEmailHeader("Confirm Email Change 📧", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: "Apply AI - Email Change" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Hi there,</p>
@@ -333,7 +333,7 @@ function generateInviteEmail(inviteUrl: string): string {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(preheaderText)}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("You're Invited! 🎉", { gradient: "#8b5cf6 0%, #6d28d9 100%", showLogo: true, logoAlt: "ATS.me - Invitation" })}
+          ${getEmailHeader("You're Invited! 🎉", { gradient: "#8b5cf6 0%, #6d28d9 100%", showLogo: true, logoAlt: "Apply AI - Invitation" })}
           
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Hello!</p>
