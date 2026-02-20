@@ -21,7 +21,7 @@ export const LogoIcon: React.FC<LogoIconProps> = ({ size = 'md', className }) =>
   return (
     <img
       src={logoIcon}
-      alt="ATS.me logo"
+      alt="Apply AI logo"
       width={pixelSize}
       height={pixelSize}
       className={cn("flex-shrink-0 object-contain", className)}

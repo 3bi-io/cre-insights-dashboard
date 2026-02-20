@@ -8,13 +8,13 @@
 export const EMAIL_CONFIG = {
   // Verified sender addresses
   senders: {
-    default: "ATS.me <noreply@notifications.3bi.io>",
-    admin: "ATS.me Admin <admin@notifications.3bi.io>",
-    notifications: "ATS.me <notifications@notifications.3bi.io>",
-    contact: "ATS.me <contact@notifications.3bi.io>",
-    support: "ATS.me Support <support@notifications.3bi.io>",
-    invites: "ATS.me <invites@notifications.3bi.io>",
-    screening: "ATS.me Screening <screening@notifications.3bi.io>"
+    default: "Apply AI <noreply@notifications.3bi.io>",
+    admin: "Apply AI Admin <admin@notifications.3bi.io>",
+    notifications: "Apply AI <notifications@notifications.3bi.io>",
+    contact: "Apply AI <contact@notifications.3bi.io>",
+    support: "Apply AI Support <support@notifications.3bi.io>",
+    invites: "Apply AI <invites@notifications.3bi.io>",
+    screening: "Apply AI Screening <screening@notifications.3bi.io>"
   },
   
   // Reply-to addresses
@@ -33,18 +33,18 @@ export const EMAIL_CONFIG = {
   
   // Brand settings
   brand: {
-    name: "ATS.me",
-    tagline: "Modern Applicant Tracking System",
+    name: "Apply AI",
+    tagline: "AI-Powered Recruitment Platform",
     primaryColor: "#3b82f6",
     secondaryColor: "#667eea",
-    logo: "https://ats.me/assets/logo-icon-BEFigvat.png",
-    website: "https://ats-me.lovable.app",
+    logo: "https://apply.jobs/assets/logo-icon-BEFigvat.png",
+    website: "https://apply.jobs",
     year: new Date().getFullYear()
   },
 
   // Email footer
   footer: {
-    copyright: `© ${new Date().getFullYear()} ATS.me by 3BI. All rights reserved.`,
+    copyright: `© ${new Date().getFullYear()} Apply AI by 3BI. All rights reserved.`,
     address: "3BI Solutions",
     unsubscribeText: "You received this email because you applied for a position or are a registered user."
   }
@@ -95,7 +95,7 @@ export const getPreheaderText = (text: string): string => {
  * Get email logo with proper alt text for accessibility
  */
 export const getEmailLogo = (
-  altText: string = 'ATS.me - Modern Applicant Tracking System',
+  altText: string = 'Apply AI - AI-Powered Recruitment Platform',
   width: number = 120
 ): string => {
   return `
@@ -174,7 +174,7 @@ export const getEmailFooter = (options?: {
     <div style="text-align: center; padding: 20px; color: #999; font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 30px;">
       <p style="margin: 5px 0;">© ${EMAIL_CONFIG.brand.year} ${company}. All rights reserved.</p>
       <p style="margin: 5px 0; color: #9ca3af;">
-        Powered by <a href="${EMAIL_CONFIG.brand.website}" style="color: #3b82f6; text-decoration: none;">ATS.me</a>
+        Powered by <a href="${EMAIL_CONFIG.brand.website}" style="color: #3b82f6; text-decoration: none;">Apply AI</a>
       </p>
       ${options?.showUnsubscribe ? getUnsubscribeSection({
         unsubscribeUrl: options.unsubscribeUrl,
@@ -207,7 +207,7 @@ export const getEmailHeader = (
       ${options?.showLogo ? `
         <img 
           src="${EMAIL_CONFIG.brand.logo}" 
-          alt="${options.logoAlt || 'ATS.me - Modern Applicant Tracking System'}" 
+          alt="${options.logoAlt || 'Apply AI - AI-Powered Recruitment Platform'}" 
           width="80" 
           height="auto"
           style="display: block; margin: 0 auto 16px; border-radius: 8px;"

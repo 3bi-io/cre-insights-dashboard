@@ -83,9 +83,9 @@ const Auth = () => {
     <AuthContainer>
       <SEO
         title={signUpMode ? "Sign Up | Create Your Account" : "Sign In | Access Your Dashboard"}
-        description="Sign in to ATS.me to manage recruitment, track applications, and access AI-powered hiring tools. Create an account to get started."
-        keywords="ATS login, recruiter sign in, candidate portal, recruitment dashboard, job seeker account"
-        canonical="https://ats.me/auth"
+        description="Sign in to Apply AI to manage recruitment, track applications, and access AI-powered hiring tools. Create an account to get started."
+        keywords="Apply AI login, recruiter sign in, candidate portal, recruitment dashboard, job seeker account"
+        canonical="https://apply.jobs/auth"
       />
       {/* Header */}
       <div className="text-center">
@@ -93,7 +93,7 @@ const Auth = () => {
           <Brand variant="horizontal" size="lg" showAsLink={false} />
         </div>
         <p className="text-sm text-muted-foreground">
-          Next-Generation Applicant Tracking System
+          AI-Powered Recruitment Platform
         </p>
       </div>
 

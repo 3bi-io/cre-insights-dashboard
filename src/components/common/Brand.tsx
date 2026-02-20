@@ -38,7 +38,7 @@ export const Brand: React.FC<BrandProps> = ({
   showAsLink = true,
   priority = false,
   customLogoUrl,
-  organizationName = 'ATS.me'
+  organizationName = 'Apply AI'
 }) => {
   const {
     isMobile,
@@ -118,11 +118,8 @@ export const Brand: React.FC<BrandProps> = ({
     return <div className="flex items-center gap-2">
         <LogoIcon size={iconSize} />
         <span className={cn("font-logo font-bold tracking-tight", textSize)}>
-          <span className="text-primary">ATS
-
-
-        </span>
-          <span className="text-muted-foreground">.ᴍᴇ</span>
+          <span className="text-primary">Aᴘᴘʟʏ</span>
+          <span className="text-muted-foreground"> Aɪ</span>
         </span>
       </div>;
   };

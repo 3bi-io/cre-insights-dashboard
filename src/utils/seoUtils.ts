@@ -17,18 +17,18 @@ export interface PageSEO {
  * Target keywords by page for content optimization
  */
 export const PAGE_KEYWORDS = {
-  home: 'applicant tracking system, ATS software, AI recruitment, voice recruitment, AI voice agents',
-  features: 'ATS features, recruitment software features, AI screening, automated workflows, candidate tracking, voice apply',
-  resources: 'recruitment resources, hiring guides, ATS knowledge base, HR best practices',
-  contact: 'contact ATS.me, recruitment software support, sales inquiry, schedule demo',
+  home: 'AI recruitment platform, Apply AI, AI recruitment, voice recruitment, AI voice agents',
+  features: 'Apply AI features, recruitment software features, AI screening, automated workflows, candidate tracking, voice apply',
+  resources: 'recruitment resources, hiring guides, Apply AI knowledge base, HR best practices',
+  contact: 'contact Apply AI, recruitment software support, sales inquiry, schedule demo',
 } as const;
 
 /**
  * Generate optimized page title (max 60 characters)
  */
 export function generatePageTitle(baseTitle: string, includeBrand = true): string {
-  if (includeBrand && !baseTitle.includes('ATS.me')) {
-    const fullTitle = `${baseTitle} - ATS.me`;
+  if (includeBrand && !baseTitle.includes('Apply AI')) {
+    const fullTitle = `${baseTitle} - Apply AI`;
     return fullTitle.length <= 60 ? fullTitle : baseTitle;
   }
   return baseTitle.substring(0, 60);
@@ -48,14 +48,14 @@ export function generateMetaDescription(description: string): string {
  */
 export function generateCanonicalUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `https://ats.me${cleanPath === '/' ? '' : cleanPath}`;
+  return `https://apply.jobs${cleanPath === '/' ? '' : cleanPath}`;
 }
 
 /**
  * Generate Open Graph image URL with fallback
  */
 export function generateOgImage(customImage?: string): string {
-  return customImage || 'https://ats.me/og-image.png';
+  return customImage || 'https://apply.jobs/og-image.png';
 }
 
 /**

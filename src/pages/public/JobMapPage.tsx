@@ -99,26 +99,26 @@ function JobMapPageContent() {
   return (
     <>
       <Helmet>
-        <title>Job Locations Map | ATS.me</title>
+        <title>Job Locations Map | Apply AI</title>
         <meta 
           name="description" 
           content="Explore job opportunities across the United States on our interactive map. Find positions near you or discover opportunities in new locations." 
         />
         <meta name="keywords" content="job map, jobs near me, job locations, employment opportunities, career map" />
-        <link rel="canonical" href="https://ats.me/map" />
+        <link rel="canonical" href="https://apply.jobs/map" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Job Locations Map | ATS.me" />
+        <meta property="og:title" content="Job Locations Map | Apply AI" />
         <meta property="og:description" content="Explore job opportunities across the United States on our interactive map." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://ats.me/map" />
-        <meta property="og:image" content="https://ats.me/og-map.png" />
+        <meta property="og:url" content="https://apply.jobs/map" />
+        <meta property="og:image" content="https://apply.jobs/og-map.png" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Job Locations Map | ATS.me" />
+        <meta name="twitter:title" content="Job Locations Map | Apply AI" />
         <meta name="twitter:description" content="Explore job opportunities across the United States on our interactive map." />
-        <meta name="twitter:image" content="https://ats.me/og-map.png" />
+        <meta name="twitter:image" content="https://apply.jobs/og-map.png" />
       </Helmet>
 
       {/* Screen Reader Announcements */}

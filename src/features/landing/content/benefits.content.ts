@@ -3,7 +3,7 @@
  */
 
 export const benefitsContent = {
-  title: 'Why Organizations Choose ATS.me',
+  title: 'Why Organizations Choose Apply AI',
   ctaText: 'Explore All Features',
   benefits: [
     "Reduce time-to-hire significantly with intelligent automation and voice-powered applications",

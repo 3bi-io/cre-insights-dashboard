@@ -34,7 +34,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className }) =>
   // Build structured data
   const schemaItems = fullItems.map(item => ({
     name: item.name,
-    url: `https://ats.me${item.path}`,
+    url: `https://apply.jobs${item.path}`,
   }));
 
   return (

@@ -76,7 +76,7 @@ export function AdminEmailUtility({ trigger }: AdminEmailUtilityProps) {
           body: {
             to: recipient.email,
             userName: recipient.userName || recipient.email.split('@')[0],
-            organizationName: organizationName || 'ATS.me',
+            organizationName: organizationName || 'Apply AI',
           },
         });
 

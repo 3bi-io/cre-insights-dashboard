@@ -26,10 +26,10 @@ const LandingPage = () => {
     <main className="min-h-screen">
       <FoundersPassPopup />
       <SEO
-        title="AI Voice Recruitment Platform | Kanban Pipeline & Talent Pools | ATS.me"
+        title="AI Voice Recruitment Platform | Kanban Pipeline & Talent Pools | Apply AI"
         description="Hire faster with AI voice technology, visual Kanban pipeline, and talent pool management. Automated callbacks within minutes, 24/7 AI voice agents, complete activity tracking."
-        keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, ATS software, Tenstreet integration, recruitment automation, kanban pipeline, talent pools, activity tracking"
-        canonical="https://ats.me/"
+        keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, Apply AI, Tenstreet integration, recruitment automation, kanban pipeline, talent pools, activity tracking"
+        canonical="https://apply.jobs/"
       />
       <StructuredData data={buildWebSiteSchema()} />
       
