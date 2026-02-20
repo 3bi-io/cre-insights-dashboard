@@ -114,7 +114,7 @@ const ChooseAccountType = () => {
       <div className="w-full max-w-md">
         {/* Logo Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">ATS.me</h1>
+          <h1 className="text-4xl font-bold text-primary mb-2">Apply AI</h1>
           <p className="text-muted-foreground">Welcome! Let's get you set up.</p>
         </div>
 
@@ -122,7 +122,7 @@ const ChooseAccountType = () => {
           <CardHeader className="text-center">
             <CardTitle>Choose Your Account Type</CardTitle>
             <CardDescription>
-              Select how you'll be using ATS.me
+              Select how you'll be using Apply AI
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

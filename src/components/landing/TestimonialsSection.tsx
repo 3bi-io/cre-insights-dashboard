@@ -33,7 +33,7 @@ const TestimonialsSection = () => {
             Built for Modern Recruiting Challenges
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            We are building ATS.me to solve real problems faced by recruiting teams today
+            We are building Apply AI to solve real problems faced by recruiting teams today
           </p>
         </div>
         

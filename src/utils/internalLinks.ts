@@ -33,7 +33,7 @@ export const INTERNAL_LINKS: InternalLink[] = [
   {
     path: '/features',
     label: 'Features',
-    description: 'Explore ATS.me features and capabilities',
+    description: 'Explore Apply AI features and capabilities',
     category: 'primary',
     priority: 0.9,
   },
@@ -56,7 +56,7 @@ export const INTERNAL_LINKS: InternalLink[] = [
   {
     path: '/auth',
     label: 'Sign In',
-    description: 'Access your ATS.me account',
+    description: 'Access your Apply AI account',
     category: 'secondary',
     priority: 0.6,
   },
