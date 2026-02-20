@@ -4,6 +4,7 @@ import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-l
 import { createLogger } from "../_shared/logger.ts";
 import { 
   getSender,
+  getReplyTo,
   getReviewBcc,
   getEmailFooter, 
   getPreheaderText,
@@ -73,7 +74,7 @@ function getPreheader(type: string, jobTitle: string, status?: string): string {
 }
 
 const getEmailTemplate = (request: EmailRequest): string => {
-  const { type, candidateName, jobTitle, companyName = "Apply AI", additionalData } = request;
+  const { type, candidateName, jobTitle, companyName = "Company", additionalData } = request;
   
   // Sanitize all inputs
   const safeName = sanitizeInput(candidateName);
@@ -333,6 +334,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: getSender('default'),
       to: [emailRequest.to],
       bcc: getReviewBcc(),
+      replyTo: getReplyTo('support'),
       subject: emailRequest.subject,
       html: htmlContent,
     });

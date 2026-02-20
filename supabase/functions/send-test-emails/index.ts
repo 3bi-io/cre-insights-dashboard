@@ -9,6 +9,7 @@ import { createLogger } from "../_shared/logger.ts";
 import { 
   EMAIL_CONFIG, 
   getSender,
+  getReplyTo,
   getReviewBcc,
   getEmailFooter, 
   getEmailHeader, 
@@ -30,7 +31,7 @@ const corsHeaders = {
 // Email templates
 const emails = {
   welcome: (to: string) => ({
-    subject: "[TEST] Welcome to ATS.me!",
+    subject: `[TEST] Welcome to ${EMAIL_CONFIG.brand.name}!`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -38,10 +39,10 @@ const emails = {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(PREHEADER_TEMPLATES.welcome("3BI Solutions"))}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Welcome to ATS.me! 🎉", { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "ATS.me - Welcome" })}
+          ${getEmailHeader(`Welcome to ${EMAIL_CONFIG.brand.name}! 🎉`, { gradient: "#3b82f6 0%, #667eea 100%", showLogo: true, logoAlt: "Apply AI - Welcome" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Hi <strong>Chris</strong>,</p>
-            <p style="font-size: 16px; margin-bottom: 20px;">Welcome to <strong>3BI Solutions</strong> on ATS.me! Your account is ready.</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Welcome to <strong>3BI Solutions</strong> on ${EMAIL_CONFIG.brand.name}! Your account is ready.</p>
             <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
               <h3 style="margin: 0 0 12px 0; color: #1e40af;">🚀 Quick Start Guide</h3>
               <ol style="margin: 0; padding-left: 20px; color: #374151;">
@@ -62,21 +63,21 @@ const emails = {
   }),
 
   invite: (to: string) => ({
-    subject: "[TEST] You're invited to join 3BI Solutions on ATS.me",
+    subject: `[TEST] You're invited to join 3BI Solutions on ${EMAIL_CONFIG.brand.name}`,
     html: `
       <!DOCTYPE html>
       <html>
       <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
       <body style="${baseEmailStyles} background-color: #f3f4f6;">
-        ${getPreheaderText(PREHEADER_TEMPLATES.invite("ATS.me Team", "3BI Solutions", "Administrator"))}
+        ${getPreheaderText(PREHEADER_TEMPLATES.invite("Apply AI Team", "3BI Solutions", "Administrator"))}
         <div style="max-width: 600px; margin: 40px auto;">
-          ${getEmailHeader("You're Invited! 🎉", { gradient: "#3b82f6 0%, #8b5cf6 100%", showLogo: true, logoAlt: "ATS.me - Team Invitation" })}
+          ${getEmailHeader("You're Invited! 🎉", { gradient: "#3b82f6 0%, #8b5cf6 100%", showLogo: true, logoAlt: "Apply AI - Team Invitation" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; color: #374151; margin-bottom: 24px;">
-              <strong>ATS.me Team</strong> has invited you to join <strong>3BI Solutions</strong> on ATS.me as an <strong>Administrator</strong>.
+              <strong>Apply AI Team</strong> has invited you to join <strong>3BI Solutions</strong> on ${EMAIL_CONFIG.brand.name} as an <strong>Administrator</strong>.
             </p>
             <p style="font-size: 14px; color: #6b7280; margin-bottom: 24px;">
-              ATS.me is a modern applicant tracking system that helps teams hire faster with AI-powered voice recruitment and smart automation.
+              ${EMAIL_CONFIG.brand.name} is a modern applicant tracking system that helps teams hire faster with AI-powered voice recruitment and smart automation.
             </p>
             <div style="text-align: center; margin: 32px 0;">
               <a href="${EMAIL_CONFIG.brand.website}/auth?org=3bi" style="${buttonStyles}">Accept Invitation & Sign Up</a>
@@ -104,7 +105,7 @@ const emails = {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(PREHEADER_TEMPLATES.application_received("CDL Class A Driver"))}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Application Received ✓", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: "ATS.me - Application Confirmation" })}
+          ${getEmailHeader("Application Received ✓", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: "Apply AI - Application Confirmation" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>John Smith</strong>,</p>
             <p style="font-size: 16px; margin-bottom: 20px;">Thank you for applying for the <strong>CDL Class A Driver</strong> position at <strong>3BI Solutions</strong>.</p>
@@ -134,7 +135,7 @@ const emails = {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(PREHEADER_TEMPLATES.interview_invitation("CDL Class A Driver"))}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Interview Invitation 📅", { gradient: "#8b5cf6 0%, #6366f1 100%", showLogo: true, logoAlt: "ATS.me - Interview Invitation" })}
+          ${getEmailHeader("Interview Invitation 📅", { gradient: "#8b5cf6 0%, #6366f1 100%", showLogo: true, logoAlt: "Apply AI - Interview Invitation" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>John Smith</strong>,</p>
             <p style="font-size: 16px; margin-bottom: 20px;">Great news! We were impressed with your application and would like to invite you to interview for the <strong>CDL Class A Driver</strong> position.</p>
@@ -164,7 +165,7 @@ const emails = {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(PREHEADER_TEMPLATES.offer("CDL Class A Driver"))}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Congratulations! 🎉", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: "ATS.me - Job Offer" })}
+          ${getEmailHeader("Congratulations! 🎉", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: "Apply AI - Job Offer" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>John Smith</strong>,</p>
             <p style="font-size: 18px; margin-bottom: 20px; color: #d97706;"><strong>We are pleased to offer you the position of CDL Class A Driver at 3BI Solutions!</strong></p>
@@ -189,7 +190,7 @@ const emails = {
   }),
 
   magic_link: (to: string) => ({
-    subject: "[TEST] Your ATS.me Sign-in Link",
+    subject: `[TEST] Your ${EMAIL_CONFIG.brand.name} Sign-in Link`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -197,12 +198,12 @@ const emails = {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(PREHEADER_TEMPLATES.magic_link())}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Sign In to ATS.me 🔐", { gradient: "#3b82f6 0%, #1d4ed8 100%", showLogo: true, logoAlt: "ATS.me - Secure Sign In" })}
+          ${getEmailHeader(`Sign In to ${EMAIL_CONFIG.brand.name} 🔐`, { gradient: "#3b82f6 0%, #1d4ed8 100%", showLogo: true, logoAlt: "Apply AI - Secure Sign In" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Hello,</p>
-            <p style="font-size: 16px; margin-bottom: 20px;">Click the button below to securely sign in to your ATS.me account. This link will expire in 1 hour.</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">Click the button below to securely sign in to your ${EMAIL_CONFIG.brand.name} account. This link will expire in 1 hour.</p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${EMAIL_CONFIG.brand.website}/auth" style="${buttonStyles}">Sign In to ATS.me</a>
+              <a href="${EMAIL_CONFIG.brand.website}/auth" style="${buttonStyles}">Sign In to ${EMAIL_CONFIG.brand.name}</a>
             </div>
             <div style="background: #fef2f2; border: 1px solid #fee2e2; padding: 16px; border-radius: 8px; margin: 24px 0;">
               <p style="margin: 0; font-size: 13px; color: #991b1b;">
@@ -226,7 +227,7 @@ const emails = {
       <body style="${baseEmailStyles} background-color: #f5f5f5;">
         ${getPreheaderText(PREHEADER_TEMPLATES.background_check("John Smith"))}
         <div style="max-width: 600px; margin: 0 auto;">
-          ${getEmailHeader("Background Check Request 🔍", { gradient: "#6366f1 0%, #4f46e5 100%", showLogo: true, logoAlt: "ATS.me - Screening Request" })}
+          ${getEmailHeader("Background Check Request 🔍", { gradient: "#6366f1 0%, #4f46e5 100%", showLogo: true, logoAlt: "Apply AI - Screening Request" })}
           <div style="${contentStyles}">
             <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>John Smith</strong>,</p>
             <p style="font-size: 16px; margin-bottom: 20px;">As part of the hiring process at <strong>3BI Solutions</strong>, we need to conduct a background verification.</p>
@@ -275,6 +276,7 @@ serve(async (req: Request): Promise<Response> => {
           from: getSender('default'),
           to: [to],
           bcc: getReviewBcc(),
+          replyTo: getReplyTo('support'),
           subject: email.subject,
           html: email.html
         });
