@@ -1,85 +1,140 @@
 
-# Fix: /embed/apply Fetch Failures + Complete Rebrand Cleanup
+# Refactor: Full Apply Form Data Visibility in Admin
 
-## Root Cause Analysis
+## Problem Summary
 
-The `/embed/apply` fetch fails because `getCorsHeaders()` in `supabase/functions/_shared/cors-config.ts` validates the request `origin` against a hardcoded allowlist that still only contains `https://ats.me` and `https://ats-me.lovable.app`. When an embedded form on an external site posts to `submit-application`, the origin is rejected and the browser blocks the response.
+The admin panel currently surfaces only a small subset of the data that applicants submit. Specifically:
 
-Additionally, the previous rebrand sweeps missed **27 frontend files and 6+ edge function files** still containing `ats.me` references, plus 3 database client logo URLs pointing to the old Lovable subdomain.
+- The **quick apply** form (`/apply`, `/embed/apply`) collects ~15 fields.
+- The **detailed apply** form (`/apply/detailed`) collects ~50+ fields including CDL class, endorsements, SSN (last 4), DOB, employment history, military service, accident/violation history, HAZMAT/TWIC/passport, medical card expiration, felony details, work preferences, emergency contact, and more.
+- The `ApplicationDetailsDialog` in the admin only displays ~12 of these fields. The remaining 35+ are silently ignored.
+- The admin table/grid shows no indication of which form type was used or whether extended data exists.
 
 ---
 
-## Fix 1 — CORS Configuration (Critical — fixes the embed fetch failure)
+## Root Cause
 
-**File:** `supabase/functions/_shared/cors-config.ts`
+The `ApplicationDetailsDialog` was never updated to display the extended fields added in the detailed form. The data **is being saved** correctly (the `submit-application` edge function maps all fields to the `applications` table), but the admin UI just doesn't render them.
 
-Two changes:
-1. Replace `https://ats.me`, `https://www.ats.me`, and `https://ats-me.lovable.app` with `https://applyai.jobs` and `https://www.applyai.jobs` in `ALLOWED_ORIGINS`.
-2. Change the fallback in `getCorsHeaders()` from returning `ALLOWED_ORIGINS[0]` (which would be the old first entry) to returning `'*'` for unrecognized origins — the embed form is a genuinely public endpoint called from arbitrary third-party domains.
+There is also a minor remaining hardcoded URL in `DetailedApplicationForm.tsx` — breadcrumb URLs still point to `https://ats.me/` (lines 111–113). This will be fixed as part of this refactor.
 
-Also update `inbound-applications/index.ts` which has a hardcoded origin check for `ats.me` and `ats-me.lovable.app`.
+---
 
-## Fix 2 — Edge Functions with Remaining ats.me References
+## What Will Be Changed
 
-| File | What to fix |
-|---|---|
-| `supabase/functions/sync-cdl-feeds/index.ts` | `generateApplyUrl` base URL: `https://ats.me/apply` → `https://applyai.jobs/apply` |
-| `supabase/functions/import-jobs-from-feed/index.ts` | Same `generateApplyUrl` base URL |
-| `supabase/functions/social-oauth-callback/index.ts` | Fallback `FRONTEND_URL`: `https://ats-me.lovable.app` → `https://applyai.jobs` (in 2 places) |
-| `supabase/functions/universal-xml-feed/index.ts` | `buildApplyUrl` uses `https://ats.me/apply`; publisher name `ATS.me` → `Apply AI` across all ~10 XML generator functions (`generateIndeedXML`, `generateCareerJetXML`, `generateAdzunaXML`, `generateDiceXML`, `generateJoobleXML`, `generateGenericXML`, `generateHcareersXML`, `generateSnagajobXML`, `generateWellfoundXML`) |
-| `supabase/functions/send-welcome-email/index.ts` | Brand name strings: "ATS.me" → "Apply AI", "The ATS.me Team" → "The Apply AI Team", subject line, logo alt text, quick start guide link text |
-| `supabase/functions/send-invite-email/index.ts` | Logo alt text: "ATS.me - Team Invitation" → "Apply AI - Team Invitation" |
-| `supabase/functions/job-group-xml-feed/index.ts` | Fallback `BASE_URL`: `https://ats.me` → `https://applyai.jobs` |
+### 1. `ApplicationDetailsDialog.tsx` — Core Fix
 
-After editing, redeploy: `sync-cdl-feeds`, `import-jobs-from-feed`, `social-oauth-callback`, `universal-xml-feed`, `send-welcome-email`, `send-invite-email`, `job-group-xml-feed`, `inbound-applications`.
+Expand the details dialog to show all form data, organized into logical collapsible sections. This is the most impactful change.
 
-## Fix 3 — Frontend Files with Remaining ats.me References
+New sections to add (currently missing):
 
-| File | What to fix |
-|---|---|
-| `src/utils/breadcrumbSchema.ts` | Base URL `https://ats.me` → `https://applyai.jobs` |
-| `src/utils/exportJobUrls.ts` | `BASE_URL = 'https://ats.me'` → `'https://applyai.jobs'` |
-| `src/pages/public/JobDetailsPage.tsx` | `ogImage="https://ats.me/og-jobs.png"` → `applyai.jobs` |
-| `src/pages/public/ContactPage.tsx` | Schema URLs, email addresses displayed (`sales@ats.me` → `sales@applyai.jobs`), SEO canonical/OG, text content "ATS.me" → "Apply AI" |
-| `src/pages/public/ResourcesPage.tsx` | Page title, schema name, SEO canonical/OG, download item titles |
-| `src/pages/public/DemoPage.tsx` | Schema name, SEO canonical/OG, all "ATS.me" text content in headings and copy |
-| `src/pages/public/BlogPostPage.tsx` | Author fallback name "ATS.me Team" → "Apply AI Team", SEO title/canonical/OG, publisher in schema |
-| `src/pages/public/ClientsPage.tsx` | `ogImage` URL |
-| `src/utils/roiCalculatorGenerator.ts` | "With ATS.me" column header (appears ~15 times), support email, instructions text |
-| `src/components/voice/demo/transcriptData.ts` | Agent dialogue strings "Welcome to ATS.me" / "apply with ATS.me" → "Apply AI" |
+**Extended Personal Information** (shown when data exists)
+- Prefix / Middle Name / Suffix
+- Date of Birth (formatted, not shown if null)
+- SSN Last 4 (shown as `****-1234` format for privacy)
+- Government ID Type + Government ID Number
 
-## Fix 4 — Database Logo URLs (3 records)
+**Full Contact Information** (shown when data exists)
+- Full Address (address_1, address_2, city, state, zip, country)
+- Secondary Phone
+- Preferred Contact Method
 
-The following 3 clients in the database have `logo_url` values pointing to `https://ats-me.lovable.app/logos/...` which will break if that subdomain is ever decommissioned. A SQL UPDATE is needed:
+**Emergency Contact** (shown when any field exists)
+- Emergency Contact Name, Phone, Relationship
 
-```sql
-UPDATE clients
-SET logo_url = 'https://applyai.jobs/logos/pemberton-truck-lines.png'
-WHERE id = '67cadf11-8cce-41c6-8e19-7d2bb0be3b03';
+**CDL & Licensing (Extended)** (expand existing section)
+- CDL Class (A / B / C)
+- CDL State (issuing state)
+- CDL Expiration Date
+- CDL Endorsements (as badges: H, N, P, S, T, X)
+- Total Driving Experience Years
+- HAZMAT Endorsement status
+- TWIC Card status
+- Passport Card status
+- Medical Card Expiration
+- Last DOT Physical Date
 
-UPDATE clients  
-SET logo_url = 'https://applyai.jobs/logos/jbtclogo.webp'
-WHERE id = 'b2a29507-32a6-4f5e-85d6-a7e6ffac3c52';
+**Accident & Violation History** (shown when data exists)
+- Accident History (last 3 years)
+- Violation History (last 3 years)
 
-UPDATE clients
-SET logo_url = 'https://applyai.jobs/logos/danny-herman.png'
-WHERE id = '1d54e463-4d7f-4a05-8189-3e33d0586dea';
+**Experience & Education** (shown when data exists)
+- Employment History (rendered as readable text/JSON)
+- Education Level
+
+**Military Service** (shown when military_service is set)
+- Military Service status
+- Military Branch
+- Start Date / End Date
+
+**Background & Legal** (shown when data exists)
+- Convicted Felony (yes/no)
+- Felony Details
+- Work Authorization
+
+**Work Preferences** (shown when data exists)
+- Can Work Weekends
+- Can Work Nights
+- Willing to Relocate
+- Preferred Start Date
+- Salary Expectations
+
+**How Did You Hear** (shown when set)
+- Source / Referral method
+
+**Screening Fields** (expand existing section)
+- `over_21` (currently mapped to `age` in display, ensure `over_21` field is checked)
+- `can_pass_drug_test`
+- `can_pass_physical`
+- `consent_to_sms`
+- `consent_to_email`
+- `agree_privacy_policy`
+- `background_check_consent`
+
+All new sections will be **collapsible** (using the existing `Collapsible` pattern already present in the dialog for call history, background checks, etc.) and will only render when data actually exists, keeping the dialog clean for quick-apply submissions that only have basic data.
+
+### 2. `ApplicationsTable.tsx` — Add Form Type Column
+
+Add a "Form" column to the table that shows which apply form was used. The form type can be inferred from:
+- `source === 'Embed Form'` → "Embed"
+- Fields like `cdl_class`, `date_of_birth`, `employment_history` being populated → "Detailed"
+- Otherwise → "Quick"
+
+This will be displayed as a small colored badge.
+
+### 3. `ApplicationsGrid.tsx` / `ApplicationCard.tsx` — Add Form Type Badge + Extended Info Preview
+
+Add a compact "Detailed" / "Embed" / "Quick" badge to application cards so recruiters can quickly see which form type was submitted. Also show CDL class if available (e.g., "Class A CDL") as it's a key screening field.
+
+### 4. `DetailedApplicationForm.tsx` — Fix Remaining Hardcoded URLs
+
+Lines 111–113 still reference `https://ats.me/` in the breadcrumb schema:
+```typescript
+{ name: 'Home', url: 'https://ats.me/' },
+{ name: 'Jobs', url: 'https://ats.me/jobs' },
+{ name: jobTitle || 'Detailed Application', url: 'https://ats.me/apply/detailed' },
 ```
+These will be updated to `https://applyai.jobs/`.
 
-Note: The actual image files (`pemberton-truck-lines.png`, `jbtclogo.webp`, `danny-herman.png`) must exist at `https://applyai.jobs/logos/`. If they are not already in `public/logos/`, we will need to keep the `ats-me.lovable.app` URLs intact until the images are migrated. We will update the database URLs to point to `applyai.jobs` since the `public/logos/` directory should be serving these files from the same deployment.
+Also lines 124 and 154 have `canonical="https://ats.me/apply/detailed"` in the `<SEO>` components — both will be updated.
+
+---
 
 ## Implementation Order
 
-1. Fix `cors-config.ts` — add `applyai.jobs` to allowlist, wildcard fallback (fixes the live embed breakage immediately)
-2. Fix `inbound-applications/index.ts` — update origin check
-3. Fix frontend files (breadcrumbSchema, exportJobUrls, 7 public pages, roiCalculatorGenerator, transcriptData)
-4. Fix edge functions (sync-cdl-feeds, import-jobs-from-feed, social-oauth-callback, universal-xml-feed, send-welcome-email, send-invite-email, job-group-xml-feed)
-5. Run SQL UPDATE for the 3 client logo URLs in the database
-6. Redeploy all 8 affected edge functions
+1. Fix `DetailedApplicationForm.tsx` — correct remaining `ats.me` URLs (trivial, 3 lines).
+2. Expand `ApplicationDetailsDialog.tsx` — add all missing data sections as collapsibles.
+3. Update `ApplicationsTable.tsx` — add Form Type column.
+4. Update `ApplicationCard.tsx` — add Form Type badge and CDL class display.
+
+---
 
 ## Technical Notes
 
-- The `ats.me` email addresses (`sales@ats.me`, `support@ats.me`) shown on the Contact page are display-only contact links. These should change to `@applyai.jobs` in the UI, but only if you have those email aliases configured. We will update the displayed text — confirm if you want this.
-- The `ROI Calculator XLSX` has "With ATS.me" as a column header throughout; changing it means the XLSX template regenerates with "With Apply AI" — this is a cosmetic-only content change.
-- The voice transcript data (`transcriptData.ts`) is demo audio transcript text, not live agent script — updating it only changes the visual demo on the audio showcase page.
-- `public/logos/` directory will be checked to confirm the logo images exist before committing the DB update.
+- No database changes required — all fields are already stored in the `applications` table.
+- No API changes required — `usePaginatedApplications` already fetches `*` (all columns) from applications.
+- The `Application` type in `common.types.ts` already has all extended fields typed — they just aren't rendered.
+- Sections in the dialog are conditionally rendered only when data exists, so the dialog stays clean for quick-apply submissions.
+- The "form type" indicator is inferred client-side from field presence — no new DB column needed.
+- Employment history is stored as JSON (`jsonb`) — it will be rendered as a formatted readable list when present.
+- SSN display in admin is shown as `****-XXXX` (masking first digits, showing last 4 only) since only last 4 digits are collected anyway.
