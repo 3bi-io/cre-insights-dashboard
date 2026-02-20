@@ -1,5 +1,5 @@
 # robots.txt for Apply AI
-# https://apply.jobs/robots.txt
+# https://applyai.jobs/robots.txt
 
 User-agent: *
 Allow: /
@@ -44,7 +44,7 @@ Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/google-jobs-xml
 Sitemap: https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/indeed-xml-feed
 
 # Fallback static sitemap
-Sitemap: https://apply.jobs/sitemap.xml
+Sitemap: https://applyai.jobs/sitemap.xml
 
 # Crawl-delay for all bots
 Crawl-delay: 1

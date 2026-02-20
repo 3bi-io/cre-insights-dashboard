@@ -92,7 +92,7 @@ const sections: LegalSection[] = [
     content: (
       <div className="space-y-2">
         <p>If you have any questions about our use of cookies, please contact us at:</p>
-        <p className="text-foreground font-medium">Email: privacy@apply.jobs</p>
+        <p className="text-foreground font-medium">Email: privacy@applyai.jobs</p>
         <p className="text-foreground font-medium">Subject: Cookie Policy Inquiry</p>
       </div>
     ),
@@ -106,7 +106,7 @@ const CookiePolicyPage = () => (
     icon={<Cookie className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Cookie Policy | How We Use Cookies"
     seoDescription="Learn how Apply AI uses cookies to enhance your experience. Cookie types, purposes, and how to manage cookie preferences."
-    canonical="https://apply.jobs/cookie-policy"
+    canonical="https://applyai.jobs/cookie-policy"
     breadcrumbPath="/cookie-policy"
     sections={sections}
     introAlert={

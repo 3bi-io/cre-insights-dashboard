@@ -78,7 +78,7 @@ const sections: LegalSection[] = [
     content: (
       <div className="space-y-2">
         <p>If you have any questions about this Privacy Policy or our data practices, please contact us at:</p>
-        <p className="text-foreground font-medium">Email: privacy@apply.jobs</p>
+        <p className="text-foreground font-medium">Email: privacy@applyai.jobs</p>
         <p className="text-foreground font-medium">Address: Apply AI Privacy Office</p>
       </div>
     ),
@@ -92,7 +92,7 @@ const PrivacyPolicyPage = () => (
     icon={<Shield className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Privacy Policy | Data Protection & GDPR Compliance"
     seoDescription="Apply AI's privacy policy covering data collection, usage, security, and your rights. GDPR compliant recruitment platform."
-    canonical="https://apply.jobs/privacy-policy"
+    canonical="https://applyai.jobs/privacy-policy"
     breadcrumbPath="/privacy-policy"
     sections={sections}
   />

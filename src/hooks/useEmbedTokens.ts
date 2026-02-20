@@ -237,7 +237,7 @@ export function generateWidgetCode(token: string, containerId: string = 'apply-w
   return `<!-- Apply AI Application Widget -->
 <div id="${containerId}"></div>
 <script 
-  src="https://apply.jobs/widget.js" 
+  src="https://applyai.jobs/widget.js" 
   data-token="${token}"
   data-container="${containerId}"
   async
@@ -260,7 +260,7 @@ export function generateWidgetCodeWithOptions(
   return `<!-- Apply AI Application Widget -->
 <div id="${containerId}"></div>
 <script 
-  src="https://apply.jobs/widget.js" 
+  src="https://applyai.jobs/widget.js" 
   data-token="${token}"
   data-container="${containerId}"${minHeightAttr}
   async

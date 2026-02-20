@@ -91,7 +91,7 @@ const sections: LegalSection[] = [
     content: (
       <div className="space-y-2">
         <p>If you have any questions about these Terms of Service, please contact us at:</p>
-        <p className="text-foreground font-medium">Email: legal@apply.jobs</p>
+        <p className="text-foreground font-medium">Email: legal@applyai.jobs</p>
         <p className="text-foreground font-medium">Address: Apply AI Legal Department</p>
       </div>
     ),
@@ -105,7 +105,7 @@ const TermsOfServicePage = () => (
     icon={<FileText className="h-14 w-14 text-primary mx-auto" />}
     seoTitle="Terms of Service | User Agreement"
     seoDescription="Terms and conditions for using Apply AI's recruitment platform. Service agreement, usage rights, and responsibilities."
-    canonical="https://apply.jobs/terms-of-service"
+    canonical="https://applyai.jobs/terms-of-service"
     breadcrumbPath="/terms-of-service"
     sections={sections}
     introAlert={

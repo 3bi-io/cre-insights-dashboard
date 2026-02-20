@@ -103,7 +103,7 @@ export const EmbedThankYou: React.FC<EmbedThankYouProps> = ({
               <p className="text-xs text-muted-foreground">
                 Powered by{' '}
                 <a 
-                  href="https://apply.jobs" 
+                  href="https://applyai.jobs" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"

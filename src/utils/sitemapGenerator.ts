@@ -12,63 +12,63 @@ export interface SitemapUrl {
 
 export const STATIC_ROUTES: SitemapUrl[] = [
   {
-    loc: 'https://apply.jobs/',
+    loc: 'https://applyai.jobs/',
     changefreq: 'daily',
     priority: 1.0,
   },
   {
-    loc: 'https://apply.jobs/jobs',
+    loc: 'https://applyai.jobs/jobs',
     changefreq: 'daily',
     priority: 0.9,
   },
   {
-    loc: 'https://apply.jobs/features',
+    loc: 'https://applyai.jobs/features',
     changefreq: 'weekly',
     priority: 0.9,
   },
   // Pricing page removed - all features available to all users
   {
-    loc: 'https://apply.jobs/apply',
+    loc: 'https://applyai.jobs/apply',
     changefreq: 'weekly',
     priority: 0.7,
   },
   {
-    loc: 'https://apply.jobs/resources',
+    loc: 'https://applyai.jobs/resources',
     changefreq: 'weekly',
     priority: 0.7,
   },
   {
-    loc: 'https://apply.jobs/contact',
+    loc: 'https://applyai.jobs/contact',
     changefreq: 'monthly',
     priority: 0.8,
   },
   {
-    loc: 'https://apply.jobs/auth',
+    loc: 'https://applyai.jobs/auth',
     changefreq: 'monthly',
     priority: 0.6,
   },
   {
-    loc: 'https://apply.jobs/privacy-policy',
+    loc: 'https://applyai.jobs/privacy-policy',
     changefreq: 'yearly',
     priority: 0.3,
   },
   {
-    loc: 'https://apply.jobs/terms-of-service',
+    loc: 'https://applyai.jobs/terms-of-service',
     changefreq: 'yearly',
     priority: 0.3,
   },
   {
-    loc: 'https://apply.jobs/cookie-policy',
+    loc: 'https://applyai.jobs/cookie-policy',
     changefreq: 'yearly',
     priority: 0.3,
   },
   {
-    loc: 'https://apply.jobs/sitemap',
+    loc: 'https://applyai.jobs/sitemap',
     changefreq: 'monthly',
     priority: 0.5,
   },
   {
-    loc: 'https://apply.jobs/founders-pass',
+    loc: 'https://applyai.jobs/founders-pass',
     changefreq: 'weekly',
     priority: 0.9,
   },

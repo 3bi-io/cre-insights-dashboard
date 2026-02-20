@@ -46,7 +46,7 @@ const BlogPage: React.FC = () => {
         title="Blog | Apply AI - Recruitment Insights & Industry Trends"
         description="Expert insights on AI recruitment, applicant tracking systems, hiring strategies, and HR technology trends."
         keywords="recruitment blog, ATS insights, hiring strategies, HR technology, AI recruiting tips"
-        canonical="https://apply.jobs/blog"
+        canonical="https://applyai.jobs/blog"
       />
 
       <div className="min-h-screen">
