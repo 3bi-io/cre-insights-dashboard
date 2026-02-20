@@ -19,10 +19,13 @@ import { HeroBackground } from '@/components/shared';
 import { calculateReadingTime } from '@/utils/seoUtils';
 import socialHero from '@/assets/hero/social-hero.png';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const BlogPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
   const { data: posts, isLoading } = useBlogPosts(selectedCategory);
   const { data: categories } = useBlogCategories();
 
@@ -214,9 +217,33 @@ const BlogPage: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               Get the latest recruitment insights and product updates delivered to your inbox.
             </p>
-            <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
-              <Input type="email" placeholder="your@email.com" className="flex-1 min-h-[44px]" />
-              <Button type="submit" className="min-h-[44px]">
+            <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!newsletterEmail || isSubscribing) return;
+              setIsSubscribing(true);
+              try {
+                const response = await fetch(
+                  `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/newsletter-subscribe`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: newsletterEmail, source: 'blog' }),
+                  }
+                );
+                if (!response.ok) {
+                  const data = await response.json().catch(() => ({}));
+                  throw new Error(data.error || 'Subscription failed');
+                }
+                toast.success('Thanks for subscribing! Check your inbox.');
+                setNewsletterEmail('');
+              } catch (err: any) {
+                toast.error(err.message || 'Something went wrong. Please try again.');
+              } finally {
+                setIsSubscribing(false);
+              }
+            }}>
+              <Input type="email" placeholder="your@email.com" className="flex-1 min-h-[44px]" value={newsletterEmail} onChange={(e) => setNewsletterEmail(e.target.value)} />
+              <Button type="submit" className="min-h-[44px]" disabled={isSubscribing}>
                 Subscribe <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
