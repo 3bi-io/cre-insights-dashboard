@@ -3,9 +3,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Resend } from "npm:resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
 import { 
+  EMAIL_CONFIG,
   getSender,
+  getReplyTo,
   getReviewBcc,
   getPreheaderText,
+  getEmailHeader,
   baseEmailStyles, 
   contentStyles, 
   buttonStyles, 
@@ -26,7 +29,7 @@ interface MagicLinkRequest {
 }
 
 /**
- * Generate magic link email HTML with preheader
+ * Generate magic link email HTML with preheader and shared header with logo
  */
 const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): string => {
   const title = isAdmin ? "Administrator Login" : "Access Your Account";
@@ -43,9 +46,7 @@ const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): s
       </head>
       <body style="${baseEmailStyles}">
         ${getPreheaderText(preheaderText)}
-        <div style="background: linear-gradient(135deg, ${gradient}); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">🔐 ${title}</h1>
-        </div>
+        ${getEmailHeader(`🔐 ${title}`, { gradient, showLogo: true, logoAlt: `Apply AI - ${title}` })}
         <div style="${contentStyles}">
           <p style="font-size: 16px; margin-bottom: 20px;">Hello,</p>
           <p style="font-size: 16px; margin-bottom: 20px;">
@@ -98,6 +99,9 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, bulkSend }: MagicLinkRequest = await req.json();
     logger.info("Magic link request received", { email, bulkSend });
 
+    // Use production website URL for redirects
+    const redirectUrl = `${EMAIL_CONFIG.brand.website}/dashboard`;
+
     // Handle bulk send for all users
     if (bulkSend) {
       // Get all profiles to send magic links to
@@ -124,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
             type: 'magiclink',
             email: profile.email,
             options: {
-              redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('auwhcdpppldjlcaxzsme.supabase.co', 'cf22d483-762d-45c7-a42c-85b40ce9290a.lovableproject.com')}/dashboard`
+              redirectTo: redirectUrl
             }
           });
 
@@ -143,7 +147,8 @@ const handler = async (req: Request): Promise<Response> => {
             from: getSender('admin'),
             to: [profile.email],
             bcc: getReviewBcc(),
-            subject: "Magic Link Login Access - ATS.me",
+            replyTo: getReplyTo('support'),
+            subject: `Magic Link Login Access - ${EMAIL_CONFIG.brand.name}`,
             html: generateMagicLinkEmail(actionLink, false)
           });
 
@@ -222,7 +227,7 @@ const handler = async (req: Request): Promise<Response> => {
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('auwhcdpppldjlcaxzsme.supabase.co', 'cf22d483-762d-45c7-a42c-85b40ce9290a.lovableproject.com')}/dashboard`
+        redirectTo: redirectUrl
       }
     });
 
@@ -240,7 +245,8 @@ const handler = async (req: Request): Promise<Response> => {
       from: getSender('admin'),
       to: [email],
       bcc: getReviewBcc(),
-      subject: "Administrator Magic Link Login - ATS.me",
+      replyTo: getReplyTo('support'),
+      subject: `Administrator Magic Link Login - ${EMAIL_CONFIG.brand.name}`,
       html: generateMagicLinkEmail(actionLink, true)
     });
 

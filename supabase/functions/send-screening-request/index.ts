@@ -5,9 +5,14 @@ import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-l
 import { createLogger } from "../_shared/logger.ts";
 import { 
   getSender,
+  getReplyTo,
   getReviewBcc,
   getPreheaderText,
+  getEmailHeader,
   getEmailFooter,
+  baseEmailStyles,
+  contentStyles,
+  buttonStyles,
   PREHEADER_TEMPLATES 
 } from "../_shared/email-config.ts";
 
@@ -56,7 +61,7 @@ function getPreheader(requestType: string, applicantName: string, organizationNa
   }
 }
 
-// Generate screening email HTML template
+// Generate screening email HTML template using shared header with logo
 function generateScreeningEmail(
   requestType: string,
   applicantName: string,
@@ -73,26 +78,6 @@ function generateScreeningEmail(
   // Get preheader text
   const preheaderText = getPreheader(requestType, safeName, safeOrg);
 
-  const baseStyles = `
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-  `;
-
-  const buttonStyle = `
-    display: inline-block;
-    padding: 14px 28px;
-    background-color: #3b82f6;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: 600;
-    margin: 16px 0;
-  `;
-
   switch (requestType) {
     case 'background_check':
       return {
@@ -105,12 +90,10 @@ function generateScreeningEmail(
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Background Check Request</title>
             </head>
-            <body style="${baseStyles}">
+            <body style="${baseEmailStyles}">
               ${getPreheaderText(preheaderText)}
-              <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">🔍 Background Check Request</h1>
-              </div>
-              <div style="background: white; padding: 30px; border: 1px solid #e1e8ed; border-top: none; border-radius: 0 0 10px 10px;">
+              ${getEmailHeader("🔍 Background Check Request", { gradient: "#3b82f6 0%, #1d4ed8 100%", showLogo: true, logoAlt: "Apply AI - Background Check" })}
+              <div style="${contentStyles}">
                 <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeProvider},</p>
                 <p style="font-size: 16px; margin-bottom: 20px;">We are requesting a background check for the following applicant:</p>
                 <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
@@ -120,7 +103,7 @@ function generateScreeningEmail(
                 </div>
                 <p style="font-size: 16px; margin-bottom: 10px;">Please complete the background check and upload the results using the secure portal:</p>
                 <div style="text-align: center;">
-                  <a href="${portalLink}" style="${buttonStyle}">Access Screening Portal</a>
+                  <a href="${portalLink}" style="${buttonStyles}">Access Screening Portal</a>
                 </div>
                 <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">⏰ This request will expire in 30 days.</p>
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Thank you,</p>
@@ -143,17 +126,15 @@ function generateScreeningEmail(
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Employment Application Request</title>
             </head>
-            <body style="${baseStyles}">
+            <body style="${baseEmailStyles}">
               ${getPreheaderText(preheaderText)}
-              <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">📋 Complete Your Application</h1>
-              </div>
-              <div style="background: white; padding: 30px; border: 1px solid #e1e8ed; border-top: none; border-radius: 0 0 10px 10px;">
+              ${getEmailHeader("📋 Complete Your Application", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: "Apply AI - Employment Application" })}
+              <div style="${contentStyles}">
                 <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
                 <p style="font-size: 16px; margin-bottom: 20px;">Thank you for your interest in joining <strong>${safeOrg}</strong>!</p>
                 <p style="font-size: 16px; margin-bottom: 20px;">To proceed with your application, please complete the full employment application form by clicking the button below:</p>
                 <div style="text-align: center;">
-                  <a href="${portalLink}" style="${buttonStyle}">Complete Application</a>
+                  <a href="${portalLink}" style="${buttonStyles}">Complete Application</a>
                 </div>
                 <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 25px 0;">
                   <p style="margin: 0; font-size: 14px; color: #166534;">
@@ -184,12 +165,10 @@ function generateScreeningEmail(
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Drug Screening Request</title>
             </head>
-            <body style="${baseStyles}">
+            <body style="${baseEmailStyles}">
               ${getPreheaderText(preheaderText)}
-              <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-                <h1 style="color: white; margin: 0; font-size: 24px;">🏥 Drug Screening Request</h1>
-              </div>
-              <div style="background: white; padding: 30px; border: 1px solid #e1e8ed; border-top: none; border-radius: 0 0 10px 10px;">
+              ${getEmailHeader("🏥 Drug Screening Request", { gradient: "#8b5cf6 0%, #6d28d9 100%", showLogo: true, logoAlt: "Apply AI - Drug Screening" })}
+              <div style="${contentStyles}">
                 <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeProvider},</p>
                 <p style="font-size: 16px; margin-bottom: 20px;">We are requesting a pre-employment drug screening for:</p>
                 <div style="background: #f5f3ff; border-left: 4px solid #8b5cf6; padding: 15px; margin: 20px 0;">
@@ -199,7 +178,7 @@ function generateScreeningEmail(
                 </div>
                 <p style="font-size: 16px; margin-bottom: 10px;">Please conduct the screening and upload results via our secure portal:</p>
                 <div style="text-align: center;">
-                  <a href="${portalLink}" style="${buttonStyle}">Upload Results</a>
+                  <a href="${portalLink}" style="${buttonStyles}">Upload Results</a>
                 </div>
                 <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">⏰ This request will expire in 30 days.</p>
                 <p style="font-size: 16px; margin-top: 25px; margin-bottom: 5px;">Thank you,</p>
@@ -353,6 +332,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: getSender('screening'),
       to: [emailTo],
       bcc: getReviewBcc(),
+      replyTo: getReplyTo('support'),
       subject: emailContent.subject,
       html: emailContent.html
     });
