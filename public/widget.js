@@ -4,7 +4,7 @@
  * Usage:
  * <div id="apply-widget"></div>
  * <script 
- *   src="https://apply.jobs/widget.js" 
+ *   src="https://applyai.jobs/widget.js" 
  *   data-token="your-token-here"
  *   data-container="apply-widget"
  *   async
@@ -30,7 +30,7 @@
   // Read configuration from data attributes
   var token = script.getAttribute('data-token');
   var containerId = script.getAttribute('data-container') || 'apply-widget';
-  var baseUrl = script.getAttribute('data-base-url') || 'https://apply.jobs';
+  var baseUrl = script.getAttribute('data-base-url') || 'https://applyai.jobs';
   var apiUrl = script.getAttribute('data-api-url') || 'https://auwhcdpppldjlcaxzsme.supabase.co';
   var minHeight = parseInt(script.getAttribute('data-min-height') || '600', 10);
 

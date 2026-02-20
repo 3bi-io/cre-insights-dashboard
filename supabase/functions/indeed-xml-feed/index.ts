@@ -107,7 +107,7 @@ function generateIndeedXML(jobs: any[]): string {
     const experience = escapeXml(job.experience_level || '')
     const referencenumber = escapeXml(job.id || '')
     // Build apply URL with client context for proper routing
-    let applyUrl = `https://apply.jobs/apply?job_listing_id=${job.id}`;
+    let applyUrl = `https://applyai.jobs/apply?job_listing_id=${job.id}`;
     if (job.organization_id) applyUrl += `&organization_id=${job.organization_id}`;
     if (job.client_id) applyUrl += `&client_id=${job.client_id}`;
     const url = escapeXml(applyUrl)
@@ -182,7 +182,7 @@ function generateIndeedXML(jobs: any[]): string {
 
   return `<source>
     <publisher>Apply AI</publisher>
-    <publisherurl>https://apply.jobs</publisherurl>
+    <publisherurl>https://applyai.jobs</publisherurl>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
 ${xmlJobs}
 </source>`

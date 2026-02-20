@@ -48,14 +48,14 @@ export function generateMetaDescription(description: string): string {
  */
 export function generateCanonicalUrl(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `https://apply.jobs${cleanPath === '/' ? '' : cleanPath}`;
+  return `https://applyai.jobs${cleanPath === '/' ? '' : cleanPath}`;
 }
 
 /**
  * Generate Open Graph image URL with fallback
  */
 export function generateOgImage(customImage?: string): string {
-  return customImage || 'https://apply.jobs/og-image.png';
+  return customImage || 'https://applyai.jobs/og-image.png';
 }
 
 /**

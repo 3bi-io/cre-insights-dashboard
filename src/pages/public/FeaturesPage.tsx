@@ -81,7 +81,7 @@ const FeaturesPage = () => {
       "Visual Kanban Pipeline",
     ],
     "description": "AI-powered applicant tracking system with Voice Apply technology, instant AI callbacks, 24/7 voice agents, and social recruitment automation.",
-    "url": "https://apply.jobs/features"
+    "url": "https://applyai.jobs/features"
   };
 
   const faqSchema = buildFAQSchema(featureFaqs);
@@ -92,8 +92,8 @@ const FeaturesPage = () => {
         title="Features | Voice Apply, AI Callbacks & Smart Recruiting"
         description="Explore Apply AI's Voice Apply technology, instant AI callbacks, 24/7 AI voice agents, and social recruitment automation — the fastest way to hire."
         keywords="Voice Apply, AI callbacks, AI recruitment, voice screening, ATS features, AI voice agents, social beacon, job board integration"
-        canonical="https://apply.jobs/features"
-        ogImage="https://apply.jobs/og-features.png"
+        canonical="https://applyai.jobs/features"
+        ogImage="https://applyai.jobs/og-features.png"
       />
       <StructuredData data={[softwareAppSchema, faqSchema]} />
 

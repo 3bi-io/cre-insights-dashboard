@@ -17,7 +17,7 @@ import WaveformVisualizer from '@/components/audio/WaveformVisualizer';
 import LogoIcon from '@/components/common/LogoIcon';
 import voiceInterviewCover from '@/assets/audio/voice-interview-cover.jpg';
 
-const OG_IMAGE_URL = 'https://apply.jobs/og-audio.jpg';
+const OG_IMAGE_URL = 'https://applyai.jobs/og-audio.jpg';
 
 // Audio file mapping - hardcoded for now, can be database-driven later
 const AUDIO_FILES: Record<string, string> = {

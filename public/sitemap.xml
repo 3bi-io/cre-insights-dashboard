@@ -3,7 +3,7 @@
   
   <!-- Homepage -->
   <url>
-    <loc>https://apply.jobs/</loc>
+    <loc>https://applyai.jobs/</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -11,7 +11,7 @@
   
   <!-- Jobs (Public Listings) -->
   <url>
-    <loc>https://apply.jobs/jobs</loc>
+    <loc>https://applyai.jobs/jobs</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -19,7 +19,7 @@
   
   <!-- Demo -->
   <url>
-    <loc>https://apply.jobs/demo</loc>
+    <loc>https://applyai.jobs/demo</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -27,7 +27,7 @@
   
   <!-- Features -->
   <url>
-    <loc>https://apply.jobs/features</loc>
+    <loc>https://applyai.jobs/features</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -35,7 +35,7 @@
   
   <!-- Clients -->
   <url>
-    <loc>https://apply.jobs/clients</loc>
+    <loc>https://applyai.jobs/clients</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -43,7 +43,7 @@
   
   <!-- Job Map -->
   <url>
-    <loc>https://apply.jobs/map</loc>
+    <loc>https://applyai.jobs/map</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -51,7 +51,7 @@
   
   <!-- Apply -->
   <url>
-    <loc>https://apply.jobs/apply</loc>
+    <loc>https://applyai.jobs/apply</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -59,7 +59,7 @@
   
   <!-- Apply Detailed -->
   <url>
-    <loc>https://apply.jobs/apply/detailed</loc>
+    <loc>https://applyai.jobs/apply/detailed</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -67,7 +67,7 @@
   
   <!-- Contact -->
   <url>
-    <loc>https://apply.jobs/contact</loc>
+    <loc>https://applyai.jobs/contact</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -75,7 +75,7 @@
   
   <!-- Resources -->
   <url>
-    <loc>https://apply.jobs/resources</loc>
+    <loc>https://applyai.jobs/resources</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -83,7 +83,7 @@
   
   <!-- Authentication -->
   <url>
-    <loc>https://apply.jobs/auth</loc>
+    <loc>https://applyai.jobs/auth</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -91,21 +91,21 @@
   
   <!-- Legal Pages -->
   <url>
-    <loc>https://apply.jobs/privacy-policy</loc>
+    <loc>https://applyai.jobs/privacy-policy</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
-    <loc>https://apply.jobs/terms-of-service</loc>
+    <loc>https://applyai.jobs/terms-of-service</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
-    <loc>https://apply.jobs/cookie-policy</loc>
+    <loc>https://applyai.jobs/cookie-policy</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
@@ -113,7 +113,7 @@
   
   <!-- Blog -->
   <url>
-    <loc>https://apply.jobs/blog</loc>
+    <loc>https://applyai.jobs/blog</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -121,35 +121,35 @@
   
   <!-- Blog Posts -->
   <url>
-    <loc>https://apply.jobs/blog/what-is-voice-apply-technology</loc>
+    <loc>https://applyai.jobs/blog/what-is-voice-apply-technology</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://apply.jobs/blog/roi-ai-powered-recruitment-2026</loc>
+    <loc>https://applyai.jobs/blog/roi-ai-powered-recruitment-2026</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://apply.jobs/blog/social-beacon-beyond-job-boards</loc>
+    <loc>https://applyai.jobs/blog/social-beacon-beyond-job-boards</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://apply.jobs/blog/tenstreet-integration-driver-recruitment</loc>
+    <loc>https://applyai.jobs/blog/tenstreet-integration-driver-recruitment</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
-    <loc>https://apply.jobs/blog/recruitment-compliance-ai-hiring-2026</loc>
+    <loc>https://applyai.jobs/blog/recruitment-compliance-ai-hiring-2026</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -157,7 +157,7 @@
   
   <!-- Sitemap -->
   <url>
-    <loc>https://apply.jobs/sitemap</loc>
+    <loc>https://applyai.jobs/sitemap</loc>
     <lastmod>2026-02-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

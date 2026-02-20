@@ -52,7 +52,7 @@ export const buildFAQSchema = (faqs: Array<{ question: string; answer: string }>
 });
 
 // Base URL for structured data - can be overridden via environment variable
-const BASE_URL = import.meta.env.VITE_SITE_URL || 'https://apply.jobs';
+const BASE_URL = import.meta.env.VITE_SITE_URL || 'https://applyai.jobs';
 
 export const buildWebSiteSchema = () => ({
   "@context": "https://schema.org",

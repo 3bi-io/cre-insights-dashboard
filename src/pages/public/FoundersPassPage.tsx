@@ -45,7 +45,7 @@ const FoundersPassPage = () => {
         title="Founders Pass — $3/Apply Performance Pricing | Apply AI"
         description="Limited-time Founders Pass: free signup, free onboarding, $1 per apply, $1 ATS delivery, $1 optional Voice Agent. Pay only when it works."
         keywords="founders pass, performance pricing, pay per apply, recruitment platform, ATS, AI voice agent"
-        canonical="https://apply.jobs/founders-pass"
+        canonical="https://applyai.jobs/founders-pass"
         ogImage="/og-founders-pass.png"
       />
       <StructuredData data={buildWebSiteSchema()} />

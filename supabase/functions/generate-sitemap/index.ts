@@ -10,18 +10,18 @@ import { createLogger } from '../_shared/logger.ts';
 const logger = createLogger('generate-sitemap');
 
 const STATIC_ROUTES = [
-  { loc: 'https://apply.jobs/', changefreq: 'daily', priority: 1.0 },
-  { loc: 'https://apply.jobs/jobs', changefreq: 'daily', priority: 0.9 },
-  { loc: 'https://apply.jobs/apply', changefreq: 'weekly', priority: 0.7 },
-  { loc: 'https://apply.jobs/features', changefreq: 'weekly', priority: 0.9 },
+  { loc: 'https://applyai.jobs/', changefreq: 'daily', priority: 1.0 },
+  { loc: 'https://applyai.jobs/jobs', changefreq: 'daily', priority: 0.9 },
+  { loc: 'https://applyai.jobs/apply', changefreq: 'weekly', priority: 0.7 },
+  { loc: 'https://applyai.jobs/features', changefreq: 'weekly', priority: 0.9 },
   // Pricing page removed - all features available to all users
-  { loc: 'https://apply.jobs/resources', changefreq: 'weekly', priority: 0.7 },
-  { loc: 'https://apply.jobs/contact', changefreq: 'monthly', priority: 0.8 },
-  { loc: 'https://apply.jobs/auth', changefreq: 'monthly', priority: 0.6 },
-  { loc: 'https://apply.jobs/privacy-policy', changefreq: 'yearly', priority: 0.3 },
-  { loc: 'https://apply.jobs/terms-of-service', changefreq: 'yearly', priority: 0.3 },
-  { loc: 'https://apply.jobs/cookie-policy', changefreq: 'yearly', priority: 0.3 },
-  { loc: 'https://apply.jobs/sitemap', changefreq: 'monthly', priority: 0.5 },
+  { loc: 'https://applyai.jobs/resources', changefreq: 'weekly', priority: 0.7 },
+  { loc: 'https://applyai.jobs/contact', changefreq: 'monthly', priority: 0.8 },
+  { loc: 'https://applyai.jobs/auth', changefreq: 'monthly', priority: 0.6 },
+  { loc: 'https://applyai.jobs/privacy-policy', changefreq: 'yearly', priority: 0.3 },
+  { loc: 'https://applyai.jobs/terms-of-service', changefreq: 'yearly', priority: 0.3 },
+  { loc: 'https://applyai.jobs/cookie-policy', changefreq: 'yearly', priority: 0.3 },
+  { loc: 'https://applyai.jobs/sitemap', changefreq: 'monthly', priority: 0.5 },
 ];
 
 function escapeXml(unsafe: string): string {
@@ -101,7 +101,7 @@ serve(async (req) => {
     } else if (jobs) {
       jobs.forEach(job => {
         allUrls.push({
-          loc: `https://apply.jobs/jobs/${job.id}`,
+          loc: `https://applyai.jobs/jobs/${job.id}`,
           lastmod: job.updated_at?.split('T')[0],
           changefreq: 'weekly',
           priority: 0.8,
@@ -119,14 +119,14 @@ serve(async (req) => {
     } else if (blogPosts) {
       // Add blog index page
       allUrls.push({
-        loc: 'https://apply.jobs/blog',
+        loc: 'https://applyai.jobs/blog',
         lastmod: new Date().toISOString().split('T')[0],
         changefreq: 'daily',
         priority: 0.8,
       });
       blogPosts.forEach(post => {
         allUrls.push({
-          loc: `https://apply.jobs/blog/${post.slug}`,
+          loc: `https://applyai.jobs/blog/${post.slug}`,
           lastmod: post.updated_at?.split('T')[0],
           changefreq: 'weekly',
           priority: 0.7,

@@ -3,7 +3,7 @@
  * Route-aware OG image determination for social sharing
  */
 
-const BASE_URL = 'https://apply.jobs';
+const BASE_URL = 'https://applyai.jobs';
 
 /**
  * Static OG images for main pages

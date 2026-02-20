@@ -85,7 +85,7 @@ const Auth = () => {
         title={signUpMode ? "Sign Up | Create Your Account" : "Sign In | Access Your Dashboard"}
         description="Sign in to Apply AI to manage recruitment, track applications, and access AI-powered hiring tools. Create an account to get started."
         keywords="Apply AI login, recruiter sign in, candidate portal, recruitment dashboard, job seeker account"
-        canonical="https://apply.jobs/auth"
+        canonical="https://applyai.jobs/auth"
       />
       {/* Header */}
       <div className="text-center">

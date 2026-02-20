@@ -74,7 +74,7 @@ const JobsPage = () => {
           "@type": "Place",
           "address": job.location || "Multiple Locations"
         },
-        "url": `https://apply.jobs/jobs/${job.id}`
+        "url": `https://applyai.jobs/jobs/${job.id}`
       }
     }))
   };
@@ -95,8 +95,8 @@ const JobsPage = () => {
         title="Browse Jobs | Find Your Next Career Opportunity"
         description={`Explore ${totalCount || 200}+ open positions from top companies. Filter by location, company, and category. Apply instantly with Voice Apply technology.`}
         keywords="jobs, careers, job listings, job search, employment opportunities, hiring, open positions, CDL jobs, driver jobs"
-        canonical="https://apply.jobs/jobs"
-        ogImage="https://apply.jobs/og-jobs.png"
+        canonical="https://applyai.jobs/jobs"
+        ogImage="https://applyai.jobs/og-jobs.png"
       />
       <StructuredData data={[jobListSchema, breadcrumbs]} />
       

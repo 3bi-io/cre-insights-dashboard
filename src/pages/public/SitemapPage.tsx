@@ -210,8 +210,8 @@ const SitemapPage = () => {
   ];
 
   const breadcrumbData = buildBreadcrumbSchema([
-    { name: 'Home', url: 'https://apply.jobs/' },
-    { name: 'Sitemap', url: 'https://apply.jobs/sitemap' },
+    { name: 'Home', url: 'https://applyai.jobs/' },
+    { name: 'Sitemap', url: 'https://applyai.jobs/sitemap' },
   ]);
 
   return (
@@ -220,8 +220,8 @@ const SitemapPage = () => {
         title="Sitemap - Navigate Apply AI"
         description="Complete directory of Apply AI pages. Find job listings, features, resources, and platform documentation. Navigate to any section quickly."
         keywords="sitemap, Apply AI pages, navigation, site directory, job board, recruitment platform"
-        canonical="https://apply.jobs/sitemap"
-        ogImage="https://apply.jobs/og-sitemap.png"
+        canonical="https://applyai.jobs/sitemap"
+        ogImage="https://applyai.jobs/og-sitemap.png"
       />
       <StructuredData data={breadcrumbData} />
       {/* Header */}

@@ -45,7 +45,7 @@
      }
  
      // Build the job URL
-     const baseUrl = 'https://apply.jobs'
+     const baseUrl = 'https://applyai.jobs'
      const jobUrl = payload.url || `${baseUrl}/jobs/${payload.job_id}`
  
      // Determine notification type
