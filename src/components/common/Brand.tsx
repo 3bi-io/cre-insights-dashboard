@@ -104,8 +104,8 @@ export const Brand: React.FC<BrandProps> = ({
     // Text-only variant
     if (variant === 'text') {
       return <span className={cn("font-logo font-bold tracking-tight", textSize)}>
-          <span className="text-primary">ATS</span>
-          <span className="text-muted-foreground">.me</span>
+          <span className="text-primary">Aᴘᴘʟʏ</span>
+          <span className="text-muted-foreground"> Aɪ</span>
         </span>;
     }
 

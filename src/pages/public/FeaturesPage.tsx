@@ -45,7 +45,7 @@ const comparisonData = [
 const featureFaqs = [
   { question: "How does Voice Apply work?", answer: "Candidates call a dedicated number and complete an AI-guided interview. The system transcribes, scores, and routes qualified candidates automatically." },
   { question: "What social platforms does Social Beacon support?", answer: "Social Beacon distributes to X/Twitter, Facebook, Instagram, LinkedIn, WhatsApp, TikTok, and Reddit with AI-optimized creative for each platform." },
-  { question: "Can ATS.me integrate with my existing ATS?", answer: "Yes, we support Tenstreet, DriverReach, and 100+ other systems with bi-directional sync." },
+  { question: "Can Apply AI integrate with my existing ATS?", answer: "Yes, we support Tenstreet, DriverReach, and 100+ other systems with bi-directional sync." },
 ];
 
 const coreStats = [
@@ -67,7 +67,7 @@ const FeaturesPage = () => {
   const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "ATS.me",
+    "name": "Apply AI",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "50" },
@@ -81,7 +81,7 @@ const FeaturesPage = () => {
       "Visual Kanban Pipeline",
     ],
     "description": "AI-powered applicant tracking system with Voice Apply technology, instant AI callbacks, 24/7 voice agents, and social recruitment automation.",
-    "url": "https://ats.me/features"
+    "url": "https://apply.jobs/features"
   };
 
   const faqSchema = buildFAQSchema(featureFaqs);
@@ -90,10 +90,10 @@ const FeaturesPage = () => {
     <div className="min-h-screen">
       <SEO
         title="Features | Voice Apply, AI Callbacks & Smart Recruiting"
-        description="Explore ATS.me's Voice Apply technology, instant AI callbacks, 24/7 AI voice agents, and social recruitment automation — the fastest way to hire."
+        description="Explore Apply AI's Voice Apply technology, instant AI callbacks, 24/7 AI voice agents, and social recruitment automation — the fastest way to hire."
         keywords="Voice Apply, AI callbacks, AI recruitment, voice screening, ATS features, AI voice agents, social beacon, job board integration"
-        canonical="https://ats.me/features"
-        ogImage="https://ats.me/og-features.png"
+        canonical="https://apply.jobs/features"
+        ogImage="https://apply.jobs/og-features.png"
       />
       <StructuredData data={[softwareAppSchema, faqSchema]} />
 
@@ -247,7 +247,7 @@ const FeaturesPage = () => {
       {/* Comparison Table */}
       <SectionWrapper id="comparison">
         <SectionHeader
-          title="ATS.me vs Traditional ATS"
+          title="Apply AI vs Traditional ATS"
           description="See what you get that traditional ATS platforms simply can't offer"
         />
         <motion.div
@@ -263,7 +263,7 @@ const FeaturesPage = () => {
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-4 font-semibold text-foreground">Feature</th>
                     <th className="text-center p-4 font-semibold text-primary">
-                      <Badge className="bg-primary text-primary-foreground">ATS.me</Badge>
+                      <Badge className="bg-primary text-primary-foreground">Apply AI</Badge>
                     </th>
                     <th className="text-center p-4 font-semibold text-muted-foreground">Traditional ATS</th>
                   </tr>

@@ -210,18 +210,18 @@ const SitemapPage = () => {
   ];
 
   const breadcrumbData = buildBreadcrumbSchema([
-    { name: 'Home', url: 'https://ats.me/' },
-    { name: 'Sitemap', url: 'https://ats.me/sitemap' },
+    { name: 'Home', url: 'https://apply.jobs/' },
+    { name: 'Sitemap', url: 'https://apply.jobs/sitemap' },
   ]);
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Sitemap - Navigate ATS.me"
-        description="Complete directory of ATS.me pages. Find job listings, features, resources, and platform documentation. Navigate to any section quickly."
-        keywords="sitemap, ATS.me pages, navigation, site directory, job board, recruitment platform"
-        canonical="https://ats.me/sitemap"
-        ogImage="https://ats.me/og-sitemap.png"
+        title="Sitemap - Navigate Apply AI"
+        description="Complete directory of Apply AI pages. Find job listings, features, resources, and platform documentation. Navigate to any section quickly."
+        keywords="sitemap, Apply AI pages, navigation, site directory, job board, recruitment platform"
+        canonical="https://apply.jobs/sitemap"
+        ogImage="https://apply.jobs/og-sitemap.png"
       />
       <StructuredData data={breadcrumbData} />
       {/* Header */}

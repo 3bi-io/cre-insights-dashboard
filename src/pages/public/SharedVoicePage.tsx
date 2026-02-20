@@ -366,7 +366,7 @@ export default function SharedVoicePage() {
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           Powered by{' '}
           <Link to="/" className="text-primary hover:underline">
-            ATS.me
+            Apply AI
           </Link>
         </div>
       </footer>

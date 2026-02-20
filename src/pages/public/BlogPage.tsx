@@ -43,10 +43,10 @@ const BlogPage: React.FC = () => {
   return (
     <>
       <SEO
-        title="Blog | ATS.me - Recruitment Insights & Industry Trends"
+        title="Blog | Apply AI - Recruitment Insights & Industry Trends"
         description="Expert insights on AI recruitment, applicant tracking systems, hiring strategies, and HR technology trends."
         keywords="recruitment blog, ATS insights, hiring strategies, HR technology, AI recruiting tips"
-        canonical="https://ats.me/blog"
+        canonical="https://apply.jobs/blog"
       />
 
       <div className="min-h-screen">
@@ -64,7 +64,7 @@ const BlogPage: React.FC = () => {
                 Insights & Resources
               </span>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
-                The ATS.me
+                The Apply AI
                 <span className="text-white"> Blog</span>
               </h1>
               <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
