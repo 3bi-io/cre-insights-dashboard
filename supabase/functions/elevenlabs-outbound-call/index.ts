@@ -293,6 +293,38 @@ serve(async (req) => {
         logger.info(`Promoted ${promotedNull.length} NULL scheduled_at calls to queued`);
       }
 
+      // Completion guard: cancel any queued calls whose application already has a completed call
+      const { data: queuedForGuard } = await supabase
+        .from('outbound_calls')
+        .select('id, application_id')
+        .eq('status', 'queued')
+        .not('application_id', 'is', null);
+
+      if (queuedForGuard && queuedForGuard.length > 0) {
+        const appIds = [...new Set(queuedForGuard.map(c => c.application_id).filter(Boolean))];
+        if (appIds.length > 0) {
+          const { data: completedApps } = await supabase
+            .from('outbound_calls')
+            .select('application_id')
+            .eq('status', 'completed')
+            .in('application_id', appIds as string[]);
+
+          if (completedApps && completedApps.length > 0) {
+            const completedAppIds = new Set(completedApps.map(c => c.application_id));
+            const toCancel = queuedForGuard.filter(c => completedAppIds.has(c.application_id)).map(c => c.id);
+            if (toCancel.length > 0) {
+              const { error: cancelErr } = await supabase
+                .from('outbound_calls')
+                .update({ status: 'cancelled', error_message: 'Cancelled: completed call already exists for this application', updated_at: new Date().toISOString() })
+                .in('id', toCancel);
+              if (!cancelErr) {
+                logger.info(`Completion guard cancelled ${toCancel.length} queued calls with existing completed calls`);
+              }
+            }
+          }
+        }
+      }
+
       const { data: queuedCalls, error: fetchError } = await supabase
         .from('outbound_calls')
         .select('id')
