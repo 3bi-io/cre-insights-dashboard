@@ -228,7 +228,7 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const jobId = searchParams.get('job');
+  const jobId = searchParams.get('job_id') || searchParams.get('job_listing_id') || searchParams.get('jobId') || searchParams.get('job');
 
   const [formData, setFormData] = useState<DetailedFormData>(initialFormData);
   
