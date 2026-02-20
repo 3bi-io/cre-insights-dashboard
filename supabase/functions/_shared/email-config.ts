@@ -37,7 +37,7 @@ export const EMAIL_CONFIG = {
     tagline: "AI-Powered Recruitment Platform",
     primaryColor: "#3b82f6",
     secondaryColor: "#667eea",
-    logo: "https://applyai.jobs/assets/logo-icon-BEFigvat.png",
+    logo: "https://applyai.jobs/logo-icon.svg",
     website: "https://applyai.jobs",
     year: new Date().getFullYear()
   },
