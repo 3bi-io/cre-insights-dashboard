@@ -6,7 +6,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
 interface ClientInfo {
@@ -32,12 +31,18 @@ const ClientLogoMarquee = () => {
 
   if (clients.length < 3) return null;
 
-  // Double the array for seamless infinite scroll
-  const doubled = [...clients, ...clients];
+  // Triple the array for seamless infinite scroll
+  const tripled = [...clients, ...clients, ...clients];
+
+  // Dynamic duration based on count for consistent speed
+  const duration = Math.max(20, clients.length * 3);
 
   return (
-    <section className="py-10 md:py-14 bg-muted/20 border-y border-border/30 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+    <section
+      aria-label="Trusted by industry leaders"
+      className="py-10 md:py-14 bg-muted/20 border-y border-border/30 overflow-hidden"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -49,15 +54,18 @@ const ClientLogoMarquee = () => {
       </div>
 
       <div className="relative">
-        {/* Fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-20 md:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        {/* Fade edges matched to section bg */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 md:w-32 z-10 pointer-events-none bg-gradient-to-r from-muted/20 to-transparent" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 md:w-32 z-10 pointer-events-none bg-gradient-to-l from-muted/20 to-transparent" />
 
-        <div className="flex animate-marquee gap-12 md:gap-16 items-center">
-          {doubled.map((client, i) => (
+        <div
+          className="flex animate-marquee gap-12 md:gap-16 items-center will-change-transform"
+          style={{ animationDuration: `${duration}s` }}
+        >
+          {tripled.map((client, i) => (
             <div
               key={`${client.id}-${i}`}
-              className="flex-shrink-0 flex items-center justify-center h-12 w-32 md:h-14 md:w-40 grayscale hover:grayscale-0 opacity-60 hover:opacity-100 transition-all duration-300"
+              className="flex-shrink-0 flex items-center justify-center h-16 w-40 md:h-20 md:w-48 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300"
             >
               {client.logo_url ? (
                 <img
