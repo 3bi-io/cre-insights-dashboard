@@ -29,6 +29,7 @@ export interface TrustStat {
 export interface IntegrationCategory {
   title: string;
   integrations: string[];
+  icon?: LucideIcon;
 }
 
 export interface Benefit {
