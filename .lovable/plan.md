@@ -1,40 +1,46 @@
 
 
-# Refactor "Trusted by Industry Leaders" Logo Marquee
+# Refactor "Seamless Integrations" Section
 
 ## Current Issues
 
-Based on the screenshot and code review:
-
-1. **Logos are nearly invisible** -- `opacity-60` combined with `grayscale` makes logos look washed out and hard to see
-2. **Logos are too small** -- fixed at `h-12 w-32` (mobile) / `h-14 w-40` (desktop), which is tiny for brand recognition
-3. **Fade edges mismatch** -- gradient fades use `from-background` but the section background is `bg-muted/20`, creating a visible mismatch
-4. **No visual polish** -- the section feels sparse with minimal spacing and no subtle design accents
-5. **Animation speed** -- 30s for a small set of logos may feel too slow or leave visible gaps
+1. **No entrance animations** -- every other landing section uses Framer Motion `fadeUp` transitions; this section pops in statically
+2. **No category icons** -- section headers are plain text while the rest of the landing page uses icon-driven cards (via `IconFeatureCard`)
+3. **Cards lack visual depth** -- no hover gradient accent or border highlight like other sections
+4. **Duplicate file exists** -- `src/components/landing/IntegrationsSection.tsx` is an unused copy of the same component with hardcoded content (violates DRY)
+5. **Missing section badge** -- other sections (Features, Trust) use a `Badge` chip above the header for visual consistency
+6. **No aria-label** on the wrapping section element
 
 ## Changes
 
-### File: `src/features/landing/components/shared/ClientLogoMarquee.tsx`
+### 1. `src/features/landing/components/sections/IntegrationsSection.tsx`
 
-**Visual improvements:**
-- Increase logo container size to `h-16 w-40` / `h-20 w-48` for better visibility
-- Raise default opacity from `0.6` to `0.7` so logos are clearly visible in grayscale
-- Triple the array (instead of double) to eliminate any gaps during scroll
-- Match fade-edge gradient to the section's actual background (`from-muted/20` or use a wrapper approach)
-- Add `will-change-transform` to the scrolling container for smoother GPU-accelerated animation
+- Add staggered Framer Motion entrance animations on cards (matching FeaturesSection pattern: `initial={{ opacity: 0, y: 20 }}`, `whileInView`, stagger delay)
+- Add a category icon per card using relevant Lucide icons (e.g., `Building2` for ATS, `Search` for Job Boards, `ShieldCheck` for Background Checks, `Calendar` for Calendar, `MessageSquare` for Communication, `BarChart3` for Analytics)
+- Add subtle hover border accent (`hover:border-primary/30`) and a top gradient stripe for visual polish
+- Add a `Badge` above the section header for consistency with other sections
+- Wrap the section in an `id` and pass `aria-label` for accessibility
+- Convert footer CTA link into an inline `Link` with icon (matching FeaturesSection's "Explore all features" pattern)
 
-**Structural cleanup:**
-- Adjust animation duration dynamically based on client count for consistent scroll speed
-- Add `aria-label` to the section for accessibility
+### 2. `src/features/landing/content/integrations.content.ts`
 
-### File: `src/index.css`
+- Add a `badge` field (e.g., "100+ Integrations")
+- Add an `icon` field (Lucide icon) to the `IntegrationCategory` type usage, importing the icons here to keep the component clean
 
-- No changes needed -- the existing `@keyframes marquee` and `.animate-marquee` class are correct
+### 3. `src/features/landing/content/types.ts`
 
-## Summary of Visual Result
+- Extend `IntegrationCategory` to include an optional `icon: LucideIcon` field
 
-- Logos will be larger, clearly visible, and smoothly scrolling
-- Grayscale effect retained but at higher opacity so brands are recognizable
-- Hover still reveals full color at 100% opacity
-- Fade edges will blend seamlessly with the section background
+### 4. `src/components/landing/IntegrationsSection.tsx`
+
+- **Delete** this duplicate file -- it is unused (the landing page imports from `src/features/landing/`)
+
+## Summary
+
+| File | Action |
+|------|--------|
+| `src/features/landing/components/sections/IntegrationsSection.tsx` | Refactor with animations, icons, hover effects, badge, accessibility |
+| `src/features/landing/content/integrations.content.ts` | Add badge text and category icons |
+| `src/features/landing/content/types.ts` | Add optional `icon` to `IntegrationCategory` |
+| `src/components/landing/IntegrationsSection.tsx` | Delete (unused duplicate) |
 
