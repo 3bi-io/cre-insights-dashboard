@@ -4,11 +4,13 @@ import { Header } from '@/components/common';
 import PublicFooter from './PublicFooter';
 import PublicBottomNav from './PublicBottomNav';
 import { SkipLinks } from '@/components/shared/SkipLinks';
+import ScrollToTop from '@/components/shared/ScrollToTop';
 
 const PublicLayout = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       <SkipLinks />
+      <ScrollToTop />
       
       <Header />
       
