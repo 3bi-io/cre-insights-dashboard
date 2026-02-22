@@ -1,46 +1,44 @@
 
 
-# Refactor "Seamless Integrations" Section
+# Fix: Scroll to Top on Route Navigation
 
-## Current Issues
+## Problem
 
-1. **No entrance animations** -- every other landing section uses Framer Motion `fadeUp` transitions; this section pops in statically
-2. **No category icons** -- section headers are plain text while the rest of the landing page uses icon-driven cards (via `IconFeatureCard`)
-3. **Cards lack visual depth** -- no hover gradient accent or border highlight like other sections
-4. **Duplicate file exists** -- `src/components/landing/IntegrationsSection.tsx` is an unused copy of the same component with hardcoded content (violates DRY)
-5. **Missing section badge** -- other sections (Features, Trust) use a `Badge` chip above the header for visual consistency
-6. **No aria-label** on the wrapping section element
+When navigating between pages via links, the scroll position persists from the previous page. This happens because:
 
-## Changes
+1. There is **no scroll restoration logic** anywhere in the app
+2. The scrollable container is the `<main>` element (which has `overflow-y-auto`), not the `window` -- so even `window.scrollTo(0,0)` would not help
+3. This affects both the **PublicLayout** and the **admin Layout**
 
-### 1. `src/features/landing/components/sections/IntegrationsSection.tsx`
+## Solution
 
-- Add staggered Framer Motion entrance animations on cards (matching FeaturesSection pattern: `initial={{ opacity: 0, y: 20 }}`, `whileInView`, stagger delay)
-- Add a category icon per card using relevant Lucide icons (e.g., `Building2` for ATS, `Search` for Job Boards, `ShieldCheck` for Background Checks, `Calendar` for Calendar, `MessageSquare` for Communication, `BarChart3` for Analytics)
-- Add subtle hover border accent (`hover:border-primary/30`) and a top gradient stripe for visual polish
-- Add a `Badge` above the section header for consistency with other sections
-- Wrap the section in an `id` and pass `aria-label` for accessibility
-- Convert footer CTA link into an inline `Link` with icon (matching FeaturesSection's "Explore all features" pattern)
+Create a single `ScrollToTop` component that listens for route changes and scrolls the nearest scrollable parent to the top.
 
-### 2. `src/features/landing/content/integrations.content.ts`
+### New File: `src/components/shared/ScrollToTop.tsx`
 
-- Add a `badge` field (e.g., "100+ Integrations")
-- Add an `icon` field (Lucide icon) to the `IntegrationCategory` type usage, importing the icons here to keep the component clean
+A small component that:
+- Uses `useLocation()` to detect route changes (reacts to `location.pathname`)
+- On change, finds the scrollable `<main id="main-content">` element via `document.getElementById`
+- Scrolls it to `scrollTop = 0`
+- Also calls `window.scrollTo(0, 0)` as a fallback for any edge cases
 
-### 3. `src/features/landing/content/types.ts`
+### Modified File: `src/components/public/PublicLayout.tsx`
 
-- Extend `IntegrationCategory` to include an optional `icon: LucideIcon` field
+- Import and render `<ScrollToTop />` inside the layout, before the `<main>` tag
 
-### 4. `src/components/landing/IntegrationsSection.tsx`
+### Modified File: `src/components/Layout.tsx`
 
-- **Delete** this duplicate file -- it is unused (the landing page imports from `src/features/landing/`)
+- Import and render `<ScrollToTop />` inside `LayoutContent`, before the main content area
 
-## Summary
+## Technical Details
 
-| File | Action |
-|------|--------|
-| `src/features/landing/components/sections/IntegrationsSection.tsx` | Refactor with animations, icons, hover effects, badge, accessibility |
-| `src/features/landing/content/integrations.content.ts` | Add badge text and category icons |
-| `src/features/landing/content/types.ts` | Add optional `icon` to `IntegrationCategory` |
-| `src/components/landing/IntegrationsSection.tsx` | Delete (unused duplicate) |
+```text
+ScrollToTop component (pseudocode):
+  useLocation() -> pathname
+  useEffect([pathname]):
+    document.getElementById('main-content')?.scrollTo(0, 0)
+    window.scrollTo(0, 0)
+```
+
+This is a lightweight, zero-dependency fix that follows the existing pattern of both layouts sharing an `id="main-content"` on their `<main>` element.
 
