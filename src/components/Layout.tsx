@@ -18,6 +18,7 @@ import { Brand } from '@/components/common';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { SkipLinks } from '@/components/shared/SkipLinks';
+import ScrollToTop from '@/components/shared/ScrollToTop';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,6 +86,7 @@ const LayoutContent = () => {
   return (
     <div className="h-screen flex w-full overflow-hidden">
       <SkipLinks />
+      <ScrollToTop />
       
       <AppSidebar />
       
