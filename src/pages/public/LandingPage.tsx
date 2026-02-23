@@ -4,7 +4,7 @@
  */
 
 import React, { lazy, Suspense } from 'react';
-import { FoundersPassPopup } from '@/features/landing/components/FoundersPassPopup';
+
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildWebSiteSchema } from '@/components/StructuredData';
 import HeroSection from '@/features/landing/components/sections/HeroSection';
@@ -24,7 +24,7 @@ const CTASection = lazy(() => import('@/features/landing/components/sections/CTA
 const LandingPage = () => {
   return (
     <main className="min-h-screen">
-      <FoundersPassPopup />
+      
       <SEO
         title="AI Voice Recruitment Platform | Kanban Pipeline & Talent Pools | Apply AI"
         description="Hire faster with AI voice technology, visual Kanban pipeline, and talent pool management. Automated callbacks within minutes, 24/7 AI voice agents, complete activity tracking."
