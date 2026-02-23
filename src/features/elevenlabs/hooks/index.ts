@@ -42,3 +42,7 @@ export {
   type DailyCallVolume,
   type StatusDistribution
 } from './useOutboundCallAnalytics';
+
+// Call schedule settings hook
+export { useCallScheduleSettings } from './useCallScheduleSettings';
+export type { CallScheduleSettings } from './useCallScheduleSettings';
