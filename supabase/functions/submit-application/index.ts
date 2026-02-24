@@ -286,6 +286,9 @@ const ApplicationSubmissionSchema = z.object({
   // Employment history - limit to prevent DoS
   employmentHistory: z.any().optional(),
   employment_history: z.any().optional(),
+  
+  // Screening question answers (custom org-specific questions)
+  custom_questions: z.record(z.string(), z.string()).optional(),
 }).refine(
   (data) => (data.firstName || data.first_name) && (data.lastName || data.last_name) && (data.email || data.applicant_email),
   { message: 'First name, last name, and email are required' }
@@ -340,6 +343,9 @@ function buildZapierPayload(app: Record<string, unknown>) {
     status: app.status,
     applied_at: app.applied_at,
     created_at: app.created_at,
+    
+    // Screening answers (org-specific custom questions)
+    screening_answers: app.custom_questions || null,
   };
 }
 
@@ -1017,6 +1023,9 @@ Deno.serve(async (req) => {
       utm_source: formData.utm_source || null,
       utm_medium: formData.utm_medium || null,
       utm_campaign: formData.utm_campaign || null,
+      
+      // Screening question answers
+      custom_questions: formData.custom_questions || null,
       
       // Metadata
       source: detectedSource,
