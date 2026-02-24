@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, User, Truck, Shield, FileCheck, ClipboardList } from 'lucide-react';
+import { Check, User, Truck, Shield, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FormProgressIndicatorProps {
@@ -8,7 +8,7 @@ interface FormProgressIndicatorProps {
   completedSteps: Set<number>;
   onStepClick?: (step: number) => void;
   canGoToStep?: (step: number) => boolean;
-  hasScreening?: boolean;
+  
 }
 
 const baseSteps = [
@@ -17,7 +17,6 @@ const baseSteps = [
   { label: 'Background', icon: Shield },
 ];
 
-const screeningStep = { label: 'Screening', icon: ClipboardList };
 const consentStep = { label: 'Consent', icon: FileCheck };
 
 export const FormProgressIndicator = ({ 
@@ -26,11 +25,8 @@ export const FormProgressIndicator = ({
   completedSteps,
   onStepClick,
   canGoToStep,
-  hasScreening = false,
 }: FormProgressIndicatorProps) => {
-  const steps = hasScreening 
-    ? [...baseSteps, screeningStep, consentStep] 
-    : [...baseSteps, consentStep];
+  const steps = [...baseSteps, consentStep];
   const handleStepClick = (stepNumber: number) => {
     if (canGoToStep?.(stepNumber) && onStepClick) {
       onStepClick(stepNumber);
