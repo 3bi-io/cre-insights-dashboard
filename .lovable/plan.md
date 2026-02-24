@@ -1,64 +1,32 @@
 
 
-# Add Voice Agent Schedule Management UI
+# Add Address Field to Application Form Location Section
 
-## Problem
+## What Changes
 
-The `organization_call_settings` database table stores per-organization call scheduling configuration (business hours, follow-up rules), but there is zero UI to view or edit these settings. Admins currently have no way to configure when outbound calls should occur or how follow-ups are handled.
+An "Address" text input will be added to the Location section of the /apply form, allowing applicants to enter their street address (e.g., "123 Main St, Apt 4").
 
-## Database Schema (already exists)
+## Where It Appears
 
-```text
-organization_call_settings
-  - business_hours_start    (e.g. "09:00:00")
-  - business_hours_end      (e.g. "16:30:00")
-  - business_hours_timezone (e.g. "America/Chicago")
-  - business_days            (e.g. [1,2,3,4,5])
-  - auto_follow_up_enabled  (boolean)
-  - max_attempts             (integer)
-  - follow_up_delay_hours   (integer)
-```
+The address field will sit above the existing ZIP / City / State row, spanning the full width of the Location section. It will be optional (no asterisk), matching the style of the City field.
 
-## Plan
+## Technical Details
 
-### 1. New Component: `src/components/voice/CallScheduleSettings.tsx`
+### 1. Update Form Data Model: `src/hooks/useApplicationForm.ts`
+- Add `address: string` to the `FormData` interface
+- Add `address: ''` to `initialFormData`
 
-A settings panel with two sections:
+### 2. Update PersonalInfoSection Props and UI: `src/components/apply/PersonalInfoSection.tsx`
+- Add `address: string` to the `formData` prop type
+- Insert a full-width `<Input>` field labeled "Address" with `autoComplete="street-address"` and a `MapPin` icon, placed between the "Location" header and the ZIP/City/State grid
+- Uses the same `h-14 text-base rounded-xl border-2` styling as existing fields
 
-**Business Hours**
-- Time pickers for start/end hours
-- Timezone selector (US timezones: Eastern, Central, Mountain, Pacific)
-- Day-of-week checkboxes (Mon-Sun) using the `business_days` integer array (1=Mon, 7=Sun)
-- Visual "current status" badge showing whether it's currently within business hours
+### 3. Include Address in Submission: `src/hooks/useApplicationForm.ts`
+- The `address` field is already part of `formData` and will be sent to the `submit-application` edge function automatically via the spread (`...data`)
 
-**Follow-Up Rules**
-- Toggle for `auto_follow_up_enabled`
-- Number input for `max_attempts` (1-10)
-- Number input for `follow_up_delay_hours` (1-72)
+## Files Modified
 
-Save button triggers upsert to `organization_call_settings`.
-
-### 2. New Hook: `src/features/elevenlabs/hooks/useCallScheduleSettings.ts`
-
-- `useQuery` to fetch current settings from `organization_call_settings` for the user's organization
-- `useMutation` to upsert settings
-- Expose `settings`, `isLoading`, `updateSettings`, `isUpdating`
-
-### 3. Integrate into ElevenLabsAdmin: `src/pages/ElevenLabsAdmin.tsx`
-
-- Add a "Schedule" tab (with Clock icon) to the existing TabsList, positioned after "Outbound Calls"
-- Render `CallScheduleSettings` inside the new tab content
-
-### 4. Update Hook Exports: `src/features/elevenlabs/hooks/index.ts`
-
-- Export the new `useCallScheduleSettings` hook
-
-## Files
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/features/elevenlabs/hooks/useCallScheduleSettings.ts` | Create -- query/mutation hook |
-| `src/components/voice/CallScheduleSettings.tsx` | Create -- schedule management form |
-| `src/pages/ElevenLabsAdmin.tsx` | Edit -- add Schedule tab |
-| `src/features/elevenlabs/hooks/index.ts` | Edit -- export new hook |
-
+| `src/hooks/useApplicationForm.ts` | Add `address` to FormData interface and initial state |
+| `src/components/apply/PersonalInfoSection.tsx` | Add `address` to props interface; render Address input in Location section |
