@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, User, Mail, Phone, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SelectionButtonGroup } from './SelectionButton';
 import { formatPhoneInput, wasCountryCodeDetected, isValidUSPhone } from '@/utils/phoneFormatter';
+import { AddressAutocompleteInput } from '@/components/shared/AddressAutocompleteInput';
 const US_STATES = [
   { value: 'AL', label: 'Alabama' },
   { value: 'AK', label: 'Alaska' },
@@ -249,13 +250,20 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange, isActi
           <Label htmlFor="address" className="text-sm font-medium">
             Address
           </Label>
-          <Input
+          <AddressAutocompleteInput
             id="address"
             name="address"
             autoComplete="street-address"
             value={formData.address}
-            onChange={(e) => onInputChange('address', e.target.value)}
-            placeholder="123 Main St, Apt 4"
+            onChange={(value) => onInputChange('address', value)}
+            onPlaceSelect={(address, city, state, zip) => {
+              onInputChange('address', address);
+              onInputChange('city', city);
+              onInputChange('state', state);
+              onInputChange('zip', zip);
+              setWasAutoFilled(true);
+            }}
+            placeholder="Start typing an address..."
             className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
