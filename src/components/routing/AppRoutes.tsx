@@ -91,6 +91,7 @@ const TenstreetSyncDashboard = React.lazy(() => import("@/pages/TenstreetSyncDas
 const DriverReachIntegration = React.lazy(() => import("@/pages/DriverReachIntegration"));
 const DriverReachSyncDashboard = React.lazy(() => import("@/pages/DriverReachSyncDashboard"));
 const EdgeFunctionsTest = React.lazy(() => import("@/pages/EdgeFunctionsTest"));
+const WebScraperPage = React.lazy(() => import("@/pages/admin/WebScraperPage"));
 const DataPopulation = React.lazy(() => import("@/pages/DataPopulation"));
 const Support = React.lazy(() => import("@/pages/Support"));
 const VisitorAnalytics = React.lazy(() => import("@/pages/VisitorAnalytics"));
@@ -292,6 +293,7 @@ const AppRoutes: React.FC = () => {
         <Route path="data-population" element={<ProtectedRouteWrapper><DataPopulation /></ProtectedRouteWrapper>} />
         <Route path="visitor-analytics" element={<ProtectedRouteWrapper><VisitorAnalytics /></ProtectedRouteWrapper>} />
         <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
+        <Route path="web-scraper" element={<ProtectedRouteWrapper><WebScraperPage /></ProtectedRouteWrapper>} />
         <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
         <Route path="ai-assistant" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
         <Route path="grok" element={<Navigate to="/admin/ai-assistant" replace />} />

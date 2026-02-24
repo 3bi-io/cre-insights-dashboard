@@ -279,5 +279,17 @@ verify_jwt = false
 [functions.newsletter-subscribe]
 verify_jwt = false
 
+[functions.firecrawl-scrape]
+verify_jwt = false
+
+[functions.firecrawl-search]
+verify_jwt = false
+
+[functions.firecrawl-map]
+verify_jwt = false
+
+[functions.firecrawl-crawl]
+verify_jwt = false
+
 [functions.get-google-maps-key]
 verify_jwt = false
