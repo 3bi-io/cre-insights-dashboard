@@ -542,21 +542,41 @@ async function resolveOrganizationAndJob(
   if (jobListingId) {
     const { data: jobListing } = await supabase
       .from('job_listings')
-      .select('organization_id, external_job_id, title, client_id, organizations(id, name, slug), clients(id, name)')
+      .select('organization_id, job_id, title, client_id, organizations(id, name, slug), clients(id, name, organization_id)')
       .eq('id', jobListingId)
       .single();
     
     if (jobListing?.organization_id) {
       const org = jobListing.organizations as { id: string; name: string; slug: string } | null;
       const client = jobListing.clients as { id: string; name: string } | null;
-      logger.info('Resolved org from job_listing_id', { org_name: org?.name, client_name: client?.name, external_job_id: jobListing.external_job_id });
+      logger.info('Resolved org from job_listing_id', { org_name: org?.name, client_name: client?.name, job_id: jobListing.job_id });
       return {
         organizationId: jobListing.organization_id,
         organizationName: org?.name || 'Unknown',
         clientName: client?.name || null,
-        externalJobId: jobListing.external_job_id || null,
+        externalJobId: jobListing.job_id || null,
         jobTitle: jobListing.title || null
       };
+    }
+    
+    // Fallback: job listing has no organization_id but has a client — resolve org from client
+    if (!jobListing?.organization_id && jobListing?.client_id) {
+      const client = jobListing.clients as { id: string; name: string; organization_id?: string } | null;
+      if (client?.organization_id) {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('id, name, slug')
+          .eq('id', client.organization_id)
+          .single();
+        logger.info('Resolved org from client.organization_id', { org_name: org?.name, client_name: client.name });
+        return {
+          organizationId: client.organization_id,
+          organizationName: org?.name || 'Unknown',
+          clientName: client.name || null,
+          externalJobId: jobListing.job_id || null,
+          jobTitle: jobListing.title || null
+        };
+      }
     }
   }
   
