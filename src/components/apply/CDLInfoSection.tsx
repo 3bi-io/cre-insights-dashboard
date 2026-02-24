@@ -16,7 +16,7 @@ interface CDLInfoSectionProps {
 }
 
 const CDL_OPTIONS = [
-  { value: 'Yes', label: 'Yes, I have a CDL-A', description: 'Active Class A license', icon: <Award className="h-5 w-5" /> },
+  { value: 'Yes', label: 'Yes, I have a CDL', description: 'Active Class A license', icon: <Award className="h-5 w-5" /> },
   { value: 'Permit', label: 'I have a CDL permit', description: 'Permit holder', icon: <GraduationCap className="h-5 w-5" /> },
   { value: 'InSchool', label: 'Currently in CDL school', description: 'In training now', icon: <GraduationCap className="h-5 w-5" /> },
   { value: 'No', label: 'No CDL-A', description: 'No license yet' },
