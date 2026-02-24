@@ -1,42 +1,69 @@
 
 
-## Add Hub Group Job Listing from CDL Job Now
+## Add Zapier Webhook + Screening Questions for Career Now Brands
 
-### What We're Doing
-Insert a single job listing scraped from the provided URL into the `job_listings` table, linked to the existing Hub Group client.
+### Overview
+Configure a Zapier webhook for Career Now Brands organization and add CDL screening questions to their application flow. When applicants apply to Career Now Brands jobs, they'll answer the screening questions (CDL license status, experience level), and those answers will be forwarded to the Zapier webhook along with the standard application data.
 
-### Job Details Extracted
-| Field | Value |
-|-------|-------|
-| **Title** | Non-CDL Delivery Driver - Cedar Rapids, IA |
-| **Company/Client** | Hub Group (client_id: `8ca3faca-b91c-4ab8-a9af-b145ab265228`) |
-| **Location** | Cedar Rapids, IA |
-| **Pay** | $70,441/year ($24.63/hr + OT) |
-| **Job Type** | Local, Home Daily |
-| **Category** | Driver Recruitment |
+### What Gets Built
 
-### Job Summary
-Drive 26' straight box truck and work as a two-man team to deliver and install household appliances. Local routes, home daily. Benefits include medical, dental, and 401(k).
+**1. Database Changes**
 
-### Requirements
-- Non-CDL licensed driver
-- DOT physical card
-- 6 months previous driving experience
-- Ability to lift 150+ lbs repeatedly
-- Must pass pre-employment drug screen including hair follicle
+- **Insert webhook record** into `client_webhooks` for Career Now Brands:
+  - `organization_id`: `650cf2cc-22e7-4a52-8899-b56d315bed2a`
+  - `webhook_url`: `https://hooks.zapier.com/hooks/catch/23823129/u28navp/`
+  - `user_id`: `313592ee-ac3b-4c7c-b5b4-fe95c46e62d9` (craig@careernowbrands.com)
+  - `client_id`: NULL (org-wide, all clients)
+  - `enabled`: true
 
-### Technical Implementation
-Insert one row into `job_listings` with:
-- `client_id` = Hub Group UUID
-- `category_id` = Driver Recruitment UUID
-- `user_id` = super admin UUID
-- `salary_min` = 70441, `salary_type` = yearly
-- `city` = Cedar Rapids, `state` = IA
-- `url` = the source URL
-- `status` = active
-- `experience_level` = entry
-- `job_summary` = full description with pay, benefits, requirements, and responsibilities
+- **Add `screening_questions` JSONB column** to `organizations` table to store per-org screening question configs. Career Now Brands gets the provided CDL + experience questions schema.
 
-### Files Modified
-- None -- this is a direct database insert via Supabase
+**2. Apply Form Enhancement**
+
+- Modify the application form (`ApplicationForm.tsx` and/or the detailed form) to:
+  - Fetch the organization's `screening_questions` config when loading the job
+  - Render the screening questions as a new step/section (select dropdowns based on the schema)
+  - Save answers into the `custom_questions` JSONB column on the `applications` table
+
+**3. Webhook Payload Enhancement**
+
+- Update `client-webhook` edge function to include `custom_questions` (screening answers) in the webhook payload sent to Zapier, so the data flows through as:
+
+```text
+{
+  "application": {
+    ...existing fields...,
+    "screening_answers": {
+      "valid_cdl": "yes",
+      "experience": "12"
+    }
+  }
+}
+```
+
+### Implementation Sequence
+
+1. **Migration**: Add `screening_questions` column to `organizations`, insert webhook record, populate Career Now Brands screening config
+2. **Apply form**: Add screening questions section that reads from org config and saves to `custom_questions`
+3. **Edge function**: Update `client-webhook/index.ts` to include `custom_questions` in payload
+4. **Verify**: Test end-to-end with a Career Now Brands job application
+
+### Technical Details
+
+| Item | Detail |
+|------|--------|
+| Org ID | `650cf2cc-22e7-4a52-8899-b56d315bed2a` |
+| Webhook URL | `https://hooks.zapier.com/hooks/catch/23823129/u28navp/` |
+| User ID (owner) | `313592ee-ac3b-4c7c-b5b4-fe95c46e62d9` |
+| Storage column | `organizations.screening_questions` (JSONB) |
+| Answer storage | `applications.custom_questions` (already exists) |
+
+### Files to Modify
+| File | Change |
+|------|--------|
+| `supabase/functions/client-webhook/index.ts` | Add `custom_questions` to webhook payload |
+| `src/components/apply/ApplicationForm.tsx` | Add screening questions section |
+
+### Files to Create
+- None (all changes are modifications + DB inserts/migrations)
 
