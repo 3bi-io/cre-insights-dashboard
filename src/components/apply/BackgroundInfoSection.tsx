@@ -2,6 +2,8 @@ import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Shield, CheckCircle, XCircle, Medal } from 'lucide-react';
 import { SelectionButtonGroup } from './SelectionButton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { ScreeningQuestion } from '@/hooks/useScreeningQuestions';
 
 interface BackgroundInfoSectionProps {
   formData: {
@@ -10,6 +12,9 @@ interface BackgroundInfoSectionProps {
   };
   onInputChange: (name: string, value: string) => void;
   isActive?: boolean;
+  screeningQuestions?: ScreeningQuestion[];
+  screeningAnswers?: Record<string, string>;
+  onScreeningAnswerChange?: (questionId: string, value: string) => void;
 }
 
 const DRUG_TEST_OPTIONS = [
@@ -39,7 +44,7 @@ const VETERAN_OPTIONS = [
   },
 ];
 
-export const BackgroundInfoSection = React.memo(({ formData, onInputChange, isActive }: BackgroundInfoSectionProps) => {
+export const BackgroundInfoSection = React.memo(({ formData, onInputChange, isActive, screeningQuestions, screeningAnswers, onScreeningAnswerChange }: BackgroundInfoSectionProps) => {
   return (
     <div className="space-y-6">
       {/* Section Header */}
@@ -87,6 +92,35 @@ export const BackgroundInfoSection = React.memo(({ formData, onInputChange, isAc
           columns={2}
         />
       </div>
+
+      {/* Inline Screening Questions */}
+      {screeningQuestions && screeningQuestions.length > 0 && (
+        <div className="space-y-4 pt-2 border-t border-border">
+          {screeningQuestions.map((q) => (
+            <div key={q.id} className="space-y-2">
+              <Label htmlFor={`screening-${q.id}`} className="text-sm font-medium">
+                {q.question}
+                {q.required && <span className="text-destructive ml-1">*</span>}
+              </Label>
+              <Select
+                value={screeningAnswers?.[q.id] || ''}
+                onValueChange={(value) => onScreeningAnswerChange?.(q.id, value)}
+              >
+                <SelectTrigger id={`screening-${q.id}`} className="w-full">
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  {q.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 });

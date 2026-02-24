@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Truck, GraduationCap, Clock, Award, ShieldCheck } from 'lucide-react';
 import { SelectionButtonGroup } from './SelectionButton';
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { ScreeningQuestion } from '@/hooks/useScreeningQuestions';
 
 interface CDLInfoSectionProps {
   formData: {
@@ -13,6 +15,9 @@ interface CDLInfoSectionProps {
   };
   onInputChange: (name: string, value: string | string[]) => void;
   isActive?: boolean;
+  screeningQuestions?: ScreeningQuestion[];
+  screeningAnswers?: Record<string, string>;
+  onScreeningAnswerChange?: (questionId: string, value: string) => void;
 }
 
 const CDL_OPTIONS = [
@@ -47,7 +52,7 @@ const EXPERIENCE_OPTIONS = [
   { value: '48', label: '4+ years', description: 'Veteran driver' },
 ];
 
-export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }: CDLInfoSectionProps) => {
+export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive, screeningQuestions, screeningAnswers, onScreeningAnswerChange }: CDLInfoSectionProps) => {
   const showCDLClass = formData.cdl === 'Yes' || formData.cdl === 'Permit';
   const showEndorsements = formData.cdl === 'Yes';
   
@@ -154,6 +159,35 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }:
           Include all verifiable CDL-A driving experience
         </p>
       </div>
+
+      {/* Inline Screening Questions */}
+      {screeningQuestions && screeningQuestions.length > 0 && (
+        <div className="space-y-4 pt-2 border-t border-border">
+          {screeningQuestions.map((q) => (
+            <div key={q.id} className="space-y-2">
+              <Label htmlFor={`screening-${q.id}`} className="text-sm font-medium">
+                {q.question}
+                {q.required && <span className="text-destructive ml-1">*</span>}
+              </Label>
+              <Select
+                value={screeningAnswers?.[q.id] || ''}
+                onValueChange={(value) => onScreeningAnswerChange?.(q.id, value)}
+              >
+                <SelectTrigger id={`screening-${q.id}`} className="w-full">
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  {q.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 });
