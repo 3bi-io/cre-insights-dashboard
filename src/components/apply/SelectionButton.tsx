@@ -59,7 +59,7 @@ export const SelectionButton = ({
             {label}
           </p>
           {description && (
-            <p className="text-sm text-muted-foreground mt-0.5 truncate">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {description}
             </p>
           )}
