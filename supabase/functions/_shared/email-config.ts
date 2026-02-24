@@ -198,15 +198,17 @@ export const getEmailHeader = (
     gradient?: string;
     showLogo?: boolean;
     logoAlt?: string;
+    clientLogoUrl?: string;
   }
 ): string => {
   const gradient = options?.gradient || '#667eea 0%, #764ba2 100%';
+  const logoSrc = options?.clientLogoUrl || EMAIL_CONFIG.brand.logo;
   
   return `
     <div style="background: linear-gradient(135deg, ${gradient}); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
       ${options?.showLogo ? `
         <img 
-          src="${EMAIL_CONFIG.brand.logo}" 
+          src="${logoSrc}" 
           alt="${options.logoAlt || 'Apply AI - AI-Powered Recruitment Platform'}" 
           width="80" 
           height="auto"

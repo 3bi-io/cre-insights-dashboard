@@ -482,7 +482,7 @@ async function resolveOrganizationAndJob(
   jobIdFromPayload?: string,
   organizationIdDirect?: string,
   clientIdDirect?: string
-): Promise<{ organizationId: string; organizationName: string; clientName: string | null; externalJobId: string | null; jobTitle: string | null }> {
+): Promise<{ organizationId: string; organizationName: string; clientName: string | null; clientLogoUrl: string | null; externalJobId: string | null; jobTitle: string | null }> {
   // Priority 0: Source-based organization override (e.g., CDL Job Cast → Hayes)
   if (detectedSource && SOURCE_ORGANIZATION_OVERRIDES[detectedSource]) {
     const overrideOrgId = SOURCE_ORGANIZATION_OVERRIDES[detectedSource];
@@ -494,7 +494,7 @@ async function resolveOrganizationAndJob(
     
     if (org) {
       logger.info('Resolved org from source override', { source: detectedSource, org_name: org.name });
-      return { organizationId: org.id, organizationName: org.name, clientName: null, externalJobId: jobIdFromPayload || null, jobTitle: null };
+      return { organizationId: org.id, organizationName: org.name, clientName: null, clientLogoUrl: null, externalJobId: jobIdFromPayload || null, jobTitle: null };
     }
   }
 
@@ -512,14 +512,16 @@ async function resolveOrganizationAndJob(
       if (org) {
         // Also lookup client name if we can infer client from job_id
         let clientName: string | null = null;
+        let clientLogoUrl: string | null = null;
         const inferredClientId = getClientIdFromJobId(jobIdFromPayload, inferredOrgId);
         if (inferredClientId) {
           const { data: client } = await supabase
             .from('clients')
-            .select('name')
+            .select('name, logo_url')
             .eq('id', inferredClientId)
             .single();
           clientName = client?.name || null;
+          clientLogoUrl = client?.logo_url || null;
         }
         
         logger.info('Resolved org from job_id prefix', { 
@@ -531,6 +533,7 @@ async function resolveOrganizationAndJob(
           organizationId: org.id, 
           organizationName: org.name,
           clientName,
+          clientLogoUrl,
           externalJobId: jobIdFromPayload, 
           jobTitle: null 
         };
@@ -542,18 +545,19 @@ async function resolveOrganizationAndJob(
   if (jobListingId) {
     const { data: jobListing } = await supabase
       .from('job_listings')
-      .select('organization_id, job_id, title, client_id, organizations(id, name, slug), clients(id, name, organization_id)')
+      .select('organization_id, job_id, title, client_id, organizations(id, name, slug), clients(id, name, logo_url, organization_id)')
       .eq('id', jobListingId)
       .single();
     
     if (jobListing?.organization_id) {
       const org = jobListing.organizations as { id: string; name: string; slug: string } | null;
-      const client = jobListing.clients as { id: string; name: string } | null;
+      const client = jobListing.clients as { id: string; name: string; logo_url?: string } | null;
       logger.info('Resolved org from job_listing_id', { org_name: org?.name, client_name: client?.name, job_id: jobListing.job_id });
       return {
         organizationId: jobListing.organization_id,
         organizationName: org?.name || 'Unknown',
         clientName: client?.name || null,
+        clientLogoUrl: client?.logo_url || null,
         externalJobId: jobListing.job_id || null,
         jobTitle: jobListing.title || null
       };
@@ -561,7 +565,7 @@ async function resolveOrganizationAndJob(
     
     // Fallback: job listing has no organization_id but has a client — resolve org from client
     if (!jobListing?.organization_id && jobListing?.client_id) {
-      const client = jobListing.clients as { id: string; name: string; organization_id?: string } | null;
+      const client = jobListing.clients as { id: string; name: string; logo_url?: string; organization_id?: string } | null;
       if (client?.organization_id) {
         const { data: org } = await supabase
           .from('organizations')
@@ -573,6 +577,7 @@ async function resolveOrganizationAndJob(
           organizationId: client.organization_id,
           organizationName: org?.name || 'Unknown',
           clientName: client.name || null,
+          clientLogoUrl: client.logo_url || null,
           externalJobId: jobListing.job_id || null,
           jobTitle: jobListing.title || null
         };
@@ -590,7 +595,7 @@ async function resolveOrganizationAndJob(
     
     if (org) {
       logger.info('Resolved org from slug', { org_name: org.name });
-      return { organizationId: org.id, organizationName: org.name, clientName: null, externalJobId: null, jobTitle: null };
+      return { organizationId: org.id, organizationName: org.name, clientName: null, clientLogoUrl: null, externalJobId: null, jobTitle: null };
     }
   }
 
@@ -604,16 +609,18 @@ async function resolveOrganizationAndJob(
     
     if (org) {
       let clientName: string | null = null;
+      let clientLogoUrl2: string | null = null;
       if (clientIdDirect) {
         const { data: client } = await supabase
           .from('clients')
-          .select('name')
+          .select('name, logo_url')
           .eq('id', clientIdDirect)
           .single();
         clientName = client?.name || null;
+        clientLogoUrl2 = client?.logo_url || null;
       }
       logger.info('Resolved org from direct organization_id', { org_name: org.name, client_name: clientName });
-      return { organizationId: org.id, organizationName: org.name, clientName, externalJobId: null, jobTitle: null };
+      return { organizationId: org.id, organizationName: org.name, clientName, clientLogoUrl: clientLogoUrl2, externalJobId: null, jobTitle: null };
     }
   }
   
@@ -629,6 +636,7 @@ async function resolveOrganizationAndJob(
     organizationId: crEnglandOrg?.id || '',
     organizationName: crEnglandOrg?.name || 'C.R. England',
     clientName: null,
+    clientLogoUrl: null,
     externalJobId: null,
     jobTitle: null
   };
@@ -682,26 +690,34 @@ async function sendConfirmationEmail(
   lastName: string,
   jobTitle: string | null,
   clientName: string | null,
-  organizationName: string
+  organizationName: string,
+  clientLogoUrl: string | null = null
 ): Promise<void> {
   // Use client name for applicant emails (privacy), fallback to org name
   const companyName = clientName || organizationName || 'Company';
   
   try {
+    const emailBody: Record<string, unknown> = {
+      to: applicantEmail,
+      subject: `Application Received${jobTitle ? ` - ${jobTitle}` : ''}`,
+      candidateName: `${firstName} ${lastName}`.trim(),
+      jobTitle: jobTitle || 'Driver Position',
+      companyName: companyName,
+      type: 'application_received'
+    };
+    
+    // Include client logo URL if available
+    if (clientLogoUrl) {
+      emailBody.clientLogoUrl = clientLogoUrl;
+    }
+    
     const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-application-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
       },
-      body: JSON.stringify({
-        to: applicantEmail,
-        subject: `Application Received${jobTitle ? ` - ${jobTitle}` : ''}`,
-        candidateName: `${firstName} ${lastName}`.trim(),
-        jobTitle: jobTitle || 'Driver Position',
-        companyName: companyName,
-        type: 'application_received'
-      })
+      body: JSON.stringify(emailBody)
     });
     
     if (response.ok) {
@@ -827,7 +843,7 @@ Deno.serve(async (req) => {
           ? formData.job_listing_id
           : undefined);
 
-    const { organizationId, organizationName, clientName, externalJobId, jobTitle } = await resolveOrganizationAndJob(
+    const { organizationId, organizationName, clientName, clientLogoUrl, externalJobId, jobTitle } = await resolveOrganizationAndJob(
       supabase,
       resolvedJobListingId,
       formData.org_slug,
@@ -1081,7 +1097,7 @@ Deno.serve(async (req) => {
     // Send confirmation email to applicant (non-blocking background task)
     // Uses clientName for privacy - applicants see the employer brand, not the recruiting org
     EdgeRuntime.waitUntil(
-      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName)
+      sendConfirmationEmail(applicantEmail, firstName, lastName, jobTitle, clientName, organizationName, clientLogoUrl)
     );
 
     // Resolve client_id from the job listing for ATS routing

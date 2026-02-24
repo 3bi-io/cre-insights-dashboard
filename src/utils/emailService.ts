@@ -6,6 +6,7 @@ export interface SendEmailParams {
   candidateName: string;
   jobTitle: string;
   companyName?: string; // Client name for applicant-facing branded emails
+  clientLogoUrl?: string; // Client logo URL for branded email headers
   type: 'application_received' | 'status_update' | 'interview_invitation' | 'offer' | 'rejection';
   additionalData?: {
     status?: string;
@@ -26,6 +27,7 @@ export const sendApplicationEmail = async (params: SendEmailParams): Promise<voi
         candidateName: params.candidateName,
         jobTitle: params.jobTitle,
         companyName: params.companyName || 'Company', // Use client name for branded emails
+        clientLogoUrl: params.clientLogoUrl, // Client logo for branded email headers
         type: params.type,
         additionalData: params.additionalData,
       },
