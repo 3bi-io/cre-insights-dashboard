@@ -10,6 +10,7 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
+  address: string;
   city: string;
   state: string;
   zip: string;
@@ -42,6 +43,7 @@ const initialFormData: FormData = {
   lastName: '',
   email: '',
   phone: '',
+  address: '',
   city: '',
   state: '',
   zip: '',

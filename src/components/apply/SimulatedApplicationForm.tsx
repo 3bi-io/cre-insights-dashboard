@@ -22,6 +22,7 @@ interface SimFormData {
   lastName: string;
   email: string;
   phone: string;
+  address: string;
   city: string;
   state: string;
   zip: string;
@@ -41,6 +42,7 @@ const initialFormData: SimFormData = {
   lastName: '',
   email: '',
   phone: '',
+  address: '',
   city: '',
   state: '',
   zip: '',

@@ -66,6 +66,7 @@ interface PersonalInfoSectionProps {
     lastName: string;
     email: string;
     phone: string;
+    address: string;
     city: string;
     state: string;
     zip: string;
@@ -244,6 +245,21 @@ export const PersonalInfoSection = React.memo(({ formData, onInputChange, isActi
           <span className="text-sm font-medium">Location</span>
         </div>
         
+        <div className="space-y-2">
+          <Label htmlFor="address" className="text-sm font-medium">
+            Address
+          </Label>
+          <Input
+            id="address"
+            name="address"
+            autoComplete="street-address"
+            value={formData.address}
+            onChange={(e) => onInputChange('address', e.target.value)}
+            placeholder="123 Main St, Apt 4"
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="zip" className="text-sm font-medium flex items-center gap-2">
