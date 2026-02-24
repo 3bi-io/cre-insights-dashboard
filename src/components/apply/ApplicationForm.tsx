@@ -184,12 +184,13 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
 
         {/* Progress Indicator */}
         <nav aria-label="Application progress">
-          <FormProgressIndicator 
+        <FormProgressIndicator 
             currentStep={activeStep}
             activeStep={activeStep}
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            hasScreening={!!hasScreening}
           />
         </nav>
 
