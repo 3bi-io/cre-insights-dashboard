@@ -7,6 +7,7 @@ import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
 import { SelectionButtonGroup } from '../SelectionButton';
 import type { DetailedFormData } from '@/hooks/useDetailedApplicationForm';
 import { formatPhoneInput, wasCountryCodeDetected, isValidUSPhone } from '@/utils/phoneFormatter';
+import { AddressAutocompleteInput } from '@/components/shared/AddressAutocompleteInput';
 
 interface DetailedContactSectionProps {
   formData: DetailedFormData;
@@ -195,13 +196,20 @@ export const DetailedContactSection = React.memo(({
           <Label htmlFor="address1" className="text-sm font-medium">
             Street Address
           </Label>
-          <Input
+          <AddressAutocompleteInput
             id="address1"
             name="address1"
             autoComplete="street-address"
             value={formData.address1}
-            onChange={(e) => onInputChange('address1', e.target.value)}
-            placeholder="123 Main Street"
+            onChange={(value) => onInputChange('address1', value)}
+            onPlaceSelect={(address, city, state, zip) => {
+              onInputChange('address1', address);
+              onInputChange('city', city);
+              onInputChange('state', state);
+              onInputChange('zipCode', zip);
+              setWasAutoFilled(true);
+            }}
+            placeholder="Start typing an address..."
             className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
