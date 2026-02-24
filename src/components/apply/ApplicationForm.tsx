@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { useApplicationForm } from '@/hooks/useApplicationForm';
 import { useStepWizard } from '@/hooks/useStepWizard';
@@ -16,7 +16,63 @@ import { StepNavigation } from './StepNavigation';
 import { StepCompletionFeedback } from './StepCompletionFeedback';
 import { DraftBanner, AutoSaveIndicator } from '@/components/shared/DraftBanner';
 import { toast } from 'sonner';
+import type { ScreeningQuestion } from '@/hooks/useScreeningQuestions';
 
+// Patterns to detect screening questions that overlap with native form fields
+const CDL_QUESTION_PATTERN = /hold.*cdl|active.*cdl|cdl.*license|have.*cdl|do you.*cdl/i;
+const EXPERIENCE_QUESTION_PATTERN = /years.*experience|how many.*experience|driving.*experience/i;
+const DRUG_QUESTION_PATTERN = /drug.*test|dot.*test|pass.*drug|drug.*screen/i;
+
+function isRedundantQuestion(q: ScreeningQuestion): 'cdl' | 'experience' | 'drug' | null {
+  const text = `${q.id} ${q.question}`;
+  if (CDL_QUESTION_PATTERN.test(text)) return 'cdl';
+  if (EXPERIENCE_QUESTION_PATTERN.test(text)) return 'experience';
+  if (DRUG_QUESTION_PATTERN.test(text)) return 'drug';
+  return null;
+}
+
+function findBestOption(options: { value: string; label: string }[], nativeValue: string): string | null {
+  if (!nativeValue) return null;
+  // Direct match
+  const direct = options.find(o => o.value.toLowerCase() === nativeValue.toLowerCase() || o.label.toLowerCase() === nativeValue.toLowerCase());
+  if (direct) return direct.value;
+  // Partial match
+  const partial = options.find(o => o.label.toLowerCase().includes(nativeValue.toLowerCase()) || nativeValue.toLowerCase().includes(o.value.toLowerCase()));
+  if (partial) return partial.value;
+  // For Yes/No type: map CDL values
+  if (['Yes', 'Permit', 'InSchool'].includes(nativeValue)) {
+    const yesOpt = options.find(o => /yes/i.test(o.value) || /yes/i.test(o.label));
+    if (yesOpt) return yesOpt.value;
+  }
+  if (nativeValue === 'No') {
+    const noOpt = options.find(o => /no/i.test(o.value) || /no/i.test(o.label));
+    if (noOpt) return noOpt.value;
+  }
+  return null;
+}
+
+function mapExperienceToOption(options: { value: string; label: string }[], months: string): string | null {
+  if (!months) return null;
+  const m = parseInt(months) || 0;
+  const years = m / 12;
+  // Try to find the closest numeric option
+  let best: { value: string; dist: number } | null = null;
+  for (const o of options) {
+    const match = o.label.match(/(\d+)/);
+    if (match) {
+      const optYears = parseInt(match[1]);
+      const dist = Math.abs(years - optYears);
+      if (!best || dist < best.dist) best = { value: o.value, dist };
+    }
+  }
+  if (best) return best.value;
+  // Fallback: if no experience and there's a "no" or "none" option
+  if (m === 0) {
+    const none = options.find(o => /no|none|0/i.test(o.label));
+    if (none) return none.value;
+  }
+  return options[0]?.value || null;
+}
 
 
 
@@ -66,6 +122,24 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
     canGoToStep,
   } = useStepWizard({ totalSteps });
 
+  // Identify redundant questions and filter them out
+  const { visibleCdlQuestions, visibleBgQuestions, redundantQuestions } = useMemo(() => {
+    const redundant: { question: ScreeningQuestion; field: 'cdl' | 'experience' | 'drug' }[] = [];
+    const visibleCdl: typeof cdlScreeningQuestions = [];
+    const visibleBg: typeof backgroundScreeningQuestions = [];
+    for (const q of cdlScreeningQuestions) {
+      const field = isRedundantQuestion(q);
+      if (field) redundant.push({ question: q, field });
+      else visibleCdl.push(q);
+    }
+    for (const q of backgroundScreeningQuestions) {
+      const field = isRedundantQuestion(q);
+      if (field) redundant.push({ question: q, field });
+      else visibleBg.push(q);
+    }
+    return { visibleCdlQuestions: visibleCdl, visibleBgQuestions: visibleBg, redundantQuestions: redundant };
+  }, [cdlScreeningQuestions, backgroundScreeningQuestions]);
+
   const validateStep = useCallback((step: number): boolean => {
     const validations: Record<number, () => { isValid: boolean; message: string }> = {
       1: () => {
@@ -80,16 +154,14 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
       2: () => {
         if (!formData.cdl) return { isValid: false, message: 'Please select your CDL status' };
         if (!formData.experience) return { isValid: false, message: 'Please select your experience level' };
-        // Validate CDL-related screening questions
-        for (const q of cdlScreeningQuestions.filter(q => q.required)) {
+        for (const q of visibleCdlQuestions.filter(q => q.required)) {
           if (!formData.custom_questions[q.id]) return { isValid: false, message: `Please answer: ${q.question}` };
         }
         return { isValid: true, message: '' };
       },
       3: () => {
         if (!formData.drug) return { isValid: false, message: 'Please answer the drug test question' };
-        // Validate background-related screening questions
-        for (const q of backgroundScreeningQuestions.filter(q => q.required)) {
+        for (const q of visibleBgQuestions.filter(q => q.required)) {
           if (!formData.custom_questions[q.id]) return { isValid: false, message: `Please answer: ${q.question}` };
         }
         return { isValid: true, message: '' };
@@ -100,18 +172,37 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
         return { isValid: true, message: '' };
       },
     };
-
     const validation = validations[step]?.() ?? { isValid: true, message: '' };
     if (!validation.isValid) {
       toast.error(validation.message);
     }
     return validation.isValid;
-  }, [formData, cdlScreeningQuestions, backgroundScreeningQuestions]);
+  }, [formData, visibleCdlQuestions, visibleBgQuestions]);
 
-  // Check if current step can proceed
+  // (redundant question detection moved above validateStep)
+
+  // Auto-populate answers for redundant screening questions from native fields
+  useEffect(() => {
+    if (redundantQuestions.length === 0) return;
+    const updates: Record<string, string> = {};
+    for (const { question, field } of redundantQuestions) {
+      let mapped: string | null = null;
+      if (field === 'cdl') mapped = findBestOption(question.options, formData.cdl);
+      else if (field === 'experience') mapped = mapExperienceToOption(question.options, formData.experience);
+      else if (field === 'drug') mapped = findBestOption(question.options, formData.drug);
+      if (mapped && mapped !== formData.custom_questions[question.id]) {
+        updates[question.id] = mapped;
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      handleInputChange('custom_questions', { ...formData.custom_questions, ...updates });
+    }
+  }, [formData.cdl, formData.experience, formData.drug, redundantQuestions, formData.custom_questions, handleInputChange]);
+
+  // Check if current step can proceed (using visible questions only; redundant ones are auto-populated)
   const canProceed = useMemo((): boolean => {
-    const cdlScreeningValid = cdlScreeningQuestions.filter(q => q.required).every(q => !!formData.custom_questions[q.id]);
-    const bgScreeningValid = backgroundScreeningQuestions.filter(q => q.required).every(q => !!formData.custom_questions[q.id]);
+    const cdlScreeningValid = visibleCdlQuestions.filter(q => q.required).every(q => !!formData.custom_questions[q.id]);
+    const bgScreeningValid = visibleBgQuestions.filter(q => q.required).every(q => !!formData.custom_questions[q.id]);
 
     const checks: Record<number, boolean> = {
       1: !!(formData.firstName && formData.lastName && formData.email && formData.phone && formData.zip && formData.over21),
@@ -121,7 +212,7 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
     };
 
     return checks[activeStep] ?? false;
-  }, [formData, activeStep, cdlScreeningQuestions, backgroundScreeningQuestions]);
+  }, [formData, activeStep, visibleCdlQuestions, visibleBgQuestions]);
 
   const handleNext = useCallback(() => {
     if (validateStep(activeStep)) {
@@ -208,7 +299,7 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
                 formData={formData}
                 onInputChange={handleInputChange}
                 isActive={activeStep === 2}
-                screeningQuestions={cdlScreeningQuestions}
+                screeningQuestions={visibleCdlQuestions}
                 screeningAnswers={formData.custom_questions}
                 onScreeningAnswerChange={(questionId, value) => {
                   handleInputChange('custom_questions', {
@@ -227,7 +318,7 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
                 formData={formData}
                 onInputChange={handleInputChange}
                 isActive={activeStep === 3}
-                screeningQuestions={backgroundScreeningQuestions}
+                screeningQuestions={visibleBgQuestions}
                 screeningAnswers={formData.custom_questions}
                 onScreeningAnswerChange={(questionId, value) => {
                   handleInputChange('custom_questions', {
