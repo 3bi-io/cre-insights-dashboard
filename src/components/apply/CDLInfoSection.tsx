@@ -23,9 +23,9 @@ const CDL_OPTIONS = [
 ];
 
 const CDL_CLASS_OPTIONS = [
-  { value: 'A', label: 'Class A', description: 'Combination vehicles' },
-  { value: 'B', label: 'Class B', description: 'Single vehicles 26,001+ lbs' },
-  { value: 'C', label: 'Class C', description: 'Hazmat/passenger vehicles' },
+  { value: 'A', label: 'Class A', description: 'Combo vehicles' },
+  { value: 'B', label: 'Class B', description: 'Heavy single' },
+  { value: 'C', label: 'Class C', description: 'Hazmat/passenger' },
 ];
 
 const CDL_ENDORSEMENTS = [
@@ -48,7 +48,8 @@ const EXPERIENCE_OPTIONS = [
 ];
 
 export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }: CDLInfoSectionProps) => {
-  const showClassAndEndorsements = formData.cdl === 'Yes' || formData.cdl === 'Permit';
+  const showCDLClass = formData.cdl === 'Yes' || formData.cdl === 'Permit';
+  const showEndorsements = formData.cdl === 'Yes';
   
   const handleEndorsementChange = (endorsementId: string, checked: boolean) => {
     const current = formData.cdlEndorsements || [];
@@ -90,7 +91,7 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }:
       </div>
       
       {/* CDL Class - only show if they have a CDL */}
-      {showClassAndEndorsements && (
+      {showCDLClass && (
         <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <Label className="text-sm font-medium flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
@@ -102,13 +103,13 @@ export const CDLInfoSection = React.memo(({ formData, onInputChange, isActive }:
             options={CDL_CLASS_OPTIONS}
             value={formData.cdlClass}
             onChange={(value) => onInputChange('cdlClass', value)}
-            columns={3}
+            columns={2}
           />
         </div>
       )}
       
-      {/* Endorsements - only show if they have a CDL */}
-      {showClassAndEndorsements && (
+      {/* Endorsements - only show if they have a full CDL */}
+      {showEndorsements && (
         <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
           <Label className="text-sm font-medium">
             Endorsements <span className="text-muted-foreground font-normal">(optional)</span>
