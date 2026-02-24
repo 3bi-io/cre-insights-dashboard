@@ -319,8 +319,8 @@ serve(async (req: Request): Promise<Response> => {
             results[name] = { success: true, id: response.data?.id };
           }
           
-          // Small delay between sends to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 300));
+          // Delay between sends to respect Resend's 2 req/sec rate limit
+          await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (err: any) {
           results[name] = { success: false, error: err.message };
         }
