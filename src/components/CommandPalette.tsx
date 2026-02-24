@@ -62,6 +62,9 @@ const NAVIGATION_ROUTES: CommandRoute[] = [
   // Settings
   { label: 'Settings', path: '/admin/settings', icon: Settings, keywords: ['preferences', 'account', 'profile'], group: 'Settings' },
 
+  // Tools
+  { label: 'Web Scraper', path: '/admin/web-scraper', icon: Globe, keywords: ['firecrawl', 'scrape', 'extract', 'branding'], group: 'Tools' },
+
   // Public pages
   { label: 'Job Board', path: '/jobs', icon: Search, keywords: ['search', 'find jobs', 'careers'], group: 'Public Pages' },
   { label: 'Apply', path: '/apply', icon: FileText, keywords: ['application', 'submit'], group: 'Public Pages' },
