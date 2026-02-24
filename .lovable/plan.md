@@ -1,32 +1,77 @@
 
 
-# Add Address Field to Application Form Location Section
+# Add Google Places Autocomplete to Address Forms
 
-## What Changes
+## Overview
 
-An "Address" text input will be added to the Location section of the /apply form, allowing applicants to enter their street address (e.g., "123 Main St, Apt 4").
+Integrate the Google Places Autocomplete API into both address input fields across the application. When a user starts typing an address, a dropdown of suggestions appears. Selecting a suggestion auto-fills the address, city, state, and ZIP fields.
 
-## Where It Appears
+## Affected Forms
 
-The address field will sit above the existing ZIP / City / State row, spanning the full width of the Location section. It will be optional (no asterisk), matching the style of the City field.
+1. **Quick Apply** (`/apply`) -- `PersonalInfoSection.tsx` with fields: address, city, state, zip
+2. **Detailed Apply** (`/detailed-apply`) -- `DetailedContactSection.tsx` with fields: address1, address2, city, state, zipCode
 
-## Technical Details
+## Implementation
 
-### 1. Update Form Data Model: `src/hooks/useApplicationForm.ts`
-- Add `address: string` to the `FormData` interface
-- Add `address: ''` to `initialFormData`
+### 1. Store Google Maps API Key as a Supabase Secret
 
-### 2. Update PersonalInfoSection Props and UI: `src/components/apply/PersonalInfoSection.tsx`
-- Add `address: string` to the `formData` prop type
-- Insert a full-width `<Input>` field labeled "Address" with `autoComplete="street-address"` and a `MapPin` icon, placed between the "Location" header and the ZIP/City/State grid
-- Uses the same `h-14 text-base rounded-xl border-2` styling as existing fields
+- Add `GOOGLE_MAPS_API_KEY` as a Supabase secret
+- Create a small edge function `get-google-maps-key` that returns the API key to the frontend (so the key isn't hardcoded in client code)
 
-### 3. Include Address in Submission: `src/hooks/useApplicationForm.ts`
-- The `address` field is already part of `formData` and will be sent to the `submit-application` edge function automatically via the spread (`...data`)
+### 2. Create a Reusable Hook: `src/hooks/useGooglePlacesAutocomplete.ts`
 
-## Files Modified
+- Loads the Google Maps JavaScript SDK dynamically (only once) using the API key fetched from the edge function
+- Attaches a `google.maps.places.Autocomplete` instance to a given input ref
+- Restricts results to US addresses (`componentRestrictions: { country: 'us' }`)
+- On `place_changed`, parses the address components and returns structured data:
 
-| File | Change |
+```text
+{
+  address: "123 Main St",
+  city: "Dallas",
+  state: "TX",
+  zip: "75201"
+}
+```
+
+- Cleans up the Autocomplete instance on unmount
+
+### 3. Create a Reusable Component: `src/components/shared/AddressAutocompleteInput.tsx`
+
+- Wraps the existing `Input` component with the autocomplete hook
+- Props: `value`, `onChange`, `onPlaceSelect(address, city, state, zip)`, plus standard input props
+- Renders the same `h-14 text-base rounded-xl border-2` styling
+- Shows a subtle Google attribution as required by their TOS
+
+### 4. Update `PersonalInfoSection.tsx`
+
+- Replace the plain address `<Input>` with `<AddressAutocompleteInput>`
+- On place selection, call `onInputChange` for address, city, state, and zip
+- Existing ZIP auto-lookup continues to work as a fallback if Places isn't used
+
+### 5. Update `DetailedContactSection.tsx`
+
+- Replace the `address1` `<Input>` with `<AddressAutocompleteInput>`
+- On place selection, call `onInputChange` for address1, city, state, and zipCode
+- `address2` remains a plain input (apt/suite number)
+
+### 6. Edge Function: `supabase/functions/get-google-maps-key/index.ts`
+
+- Reads `GOOGLE_MAPS_API_KEY` from environment
+- Returns `{ apiKey: "..." }` with CORS headers
+- This keeps the API key out of client-side source code
+
+## Files Summary
+
+| File | Action |
 |------|--------|
-| `src/hooks/useApplicationForm.ts` | Add `address` to FormData interface and initial state |
-| `src/components/apply/PersonalInfoSection.tsx` | Add `address` to props interface; render Address input in Location section |
+| `supabase/functions/get-google-maps-key/index.ts` | Create -- returns API key |
+| `src/hooks/useGooglePlacesAutocomplete.ts` | Create -- loads SDK, manages Autocomplete |
+| `src/components/shared/AddressAutocompleteInput.tsx` | Create -- reusable autocomplete input |
+| `src/components/apply/PersonalInfoSection.tsx` | Edit -- use AddressAutocompleteInput |
+| `src/components/apply/detailed/DetailedContactSection.tsx` | Edit -- use AddressAutocompleteInput |
+
+## Prerequisites
+
+You will need a Google Cloud project with the **Places API** and **Maps JavaScript API** enabled, and an API key with those APIs allowed. I'll prompt you to provide the key as a Supabase secret during implementation.
+
