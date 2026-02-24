@@ -1,41 +1,39 @@
 
 
-## Integrate Screening Questions Into Existing Form Steps
+## Remove Redundant Screening Questions from CDL Section
 
-### What Changes
-Instead of showing screening questions as a separate Step 4, they will be appended inline to the most relevant existing step. The form will always be 4 steps: Personal, CDL, Background, Consent.
+### Problem
+The screenshots show that CDL-related screening questions (e.g., "Do you currently hold an active Class A CDL license?" and "How many years of Class A CDL driving experience do you have?") are rendered as **additional** Select dropdowns below the existing native CDL buttons and experience buttons. This is redundant -- the user is answering the same thing twice.
 
-### How It Works
-
-Each screening question will be mapped to an existing step based on its `id`:
-- **CDL-related** (`valid_cdl`, `experience`, `cdl_class`, or any ID containing "cdl", "license", "experience", "driving") -- appended to **Step 2 (CDL)**
-- **Everything else** (background checks, drug tests, availability, etc.) -- appended to **Step 3 (Background)**
-
-The questions will render at the bottom of their respective section using the existing `Select` dropdown UI from `ScreeningQuestionsSection`, styled to match the section's visual pattern. Answers still go into `formData.custom_questions` for webhook delivery.
-
----
+### Solution
+Instead of displaying screening questions that overlap with existing form fields, **auto-populate** their answers from the native field values. Only render screening questions that don't have a corresponding native field.
 
 ### Technical Changes
 
 **1. `src/components/apply/ApplicationForm.tsx`**
-- Remove the separate screening `StepContainer` (Step 4)
-- Revert `totalSteps` back to always `4`
-- Remove `hasScreening` prop from `FormProgressIndicator`
-- Add a helper function to split screening questions into two groups: `cdlQuestions` and `backgroundQuestions` based on ID pattern matching
-- Pass the relevant question group + answers + handler to `CDLInfoSection` and `BackgroundInfoSection`
-- Move screening validation into the existing step 2 and step 3 validators (required screening questions in the CDL group validate in step 2, others in step 3)
+- Add a `useEffect` that watches `formData.cdl`, `formData.experience`, `formData.cdlClass`, and `formData.drug` values
+- When these change, auto-map them to matching screening question answers in `custom_questions` using keyword detection on the question text:
+  - Questions matching "hold" + "CDL" or "active" + "CDL" -> map from `formData.cdl` (Yes/No)
+  - Questions matching "years" + "experience" or "how many" + "experience" -> map from `formData.experience` value
+  - Questions matching "drug" + "test" or "DOT" -> map from `formData.drug`
+- Filter these auto-mapped questions OUT of `cdlScreeningQuestions` and `backgroundScreeningQuestions` so they are not rendered as duplicate dropdowns
+- The auto-populated answers still get submitted in `custom_questions` for webhook delivery
 
 **2. `src/components/apply/CDLInfoSection.tsx`**
-- Add optional `screeningQuestions`, `screeningAnswers`, and `onScreeningAnswerChange` props
-- Render any provided screening questions at the bottom of the section using `Select` dropdowns (matching existing styling)
+- No structural changes needed -- it will simply receive fewer (or zero) screening questions to render since the redundant ones are filtered out upstream
 
-**3. `src/components/apply/BackgroundInfoSection.tsx`**
-- Same new optional props as CDLInfoSection
-- Render any provided screening questions at the bottom, after the veteran status field
+**3. `src/components/apply/BackgroundInfoSection.tsx`**  
+- Same as above -- drug-test-related screening questions that overlap with the native drug test field will be filtered out
 
-**4. `src/components/apply/FormProgressIndicator.tsx`**
-- Remove the `hasScreening` prop and revert to always showing 4 steps (Personal, CDL, Background, Consent)
+### How Auto-Mapping Works
 
-**5. `src/components/apply/ScreeningQuestionsSection.tsx`**
-- No longer rendered as a standalone step, but the component can be reused as an inline sub-component within CDL and Background sections (or its rendering logic inlined directly)
+```text
+Native Field          Screening Question Pattern              Mapped Value
+-----------          --------------------------              ------------
+formData.cdl         /hold.*cdl|active.*cdl|cdl.*license/i   "Yes" / "No"
+formData.experience  /years.*experience|how many.*experience/i  Closest option match
+formData.drug        /drug.*test|dot.*test/i                 "Yes" / "No"
+```
+
+The mapping will find the best-matching option from the screening question's `options` array (using the option value or label) so the answer is always valid for that question's schema.
 
