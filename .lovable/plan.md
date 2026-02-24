@@ -1,69 +1,61 @@
 
 
-## Add Zapier Webhook + Screening Questions for Career Now Brands
+## Add Client Logos to Email Templates
 
 ### Overview
-Configure a Zapier webhook for Career Now Brands organization and add CDL screening questions to their application flow. When applicants apply to Career Now Brands jobs, they'll answer the screening questions (CDL license status, experience level), and those answers will be forwarded to the Zapier webhook along with the standard application data.
+Most clients already have `logo_url` set in the database. The main work is:
+1. Fix a few inconsistent logo URLs (use stable `applyai.jobs/logos/` paths)
+2. Update the email pipeline to pass the client's logo URL through to the email template
+3. Render the client logo in the email header alongside or instead of the platform logo
 
-### What Gets Built
+### Current State
+All clients except "Unassigned" already have logo URLs. Two use external URLs where local copies exist:
 
-**1. Database Changes**
+| Client | Current logo_url | Fix |
+|--------|-----------------|-----|
+| Day and Ross | External seeklogo.com URL | Update to `https://applyai.jobs/logos/day-and-ross.jpeg` |
+| Novco, Inc. | External cloudfront URL | Update to `https://applyai.jobs/logos/novco.png` |
+| Hayes AI Recruiting | Relative path `/images/...` | No local logo file exists -- skip or leave as-is |
 
-- **Insert webhook record** into `client_webhooks` for Career Now Brands:
-  - `organization_id`: `650cf2cc-22e7-4a52-8899-b56d315bed2a`
-  - `webhook_url`: `https://hooks.zapier.com/hooks/catch/23823129/u28navp/`
-  - `user_id`: `313592ee-ac3b-4c7c-b5b4-fe95c46e62d9` (craig@careernowbrands.com)
-  - `client_id`: NULL (org-wide, all clients)
-  - `enabled`: true
+### Changes
 
-- **Add `screening_questions` JSONB column** to `organizations` table to store per-org screening question configs. Career Now Brands gets the provided CDL + experience questions schema.
+**1. Fix Logo URLs (Data Update)**
+- Update `Day and Ross` logo_url to `https://applyai.jobs/logos/day-and-ross.jpeg`
+- Update `Novco, Inc.` logo_url to `https://applyai.jobs/logos/novco.png`
 
-**2. Apply Form Enhancement**
+**2. Email Pipeline: Pass `clientLogoUrl`**
+- **`supabase/functions/submit-application/index.ts`**: When sending the confirmation email, also look up the client's `logo_url` from the job listing's client record and pass it as `clientLogoUrl` in the request body to `send-application-email`.
 
-- Modify the application form (`ApplicationForm.tsx` and/or the detailed form) to:
-  - Fetch the organization's `screening_questions` config when loading the job
-  - Render the screening questions as a new step/section (select dropdowns based on the schema)
-  - Save answers into the `custom_questions` JSONB column on the `applications` table
+**3. Email Template: Render Client Logo**
+- **`supabase/functions/send-application-email/index.ts`**: Accept optional `clientLogoUrl` in `EmailRequest`. When present, display the client logo in the email header (centered, above the title) instead of the default Apply AI logo.
+- **`supabase/functions/_shared/email-config.ts`**: Update `getEmailHeader()` to accept an optional `clientLogoUrl` parameter. When provided, render the client logo; otherwise fall back to the Apply AI platform logo.
 
-**3. Webhook Payload Enhancement**
-
-- Update `client-webhook` edge function to include `custom_questions` (screening answers) in the webhook payload sent to Zapier, so the data flows through as:
-
-```text
-{
-  "application": {
-    ...existing fields...,
-    "screening_answers": {
-      "valid_cdl": "yes",
-      "experience": "12"
-    }
-  }
-}
-```
-
-### Implementation Sequence
-
-1. **Migration**: Add `screening_questions` column to `organizations`, insert webhook record, populate Career Now Brands screening config
-2. **Apply form**: Add screening questions section that reads from org config and saves to `custom_questions`
-3. **Edge function**: Update `client-webhook/index.ts` to include `custom_questions` in payload
-4. **Verify**: Test end-to-end with a Career Now Brands job application
+**4. Frontend Email Service**
+- **`src/utils/emailService.ts`**: Add optional `clientLogoUrl` to `SendEmailParams` so status update, interview, offer, and rejection emails can also include the client logo when triggered from the dashboard.
 
 ### Technical Details
 
-| Item | Detail |
-|------|--------|
-| Org ID | `650cf2cc-22e7-4a52-8899-b56d315bed2a` |
-| Webhook URL | `https://hooks.zapier.com/hooks/catch/23823129/u28navp/` |
-| User ID (owner) | `313592ee-ac3b-4c7c-b5b4-fe95c46e62d9` |
-| Storage column | `organizations.screening_questions` (JSONB) |
-| Answer storage | `applications.custom_questions` (already exists) |
+```text
+Email flow with client logo:
+
+submit-application
+  -> resolves client from job_listing
+  -> reads client.logo_url
+  -> calls send-application-email with { clientLogoUrl: "https://applyai.jobs/logos/hubgroup-logo.png" }
+
+send-application-email
+  -> passes clientLogoUrl to getEmailHeader()
+  -> getEmailHeader renders client logo if provided, else Apply AI logo
+```
 
 ### Files to Modify
 | File | Change |
 |------|--------|
-| `supabase/functions/client-webhook/index.ts` | Add `custom_questions` to webhook payload |
-| `src/components/apply/ApplicationForm.tsx` | Add screening questions section |
+| `supabase/functions/submit-application/index.ts` | Pass `clientLogoUrl` to email call |
+| `supabase/functions/send-application-email/index.ts` | Accept + use `clientLogoUrl` |
+| `supabase/functions/_shared/email-config.ts` | Update `getEmailHeader()` to support client logo |
+| `src/utils/emailService.ts` | Add optional `clientLogoUrl` param |
 
-### Files to Create
-- None (all changes are modifications + DB inserts/migrations)
+### Data Updates
+- UPDATE `clients` SET `logo_url` for Day and Ross and Novco to use stable applyai.jobs paths
 
