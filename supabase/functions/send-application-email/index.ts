@@ -28,6 +28,7 @@ interface EmailRequest {
   candidateName: string;
   jobTitle: string;
   companyName?: string;
+  clientLogoUrl?: string;
   type: 'application_received' | 'status_update' | 'interview_invitation' | 'offer' | 'rejection';
   additionalData?: {
     status?: string;
@@ -74,7 +75,7 @@ function getPreheader(type: string, jobTitle: string, status?: string): string {
 }
 
 const getEmailTemplate = (request: EmailRequest): string => {
-  const { type, candidateName, jobTitle, companyName = "Company", additionalData } = request;
+  const { type, candidateName, jobTitle, companyName = "Company", clientLogoUrl, additionalData } = request;
   
   // Sanitize all inputs
   const safeName = sanitizeInput(candidateName);
@@ -97,7 +98,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
           </head>
           <body style="${baseEmailStyles}">
             ${getPreheaderText(preheaderText)}
-            ${getEmailHeader("Application Received", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: `${safeCompany} - Application Received` })}
+            ${getEmailHeader("Application Received", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: `${safeCompany} - Application Received`, clientLogoUrl })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">Thank you for applying for the <strong>${safeJobTitle}</strong> position at ${safeCompany}!</p>
@@ -130,7 +131,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
           </head>
           <body style="${baseEmailStyles}">
             ${getPreheaderText(preheaderText)}
-            ${getEmailHeader("Application Update", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: `${safeCompany} - Status Update` })}
+            ${getEmailHeader("Application Update", { gradient: "#667eea 0%, #764ba2 100%", showLogo: true, logoAlt: `${safeCompany} - Status Update`, clientLogoUrl })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">We have an update regarding your application for the <strong>${safeJobTitle}</strong> position.</p>
@@ -164,7 +165,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
           </head>
           <body style="${baseEmailStyles}">
             ${getPreheaderText(preheaderText)}
-            ${getEmailHeader("Interview Invitation", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: `${safeCompany} - Interview Invitation` })}
+            ${getEmailHeader("Interview Invitation", { gradient: "#10b981 0%, #059669 100%", showLogo: true, logoAlt: `${safeCompany} - Interview Invitation`, clientLogoUrl })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">Great news! We'd like to invite you for an interview for the <strong>${safeJobTitle}</strong> position at ${safeCompany}.</p>
@@ -195,7 +196,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
           </head>
           <body style="${baseEmailStyles}">
             ${getPreheaderText(preheaderText)}
-            ${getEmailHeader("🎉 Congratulations!", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: `${safeCompany} - Job Offer` })}
+            ${getEmailHeader("🎉 Congratulations!", { gradient: "#f59e0b 0%, #d97706 100%", showLogo: true, logoAlt: `${safeCompany} - Job Offer`, clientLogoUrl })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">We are thrilled to offer you the position of <strong>${safeJobTitle}</strong> at ${safeCompany}!</p>
@@ -223,7 +224,7 @@ const getEmailTemplate = (request: EmailRequest): string => {
           </head>
           <body style="${baseEmailStyles}">
             ${getPreheaderText(preheaderText)}
-            ${getEmailHeader("Application Update", { gradient: "#6b7280 0%, #4b5563 100%", showLogo: true, logoAlt: `${safeCompany} - Application Update` })}
+            ${getEmailHeader("Application Update", { gradient: "#6b7280 0%, #4b5563 100%", showLogo: true, logoAlt: `${safeCompany} - Application Update`, clientLogoUrl })}
             <div style="${contentStyles}">
               <p style="font-size: 16px; margin-bottom: 20px;">Dear ${safeName},</p>
               <p style="font-size: 16px; margin-bottom: 20px;">Thank you for your interest in the <strong>${safeJobTitle}</strong> position at ${safeCompany} and for taking the time to interview with our team.</p>
