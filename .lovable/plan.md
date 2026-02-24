@@ -1,77 +1,73 @@
 
 
-# Add Google Places Autocomplete to Address Forms
+## Firecrawl Web Scraper Tool for Admin Dashboard
 
-## Overview
+### Overview
+Add a new admin page at `/admin/web-scraper` that lets admins paste any URL and extract job listings or company information using the Firecrawl API. The tool will support three modes: **Job Extraction** (structured job data), **Company Info** (branding and metadata), and **Raw Scrape** (markdown content).
 
-Integrate the Google Places Autocomplete API into both address input fields across the application. When a user starts typing an address, a dropdown of suggestions appears. Selecting a suggestion auto-fills the address, city, state, and ZIP fields.
-
-## Affected Forms
-
-1. **Quick Apply** (`/apply`) -- `PersonalInfoSection.tsx` with fields: address, city, state, zip
-2. **Detailed Apply** (`/detailed-apply`) -- `DetailedContactSection.tsx` with fields: address1, address2, city, state, zipCode
-
-## Implementation
-
-### 1. Store Google Maps API Key as a Supabase Secret
-
-- Add `GOOGLE_MAPS_API_KEY` as a Supabase secret
-- Create a small edge function `get-google-maps-key` that returns the API key to the frontend (so the key isn't hardcoded in client code)
-
-### 2. Create a Reusable Hook: `src/hooks/useGooglePlacesAutocomplete.ts`
-
-- Loads the Google Maps JavaScript SDK dynamically (only once) using the API key fetched from the edge function
-- Attaches a `google.maps.places.Autocomplete` instance to a given input ref
-- Restricts results to US addresses (`componentRestrictions: { country: 'us' }`)
-- On `place_changed`, parses the address components and returns structured data:
+### Architecture
 
 ```text
-{
-  address: "123 Main St",
-  city: "Dallas",
-  state: "TX",
-  zip: "75201"
-}
++------------------+       +-------------------+       +-----------------+
+| Admin Dashboard  | ----> | Supabase Edge Fns | ----> | Firecrawl API   |
+| (React Page)     |       | firecrawl-scrape  |       | v1/scrape       |
+|                  |       | firecrawl-search  |       | v1/search       |
+| /admin/scraper   |       | firecrawl-map     |       | v1/map          |
++------------------+       +-------------------+       +-----------------+
 ```
 
-- Cleans up the Autocomplete instance on unmount
+### What Gets Built
 
-### 3. Create a Reusable Component: `src/components/shared/AddressAutocompleteInput.tsx`
+**1. Firecrawl API Client** (`src/lib/api/firecrawl.ts`)
+- Typed wrapper around `supabase.functions.invoke()` for scrape, search, and map operations
+- Handles error responses consistently
 
-- Wraps the existing `Input` component with the autocomplete hook
-- Props: `value`, `onChange`, `onPlaceSelect(address, city, state, zip)`, plus standard input props
-- Renders the same `h-14 text-base rounded-xl border-2` styling
-- Shows a subtle Google attribution as required by their TOS
+**2. Four Supabase Edge Functions**
+- `firecrawl-scrape/index.ts` -- Single URL scrape with format options
+- `firecrawl-search/index.ts` -- Web search with optional content scraping
+- `firecrawl-map/index.ts` -- URL discovery/sitemap generation
+- `firecrawl-crawl/index.ts` -- Multi-page crawl
 
-### 4. Update `PersonalInfoSection.tsx`
+All use `FIRECRAWL_API_KEY` from environment. Each configured with `verify_jwt = false` in `config.toml` (auth handled in-app via role guard).
 
-- Replace the plain address `<Input>` with `<AddressAutocompleteInput>`
-- On place selection, call `onInputChange` for address, city, state, and zip
-- Existing ZIP auto-lookup continues to work as a fallback if Places isn't used
+**3. Admin Page** (`src/pages/admin/WebScraperPage.tsx`)
+- Uses `AdminPageLayout` with `requiredRole={['admin', 'super_admin']}`
+- Tabbed interface with three modes:
+  - **Job Extractor**: Paste a URL, extracts structured job data using Firecrawl's JSON extraction with a job-listing schema (title, company, location, pay, requirements)
+  - **Company Info**: Extracts branding (logo, colors, fonts) using the `branding` format -- useful for client onboarding
+  - **URL Explorer**: Uses the `map` endpoint to discover all pages on a site, filterable by keyword (e.g., "careers", "jobs")
+- Results displayed in cards/tables with copy-to-clipboard and export options
 
-### 5. Update `DetailedContactSection.tsx`
+**4. Route Registration** (`src/components/routing/AppRoutes.tsx`)
+- Add lazy import and route at `/admin/web-scraper`
 
-- Replace the `address1` `<Input>` with `<AddressAutocompleteInput>`
-- On place selection, call `onInputChange` for address1, city, state, and zipCode
-- `address2` remains a plain input (apt/suite number)
+**5. Navigation Entry** (`src/components/CommandPalette.tsx`)
+- Add "Web Scraper" to command palette for discoverability
 
-### 6. Edge Function: `supabase/functions/get-google-maps-key/index.ts`
+### Technical Details
 
-- Reads `GOOGLE_MAPS_API_KEY` from environment
-- Returns `{ apiKey: "..." }` with CORS headers
-- This keeps the API key out of client-side source code
+- **Edge functions**: Follow existing CORS pattern from the project's shared utilities
+- **Job extraction schema** uses Firecrawl's `{ type: 'json', schema: {...} }` format to return structured data like:
+  ```text
+  { title, company, location, pay_range, job_type, requirements[], apply_url }
+  ```
+- **Branding extraction** uses `formats: ['branding']` to pull logo URLs, color palettes, and typography -- directly useful for auto-configuring new clients
+- **URL mapping** helps admins discover career pages on carrier websites before scraping
 
-## Files Summary
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `src/lib/api/firecrawl.ts` | Frontend API client |
+| `supabase/functions/firecrawl-scrape/index.ts` | Scrape edge function |
+| `supabase/functions/firecrawl-search/index.ts` | Search edge function |
+| `supabase/functions/firecrawl-map/index.ts` | Map edge function |
+| `supabase/functions/firecrawl-crawl/index.ts` | Crawl edge function |
+| `src/pages/admin/WebScraperPage.tsx` | Main admin page |
 
-| File | Action |
+### Files to Modify
+| File | Change |
 |------|--------|
-| `supabase/functions/get-google-maps-key/index.ts` | Create -- returns API key |
-| `src/hooks/useGooglePlacesAutocomplete.ts` | Create -- loads SDK, manages Autocomplete |
-| `src/components/shared/AddressAutocompleteInput.tsx` | Create -- reusable autocomplete input |
-| `src/components/apply/PersonalInfoSection.tsx` | Edit -- use AddressAutocompleteInput |
-| `src/components/apply/detailed/DetailedContactSection.tsx` | Edit -- use AddressAutocompleteInput |
-
-## Prerequisites
-
-You will need a Google Cloud project with the **Places API** and **Maps JavaScript API** enabled, and an API key with those APIs allowed. I'll prompt you to provide the key as a Supabase secret during implementation.
+| `supabase/config.toml` | Add `verify_jwt = false` for all 4 Firecrawl functions |
+| `src/components/routing/AppRoutes.tsx` | Add lazy import + route for `/admin/web-scraper` |
+| `src/components/CommandPalette.tsx` | Add Web Scraper entry |
 
