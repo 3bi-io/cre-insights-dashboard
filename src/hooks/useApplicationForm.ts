@@ -23,6 +23,8 @@ interface FormData {
   veteran: string;
   consent: string;
   privacy: string;
+  // Screening question answers
+  custom_questions: Record<string, string>;
   // URL tracking parameters
   ad_id: string;
   campaign_id: string;
@@ -56,6 +58,8 @@ const initialFormData: FormData = {
   veteran: '',
   consent: '',
   privacy: '',
+  // Screening question answers
+  custom_questions: {},
   // URL tracking parameters
   ad_id: '',
   campaign_id: '',
@@ -247,7 +251,7 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
     },
   });
 
-  const handleInputChange = useCallback((name: string, value: string | string[]) => {
+  const handleInputChange = useCallback((name: string, value: string | string[] | Record<string, string>) => {
     setFormData(prev => ({ ...prev, [name]: value } as FormData));
   }, []);
 

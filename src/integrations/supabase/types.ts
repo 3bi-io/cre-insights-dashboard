@@ -5179,6 +5179,7 @@ export type Database = {
           logo_url: string | null
           name: string
           plan_type: string
+          screening_questions: Json | null
           settings: Json | null
           slug: string
           subscription_status: string | null
@@ -5199,6 +5200,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           plan_type?: string
+          screening_questions?: Json | null
           settings?: Json | null
           slug: string
           subscription_status?: string | null
@@ -5219,6 +5221,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           plan_type?: string
+          screening_questions?: Json | null
           settings?: Json | null
           slug?: string
           subscription_status?: string | null
@@ -8233,6 +8236,10 @@ export type Database = {
           publisher_name: string
           publisher_slug: string
         }[]
+      }
+      get_screening_questions_for_job: {
+        Args: { p_job_listing_id: string }
+        Returns: Json
       }
       get_spend_chart_data: { Args: never; Returns: Json }
       get_sponsorship_tier: { Args: { referrer: string }; Returns: string }

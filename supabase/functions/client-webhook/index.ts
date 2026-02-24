@@ -165,6 +165,7 @@ Deno.serve(async (req) => {
           notes: application.notes,
           applied_at: application.applied_at,
           created_at: application.created_at,
+          screening_answers: application.custom_questions || null,
           recruiter: application.recruiter ? {
             id: application.recruiter.id,
             name: application.recruiter.name,
