@@ -15,7 +15,7 @@ export interface HowItWorksStep {
 export const howItWorksContent = {
   badge: 'Why It Works',
   title: 'Authentic Candidates Will Interview Right Away',
-  description: 'Candidates who are authentic will interview on the spot.',
+  description: 'One click apply is too easy for candidates and fraudsters. Instant interviewing creates a pause for candidates to reaffirm interest and produces havoc for cyber actors.',
   
   jobseekerTitle: 'For Jobseekers',
   jobseekerSteps: [
