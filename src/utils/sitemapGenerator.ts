@@ -67,11 +67,6 @@ export const STATIC_ROUTES: SitemapUrl[] = [
     changefreq: 'monthly',
     priority: 0.5,
   },
-  {
-    loc: 'https://applyai.jobs/founders-pass',
-    changefreq: 'weekly',
-    priority: 0.9,
-  },
 ];
 
 /**

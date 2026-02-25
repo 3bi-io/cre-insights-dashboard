@@ -96,9 +96,9 @@ const CTASection = () => {
         >
           <CTABlock
             primaryText={ctaContent.cta.primary}
-            primaryPath={ctaContent.cta.primaryPath || '/founders-pass'}
+            primaryPath={ctaContent.cta.primaryPath}
             secondaryText={ctaContent.cta.secondary}
-            secondaryPath={ctaContent.cta.secondaryPath || '/contact?subject=founders-pass'}
+            secondaryPath={ctaContent.cta.secondaryPath}
           />
         </motion.div>
 

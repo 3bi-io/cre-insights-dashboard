@@ -22,7 +22,7 @@ const DemoPage = React.lazy(() => import("@/pages/public/DemoPage"));
 const JobMapPage = React.lazy(() => import("@/pages/public/JobMapPage"));
 const BlogPage = React.lazy(() => import("@/pages/public/BlogPage"));
 const BlogPostPage = React.lazy(() => import("@/pages/public/BlogPostPage"));
-const FoundersPassPage = React.lazy(() => import("@/pages/public/FoundersPassPage"));
+
 
 // Authentication pages
 const Auth = React.lazy(() => import("@/pages/Auth"));
@@ -70,7 +70,7 @@ const MetaAnalyticsPage = React.lazy(() => import("@/features/analytics").then(m
 const AIConfigurationPage = React.lazy(() => import("@/features/settings").then(m => ({ default: m.AIConfigurationPage })));
 const SocialEngagementDashboard = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SocialEngagementDashboard })));
 const SuperAdminSocialBeacons = React.lazy(() => import("@/features/social-engagement").then(m => ({ default: m.SuperAdminSocialBeacons })));
-const GenerateFoundersPassCreative = React.lazy(() => import("@/pages/admin/GenerateFoundersPassCreative"));
+
 // Remaining pages
 const TenstreetIntegration = React.lazy(() => import("@/pages/TenstreetIntegration"));
 const RoutesPage = React.lazy(() => import("@/features/routes").then(m => ({ default: m.RoutesPage })));
@@ -175,7 +175,7 @@ const AppRoutes: React.FC = () => {
         <Route path="map" element={<RouteWrapper><JobMapPage /></RouteWrapper>} />
         <Route path="blog" element={<RouteWrapper><BlogPage /></RouteWrapper>} />
         <Route path="blog/:slug" element={<RouteWrapper><BlogPostPage /></RouteWrapper>} />
-        <Route path="founders-pass" element={<RouteWrapper><FoundersPassPage /></RouteWrapper>} />
+        
       </Route>
 
       {/* Voice Agent Demo - redirect to consolidated demo page */}
@@ -304,7 +304,7 @@ const AppRoutes: React.FC = () => {
         {/* Social Engagement Routes */}
         <Route path="social-engagement" element={<ProtectedRouteWrapper><SocialEngagementDashboard /></ProtectedRouteWrapper>} />
         <Route path="social-beacons" element={<ProtectedRouteWrapper><SuperAdminSocialBeacons /></ProtectedRouteWrapper>} />
-        <Route path="generate-founders-pass-creative" element={<ProtectedRouteWrapper><GenerateFoundersPassCreative /></ProtectedRouteWrapper>} />
+        
         
         <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
         <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
