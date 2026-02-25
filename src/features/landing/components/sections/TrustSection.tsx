@@ -23,7 +23,7 @@ const TrustSection = () => {
         <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
           Assess Merit and Skill
         </Badge>
-        <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
+        <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
           {trustContent.title}
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto font-normal">
