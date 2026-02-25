@@ -1,32 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ExternalLink } from 'lucide-react';
 import AdminPageLayout from '@/features/shared/components/AdminPageLayout';
-import { supabase } from '@/integrations/supabase/client';
 
 const Media = () => {
-  const [foundersPassCreatives, setFoundersPassCreatives] = useState<Array<{
-    id: string;
-    headline: string;
-    media_url: string | null;
-    created_at: string | null;
-    status: string;
-  }>>([]);
-
-  useEffect(() => {
-    const fetchCreatives = async () => {
-      const { data } = await supabase
-        .from('generated_ad_creatives')
-        .select('id, headline, media_url, created_at, status')
-        .eq('job_type', 'founders_pass')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (data) setFoundersPassCreatives(data);
-    };
-    fetchCreatives();
-  }, []);
-
   return (
     <AdminPageLayout
       title="Media Assets"
@@ -101,52 +77,6 @@ const Media = () => {
             </div>
           </CardContent>
         </Card>
-        {/* Founders Pass AI-Generated Creatives */}
-        {foundersPassCreatives.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Founders Pass — AI-Generated Creatives</CardTitle>
-              <CardDescription>
-                Cinematic 16:9 images generated via Gemini Pro for Social Beacon distribution
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {foundersPassCreatives.map((creative) => (
-                <div key={creative.id} className="space-y-2">
-                  {creative.media_url && (
-                    <div className="relative rounded-lg overflow-hidden border border-border">
-                      <img
-                        src={creative.media_url}
-                        alt={creative.headline}
-                        className="w-full aspect-video object-cover"
-                      />
-                      <Badge className="absolute top-2 right-2" variant="secondary">
-                        {creative.status}
-                      </Badge>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">{creative.headline}</p>
-                    {creative.media_url && (
-                      <a
-                        href={creative.media_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {creative.created_at ? new Date(creative.created_at).toLocaleDateString() : ''}
-                    {' · '}16:9 Landscape · Gemini Pro
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
       </div>
     </AdminPageLayout>
   );

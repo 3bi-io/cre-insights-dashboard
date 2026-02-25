@@ -54,24 +54,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* Announcement Bar */}
-      {announcementVisible && (
-        <div className="relative bg-primary text-primary-foreground text-center text-xs sm:text-sm py-2 px-8">
-          <span className="font-medium">
-            🚀 Limited Time: Founders Pass — $1/apply, zero upfront cost —{' '}
-            <Link to="/founders-pass" className="underline hover:no-underline font-semibold">
-              Claim yours now
-            </Link>
-          </span>
-          <button
-            onClick={dismissAnnouncement}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-primary-foreground/10 rounded"
-            aria-label="Dismiss announcement"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
 
       <nav 
         className={cn(
