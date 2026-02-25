@@ -24,7 +24,7 @@ import {
 import { Feature, DetailedFeature } from './types';
 
 export const featuresContent = {
-  title: 'Everything You Need to Hire Better',
+  title: 'Assess for Merit and Skill Quickly',
   description: 'AI-powered voice technology, visual pipeline management, and automation that transforms how you connect with jobseekers.',
   
   // Primary features (AI-powered, high-impact) - shown with detailed view
