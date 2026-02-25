@@ -20,7 +20,7 @@ export const trustContent = {
     },
     {
       icon: CheckCircle,
-      value: '100%',
+      value: 'Transparent',
       label: 'Transparency',
       description: 'Cover pay, process, and policy'
     },
