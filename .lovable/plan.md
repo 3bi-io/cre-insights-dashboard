@@ -1,33 +1,25 @@
 
 
-## Backfill: Send Cody Forbes Application to Zapier
+## Add Client: Aspenview Technology Partners
 
-### What This Does
-Creates a one-time edge function that fetches the Cody Forbes application from the database, builds the same Zapier payload format used by `submit-application`, and POSTs it to the Hub Group webhook endpoint. It also logs the delivery in `client_webhook_logs`.
+### Action
+Insert a new row into the `clients` table:
 
-### Implementation
+```sql
+INSERT INTO clients (name, status, organization_id)
+VALUES (
+  'Aspenview Technology Partners',
+  'active',
+  '9335c64c-b793-4578-bf51-63d0c3b5d66d'
+);
+```
 
-**New File: `supabase/functions/backfill-webhook/index.ts`**
-
-A simple edge function that:
-1. Queries the `applications` table for Cody Forbes' application (by name + Hub Group job listing)
-2. Builds the payload using the same field mapping as `buildZapierPayload` in submit-application
-3. POSTs to `https://hooks.zapier.com/hooks/catch/23823129/u28navp/`
-4. Logs the result in `client_webhook_logs` with the correct `webhook_id`
-5. Returns success/failure response
-
-The function will be invoked once manually from the frontend or via curl, then can be deleted.
-
-### Payload Format
-Uses the exact same structure as the live webhook path -- event metadata, personal info, location, screening fields, and `screening_answers` from `custom_questions`.
-
-### Safety
-- Only sends the single Cody Forbes application (hardcoded filter by name)
-- Logs delivery in `client_webhook_logs` so it's auditable
-- Marks `event_type` as `backfill` to distinguish from live submissions
-- No database schema changes needed
+### Details
+- **Organization**: Aspen Analytics (`9335c64c-b793-4578-bf51-63d0c3b5d66d`)
+- **Client Name**: Aspenview Technology Partners
+- **Status**: active
+- **Other fields** (email, phone, company, address, etc.): left null for now -- can be updated later through the admin UI
 
 ### Scope
-- 1 new edge function file: `supabase/functions/backfill-webhook/index.ts`
-- Update `supabase/config.toml` to add the function config with `verify_jwt = false`
+- Single SQL INSERT, no schema changes, no code changes needed.
 
