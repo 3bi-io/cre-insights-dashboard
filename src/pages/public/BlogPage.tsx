@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
+import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -59,6 +60,11 @@ const BlogPage: React.FC = () => {
     );
   }, [posts]);
 
+  const breadcrumbs = useMemo(() => buildBreadcrumbSchema([
+    { name: 'Home', href: '/' },
+    { name: 'Blog', href: '/blog' },
+  ]), []);
+
   return (
     <>
       <SEO
@@ -78,7 +84,7 @@ const BlogPage: React.FC = () => {
         />
       </Helmet>
 
-      {blogIndexSchema && <StructuredData data={blogIndexSchema} />}
+      <StructuredData data={[breadcrumbs, ...(blogIndexSchema ? [blogIndexSchema] : [])]} />
 
       <div className="min-h-screen">
         {/* Hero */}

@@ -7,6 +7,25 @@ import React, { lazy, Suspense } from 'react';
 
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildWebSiteSchema } from '@/components/StructuredData';
+import { SITE_URL, SITE_NAME, DEFAULT_LOGO } from '@/config/siteConfig';
+
+const buildOrganizationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": SITE_NAME,
+  "url": SITE_URL,
+  "logo": DEFAULT_LOGO,
+  "sameAs": [
+    "https://www.linkedin.com/company/applyai",
+    "https://x.com/applyaijobs",
+  ],
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Anniston",
+    "addressRegion": "AL",
+    "addressCountry": "US",
+  },
+});
 import HeroSection from '@/features/landing/components/sections/HeroSection';
 import { LoadingSkeleton } from '@/features/landing/components/shared/LoadingSkeleton';
 
@@ -30,7 +49,7 @@ const LandingPage = () => {
         keywords="AI recruitment, automated callbacks, voice apply, AI voice agents, Apply AI, Tenstreet integration, recruitment automation, kanban pipeline, talent pools, activity tracking"
         canonical="https://applyai.jobs/"
       />
-      <StructuredData data={buildWebSiteSchema()} />
+      <StructuredData data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
       
       {/* Hero */}
       <HeroSection />

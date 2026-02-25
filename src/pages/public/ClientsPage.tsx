@@ -7,6 +7,9 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
+import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
+import { SITE_URL } from '@/config/siteConfig';
 import { ClientsHero, ClientsGrid, type PublicClient } from '@/components/public/clients';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -59,14 +62,44 @@ const ClientsPage = () => {
       .slice(0, 4);
   }, [clients]);
 
+  // Breadcrumb schema
+  const breadcrumbs = useMemo(() => buildBreadcrumbSchema([
+    { name: 'Home', href: '/' },
+    { name: 'Companies Hiring', href: '/clients' },
+  ]), []);
+
+  // CollectionPage schema
+  const collectionSchema = useMemo(() => {
+    if (!clients || clients.length === 0) return null;
+    return {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "Companies Hiring | Apply AI",
+      "description": "Explore companies actively hiring. Find your next employer and browse open positions.",
+      "url": `${SITE_URL}/clients`,
+      "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": clients.length,
+        "itemListElement": clients.slice(0, 50).map((c, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "name": c.name,
+          ...(c.logo_url && { "image": c.logo_url }),
+        })),
+      },
+    };
+  }, [clients]);
+
   return (
     <>
       <SEO 
         title="Companies Hiring | Browse Employers"
         description="Explore companies actively hiring. Find your next employer and browse open positions."
         keywords="companies hiring, employers, trucking companies, driver jobs, transportation jobs"
+        canonical={`${SITE_URL}/clients`}
         ogImage="https://applyai.jobs/og-clients.png"
       />
+      <StructuredData data={[breadcrumbs, ...(collectionSchema ? [collectionSchema] : [])]} />
        
       <div className="min-h-screen bg-background">
         <ClientsHero totalCompanies={clients?.length || 0} />

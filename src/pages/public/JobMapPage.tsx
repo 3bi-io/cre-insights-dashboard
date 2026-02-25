@@ -5,12 +5,14 @@
  */
 
 import { useState, Suspense, lazy, useCallback, useMemo } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { MapPin, Loader2 } from 'lucide-react';
 import { useJobMapData, JobMapFilters, MapLocation } from '@/hooks/useJobMapData';
 import { MapFilters, MapStats, JobListPanel, MapLayerControls } from '@/components/map';
 import { MapProvider, useMapContext } from '@/components/map/MapContext';
 import { MapAnnouncements } from '@/components/map/MapAnnouncements';
+import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
+import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { 
   MapFiltersSkeleton, 
   MapStatsSkeleton, 
@@ -96,30 +98,21 @@ function JobMapPageContent() {
 
   const hasActiveFilters = activeFilterCount > 0;
 
+  const mapBreadcrumbs = useMemo(() => buildBreadcrumbSchema([
+    { name: 'Home', href: '/' },
+    { name: 'Job Map', href: '/map' },
+  ]), []);
+
   return (
     <>
-      <Helmet>
-        <title>Job Locations Map | Apply AI</title>
-        <meta 
-          name="description" 
-          content="Explore job opportunities across the United States on our interactive map. Find positions near you or discover opportunities in new locations." 
-        />
-        <meta name="keywords" content="job map, jobs near me, job locations, employment opportunities, career map" />
-        <link rel="canonical" href="https://applyai.jobs/map" />
-        
-        {/* Open Graph */}
-        <meta property="og:title" content="Job Locations Map | Apply AI" />
-        <meta property="og:description" content="Explore job opportunities across the United States on our interactive map." />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://applyai.jobs/map" />
-        <meta property="og:image" content="https://applyai.jobs/og-map.png" />
-        
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Job Locations Map | Apply AI" />
-        <meta name="twitter:description" content="Explore job opportunities across the United States on our interactive map." />
-        <meta name="twitter:image" content="https://applyai.jobs/og-map.png" />
-      </Helmet>
+      <SEO
+        title="Job Locations Map"
+        description="Explore job opportunities across the United States on our interactive map. Find positions near you or discover opportunities in new locations."
+        keywords="job map, jobs near me, job locations, employment opportunities, career map"
+        canonical="https://applyai.jobs/map"
+        ogImage="https://applyai.jobs/og-map.png"
+      />
+      <StructuredData data={mapBreadcrumbs} />
 
       {/* Screen Reader Announcements */}
       <MapAnnouncements

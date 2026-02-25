@@ -6,7 +6,6 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,8 +15,9 @@ import { useAudioVisualizer } from '@/hooks/useAudioVisualizer';
 import WaveformVisualizer from '@/components/audio/WaveformVisualizer';
 import LogoIcon from '@/components/common/LogoIcon';
 import voiceInterviewCover from '@/assets/audio/voice-interview-cover.jpg';
-
-const OG_IMAGE_URL = 'https://applyai.jobs/og-audio.jpg';
+import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
+import { SITE_URL } from '@/config/siteConfig';
 
 // Audio file mapping - hardcoded for now, can be database-driven later
 const AUDIO_FILES: Record<string, string> = {
@@ -158,20 +158,25 @@ const AudioShowcasePage: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, toggleMute, currentTime, duration]);
 
+  const audioObjectSchema = {
+    "@context": "https://schema.org",
+    "@type": "AudioObject",
+    "name": "Voice Interview",
+    "description": "AI-powered voice interview between a driver and recruiter using Apply AI Voice Apply technology.",
+    "contentUrl": `${SITE_URL}${audioSrc}`,
+    "encodingFormat": "audio/mpeg",
+    "creator": { "@type": "Organization", "name": "Apply AI", "url": SITE_URL },
+  };
+
   return (
     <>
-      <Helmet>
-        <title>Voice Interview | Apply AI</title>
-        <meta name="description" content="Listen to an AI-powered voice interview between a driver and recruiter. Experience the future of recruitment with Apply AI Voice Apply technology." />
-        <meta property="og:title" content="Voice Interview | Apply AI" />
-        <meta property="og:description" content="Listen to an AI-powered voice interview between a driver and recruiter." />
-        <meta property="og:image" content={OG_IMAGE_URL} />
-        <meta property="og:type" content="music.song" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Voice Interview | Apply AI" />
-        <meta name="twitter:description" content="Listen to an AI-powered voice interview between a driver and recruiter." />
-        <meta name="twitter:image" content={OG_IMAGE_URL} />
-      </Helmet>
+      <SEO
+        title="Voice Interview"
+        description="Listen to an AI-powered voice interview between a driver and recruiter. Experience the future of recruitment with Apply AI Voice Apply technology."
+        canonical={`${SITE_URL}/audio/${id || 'showcase'}`}
+        ogImage={`${SITE_URL}/og-audio.jpg`}
+      />
+      <StructuredData data={audioObjectSchema} />
       <div className="audio-showcase-bg fixed inset-0 h-[100dvh] w-full overflow-hidden flex flex-col">
       {/* Hidden audio element */}
       <audio
