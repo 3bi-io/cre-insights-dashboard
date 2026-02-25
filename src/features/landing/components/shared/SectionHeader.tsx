@@ -25,7 +25,7 @@ export const SectionHeader = ({
   return (
     <div className={cn(alignClasses, 'mb-16', className)}>
       {badge && <div className="mb-4">{badge}</div>}
-      <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
+      <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
         {title}
       </h2>
       {description && (
