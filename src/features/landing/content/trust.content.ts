@@ -7,7 +7,7 @@ import { Shield, Phone, CheckCircle, Rocket } from 'lucide-react';
 import { TrustStat } from './types';
 
 export const trustContent = {
-  badge: 'Enterprise-Grade Platform',
+  badge: 'Enterprise Tested',
   title: 'Built for Speed, Designed for Results',
   description: 'Our AI-powered platform delivers measurable outcomes with enterprise-grade infrastructure and seamless integrations.',
   footer: 'All Plans Include: Priority support, dedicated onboarding, and direct access to our product team',
