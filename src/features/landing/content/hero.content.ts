@@ -7,7 +7,7 @@ export const heroContent = {
   badge: 'AI-Powered Voice Interviews',
   headline: 'Interview',
   headlineAccent: ' Everyone',
-  subheadline: 'No resumes. No waiting. Just conversations.\nConnect with every interested candidate in 3 minutes.',
+  subheadline: 'No resumes. No waiting. Just conversations.\nConnect with any interested candidate in 3 minutes.',
   cta: {
     primary: 'Search Jobs',
     secondary: 'For Employers'
