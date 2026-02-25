@@ -296,3 +296,6 @@ verify_jwt = false
 
 [functions.get-google-maps-key]
 verify_jwt = false
+
+[functions.backfill-webhook]
+verify_jwt = false
