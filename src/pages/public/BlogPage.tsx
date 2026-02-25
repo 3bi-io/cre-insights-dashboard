@@ -1,10 +1,13 @@
 /**
  * Blog Index Page
- * Featured post hero, search, category filtering, and newsletter CTA
+ * Featured post hero, search, category filtering, newsletter CTA,
+ * and CollectionPage/ItemList structured data for SEO
  */
 
 import React, { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -13,13 +16,14 @@ import { Badge } from '@/components/ui/badge';
 import { BookOpen, Search, ArrowRight, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBlogPosts, useBlogCategories } from '@/hooks/useBlog';
-import { BlogPostCard } from '@/components/blog';
-import { BlogFeaturedImage } from '@/components/blog';
+import { BlogPostCard, BlogFeaturedImage, buildBlogIndexSchema } from '@/components/blog';
 import { HeroBackground } from '@/components/shared';
 import { calculateReadingTime } from '@/utils/seoUtils';
 import socialHero from '@/assets/hero/social-hero.png';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+
+const SUPABASE_URL = 'https://auwhcdpppldjlcaxzsme.supabase.co';
 
 const BlogPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
@@ -43,6 +47,18 @@ const BlogPage: React.FC = () => {
   const featuredPost = filteredPosts[0];
   const remainingPosts = filteredPosts.slice(1);
 
+  // Build CollectionPage schema for blog index
+  const blogIndexSchema = useMemo(() => {
+    if (!posts || posts.length === 0) return null;
+    return buildBlogIndexSchema(
+      posts.map(p => ({
+        slug: p.slug,
+        title: p.title,
+        image: p.featured_image,
+      }))
+    );
+  }, [posts]);
+
   return (
     <>
       <SEO
@@ -51,6 +67,18 @@ const BlogPage: React.FC = () => {
         keywords="recruitment blog, ATS insights, hiring strategies, HR technology, AI recruiting tips"
         canonical="https://applyai.jobs/blog"
       />
+
+      {/* RSS feed discovery */}
+      <Helmet>
+        <link
+          rel="alternate"
+          type="application/atom+xml"
+          title="Apply AI Blog"
+          href={`${SUPABASE_URL}/functions/v1/blog-rss`}
+        />
+      </Helmet>
+
+      {blogIndexSchema && <StructuredData data={blogIndexSchema} />}
 
       <div className="min-h-screen">
         {/* Hero */}
@@ -223,7 +251,7 @@ const BlogPage: React.FC = () => {
               setIsSubscribing(true);
               try {
                 const response = await fetch(
-                  `https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/newsletter-subscribe`,
+                  `${SUPABASE_URL}/functions/v1/newsletter-subscribe`,
                   {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

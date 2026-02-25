@@ -22,6 +22,7 @@ const DemoPage = React.lazy(() => import("@/pages/public/DemoPage"));
 const JobMapPage = React.lazy(() => import("@/pages/public/JobMapPage"));
 const BlogPage = React.lazy(() => import("@/pages/public/BlogPage"));
 const BlogPostPage = React.lazy(() => import("@/pages/public/BlogPostPage"));
+const BlogAuthorPage = React.lazy(() => import("@/pages/public/BlogAuthorPage"));
 
 
 // Authentication pages
@@ -174,6 +175,7 @@ const AppRoutes: React.FC = () => {
         <Route path="demo" element={<RouteWrapper><DemoPage /></RouteWrapper>} />
         <Route path="map" element={<RouteWrapper><JobMapPage /></RouteWrapper>} />
         <Route path="blog" element={<RouteWrapper><BlogPage /></RouteWrapper>} />
+        <Route path="blog/author/:id" element={<RouteWrapper><BlogAuthorPage /></RouteWrapper>} />
         <Route path="blog/:slug" element={<RouteWrapper><BlogPostPage /></RouteWrapper>} />
         
       </Route>
