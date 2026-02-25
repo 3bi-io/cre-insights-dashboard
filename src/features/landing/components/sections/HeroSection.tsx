@@ -191,7 +191,7 @@ const HeroSection = () => {
                 key={tag}
                 variants={tagVariants}
                 custom={index}
-                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white/90 bg-white/15 backdrop-blur-sm rounded-full border border-white/20 hover:bg-white/25 transition-colors"
+                className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-black rounded-full border border-white hover:bg-black/80 transition-colors"
               >
                 {tag}
               </motion.span>
