@@ -1,42 +1,33 @@
 
 
-## Fix: Hub Group Zapier Webhook Not Firing
+## Backfill: Send Cody Forbes Application to Zapier
 
-### Root Cause
-The webhook for Career Now Brands / Hub Group (`https://hooks.zapier.com/hooks/catch/23823129/u28navp/`) has **never been triggered**. The `source_filter` field on the webhook record is an empty array `[]`, and the filtering logic in `submit-application/index.ts` treats empty arrays as "match nothing" instead of "match everything."
+### What This Does
+Creates a one-time edge function that fetches the Cody Forbes application from the database, builds the same Zapier payload format used by `submit-application`, and POSTs it to the Hub Group webhook endpoint. It also logs the delivery in `client_webhook_logs`.
 
-### The Bug (line 370-373 of `submit-application/index.ts`)
-```text
-const matchingWebhooks = (webhooks || []).filter((webhook) => {
-  const sourceFilter = webhook.source_filter as string[] | null;
-  if (!sourceFilter || sourceFilter.length === 0) return false;  // <-- BUG: empty = skip
-  return sourceFilter.includes(source);
-});
-```
+### Implementation
 
-An empty `source_filter` should mean "no filter applied, match all sources." Currently it means "match no sources."
+**New File: `supabase/functions/backfill-webhook/index.ts`**
 
-### Fix
-**File: `supabase/functions/submit-application/index.ts`**
+A simple edge function that:
+1. Queries the `applications` table for Cody Forbes' application (by name + Hub Group job listing)
+2. Builds the payload using the same field mapping as `buildZapierPayload` in submit-application
+3. POSTs to `https://hooks.zapier.com/hooks/catch/23823129/u28navp/`
+4. Logs the result in `client_webhook_logs` with the correct `webhook_id`
+5. Returns success/failure response
 
-Change the filter logic so that `null` or empty `source_filter` means "match all sources":
+The function will be invoked once manually from the frontend or via curl, then can be deleted.
 
-```typescript
-const matchingWebhooks = (webhooks || []).filter((webhook) => {
-  const sourceFilter = webhook.source_filter as string[] | null;
-  // Empty or null source_filter means "all sources" (no filter)
-  if (!sourceFilter || sourceFilter.length === 0) return true;
-  return sourceFilter.includes(source);
-});
-```
+### Payload Format
+Uses the exact same structure as the live webhook path -- event metadata, personal info, location, screening fields, and `screening_answers` from `custom_questions`.
 
-This single-line change (`return false` to `return true`) will cause all 8 existing Hub Group applications (and future ones) to trigger the Zapier webhook on submission.
+### Safety
+- Only sends the single Cody Forbes application (hardcoded filter by name)
+- Logs delivery in `client_webhook_logs` so it's auditable
+- Marks `event_type` as `backfill` to distinguish from live submissions
+- No database schema changes needed
 
-### Additional Consideration
-The webhook also needs to filter by `organization_id` -- currently `triggerSourceWebhooks` fetches ALL enabled webhooks across all organizations. This could cause cross-org webhook firing. However, the immediate fix above will unblock Hub Group. A follow-up improvement could scope the query to the application's organization.
-
-### Scope of Change
-- 1 line change in `supabase/functions/submit-application/index.ts`
-- No database migrations needed
-- No frontend changes needed
+### Scope
+- 1 new edge function file: `supabase/functions/backfill-webhook/index.ts`
+- Update `supabase/config.toml` to add the function config with `verify_jwt = false`
 
