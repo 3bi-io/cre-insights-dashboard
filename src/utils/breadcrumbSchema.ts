@@ -3,6 +3,8 @@
  * Generates JSON-LD BreadcrumbList schema for SEO
  */
 
+import { SITE_URL } from '@/config/siteConfig';
+
 export interface BreadcrumbItem {
   name: string;
   href: string;
@@ -15,6 +17,6 @@ export const buildBreadcrumbSchema = (items: BreadcrumbItem[]) => ({
     "@type": "ListItem",
     "position": index + 1,
     "name": item.name,
-    "item": `https://applyai.jobs${item.href}`,
+    "item": `${SITE_URL}${item.href}`,
   })),
 });

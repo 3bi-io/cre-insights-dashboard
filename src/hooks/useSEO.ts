@@ -6,6 +6,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { shouldIndexUrl } from '@/utils/seoUtils';
+import { SITE_URL } from '@/config/siteConfig';
 
 interface UseSEOOptions {
   onRouteChange?: (path: string) => void;
@@ -21,7 +22,7 @@ export function useSEO(options: UseSEOOptions = {}) {
     // Update canonical link on route change
     const canonicalLink = document.querySelector('link[rel="canonical"]');
     if (canonicalLink) {
-      canonicalLink.setAttribute('href', `https://applyai.jobs${location.pathname}`);
+      canonicalLink.setAttribute('href', `${SITE_URL}${location.pathname}`);
     }
 
     // Check if page should be indexed

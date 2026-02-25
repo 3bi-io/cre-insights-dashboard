@@ -1,6 +1,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { getOgImageUrl } from '@/utils/ogImageUtils';
+import { SITE_URL, SITE_NAME } from '@/config/siteConfig';
 
 interface SEOProps {
   title: string;
@@ -37,8 +38,8 @@ export const SEO: React.FC<SEOProps> = ({
   articleModifiedTime,
   author,
 }) => {
-  const fullTitle = title.includes('ATS.me') ? title : `${title} - ATS.me`;
-  const url = canonical || `https://ats.me${window.location.pathname}`;
+  const fullTitle = title.includes(SITE_NAME) ? title : `${title} - ${SITE_NAME}`;
+  const url = canonical || `${SITE_URL}${window.location.pathname}`;
   // Use provided ogImage or determine based on current path
   const resolvedOgImage = ogImage || getOgImageUrl(window.location.pathname);
 
@@ -52,7 +53,7 @@ export const SEO: React.FC<SEOProps> = ({
       {noindex && <meta name="robots" content="noindex, nofollow" />}
       
       {/* Open Graph */}
-      <meta property="og:site_name" content="ATS.me" />
+      <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:locale" content="en_US" />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />

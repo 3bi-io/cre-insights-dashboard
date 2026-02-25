@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSharedConversation } from '@/hooks/useSharedConversation';
+import { SEO } from '@/components/SEO';
+import { SITE_URL } from '@/config/siteConfig';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -183,6 +185,12 @@ export default function SharedVoicePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${conversation.title || 'Voice Conversation'} | ${conversation.organization.name || 'Apply AI'}`}
+        description={`Listen to a shared voice conversation${conversation.organization.name ? ` from ${conversation.organization.name}` : ''}. Duration: ${formatDuration(conversation.duration_seconds)}.`}
+        canonical={`${SITE_URL}/voice/${shareCode}`}
+        noindex
+      />
       {/* Header with organization branding */}
       <header className="border-b bg-card">
         <div className="max-w-4xl mx-auto px-4 py-4">

@@ -83,7 +83,7 @@ const LegalPageLayout: React.FC<LegalPageLayoutProps> = ({
 
   return (
     <>
-      <SEO title={seoTitle} description={seoDescription} canonical={canonical} noindex={true} />
+      <SEO title={seoTitle} description={seoDescription} canonical={canonical} />
       <StructuredData data={breadcrumbs} />
       <div className="min-h-screen bg-background animate-page-in print:animate-none">
         {/* Hero */}
