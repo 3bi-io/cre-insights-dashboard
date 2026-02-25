@@ -14,7 +14,7 @@ export interface HowItWorksStep {
 
 export const howItWorksContent = {
   badge: 'Why It Works',
-  title: 'Candidate Sees Job and Instantly Phone Screens',
+  title: 'Authentic Candidates Will Interview Right Away',
   description: 'Candidates who are authentic will interview on the spot.',
   
   jobseekerTitle: 'For Jobseekers',
