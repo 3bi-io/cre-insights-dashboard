@@ -27,7 +27,7 @@ export const trustContent = {
     {
       icon: Shield,
       value: 'Reduce Fraud',
-      label: 'Secure by Design',
+      label: 'Secure by Design Protocols',
       description: 'Enterprise security standards'
     },
     {
