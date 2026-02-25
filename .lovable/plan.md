@@ -1,39 +1,44 @@
 
 
-## Remove Redundant Screening Questions from CDL Section
+## Remove Founders Pass Offering
 
-### Problem
-The screenshots show that CDL-related screening questions (e.g., "Do you currently hold an active Class A CDL license?" and "How many years of Class A CDL driving experience do you have?") are rendered as **additional** Select dropdowns below the existing native CDL buttons and experience buttons. This is redundant -- the user is answering the same thing twice.
+This plan removes all Founders Pass references across the application, including the dedicated page, popup, header banner, CTA content, route definitions, admin creative generator, and related content/assets.
 
-### Solution
-Instead of displaying screening questions that overlap with existing form fields, **auto-populate** their answers from the native field values. Only render screening questions that don't have a corresponding native field.
+### Files to Delete
+1. **src/pages/public/FoundersPassPage.tsx** -- Dedicated Founders Pass landing page
+2. **src/features/landing/content/foundersPass.content.ts** -- Founders Pass content data
+3. **src/features/landing/components/FoundersPassPopup.tsx** -- Auto-show popup dialog
+4. **src/features/landing/components/FoundersPassVoiceCTA.tsx** -- Voice CTA component
+5. **src/pages/admin/GenerateFoundersPassCreative.tsx** -- Admin creative generator page
+6. **src/components/landing/CTASection.tsx** -- Old CTA section (references Founders Pass)
 
-### Technical Changes
+### Files to Modify
 
-**1. `src/components/apply/ApplicationForm.tsx`**
-- Add a `useEffect` that watches `formData.cdl`, `formData.experience`, `formData.cdlClass`, and `formData.drug` values
-- When these change, auto-map them to matching screening question answers in `custom_questions` using keyword detection on the question text:
-  - Questions matching "hold" + "CDL" or "active" + "CDL" -> map from `formData.cdl` (Yes/No)
-  - Questions matching "years" + "experience" or "how many" + "experience" -> map from `formData.experience` value
-  - Questions matching "drug" + "test" or "DOT" -> map from `formData.drug`
-- Filter these auto-mapped questions OUT of `cdlScreeningQuestions` and `backgroundScreeningQuestions` so they are not rendered as duplicate dropdowns
-- The auto-populated answers still get submitted in `custom_questions` for webhook delivery
+1. **src/components/routing/AppRoutes.tsx**
+   - Remove `FoundersPassPage` lazy import and its route (`/founders-pass`)
+   - Remove `GenerateFoundersPassCreative` lazy import and its admin route
 
-**2. `src/components/apply/CDLInfoSection.tsx`**
-- No structural changes needed -- it will simply receive fewer (or zero) screening questions to render since the redundant ones are filtered out upstream
+2. **src/components/common/Header.tsx**
+   - Remove or replace the Founders Pass announcement bar (the banner that says "Founders Pass -- $1/apply, zero upfront cost -- Claim yours now")
 
-**3. `src/components/apply/BackgroundInfoSection.tsx`**  
-- Same as above -- drug-test-related screening questions that overlap with the native drug test field will be filtered out
+3. **src/features/landing/content/cta.content.ts**
+   - Update badge, title, description, and CTA buttons to be generic (e.g., "Get Started" linking to `/register`, "Talk to Us" linking to `/contact`)
+   - Remove Founders Pass pricing references ($0, $1-$3)
 
-### How Auto-Mapping Works
+4. **src/features/landing/components/sections/CTASection.tsx**
+   - Remove fallback `/founders-pass` paths from the CTABlock component props (will use whatever cta.content.ts provides)
 
-```text
-Native Field          Screening Question Pattern              Mapped Value
------------          --------------------------              ------------
-formData.cdl         /hold.*cdl|active.*cdl|cdl.*license/i   "Yes" / "No"
-formData.experience  /years.*experience|how many.*experience/i  Closest option match
-formData.drug        /drug.*test|dot.*test/i                 "Yes" / "No"
-```
+5. **src/pages/Media.tsx**
+   - Remove the `foundersPassCreatives` state, the fetch query filtering by `founders_pass`, and the entire "Founders Pass -- AI-Generated Creatives" card section
 
-The mapping will find the best-matching option from the screening question's `options` array (using the option value or label) so the answer is always valid for that question's schema.
+6. **src/utils/sitemapGenerator.ts**
+   - Remove the `/founders-pass` entry from the sitemap URLs
+
+### Summary of Impact
+- The `/founders-pass` route will no longer exist
+- The header announcement bar promoting Founders Pass will be removed
+- CTA sections throughout the landing page will use generic messaging instead of Founders Pass branding
+- The admin creative generator for Founders Pass will be removed
+- The Media page will no longer show Founders Pass creatives
+- The edge function (`supabase/functions/generate-founders-pass-creative`) can be cleaned up separately if desired
 
