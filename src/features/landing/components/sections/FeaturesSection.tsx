@@ -39,7 +39,7 @@ const FeaturesSection = () => {
           title={featuresContent.title}
           description={featuresContent.description}
           badge={
-            <Badge className="bg-primary/10 text-primary border-primary/20">
+            <Badge className="bg-primary/10 text-primary border-primary/20 text-3xl md:text-4xl font-playfair font-bold px-6 py-2">
               {trustContent.badge}
             </Badge>
           }
