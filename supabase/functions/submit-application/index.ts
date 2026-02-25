@@ -369,7 +369,8 @@ async function triggerSourceWebhooks(
   // Filter webhooks that have this source in their source_filter
   const matchingWebhooks = (webhooks || []).filter((webhook: Record<string, unknown>) => {
     const sourceFilter = webhook.source_filter as string[] | null;
-    if (!sourceFilter || sourceFilter.length === 0) return false;
+    // Empty or null source_filter means "all sources" (no filter)
+    if (!sourceFilter || sourceFilter.length === 0) return true;
     return sourceFilter.includes(source);
   });
 
