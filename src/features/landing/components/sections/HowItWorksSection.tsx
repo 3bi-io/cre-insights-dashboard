@@ -84,7 +84,7 @@ const HowItWorksSection: React.FC = () => {
         viewport={{ once: true }}
         className="text-center mb-12"
       >
-        <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 text-3xl md:text-4xl font-playfair font-bold px-6 py-2">
+        <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 text-2xl md:text-3xl font-playfair font-bold px-5 py-1.5">
           {howItWorksContent.badge}
         </Badge>
         <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
