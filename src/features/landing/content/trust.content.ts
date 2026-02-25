@@ -16,7 +16,7 @@ export const trustContent = {
       icon: Phone,
       value: '< 3 min',
       label: 'Response Time',
-      description: 'From application to callback'
+      description: 'From consent to callback'
     },
     {
       icon: CheckCircle,
