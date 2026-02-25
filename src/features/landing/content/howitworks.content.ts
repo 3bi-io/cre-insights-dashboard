@@ -13,7 +13,7 @@ export interface HowItWorksStep {
 }
 
 export const howItWorksContent = {
-  badge: 'How It Works',
+  badge: 'Why It Works',
   title: 'Candidate Sees Job and Instantly Phone Screens',
   description: 'Candidates who are authentic will interview on the spot.',
   
