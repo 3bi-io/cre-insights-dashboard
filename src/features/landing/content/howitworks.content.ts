@@ -14,7 +14,7 @@ export interface HowItWorksStep {
 
 export const howItWorksContent = {
   badge: 'How It Works',
-  title: 'From Application to Callback in Minutes',
+  title: 'From Interest to Callback in Minutes',
   description: 'Our AI-powered voice technology ensures every qualified jobseeker gets contacted instantly.',
   
   jobseekerTitle: 'For Jobseekers',
