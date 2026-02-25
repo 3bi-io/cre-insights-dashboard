@@ -8,7 +8,6 @@ import React, { lazy, Suspense } from 'react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildWebSiteSchema } from '@/components/StructuredData';
 import HeroSection from '@/features/landing/components/sections/HeroSection';
-import StatsSection from '@/features/landing/components/sections/StatsSection';
 import { LoadingSkeleton } from '@/features/landing/components/shared/LoadingSkeleton';
 
 // Lazy load sections below the fold for better performance
@@ -19,7 +18,7 @@ const IntegrationsSection = lazy(() => import('@/features/landing/components/sec
 
 const TrustSection = lazy(() => import('@/features/landing/components/sections/TrustSection'));
 const FAQSection = lazy(() => import('@/features/landing/components/sections/FAQSection'));
-const CTASection = lazy(() => import('@/features/landing/components/sections/CTASection'));
+
 
 const LandingPage = () => {
   return (
@@ -33,41 +32,37 @@ const LandingPage = () => {
       />
       <StructuredData data={buildWebSiteSchema()} />
       
-      {/* Above the fold - loaded immediately */}
+      {/* Hero */}
       <HeroSection />
-      <StatsSection />
 
-      {/* Social proof logo marquee */}
+      {/* Trusted by Industry Leaders */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
         <ClientLogoMarquee />
       </Suspense>
-      
-      {/* How It Works - moved below fold */}
+
+      {/* How It Works */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
         <HowItWorksSection />
       </Suspense>
-      
-      {/* Below the fold - lazy loaded with skeleton placeholders */}
-      <Suspense fallback={<LoadingSkeleton variant="section" />}>
-        <FeaturesSection />
-      </Suspense>
-      
-      <Suspense fallback={<LoadingSkeleton variant="section" />}>
-        <IntegrationsSection />
-      </Suspense>
-      
-      
-      
+
+      {/* What People Say */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
         <TrustSection />
       </Suspense>
-      
+
+      {/* Enterprise-Grade Platform */}
+      <Suspense fallback={<LoadingSkeleton variant="section" />}>
+        <FeaturesSection />
+      </Suspense>
+
+      {/* 100+ Integrations */}
+      <Suspense fallback={<LoadingSkeleton variant="section" />}>
+        <IntegrationsSection />
+      </Suspense>
+
+      {/* Frequently Asked Questions */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
         <FAQSection />
-      </Suspense>
-      
-      <Suspense fallback={<LoadingSkeleton variant="section" />}>
-        <CTASection />
       </Suspense>
     </main>
   );
