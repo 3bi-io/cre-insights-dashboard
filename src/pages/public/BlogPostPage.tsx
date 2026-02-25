@@ -1,28 +1,46 @@
 /**
  * Blog Post Detail Page
- * Individual blog post with Article schema, reading time, author bio, and share buttons
- * Implements E-E-A-T with structured data
+ * BlogPosting schema with E-E-A-T, speakable, TOC, FAQ, DOMPurify
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { SEO } from '@/components/SEO';
-import { StructuredData, buildArticleSchema } from '@/components/StructuredData';
+import { StructuredData } from '@/components/StructuredData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Clock, User, ArrowLeft, Tag } from 'lucide-react';
+import { Calendar, Clock, User, ArrowLeft, Tag, RefreshCw } from 'lucide-react';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { useBlogPost } from '@/hooks/useBlog';
 import { calculateReadingTime } from '@/utils/seoUtils';
-import { BlogFeaturedImage, BlogShareButtons, RelatedPosts } from '@/components/blog';
-import { getBlogPlaceholderImage, getBlogOgImage } from '@/utils/blogImageUtils';
+import {
+  BlogFeaturedImage,
+  BlogShareButtons,
+  RelatedPosts,
+  BlogTableOfContents,
+  BlogFAQSection,
+  injectHeadingIds,
+  buildBlogPostingSchema,
+} from '@/components/blog';
+import { buildHowToSchema } from '@/components/StructuredData';
+import { getBlogOgImage } from '@/utils/blogImageUtils';
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = useBlogPost(slug || '');
+
+  // Process content: inject heading IDs for TOC anchors, then sanitize
+  const processedContent = useMemo(() => {
+    if (!post?.content) return '';
+    const withIds = injectHeadingIds(post.content);
+    return DOMPurify.sanitize(withIds, {
+      ADD_ATTR: ['id', 'target', 'rel'],
+    });
+  }, [post?.content]);
 
   if (!slug) return <Navigate to="/blog" replace />;
 
@@ -60,19 +78,43 @@ const BlogPostPage: React.FC = () => {
   }
 
   const readingTime = calculateReadingTime(post.content);
+  const wordCount = post.content.trim().split(/\s+/).length;
   const publishedDate = post.published_at ? new Date(post.published_at).toISOString() : post.created_at;
   const authorName = post.author?.full_name || 'Apply AI Team';
   const ogImage = getBlogOgImage(post.slug, post.featured_image);
 
-  const articleSchema = buildArticleSchema({
-    headline: post.title,
+  // Show "Updated" if updated_at differs from published_at by > 1 day
+  const showUpdatedDate = post.published_at && post.updated_at &&
+    Math.abs(new Date(post.updated_at).getTime() - new Date(post.published_at).getTime()) > 86400000;
+
+  // BlogPosting schema with full E-E-A-T
+  const blogPostingSchema = buildBlogPostingSchema({
+    title: post.title,
     description: post.description || post.title,
     image: post.featured_image || 'https://applyai.jobs/og-image.png',
     datePublished: publishedDate,
     dateModified: post.updated_at,
-    author: authorName,
-    publisher: 'Apply AI',
+    authorName,
+    authorTitle: post.author?.author_title,
+    authorBio: post.author?.author_bio,
+    authorUrl: post.author_id ? `https://applyai.jobs/blog/author/${post.author_id}` : undefined,
+    category: post.category,
+    tags: post.tags || undefined,
+    wordCount,
+    slug: post.slug,
   });
+
+  // Parse FAQs from jsonb field
+  const faqs = (post as any).faqs as Array<{ question: string; answer: string }> | null;
+  
+  // Parse HowTo steps from jsonb field
+  const howtoSteps = (post as any).howto_steps as Array<{ name: string; text: string }> | null;
+  const howtoSchema = howtoSteps && howtoSteps.length > 0
+    ? buildHowToSchema({ name: post.title, description: post.description || post.title, steps: howtoSteps })
+    : null;
+
+  // Collect all schemas
+  const schemas = [blogPostingSchema, ...(howtoSchema ? [howtoSchema] : [])];
 
   return (
     <>
@@ -87,7 +129,7 @@ const BlogPostPage: React.FC = () => {
         articleModifiedTime={post.updated_at}
         author={authorName}
       />
-      <StructuredData data={articleSchema} />
+      <StructuredData data={schemas} />
 
       <article className="min-h-screen">
         {/* Header */}
@@ -122,6 +164,16 @@ const BlogPostPage: React.FC = () => {
                 })}
               </span>
             )}
+            {showUpdatedDate && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <RefreshCw className="h-3.5 w-3.5" />
+                Updated {new Date(post.updated_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+            )}
           </div>
 
           {/* Title */}
@@ -138,17 +190,22 @@ const BlogPostPage: React.FC = () => {
 
           {/* Author + Share */}
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
+            <Link
+              to={post.author_id ? `/blog/author/${post.author_id}` : '/blog'}
+              className="flex items-center gap-3 group"
+            >
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">{authorName}</p>
+                <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                  {authorName}
+                </p>
                 {post.author?.author_title && (
                   <p className="text-xs text-muted-foreground">{post.author.author_title}</p>
                 )}
               </div>
-            </div>
+            </Link>
             <BlogShareButtons
               title={post.title}
               slug={post.slug}
@@ -165,7 +222,10 @@ const BlogPostPage: React.FC = () => {
             eager
           />
 
-          {/* Content */}
+          {/* Table of Contents */}
+          <BlogTableOfContents content={post.content} />
+
+          {/* Content — sanitized with DOMPurify */}
           <div
             className="prose prose-lg dark:prose-invert max-w-none mb-12
               prose-headings:font-semibold prose-headings:text-foreground prose-headings:mt-8 prose-headings:mb-4
@@ -183,8 +243,11 @@ const BlogPostPage: React.FC = () => {
               prose-th:bg-muted prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:border prose-th:border-border
               prose-td:px-4 prose-td:py-2 prose-td:border prose-td:border-border
               prose-img:rounded-lg prose-img:my-6"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: processedContent }}
           />
+
+          {/* FAQ Section with FAQPage schema */}
+          {faqs && faqs.length > 0 && <BlogFAQSection faqs={faqs} />}
 
           {/* Tags */}
           {post.tags && post.tags.length > 0 && (
@@ -216,12 +279,15 @@ const BlogPostPage: React.FC = () => {
           {post.author && (
             <Card className="mb-8">
               <CardContent className="p-6">
-                <div className="flex items-start gap-4">
+                <Link
+                  to={post.author_id ? `/blog/author/${post.author_id}` : '/blog'}
+                  className="flex items-start gap-4 group"
+                >
                   <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <User className="h-7 w-7 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">
+                    <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                       About {authorName}
                     </h3>
                     {post.author.author_title && (
@@ -237,7 +303,7 @@ const BlogPostPage: React.FC = () => {
                       </p>
                     )}
                   </div>
-                </div>
+                </Link>
               </CardContent>
             </Card>
           )}

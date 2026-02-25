@@ -1495,7 +1495,9 @@ export type Database = {
           content: string
           created_at: string
           description: string | null
+          faqs: Json | null
           featured_image: string | null
+          howto_steps: Json | null
           id: string
           published: boolean | null
           published_at: string | null
@@ -1510,7 +1512,9 @@ export type Database = {
           content: string
           created_at?: string
           description?: string | null
+          faqs?: Json | null
           featured_image?: string | null
+          howto_steps?: Json | null
           id?: string
           published?: boolean | null
           published_at?: string | null
@@ -1525,7 +1529,9 @@ export type Database = {
           content?: string
           created_at?: string
           description?: string | null
+          faqs?: Json | null
           featured_image?: string | null
+          howto_steps?: Json | null
           id?: string
           published?: boolean | null
           published_at?: string | null

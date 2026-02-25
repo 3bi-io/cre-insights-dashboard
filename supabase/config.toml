@@ -299,3 +299,6 @@ verify_jwt = false
 
 [functions.backfill-webhook]
 verify_jwt = false
+
+[functions.blog-rss]
+verify_jwt = false
