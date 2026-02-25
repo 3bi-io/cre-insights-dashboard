@@ -18,15 +18,15 @@ const TrustSection = () => {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-center mb-12"
-      >
-        <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 text-2xl md:text-3xl font-playfair font-bold px-5 py-1.5">
+        className="text-center mb-12">
+
+        <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
           What People Say
         </Badge>
-        <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-4">
+        <h2 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
           {trustContent.title}
         </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-2xl mx-auto font-bold">
           {trustContent.description}
         </p>
 
@@ -34,30 +34,30 @@ const TrustSection = () => {
 
       {/* Trust Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {trustContent.stats.map((stat, index) => (
-          <CountUpStatCard
-            key={index}
-            icon={stat.icon}
-            value={stat.value}
-            label={stat.label}
-            description={stat.description}
-            delay={index * 100}
-          />
-        ))}
+        {trustContent.stats.map((stat, index) =>
+        <CountUpStatCard
+          key={index}
+          icon={stat.icon}
+          value={stat.value}
+          label={stat.label}
+          description={stat.description}
+          delay={index * 100} />
+
+        )}
       </div>
 
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="mt-10 text-center"
-      >
+        className="mt-10 text-center">
+
         <p className="text-sm text-muted-foreground">
           {trustContent.footer}
         </p>
       </motion.div>
-    </SectionWrapper>
-  );
+    </SectionWrapper>);
+
 };
 
 export default TrustSection;
