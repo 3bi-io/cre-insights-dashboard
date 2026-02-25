@@ -122,8 +122,8 @@ const HeroSection = () => {
           variants={itemVariants}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-playfair font-bold text-foreground mb-6 leading-[1.1] tracking-tight"
         >
-          <span style={{ WebkitTextStroke: '0.5px white' }}>{heroContent.headline}</span>
-          <span className="text-white" style={{ WebkitTextStroke: '0.5px black' }}>
+          {heroContent.headline}
+          <span className="text-white">
             {heroContent.headlineAccent}
           </span>
         </motion.h1>
