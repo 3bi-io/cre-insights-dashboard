@@ -13,7 +13,7 @@ export interface HowItWorksStep {
 }
 
 export const howItWorksContent = {
-  badge: 'Why It Works',
+  badge: 'Why and How It Works',
   title: 'Authentic Candidates Will Interview Right Away',
   description: 'One click apply is easy for candidates and fraudsters. An instant voice interview and security scan creates an interest pause for candidates and havoc for cyber actors.',
   
