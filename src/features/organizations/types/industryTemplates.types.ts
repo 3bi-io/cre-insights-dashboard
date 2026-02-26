@@ -30,6 +30,7 @@ export interface IndustryTemplateConfig {
   defaultPlatforms: string[];
   defaultFeatures: FeaturePreset[];
   aiPromptHints: AIPromptHints;
+  valueProposition?: string;
 }
 
 export interface IndustryTemplate {
