@@ -12,6 +12,7 @@ import HowItWorksSection from '@/components/voice/demo/HowItWorksSection';
 import { liveCallTranscript, voicemailTranscript } from '@/components/voice/demo/transcriptData';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildHowToSchema } from '@/components/StructuredData';
+import { SITE_URL, SITE_NAME } from '@/config/siteConfig';
 
 const VoiceAgentDemo: React.FC = () => {
   const [liveCallTime, setLiveCallTime] = useState(0);
@@ -35,8 +36,8 @@ const VoiceAgentDemo: React.FC = () => {
         title="AI Voice Agent Demo - See It In Action"
         description="Listen to real AI-powered outbound call demos. Hear how our voice agent verifies applicant information and handles voicemail scenarios using dynamic variables."
         keywords="AI voice agent, outbound call automation, voice AI demo, recruitment automation, applicant verification, AI voicemail"
-        canonical="https://ats.me/demo"
-        ogImage="https://ats.me/og-voice-demo.png"
+        canonical={`${SITE_URL}/demo`}
+        ogImage={`${SITE_URL}/og-voice-demo.png`}
         ogType="website"
       />
       <StructuredData data={howToSchema} />
@@ -48,7 +49,7 @@ const VoiceAgentDemo: React.FC = () => {
               <Link to="/">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to ATS.me
+                  Back to {SITE_NAME}
                 </Button>
               </Link>
             </div>
