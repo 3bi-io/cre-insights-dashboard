@@ -1130,19 +1130,28 @@ Deno.serve(async (req) => {
     );
 
     // Check if organization has voice agent for response
-    const { data: voiceAgent } = await supabase
-      .from('voice_agents')
-      .select('id')
-      .eq('organization_id', organizationId)
-      .eq('is_active', true)
-      .eq('is_outbound_enabled', true)
-      .maybeSingle();
+    // Embed Form submissions always have a dedicated outbound agent via DB trigger
+    const isEmbedForm = detectedSource === 'Embed Form';
+    let hasVoiceAgent = isEmbedForm;
+
+    if (!hasVoiceAgent) {
+      const { data: voiceAgent } = await supabase
+        .from('voice_agents')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('is_active', true)
+        .eq('is_outbound_enabled', true)
+        .limit(1)
+        .maybeSingle();
+
+      hasVoiceAgent = !!voiceAgent;
+    }
 
     return successResponse(
       { 
         applicationId: data.id,
         organizationName,
-        hasVoiceAgent: !!voiceAgent
+        hasVoiceAgent
       },
       'Application submitted successfully',
       undefined,
