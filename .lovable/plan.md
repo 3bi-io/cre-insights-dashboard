@@ -1,31 +1,34 @@
 
 
-## Remove "Back to Home" Links from All Apply Pages
+## Remove Duplicate Application Restriction
 
 ### Problem
-All public-facing apply pages contain "Back to Home" links that navigate to the main marketing site (`/`). For a recruitment platform, these links create unnecessary exit points that reduce application completion rates.
-
-### Pages Affected
-
-| File | Element | Location |
-|------|---------|----------|
-| `src/pages/Apply.tsx` | "Back to Home" link with arrow icon | Bottom of form (lines 94-103) |
-| `src/pages/ThankYou.tsx` | "Back to Home" button | Post-submission card (lines 80-86) |
-| `src/features/auth/pages/ApplyPage.tsx` | "Back to Home" arrow link | Bottom of form (lines 12-19) |
-
-### Already Clean (No Changes Needed)
-- `src/pages/EmbedApply.tsx` -- no home link
-- `src/components/apply/EmbedThankYou.tsx` -- no home link (only "Powered by" branding)
+The `submit-application` edge function blocks users from reapplying to the same job within 30 days, returning a 409 error. This prevents legitimate reapplications and applying to multiple positions.
 
 ### Changes
 
-**1. `src/pages/Apply.tsx`** -- Remove the entire `<nav>` block (lines 94-103) containing the "Back to Home" link. Also remove the unused `ArrowLeft` icon import and `Link` import if no longer referenced.
+**1. Edge Function: `supabase/functions/submit-application/index.ts`**
 
-**2. `src/pages/ThankYou.tsx`** -- Remove the `<div className="space-y-4">` block (lines 80-87) containing the "Back to Home" button. Also clean up unused `ArrowLeft` and `Link` imports.
+Remove the duplicate application check entirely:
 
-**3. `src/features/auth/pages/ApplyPage.tsx`** -- Remove the `<div className="text-center mt-6 pb-6">` block (lines 12-19) containing the "Back to Home" link. Remove the unused `Link` import from line 2.
+- **Delete** the `checkDuplicateApplication` function (lines 646-682) -- the entire function that queries for existing applications by email + job listing within 30 days
+- **Delete** the call site and 409 response block (lines 857-881) -- the code that calls `checkDuplicateApplication` and returns the rejection response
+
+**2. Frontend: `src/hooks/useApplicationForm.ts`**
+
+- Remove the special 409 handling (lines ~175-178) since the server will no longer return that status code
+
+**3. Frontend: `src/hooks/useEmbedApplicationForm.ts`**
+
+- Remove the special 409 handling (lines ~206-210) for the same reason
+
+### What stays the same
+- No database constraints need to change (there's no unique constraint on email + job listing)
+- The application form, thank-you page, and outbound call triggers are unaffected
+- All other validation (required fields, phone format, etc.) remains intact
 
 ### Impact
-- Reduces funnel drop-off on `/apply` and `/thank-you`
-- Keeps embed pages unchanged (already correct)
-- No functional impact on form submission or navigation flow
+- Users can apply to the same job multiple times
+- Users can apply to different jobs without any cooldown period
+- The edge function will simply insert a new application each time
+
