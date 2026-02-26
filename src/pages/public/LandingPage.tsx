@@ -37,6 +37,7 @@ const IntegrationsSection = lazy(() => import('@/features/landing/components/sec
 
 const TrustSection = lazy(() => import('@/features/landing/components/sections/TrustSection'));
 const FAQSection = lazy(() => import('@/features/landing/components/sections/FAQSection'));
+const IndustryShowcaseModal = lazy(() => import('@/features/landing/components/IndustryShowcaseModal'));
 
 
 const LandingPage = () => {
@@ -82,6 +83,11 @@ const LandingPage = () => {
       {/* Frequently Asked Questions */}
       <Suspense fallback={<LoadingSkeleton variant="section" />}>
         <FAQSection />
+      </Suspense>
+
+      {/* Industry Showcase Modal */}
+      <Suspense fallback={null}>
+        <IndustryShowcaseModal />
       </Suspense>
     </main>
   );
