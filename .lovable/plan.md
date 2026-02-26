@@ -1,83 +1,64 @@
 
 
-## Industry Showcase Modal -- Advisory & Implementation Plan
+## Refactor Industry Showcase Modal for Best-in-Class UX
 
-### Concept
+### Current Issues
+- Basic visual design with minimal hierarchy -- feels like a settings dialog, not a showcase
+- Industry cards are small and cramped (especially on 3-col mobile grid)
+- Detail panel is plain with flat badges -- no visual storytelling
+- No entrance stagger animation on cards
+- Terminology tags feel disconnected from the feature badges
+- "Don't show again" link looks like an afterthought
+- Missing screening focus content from templates (wasted data)
+- CTAs lack visual weight differentiation
+- No visual indicator showing industry-specific value proposition
 
-Replace the old single-purpose Founders Pass popup with a **"Platform Showcase" modal** that highlights Apply AI's multi-industry capabilities. This serves as both a lead-generation tool and a trust signal, showing visitors that the platform is purpose-built for their specific vertical.
+### Refactored Design
 
-### UX Design Approach
+**Layout Changes:**
+- Widen modal to `sm:max-w-2xl` for breathing room
+- Industry selector becomes a horizontal scrollable row on mobile (no cramped grid), 5-col on desktop
+- Cards get icon backgrounds with subtle gradient rings when active
+- Detail panel gets a two-section layout: features left, AI screening focus right
 
-**Trigger Strategy:**
-- Timed trigger (e.g., 8-10 seconds after landing page load, once per session)
-- Optional exit-intent trigger on desktop
-- Stored in `sessionStorage` so it only fires once per visit
+**Visual Polish:**
+- Add staggered entrance animation to industry cards using Framer Motion
+- Active card gets a subtle glow/ring effect instead of just border color
+- Detail panel header includes the industry icon alongside the name
+- Feature badges get colored dot indicators
+- Screening focus items displayed as a compact checklist with check icons
+- Gradient accent line between header and content
 
-**Modal Layout (Desktop = Dialog, Mobile = Drawer via ResponsiveModal):**
+**Interaction Improvements:**
+- Cards animate on hover with slight lift (`scale(1.03)`)
+- Detail panel crossfades with `layout` animation for smoother height transitions
+- Primary CTA gets gradient background matching platform brand
+- "Don't show again" moved into footer row, styled as ghost button
 
-```text
-+--------------------------------------------------+
-|  [X]                                             |
-|                                                   |
-|  "Built for Your Industry"                        |
-|  One platform, purpose-built for how you hire.    |
-|                                                   |
-|  +----------+  +----------+  +----------+         |
-|  | [Truck]  |  |[Heart]   |  | [Shield] |         |
-|  | Transport|  | Health   |  | Cyber    |         |
-|  |          |  |          |  |          |         |
-|  +----------+  +----------+  +----------+         |
-|  +----------+  +----------+                       |
-|  | [Wrench] |  |[Building]|                       |
-|  | Trades   |  | General  |                       |
-|  +----------+  +----------+                       |
-|                                                   |
-|  --- Selected detail panel ---                    |
-|  Transportation                                   |
-|  CDL-focused job boards, Tenstreet integration,   |
-|  AI voice screening for drivers                   |
-|                                                   |
-|  [Explore Transportation] [Book a Demo]           |
-+--------------------------------------------------+
-```
+**Content Enhancement:**
+- Add a short value proposition line per industry (e.g., "Screen CDL drivers in minutes, not days")
+- Show screening focus as checklist items with CheckCircle icons
+- Combine features + terminology into a unified "What's Included" section
 
-**Interaction Flow:**
-1. Modal opens with animated entrance (Framer Motion `fadeUp`)
-2. Industry cards are clickable -- selecting one reveals a detail panel below with key features, terminology badges, and a tailored CTA
-3. Default selection: Transportation (primary vertical)
-4. Two CTAs: "Explore [Industry]" navigates to relevant content; "Book a Demo" links to contact/demo page
+### Technical Changes
 
-### Technical Implementation
+**File: `src/features/landing/components/IndustryShowcaseModal.tsx`**
+- Widen modal container
+- Refactor industry cards with staggered motion, hover lift, gradient active ring
+- Redesign detail panel with icon header, two-column layout (features + screening focus)
+- Add CheckCircle icons for screening focus items
+- Restyle CTAs: primary gets gradient, outline stays as-is
+- Move "Don't show again" into the footer as a subtle ghost button
+- Add `Sparkles` icon to header for visual flair
 
-**New Files:**
-- `src/features/landing/components/IndustryShowcaseModal.tsx` -- Main modal component
-- `src/features/landing/hooks/useShowcaseModal.ts` -- Trigger logic (timer + sessionStorage guard)
+**File: `src/features/organizations/config/industryTemplates.config.ts`**
+- Add a `valueProposition` string to each template for the detail panel tagline
 
-**Reuses Existing:**
-- `ResponsiveModal` from `src/components/ui/responsive-modal.tsx` (Dialog on desktop, Drawer on mobile)
-- `INDUSTRY_VERTICAL_OPTIONS` and `INDUSTRY_TEMPLATES` from the config (already has icons, descriptions, features, AI context)
-- `IndustryVertical` type system
-- Framer Motion for animations (already a dependency)
-- Lucide icons already mapped (`Truck`, `HeartPulse`, `Shield`, `Wrench`, `Building`)
+**File: `src/features/organizations/types/industryTemplates.types.ts`**
+- Add optional `valueProposition?: string` to `IndustryTemplateConfig`
 
-**Integration Point:**
-- Render `IndustryShowcaseModal` inside `LandingPage.tsx` with a `Suspense` boundary
-- The hook manages open state, so the modal auto-triggers based on timer/session logic
+**No changes needed:**
+- `useShowcaseModal.ts` -- trigger logic is solid
+- `ResponsiveModal` -- component works well as-is
+- `LandingPage.tsx` -- integration is already correct
 
-**Key Differences from Old Founders Pass Popup:**
-| Aspect | Old Popup | New Modal |
-|--------|-----------|-----------|
-| Purpose | Single promo (pricing) | Platform capability showcase |
-| Content | Static copy | Dynamic, interactive industry cards |
-| Engagement | Passive read | Click-to-explore with detail panel |
-| Responsiveness | Unknown (deleted) | Drawer on mobile via ResponsiveModal |
-| Trigger | Unknown | Timed + session-guarded |
-| Data source | Hardcoded | Driven by `industryTemplates.config` |
-
-### Considerations
-
-- **Performance**: Lazy-load the modal component so it doesn't block initial page render
-- **Accessibility**: Focus trap, ESC to close, proper ARIA labels on industry cards
-- **Analytics**: Track which industry card users click to inform sales outreach
-- **Dismissal UX**: "Don't show again" option stored in localStorage for repeat visitors
-- **Future extensibility**: The same modal pattern could be reused on feature pages or triggered by specific UTM parameters to show the relevant industry pre-selected
