@@ -34,6 +34,7 @@ const BLOG_OG_IMAGE_MAP: Record<string, string> = {
   'tenstreet-integration-driver-recruitment': `${BASE_URL}/og-blog-tenstreet.png`,
   'recruitment-compliance-ai-hiring-2026': `${BASE_URL}/og-blog-compliance.png`,
   'why-ats-me-will-thrive-2026': `${BASE_URL}/og-blog-ats-me-thrive.png`,
+  'advanced-seo-implementation-guide-2026': `${BASE_URL}/og-blog-seo-guide.png`,
 };
 
 /** Default fallback image for posts without a mapped placeholder */
