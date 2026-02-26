@@ -91,11 +91,11 @@ const RegionBlocked: React.FC = () => {
               </p>
               
               <a 
-                href="mailto:compliance@ats.me?subject=OFAC%20Sanctions%20Access%20Inquiry"
+                href="mailto:compliance@applyai.jobs?subject=OFAC%20Sanctions%20Access%20Inquiry"
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
               >
                 <Mail className="w-4 h-4" />
-                compliance@ats.me
+                compliance@applyai.jobs
               </a>
               
               {countryCode && (

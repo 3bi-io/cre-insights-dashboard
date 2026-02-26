@@ -556,7 +556,7 @@ export class XMLPostAdapter extends BaseATSAdapter {
       }
     }
 
-    return fallbackSource || 'ATS.me';
+    return fallbackSource || 'Apply AI';
   }
 
   /**

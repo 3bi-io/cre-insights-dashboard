@@ -56,29 +56,29 @@ Design requirements:
 
 Style: Modern SaaS logo lockup. Clean typography, balanced spacing.`;
     } else if (type === 'horizontal-white') {
-      prompt = `Create a professional horizontal logo for "ATS.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a professional horizontal logo for "Apply AI" - an AI-powered voice recruitment platform.
 
 Design requirements:
-- Icon on the left side + "ATS.me" text on the right
+- Icon on the left side + "Apply AI" text on the right
 - The icon should represent AI voice technology (soundwave + neural nodes)
-- Text "ATS.me" in clean, modern sans-serif font (like Inter or SF Pro)
+- Text "Apply AI" in clean, modern sans-serif font (like Inter or SF Pro)
 - WHITE/light colored icon and text for dark backgrounds
 - Use vibrant blue (#3b82f6) and emerald green (#10b981) accents in the icon
 - Modern, tech-forward, trustworthy aesthetic
-- Correct spelling: "ATS.me" with the period before "me"
+- Correct spelling: "Apply AI"
 - 16:9 aspect ratio suitable for website headers
 - Transparent or dark background (#1a1a2e)
 - Professional and corporate appropriate
 
 Style: Modern SaaS logo lockup for dark mode. Clean white typography, balanced spacing.`;
     } else if (type === 'og-image') {
-      prompt = `Create a stunning, premium social media preview image (Open Graph) for "ATS.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a stunning, premium social media preview image (Open Graph) for "Apply AI" - an AI-powered voice recruitment platform.
 
-CRITICAL SPELLING: The brand name is "ATS.me" (capital A, T, S, period, lowercase m, e). NO extra period at the end. Just "ATS.me"
+CRITICAL SPELLING: The brand name is "Apply AI".
 
 Design requirements:
 - Exact dimensions: 1200x630 pixels aspect ratio (16:9 landscape)
-- Layout: Clean left-aligned logo area with "ATS.me" text prominently displayed
+- Layout: Clean left-aligned logo area with "Apply AI" text prominently displayed
 - Tagline below logo: "AI-Powered Voice Recruitment"
 - Background: Stunning premium gradient flowing from vibrant blue (#3b82f6) on left to emerald green (#10b981) on right, with subtle dark overlay for depth
 - Include elegant visual elements representing platform capabilities:
@@ -98,11 +98,11 @@ Key visual messages:
 
 Style: Ultra-modern SaaS marketing material with premium tech aesthetic. Clean but visually striking.`;
     } else if (type === 'premium-soundwave') {
-      prompt = `Create a premium horizontal logo for "ats.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a premium horizontal logo for "Apply AI" - an AI-powered voice recruitment platform.
 
 CRITICAL DESIGN - Replicate this exact premium style:
 - Soundwave icon on the left: 5-7 vertical bars of varying heights forming an elegant audio waveform, emerald/teal green color (#10b981 to #14b8a6)
-- Text "ats.me" in LOWERCASE next to the icon - clean, modern sans-serif font (Inter or Montserrat style), pure white color
+- Text "Apply AI" next to the icon - clean, modern sans-serif font (Inter or Montserrat style), pure white color
 - Tagline "AI Powered Voice Recruitment" below the main text in smaller, lighter weight font
 - Dark navy/teal gradient background (approximately #0a1628 flowing to #0d3d38)
 - Premium particle flow effect in background with glowing dots/particles
@@ -110,7 +110,7 @@ CRITICAL DESIGN - Replicate this exact premium style:
 - Bokeh-style glowing orbs scattered in the background for premium feel
 
 Typography specifications:
-- "ats.me" - lowercase, white (#ffffff), bold modern sans-serif weight
+- "Apply AI" - white (#ffffff), bold modern sans-serif weight
 - Tagline - smaller size, lighter weight, same font family, slightly muted white
 
 Color palette:
@@ -123,7 +123,7 @@ Dimensions: 16:9 aspect ratio, suitable for hero sections and marketing
 
 Style: Ultra-premium, modern SaaS branding. High-end tech company aesthetic like Vercel, Linear, or Stripe. Clean but with stunning depth and sophistication.`;
     } else if (type === 'premium-icon') {
-      prompt = `Create a premium square icon for "ats.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a premium square icon for "Apply AI" - an AI-powered voice recruitment platform.
 
 Design requirements:
 - Square format, perfect for favicon and app icons
@@ -137,11 +137,11 @@ Design requirements:
 
 Style: Minimalist tech icon like Linear, Vercel, or Notion. Clean geometry with premium feel.`;
     } else if (type === 'premium-og') {
-      prompt = `Create a stunning premium social media preview image (Open Graph) for "ats.me" - an AI-powered voice recruitment platform.
+      prompt = `Create a stunning premium social media preview image (Open Graph) for "Apply AI" - an AI-powered voice recruitment platform.
 
 CRITICAL DESIGN - Match the premium soundwave branding:
 - Dimensions: 1200x630 pixels (16:9 landscape)
-- Left side: Soundwave icon (5-7 vertical bars, emerald green #10b981) + "ats.me" text in lowercase white
+- Left side: Soundwave icon (5-7 vertical bars, emerald green #10b981) + "Apply AI" text in white
 - Tagline: "AI Powered Voice Recruitment" below the logo
 - Background: Premium dark navy to teal gradient (#0a1628 to #0d4d40)
 - Include flowing particle effects and luminous wave curves in background
@@ -155,7 +155,7 @@ Visual elements to include:
 - Abstract neural network nodes (subtle, in background)
 
 Typography:
-- "ats.me" - large, lowercase, bold white sans-serif
+- "Apply AI" - large, bold white sans-serif
 - Tagline - smaller, lighter weight, white
 
 Style: Ultra-premium tech marketing. Dark, sophisticated, modern. Like Vercel, Linear, or high-end SaaS company marketing materials.`;

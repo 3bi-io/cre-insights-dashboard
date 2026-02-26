@@ -113,7 +113,7 @@ export const SimulationCompleteScreen = ({
               </h3>
             </div>
             <p className="text-xs text-muted-foreground mb-4">
-              Join the waitlist and we'll reach out as soon as ATS.me expands to your region.
+              Join the waitlist and we'll reach out as soon as Apply AI expands to your region.
             </p>
 
             {submitted ? (
@@ -207,7 +207,7 @@ export const SimulationCompleteScreen = ({
             </Link>
           </Button>
           <Button asChild variant="outline" className="flex-1 h-12">
-            <Link to="/features">Learn More About ATS.me</Link>
+            <Link to="/features">Learn More About Apply AI</Link>
           </Button>
         </div>
       </CardContent>

@@ -107,7 +107,7 @@ const handler = wrapHandler(async (req: Request) => {
 
   logger.info('Processing AI chat request', { messageCount: messages.length, userId: authContext.userId });
 
-  const systemPrompt = `You are an AI recruitment assistant for ATS.me. Help users with:
+  const systemPrompt = `You are an AI recruitment assistant for Apply AI. Help users with:
 - Job posting questions and best practices
 - Candidate evaluation guidance
 - Interview preparation and scheduling

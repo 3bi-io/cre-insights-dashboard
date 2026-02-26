@@ -287,7 +287,7 @@ const ContactPage = () => {
                       <h3 className="font-bold text-foreground">Schedule a Demo</h3>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">
-                      See ATS.me in action with a personalized walkthrough of Voice Apply, Social Beacon, and more.
+                      See Apply AI in action with a personalized walkthrough of Voice Apply, Social Beacon, and more.
                     </p>
                     <Link to="/contact?subject=demo">
                       <Button className="w-full sm:w-auto min-h-[44px]">

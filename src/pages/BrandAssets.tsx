@@ -143,7 +143,7 @@ const BrandAssets = () => {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Brand Assets</h1>
           <p className="text-muted-foreground mt-1">
-            Download official ATS.me logos and brand materials
+            Download official Apply AI logos and brand materials
           </p>
         </div>
         <Button

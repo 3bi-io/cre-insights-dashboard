@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 // Base URL for job pages - configurable via environment variable
-const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://ats.me';
+const BASE_URL = Deno.env.get('SITE_BASE_URL') || 'https://applyai.jobs';
 
 const logger = createLogger('google-jobs-xml');
 

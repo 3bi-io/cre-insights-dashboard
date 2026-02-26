@@ -41,7 +41,7 @@ const Footer = () => {
               Sitemap
             </Link>
             <a 
-              href="mailto:support@ats.me" 
+              href="mailto:support@applyai.jobs" 
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Support

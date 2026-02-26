@@ -291,7 +291,7 @@ async function handleAutoResponse(
     intent: classification.intent,
     sentiment: classification.sentiment,
     extractedEntities: classification.extractedEntities,
-    applyUrl: `https://ats.me/${org.slug}/apply`,
+    applyUrl: `https://applyai.jobs/${org.slug}/apply`,
   });
   
   if (!responseResult.success || !responseResult.content) {
