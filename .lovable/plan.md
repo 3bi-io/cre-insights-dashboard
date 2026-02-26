@@ -1,47 +1,66 @@
 
 
-## Refactor Industry Showcase Modal -- Mobile-First UX Fixes
+## Fix: Return `hasVoiceAgent: true` for Embed Form Submissions
 
-### Issues Found
+### Root Cause
 
-**Critical (Mobile):**
-1. Only 3 of 5 industry cards visible on mobile (375px). "Skilled Trades" and "General" are completely hidden off-screen with no visual indicator that scrolling is possible.
-2. No scroll affordance on the horizontal card row -- users have no idea more options exist.
-3. Footer lacks `pb-[env(safe-area-inset-bottom)]` for modern Android/iOS gesture navigation.
+The `submit-application` edge function checks for outbound voice agents at lines 1132-1139:
 
-**Minor (All Devices):**
-4. Card minimum width (`min-w-[5.5rem]`) is too wide for 5 cards on small screens but too narrow to show labels comfortably -- needs optimization.
-5. The `scrollbar-hide` class hides native scrollbar but provides no alternative affordance.
+```typescript
+const { data: voiceAgent } = await supabase
+  .from('voice_agents')
+  .select('id')
+  .eq('organization_id', organizationId)
+  .eq('is_active', true)
+  .eq('is_outbound_enabled', true)
+  .maybeSingle();
+```
 
-### Proposed Changes
+**Problem:** Hayes Recruiting (org `84214b48-...`) has **4 active outbound agents** (Pemberton, Day & Ross, Danny Herman, James Burg). The `.maybeSingle()` call **errors when multiple rows are returned**, causing `voiceAgent` to be `null` and `hasVoiceAgent` to resolve to `false`.
 
-**File: `src/features/landing/components/IndustryShowcaseModal.tsx`**
+Meanwhile, the actual outbound call routing for embed submissions is handled by a database trigger using a hardcoded agent ID -- so calls DO happen, but the thank-you page never shows the phone screening notice.
 
-1. **Add scroll fade indicators on mobile** -- Add a gradient fade on the right edge of the industry card row to signal more content is available. Use a `::after` pseudo-element or a positioned gradient overlay div that fades out when scrolled to the end.
+### Fix
 
-2. **Reduce card min-width for mobile** -- Change `min-w-[5.5rem]` to `min-w-[4.5rem]` so more cards are partially visible, hinting at scrollability. Reduce icon container from `h-10 w-10` to `h-8 w-8` on mobile.
+**File: `supabase/functions/submit-application/index.ts`** (lines ~1132-1139)
 
-3. **Add scroll dots/pagination indicator** -- Below the card row on mobile, add small dot indicators (5 dots, active one highlighted) to show there are more options. This is a standard mobile pattern for horizontal carousels.
+Replace the `.maybeSingle()` query with `.limit(1).maybeSingle()` so that when multiple outbound agents exist, we still get a truthy result. Alternatively, for Embed Form submissions specifically, we can short-circuit and set `hasVoiceAgent: true` since we know the DB trigger will always route those to the hardcoded embed agent.
 
-4. **Safe area padding on footer** -- Add `pb-[env(safe-area-inset-bottom)]` to the footer section for mobile drawer to prevent overlap with gesture navigation bars.
+**Recommended approach -- both fixes combined:**
 
-5. **Improve mobile detail panel spacing** -- Reduce vertical padding in the detail panel on mobile (`p-3` instead of `p-5`) to fit more content above the fold.
+1. Change the voice agent query from `.maybeSingle()` to `.limit(1).maybeSingle()` -- this fixes the general case for any org with multiple outbound agents.
+2. Add a source-based override: if `formData.source === 'Embed Form'`, force `hasVoiceAgent = true` since the DB trigger guarantees an outbound call for these submissions.
 
-6. **Stack detail panel columns on mobile** -- The grid already does `grid-cols-1 sm:grid-cols-2` which is correct, but ensure the "What's Included" badges wrap more compactly with smaller text on mobile.
+```typescript
+// For embed submissions, we know the DB trigger routes to a dedicated agent
+const isEmbedForm = formData.source === 'Embed Form';
 
-**File: `src/components/ui/responsive-modal.tsx`**
+let hasVoiceAgent = isEmbedForm;
 
-7. **Add safe-area bottom padding to drawer footer path** -- Ensure the `ResponsiveModalFooter` mobile path includes safe-area inset padding.
+if (!hasVoiceAgent) {
+  const { data: voiceAgent } = await supabase
+    .from('voice_agents')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .eq('is_active', true)
+    .eq('is_outbound_enabled', true)
+    .limit(1)
+    .maybeSingle();
+  
+  hasVoiceAgent = !!voiceAgent;
+}
+```
+
+### Result
+
+After this fix, when an applicant submits via `/embed/apply`:
+- The response will include `hasVoiceAgent: true`
+- The `EmbedThankYou` component will display: "You may receive a call from our AI assistant for a brief phone screening"
+- No changes needed to any frontend code
 
 ### Technical Details
 
-- The scroll fade overlay uses `pointer-events-none` so it doesn't block card taps
-- Dot indicators track scroll position via an `onScroll` handler on the card container ref
-- Card sizing uses responsive classes: `min-w-[4.5rem] sm:min-w-0` (mobile gets smaller min-width, desktop uses grid auto-sizing)
-- Safe area padding uses the existing pattern from `DrawerContent`: `pb-[env(safe-area-inset-bottom)]`
-
-### No Changes Needed
-- `useShowcaseModal.ts` -- trigger logic is solid
-- `industryTemplates.config.ts` -- data is fine
-- Desktop and tablet views -- already working well
+- **Edge function to redeploy:** `submit-application`
+- Only ~8 lines of code change in the response section
+- The `.limit(1)` addition also prevents the same bug for any future organization with multiple outbound agents using the standard `/apply` form
 
