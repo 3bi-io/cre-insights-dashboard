@@ -127,12 +127,6 @@ export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedAppli
     }
   }, [activeStep, validateStep, nextStep]);
 
-  const handleSkipToSubmit = useCallback(() => {
-    if (!validateStep(1)) return;
-    handleInputChange('consent', 'yes');
-    handleInputChange('privacy', 'yes');
-    handleSubmit(new Event('submit') as unknown as React.FormEvent);
-  }, [validateStep, handleInputChange, handleSubmit]);
 
   const handleFormSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
@@ -199,12 +193,10 @@ export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedAppli
             onBack={prevStep}
             onNext={handleNext}
             onSubmit={handleFormSubmit}
-            onSkipToSubmit={handleSkipToSubmit}
             isFirstStep={isFirstStep}
             isLastStep={isLastStep}
             isSubmitting={isSubmitting}
             canProceed={canProceed}
-            canSkipToSubmit={canProceed && activeStep === 1}
             currentStep={activeStep}
           />
         </form>

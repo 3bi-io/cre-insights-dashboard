@@ -220,18 +220,6 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
     }
   }, [activeStep, validateStep, nextStep]);
 
-  // Skip to submit - allows users to submit after step 1 with minimal info
-  const handleSkipToSubmit = useCallback(() => {
-    // Validate step 1 first
-    if (!validateStep(1)) return;
-    
-    // Set default consent values for quick submit
-    handleInputChange('consent', 'yes');
-    handleInputChange('privacy', 'yes');
-    
-    // Submit the form
-    handleSubmit(new Event('submit') as unknown as React.FormEvent);
-  }, [validateStep, handleInputChange, handleSubmit]);
 
   const handleFormSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault();
@@ -342,12 +330,10 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
             onBack={prevStep}
             onNext={handleNext}
             onSubmit={handleFormSubmit}
-            onSkipToSubmit={handleSkipToSubmit}
             isFirstStep={isFirstStep}
             isLastStep={isLastStep}
             isSubmitting={isSubmitting}
             canProceed={canProceed}
-            canSkipToSubmit={canProceed && activeStep === 1}
             currentStep={activeStep}
           />
         </form>
