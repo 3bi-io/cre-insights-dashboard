@@ -133,6 +133,13 @@ const detectIntegrationSource = (
   utmSource?: string,
   referralSource?: string
 ): string => {
+  // Priority 0: Check Referer header for /embed/apply path (most reliable for embed)
+  const refererHeader = req.headers.get('referer') || '';
+  if (refererHeader.includes('/embed/apply')) {
+    logger.info('Detected Embed Form from referer path', { referer: refererHeader });
+    return 'Embed Form';
+  }
+
   // Priority 1: Explicit source passed from frontend (e.g., Embed Form)
   if (explicitSource && explicitSource.trim() !== '') {
     logger.info('Using explicit source from request body', { source: explicitSource });
@@ -473,7 +480,7 @@ async function triggerSourceWebhooks(
 
 /**
  * Resolve organization ID and job details from various sources
- * Priority: source_override -> job_id_prefix -> job_listing_id -> org_slug -> fallback to CR England
+ * Priority: source_override -> job_id_prefix -> job_listing_id -> org_slug -> reject
  */
 async function resolveOrganizationAndJob(
   supabase: ReturnType<typeof createClient>,
@@ -625,22 +632,16 @@ async function resolveOrganizationAndJob(
     }
   }
   
-  // Fallback: CR England
-  const { data: crEnglandOrg } = await supabase
-    .from('organizations')
-    .select('id, name')
-    .eq('slug', 'cr-england')
-    .single();
-
-  logger.info('Falling back to CR England org');
-  return {
-    organizationId: crEnglandOrg?.id || '',
-    organizationName: crEnglandOrg?.name || 'C.R. England',
-    clientName: null,
-    clientLogoUrl: null,
-    externalJobId: null,
-    jobTitle: null
-  };
+  // No fallback — reject unresolvable submissions instead of silently misrouting
+  logger.error('Unable to resolve organization for application', {
+    jobListingId,
+    orgSlug,
+    detectedSource,
+    organizationIdDirect,
+    clientIdDirect,
+    jobIdFromPayload,
+  });
+  throw new Error('Unable to determine organization for this application. Please include a valid job or organization reference.');
 }
 
 
