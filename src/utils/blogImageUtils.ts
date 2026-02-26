@@ -10,6 +10,7 @@ import socialBeaconHero from '@/assets/blog/social-beacon-hero.jpg';
 import tenstreetHero from '@/assets/blog/tenstreet-hero.jpg';
 import complianceHero from '@/assets/blog/compliance-hero.jpg';
 import atsMeThriveHero from '@/assets/blog/ats-me-thrive-hero.jpg';
+import seoGuideHero from '@/assets/blog/seo-guide-hero.jpg';
 
 const BASE_URL = 'https://applyai.jobs';
 
@@ -21,6 +22,7 @@ const BLOG_IMAGE_MAP: Record<string, string> = {
   'tenstreet-integration-driver-recruitment': tenstreetHero,
   'recruitment-compliance-ai-hiring-2026': complianceHero,
   'why-ats-me-will-thrive-2026': atsMeThriveHero,
+  'advanced-seo-implementation-guide-2026': seoGuideHero,
 };
 
 /** 
