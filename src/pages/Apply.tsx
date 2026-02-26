@@ -1,6 +1,4 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { ApplicationHeader } from '@/components/apply/ApplicationHeader';
 import { ApplicationForm } from '@/components/apply/ApplicationForm';
 import { SimulatedApplicationForm } from '@/components/apply/SimulatedApplicationForm';
@@ -91,16 +89,6 @@ const Apply = () => {
               )}
             </main>
             
-            {/* Back Navigation */}
-            <nav className="text-center mt-6 pb-6" aria-label="Page navigation">
-              <Link 
-                to="/" 
-                className="text-primary hover:underline inline-flex items-center gap-2 text-base sm:text-sm touch-manipulation py-2 px-4 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Back to Home
-              </Link>
-            </nav>
           </div>
         </div>
       </div>

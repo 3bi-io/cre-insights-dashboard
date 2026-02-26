@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, Phone, Clock, ArrowLeft } from "lucide-react";
+import { CheckCircle, Phone, Clock } from "lucide-react";
 import { SEO } from '@/components/SEO';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 
@@ -77,14 +76,6 @@ const ThankYou = () => {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Link to="/">
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Home
-                  </Button>
-                </Link>
-              </div>
             </CardContent>
           </Card>
         </div>
