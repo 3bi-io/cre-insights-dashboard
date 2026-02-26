@@ -16,8 +16,8 @@ const buildOrganizationSchema = () => ({
   "url": SITE_URL,
   "logo": DEFAULT_LOGO,
   "sameAs": [
-    "https://www.linkedin.com/company/applyai",
-    "https://x.com/applyaijobs",
+    "https://www.linkedin.com/company/108142287/",
+    "https://x.com/applyai_jobs",
   ],
   "address": {
     "@type": "PostalAddress",

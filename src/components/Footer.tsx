@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="flex items-center gap-2">
           <Brand variant="horizontal" size="sm" showAsLink={false} />
             <span className="text-sm text-muted-foreground">
-              © 2024 ATS.me. All rights reserved.
+              © {new Date().getFullYear()} Apply AI. All rights reserved.
             </span>
           </div>
           
