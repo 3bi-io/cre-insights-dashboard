@@ -208,7 +208,8 @@ export const useEmbedApplicationForm = (options?: UseEmbedApplicationFormOptions
         throw new Error(errorData.error || 'Failed to submit application');
       }
 
-      return response.json();
+      const result = await response.json();
+      return result.data || result;
     },
     onSuccess: (data) => {
       clearDraft();

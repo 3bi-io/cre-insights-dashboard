@@ -226,7 +226,8 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
         throw new Error(errorData.error || 'Failed to submit application');
       }
 
-      return response.json();
+      const result = await response.json();
+      return result.data || result;
     },
     onSuccess: (data) => {
       // Clear draft on successful submission
