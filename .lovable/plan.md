@@ -1,64 +1,47 @@
 
 
-## Refactor Industry Showcase Modal for Best-in-Class UX
+## Refactor Industry Showcase Modal -- Mobile-First UX Fixes
 
-### Current Issues
-- Basic visual design with minimal hierarchy -- feels like a settings dialog, not a showcase
-- Industry cards are small and cramped (especially on 3-col mobile grid)
-- Detail panel is plain with flat badges -- no visual storytelling
-- No entrance stagger animation on cards
-- Terminology tags feel disconnected from the feature badges
-- "Don't show again" link looks like an afterthought
-- Missing screening focus content from templates (wasted data)
-- CTAs lack visual weight differentiation
-- No visual indicator showing industry-specific value proposition
+### Issues Found
 
-### Refactored Design
+**Critical (Mobile):**
+1. Only 3 of 5 industry cards visible on mobile (375px). "Skilled Trades" and "General" are completely hidden off-screen with no visual indicator that scrolling is possible.
+2. No scroll affordance on the horizontal card row -- users have no idea more options exist.
+3. Footer lacks `pb-[env(safe-area-inset-bottom)]` for modern Android/iOS gesture navigation.
 
-**Layout Changes:**
-- Widen modal to `sm:max-w-2xl` for breathing room
-- Industry selector becomes a horizontal scrollable row on mobile (no cramped grid), 5-col on desktop
-- Cards get icon backgrounds with subtle gradient rings when active
-- Detail panel gets a two-section layout: features left, AI screening focus right
+**Minor (All Devices):**
+4. Card minimum width (`min-w-[5.5rem]`) is too wide for 5 cards on small screens but too narrow to show labels comfortably -- needs optimization.
+5. The `scrollbar-hide` class hides native scrollbar but provides no alternative affordance.
 
-**Visual Polish:**
-- Add staggered entrance animation to industry cards using Framer Motion
-- Active card gets a subtle glow/ring effect instead of just border color
-- Detail panel header includes the industry icon alongside the name
-- Feature badges get colored dot indicators
-- Screening focus items displayed as a compact checklist with check icons
-- Gradient accent line between header and content
-
-**Interaction Improvements:**
-- Cards animate on hover with slight lift (`scale(1.03)`)
-- Detail panel crossfades with `layout` animation for smoother height transitions
-- Primary CTA gets gradient background matching platform brand
-- "Don't show again" moved into footer row, styled as ghost button
-
-**Content Enhancement:**
-- Add a short value proposition line per industry (e.g., "Screen CDL drivers in minutes, not days")
-- Show screening focus as checklist items with CheckCircle icons
-- Combine features + terminology into a unified "What's Included" section
-
-### Technical Changes
+### Proposed Changes
 
 **File: `src/features/landing/components/IndustryShowcaseModal.tsx`**
-- Widen modal container
-- Refactor industry cards with staggered motion, hover lift, gradient active ring
-- Redesign detail panel with icon header, two-column layout (features + screening focus)
-- Add CheckCircle icons for screening focus items
-- Restyle CTAs: primary gets gradient, outline stays as-is
-- Move "Don't show again" into the footer as a subtle ghost button
-- Add `Sparkles` icon to header for visual flair
 
-**File: `src/features/organizations/config/industryTemplates.config.ts`**
-- Add a `valueProposition` string to each template for the detail panel tagline
+1. **Add scroll fade indicators on mobile** -- Add a gradient fade on the right edge of the industry card row to signal more content is available. Use a `::after` pseudo-element or a positioned gradient overlay div that fades out when scrolled to the end.
 
-**File: `src/features/organizations/types/industryTemplates.types.ts`**
-- Add optional `valueProposition?: string` to `IndustryTemplateConfig`
+2. **Reduce card min-width for mobile** -- Change `min-w-[5.5rem]` to `min-w-[4.5rem]` so more cards are partially visible, hinting at scrollability. Reduce icon container from `h-10 w-10` to `h-8 w-8` on mobile.
 
-**No changes needed:**
+3. **Add scroll dots/pagination indicator** -- Below the card row on mobile, add small dot indicators (5 dots, active one highlighted) to show there are more options. This is a standard mobile pattern for horizontal carousels.
+
+4. **Safe area padding on footer** -- Add `pb-[env(safe-area-inset-bottom)]` to the footer section for mobile drawer to prevent overlap with gesture navigation bars.
+
+5. **Improve mobile detail panel spacing** -- Reduce vertical padding in the detail panel on mobile (`p-3` instead of `p-5`) to fit more content above the fold.
+
+6. **Stack detail panel columns on mobile** -- The grid already does `grid-cols-1 sm:grid-cols-2` which is correct, but ensure the "What's Included" badges wrap more compactly with smaller text on mobile.
+
+**File: `src/components/ui/responsive-modal.tsx`**
+
+7. **Add safe-area bottom padding to drawer footer path** -- Ensure the `ResponsiveModalFooter` mobile path includes safe-area inset padding.
+
+### Technical Details
+
+- The scroll fade overlay uses `pointer-events-none` so it doesn't block card taps
+- Dot indicators track scroll position via an `onScroll` handler on the card container ref
+- Card sizing uses responsive classes: `min-w-[4.5rem] sm:min-w-0` (mobile gets smaller min-width, desktop uses grid auto-sizing)
+- Safe area padding uses the existing pattern from `DrawerContent`: `pb-[env(safe-area-inset-bottom)]`
+
+### No Changes Needed
 - `useShowcaseModal.ts` -- trigger logic is solid
-- `ResponsiveModal` -- component works well as-is
-- `LandingPage.tsx` -- integration is already correct
+- `industryTemplates.config.ts` -- data is fine
+- Desktop and tablet views -- already working well
 
