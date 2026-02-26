@@ -1,12 +1,15 @@
 /**
  * IndustryShowcaseModal
- * Interactive modal showcasing Apply AI's multi-industry capabilities.
- * Driven by industryTemplates config. Desktop = Dialog, Mobile = Drawer.
+ * Best-in-class showcase of Apply AI's multi-industry capabilities.
+ * Desktop = Dialog, Mobile = Drawer. Staggered animations, rich detail panel.
  */
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, HeartPulse, Shield, Wrench, Building, ArrowRight, Calendar } from 'lucide-react';
+import {
+  Truck, HeartPulse, Shield, Wrench, Building,
+  ArrowRight, Calendar, CheckCircle2, Sparkles,
+} from 'lucide-react';
 import {
   ResponsiveModal,
   ResponsiveModalContent,
@@ -26,15 +29,20 @@ import { useShowcaseModal } from '../hooks/useShowcaseModal';
 import { cn } from '@/lib/utils';
 
 const ICON_MAP: Record<string, React.ElementType> = {
-  Truck,
-  HeartPulse,
-  Shield,
-  Wrench,
-  Building,
+  Truck, HeartPulse, Shield, Wrench, Building,
+};
+
+const staggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 12, scale: 0.95 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: 'easeOut' as const } },
 };
 
 interface IndustryShowcaseModalProps {
-  /** Override open state externally (optional) */
   externalOpen?: boolean;
   onExternalOpenChange?: (open: boolean) => void;
 }
@@ -54,12 +62,14 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
 
   const template = INDUSTRY_TEMPLATES[selected];
   const option = INDUSTRY_VERTICAL_OPTIONS.find((o) => o.value === selected);
+  const ActiveIcon = ICON_MAP[template.icon] || Building;
 
   return (
     <ResponsiveModal open={open} onOpenChange={handleOpenChange}>
-      <ResponsiveModalContent className="sm:max-w-lg" maxHeight="80vh">
+      <ResponsiveModalContent className="sm:max-w-2xl" maxHeight="85vh">
         <ResponsiveModalHeader>
-          <ResponsiveModalTitle className="font-playfair text-2xl">
+          <ResponsiveModalTitle className="font-playfair text-2xl flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
             Built for Your Industry
           </ResponsiveModalTitle>
           <ResponsiveModalDescription>
@@ -67,85 +77,132 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        {/* Industry Cards Grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 py-4">
+        {/* Gradient accent line */}
+        <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+        {/* Industry selector — horizontal scroll mobile, 5-col grid desktop */}
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="flex gap-2 overflow-x-auto py-4 sm:grid sm:grid-cols-5 sm:overflow-visible scrollbar-hide"
+        >
           {INDUSTRY_VERTICAL_OPTIONS.map((ind) => {
             const Icon = ICON_MAP[ind.icon] || Building;
             const isActive = selected === ind.value;
             return (
-              <button
+              <motion.button
                 key={ind.value}
+                variants={cardItem}
                 onClick={() => setSelected(ind.value)}
                 aria-pressed={isActive}
+                whileHover={{ scale: 1.03, y: -2 }}
+                whileTap={{ scale: 0.97 }}
                 className={cn(
-                  'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-all duration-200',
-                  'hover:border-primary/50 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex flex-col items-center gap-2 rounded-xl border p-3.5 text-center transition-all duration-200 min-w-[5.5rem] flex-shrink-0',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   isActive
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-border bg-card'
+                    ? 'border-primary/60 bg-primary/10 shadow-md ring-2 ring-primary/20'
+                    : 'border-border bg-card hover:border-primary/30 hover:bg-accent/40'
                 )}
               >
-                <Icon
+                <div
                   className={cn(
-                    'h-6 w-6 transition-colors',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                    isActive
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-muted text-muted-foreground'
                   )}
-                />
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
                 <span
                   className={cn(
-                    'text-xs font-medium leading-tight',
+                    'text-xs font-semibold leading-tight',
                     isActive ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
                   {ind.label}
                 </span>
-              </button>
+              </motion.button>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Detail Panel */}
         <AnimatePresence mode="wait">
           <motion.div
             key={selected}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="rounded-lg border border-border bg-muted/30 p-4 space-y-3"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-xl border border-border bg-muted/30 p-5 space-y-4"
           >
-            <h3 className="font-semibold text-foreground">{template.displayName}</h3>
+            {/* Header with icon */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <ActiveIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-base">{template.displayName}</h3>
+                {template.valueProposition && (
+                  <p className="text-sm text-primary font-medium">{template.valueProposition}</p>
+                )}
+              </div>
+            </div>
+
             <p className="text-sm text-muted-foreground">{template.description}</p>
 
-            {/* Feature badges */}
-            {option && (
-              <div className="flex flex-wrap gap-1.5">
-                {option.features.map((feat) => (
-                  <Badge key={feat} variant="secondary" className="text-xs">
-                    {feat}
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            {/* Terminology tags */}
-            {template.aiPromptHints.terminology.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {template.aiPromptHints.terminology.slice(0, 6).map((term) => (
-                  <span
-                    key={term}
-                    className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground"
-                  >
-                    {term}
+            {/* Two-column: Features + Screening Focus */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Features */}
+              {option && (
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    What's Included
                   </span>
-                ))}
-              </div>
-            )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {option.features.map((feat) => (
+                      <Badge key={feat} variant="secondary" className="text-xs gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary inline-block" />
+                        {feat}
+                      </Badge>
+                    ))}
+                    {template.aiPromptHints.terminology.slice(0, 4).map((term) => (
+                      <Badge key={term} variant="outline" className="text-[10px]">
+                        {term}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Screening Focus */}
+              {template.aiPromptHints.screeningFocus.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    AI Screening Focus
+                  </span>
+                  <ul className="space-y-1.5">
+                    {template.aiPromptHints.screeningFocus.map((item) => (
+                      <li key={item} className="flex items-start gap-1.5 text-sm text-foreground">
+                        <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           </motion.div>
         </AnimatePresence>
 
         <ResponsiveModalFooter className="flex-col sm:flex-row gap-2 pt-4">
-          <Button variant="default" className="w-full sm:w-auto" asChild>
+          <Button
+            className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
+            asChild
+          >
             <a href="/features">
               Explore {template.displayName}
               <ArrowRight className="ml-1 h-4 w-4" />
@@ -157,17 +214,15 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
               Book a Demo
             </a>
           </Button>
-        </ResponsiveModalFooter>
-
-        {/* Don't show again */}
-        <div className="flex justify-center pt-2 pb-1">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={dismissPermanently}
-            className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
+            className="text-xs text-muted-foreground sm:ml-auto"
           >
-            Don't show this again
-          </button>
-        </div>
+            Don't show again
+          </Button>
+        </ResponsiveModalFooter>
       </ResponsiveModalContent>
     </ResponsiveModal>
   );

@@ -33,6 +33,7 @@ export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplateConfig> = {
         'Accident and violation history',
       ],
     },
+    valueProposition: 'Screen CDL drivers in minutes, not days',
   },
   healthcare: {
     vertical: 'healthcare',
@@ -55,6 +56,7 @@ export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplateConfig> = {
         'HIPAA compliance awareness',
       ],
     },
+    valueProposition: 'Verify licenses and certifications instantly',
   },
   cyber: {
     vertical: 'cyber',
@@ -77,6 +79,7 @@ export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplateConfig> = {
         'Remote work capability',
       ],
     },
+    valueProposition: 'Match cleared talent to classified roles faster',
   },
   trades: {
     vertical: 'trades',
@@ -98,6 +101,7 @@ export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplateConfig> = {
         'Union membership status',
       ],
     },
+    valueProposition: 'Find certified tradespeople ready to work',
   },
   general: {
     vertical: 'general',
@@ -111,6 +115,7 @@ export const INDUSTRY_TEMPLATES: Record<string, IndustryTemplateConfig> = {
       terminology: [],
       screeningFocus: ['Work authorization', 'Experience level', 'Availability'],
     },
+    valueProposition: 'Streamline hiring across any industry',
   },
 };
 
