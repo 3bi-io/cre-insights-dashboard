@@ -1,66 +1,31 @@
 
 
-## Fix: Return `hasVoiceAgent: true` for Embed Form Submissions
+## Remove "Back to Home" Links from All Apply Pages
 
-### Root Cause
+### Problem
+All public-facing apply pages contain "Back to Home" links that navigate to the main marketing site (`/`). For a recruitment platform, these links create unnecessary exit points that reduce application completion rates.
 
-The `submit-application` edge function checks for outbound voice agents at lines 1132-1139:
+### Pages Affected
 
-```typescript
-const { data: voiceAgent } = await supabase
-  .from('voice_agents')
-  .select('id')
-  .eq('organization_id', organizationId)
-  .eq('is_active', true)
-  .eq('is_outbound_enabled', true)
-  .maybeSingle();
-```
+| File | Element | Location |
+|------|---------|----------|
+| `src/pages/Apply.tsx` | "Back to Home" link with arrow icon | Bottom of form (lines 94-103) |
+| `src/pages/ThankYou.tsx` | "Back to Home" button | Post-submission card (lines 80-86) |
+| `src/features/auth/pages/ApplyPage.tsx` | "Back to Home" arrow link | Bottom of form (lines 12-19) |
 
-**Problem:** Hayes Recruiting (org `84214b48-...`) has **4 active outbound agents** (Pemberton, Day & Ross, Danny Herman, James Burg). The `.maybeSingle()` call **errors when multiple rows are returned**, causing `voiceAgent` to be `null` and `hasVoiceAgent` to resolve to `false`.
+### Already Clean (No Changes Needed)
+- `src/pages/EmbedApply.tsx` -- no home link
+- `src/components/apply/EmbedThankYou.tsx` -- no home link (only "Powered by" branding)
 
-Meanwhile, the actual outbound call routing for embed submissions is handled by a database trigger using a hardcoded agent ID -- so calls DO happen, but the thank-you page never shows the phone screening notice.
+### Changes
 
-### Fix
+**1. `src/pages/Apply.tsx`** -- Remove the entire `<nav>` block (lines 94-103) containing the "Back to Home" link. Also remove the unused `ArrowLeft` icon import and `Link` import if no longer referenced.
 
-**File: `supabase/functions/submit-application/index.ts`** (lines ~1132-1139)
+**2. `src/pages/ThankYou.tsx`** -- Remove the `<div className="space-y-4">` block (lines 80-87) containing the "Back to Home" button. Also clean up unused `ArrowLeft` and `Link` imports.
 
-Replace the `.maybeSingle()` query with `.limit(1).maybeSingle()` so that when multiple outbound agents exist, we still get a truthy result. Alternatively, for Embed Form submissions specifically, we can short-circuit and set `hasVoiceAgent: true` since we know the DB trigger will always route those to the hardcoded embed agent.
+**3. `src/features/auth/pages/ApplyPage.tsx`** -- Remove the `<div className="text-center mt-6 pb-6">` block (lines 12-19) containing the "Back to Home" link. Remove the unused `Link` import from line 2.
 
-**Recommended approach -- both fixes combined:**
-
-1. Change the voice agent query from `.maybeSingle()` to `.limit(1).maybeSingle()` -- this fixes the general case for any org with multiple outbound agents.
-2. Add a source-based override: if `formData.source === 'Embed Form'`, force `hasVoiceAgent = true` since the DB trigger guarantees an outbound call for these submissions.
-
-```typescript
-// For embed submissions, we know the DB trigger routes to a dedicated agent
-const isEmbedForm = formData.source === 'Embed Form';
-
-let hasVoiceAgent = isEmbedForm;
-
-if (!hasVoiceAgent) {
-  const { data: voiceAgent } = await supabase
-    .from('voice_agents')
-    .select('id')
-    .eq('organization_id', organizationId)
-    .eq('is_active', true)
-    .eq('is_outbound_enabled', true)
-    .limit(1)
-    .maybeSingle();
-  
-  hasVoiceAgent = !!voiceAgent;
-}
-```
-
-### Result
-
-After this fix, when an applicant submits via `/embed/apply`:
-- The response will include `hasVoiceAgent: true`
-- The `EmbedThankYou` component will display: "You may receive a call from our AI assistant for a brief phone screening"
-- No changes needed to any frontend code
-
-### Technical Details
-
-- **Edge function to redeploy:** `submit-application`
-- Only ~8 lines of code change in the response section
-- The `.limit(1)` addition also prevents the same bug for any future organization with multiple outbound agents using the standard `/apply` form
-
+### Impact
+- Reduces funnel drop-off on `/apply` and `/thank-you`
+- Keeps embed pages unchanged (already correct)
+- No functional impact on form submission or navigation flow
