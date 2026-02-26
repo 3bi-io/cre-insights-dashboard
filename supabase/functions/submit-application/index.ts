@@ -643,43 +643,6 @@ async function resolveOrganizationAndJob(
   };
 }
 
-/**
- * Check for duplicate applications within the last 30 days
- */
-async function checkDuplicateApplication(
-  supabase: ReturnType<typeof createClient>,
-  email: string,
-  jobListingId: string | null
-): Promise<{ isDuplicate: boolean; existingApplicationDate?: string }> {
-  if (!email) return { isDuplicate: false };
-  
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  let query = supabase
-    .from('applications')
-    .select('id, applied_at')
-    .eq('applicant_email', email.toLowerCase())
-    .gte('applied_at', thirtyDaysAgo.toISOString())
-    .limit(1);
-  
-  // If we have a job listing ID, check for exact match
-  if (jobListingId) {
-    query = query.eq('job_listing_id', jobListingId);
-  }
-  
-  const { data: existingApp } = await query.maybeSingle();
-  
-  if (existingApp) {
-    logger.info('Duplicate application detected', { email_hash: email.substring(0, 3) + '***' });
-    return { 
-      isDuplicate: true, 
-      existingApplicationDate: existingApp.applied_at 
-    };
-  }
-  
-  return { isDuplicate: false };
-}
 
 /**
  * Send application confirmation email (non-blocking)
@@ -853,32 +816,6 @@ Deno.serve(async (req) => {
       formData.organization_id && formData.organization_id.trim() !== '' ? formData.organization_id : undefined,
       formData.client_id && formData.client_id.trim() !== '' ? formData.client_id : undefined
     );
-
-    // Check for duplicate applications within 30 days
-    const { isDuplicate, existingApplicationDate } = await checkDuplicateApplication(
-      supabase,
-      applicantEmail,
-      resolvedJobListingId || null
-    );
-
-    if (isDuplicate) {
-      const appliedDate = existingApplicationDate 
-        ? new Date(existingApplicationDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-        : 'recently';
-      
-      logger.info('Duplicate application rejected', { email_hash: applicantEmail.substring(0, 3) + '***' });
-      
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: `You already applied to this position on ${appliedDate}. Check your email for updates on your application status.`
-        }),
-        { 
-          status: 409, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
 
     // Determine experience level based on months
     const getExperienceLevel = (months: string) => {
