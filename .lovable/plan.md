@@ -1,74 +1,62 @@
 
-# Fix: Remove CR England as Default Fallback and Enforce Client-Level Routing
 
-## Problem Summary
+# Fix: Replace Remaining `ats.me` References with `applyai.jobs` + Review Google Sign-In
 
-Cody Forbes applied via `/embed/apply` but his application landed on **CR England's General Application** (job `100a59c2`) with source "Company Website" instead of the Hayes embed job (`4c3cfad9`). This happened because:
+## Google Sign-In Review
 
-1. **Source detection failed** -- his submission was tagged "Company Website" instead of "Embed Form", so the embed job override didn't trigger
-2. **The fallback is CR England** -- when organization resolution fails, the `submit-application` edge function falls back to CR England (line 628-643), which is an Org, not a Client
-3. **CR England should never receive direct applications** -- it's an organization entity, and applications should only associate with clients
+Google Sign-In is implemented correctly using `supabase.auth.signInWithOAuth({ provider: 'google' })` with PKCE flow. The redirect URLs use `window.location.origin` (dynamic), so they'll work on any domain. **No code changes needed for Google auth itself**, but you should verify in your **Supabase Dashboard** (Authentication > URL Configuration) that:
+- **Site URL** is set to `https://applyai.jobs`
+- **Redirect URLs** include `https://applyai.jobs/**` (and remove any `ats.me` entries)
+- In **Google Cloud Console**, the OAuth client has `https://applyai.jobs` in Authorized JavaScript Origins and the Supabase callback URL in Authorized Redirect URIs
 
-## Root Causes
+## `ats.me` to `applyai.jobs` Migration
 
-### 1. CR England hardcoded as fallback (Critical)
-In `supabase/functions/submit-application/index.ts` (lines 628-643), the `resolveOrganizationAndJob` function falls back to `slug: 'cr-england'` when no context is found. This means any unresolved application silently goes to CR England.
+There are ~25 files still referencing `ats.me`. These fall into categories:
 
-### 2. Embed Form source not always detected
-The embed form override (`source === 'Embed Form'`) is the **only** mechanism routing `/embed/apply` submissions to the Hayes job. If the `source` field isn't passed or is overridden (e.g., by UTM params), the routing breaks entirely.
+### Frontend Files (9 files)
+| File | What to change |
+|------|---------------|
+| `src/components/Footer.tsx` | `support@ats.me` -> `support@applyai.jobs` |
+| `src/pages/Apply.tsx` | Hardcoded `https://ats.me/` breadcrumb and canonical URLs -> use `SITE_URL` from siteConfig |
+| `src/pages/Support.tsx` | `ATS.me` brand name -> `Apply AI`, `support@ats.me` -> `support@applyai.jobs` |
+| `src/pages/RegionBlocked.tsx` | `compliance@ats.me` -> `compliance@applyai.jobs` |
+| `src/pages/Onboarding.tsx` | `Welcome to ATS.me` -> `Welcome to Apply AI` |
+| `src/pages/BrandAssets.tsx` | `ATS.me logos` -> `Apply AI logos` |
+| `src/pages/public/ContactPage.tsx` | `ATS.me` -> `Apply AI`, `support@ats.me` -> `support@applyai.jobs` |
+| `src/components/apply/SimulationCompleteScreen.tsx` | `ATS.me` -> `Apply AI` |
+| `src/features/landing/components/sections/CTASection.tsx` | `Without ATS.me` / `With ATS.me` -> `Without Apply AI` / `With Apply AI` |
+| `src/components/landing/TestimonialsSection.tsx` | `ATS.me` -> `Apply AI` |
+| `src/utils/resourcesPdfGenerator.ts` | `ATS.me Feature Guide` / `ATS.me` -> `Apply AI` |
 
-### 3. No validation that applications associate with clients
-There's no server-side check ensuring every application resolves to a valid client, not just an organization.
+### i18n Locale Files (3 files)
+| File | What to change |
+|------|---------------|
+| `src/i18n/locales/fr.json` | `"name": "ATS.me"` -> `"name": "Apply AI"` |
+| `src/i18n/locales/de.json` | `"name": "ATS.me"` -> `"name": "Apply AI"` |
+| `src/i18n/locales/es.json` | `"name": "ATS.me"` -> `"name": "Apply AI"` |
 
-## Proposed Changes
+### Edge Functions (7 files)
+| File | What to change |
+|------|---------------|
+| `supabase/functions/cdl-jobcast-inbound/index.ts` | `https://ats.me/apply` -> `https://applyai.jobs/apply` |
+| `supabase/functions/ats-integration/index.ts` | `https://ats.me/j/` and `https://ats.me/apply` -> `https://applyai.jobs/...` |
+| `supabase/functions/whatsapp-webhook/index.ts` | `https://ats.me/` -> `https://applyai.jobs/` |
+| `supabase/functions/meta-engagement-webhook/index.ts` | `https://ats.me/` -> `https://applyai.jobs/` |
+| `supabase/functions/google-jobs-xml/index.ts` | Fallback URL `https://ats.me` -> `https://applyai.jobs` |
+| `supabase/functions/ai-chat/index.ts` | System prompt `ATS.me` -> `Apply AI` |
+| `supabase/functions/_shared/hayes-client-handler.ts` | `https://ats.me/apply/` -> `https://applyai.jobs/apply/` |
+| `supabase/functions/_shared/ats-adapters/xml-post-adapter.ts` | Fallback source `ATS.me` -> `Apply AI` |
+| `supabase/functions/generate-logo/index.ts` | Multiple prompt strings (cosmetic, low priority) |
 
-### Step 1: Fix `resolveOrganizationAndJob` fallback (Edge Function)
-- Remove the CR England hardcoded fallback
-- Replace with a rejection -- if no organization/client can be resolved, return an error instead of silently misrouting
-- Log a clear warning when fallback would have been triggered
+## Implementation Approach
 
-### Step 2: Make embed routing more resilient (Edge Function)
-- Instead of relying solely on `source === 'Embed Form'`, also check the `Referer` header for `/embed/apply` path
-- This provides a secondary detection mechanism if the explicit source field is missing
+1. Update all frontend files -- replace hardcoded `ats.me` URLs with `SITE_URL` from siteConfig where possible, or with `applyai.jobs` directly
+2. Update all edge function URLs from `ats.me` to `applyai.jobs`
+3. Update brand name references from `ATS.me` to `Apply AI`
+4. Update i18n locale files
+5. Redeploy affected edge functions
 
-### Step 3: Reassign Cody Forbes' application (Data Fix)
-- Update application `e947d090-36a4-4777-9d22-db8aeb5eb2d6` to point to job `4c3cfad9-4641-4830-ad97-11589e8f8cd4` and source `Embed Form`
-- Queue the outbound call using the Hayes embed agent
+## Out of Scope (Manual Steps)
+- Supabase Dashboard: Update Site URL and Redirect URLs under Authentication > URL Configuration
+- Google Cloud Console: Update Authorized JavaScript Origins to include `applyai.jobs`
 
-### Step 4: Audit other misrouted applications (Data Fix)
-- Query for any other applications on CR England's "General Application" listings that may have been misrouted
-- Identify candidates that should have gone to Hayes or other clients
-
-## Technical Details
-
-### Edge Function Changes (`supabase/functions/submit-application/index.ts`)
-
-**Fallback removal (lines 628-643):**
-```typescript
-// BEFORE: Silent fallback to CR England
-const { data: crEnglandOrg } = await supabase
-  .from('organizations').select('id, name').eq('slug', 'cr-england').single();
-return { organizationId: crEnglandOrg?.id || '', ... };
-
-// AFTER: Reject unresolvable submissions
-logger.error('Unable to resolve organization for application', { 
-  jobListingId, orgSlug, detectedSource, organizationIdDirect 
-});
-throw new Error('Unable to determine organization for this application. Please include a valid job or organization reference.');
-```
-
-**Embed detection hardening (in `detectIntegrationSource`):**
-```typescript
-// Add referer-path check as secondary embed detection
-const refererPath = req.headers.get('referer') || '';
-if (refererPath.includes('/embed/apply')) {
-  return 'Embed Form';
-}
-```
-
-### Data Operations
-- Reassign Cody Forbes' application to the correct job listing
-- Queue outbound call via Hayes embed agent
-
-### Files Modified
-- `supabase/functions/submit-application/index.ts` -- Remove CR England fallback, harden embed detection
