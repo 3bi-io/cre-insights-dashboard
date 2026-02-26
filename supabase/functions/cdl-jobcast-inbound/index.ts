@@ -44,7 +44,7 @@ function generateApplyUrl(jobListingId: string, clientName: string, utmParams: {
   medium: string;
   campaign?: string;
 }): string {
-  const baseUrl = 'https://ats.me/apply';
+  const baseUrl = 'https://applyai.jobs/apply';
   
   // Generate campaign name if not provided
   const campaign = utmParams.campaign || generateCampaignName(clientName);

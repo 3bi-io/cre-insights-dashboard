@@ -486,7 +486,7 @@ const Support = () => {
   return (
     <PageLayout 
       title="Support & Documentation" 
-      description="Comprehensive guide to using the ATS.me platform"
+      description="Comprehensive guide to using the Apply AI platform"
       className="bg-background"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
@@ -498,9 +498,9 @@ const Support = () => {
                 <Bot className="h-8 w-8 text-primary" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-2xl mb-2">Welcome to ATS.me Support</CardTitle>
+                <CardTitle className="text-2xl mb-2">Welcome to Apply AI Support</CardTitle>
                 <CardDescription className="text-base">
-                  This comprehensive guide covers all features and capabilities of the ATS.me platform.
+                  This comprehensive guide covers all features and capabilities of the Apply AI platform.
                   Use the sections below to learn about each feature in detail.
                 </CardDescription>
                 <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
@@ -575,8 +575,8 @@ const Support = () => {
             <div className="space-y-3 text-sm">
               <p>
                 <strong>Email Support:</strong>{' '}
-                <a href="mailto:support@ats.me" className="text-primary hover:underline">
-                  support@ats.me
+                <a href="mailto:support@applyai.jobs" className="text-primary hover:underline">
+                  support@applyai.jobs
                 </a>
               </p>
               <p>

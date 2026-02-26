@@ -165,7 +165,7 @@ async function syncJobsFromFeed(
         .maybeSingle();
       
       // Build apply URL with UTM tracking
-      const baseApplyUrl = job.apply_url || `https://ats.me/apply/${job.id}`;
+      const baseApplyUrl = job.apply_url || `https://applyai.jobs/apply/${job.id}`;
       const applyUrlWithUtm = `${baseApplyUrl}${baseApplyUrl.includes('?') ? '&' : '?'}utm_source=${utmSource}&utm_medium=${utmMedium}&utm_campaign=${utmCampaign}`;
       
       if (existingJob) {

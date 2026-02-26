@@ -39,16 +39,16 @@ const Apply = () => {
   const breadcrumbData = useMemo(() => {
     const searchParams = typeof window !== 'undefined' ? window.location.search : '';
     return buildBreadcrumbSchema([
-      { name: 'Home', url: 'https://ats.me/' },
-      { name: 'Jobs', url: 'https://ats.me/jobs' },
-      { name: seoContent.title, url: `https://ats.me/apply${searchParams}` },
+      { name: 'Home', url: 'https://applyai.jobs/' },
+      { name: 'Jobs', url: 'https://applyai.jobs/jobs' },
+      { name: seoContent.title, url: `https://applyai.jobs/apply${searchParams}` },
     ]);
   }, [seoContent.title]);
 
   // Canonical URL
   const canonicalUrl = useMemo(() => {
     const searchParams = typeof window !== 'undefined' ? window.location.search : '';
-    return `https://ats.me/apply${searchParams}`;
+    return `https://applyai.jobs/apply${searchParams}`;
   }, []);
 
   return (

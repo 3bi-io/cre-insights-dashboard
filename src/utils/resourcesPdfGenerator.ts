@@ -14,7 +14,7 @@ export const generateFeatureGuidePDF = (): void => {
   // Title
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('ATS.me Feature Guide', pageWidth / 2, yPos, { align: 'center' });
+  doc.text('Apply AI Feature Guide', pageWidth / 2, yPos, { align: 'center' });
   yPos += 15;
 
   // Subtitle
@@ -119,7 +119,7 @@ export const generateFeatureGuidePDF = (): void => {
   doc.setFont('helvetica', 'italic');
   doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, 285, { align: 'center' });
 
-  doc.save('ats-me-feature-guide.pdf');
+  doc.save('apply-ai-feature-guide.pdf');
 };
 
 /**
@@ -139,7 +139,7 @@ export const generateImplementationChecklistPDF = (): void => {
   // Subtitle
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  doc.text('Step-by-step guide to get started with ATS.me', pageWidth / 2, yPos, { align: 'center' });
+  doc.text('Step-by-step guide to get started with Apply AI', pageWidth / 2, yPos, { align: 'center' });
   yPos += 20;
 
   const phases = [
@@ -232,7 +232,7 @@ export const generateImplementationChecklistPDF = (): void => {
   doc.setFont('helvetica', 'italic');
   doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, 285, { align: 'center' });
 
-  doc.save('ats-me-implementation-checklist.pdf');
+  doc.save('apply-ai-implementation-checklist.pdf');
 };
 
 /**
@@ -345,5 +345,5 @@ export const generateBestPracticesPDF = (): void => {
   doc.setFont('helvetica', 'italic');
   doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, 285, { align: 'center' });
 
-  doc.save('ats-me-best-practices-guide.pdf');
+  doc.save('apply-ai-best-practices-guide.pdf');
 };

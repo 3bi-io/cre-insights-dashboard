@@ -174,12 +174,12 @@ serve(async (req) => {
                 .single();
 
               if (shortLink?.short_code) {
-                appData.apply_url = `https://ats.me/j/${shortLink.short_code}`;
+                appData.apply_url = `https://applyai.jobs/j/${shortLink.short_code}`;
               } else {
                 // Fallback to universal apply URL
                 const orgId = (jobData as any).organization_id || '';
                 const clientId = atsConnection.client_id || '';
-                appData.apply_url = `https://ats.me/apply?organization_id=${orgId}${clientId ? `&client_id=${clientId}` : ''}`;
+                appData.apply_url = `https://applyai.jobs/apply?organization_id=${orgId}${clientId ? `&client_id=${clientId}` : ''}`;
               }
             }
           }

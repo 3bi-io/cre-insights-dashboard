@@ -66,8 +66,8 @@ const CTASection = () => {
         >
           <div className="grid grid-cols-3 bg-muted/50">
             <div className="p-4 text-sm font-semibold text-muted-foreground text-left">Feature</div>
-            <div className="p-4 text-sm font-semibold text-destructive text-center">Without ATS.me</div>
-            <div className="p-4 text-sm font-semibold text-primary text-center">With ATS.me</div>
+            <div className="p-4 text-sm font-semibold text-destructive text-center">Without Apply AI</div>
+            <div className="p-4 text-sm font-semibold text-primary text-center">With Apply AI</div>
           </div>
           {comparisonRows.map((row, i) => (
             <div

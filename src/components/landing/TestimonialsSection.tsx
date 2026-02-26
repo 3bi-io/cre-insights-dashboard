@@ -60,7 +60,7 @@ const TestimonialsSection = () => {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground">
-            See how ATS.me is transforming recruitment for companies like yours
+            See how Apply AI is transforming recruitment for companies like yours
           </p>
         </div>
       </div>
