@@ -30,12 +30,14 @@ const INTEGRATION_SIGNATURES: Record<string, { source: string; requiresScreening
   'make.com': { source: 'Make Integration', requiresScreening: false },
   'integromat.com': { source: 'Make Integration', requiresScreening: false },
   'embed/apply': { source: 'Embed Form', requiresScreening: false },
+  'hayesairecruiting.com': { source: 'Hayes Website', requiresScreening: false },
 };
 
 // Source-specific organization enforcement
 // These sources MUST route to specific organizations regardless of other identifiers
 const SOURCE_ORGANIZATION_OVERRIDES: Record<string, string> = {
   'CDL Job Cast': '84214b48-7b51-45bc-ad7f-723bcf50466c', // Hayes Recruiting Solutions
+  'Hayes Website': '84214b48-7b51-45bc-ad7f-723bcf50466c', // Hayes Recruiting Solutions
 };
 
 // ============================================================
@@ -140,7 +142,7 @@ const detectIntegrationSource = (
     return 'Embed Form';
   }
 
-  // Priority 1: Explicit source passed from frontend (e.g., Embed Form)
+  // Priority 0.5: Explicit source passed from frontend (moved up for embed reliability)
   if (explicitSource && explicitSource.trim() !== '') {
     logger.info('Using explicit source from request body', { source: explicitSource });
     return explicitSource;

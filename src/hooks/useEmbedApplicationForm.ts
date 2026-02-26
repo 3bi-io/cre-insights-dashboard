@@ -200,6 +200,7 @@ export const useEmbedApplicationForm = (options?: UseEmbedApplicationFormOptions
         headers: {
           'Content-Type': 'application/json',
         },
+        referrerPolicy: 'unsafe-url', // Send full path so backend detects /embed/apply
         body: JSON.stringify(formattedData),
       });
 
