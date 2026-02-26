@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { SITE_URL } from '@/config/siteConfig';
 
 interface BlogShareButtonsProps {
   title: string;
@@ -22,7 +23,7 @@ interface BlogShareButtonsProps {
 const BlogShareButtons: React.FC<BlogShareButtonsProps> = ({ title, slug, description }) => {
   const { toast } = useToast();
   const [copied, setCopied] = React.useState(false);
-  const url = `https://ats.me/blog/${slug}`;
+  const url = `${SITE_URL}/blog/${slug}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
   const encodedDesc = encodeURIComponent(description || title);
