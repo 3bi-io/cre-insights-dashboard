@@ -136,7 +136,7 @@ export function ResponsiveModalFooter({
 
   if (isMobile) {
     return (
-      <DrawerFooter className={cn("flex-row justify-end gap-2 pt-2", className)}>
+      <DrawerFooter className={cn("flex-row justify-end gap-2 pt-2 pb-[env(safe-area-inset-bottom)]", className)}>
         {children}
       </DrawerFooter>
     );
