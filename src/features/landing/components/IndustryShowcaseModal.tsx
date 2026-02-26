@@ -4,8 +4,9 @@
  * Desktop = Dialog, Mobile = Drawer. Staggered animations, rich detail panel.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Truck, HeartPulse, Shield, Wrench, Building,
   ArrowRight, Calendar, CheckCircle2, Sparkles,
@@ -53,12 +54,37 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
 }) => {
   const { isOpen, setIsOpen, dismissPermanently } = useShowcaseModal({ delay: 8000 });
   const [selected, setSelected] = useState<IndustryVertical>('transportation');
+  const isMobile = useIsMobile();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeScrollIndex, setActiveScrollIndex] = useState(0);
+  const [showFade, setShowFade] = useState(true);
 
   const open = externalOpen ?? isOpen;
   const handleOpenChange = (val: boolean) => {
     onExternalOpenChange?.(val);
     setIsOpen(val);
   };
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    // Hide fade when scrolled near end
+    setShowFade(scrollLeft + clientWidth < scrollWidth - 10);
+    // Calculate active dot index
+    const cardCount = INDUSTRY_VERTICAL_OPTIONS.length;
+    const maxScroll = scrollWidth - clientWidth;
+    const progress = maxScroll > 0 ? scrollLeft / maxScroll : 0;
+    setActiveScrollIndex(Math.round(progress * (cardCount - 1)));
+  }, []);
+
+  // Check initial fade state when modal opens
+  useEffect(() => {
+    if (open && scrollRef.current) {
+      const el = scrollRef.current;
+      setShowFade(el.scrollWidth > el.clientWidth);
+    }
+  }, [open]);
 
   const template = INDUSTRY_TEMPLATES[selected];
   const option = INDUSTRY_VERTICAL_OPTIONS.find((o) => o.value === selected);
@@ -80,54 +106,80 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
         {/* Gradient accent line */}
         <div className="h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-        {/* Industry selector — horizontal scroll mobile, 5-col grid desktop */}
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="show"
-          className="flex gap-2 overflow-x-auto py-4 sm:grid sm:grid-cols-5 sm:overflow-visible scrollbar-hide"
-        >
-          {INDUSTRY_VERTICAL_OPTIONS.map((ind) => {
-            const Icon = ICON_MAP[ind.icon] || Building;
-            const isActive = selected === ind.value;
-            return (
-              <motion.button
-                key={ind.value}
-                variants={cardItem}
-                onClick={() => setSelected(ind.value)}
-                aria-pressed={isActive}
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                className={cn(
-                  'flex flex-col items-center gap-2 rounded-xl border p-3.5 text-center transition-all duration-200 min-w-[5.5rem] flex-shrink-0',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  isActive
-                    ? 'border-primary/60 bg-primary/10 shadow-md ring-2 ring-primary/20'
-                    : 'border-border bg-card hover:border-primary/30 hover:bg-accent/40'
-                )}
-              >
-                <div
+        {/* Industry selector — horizontal scroll mobile with fade + dots, 5-col grid desktop */}
+        <div className="relative">
+          <motion.div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="show"
+            className="flex gap-2 overflow-x-auto py-4 sm:grid sm:grid-cols-5 sm:overflow-visible scrollbar-hide"
+          >
+            {INDUSTRY_VERTICAL_OPTIONS.map((ind) => {
+              const Icon = ICON_MAP[ind.icon] || Building;
+              const isActive = selected === ind.value;
+              return (
+                <motion.button
+                  key={ind.value}
+                  variants={cardItem}
+                  onClick={() => setSelected(ind.value)}
+                  aria-pressed={isActive}
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
                   className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
+                    'flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all duration-200 min-w-[4.5rem] sm:min-w-0 flex-shrink-0',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     isActive
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'border-primary/60 bg-primary/10 shadow-md ring-2 ring-primary/20'
+                      : 'border-border bg-card hover:border-primary/30 hover:bg-accent/40'
                   )}
                 >
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span
-                  className={cn(
-                    'text-xs font-semibold leading-tight',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                >
-                  {ind.label}
-                </span>
-              </motion.button>
-            );
-          })}
-        </motion.div>
+                  <div
+                    className={cn(
+                      'flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg transition-colors',
+                      isActive
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </div>
+                  <span
+                    className={cn(
+                      'text-[10px] sm:text-xs font-semibold leading-tight',
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  >
+                    {ind.label}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </motion.div>
+
+          {/* Right fade overlay — mobile only */}
+          {isMobile && showFade && (
+            <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          )}
+        </div>
+
+        {/* Scroll dot indicators — mobile only */}
+        {isMobile && (
+          <div className="flex justify-center gap-1.5 -mt-2 mb-1">
+            {INDUSTRY_VERTICAL_OPTIONS.map((ind, i) => (
+              <div
+                key={ind.value}
+                className={cn(
+                  'h-1.5 rounded-full transition-all duration-200',
+                  i === activeScrollIndex
+                    ? 'w-4 bg-primary'
+                    : 'w-1.5 bg-muted-foreground/30'
+                )}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Detail Panel */}
         <AnimatePresence mode="wait">
@@ -137,7 +189,7 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="rounded-xl border border-border bg-muted/30 p-5 space-y-4"
+            className="rounded-xl border border-border bg-muted/30 p-3 sm:p-5 space-y-3 sm:space-y-4"
           >
             {/* Header with icon */}
             <div className="flex items-center gap-3">
@@ -198,7 +250,7 @@ const IndustryShowcaseModal: React.FC<IndustryShowcaseModalProps> = ({
           </motion.div>
         </AnimatePresence>
 
-        <ResponsiveModalFooter className="flex-col sm:flex-row gap-2 pt-4">
+        <ResponsiveModalFooter className="flex-col sm:flex-row gap-2 pt-4 pb-[env(safe-area-inset-bottom)]">
           <Button
             className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
             asChild
