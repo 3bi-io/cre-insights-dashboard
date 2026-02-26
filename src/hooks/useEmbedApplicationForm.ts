@@ -205,9 +205,6 @@ export const useEmbedApplicationForm = (options?: UseEmbedApplicationFormOptions
 
       if (!response.ok) {
         const errorData = await response.json();
-        if (response.status === 409) {
-          throw new Error(errorData.error || 'You have already applied to this position recently.');
-        }
         throw new Error(errorData.error || 'Failed to submit application');
       }
 

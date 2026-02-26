@@ -223,12 +223,6 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        
-        // Handle duplicate application (409 Conflict)
-        if (response.status === 409) {
-          throw new Error(errorData.error || 'You have already applied to this position recently.');
-        }
-        
         throw new Error(errorData.error || 'Failed to submit application');
       }
 
