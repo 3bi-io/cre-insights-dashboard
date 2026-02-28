@@ -1,69 +1,32 @@
 
-# Fix: Embed Apply Form Submission Failing
 
-## Root Cause
+# New Blog Post: DevOps Best Practices in 2026
 
-The embed form at `/embed/apply` fails to submit when loaded in an iframe on external sites (e.g., `hayesairecruiting.com`) because the **source detection chain breaks**:
+## Overview
+Create a new blog post by adding a Supabase migration that inserts the article "DevOps Best Practices in 2026: A Comprehensive Guide" into the `blog_posts` table. The image is a reference thumbnail (DevOps roadmap) and will NOT be embedded directly.
 
-1. **Priority 0 (Referer path check)** fails: The fetch call from `https://applyai.jobs/embed/apply` to `https://auwhcdpppldjlcaxzsme.supabase.co` is cross-origin. The default `strict-origin-when-cross-origin` referrer policy strips the URL path, sending only `https://applyai.jobs` as the Referer header. So `refererHeader.includes('/embed/apply')` never matches.
+## Implementation
 
-2. **Priority 1 (Explicit source)** should work since the form sets `source: 'Embed Form'` in the body, but it appears to not be reaching the server properly.
+### Single file: New Supabase migration
 
-3. **Priority 2 (Integration signatures)** also fails because `embed/apply` is checked against the combined origin/referer/user-agent string, which no longer contains the path.
+Create a migration SQL file that inserts a row into `public.blog_posts` with:
 
-4. **Priority 4 (Referrer classification)** kicks in, classifying `hayesairecruiting.com` as "Company Website" -- which has no org mapping, causing the "Unable to determine organization" error.
+- **slug**: `devops-best-practices-comprehensive-guide-2026`
+- **title**: `DevOps Best Practices in 2026: A Comprehensive Guide`
+- **description**: A concise meta description (~155 chars) summarizing the article
+- **category**: `DevOps & Technology`
+- **tags**: `['DevOps', 'CI/CD', 'Infrastructure as Code', 'DevSecOps', 'Kubernetes', 'observability', 'AIOps', 'platform engineering', 'GitOps', 'cloud']`
+- **published**: `true`
+- **published_at**: `now()`
+- **content**: Full HTML-formatted article with all 8 sections (Culture, CI/CD, IaC/Containers, DevSecOps, Observability, AI, Scalability, Feedback), using proper `<h2>`, `<h3>`, `<p>`, `<ul>/<li>`, and `<strong>` tags -- following the exact same HTML patterns used in existing blog posts
+- **faqs**: A JSON array of 4-5 FAQ items derived from the content (e.g., "What are the top DevOps best practices in 2026?", "What is GitOps?", "How does DevSecOps differ from DevOps?", "What is platform engineering 2.0?")
+- **howto_steps**: `NULL` (this is a guide, not a how-to)
 
-## Fix (2 files)
+The referenced numbered images/diagrams in the original text will be described contextually in prose rather than embedded, since they were reference citations.
 
-### 1. `src/hooks/useEmbedApplicationForm.ts` -- Fix Referer header
+### Technical Notes
+- Follows the exact same INSERT pattern as the existing migration `20260226032042`
+- No frontend changes needed -- the existing blog index and post detail pages will automatically pick up the new post via the `useBlogPosts` / `useBlogPost` hooks
+- The post will appear at the top of the blog index since it's ordered by `published_at DESC`
+- Single-quote escaping (`''`) used throughout for SQL string safety
 
-Add `referrerPolicy: 'unsafe-url'` to the fetch call so the full URL path (including `/embed/apply`) is sent as the Referer header to the edge function. This makes Priority 0 detection work again.
-
-```typescript
-const response = await fetch('https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/submit-application', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  referrerPolicy: 'unsafe-url',  // <-- Send full path so backend detects /embed/apply
-  body: JSON.stringify(formattedData),
-});
-```
-
-### 2. `supabase/functions/submit-application/index.ts` -- Add fallback detection
-
-Add a secondary check: if the `referral_source` field (which is `document.referrer` from the parent frame) is from `hayesairecruiting.com`, AND the explicit source is `'Embed Form'`, ensure it routes correctly. Also add `hayesairecruiting.com` to the integration signatures as an additional safety net:
-
-- In `detectIntegrationSource`, after the Referer header check (Priority 0), also check if `referralSource` contains `hayesairecruiting.com` combined with `explicitSource === 'Embed Form'` to return `'Embed Form'`
-- Add `'hayesairecruiting.com'` to `INTEGRATION_SIGNATURES` mapping to `{ source: 'Hayes Website', requiresScreening: false }`
-- Add `'Hayes Website'` to `SOURCE_ORGANIZATION_OVERRIDES` pointing to Hayes org ID `84214b48-7b51-45bc-ad7f-723bcf50466c`
-
-This ensures that even if the referrerPolicy fix doesn't work in all browsers, submissions from hayesairecruiting.com always resolve to Hayes Recruiting.
-
-### Technical Details
-
-**Changes to `detectIntegrationSource`** (Priority 0 enhancement):
-```typescript
-// Priority 0: Check Referer header for /embed/apply path
-const refererHeader = req.headers.get('referer') || '';
-if (refererHeader.includes('/embed/apply')) {
-  return 'Embed Form';
-}
-
-// Priority 0.5: Check explicit source field (moved up from Priority 1 for embed reliability)
-if (explicitSource && explicitSource.trim() !== '') {
-  return explicitSource;
-}
-```
-
-Moving the explicit source check ABOVE the integration signatures check ensures `source: 'Embed Form'` is always respected before domain-based detection can misclassify it.
-
-**Changes to `INTEGRATION_SIGNATURES`**:
-```typescript
-'hayesairecruiting.com': { source: 'Hayes Website', requiresScreening: false },
-```
-
-**Changes to `SOURCE_ORGANIZATION_OVERRIDES`**:
-```typescript
-'Hayes Website': '84214b48-7b51-45bc-ad7f-723bcf50466c',
-```
-
-After code changes, redeploy the `submit-application` edge function.
