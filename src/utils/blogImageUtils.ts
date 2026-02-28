@@ -11,6 +11,7 @@ import tenstreetHero from '@/assets/blog/tenstreet-hero.jpg';
 import complianceHero from '@/assets/blog/compliance-hero.jpg';
 import atsMeThriveHero from '@/assets/blog/ats-me-thrive-hero.jpg';
 import seoGuideHero from '@/assets/blog/seo-guide-hero.jpg';
+import devopsRoadmapHero from '@/assets/blog/devops-roadmap-hero.jpg';
 
 const BASE_URL = 'https://applyai.jobs';
 
@@ -23,6 +24,7 @@ const BLOG_IMAGE_MAP: Record<string, string> = {
   'recruitment-compliance-ai-hiring-2026': complianceHero,
   'why-ats-me-will-thrive-2026': atsMeThriveHero,
   'advanced-seo-implementation-guide-2026': seoGuideHero,
+  'devops-best-practices-comprehensive-guide-2026': devopsRoadmapHero,
 };
 
 /** 
@@ -37,6 +39,7 @@ const BLOG_OG_IMAGE_MAP: Record<string, string> = {
   'recruitment-compliance-ai-hiring-2026': `${BASE_URL}/og-blog-compliance.png`,
   'why-ats-me-will-thrive-2026': `${BASE_URL}/og-blog-ats-me-thrive.png`,
   'advanced-seo-implementation-guide-2026': `${BASE_URL}/og-blog-seo-guide.png`,
+  'devops-best-practices-comprehensive-guide-2026': `${BASE_URL}/og-blog-devops.png`,
 };
 
 /** Default fallback image for posts without a mapped placeholder */
