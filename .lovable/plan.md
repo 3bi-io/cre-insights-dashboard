@@ -1,48 +1,37 @@
 
 
-# Geo-Fence: DFW 200-Mile Radius Restriction
+# Invert DFW Geo-Fence: Block Inside, Allow Outside
 
-## What Changes
+## Current behavior (wrong)
+- Users **inside** 200 miles of DFW → allowed
+- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
 
-Restrict full platform access to users within a 200-mile radius of the Dallas-Fort Worth metroplex center. Users outside this radius (but not OFAC-blocked) see a "Service Area" page instead of the OFAC sanctions page. OFAC blocking still applies on top.
+## Desired behavior
+- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
+- Users **outside** 200 miles of DFW → **allowed**
+- OFAC sanctions countries → still blocked (no change)
 
-## Implementation
+## Changes
 
-### 1. Update `geo-lookup.ts` — Add lat/lon to GeoLocation
+### 1. `supabase/functions/_shared/geo-fence.ts`
+- Rename concept from "service area" to "restricted zone"
+- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
+- Update JSDoc comments to reflect the new semantics
 
-The ip-api.com API supports `lat,lon` fields. Add them to the fields query string and `GeoLocation` interface. This is a one-line field addition to the fetch URL and two new properties on the interface.
+### 2. `supabase/functions/geo-check/index.ts`
+- Gate 2 now blocks when user **is inside** the DFW radius
+- Change reason from `outside_service_area` to `inside_restricted_zone`
+- Update log messages accordingly
 
-### 2. Create `supabase/functions/_shared/geo-fence.ts` — Distance calculation
+### 3. `src/contexts/GeoBlockingContext.tsx`
+- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
+- Match on new reason `inside_restricted_zone`
 
-New shared module with:
-- DFW center coordinates: `(32.8968, -97.0380)`
-- `ALLOWED_RADIUS_MILES = 200`
-- `haversineDistanceMiles(lat1, lon1, lat2, lon2)` — standard Haversine formula
-- `isWithinServiceArea(geo: GeoLocation): { allowed: boolean; distanceMiles: number }` — returns whether user is within 200 miles of DFW
+### 4. `src/pages/RegionBlocked.tsx`
+- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
+- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
 
-### 3. Update `geo-check/index.ts` — Apply geo-fence after OFAC check
+### 5. Deploy updated `geo-check` edge function
 
-After the existing OFAC sanctions check passes, add a second gate:
-- If `geo` has valid lat/lon, compute distance from DFW
-- If distance > 200 miles, return `{ allowed: false, reason: 'outside_service_area', distanceMiles }` with a 403
-- Fail-open: if lat/lon are missing, allow access (consistent with existing policy)
-
-### 4. Update `GeoBlockingContext.tsx` — Handle new reason
-
-Add `isOutsideServiceArea` boolean to the context state, set when `reason === 'outside_service_area'`. The existing `isBlocked` flag will already be true, so `GeoBlockingGate` will show the blocked page.
-
-### 5. Update `RegionBlocked.tsx` — Show service-area message
-
-Conditionally render different content based on `reason`:
-- `blocked_region` → existing OFAC sanctions messaging
-- `outside_service_area` → friendly "We're currently serving the Dallas-Fort Worth area" message with a map pin icon, distance info, and a "notify me when we expand" or contact email
-
-### 6. Update `geo-rate-config.ts` — Align DFW city list
-
-No changes needed — the existing DFW rate-limit override is separate from the geo-fence and continues to work independently.
-
-## Key Decisions
-- **Fail-open on missing coordinates**: If ip-api.com doesn't return lat/lon, allow access (consistent with existing fail-open policy)
-- **Lovable preview bypass preserved**: The existing preview environment bypass in `geo-check/index.ts` continues to skip all checks including the new geo-fence
-- **OFAC checked first**: Sanctioned countries are still blocked with the sanctions message before the distance check runs
+No database changes needed. All changes are in edge function code and frontend components.
 
