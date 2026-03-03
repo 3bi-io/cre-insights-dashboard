@@ -473,6 +473,61 @@ export type Database = {
           },
         ]
       }
+      api_request_logs: {
+        Row: {
+          api_key_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          organization_id: string
+          origin: string | null
+          response_status: number | null
+          response_time_ms: number | null
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          organization_id: string
+          origin?: string | null
+          response_status?: number | null
+          response_time_ms?: number | null
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          organization_id?: string
+          origin?: string | null
+          response_status?: number | null
+          response_time_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "org_api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_request_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_request_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_documents: {
         Row: {
           application_id: string
@@ -4727,6 +4782,7 @@ export type Database = {
       }
       org_api_keys: {
         Row: {
+          allowed_origins: string[] | null
           api_key: string
           created_at: string | null
           id: string
@@ -4734,9 +4790,11 @@ export type Database = {
           label: string | null
           last_used_at: string | null
           organization_id: string
+          rate_limit_per_minute: number | null
           updated_at: string | null
         }
         Insert: {
+          allowed_origins?: string[] | null
           api_key?: string
           created_at?: string | null
           id?: string
@@ -4744,9 +4802,11 @@ export type Database = {
           label?: string | null
           last_used_at?: string | null
           organization_id: string
+          rate_limit_per_minute?: number | null
           updated_at?: string | null
         }
         Update: {
+          allowed_origins?: string[] | null
           api_key?: string
           created_at?: string | null
           id?: string
@@ -4754,6 +4814,7 @@ export type Database = {
           label?: string | null
           last_used_at?: string | null
           organization_id?: string
+          rate_limit_per_minute?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -8013,6 +8074,7 @@ export type Database = {
       classify_traffic_source: { Args: { referrer: string }; Returns: string }
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_sms_links: { Args: never; Returns: undefined }
+      cleanup_old_api_request_logs: { Args: never; Returns: undefined }
       cleanup_old_feed_logs: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
       create_application_with_audit: {
