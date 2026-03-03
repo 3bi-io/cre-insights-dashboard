@@ -1,7 +1,7 @@
 /**
  * Geo-Check Edge Function
  * Validates visitor geographic location for OFAC sanctions compliance
- * and DFW 200-mile service area restriction.
+ * and DFW 200-mile restricted zone.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -10,7 +10,7 @@ import { successResponse, errorResponse } from '../_shared/response.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { extractIPFromRequest, getGeoLocation } from '../_shared/geo-lookup.ts';
 import { checkGeoAccess, getAllowedRegionsDescription, GeoBlockResult } from '../_shared/geo-blocking.ts';
-import { isWithinServiceArea, ALLOWED_RADIUS_MILES } from '../_shared/geo-fence.ts';
+import { checkRestrictedZone, RESTRICTED_RADIUS_MILES } from '../_shared/geo-fence.ts';
 
 const logger = createLogger('geo-check');
 
@@ -76,14 +76,14 @@ serve(async (req) => {
       );
     }
 
-    // Gate 2: DFW 200-mile service area check
-    const serviceArea = isWithinServiceArea(geo);
+    // Gate 2: DFW 200-mile restricted zone — block users INSIDE the radius
+    const restrictedZone = checkRestrictedZone(geo);
 
-    if (!serviceArea.allowed) {
+    if (restrictedZone.blocked) {
       const duration = Date.now() - startTime;
-      logger.info('Geo check blocked (service area)', {
+      logger.info('Geo check blocked (restricted zone)', {
         countryCode: result.countryCode,
-        distanceMiles: serviceArea.distanceMiles,
+        distanceMiles: restrictedZone.distanceMiles,
         duration_ms: duration,
       });
       return new Response(
@@ -91,9 +91,9 @@ serve(async (req) => {
           allowed: false,
           countryCode: result.countryCode,
           country: result.country,
-          reason: 'outside_service_area',
-          distanceMiles: serviceArea.distanceMiles,
-          serviceAreaRadiusMiles: ALLOWED_RADIUS_MILES,
+          reason: 'inside_restricted_zone',
+          distanceMiles: restrictedZone.distanceMiles,
+          restrictedRadiusMiles: RESTRICTED_RADIUS_MILES,
           checkedAt: new Date().toISOString(),
         }),
         {
@@ -108,14 +108,14 @@ serve(async (req) => {
     logger.info('Geo check complete', { 
       allowed: true, 
       countryCode: result.countryCode,
-      distanceMiles: serviceArea.distanceMiles,
+      distanceMiles: restrictedZone.distanceMiles,
       duration_ms: duration 
     });
 
     return new Response(
       JSON.stringify({
         ...result,
-        distanceMiles: serviceArea.distanceMiles,
+        distanceMiles: restrictedZone.distanceMiles,
         checkedAt: new Date().toISOString(),
       }),
       {
