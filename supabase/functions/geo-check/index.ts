@@ -1,7 +1,7 @@
 /**
  * Geo-Check Edge Function
- * Validates visitor geographic location for OFAC sanctions compliance.
- * Open-world policy: allow all countries except OFAC-sanctioned ones.
+ * Validates visitor geographic location for OFAC sanctions compliance
+ * and DFW 200-mile service area restriction.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -10,6 +10,7 @@ import { successResponse, errorResponse } from '../_shared/response.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { extractIPFromRequest, getGeoLocation } from '../_shared/geo-lookup.ts';
 import { checkGeoAccess, getAllowedRegionsDescription, GeoBlockResult } from '../_shared/geo-blocking.ts';
+import { isWithinServiceArea, ALLOWED_RADIUS_MILES } from '../_shared/geo-fence.ts';
 
 const logger = createLogger('geo-check');
 
@@ -56,33 +57,76 @@ serve(async (req) => {
     // Perform geo lookup
     const geo = await getGeoLocation(ip);
     
-    // Check against OFAC sanctions block list
+    // Gate 1: Check against OFAC sanctions block list
     const result: GeoBlockResult = checkGeoAccess(geo);
     
+    if (!result.allowed) {
+      const duration = Date.now() - startTime;
+      logger.info('Geo check blocked (OFAC)', { countryCode: result.countryCode, duration_ms: duration });
+      return new Response(
+        JSON.stringify({
+          ...result,
+          blockedRegions: getAllowedRegionsDescription(),
+          checkedAt: new Date().toISOString(),
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Gate 2: DFW 200-mile service area check
+    const serviceArea = isWithinServiceArea(geo);
+
+    if (!serviceArea.allowed) {
+      const duration = Date.now() - startTime;
+      logger.info('Geo check blocked (service area)', {
+        countryCode: result.countryCode,
+        distanceMiles: serviceArea.distanceMiles,
+        duration_ms: duration,
+      });
+      return new Response(
+        JSON.stringify({
+          allowed: false,
+          countryCode: result.countryCode,
+          country: result.country,
+          reason: 'outside_service_area',
+          distanceMiles: serviceArea.distanceMiles,
+          serviceAreaRadiusMiles: ALLOWED_RADIUS_MILES,
+          checkedAt: new Date().toISOString(),
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Allowed
     const duration = Date.now() - startTime;
     logger.info('Geo check complete', { 
-      allowed: result.allowed, 
+      allowed: true, 
       countryCode: result.countryCode,
-      reason: result.reason,
+      distanceMiles: serviceArea.distanceMiles,
       duration_ms: duration 
     });
 
-    // Return response with access decision
     return new Response(
       JSON.stringify({
         ...result,
-        blockedRegions: result.allowed ? undefined : getAllowedRegionsDescription(),
+        distanceMiles: serviceArea.distanceMiles,
         checkedAt: new Date().toISOString(),
       }),
       {
-        status: result.allowed ? 200 : 403,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
     logger.error('Geo check error', error);
     
-    // Fail open — on error, allow access (open-world sanctions policy)
+    // Fail open — on error, allow access
     return new Response(
       JSON.stringify({
         allowed: true,

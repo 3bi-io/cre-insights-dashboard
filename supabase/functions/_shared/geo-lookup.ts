@@ -14,6 +14,8 @@ export interface GeoLocation {
   regionName: string;   // Full name (e.g., "Texas", "Alabama")
   country: string;
   countryCode: string;
+  lat: number | null;
+  lon: number | null;
   timezone: string;
   isp: string;
   success: boolean;
@@ -79,7 +81,7 @@ export async function getGeoLocation(ip: string): Promise<GeoLocation | null> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
 
-    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,timezone,isp,query`, {
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,lat,lon,timezone,isp,query`, {
       signal: controller.signal,
     });
 
@@ -104,6 +106,8 @@ export async function getGeoLocation(ip: string): Promise<GeoLocation | null> {
       regionName: data.regionName || '',
       country: data.country || '',
       countryCode: data.countryCode || '',
+      lat: typeof data.lat === 'number' ? data.lat : null,
+      lon: typeof data.lon === 'number' ? data.lon : null,
       timezone: data.timezone || '',
       isp: data.isp || '',
       success: true,

@@ -29,11 +29,15 @@ interface GeoBlockingState {
   isBlocked: boolean;
   /** True when country is known and NOT in the Americas — triggers simulation mode on apply pages */
   isOutsideAmericas: boolean;
+  /** True when user is outside the DFW 200-mile service area */
+  isOutsideServiceArea: boolean;
   countryCode: string | null;
   country: string | null;
   reason: string | null;
   message: string | null;
   allowedRegions: string | null;
+  distanceMiles: number | null;
+  serviceAreaRadiusMiles: number | null;
 }
 
 interface GeoBlockingContextType extends GeoBlockingState {
@@ -60,11 +64,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
     isChecking: true,
     isBlocked: false,
     isOutsideAmericas: false,
+    isOutsideServiceArea: false,
     countryCode: null,
     country: null,
     reason: null,
     message: null,
     allowedRegions: null,
+    distanceMiles: null,
+    serviceAreaRadiusMiles: null,
   });
 
   const [simulationModeOverride, setSimulationModeOverride] = useState<boolean>(() => {
@@ -108,11 +115,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
           isChecking: false,
           isBlocked: false,
           isOutsideAmericas: false,
+          isOutsideServiceArea: false,
           countryCode: null,
           country: null,
           reason: 'lookup_failed',
           message: null,
           allowedRegions: null,
+          distanceMiles: null,
+          serviceAreaRadiusMiles: null,
         };
         setState(allowedState);
         return;
@@ -125,6 +135,8 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         reason: string;
         message?: string;
         blockedRegions?: string;
+        distanceMiles?: number | null;
+        serviceAreaRadiusMiles?: number | null;
       };
 
       const resolvedCode = result.countryCode;
@@ -134,11 +146,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         isChecking: false,
         isBlocked: !result.allowed,
         isOutsideAmericas,
+        isOutsideServiceArea: result.reason === 'outside_service_area',
         countryCode: resolvedCode,
         country: result.country,
         reason: result.reason,
         message: result.message || null,
         allowedRegions: result.blockedRegions || null,
+        distanceMiles: result.distanceMiles ?? null,
+        serviceAreaRadiusMiles: result.serviceAreaRadiusMiles ?? null,
       };
 
       setState(newState);
@@ -168,11 +183,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         isChecking: false,
         isBlocked: false,
         isOutsideAmericas: false,
+        isOutsideServiceArea: false,
         countryCode: null,
         country: null,
         reason: 'lookup_failed',
         message: null,
         allowedRegions: null,
+        distanceMiles: null,
+        serviceAreaRadiusMiles: null,
       });
     }
   }, []);
