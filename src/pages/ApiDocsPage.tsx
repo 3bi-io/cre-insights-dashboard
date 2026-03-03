@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -349,7 +350,9 @@ curl -H "x-api-key: YOUR_KEY" \\
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground pb-8">
-            Questions? Contact us at <a href="mailto:support@applyai.jobs" className="text-primary hover:underline">support@applyai.jobs</a>
+            New partner? <Link to="/partner-setup" className="text-primary hover:underline">Follow our setup guide →</Link>
+            {' · '}
+            Questions? <a href="mailto:support@applyai.jobs" className="text-primary hover:underline">support@applyai.jobs</a>
           </p>
         </div>
       </div>

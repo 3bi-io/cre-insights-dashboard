@@ -24,6 +24,7 @@ const BlogPage = React.lazy(() => import("@/pages/public/BlogPage"));
 const BlogPostPage = React.lazy(() => import("@/pages/public/BlogPostPage"));
 const BlogAuthorPage = React.lazy(() => import("@/pages/public/BlogAuthorPage"));
 const ApiDocsPage = React.lazy(() => import("@/pages/ApiDocsPage"));
+const PartnerSetupGuidePage = React.lazy(() => import("@/pages/PartnerSetupGuidePage"));
 
 
 // Authentication pages
@@ -179,6 +180,7 @@ const AppRoutes: React.FC = () => {
         <Route path="blog/author/:id" element={<RouteWrapper><BlogAuthorPage /></RouteWrapper>} />
         <Route path="blog/:slug" element={<RouteWrapper><BlogPostPage /></RouteWrapper>} />
         <Route path="api-docs" element={<RouteWrapper><ApiDocsPage /></RouteWrapper>} />
+        <Route path="partner-setup" element={<RouteWrapper><PartnerSetupGuidePage /></RouteWrapper>} />
         
       </Route>
 
