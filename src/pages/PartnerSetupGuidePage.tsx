@@ -11,9 +11,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { CheckCircle2, Circle, BookOpen, Mail, ExternalLink, Copy } from 'lucide-react';
+import { CheckCircle2, Circle, BookOpen, Mail, ExternalLink, Copy, Download } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
 
 const SUPABASE_URL = 'https://auwhcdpppldjlcaxzsme.supabase.co';
 const BASE = `${SUPABASE_URL}/functions/v1/organization-api`;
@@ -198,6 +199,121 @@ console.log(data);
   },
 ];
 
+const pdfSteps = [
+  {
+    title: '1. Request API Access',
+    lines: [
+      'Contact the Apply AI team at support@applyai.jobs to request partner API access.',
+      'Provide: Organization name, production domain(s), technical contact email, integration use case.',
+    ],
+  },
+  {
+    title: '2. Receive Your API Key',
+    lines: [
+      'You will receive: an API Key (scoped to your org), allowed CORS origins, and your rate limit (default 100 req/min).',
+      'Keep your API key secret — never expose it in client-side code.',
+    ],
+  },
+  {
+    title: '3. Configure Your Environment',
+    lines: [
+      `Set these environment variables:`,
+      `  ORG_API_URL=${BASE}`,
+      `  ORG_API_KEY=your_api_key_here`,
+      'Endpoints: /stats, /jobs, /clients, /applications',
+    ],
+  },
+  {
+    title: '4. Test Your Connection',
+    lines: [
+      'Run: curl -H "x-api-key: YOUR_KEY" $ORG_API_URL/stats',
+      'A 200 OK response with JSON confirms connectivity.',
+    ],
+  },
+  {
+    title: '5. Integrate Data',
+    lines: [
+      'Option A — Direct API Calls: call /jobs, /clients, /applications from your backend.',
+      'Option B — Embed Widget: use the embeddable apply form at /embed/apply in an iframe.',
+      'See full API reference at /api-docs.',
+    ],
+  },
+  {
+    title: '6. Go Live',
+    lines: [
+      'Pre-launch checklist:',
+      '  ✓ Production domain(s) added to CORS origins',
+      '  ✓ API key stored securely (env vars / secrets manager)',
+      '  ✓ Error handling for rate limits (HTTP 429)',
+      '  ✓ Caching strategy in place',
+    ],
+  },
+];
+
+const generatePdf = () => {
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 50;
+  const contentW = pageW - margin * 2;
+  let y = margin;
+
+  const checkPage = (needed: number) => {
+    if (y + needed > doc.internal.pageSize.getHeight() - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  // Title
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Apply AI — Partner Integration Guide', margin, y);
+  y += 30;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(120);
+  doc.text(`Generated ${new Date().toLocaleDateString()}`, margin, y);
+  doc.setTextColor(0);
+  y += 10;
+
+  // Divider
+  doc.setDrawColor(200);
+  doc.line(margin, y, pageW - margin, y);
+  y += 20;
+
+  // Steps
+  for (const step of pdfSteps) {
+    checkPage(80);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text(step.title, margin, y);
+    y += 18;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    for (const line of step.lines) {
+      checkPage(16);
+      const wrapped = doc.splitTextToSize(line, contentW);
+      doc.text(wrapped, margin, y);
+      y += wrapped.length * 14;
+    }
+    y += 12;
+  }
+
+  // Footer
+  checkPage(40);
+  doc.setDrawColor(200);
+  doc.line(margin, y, pageW - margin, y);
+  y += 16;
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text('Support: support@applyai.jobs  |  API Docs: /api-docs  |  Base URL: ' + BASE, margin, y);
+
+  doc.save('Apply-AI-Partner-Setup-Guide.pdf');
+  toast.success('PDF downloaded');
+};
+
 const PartnerSetupGuidePage: React.FC = () => {
   const [completed, setCompleted] = useState<Set<number>>(new Set());
 
@@ -222,13 +338,18 @@ const PartnerSetupGuidePage: React.FC = () => {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-5xl px-4 py-12">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight mb-2">
-              Partner Integration Guide
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Follow these steps to connect your platform to the Apply AI API.
-            </p>
+          <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight mb-2">
+                Partner Integration Guide
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Follow these steps to connect your platform to the Apply AI API.
+              </p>
+            </div>
+            <Button variant="outline" onClick={generatePdf} className="shrink-0">
+              <Download className="h-4 w-4 mr-2" /> Download PDF
+            </Button>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[1fr_240px]">
