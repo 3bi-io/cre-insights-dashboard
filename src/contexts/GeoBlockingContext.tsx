@@ -1,6 +1,7 @@
 /**
  * Geo-Blocking Context Provider
- * Checks visitor location and blocks access from OFAC-sanctioned countries.
+ * Checks visitor location and blocks access from OFAC-sanctioned countries
+ * and from within the DFW 200-mile restricted zone.
  * Open-world policy: allow all countries by default, block only sanctioned ones.
  * Non-Americas users get simulation mode on apply pages (cannot submit real applications).
  */
@@ -29,15 +30,15 @@ interface GeoBlockingState {
   isBlocked: boolean;
   /** True when country is known and NOT in the Americas — triggers simulation mode on apply pages */
   isOutsideAmericas: boolean;
-  /** True when user is outside the DFW 200-mile service area */
-  isOutsideServiceArea: boolean;
+  /** True when user is inside the DFW 200-mile restricted zone */
+  isInsideRestrictedZone: boolean;
   countryCode: string | null;
   country: string | null;
   reason: string | null;
   message: string | null;
   allowedRegions: string | null;
   distanceMiles: number | null;
-  serviceAreaRadiusMiles: number | null;
+  restrictedRadiusMiles: number | null;
 }
 
 interface GeoBlockingContextType extends GeoBlockingState {
@@ -64,14 +65,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
     isChecking: true,
     isBlocked: false,
     isOutsideAmericas: false,
-    isOutsideServiceArea: false,
+    isInsideRestrictedZone: false,
     countryCode: null,
     country: null,
     reason: null,
     message: null,
     allowedRegions: null,
     distanceMiles: null,
-    serviceAreaRadiusMiles: null,
+    restrictedRadiusMiles: null,
   });
 
   const [simulationModeOverride, setSimulationModeOverride] = useState<boolean>(() => {
@@ -110,19 +111,18 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         logger.warn('Geo-check function error — failing open (OFAC block-list policy)', { context: 'GeoBlocking' });
-        // Fail open — open-world policy means errors should not block access
         const allowedState: GeoBlockingState = {
           isChecking: false,
           isBlocked: false,
           isOutsideAmericas: false,
-          isOutsideServiceArea: false,
+          isInsideRestrictedZone: false,
           countryCode: null,
           country: null,
           reason: 'lookup_failed',
           message: null,
           allowedRegions: null,
           distanceMiles: null,
-          serviceAreaRadiusMiles: null,
+          restrictedRadiusMiles: null,
         };
         setState(allowedState);
         return;
@@ -136,7 +136,7 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         message?: string;
         blockedRegions?: string;
         distanceMiles?: number | null;
-        serviceAreaRadiusMiles?: number | null;
+        restrictedRadiusMiles?: number | null;
       };
 
       const resolvedCode = result.countryCode;
@@ -146,14 +146,14 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         isChecking: false,
         isBlocked: !result.allowed,
         isOutsideAmericas,
-        isOutsideServiceArea: result.reason === 'outside_service_area',
+        isInsideRestrictedZone: result.reason === 'inside_restricted_zone',
         countryCode: resolvedCode,
         country: result.country,
         reason: result.reason,
         message: result.message || null,
         allowedRegions: result.blockedRegions || null,
         distanceMiles: result.distanceMiles ?? null,
-        serviceAreaRadiusMiles: result.serviceAreaRadiusMiles ?? null,
+        restrictedRadiusMiles: result.restrictedRadiusMiles ?? null,
       };
 
       setState(newState);
@@ -170,7 +170,8 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
       }
 
       if (!result.allowed) {
-        logger.warn('Access blocked - OFAC sanctioned country', { 
+        logger.warn('Access blocked', { 
+          reason: result.reason,
           countryCode: result.countryCode,
           country: result.country,
           context: 'GeoBlocking' 
@@ -178,19 +179,18 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       logger.warn('Geo-check request failed — failing open (OFAC block-list policy)', { context: 'GeoBlocking' });
-      // Fail open — open-world policy
       setState({
         isChecking: false,
         isBlocked: false,
         isOutsideAmericas: false,
-        isOutsideServiceArea: false,
+        isInsideRestrictedZone: false,
         countryCode: null,
         country: null,
         reason: 'lookup_failed',
         message: null,
         allowedRegions: null,
         distanceMiles: null,
-        serviceAreaRadiusMiles: null,
+        restrictedRadiusMiles: null,
       });
     }
   }, []);

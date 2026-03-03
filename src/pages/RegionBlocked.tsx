@@ -1,11 +1,11 @@
 /**
  * Region Blocked Page
- * Shown to visitors from OFAC-sanctioned countries OR outside the DFW service area.
+ * Shown to visitors from OFAC-sanctioned countries OR inside the DFW restricted zone.
  * Conditionally renders different messaging based on the block reason.
  */
 
 import React from 'react';
-import { GlobeIcon, ShieldAlert, Mail, ExternalLink, MapPin } from 'lucide-react';
+import { GlobeIcon, ShieldAlert, Mail, ExternalLink, MapPin, ShieldX } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -13,62 +13,63 @@ import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { SEO } from '@/components/SEO';
 
 const RegionBlocked: React.FC = () => {
-  const { country, countryCode, message, reason, distanceMiles, serviceAreaRadiusMiles } = useGeoBlocking();
+  const { country, countryCode, message, reason, distanceMiles, restrictedRadiusMiles } = useGeoBlocking();
 
-  const isServiceArea = reason === 'outside_service_area';
+  const isRestrictedZone = reason === 'inside_restricted_zone';
 
-  if (isServiceArea) {
+  if (isRestrictedZone) {
     return (
       <>
         <SEO
-          title="Outside Service Area"
-          description="This platform is currently serving the Dallas-Fort Worth area."
+          title="Access Restricted — DFW Area"
+          description="Access to this platform is restricted within the Dallas-Fort Worth area."
           noindex={true}
         />
 
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-          <Card className="max-w-lg w-full border-primary/30 shadow-2xl">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-destructive/5 via-background to-destructive/10 p-4">
+          <Card className="max-w-lg w-full border-destructive/30 shadow-2xl">
             <CardHeader className="text-center pb-4">
               <div className="mx-auto mb-4 relative">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <MapPin className="w-10 h-10 text-primary" />
+                <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <ShieldX className="w-10 h-10 text-destructive" />
                 </div>
               </div>
 
-              <CardTitle className="text-2xl font-bold text-foreground">
-                We're Not in Your Area Yet
+              <CardTitle className="text-2xl font-bold text-destructive">
+                Access Restricted
               </CardTitle>
 
               <CardDescription className="text-base mt-2">
-                Apply AI is currently serving the{' '}
-                <span className="font-semibold text-foreground">Dallas-Fort Worth</span>{' '}
-                area within a {serviceAreaRadiusMiles ?? 200}-mile radius.
+                This platform is not available within{' '}
+                <span className="font-semibold text-foreground">
+                  {restrictedRadiusMiles ?? 200} miles of Dallas-Fort Worth
+                </span>
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              <Alert className="border-primary/30 bg-primary/5">
-                <MapPin className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-foreground">Service Area Restriction</AlertTitle>
+              <Alert variant="destructive" className="border-destructive/50">
+                <MapPin className="h-4 w-4" />
+                <AlertTitle>DFW Restricted Zone</AlertTitle>
                 <AlertDescription>
                   {distanceMiles
-                    ? `Your location is approximately ${distanceMiles} miles from Dallas-Fort Worth, which is outside our current ${serviceAreaRadiusMiles ?? 200}-mile service area.`
-                    : `Your location appears to be outside our current ${serviceAreaRadiusMiles ?? 200}-mile service area around Dallas-Fort Worth.`}
+                    ? `Your location is approximately ${distanceMiles} miles from Dallas-Fort Worth, which is within the ${restrictedRadiusMiles ?? 200}-mile restricted zone.`
+                    : `Your location appears to be within the ${restrictedRadiusMiles ?? 200}-mile restricted zone around Dallas-Fort Worth.`}
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-3 text-sm text-muted-foreground">
                 <p>
-                  We're focused on delivering the best experience for the DFW metroplex
-                  right now, but we're expanding soon. Stay tuned!
+                  Access to this platform is currently restricted for users located
+                  within the Dallas-Fort Worth metropolitan area and surrounding region.
                 </p>
 
                 <div className="bg-muted/50 rounded-lg p-3 border">
                   <p className="font-medium text-foreground text-xs uppercase tracking-wide mb-1">
-                    Current Coverage
+                    Restricted Zone
                   </p>
                   <p className="text-sm">
-                    Dallas-Fort Worth metroplex and surrounding areas within {serviceAreaRadiusMiles ?? 200} miles
+                    {restrictedRadiusMiles ?? 200}-mile radius around Dallas-Fort Worth, TX
                   </p>
                 </div>
               </div>
@@ -77,11 +78,11 @@ const RegionBlocked: React.FC = () => {
 
               <div className="text-center space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Interested in bringing Apply AI to your area? Let us know:
+                  If you believe this restriction has been applied in error, please contact us:
                 </p>
 
                 <a
-                  href="mailto:hello@applyai.jobs?subject=Service%20Area%20Expansion%20Interest"
+                  href="mailto:hello@applyai.jobs?subject=DFW%20Restricted%20Zone%20Inquiry"
                   className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                 >
                   <Mail className="w-4 h-4" />

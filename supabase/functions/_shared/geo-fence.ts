@@ -1,6 +1,7 @@
 /**
  * DFW Geo-Fence Utility
- * Restricts platform access to a 200-mile radius around Dallas-Fort Worth.
+ * Restricts platform access WITHIN a 200-mile radius around Dallas-Fort Worth.
+ * Users inside this zone are blocked; users outside are allowed.
  */
 
 import type { GeoLocation } from './geo-lookup.ts';
@@ -8,7 +9,7 @@ import type { GeoLocation } from './geo-lookup.ts';
 // DFW metroplex center (midpoint between Dallas and Fort Worth)
 const DFW_LAT = 32.8968;
 const DFW_LON = -97.0380;
-const ALLOWED_RADIUS_MILES = 200;
+const RESTRICTED_RADIUS_MILES = 200;
 const EARTH_RADIUS_MILES = 3958.8;
 
 function toRad(deg: number): number {
@@ -30,25 +31,26 @@ export function haversineDistanceMiles(
   return EARTH_RADIUS_MILES * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export interface ServiceAreaResult {
-  allowed: boolean;
+export interface RestrictedZoneResult {
+  blocked: boolean;
   distanceMiles: number | null;
 }
 
 /**
- * Check whether a GeoLocation falls within the DFW service area.
- * Returns allowed=true when coordinates are missing (fail-open).
+ * Check whether a GeoLocation falls INSIDE the DFW restricted zone.
+ * Returns blocked=true when user is within 200 miles of DFW.
+ * Returns blocked=false when coordinates are missing (fail-open).
  */
-export function isWithinServiceArea(geo: GeoLocation | null): ServiceAreaResult {
+export function checkRestrictedZone(geo: GeoLocation | null): RestrictedZoneResult {
   if (!geo || geo.lat === null || geo.lon === null) {
-    return { allowed: true, distanceMiles: null };
+    return { blocked: false, distanceMiles: null };
   }
 
   const distance = haversineDistanceMiles(geo.lat, geo.lon, DFW_LAT, DFW_LON);
   return {
-    allowed: distance <= ALLOWED_RADIUS_MILES,
+    blocked: distance <= RESTRICTED_RADIUS_MILES,
     distanceMiles: Math.round(distance),
   };
 }
 
-export { ALLOWED_RADIUS_MILES };
+export { RESTRICTED_RADIUS_MILES };
