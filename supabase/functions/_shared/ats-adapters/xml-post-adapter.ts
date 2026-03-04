@@ -270,7 +270,8 @@ export class XMLPostAdapter extends BaseATSAdapter {
     const fullName = this.buildFullName(application);
     const formattedPhone = this.formatPhone(application.phone);
     const formattedDOB = application.date_of_birth ? this.formatDateMMDDYYYY(application.date_of_birth) : '';
-    const email = application.applicant_email || application.email || '';
+    const rawEmail = (application.applicant_email || application.email || '').trim();
+    const email = rawEmail.replace(/^mailto:/i, ''); // Strip any existing mailto: to prevent duplication on line below
     const preferredContact = application.preferred_contact_method || 'PrimaryPhone';
     
     // Build comprehensive Tenstreet XML per official spec
