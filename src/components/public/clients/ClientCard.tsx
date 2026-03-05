@@ -6,14 +6,15 @@
  import { MapPin, Briefcase } from 'lucide-react';
  import { cn } from '@/lib/utils';
  
- export interface PublicClient {
-   id: string;
-   name: string;
-   logo_url: string | null;
-   city: string | null;
-   state: string | null;
-   job_count: number;
- }
+export interface PublicClient {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  city: string | null;
+  state: string | null;
+  job_count: number;
+  industry_vertical: string | null;
+}
  
  interface ClientCardProps {
    client: PublicClient;

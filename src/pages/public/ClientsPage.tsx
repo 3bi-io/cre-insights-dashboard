@@ -48,8 +48,10 @@ const ClientsPage = () => {
         c.state?.toLowerCase().includes(search)
       );
     }
-    // Industry tab filtering would require industry data on clients
-    // For now tabs filter visually but pass through all
+    if (activeTab !== 'All') {
+      const tabLower = activeTab.toLowerCase();
+      result = result.filter(c => c.industry_vertical?.toLowerCase() === tabLower);
+    }
     return result;
   }, [clients, searchTerm, activeTab]);
 
