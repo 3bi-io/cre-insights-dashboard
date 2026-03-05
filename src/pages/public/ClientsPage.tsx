@@ -30,7 +30,7 @@ const ClientsPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('public_client_info')
-        .select('id, name, logo_url, city, state, job_count')
+        .select('id, name, logo_url, city, state, job_count, industry_vertical')
         .order('name');
       if (error) throw error;
       return (data || []) as PublicClient[];
