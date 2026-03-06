@@ -5729,6 +5729,78 @@ export type Database = {
         }
         Relationships: []
       }
+      recruiter_availability_preferences: {
+        Row: {
+          allow_same_day_booking: boolean
+          auto_accept_bookings: boolean
+          buffer_after_minutes: number
+          buffer_before_minutes: number
+          created_at: string
+          default_call_duration_minutes: number
+          id: string
+          max_daily_callbacks: number
+          min_booking_notice_hours: number
+          organization_id: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+          working_days: number[]
+          working_hours_end: string
+          working_hours_start: string
+        }
+        Insert: {
+          allow_same_day_booking?: boolean
+          auto_accept_bookings?: boolean
+          buffer_after_minutes?: number
+          buffer_before_minutes?: number
+          created_at?: string
+          default_call_duration_minutes?: number
+          id?: string
+          max_daily_callbacks?: number
+          min_booking_notice_hours?: number
+          organization_id?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id: string
+          working_days?: number[]
+          working_hours_end?: string
+          working_hours_start?: string
+        }
+        Update: {
+          allow_same_day_booking?: boolean
+          auto_accept_bookings?: boolean
+          buffer_after_minutes?: number
+          buffer_before_minutes?: number
+          created_at?: string
+          default_call_duration_minutes?: number
+          id?: string
+          max_daily_callbacks?: number
+          min_booking_notice_hours?: number
+          organization_id?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+          working_days?: number[]
+          working_hours_end?: string
+          working_hours_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruiter_availability_preferences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruiter_availability_preferences_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recruiter_calendar_connections: {
         Row: {
           calendar_id: string | null
