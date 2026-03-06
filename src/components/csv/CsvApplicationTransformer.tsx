@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { readExcelFile } from '@/lib/excelHelper';
 import { generateCsvFromExcelData, ExcelRow } from '@/utils/csvApplicationImporter';
 import { logger } from '@/lib/logger';
 
@@ -18,16 +18,12 @@ const CsvApplicationTransformer: React.FC = () => {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const excelData = XLSX.utils.sheet_to_json<ExcelRow>(firstSheet);
+      const excelData = await readExcelFile<ExcelRow>(data);
 
       logger.debug('Processing Excel file', { rowCount: excelData.length });
 
-      // Generate clean CSV
       const csvContent = generateCsvFromExcelData(excelData);
       
-      // Create download
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -76,12 +72,7 @@ const CsvApplicationTransformer: React.FC = () => {
             id="excel-file-input"
           />
           <label htmlFor="excel-file-input">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={processing}
-              asChild
-            >
+            <Button type="button" variant="outline" disabled={processing} asChild>
               <span>
                 <Download className="w-4 h-4 mr-2" />
                 {processing ? 'Processing...' : 'Select Excel File'}

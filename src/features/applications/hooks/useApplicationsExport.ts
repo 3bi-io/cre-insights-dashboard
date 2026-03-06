@@ -1,12 +1,12 @@
 /**
  * Consolidated Application Export Hook
- * Handles PDF, CSV, and XLSX exports
+ * Handles PDF, CSV, and XLSX exports (using exceljs)
  */
 
 import { useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
-import * as XLSX from 'xlsx';
+import { writeExcelFile } from '@/lib/excelHelper';
 import type { Application } from '@/types/common.types';
 import type { ExportFormat } from '@/types/api.types';
 import { logger } from '@/lib/logger';
@@ -34,16 +34,8 @@ export const useApplicationsExport = () => {
   const exportToCSV = useCallback((applications: Application[]) => {
     try {
       const headers = [
-        'Name',
-        'Email',
-        'Phone',
-        'Status',
-        'Source',
-        'Applied Date',
-        'Job Title',
-        'Location',
-        'City',
-        'State',
+        'Name', 'Email', 'Phone', 'Status', 'Source',
+        'Applied Date', 'Job Title', 'Location', 'City', 'State',
       ];
       
       const rows = applications.map(app => [
@@ -54,7 +46,7 @@ export const useApplicationsExport = () => {
         app.source || '',
         app.applied_at ? new Date(app.applied_at).toLocaleDateString() : '',
         app.job_listings?.title || app.job_listings?.job_title || '',
-        '',  // location - not in job_listings type
+        '',
         app.city || '',
         app.state || '',
       ]);
@@ -85,7 +77,7 @@ export const useApplicationsExport = () => {
     }
   }, [toast]);
 
-  const exportToExcel = useCallback((applications: Application[]) => {
+  const exportToExcel = useCallback(async (applications: Application[]) => {
     try {
       const data = applications.map(app => ({
         'Full Name': `${app.first_name || ''} ${app.last_name || ''}`.trim(),
@@ -95,7 +87,7 @@ export const useApplicationsExport = () => {
         'Source': app.source || '',
         'Applied Date': app.applied_at ? new Date(app.applied_at).toLocaleDateString() : '',
         'Job Title': app.job_listings?.title || app.job_listings?.job_title || '',
-        'Location': '', // location - not in job_listings type
+        'Location': '',
         'City': app.city || '',
         'State': app.state || '',
         'ZIP': app.zip || '',
@@ -106,24 +98,10 @@ export const useApplicationsExport = () => {
         'Notes': app.notes || '',
       }));
 
-      const worksheet = XLSX.utils.json_to_sheet(data);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Applications');
-
-      // Auto-size columns
-      const maxWidth = 50;
-      const colWidths = Object.keys(data[0] || {}).map(key => ({
-        wch: Math.min(
-          maxWidth,
-          Math.max(
-            key.length,
-            ...data.map(row => String(row[key as keyof typeof row] || '').length)
-          )
-        ),
-      }));
-      worksheet['!cols'] = colWidths;
-
-      XLSX.writeFile(workbook, `applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+      await writeExcelFile(
+        [{ name: 'Applications', data }],
+        `applications-${new Date().toISOString().split('T')[0]}.xlsx`,
+      );
 
       toast({
         title: 'Export Successful',
