@@ -6,6 +6,7 @@ import { useStepWizard } from '@/hooks/useStepWizard';
 import { useSimulationAnalytics } from '@/hooks/useSimulationAnalytics';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
+import { TechInfoSection } from './TechInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
 import { ConsentSection } from './ConsentSection';
 import { FormProgressIndicator } from './FormProgressIndicator';
