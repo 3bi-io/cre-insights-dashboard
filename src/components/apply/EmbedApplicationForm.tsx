@@ -23,9 +23,21 @@ interface StepConfig {
   hasClientName?: boolean;
 }
 
-const STEP_SECTIONS: StepConfig[] = [
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
+const getCdlStepSections = (): StepConfig[] => [
   { id: 1, Component: PersonalInfoSection },
   { id: 2, Component: CDLInfoSection },
+  { id: 3, Component: BackgroundInfoSection },
+  { id: 4, Component: ConsentSection, hasClientName: true },
+];
+
+const getTechStepSections = (): StepConfig[] => [
+  { id: 1, Component: PersonalInfoSection },
+  { id: 2, Component: TechInfoSection },
   { id: 3, Component: BackgroundInfoSection },
   { id: 4, Component: ConsentSection, hasClientName: true },
 ];
