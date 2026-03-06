@@ -1,4 +1,4 @@
-import { authenticateRequest } from '../_shared/auth.ts';
+import { verifyUser } from '../_shared/auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,8 +10,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const auth = await authenticateRequest(req);
-  if (!auth) {
+  try {
+    await verifyUser(req);
+  } catch {
     return new Response(
       JSON.stringify({ success: false, error: 'Unauthorized' }),
       { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

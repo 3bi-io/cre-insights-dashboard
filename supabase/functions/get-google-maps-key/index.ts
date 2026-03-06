@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
-import { authenticateRequest } from '../_shared/auth.ts';
+import { verifyUser } from '../_shared/auth.ts';
 
 serve(async (req: Request) => {
   const origin = req.headers.get('origin');
@@ -10,8 +10,9 @@ serve(async (req: Request) => {
   }
 
   // Require authentication
-  const auth = await authenticateRequest(req);
-  if (!auth) {
+  try {
+    await verifyUser(req);
+  } catch {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
