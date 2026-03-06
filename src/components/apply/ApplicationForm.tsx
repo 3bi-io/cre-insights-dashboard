@@ -80,9 +80,17 @@ function mapExperienceToOption(options: { value: string; label: string }[], mont
 interface ApplicationFormProps {
   clientName?: string | null;
   clientLogoUrl?: string | null;
+  industryVertical?: string | null;
 }
 
-export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormProps) => {
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
+export const ApplicationForm = ({ clientName, clientLogoUrl, industryVertical }: ApplicationFormProps) => {
+  const isTech = isTechVertical(industryVertical);
+  const Step2Component = isTech ? TechInfoSection : CDLInfoSection;
   const { jobListingId } = useApplyContext();
   const { data: screeningQuestions } = useScreeningQuestions(jobListingId);
   const hasScreening = screeningQuestions && screeningQuestions.length > 0;
