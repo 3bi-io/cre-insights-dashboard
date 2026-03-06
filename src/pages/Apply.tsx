@@ -84,9 +84,10 @@ const Apply = () => {
                   country={country}
                   countryCode={countryCode}
                   jobListingId={jobListingId}
+                  industryVertical={industryVertical}
                 />
               ) : (
-                <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} />
+                <ApplicationForm clientName={clientName} clientLogoUrl={clientLogoUrl} industryVertical={industryVertical} />
               )}
             </main>
             
