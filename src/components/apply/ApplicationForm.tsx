@@ -290,10 +290,10 @@ export const ApplicationForm = ({ clientName, clientLogoUrl, industryVertical }:
             </Suspense>
           </StepContainer>
 
-          {/* Step 2: CDL Info */}
+          {/* Step 2: CDL or Tech Info */}
           <StepContainer direction={direction} isActive={activeStep === 2}>
             <Suspense fallback={<ApplicationFormSkeleton />}>
-              <CDLInfoSection
+              <Step2Component
                 formData={formData}
                 onInputChange={handleInputChange}
                 isActive={activeStep === 2}
