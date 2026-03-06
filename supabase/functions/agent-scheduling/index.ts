@@ -319,14 +319,47 @@ async function handleBookCallback(
     );
   }
 
+  // Load recruiter preferences for duration and auto-accept
+  const supabase = getServiceClient();
+  const { data: prefs } = await supabase
+    .from('recruiter_availability_preferences')
+    .select('default_call_duration_minutes, auto_accept_bookings, max_daily_callbacks')
+    .eq('user_id', recruiter_user_id)
+    .maybeSingle();
+
+  const duration: number = (prefs as any)?.default_call_duration_minutes || 15;
+  const autoAccept: boolean = (prefs as any)?.auto_accept_bookings ?? true;
+  const maxDaily: number = (prefs as any)?.max_daily_callbacks || 20;
+
+  // Enforce daily cap before booking
+  const dayStart = new Date(slotDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(slotDate);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  const { count: existingCallbacks } = await supabase
+    .from('scheduled_callbacks')
+    .select('id', { count: 'exact', head: true })
+    .eq('recruiter_user_id', recruiter_user_id)
+    .gte('scheduled_start', dayStart.toISOString())
+    .lte('scheduled_start', dayEnd.toISOString())
+    .neq('status', 'cancelled');
+
+  if ((existingCallbacks || 0) >= maxDaily) {
+    return new Response(
+      JSON.stringify({ result: 'The recruiter\'s schedule is full for that day. Would you like me to check the next available day?' }),
+      { status: 200, headers }
+    );
+  }
+
   // Sanitize inputs
   const driver_name = sanitizeText(rawDriverName, 200);
   const driver_phone = sanitizePhone(rawDriverPhone);
   const notes = sanitizeText(rawNotes, 1000);
 
-  // Calculate end time if not provided (default 15 min)
+  // Calculate end time using recruiter's preferred duration
   const endTime = selected_slot_end || new Date(
-    slotDate.getTime() + 15 * 60 * 1000
+    slotDate.getTime() + duration * 60 * 1000
   ).toISOString();
 
   let bookData: any = {};
@@ -346,8 +379,9 @@ async function handleBookCallback(
         driverPhone: driver_phone,
         startTime: selected_slot_start,
         endTime: endTime,
-        durationMinutes: 15,
+        durationMinutes: duration,
         notes: notes || 'Scheduled by AI Voice Agent',
+        autoAccept,
       }),
     });
     bookData = await bookResponse.json();
@@ -389,7 +423,6 @@ async function handleBookCallback(
           applicationId: application_id,
         }),
       }, 10000);
-      // Consume the response body to prevent resource leak
       await smsResp.text();
     } catch (e) {
       console.warn('SMS confirmation failed:', e);
@@ -401,9 +434,13 @@ async function handleBookCallback(
     minute: '2-digit',
   });
 
+  const statusMsg = autoAccept
+    ? `All set! Your callback has been confirmed for ${scheduledTime}. You'll receive a text confirmation shortly.`
+    : `Your callback has been requested for ${scheduledTime}. The recruiter will confirm shortly. You'll receive a text when it's confirmed.`;
+
   return new Response(
     JSON.stringify({
-      result: `All set! Your callback has been scheduled for ${scheduledTime} tomorrow morning. You'll receive a text confirmation shortly. A recruiter will call you at that time. Is there anything else I can help with?`,
+      result: statusMsg,
       callback_id: bookData.callback?.id,
       calendar_event_created: bookData.calendarEventCreated,
     }),

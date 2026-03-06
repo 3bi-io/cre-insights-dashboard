@@ -327,11 +327,12 @@ function calculateAvailableSlots(
   busyPeriods: any[],
   windowStart: Date,
   windowEnd: Date,
-  durationMinutes: number
+  durationMinutes: number,
+  bufferMinutes: number = 5
 ): { start: string; end: string }[] {
   const slots: { start: string; end: string }[] = [];
   const durationMs = durationMinutes * 60 * 1000;
-  const bufferMs = 5 * 60 * 1000;
+  const bufferMs = bufferMinutes * 60 * 1000;
 
   const busy = busyPeriods
     .flatMap((p: any) => p.time_slots || [p])
