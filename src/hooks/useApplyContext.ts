@@ -89,6 +89,7 @@ export const useApplyContext = (): ApplyContext => {
             organizationId: organizationId || null,
             clientId: clientId || jobListing.client_id || null,
             source: utmSource,
+            industryVertical,
             isLoading: false,
           });
           return;
