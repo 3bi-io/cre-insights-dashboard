@@ -44,6 +44,7 @@ const getTechStepSections = (): StepConfig[] => [
 
 interface EmbedApplicationFormProps {
   clientName?: string | null;
+  industryVertical?: string | null;
   onSubmitSuccess?: (result: {
     applicationId: string;
     clientName?: string;
@@ -55,7 +56,9 @@ interface EmbedApplicationFormProps {
  * Embed-specific application form that routes to dedicated outbound voice agent
  * Sets source: 'Embed Form' for all submissions
  */
-export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedApplicationFormProps) => {
+export const EmbedApplicationForm = ({ clientName, industryVertical, onSubmitSuccess }: EmbedApplicationFormProps) => {
+  const isTech = isTechVertical(industryVertical);
+  const stepSections = isTech ? getTechStepSections() : getCdlStepSections();
   const { 
     formData, 
     handleInputChange, 
