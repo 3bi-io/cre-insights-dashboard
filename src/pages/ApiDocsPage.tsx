@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { SEO } from '@/components/SEO';
+import { StructuredData } from '@/components/StructuredData';
+import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -120,15 +122,44 @@ const endpoints = [
 ];
 
 const ApiDocsPage: React.FC = () => {
+  const breadcrumbs = buildBreadcrumbSchema([
+    { name: 'Home', href: '/' },
+    { name: 'API Documentation', href: '/api-docs' },
+  ]);
+
+  const techArticleSchema = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "name": "Apply AI Organization API Documentation",
+    "description": "Complete REST API reference for integrating Apply AI recruitment data into your own applications.",
+    "url": "https://applyai.jobs/api-docs",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Apply AI",
+      "url": "https://applyai.jobs",
+    },
+  };
+
   return (
     <>
-      <Helmet>
-        <title>API Documentation | ApplyAI</title>
-        <meta name="description" content="ApplyAI Organization API documentation. Integrate recruitment data into your own website dashboard." />
-      </Helmet>
+      <SEO
+        title="API Documentation | Organization REST API Reference"
+        description="Complete API reference for the Apply AI Organization API. Integrate recruitment data — clients, jobs, applications, and stats — into your own dashboard."
+        keywords="API documentation, REST API, recruitment API, organization API, developer docs, Apply AI API"
+        canonical="https://applyai.jobs/api-docs"
+        noindex={false}
+      />
+      <StructuredData data={[breadcrumbs, techArticleSchema]} />
 
       <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
+          {/* Breadcrumb */}
+          <nav className="text-sm text-muted-foreground" aria-label="Breadcrumb">
+            <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+            <span className="mx-2">/</span>
+            <span className="text-foreground">API Documentation</span>
+          </nav>
+
           {/* Header */}
           <div className="space-y-3">
             <h1 className="text-3xl font-bold tracking-tight">Organization API</h1>
@@ -141,24 +172,24 @@ const ApiDocsPage: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
+                <Zap className="h-5 w-5" aria-hidden="true" />
                 Quick Start
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">1. Generate an API key</p>
+                <h3 className="text-sm font-medium">1. Generate an API key</h3>
                 <p className="text-sm text-muted-foreground">
                   Go to <strong>Dashboard → Settings → API Keys</strong> and generate a new key. Add your website's domain as an allowed origin.
                 </p>
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">2. Make your first request</p>
+                <h3 className="text-sm font-medium">2. Make your first request</h3>
                 <CodeBlock>{`curl -H "x-api-key: YOUR_KEY" \\
   ${BASE}/stats`}</CodeBlock>
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium">3. Or use the embeddable SDK (zero code)</p>
+                <h3 className="text-sm font-medium">3. Or use the embeddable SDK (zero code)</h3>
                 <CodeBlock lang="html">{`<script src="https://applyai.jobs/sdk.js"
   data-api-key="YOUR_KEY"
   data-theme="light"
@@ -173,7 +204,7 @@ const ApiDocsPage: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
+                <Key className="h-5 w-5" aria-hidden="true" />
                 Authentication
               </CardTitle>
             </CardHeader>
@@ -183,14 +214,14 @@ const ApiDocsPage: React.FC = () => {
   headers: { "x-api-key": "your_api_key_here" }
 })`}</CodeBlock>
               <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
-                <Shield className="h-4 w-4 mt-0.5 text-primary" />
+                <Shield className="h-4 w-4 mt-0.5 text-primary" aria-hidden="true" />
                 <div>
                   <p className="font-medium">CORS & Security</p>
                   <p className="text-muted-foreground">Each API key has configurable <strong>allowed origins</strong>. Only requests from whitelisted domains will succeed. Configure origins in Dashboard → Settings → API Keys.</p>
                 </div>
               </div>
               <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
-                <Zap className="h-4 w-4 mt-0.5 text-primary" />
+                <Zap className="h-4 w-4 mt-0.5 text-primary" aria-hidden="true" />
                 <div>
                   <p className="font-medium">Rate Limiting</p>
                   <p className="text-muted-foreground">Default: 100 requests/minute per API key. Exceeding the limit returns <code className="bg-background px-1 py-0.5 rounded text-xs">429 Too Many Requests</code>.</p>
@@ -200,9 +231,9 @@ const ApiDocsPage: React.FC = () => {
           </Card>
 
           {/* Endpoints */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold flex items-center gap-2">
-              <Code className="h-5 w-5" />
+          <section className="space-y-6" aria-labelledby="endpoints-heading">
+            <h2 id="endpoints-heading" className="text-2xl font-semibold flex items-center gap-2">
+              <Code className="h-5 w-5" aria-hidden="true" />
               Endpoints
             </h2>
 
@@ -218,7 +249,7 @@ const ApiDocsPage: React.FC = () => {
                 <CardContent className="space-y-4">
                   {ep.params.length > 0 && (
                     <div>
-                      <p className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wider">Query Parameters</p>
+                      <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wider">Query Parameters</h4>
                       <div className="space-y-1">
                         {ep.params.map((p) => (
                           <div key={p.name} className="flex gap-3 text-sm">
@@ -231,19 +262,19 @@ const ApiDocsPage: React.FC = () => {
                     </div>
                   )}
                   <div>
-                    <p className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wider">Response</p>
+                    <h4 className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wider">Response</h4>
                     <CodeBlock lang="json">{ep.response}</CodeBlock>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </section>
 
           {/* SDK Reference */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
+                <Globe className="h-5 w-5" aria-hidden="true" />
                 Embeddable SDK
               </CardTitle>
             </CardHeader>
@@ -258,7 +289,7 @@ const ApiDocsPage: React.FC = () => {
 </script>
 <div id="applyai-dashboard"></div>`}</CodeBlock>
               <div>
-                <p className="font-medium mb-2">SDK Options</p>
+                <h3 className="font-medium mb-2">SDK Options</h3>
                 <div className="space-y-1">
                   {[
                     { attr: 'data-api-key', desc: 'Required. Your organization API key.' },

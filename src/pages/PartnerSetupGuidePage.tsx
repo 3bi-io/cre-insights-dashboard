@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+import { StructuredData, buildHowToSchema } from '@/components/StructuredData';
+import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { CheckCircle2, Circle, BookOpen, Mail, ExternalLink, Copy, Download } from 'lucide-react';
+import { CheckCircle2, Circle, BookOpen, Mail, Copy, Download } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -31,8 +32,8 @@ const CodeBlock = ({ children }: { children: string }) => {
       </pre>
       <button
         onClick={copy}
-        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground"
-        aria-label="Copy code"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground min-w-[44px] min-h-[44px] flex items-center justify-center"
+        aria-label="Copy code to clipboard"
       >
         <Copy className="h-4 w-4" />
       </button>
@@ -63,7 +64,7 @@ const steps: Step[] = [
           <li>Brief description of your integration use case</li>
         </ul>
         <a href="mailto:support@applyai.jobs?subject=Partner API Access Request" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
-          <Mail className="h-4 w-4" /> support@applyai.jobs
+          <Mail className="h-4 w-4" aria-hidden="true" /> support@applyai.jobs
         </a>
       </div>
     ),
@@ -81,7 +82,7 @@ const steps: Step[] = [
           <li><strong>Allowed Origins</strong> — the domains whitelisted for CORS</li>
           <li><strong>Rate Limit</strong> — your request quota (default: 100 req/min)</li>
         </ul>
-        <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+        <div className="bg-warning/10 border border-warning/30 rounded-lg p-3" role="alert">
           <p className="text-sm text-warning-foreground font-medium">🔒 Keep your API key secret</p>
           <p className="text-xs text-muted-foreground mt-1">
             Never expose it in client-side code. Use it only in server-to-server calls or secure backend proxies.
@@ -162,7 +163,7 @@ console.log(data);
           </Card>
         </div>
         <Link to="/api-docs" className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
-          <BookOpen className="h-4 w-4" /> Full API reference →
+          <BookOpen className="h-4 w-4" aria-hidden="true" /> Full API reference →
         </Link>
       </div>
     ),
@@ -175,19 +176,19 @@ console.log(data);
         <p className="text-sm font-medium">Pre-launch checklist:</p>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" aria-hidden="true" />
             Production domain(s) added to your allowed CORS origins
           </li>
           <li className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" aria-hidden="true" />
             API key stored securely (env vars, secrets manager)
           </li>
           <li className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" aria-hidden="true" />
             Error handling for rate limits (HTTP 429) implemented
           </li>
           <li className="flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+            <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" aria-hidden="true" />
             Caching strategy in place to minimize redundant calls
           </li>
         </ul>
@@ -264,7 +265,6 @@ const generatePdf = () => {
     }
   };
 
-  // Title
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.text('Apply AI — Partner Integration Guide', margin, y);
@@ -277,12 +277,10 @@ const generatePdf = () => {
   doc.setTextColor(0);
   y += 10;
 
-  // Divider
   doc.setDrawColor(200);
   doc.line(margin, y, pageW - margin, y);
   y += 20;
 
-  // Steps
   for (const step of pdfSteps) {
     checkPage(80);
     doc.setFontSize(13);
@@ -301,7 +299,6 @@ const generatePdf = () => {
     y += 12;
   }
 
-  // Footer
   checkPage(40);
   doc.setDrawColor(200);
   doc.line(margin, y, pageW - margin, y);
@@ -328,15 +325,37 @@ const PartnerSetupGuidePage: React.FC = () => {
 
   const progress = Math.round((completed.size / steps.length) * 100);
 
+  const breadcrumbs = buildBreadcrumbSchema([
+    { name: 'Home', href: '/' },
+    { name: 'Partner Setup Guide', href: '/partner-setup' },
+  ]);
+
+  const howToSchema = buildHowToSchema({
+    name: 'How to Integrate with the Apply AI Partner API',
+    description: 'Step-by-step guide for partner organizations to connect to the Apply AI platform API.',
+    totalTime: 'PT30M',
+    steps: steps.map(s => ({ name: s.title, text: s.description })),
+  });
+
   return (
     <>
-      <Helmet>
-        <title>Partner Setup Guide | Apply AI</title>
-        <meta name="description" content="Step-by-step integration guide for partner organizations connecting to the Apply AI platform API." />
-      </Helmet>
+      <SEO
+        title="Partner Setup Guide | API Integration Walkthrough"
+        description="Step-by-step integration guide for partner organizations connecting to the Apply AI platform API. Configure, test, and go live."
+        keywords="partner integration, API setup guide, Apply AI partner, developer onboarding, API key setup"
+        canonical="https://applyai.jobs/partner-setup"
+      />
+      <StructuredData data={[breadcrumbs, howToSchema]} />
 
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-5xl px-4 py-12">
+          {/* Breadcrumb */}
+          <nav className="text-sm text-muted-foreground mb-6" aria-label="Breadcrumb">
+            <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+            <span className="mx-2">/</span>
+            <span className="text-foreground">Partner Setup Guide</span>
+          </nav>
+
           {/* Header */}
           <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -347,8 +366,8 @@ const PartnerSetupGuidePage: React.FC = () => {
                 Follow these steps to connect your platform to the Apply AI API.
               </p>
             </div>
-            <Button variant="outline" onClick={generatePdf} className="shrink-0">
-              <Download className="h-4 w-4 mr-2" /> Download PDF
+            <Button variant="outline" onClick={generatePdf} className="shrink-0 min-h-[44px]">
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" /> Download PDF
             </Button>
           </div>
 
@@ -364,7 +383,7 @@ const PartnerSetupGuidePage: React.FC = () => {
                     </span>
                     <span className="text-sm text-muted-foreground">{progress}%</span>
                   </div>
-                  <Progress value={progress} className="h-2" />
+                  <Progress value={progress} className="h-2" aria-label={`Setup progress: ${progress}%`} />
                 </CardContent>
               </Card>
 
@@ -378,8 +397,8 @@ const PartnerSetupGuidePage: React.FC = () => {
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); toggle(i); }}
-                            className="shrink-0"
-                            aria-label={`Mark step ${i + 1} as ${completed.has(i) ? 'incomplete' : 'complete'}`}
+                            className="shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                            aria-label={`Mark step ${i + 1} "${step.title}" as ${completed.has(i) ? 'incomplete' : 'complete'}`}
                           >
                             {completed.has(i) ? (
                               <CheckCircle2 className="h-5 w-5 text-success" />
@@ -406,17 +425,17 @@ const PartnerSetupGuidePage: React.FC = () => {
             </div>
 
             {/* Sidebar */}
-            <aside className="space-y-4 lg:sticky lg:top-8 self-start">
+            <aside className="space-y-4 lg:sticky lg:top-8 self-start" aria-label="Quick links">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm">Quick Links</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Link to="/api-docs" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                    <BookOpen className="h-4 w-4" /> API Reference
+                    <BookOpen className="h-4 w-4" aria-hidden="true" /> API Reference
                   </Link>
                   <a href="mailto:support@applyai.jobs" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                    <Mail className="h-4 w-4" /> Support
+                    <Mail className="h-4 w-4" aria-hidden="true" /> Support
                   </a>
                 </CardContent>
               </Card>
