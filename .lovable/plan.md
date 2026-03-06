@@ -1,37 +1,45 @@
 
 
-# Invert DFW Geo-Fence: Block Inside, Allow Outside
+## Source and Implement AspenView Logo
 
-## Current behavior (wrong)
-- Users **inside** 200 miles of DFW → allowed
-- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
+### Current State
+- **Client** `Aspenview Technology Partners` (ID: `82513316-...`) has `logo_url: null`
+- **Organization** `Aspen Analytics` (ID: `9335c64c-...`) has `logo_url: null`
+- The AspenView logo SVG is available at: `https://aspenview.com/wp-content/uploads/2025/05/logo_aspen_view_technology_partners.svg`
+- Existing client logos follow the pattern of being stored in `public/logos/` and referenced via `https://applyai.jobs/logos/`
 
-## Desired behavior
-- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
-- Users **outside** 200 miles of DFW → **allowed**
-- OFAC sanctions countries → still blocked (no change)
+### What Needs To Happen
 
-## Changes
+**1. Download and host the AspenView logo locally**
+- Save the SVG logo from `aspenview.com` to `public/logos/aspenview-technology-partners.svg`
+- This follows the existing stable hosting pattern at `https://applyai.jobs/logos/`
 
-### 1. `supabase/functions/_shared/geo-fence.ts`
-- Rename concept from "service area" to "restricted zone"
-- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
-- Update JSDoc comments to reflect the new semantics
+**2. Update Client record** (data operation)
+```sql
+UPDATE clients 
+SET logo_url = 'https://applyai.jobs/logos/aspenview-technology-partners.svg',
+    city = 'San Juan', 
+    state = 'PR'
+WHERE id = '82513316-7df2-4bf0-83d8-6c511c83ddfb';
+```
 
-### 2. `supabase/functions/geo-check/index.ts`
-- Gate 2 now blocks when user **is inside** the DFW radius
-- Change reason from `outside_service_area` to `inside_restricted_zone`
-- Update log messages accordingly
+**3. Update Organization record** (data operation)
+```sql
+UPDATE organizations 
+SET logo_url = 'https://applyai.jobs/logos/aspenview-technology-partners.svg'
+WHERE id = '9335c64c-b793-4578-bf51-63d0c3b5d66d';
+```
 
-### 3. `src/contexts/GeoBlockingContext.tsx`
-- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
-- Match on new reason `inside_restricted_zone`
+### Impact (no code changes needed)
+Once the `logo_url` fields are populated, all existing components automatically pick it up:
+- `/clients` page — `ClientCard` renders the logo via `LogoAvatar`
+- `/jobs` page — job cards show client logo
+- `/apply` page — application form header displays client logo
+- Email headers — `send-application-email` passes `clientLogoUrl` from DB
+- Dashboard sidebar — org logo via `useAuth` → `organization.logo_url`
+- Branding panel — `OrganizationBrandingPanel` displays current logo
 
-### 4. `src/pages/RegionBlocked.tsx`
-- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
-- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
-
-### 5. Deploy updated `geo-check` edge function
-
-No database changes needed. All changes are in edge function code and frontend components.
+### Files
+- **Create** `public/logos/aspenview-technology-partners.svg` (downloaded from aspenview.com)
+- **Data updates** to `clients` and `organizations` tables (2 UPDATE statements)
 
