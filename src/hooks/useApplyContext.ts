@@ -100,7 +100,7 @@ export const useApplyContext = (): ApplyContext => {
       if (clientId) {
         const { data: clientInfo } = await supabase
           .from('public_client_info')
-          .select('name, logo_url')
+          .select('name, logo_url, industry_vertical')
           .eq('id', clientId)
           .maybeSingle();
 
@@ -114,6 +114,7 @@ export const useApplyContext = (): ApplyContext => {
             organizationId: organizationId || null,
             clientId,
             source: utmSource,
+            industryVertical: clientInfo.industry_vertical || null,
             isLoading: false,
           });
           return;
