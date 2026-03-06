@@ -11,6 +11,7 @@ interface ApplyContext {
   organizationId: string | null;
   clientId: string | null;
   source: string | null;
+  industryVertical: string | null;
   isLoading: boolean;
 }
 
