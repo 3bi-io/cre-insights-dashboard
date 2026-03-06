@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, User, Truck, Shield, FileCheck } from 'lucide-react';
+import { Check, User, Truck, Shield, FileCheck, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FormProgressIndicatorProps {
@@ -8,12 +8,18 @@ interface FormProgressIndicatorProps {
   completedSteps: Set<number>;
   onStepClick?: (step: number) => void;
   canGoToStep?: (step: number) => boolean;
-  
+  industryVertical?: string | null;
 }
 
-const baseSteps = [
+const CDL_STEPS = [
   { label: 'Personal', icon: User },
   { label: 'CDL', icon: Truck },
+  { label: 'Background', icon: Shield },
+];
+
+const TECH_STEPS = [
+  { label: 'Personal', icon: User },
+  { label: 'Skills', icon: Code },
   { label: 'Background', icon: Shield },
 ];
 
