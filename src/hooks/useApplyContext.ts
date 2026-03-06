@@ -11,6 +11,7 @@ interface ApplyContext {
   organizationId: string | null;
   clientId: string | null;
   source: string | null;
+  industryVertical: string | null;
   isLoading: boolean;
 }
 
@@ -25,6 +26,7 @@ export const useApplyContext = (): ApplyContext => {
     organizationId: null,
     clientId: null,
     source: null,
+    industryVertical: null,
     isLoading: true,
   });
 
@@ -62,16 +64,18 @@ export const useApplyContext = (): ApplyContext => {
           let clientName: string | null = null;
           let clientLogoUrl: string | null = null;
 
-          // Step 2: Fetch client name and logo from public_client_info view
+          // Step 2: Fetch client name, logo, and industry vertical from public_client_info view
+          let industryVertical: string | null = null;
           if (jobListing.client_id) {
             const { data: clientInfo } = await supabase
               .from('public_client_info')
-              .select('name, logo_url')
+              .select('name, logo_url, industry_vertical')
               .eq('id', jobListing.client_id)
               .maybeSingle();
             
             clientName = clientInfo?.name || null;
             clientLogoUrl = clientInfo?.logo_url || null;
+            industryVertical = clientInfo?.industry_vertical || null;
           }
           
           setContext({
@@ -85,6 +89,7 @@ export const useApplyContext = (): ApplyContext => {
             organizationId: organizationId || null,
             clientId: clientId || jobListing.client_id || null,
             source: utmSource,
+            industryVertical,
             isLoading: false,
           });
           return;
@@ -95,7 +100,7 @@ export const useApplyContext = (): ApplyContext => {
       if (clientId) {
         const { data: clientInfo } = await supabase
           .from('public_client_info')
-          .select('name, logo_url')
+          .select('name, logo_url, industry_vertical')
           .eq('id', clientId)
           .maybeSingle();
 
@@ -109,6 +114,7 @@ export const useApplyContext = (): ApplyContext => {
             organizationId: organizationId || null,
             clientId,
             source: utmSource,
+            industryVertical: clientInfo.industry_vertical || null,
             isLoading: false,
           });
           return;
@@ -125,6 +131,7 @@ export const useApplyContext = (): ApplyContext => {
         organizationId: organizationId || null,
         clientId: clientId || null,
         source: utmSource,
+        industryVertical: null,
         isLoading: false,
       });
     };

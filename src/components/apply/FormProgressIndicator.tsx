@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, User, Truck, Shield, FileCheck } from 'lucide-react';
+import { Check, User, Truck, Shield, FileCheck, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FormProgressIndicatorProps {
@@ -8,16 +8,27 @@ interface FormProgressIndicatorProps {
   completedSteps: Set<number>;
   onStepClick?: (step: number) => void;
   canGoToStep?: (step: number) => boolean;
-  
+  industryVertical?: string | null;
 }
 
-const baseSteps = [
+const CDL_STEPS = [
   { label: 'Personal', icon: User },
   { label: 'CDL', icon: Truck },
   { label: 'Background', icon: Shield },
 ];
 
+const TECH_STEPS = [
+  { label: 'Personal', icon: User },
+  { label: 'Skills', icon: Code },
+  { label: 'Background', icon: Shield },
+];
+
 const consentStep = { label: 'Consent', icon: FileCheck };
+
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
 
 export const FormProgressIndicator = ({ 
   currentStep, 
@@ -25,7 +36,9 @@ export const FormProgressIndicator = ({
   completedSteps,
   onStepClick,
   canGoToStep,
+  industryVertical,
 }: FormProgressIndicatorProps) => {
+  const baseSteps = isTechVertical(industryVertical) ? TECH_STEPS : CDL_STEPS;
   const steps = [...baseSteps, consentStep];
   const handleStepClick = (stepNumber: number) => {
     if (canGoToStep?.(stepNumber) && onStepClick) {

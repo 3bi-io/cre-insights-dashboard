@@ -7,6 +7,7 @@ import { useApplyContext } from '@/hooks/useApplyContext';
 import { ApplicationFormSkeleton } from './ApplicationFormSkeleton';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
+import { TechInfoSection } from './TechInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
 import { ConsentSection } from './ConsentSection';
 import { ScreeningQuestionsSection } from './ScreeningQuestionsSection';
@@ -79,9 +80,17 @@ function mapExperienceToOption(options: { value: string; label: string }[], mont
 interface ApplicationFormProps {
   clientName?: string | null;
   clientLogoUrl?: string | null;
+  industryVertical?: string | null;
 }
 
-export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormProps) => {
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
+export const ApplicationForm = ({ clientName, clientLogoUrl, industryVertical }: ApplicationFormProps) => {
+  const isTech = isTechVertical(industryVertical);
+  const Step2Component = isTech ? TechInfoSection : CDLInfoSection;
   const { jobListingId } = useApplyContext();
   const { data: screeningQuestions } = useScreeningQuestions(jobListingId);
   const hasScreening = screeningQuestions && screeningQuestions.length > 0;
@@ -261,6 +270,7 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            industryVertical={industryVertical}
           />
         </nav>
 
@@ -280,10 +290,10 @@ export const ApplicationForm = ({ clientName, clientLogoUrl }: ApplicationFormPr
             </Suspense>
           </StepContainer>
 
-          {/* Step 2: CDL Info */}
+          {/* Step 2: CDL or Tech Info */}
           <StepContainer direction={direction} isActive={activeStep === 2}>
             <Suspense fallback={<ApplicationFormSkeleton />}>
-              <CDLInfoSection
+              <Step2Component
                 formData={formData}
                 onInputChange={handleInputChange}
                 isActive={activeStep === 2}

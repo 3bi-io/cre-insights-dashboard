@@ -22,18 +22,22 @@ const DEFAULT_UTM = {
   medium: 'ats_feed',
 };
 
-// Department to category mapping
+// Department to category mapping (cyber-focused org)
 const DEPARTMENT_CATEGORY_MAP: Record<string, string> = {
-  'technology': 'Technology',
-  'engineering': 'Technology',
-  'sales': 'Sales',
-  'business operations': 'Operations',
-  'operations': 'Operations',
-  'people': 'Human Resources',
-  'hr': 'Human Resources',
-  'marketing': 'Marketing',
-  'finance': 'Finance',
-  'legal': 'Legal',
+  'technology': 'Cybersecurity',
+  'engineering': 'Cybersecurity',
+  'cybersecurity': 'Cybersecurity',
+  'security': 'Cybersecurity',
+  'it': 'Cybersecurity',
+  'development': 'Cybersecurity',
+  'sales': 'Customer Service',
+  'business operations': 'Administrative',
+  'operations': 'Administrative',
+  'people': 'Administrative',
+  'hr': 'Administrative',
+  'marketing': 'Administrative',
+  'finance': 'Administrative',
+  'legal': 'Administrative',
 };
 
 function generateApplyUrl(jobListingId: string): string {
@@ -67,22 +71,41 @@ function extractJobUuid(url: string): string | null {
 function parseLocation(location: string | null): { city: string | null; state: string | null; remote_type: string | null; location: string | null } {
   if (!location) return { city: null, state: null, remote_type: null, location: null };
 
-  const loc = location.trim();
+  let loc = location.trim();
 
-  // Check for remote indicators
+  // Fix truncated parentheses like "Remoto (Bogotá"
+  if (loc.includes('(') && !loc.includes(')')) {
+    loc = loc + ')';
+  }
+
+  // Check for remote indicators (Spanish and English)
   if (/remoto|remote/i.test(loc)) {
-    // If it's purely remote
+    // Purely remote
     if (/^(remoto|remote)$/i.test(loc)) {
       return { city: null, state: null, remote_type: 'remote', location: 'Remote' };
     }
-    // Remote with location (e.g. "San Francisco, CA - Remote")
+    
+    // "Remoto (City)" or "Remoto (City, Country)" pattern
+    const parenMatch = loc.match(/(?:remoto|remote)\s*\(([^)]+)\)/i);
+    if (parenMatch) {
+      const inner = parenMatch[1].trim();
+      const parts = inner.split(',').map(p => p.trim());
+      return {
+        city: parts[0] || null,
+        state: parts.length > 1 ? parts[parts.length - 1] : null,
+        remote_type: 'remote',
+        location: `${parts[0] || 'Remote'} (Remote)`,
+      };
+    }
+
+    // "City, State - Remote" pattern
     const cleanLoc = loc.replace(/[-–]\s*(remoto|remote)/i, '').trim();
     const parts = cleanLoc.split(',').map(p => p.trim());
     return {
       city: parts[0] || null,
       state: parts[1] || null,
-      remote_type: 'hybrid',
-      location: cleanLoc || 'Remote',
+      remote_type: 'remote',
+      location: cleanLoc ? `${cleanLoc} (Remote)` : 'Remote',
     };
   }
 
@@ -100,9 +123,9 @@ function parseLocation(location: string | null): { city: string | null; state: s
  * Map department to a category name
  */
 function mapDepartmentToCategory(department: string | null): string {
-  if (!department) return 'General';
+  if (!department) return 'Cybersecurity';
   const key = department.toLowerCase().trim();
-  return DEPARTMENT_CATEGORY_MAP[key] || 'General';
+  return DEPARTMENT_CATEGORY_MAP[key] || 'Cybersecurity';
 }
 
 interface ScrapedJob {

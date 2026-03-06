@@ -6,6 +6,7 @@ import { useStepWizard } from '@/hooks/useStepWizard';
 import { useSimulationAnalytics } from '@/hooks/useSimulationAnalytics';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
+import { TechInfoSection } from './TechInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
 import { ConsentSection } from './ConsentSection';
 import { FormProgressIndicator } from './FormProgressIndicator';
@@ -62,9 +63,16 @@ interface SimulatedApplicationFormProps {
   country?: string | null;
   countryCode?: string | null;
   jobListingId?: string | null;
+  industryVertical?: string | null;
 }
 
-export const SimulatedApplicationForm = ({ clientName, country, countryCode, jobListingId }: SimulatedApplicationFormProps) => {
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
+export const SimulatedApplicationForm = ({ clientName, country, countryCode, jobListingId, industryVertical }: SimulatedApplicationFormProps) => {
+  const isTech = isTechVertical(industryVertical);
   const [formData, setFormData] = useState<SimFormData>(initialFormData);
   const [simComplete, setSimComplete] = useState(false);
 
@@ -181,7 +189,7 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
 
   const STEP_SECTIONS = [
     { id: 1, Component: PersonalInfoSection },
-    { id: 2, Component: CDLInfoSection },
+    { id: 2, Component: isTech ? TechInfoSection : CDLInfoSection },
     { id: 3, Component: BackgroundInfoSection },
     { id: 4, Component: ConsentSection, hasClientName: true },
   ];
@@ -212,6 +220,7 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            industryVertical={industryVertical}
           />
         </nav>
 

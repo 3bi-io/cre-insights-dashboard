@@ -5,6 +5,7 @@ import { useStepWizard } from '@/hooks/useStepWizard';
 import { ApplicationFormSkeleton } from './ApplicationFormSkeleton';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
+import { TechInfoSection } from './TechInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
 import { ConsentSection } from './ConsentSection';
 import { FormProgressIndicator } from './FormProgressIndicator';
@@ -22,15 +23,28 @@ interface StepConfig {
   hasClientName?: boolean;
 }
 
-const STEP_SECTIONS: StepConfig[] = [
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
+const getCdlStepSections = (): StepConfig[] => [
   { id: 1, Component: PersonalInfoSection },
   { id: 2, Component: CDLInfoSection },
   { id: 3, Component: BackgroundInfoSection },
   { id: 4, Component: ConsentSection, hasClientName: true },
 ];
 
+const getTechStepSections = (): StepConfig[] => [
+  { id: 1, Component: PersonalInfoSection },
+  { id: 2, Component: TechInfoSection },
+  { id: 3, Component: BackgroundInfoSection },
+  { id: 4, Component: ConsentSection, hasClientName: true },
+];
+
 interface EmbedApplicationFormProps {
   clientName?: string | null;
+  industryVertical?: string | null;
   onSubmitSuccess?: (result: {
     applicationId: string;
     clientName?: string;
@@ -42,7 +56,9 @@ interface EmbedApplicationFormProps {
  * Embed-specific application form that routes to dedicated outbound voice agent
  * Sets source: 'Embed Form' for all submissions
  */
-export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedApplicationFormProps) => {
+export const EmbedApplicationForm = ({ clientName, industryVertical, onSubmitSuccess }: EmbedApplicationFormProps) => {
+  const isTech = isTechVertical(industryVertical);
+  const stepSections = isTech ? getTechStepSections() : getCdlStepSections();
   const { 
     formData, 
     handleInputChange, 
@@ -166,6 +182,7 @@ export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedAppli
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            industryVertical={industryVertical}
           />
         </nav>
 
@@ -176,7 +193,7 @@ export const EmbedApplicationForm = ({ clientName, onSubmitSuccess }: EmbedAppli
         <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
         
         <form onSubmit={handleFormSubmit} className="min-h-[400px]" noValidate>
-          {STEP_SECTIONS.map(({ id, Component, hasClientName }) => (
+          {stepSections.map(({ id, Component, hasClientName }) => (
             <StepContainer key={id} direction={direction} isActive={activeStep === id}>
               <Suspense fallback={<ApplicationFormSkeleton />}>
                 <Component 
