@@ -262,6 +262,7 @@ const AppRoutes: React.FC = () => {
         <Route path="ai-tools" element={<ProtectedRouteWrapper><AITools /></ProtectedRouteWrapper>} />
         <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
         <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
+        <Route path="my-calendar" element={<ProtectedRouteWrapper><RecruiterCalendarPage /></ProtectedRouteWrapper>} />
         
         {/* Consolidated Routes */}
         <Route path="ats-command" element={<ProtectedRouteWrapper><ATSCommandCenterPage /></ProtectedRouteWrapper>} />
