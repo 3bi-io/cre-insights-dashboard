@@ -211,6 +211,9 @@ const AppRoutes: React.FC = () => {
       {/* Audio Showcase - Standalone full-screen experience */}
       <Route path="/audio/:id" element={<RouteWrapper><AudioShowcasePage /></RouteWrapper>} />
       
+      {/* Calendar OAuth Callback */}
+      <Route path="/calendar/callback" element={<RouteWrapper><CalendarCallback /></RouteWrapper>} />
+      
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
       
       {/* Legacy auth route redirects for backward compatibility */}

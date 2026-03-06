@@ -308,3 +308,6 @@ verify_jwt = false
 
 [functions.calendar-integration]
 verify_jwt = false
+
+[functions.agent-scheduling]
+verify_jwt = false
