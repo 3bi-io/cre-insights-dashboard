@@ -87,6 +87,20 @@ serve(async (req) => {
       );
     }
 
+    // Verify user belongs to the connection's organization
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', userId)
+      .single();
+
+    if (!profile || profile.organization_id !== connection.organization_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden: organization mismatch' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const system = connection.ats_system as ATSSystem;
     const atsConnection = connection as unknown as ATSConnection;
 
