@@ -63,9 +63,16 @@ interface SimulatedApplicationFormProps {
   country?: string | null;
   countryCode?: string | null;
   jobListingId?: string | null;
+  industryVertical?: string | null;
 }
 
-export const SimulatedApplicationForm = ({ clientName, country, countryCode, jobListingId }: SimulatedApplicationFormProps) => {
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
+export const SimulatedApplicationForm = ({ clientName, country, countryCode, jobListingId, industryVertical }: SimulatedApplicationFormProps) => {
+  const isTech = isTechVertical(industryVertical);
   const [formData, setFormData] = useState<SimFormData>(initialFormData);
   const [simComplete, setSimComplete] = useState(false);
 
