@@ -311,3 +311,6 @@ verify_jwt = false
 
 [functions.agent-scheduling]
 verify_jwt = false
+
+[functions.morning-digest]
+verify_jwt = false
