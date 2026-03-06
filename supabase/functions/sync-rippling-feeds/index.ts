@@ -123,9 +123,9 @@ function parseLocation(location: string | null): { city: string | null; state: s
  * Map department to a category name
  */
 function mapDepartmentToCategory(department: string | null): string {
-  if (!department) return 'General';
+  if (!department) return 'Cybersecurity';
   const key = department.toLowerCase().trim();
-  return DEPARTMENT_CATEGORY_MAP[key] || 'General';
+  return DEPARTMENT_CATEGORY_MAP[key] || 'Cybersecurity';
 }
 
 interface ScrapedJob {
