@@ -1,7 +1,13 @@
-import { loadSync } from "https://deno.land/std@0.224.0/dotenv/mod.ts";
 import { assertEquals, assertExists } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { parse } from "https://deno.land/std@0.224.0/dotenv/parse.ts";
 
-loadSync({ export: true, allowEmptyValues: true });
+try {
+  const envContent = Deno.readTextFileSync(".env");
+  const envVars = parse(envContent);
+  for (const [key, value] of Object.entries(envVars)) {
+    if (!Deno.env.has(key)) Deno.env.set(key, value);
+  }
+} catch { /* ignore */ }
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY")!;
