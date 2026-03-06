@@ -19,42 +19,68 @@ const NYLAS_CLIENT_ID = Deno.env.get('NYLAS_CLIENT_ID') || '';
 const NYLAS_REDIRECT_URI = Deno.env.get('NYLAS_REDIRECT_URI') || '';
 const NYLAS_API_BASE = 'https://api.us.nylas.com';
 
+/** Fetch with timeout to prevent hanging on external API calls */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Validate UUID format */
+function isValidUUID(s: string | null | undefined): boolean {
+  if (!s) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+
 Deno.serve(async (req) => {
   const preflight = handleCorsPreflightIfNeeded(req);
   if (preflight) return preflight;
 
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
+  const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
 
   try {
-    const { action, ...params } = await req.json();
+    const body = await req.json();
+    const { action, ...params } = body;
+
+    if (!action || typeof action !== 'string') {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing or invalid action parameter' }),
+        { status: 400, headers: jsonHeaders }
+      );
+    }
 
     switch (action) {
       case 'oauth_url':
-        return handleOAuthUrl(req, corsHeaders);
+        return handleOAuthUrl(req, jsonHeaders);
 
       case 'oauth_callback':
-        return handleOAuthCallback(req, params, corsHeaders);
+        return handleOAuthCallback(req, params, jsonHeaders);
 
       case 'get_availability':
-        return handleGetAvailability(req, params, corsHeaders);
+        return handleGetAvailability(req, params, jsonHeaders);
 
       case 'book_slot':
-        return handleBookSlot(req, params, corsHeaders);
+        return handleBookSlot(req, params, jsonHeaders);
 
       case 'cancel_booking':
-        return handleCancelBooking(req, params, corsHeaders);
+        return handleCancelBooking(req, params, jsonHeaders);
 
       case 'list_connections':
-        return handleListConnections(req, corsHeaders);
+        return handleListConnections(req, jsonHeaders);
 
       case 'disconnect':
-        return handleDisconnect(req, params, corsHeaders);
+        return handleDisconnect(req, params, jsonHeaders);
 
       default:
         return new Response(
           JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: jsonHeaders }
         );
     }
   } catch (error: any) {
@@ -68,8 +94,12 @@ Deno.serve(async (req) => {
 
 // ============= OAuth =============
 
-async function handleOAuthUrl(req: Request, corsHeaders: Record<string, string>) {
+async function handleOAuthUrl(req: Request, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
+
+  if (!NYLAS_CLIENT_ID || !NYLAS_REDIRECT_URI) {
+    throw new Error('Nylas OAuth not configured. Missing NYLAS_CLIENT_ID or NYLAS_REDIRECT_URI.');
+  }
 
   const params = new URLSearchParams({
     client_id: NYLAS_CLIENT_ID,
@@ -77,26 +107,29 @@ async function handleOAuthUrl(req: Request, corsHeaders: Record<string, string>)
     response_type: 'code',
     access_type: 'online',
     state: userId,
-    provider: 'google', // can be extended to support microsoft, icloud
+    provider: 'google',
   });
 
   const authUrl = `https://api.us.nylas.com/v3/connect/auth?${params.toString()}`;
 
   return new Response(
     JSON.stringify({ success: true, url: authUrl }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }
 
-async function handleOAuthCallback(req: Request, params: any, corsHeaders: Record<string, string>) {
+async function handleOAuthCallback(req: Request, params: any, headers: Record<string, string>) {
   const { code, state: userId } = params;
 
-  if (!code || !userId) {
-    throw new Error('Missing code or state (userId)');
+  if (!code || typeof code !== 'string') {
+    throw new Error('Missing or invalid authorization code');
+  }
+  if (!userId || !isValidUUID(userId)) {
+    throw new Error('Missing or invalid state (userId)');
   }
 
   // Exchange code for grant
-  const tokenResponse = await fetch(`${NYLAS_API_BASE}/v3/connect/token`, {
+  const tokenResponse = await fetchWithTimeout(`${NYLAS_API_BASE}/v3/connect/token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -122,16 +155,22 @@ async function handleOAuthCallback(req: Request, params: any, corsHeaders: Recor
   const email = tokenData.email;
   const provider = tokenData.provider || 'unknown';
 
+  if (!grantId) {
+    throw new Error('No grant_id returned from Nylas token exchange');
+  }
+
   // Get primary calendar
   let calendarId = null;
   try {
-    const calResponse = await fetch(`${NYLAS_API_BASE}/v3/grants/${grantId}/calendars`, {
+    const calResponse = await fetchWithTimeout(`${NYLAS_API_BASE}/v3/grants/${grantId}/calendars`, {
       headers: { 'Authorization': `Bearer ${NYLAS_API_KEY}` },
     });
     if (calResponse.ok) {
       const calendars = await calResponse.json();
       const primary = calendars.data?.find((c: any) => c.is_primary) || calendars.data?.[0];
       calendarId = primary?.id || null;
+    } else {
+      await calResponse.text(); // consume body
     }
   } catch (e) {
     console.warn('Could not fetch calendars:', e);
@@ -140,7 +179,6 @@ async function handleOAuthCallback(req: Request, params: any, corsHeaders: Recor
   // Store in DB
   const supabase = getServiceClient();
   
-  // Get user's org
   const { data: profile } = await supabase
     .from('profiles')
     .select('organization_id')
@@ -168,22 +206,37 @@ async function handleOAuthCallback(req: Request, params: any, corsHeaders: Recor
 
   return new Response(
     JSON.stringify({ success: true, email, provider }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }
 
 // ============= Availability =============
 
-async function handleGetAvailability(req: Request, params: any, corsHeaders: Record<string, string>) {
+async function handleGetAvailability(req: Request, params: any, headers: Record<string, string>) {
   const { recruiterUserId, startTime, endTime, durationMinutes = 15 } = params;
 
-  if (!recruiterUserId || !startTime || !endTime) {
-    throw new Error('Missing recruiterUserId, startTime, or endTime');
+  if (!recruiterUserId || !isValidUUID(recruiterUserId)) {
+    throw new Error('Missing or invalid recruiterUserId');
   }
+  if (!startTime || !endTime) {
+    throw new Error('Missing startTime or endTime');
+  }
+
+  // Validate dates
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new Error('Invalid startTime or endTime format');
+  }
+  if (end <= start) {
+    throw new Error('endTime must be after startTime');
+  }
+
+  // Cap duration to prevent abuse
+  const duration = Math.min(Math.max(durationMinutes, 5), 120);
 
   const supabase = getServiceClient();
 
-  // Get recruiter's calendar connection
   const { data: connection } = await supabase
     .from('recruiter_calendar_connections')
     .select('nylas_grant_id, calendar_id')
@@ -196,21 +249,25 @@ async function handleGetAvailability(req: Request, params: any, corsHeaders: Rec
   }
 
   // Query Nylas free/busy
-  const fbResponse = await fetch(`${NYLAS_API_BASE}/v3/grants/${connection.nylas_grant_id}/calendars/${connection.calendar_id}/free-busy`, {
+  const fbResponse = await fetchWithTimeout(`${NYLAS_API_BASE}/v3/grants/${connection.nylas_grant_id}/calendars/${connection.calendar_id}/free-busy`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${NYLAS_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      start_time: Math.floor(new Date(startTime).getTime() / 1000),
-      end_time: Math.floor(new Date(endTime).getTime() / 1000),
+      start_time: Math.floor(start.getTime() / 1000),
+      end_time: Math.floor(end.getTime() / 1000),
     }),
   });
 
   if (!fbResponse.ok) {
+    // Consume error body
+    const errText = await fbResponse.text();
+    console.warn('Free/busy failed, trying availability endpoint:', errText);
+
     // Fallback: use availability endpoint
-    const availResponse = await fetch(`${NYLAS_API_BASE}/v3/calendars/availability`, {
+    const availResponse = await fetchWithTimeout(`${NYLAS_API_BASE}/v3/calendars/availability`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${NYLAS_API_KEY}`,
@@ -218,9 +275,9 @@ async function handleGetAvailability(req: Request, params: any, corsHeaders: Rec
       },
       body: JSON.stringify({
         participants: [{ email: connection.calendar_id, calendar_ids: [connection.calendar_id] }],
-        start_time: Math.floor(new Date(startTime).getTime() / 1000),
-        end_time: Math.floor(new Date(endTime).getTime() / 1000),
-        duration_minutes: durationMinutes,
+        start_time: Math.floor(start.getTime() / 1000),
+        end_time: Math.floor(end.getTime() / 1000),
+        duration_minutes: duration,
         availability_rules: {
           buffer: { before: 5, after: 5 },
         },
@@ -228,31 +285,30 @@ async function handleGetAvailability(req: Request, params: any, corsHeaders: Rec
     });
 
     if (!availResponse.ok) {
-      const errText = await availResponse.text();
-      console.error('Nylas availability query failed:', errText);
+      const availErrText = await availResponse.text();
+      console.error('Nylas availability query failed:', availErrText);
       throw new Error('Failed to query calendar availability');
     }
 
     const availData = await availResponse.json();
     return new Response(
       JSON.stringify({ success: true, slots: availData.data || [] }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers }
     );
   }
 
   const fbData = await fbResponse.json();
   
-  // Calculate available slots from free/busy data
   const slots = calculateAvailableSlots(
     fbData.data || [],
-    new Date(startTime),
-    new Date(endTime),
-    durationMinutes
+    start,
+    end,
+    duration
   );
 
   return new Response(
     JSON.stringify({ success: true, slots }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }
 
@@ -264,9 +320,8 @@ function calculateAvailableSlots(
 ): { start: string; end: string }[] {
   const slots: { start: string; end: string }[] = [];
   const durationMs = durationMinutes * 60 * 1000;
-  const bufferMs = 5 * 60 * 1000; // 5 min buffer
+  const bufferMs = 5 * 60 * 1000;
 
-  // Sort busy periods
   const busy = busyPeriods
     .flatMap((p: any) => p.time_slots || [p])
     .filter((p: any) => p.status === 'busy')
@@ -279,7 +334,6 @@ function calculateAvailableSlots(
   let cursor = windowStart;
 
   for (const period of busy) {
-    // Check gap before this busy period
     while (cursor.getTime() + durationMs + bufferMs <= period.start.getTime()) {
       const slotEnd = new Date(cursor.getTime() + durationMs);
       slots.push({
@@ -288,13 +342,11 @@ function calculateAvailableSlots(
       });
       cursor = new Date(slotEnd.getTime() + bufferMs);
     }
-    // Move cursor past busy period + buffer
     if (cursor < new Date(period.end.getTime() + bufferMs)) {
       cursor = new Date(period.end.getTime() + bufferMs);
     }
   }
 
-  // Check remaining time after last busy period
   while (cursor.getTime() + durationMs <= windowEnd.getTime()) {
     const slotEnd = new Date(cursor.getTime() + durationMs);
     slots.push({
@@ -304,12 +356,13 @@ function calculateAvailableSlots(
     cursor = new Date(slotEnd.getTime() + bufferMs);
   }
 
-  return slots;
+  // Safety: cap to 20 slots to prevent abuse
+  return slots.slice(0, 20);
 }
 
 // ============= Booking =============
 
-async function handleBookSlot(req: Request, params: any, corsHeaders: Record<string, string>) {
+async function handleBookSlot(req: Request, params: any, headers: Record<string, string>) {
   const {
     recruiterUserId,
     applicationId,
@@ -322,13 +375,29 @@ async function handleBookSlot(req: Request, params: any, corsHeaders: Record<str
     notes,
   } = params;
 
-  if (!recruiterUserId || !startTime || !endTime) {
-    throw new Error('Missing required booking parameters');
+  if (!recruiterUserId || !isValidUUID(recruiterUserId)) {
+    throw new Error('Missing or invalid recruiterUserId');
   }
+  if (!startTime || !endTime) {
+    throw new Error('Missing required booking parameters (startTime, endTime)');
+  }
+
+  // Validate dates
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new Error('Invalid date format for startTime or endTime');
+  }
+  if (start < new Date(Date.now() - 60000)) {
+    throw new Error('Cannot book a slot in the past');
+  }
+
+  // Sanitize text inputs
+  const safeName = (driverName || 'Driver').replace(/[\x00-\x1F\x7F]/g, '').slice(0, 200);
+  const safeNotes = notes ? notes.replace(/[\x00-\x1F\x7F]/g, '').slice(0, 1000) : 'Scheduled by AI Voice Agent';
 
   const supabase = getServiceClient();
 
-  // Get recruiter's calendar connection
   const { data: connection } = await supabase
     .from('recruiter_calendar_connections')
     .select('id, nylas_grant_id, calendar_id, email')
@@ -342,60 +411,63 @@ async function handleBookSlot(req: Request, params: any, corsHeaders: Record<str
 
   // Create event on Nylas calendar
   const eventPayload = {
-    title: `AI Callback: ${driverName || 'Driver'}`,
+    title: `AI Callback: ${safeName}`,
     description: [
-      `Driver: ${driverName || 'Unknown'}`,
+      `Driver: ${safeName}`,
       `Phone: ${driverPhone || 'N/A'}`,
-      notes ? `Notes: ${notes}` : '',
+      safeNotes !== 'Scheduled by AI Voice Agent' ? `Notes: ${safeNotes}` : '',
       'Scheduled by AI Voice Agent',
     ].filter(Boolean).join('\n'),
     when: {
-      start_time: Math.floor(new Date(startTime).getTime() / 1000),
-      end_time: Math.floor(new Date(endTime).getTime() / 1000),
+      start_time: Math.floor(start.getTime() / 1000),
+      end_time: Math.floor(end.getTime() / 1000),
     },
     busy: true,
     status: 'confirmed',
   };
 
-  const eventResponse = await fetch(
-    `${NYLAS_API_BASE}/v3/grants/${connection.nylas_grant_id}/events?calendar_id=${connection.calendar_id}`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NYLAS_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(eventPayload),
-    }
-  );
-
   let nylasEventId = null;
-  if (eventResponse.ok) {
-    const eventData = await eventResponse.json();
-    nylasEventId = eventData.data?.id;
-  } else {
-    const errText = await eventResponse.text();
-    console.error('Failed to create Nylas event:', errText);
-    // Continue anyway - still record the callback
+  try {
+    const eventResponse = await fetchWithTimeout(
+      `${NYLAS_API_BASE}/v3/grants/${connection.nylas_grant_id}/events?calendar_id=${connection.calendar_id}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${NYLAS_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventPayload),
+      }
+    );
+
+    if (eventResponse.ok) {
+      const eventData = await eventResponse.json();
+      nylasEventId = eventData.data?.id;
+    } else {
+      const errText = await eventResponse.text();
+      console.error('Failed to create Nylas event:', errText);
+    }
+  } catch (e: any) {
+    console.error('Nylas event creation timed out or failed:', e.message);
   }
 
   // Store scheduled callback
   const { data: callback, error: cbError } = await supabase
     .from('scheduled_callbacks')
     .insert({
-      application_id: applicationId || null,
-      organization_id: organizationId || null,
+      application_id: applicationId && isValidUUID(applicationId) ? applicationId : null,
+      organization_id: organizationId && isValidUUID(organizationId) ? organizationId : null,
       recruiter_user_id: recruiterUserId,
       calendar_connection_id: connection.id,
       nylas_event_id: nylasEventId,
-      driver_name: driverName,
+      driver_name: safeName,
       driver_phone: driverPhone,
       scheduled_start: startTime,
       scheduled_end: endTime,
-      duration_minutes: durationMinutes,
+      duration_minutes: Math.min(Math.max(durationMinutes, 5), 120),
       status: nylasEventId ? 'confirmed' : 'pending',
       booking_source: 'ai_agent',
-      notes,
+      notes: safeNotes,
     })
     .select()
     .single();
@@ -411,15 +483,17 @@ async function handleBookSlot(req: Request, params: any, corsHeaders: Record<str
       callback,
       calendarEventCreated: !!nylasEventId,
     }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }
 
 // ============= Cancel =============
 
-async function handleCancelBooking(req: Request, params: any, corsHeaders: Record<string, string>) {
+async function handleCancelBooking(req: Request, params: any, headers: Record<string, string>) {
   const { callbackId } = params;
-  if (!callbackId) throw new Error('Missing callbackId');
+  if (!callbackId || !isValidUUID(callbackId)) {
+    throw new Error('Missing or invalid callbackId');
+  }
 
   const supabase = getServiceClient();
 
@@ -431,17 +505,26 @@ async function handleCancelBooking(req: Request, params: any, corsHeaders: Recor
 
   if (!callback) throw new Error('Callback not found');
 
+  // Prevent double-cancel
+  if (callback.status === 'cancelled') {
+    return new Response(
+      JSON.stringify({ success: true, message: 'Already cancelled' }),
+      { headers }
+    );
+  }
+
   // Cancel Nylas event if exists
   if (callback.nylas_event_id && callback.recruiter_calendar_connections) {
     const conn = callback.recruiter_calendar_connections as any;
     try {
-      await fetch(
+      const delResp = await fetchWithTimeout(
         `${NYLAS_API_BASE}/v3/grants/${conn.nylas_grant_id}/events/${callback.nylas_event_id}?calendar_id=${conn.calendar_id}`,
         {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${NYLAS_API_KEY}` },
         }
       );
+      await delResp.text(); // consume response
     } catch (e) {
       console.warn('Failed to delete Nylas event:', e);
     }
@@ -454,13 +537,13 @@ async function handleCancelBooking(req: Request, params: any, corsHeaders: Recor
 
   return new Response(
     JSON.stringify({ success: true }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }
 
 // ============= List / Disconnect =============
 
-async function handleListConnections(req: Request, corsHeaders: Record<string, string>) {
+async function handleListConnections(req: Request, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
   const supabase = getServiceClient();
 
@@ -469,26 +552,40 @@ async function handleListConnections(req: Request, corsHeaders: Record<string, s
     .select('id, email, provider_type, status, connected_at, calendar_id')
     .eq('user_id', userId);
 
+  if (error) {
+    console.error('Failed to list connections:', error);
+    throw new Error('Failed to list calendar connections');
+  }
+
   return new Response(
     JSON.stringify({ success: true, connections: data || [] }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }
 
-async function handleDisconnect(req: Request, params: any, corsHeaders: Record<string, string>) {
+async function handleDisconnect(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
   const { connectionId } = params;
 
+  if (!connectionId || !isValidUUID(connectionId)) {
+    throw new Error('Missing or invalid connectionId');
+  }
+
   const supabase = getServiceClient();
 
-  await supabase
+  const { error } = await supabase
     .from('recruiter_calendar_connections')
     .delete()
     .eq('id', connectionId)
     .eq('user_id', userId);
 
+  if (error) {
+    console.error('Failed to disconnect:', error);
+    throw new Error('Failed to disconnect calendar');
+  }
+
   return new Response(
     JSON.stringify({ success: true }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { headers }
   );
 }

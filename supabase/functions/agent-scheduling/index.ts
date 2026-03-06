@@ -15,6 +15,38 @@ import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-con
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
+/** Sanitize phone to E.164-ish format */
+function sanitizePhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^0-9]/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.length >= 10 && digits.length <= 15) return `+${digits}`;
+  return null;
+}
+
+/** Validate UUID format */
+function isValidUUID(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+
+/** Sanitize text input - strip control chars, limit length */
+function sanitizeText(input: string | null | undefined, maxLen = 500): string | null {
+  if (!input) return null;
+  return input.replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, maxLen) || null;
+}
+
+/** Fetch with timeout */
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 Deno.serve(async (req) => {
   const preflight = handleCorsPreflightIfNeeded(req);
   if (preflight) return preflight;
@@ -34,13 +66,13 @@ Deno.serve(async (req) => {
 
     switch (toolName) {
       case 'check_availability':
-        return handleCheckAvailability(params, headers);
+        return await handleCheckAvailability(params, headers);
 
       case 'book_callback':
-        return handleBookCallback(params, headers);
+        return await handleBookCallback(params, headers);
 
       case 'get_next_slots':
-        return handleGetNextSlots(params, headers);
+        return await handleGetNextSlots(params, headers);
 
       default:
         return new Response(
@@ -53,7 +85,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Agent scheduling error:', error);
     return new Response(
-      JSON.stringify({ result: `Error: ${error.message}` }),
+      JSON.stringify({ result: `I'm having trouble with scheduling right now. A recruiter will follow up with you directly.` }),
       { status: 200, headers } // Return 200 so ElevenLabs can relay the error message
     );
   }
@@ -69,7 +101,7 @@ async function handleCheckAvailability(
 ) {
   const { organization_id, driver_timezone } = params;
 
-  if (!organization_id) {
+  if (!organization_id || !isValidUUID(organization_id)) {
     return new Response(
       JSON.stringify({ result: 'I need to know which organization to check availability for.' }),
       { status: 200, headers }
@@ -79,11 +111,19 @@ async function handleCheckAvailability(
   const supabase = getServiceClient();
 
   // Find recruiters with connected calendars in this org
-  const { data: connections } = await supabase
+  const { data: connections, error: connErr } = await supabase
     .from('recruiter_calendar_connections')
     .select('user_id, email, calendar_id')
     .eq('organization_id', organization_id)
     .eq('status', 'active');
+
+  if (connErr) {
+    console.error('Failed to query calendar connections:', connErr);
+    return new Response(
+      JSON.stringify({ result: 'I\'m having trouble checking schedules right now. A recruiter will call you back during business hours.' }),
+      { status: 200, headers }
+    );
+  }
 
   if (!connections || connections.length === 0) {
     return new Response(
@@ -111,23 +151,35 @@ async function handleCheckAvailability(
   const endTime = new Date(tomorrow);
   endTime.setHours(12, 0, 0, 0);
 
-  // Query calendar-integration for availability
-  const calResponse = await fetch(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify({
-      action: 'get_availability',
-      recruiterUserId: connections[0].user_id,
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      durationMinutes: 15,
-    }),
-  });
+  // Query calendar-integration for availability with timeout
+  let calData: any = { slots: [] };
+  try {
+    const calResponse = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'get_availability',
+        recruiterUserId: connections[0].user_id,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        durationMinutes: 15,
+      }),
+    });
+    calData = await calResponse.json();
+  } catch (e: any) {
+    console.error('Calendar availability check failed:', e.message);
+    return new Response(
+      JSON.stringify({
+        result: 'I couldn\'t check the schedule right now. Would you like a recruiter to call you back tomorrow morning?',
+        available_slots: [],
+      }),
+      { status: 200, headers }
+    );
+  }
 
-  const calData = await calResponse.json();
   const slots = calData.slots || [];
 
   if (slots.length === 0) {
@@ -176,46 +228,84 @@ async function handleBookCallback(
     recruiter_user_id,
     organization_id,
     application_id,
-    driver_name,
-    driver_phone,
+    driver_name: rawDriverName,
+    driver_phone: rawDriverPhone,
     selected_slot_start,
     selected_slot_end,
-    notes,
+    notes: rawNotes,
   } = params;
 
-  if (!recruiter_user_id || !selected_slot_start) {
+  // Validate required fields
+  if (!recruiter_user_id || !isValidUUID(recruiter_user_id)) {
     return new Response(
-      JSON.stringify({ result: 'I need the recruiter and time slot to book the callback.' }),
+      JSON.stringify({ result: 'I need to identify the recruiter to book with.' }),
       { status: 200, headers }
     );
   }
 
+  if (!selected_slot_start) {
+    return new Response(
+      JSON.stringify({ result: 'I need to know which time slot you\'d like.' }),
+      { status: 200, headers }
+    );
+  }
+
+  // Validate date
+  const slotDate = new Date(selected_slot_start);
+  if (isNaN(slotDate.getTime())) {
+    return new Response(
+      JSON.stringify({ result: 'That doesn\'t seem like a valid time. Could you try again?' }),
+      { status: 200, headers }
+    );
+  }
+
+  // Prevent booking in the past
+  if (slotDate < new Date()) {
+    return new Response(
+      JSON.stringify({ result: 'That time has already passed. Let me check for upcoming availability.' }),
+      { status: 200, headers }
+    );
+  }
+
+  // Sanitize inputs
+  const driver_name = sanitizeText(rawDriverName, 200);
+  const driver_phone = sanitizePhone(rawDriverPhone);
+  const notes = sanitizeText(rawNotes, 1000);
+
   // Calculate end time if not provided (default 15 min)
   const endTime = selected_slot_end || new Date(
-    new Date(selected_slot_start).getTime() + 15 * 60 * 1000
+    slotDate.getTime() + 15 * 60 * 1000
   ).toISOString();
 
-  const bookResponse = await fetch(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify({
-      action: 'book_slot',
-      recruiterUserId: recruiter_user_id,
-      applicationId: application_id,
-      organizationId: organization_id,
-      driverName: driver_name,
-      driverPhone: driver_phone,
-      startTime: selected_slot_start,
-      endTime: endTime,
-      durationMinutes: 15,
-      notes: notes || 'Scheduled by AI Voice Agent',
-    }),
-  });
-
-  const bookData = await bookResponse.json();
+  let bookData: any = {};
+  try {
+    const bookResponse = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'book_slot',
+        recruiterUserId: recruiter_user_id,
+        applicationId: application_id && isValidUUID(application_id) ? application_id : null,
+        organizationId: organization_id && isValidUUID(organization_id) ? organization_id : null,
+        driverName: driver_name,
+        driverPhone: driver_phone,
+        startTime: selected_slot_start,
+        endTime: endTime,
+        durationMinutes: 15,
+        notes: notes || 'Scheduled by AI Voice Agent',
+      }),
+    });
+    bookData = await bookResponse.json();
+  } catch (e: any) {
+    console.error('Booking call failed:', e.message);
+    return new Response(
+      JSON.stringify({ result: 'I couldn\'t complete the booking right now. A recruiter will reach out to you directly.' }),
+      { status: 200, headers }
+    );
+  }
 
   if (!bookData.success) {
     return new Response(
@@ -226,10 +316,10 @@ async function handleBookCallback(
     );
   }
 
-  // Trigger SMS confirmation if we have a phone number
+  // Trigger SMS confirmation if we have a valid phone number
   if (driver_phone) {
     try {
-      await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+      const smsResp = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/send-sms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -246,7 +336,9 @@ async function handleBookCallback(
           })}. Reply STOP to cancel.`,
           applicationId: application_id,
         }),
-      });
+      }, 10000);
+      // Consume the response body to prevent resource leak
+      await smsResp.text();
     } catch (e) {
       console.warn('SMS confirmation failed:', e);
     }
@@ -274,7 +366,7 @@ async function handleGetNextSlots(
   params: any,
   headers: Record<string, string>
 ) {
-  const { organization_id, count = 3 } = params;
+  const { organization_id } = params;
   
   // Delegate to check_availability with defaults
   return handleCheckAvailability(
