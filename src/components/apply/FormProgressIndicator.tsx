@@ -25,13 +25,20 @@ const TECH_STEPS = [
 
 const consentStep = { label: 'Consent', icon: FileCheck };
 
+function isTechVertical(v: string | null | undefined): boolean {
+  if (!v) return false;
+  return ['cyber', 'tech', 'general'].includes(v.toLowerCase());
+}
+
 export const FormProgressIndicator = ({ 
   currentStep, 
   activeStep,
   completedSteps,
   onStepClick,
   canGoToStep,
+  industryVertical,
 }: FormProgressIndicatorProps) => {
+  const baseSteps = isTechVertical(industryVertical) ? TECH_STEPS : CDL_STEPS;
   const steps = [...baseSteps, consentStep];
   const handleStepClick = (stepNumber: number) => {
     if (canGoToStep?.(stepNumber) && onStepClick) {
