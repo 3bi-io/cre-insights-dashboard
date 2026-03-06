@@ -64,16 +64,18 @@ export const useApplyContext = (): ApplyContext => {
           let clientName: string | null = null;
           let clientLogoUrl: string | null = null;
 
-          // Step 2: Fetch client name and logo from public_client_info view
+          // Step 2: Fetch client name, logo, and industry vertical from public_client_info view
+          let industryVertical: string | null = null;
           if (jobListing.client_id) {
             const { data: clientInfo } = await supabase
               .from('public_client_info')
-              .select('name, logo_url')
+              .select('name, logo_url, industry_vertical')
               .eq('id', jobListing.client_id)
               .maybeSingle();
             
             clientName = clientInfo?.name || null;
             clientLogoUrl = clientInfo?.logo_url || null;
+            industryVertical = clientInfo?.industry_vertical || null;
           }
           
           setContext({
