@@ -193,7 +193,7 @@ export const EmbedApplicationForm = ({ clientName, industryVertical, onSubmitSuc
         <StepCompletionFeedback show={showCelebration} stepNumber={activeStep - 1} />
         
         <form onSubmit={handleFormSubmit} className="min-h-[400px]" noValidate>
-          {STEP_SECTIONS.map(({ id, Component, hasClientName }) => (
+          {stepSections.map(({ id, Component, hasClientName }) => (
             <StepContainer key={id} direction={direction} isActive={activeStep === id}>
               <Suspense fallback={<ApplicationFormSkeleton />}>
                 <Component 

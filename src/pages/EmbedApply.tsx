@@ -95,6 +95,7 @@ const EmbedApply: React.FC = () => {
           {/* Embed Application Form - routes to dedicated outbound agent */}
           <EmbedApplicationForm 
             clientName={clientName} 
+            industryVertical={industryVertical}
             onSubmitSuccess={handleSubmissionSuccess}
           />
           
