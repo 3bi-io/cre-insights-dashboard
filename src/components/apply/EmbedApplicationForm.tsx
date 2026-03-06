@@ -182,6 +182,7 @@ export const EmbedApplicationForm = ({ clientName, industryVertical, onSubmitSuc
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            industryVertical={industryVertical}
           />
         </nav>
 
