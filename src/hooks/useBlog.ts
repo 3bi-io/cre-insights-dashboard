@@ -71,6 +71,8 @@ export function useBlogPost(slug: string) {
       return data as BlogPost;
     },
     enabled: !!slug,
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
