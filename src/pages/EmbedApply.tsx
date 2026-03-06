@@ -25,7 +25,7 @@ interface SubmissionResult {
 const EmbedApply: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { hideBranding, notifyParent, sendHeight } = useEmbedMode();
-  const { clientName, clientLogoUrl, jobTitle, location, source, isLoading: contextLoading } = useApplyContext();
+  const { clientName, clientLogoUrl, jobTitle, location, source, industryVertical, isLoading: contextLoading } = useApplyContext();
   const { setTheme } = useTheme();
 
   // Track submission state for inline thank you
