@@ -7,6 +7,7 @@ import { useApplyContext } from '@/hooks/useApplyContext';
 import { ApplicationFormSkeleton } from './ApplicationFormSkeleton';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { CDLInfoSection } from './CDLInfoSection';
+import { TechInfoSection } from './TechInfoSection';
 import { BackgroundInfoSection } from './BackgroundInfoSection';
 import { ConsentSection } from './ConsentSection';
 import { ScreeningQuestionsSection } from './ScreeningQuestionsSection';
