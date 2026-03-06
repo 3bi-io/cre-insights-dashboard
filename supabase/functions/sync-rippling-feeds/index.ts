@@ -22,18 +22,22 @@ const DEFAULT_UTM = {
   medium: 'ats_feed',
 };
 
-// Department to category mapping
+// Department to category mapping (cyber-focused org)
 const DEPARTMENT_CATEGORY_MAP: Record<string, string> = {
-  'technology': 'Technology',
-  'engineering': 'Technology',
-  'sales': 'Sales',
-  'business operations': 'Operations',
-  'operations': 'Operations',
-  'people': 'Human Resources',
-  'hr': 'Human Resources',
-  'marketing': 'Marketing',
-  'finance': 'Finance',
-  'legal': 'Legal',
+  'technology': 'Cybersecurity',
+  'engineering': 'Cybersecurity',
+  'cybersecurity': 'Cybersecurity',
+  'security': 'Cybersecurity',
+  'it': 'Cybersecurity',
+  'development': 'Cybersecurity',
+  'sales': 'Customer Service',
+  'business operations': 'Administrative',
+  'operations': 'Administrative',
+  'people': 'Administrative',
+  'hr': 'Administrative',
+  'marketing': 'Administrative',
+  'finance': 'Administrative',
+  'legal': 'Administrative',
 };
 
 function generateApplyUrl(jobListingId: string): string {
