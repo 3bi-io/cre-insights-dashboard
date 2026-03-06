@@ -213,7 +213,7 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
 // ============= Availability =============
 
 async function handleGetAvailability(req: Request, params: any, headers: Record<string, string>) {
-  const { recruiterUserId, startTime, endTime, durationMinutes = 15 } = params;
+  const { recruiterUserId, startTime, endTime, durationMinutes } = params;
 
   if (!recruiterUserId || !isValidUUID(recruiterUserId)) {
     throw new Error('Missing or invalid recruiterUserId');
@@ -232,10 +232,22 @@ async function handleGetAvailability(req: Request, params: any, headers: Record<
     throw new Error('endTime must be after startTime');
   }
 
-  // Cap duration to prevent abuse
-  const duration = Math.min(Math.max(durationMinutes, 5), 120);
-
   const supabase = getServiceClient();
+
+  // Load recruiter availability preferences for buffer/duration
+  const { data: prefs } = await supabase
+    .from('recruiter_availability_preferences')
+    .select('buffer_before_minutes, buffer_after_minutes, default_call_duration_minutes')
+    .eq('user_id', recruiterUserId)
+    .maybeSingle();
+
+  const prefDuration = (prefs as any)?.default_call_duration_minutes || 15;
+  const bufferBefore = (prefs as any)?.buffer_before_minutes ?? 5;
+  const bufferAfter = (prefs as any)?.buffer_after_minutes ?? 5;
+
+  // Use caller-specified duration if provided, otherwise recruiter preference
+  const duration = Math.min(Math.max(durationMinutes || prefDuration, 5), 120);
+  const effectiveBuffer = Math.max(bufferBefore, bufferAfter);
 
   const { data: connection } = await supabase
     .from('recruiter_calendar_connections')
@@ -262,11 +274,9 @@ async function handleGetAvailability(req: Request, params: any, headers: Record<
   });
 
   if (!fbResponse.ok) {
-    // Consume error body
     const errText = await fbResponse.text();
     console.warn('Free/busy failed, trying availability endpoint:', errText);
 
-    // Fallback: use availability endpoint
     const availResponse = await fetchWithTimeout(`${NYLAS_API_BASE}/v3/calendars/availability`, {
       method: 'POST',
       headers: {
@@ -279,7 +289,7 @@ async function handleGetAvailability(req: Request, params: any, headers: Record<
         end_time: Math.floor(end.getTime() / 1000),
         duration_minutes: duration,
         availability_rules: {
-          buffer: { before: 5, after: 5 },
+          buffer: { before: bufferBefore, after: bufferAfter },
         },
       }),
     });
@@ -303,7 +313,8 @@ async function handleGetAvailability(req: Request, params: any, headers: Record<
     fbData.data || [],
     start,
     end,
-    duration
+    duration,
+    effectiveBuffer
   );
 
   return new Response(
@@ -316,11 +327,12 @@ function calculateAvailableSlots(
   busyPeriods: any[],
   windowStart: Date,
   windowEnd: Date,
-  durationMinutes: number
+  durationMinutes: number,
+  bufferMinutes: number = 5
 ): { start: string; end: string }[] {
   const slots: { start: string; end: string }[] = [];
   const durationMs = durationMinutes * 60 * 1000;
-  const bufferMs = 5 * 60 * 1000;
+  const bufferMs = bufferMinutes * 60 * 1000;
 
   const busy = busyPeriods
     .flatMap((p: any) => p.time_slots || [p])

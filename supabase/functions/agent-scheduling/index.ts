@@ -134,22 +134,73 @@ async function handleCheckAvailability(
     );
   }
 
-  // Calculate next business morning window
-  const tz = driver_timezone || 'America/Chicago';
+  const recruiterId = connections[0].user_id;
+
+  // Load recruiter availability preferences
+  const { data: prefs } = await supabase
+    .from('recruiter_availability_preferences')
+    .select('*')
+    .eq('user_id', recruiterId)
+    .maybeSingle();
+
+  const workStart = parseInt((prefs as any)?.working_hours_start?.slice(0, 2) || '8', 10);
+  const workEnd = parseInt((prefs as any)?.working_hours_end?.slice(0, 2) || '12', 10);
+  const workingDays: number[] = (prefs as any)?.working_days || [1, 2, 3, 4, 5];
+  const duration: number = (prefs as any)?.default_call_duration_minutes || 15;
+  const maxDaily: number = (prefs as any)?.max_daily_callbacks || 20;
+  const minNoticeHours: number = (prefs as any)?.min_booking_notice_hours || 1;
+  const allowSameDay: boolean = (prefs as any)?.allow_same_day_booking ?? true;
+  const recruiterTz = (prefs as any)?.timezone || 'America/Chicago';
+
+  // Calculate next available business window respecting recruiter preferences
+  const tz = driver_timezone || recruiterTz;
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minBookingTime = new Date(now.getTime() + minNoticeHours * 60 * 60 * 1000);
+
+  // Find next business day
+  let candidate = new Date(now);
+  if (!allowSameDay || now.getUTCHours() >= workEnd) {
+    candidate.setDate(candidate.getDate() + 1);
+  }
   
-  // Skip weekends
-  const dayOfWeek = tomorrow.getDay();
-  if (dayOfWeek === 0) tomorrow.setDate(tomorrow.getDate() + 1); // Sunday -> Monday
-  if (dayOfWeek === 6) tomorrow.setDate(tomorrow.getDate() + 2); // Saturday -> Monday
+  // Skip non-working days (ISO: Mon=1, Sun=7)
+  for (let i = 0; i < 7; i++) {
+    const iso = candidate.getDay() === 0 ? 7 : candidate.getDay(); // Convert JS day to ISO
+    if (workingDays.includes(iso)) break;
+    candidate.setDate(candidate.getDate() + 1);
+  }
+
+  const startTime = new Date(candidate);
+  startTime.setHours(workStart, 0, 0, 0);
+  const endTime = new Date(candidate);
+  endTime.setHours(workEnd, 0, 0, 0);
+
+  // Ensure we respect minimum notice
+  const effectiveStart = startTime > minBookingTime ? startTime : minBookingTime;
+
+  // Check daily callback cap
+  const dayStart = new Date(candidate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(candidate);
+  dayEnd.setHours(23, 59, 59, 999);
   
-  // Set window: 8 AM - 12 PM
-  const startTime = new Date(tomorrow);
-  startTime.setHours(8, 0, 0, 0);
-  const endTime = new Date(tomorrow);
-  endTime.setHours(12, 0, 0, 0);
+  const { count: existingCallbacks } = await supabase
+    .from('scheduled_callbacks')
+    .select('id', { count: 'exact', head: true })
+    .eq('recruiter_user_id', recruiterId)
+    .gte('scheduled_start', dayStart.toISOString())
+    .lte('scheduled_start', dayEnd.toISOString())
+    .neq('status', 'cancelled');
+
+  if ((existingCallbacks || 0) >= maxDaily) {
+    return new Response(
+      JSON.stringify({
+        result: 'The recruiter\'s schedule is full for that day. Would you like me to check the next available day?',
+        available_slots: [],
+      }),
+      { status: 200, headers }
+    );
+  }
 
   // Query calendar-integration for availability with timeout
   let calData: any = { slots: [] };
@@ -162,10 +213,10 @@ async function handleCheckAvailability(
       },
       body: JSON.stringify({
         action: 'get_availability',
-        recruiterUserId: connections[0].user_id,
-        startTime: startTime.toISOString(),
+        recruiterUserId: recruiterId,
+        startTime: effectiveStart.toISOString(),
         endTime: endTime.toISOString(),
-        durationMinutes: 15,
+        durationMinutes: duration,
       }),
     });
     calData = await calResponse.json();
@@ -208,10 +259,11 @@ async function handleCheckAvailability(
 
   return new Response(
     JSON.stringify({
-      result: `I have openings tomorrow morning at ${slotText}. Which time works best for you?`,
+      result: `I have openings at ${slotText}. Which time works best for you?`,
       available_slots: slots.slice(0, 3),
-      recruiter_user_id: connections[0].user_id,
+      recruiter_user_id: recruiterId,
       recruiter_email: connections[0].email,
+      call_duration_minutes: duration,
     }),
     { status: 200, headers }
   );
@@ -267,14 +319,47 @@ async function handleBookCallback(
     );
   }
 
+  // Load recruiter preferences for duration and auto-accept
+  const supabase = getServiceClient();
+  const { data: prefs } = await supabase
+    .from('recruiter_availability_preferences')
+    .select('default_call_duration_minutes, auto_accept_bookings, max_daily_callbacks')
+    .eq('user_id', recruiter_user_id)
+    .maybeSingle();
+
+  const duration: number = (prefs as any)?.default_call_duration_minutes || 15;
+  const autoAccept: boolean = (prefs as any)?.auto_accept_bookings ?? true;
+  const maxDaily: number = (prefs as any)?.max_daily_callbacks || 20;
+
+  // Enforce daily cap before booking
+  const dayStart = new Date(slotDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(slotDate);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  const { count: existingCallbacks } = await supabase
+    .from('scheduled_callbacks')
+    .select('id', { count: 'exact', head: true })
+    .eq('recruiter_user_id', recruiter_user_id)
+    .gte('scheduled_start', dayStart.toISOString())
+    .lte('scheduled_start', dayEnd.toISOString())
+    .neq('status', 'cancelled');
+
+  if ((existingCallbacks || 0) >= maxDaily) {
+    return new Response(
+      JSON.stringify({ result: 'The recruiter\'s schedule is full for that day. Would you like me to check the next available day?' }),
+      { status: 200, headers }
+    );
+  }
+
   // Sanitize inputs
   const driver_name = sanitizeText(rawDriverName, 200);
   const driver_phone = sanitizePhone(rawDriverPhone);
   const notes = sanitizeText(rawNotes, 1000);
 
-  // Calculate end time if not provided (default 15 min)
+  // Calculate end time using recruiter's preferred duration
   const endTime = selected_slot_end || new Date(
-    slotDate.getTime() + 15 * 60 * 1000
+    slotDate.getTime() + duration * 60 * 1000
   ).toISOString();
 
   let bookData: any = {};
@@ -294,8 +379,9 @@ async function handleBookCallback(
         driverPhone: driver_phone,
         startTime: selected_slot_start,
         endTime: endTime,
-        durationMinutes: 15,
+        durationMinutes: duration,
         notes: notes || 'Scheduled by AI Voice Agent',
+        autoAccept,
       }),
     });
     bookData = await bookResponse.json();
@@ -337,7 +423,6 @@ async function handleBookCallback(
           applicationId: application_id,
         }),
       }, 10000);
-      // Consume the response body to prevent resource leak
       await smsResp.text();
     } catch (e) {
       console.warn('SMS confirmation failed:', e);
@@ -349,9 +434,13 @@ async function handleBookCallback(
     minute: '2-digit',
   });
 
+  const statusMsg = autoAccept
+    ? `All set! Your callback has been confirmed for ${scheduledTime}. You'll receive a text confirmation shortly.`
+    : `Your callback has been requested for ${scheduledTime}. The recruiter will confirm shortly. You'll receive a text when it's confirmed.`;
+
   return new Response(
     JSON.stringify({
-      result: `All set! Your callback has been scheduled for ${scheduledTime} tomorrow morning. You'll receive a text confirmation shortly. A recruiter will call you at that time. Is there anything else I can help with?`,
+      result: statusMsg,
       callback_id: bookData.callback?.id,
       calendar_event_created: bookData.calendarEventCreated,
     }),
