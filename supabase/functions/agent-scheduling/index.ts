@@ -1,0 +1,284 @@
+/**
+ * ElevenLabs Agent Scheduling Tool Webhook
+ * 
+ * Called by ElevenLabs voice agent as a "tool" during conversation.
+ * Allows the agent to:
+ * 1. Check recruiter availability for a given time window
+ * 2. Book a callback slot on the recruiter's calendar
+ * 
+ * Configure this as a webhook tool in ElevenLabs agent settings.
+ */
+
+import { getServiceClient } from '../_shared/supabase-client.ts';
+import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+Deno.serve(async (req) => {
+  const preflight = handleCorsPreflightIfNeeded(req);
+  if (preflight) return preflight;
+
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+  const headers = { ...corsHeaders, 'Content-Type': 'application/json' };
+
+  try {
+    const body = await req.json();
+    
+    // ElevenLabs sends tool calls with a specific structure
+    const toolName = body.tool_name || body.action || '';
+    const params = body.parameters || body;
+
+    console.log(`Agent scheduling tool called: ${toolName}`, JSON.stringify(params));
+
+    switch (toolName) {
+      case 'check_availability':
+        return handleCheckAvailability(params, headers);
+
+      case 'book_callback':
+        return handleBookCallback(params, headers);
+
+      case 'get_next_slots':
+        return handleGetNextSlots(params, headers);
+
+      default:
+        return new Response(
+          JSON.stringify({ 
+            result: `Unknown tool: ${toolName}. Available tools: check_availability, book_callback, get_next_slots` 
+          }),
+          { status: 200, headers }
+        );
+    }
+  } catch (error: any) {
+    console.error('Agent scheduling error:', error);
+    return new Response(
+      JSON.stringify({ result: `Error: ${error.message}` }),
+      { status: 200, headers } // Return 200 so ElevenLabs can relay the error message
+    );
+  }
+});
+
+/**
+ * Check availability for the next business morning
+ * The agent calls this after verifying driver qualifications
+ */
+async function handleCheckAvailability(
+  params: any,
+  headers: Record<string, string>
+) {
+  const { organization_id, driver_timezone } = params;
+
+  if (!organization_id) {
+    return new Response(
+      JSON.stringify({ result: 'I need to know which organization to check availability for.' }),
+      { status: 200, headers }
+    );
+  }
+
+  const supabase = getServiceClient();
+
+  // Find recruiters with connected calendars in this org
+  const { data: connections } = await supabase
+    .from('recruiter_calendar_connections')
+    .select('user_id, email, calendar_id')
+    .eq('organization_id', organization_id)
+    .eq('status', 'active');
+
+  if (!connections || connections.length === 0) {
+    return new Response(
+      JSON.stringify({ 
+        result: 'No recruiters have connected their calendars yet. I can take your information and have a recruiter call you back during business hours.' 
+      }),
+      { status: 200, headers }
+    );
+  }
+
+  // Calculate next business morning window
+  const tz = driver_timezone || 'America/Chicago';
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Skip weekends
+  const dayOfWeek = tomorrow.getDay();
+  if (dayOfWeek === 0) tomorrow.setDate(tomorrow.getDate() + 1); // Sunday -> Monday
+  if (dayOfWeek === 6) tomorrow.setDate(tomorrow.getDate() + 2); // Saturday -> Monday
+  
+  // Set window: 8 AM - 12 PM
+  const startTime = new Date(tomorrow);
+  startTime.setHours(8, 0, 0, 0);
+  const endTime = new Date(tomorrow);
+  endTime.setHours(12, 0, 0, 0);
+
+  // Query calendar-integration for availability
+  const calResponse = await fetch(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify({
+      action: 'get_availability',
+      recruiterUserId: connections[0].user_id,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      durationMinutes: 15,
+    }),
+  });
+
+  const calData = await calResponse.json();
+  const slots = calData.slots || [];
+
+  if (slots.length === 0) {
+    return new Response(
+      JSON.stringify({
+        result: 'Tomorrow morning is fully booked. Would you like me to check the afternoon, or would you prefer a recruiter calls you when they are free?',
+        available_slots: [],
+      }),
+      { status: 200, headers }
+    );
+  }
+
+  // Format top 2-3 slots for the agent to speak
+  const topSlots = slots.slice(0, 3).map((s: any) => {
+    const time = new Date(s.start);
+    return time.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      timeZone: tz,
+    });
+  });
+
+  const slotText = topSlots.length === 1 
+    ? topSlots[0]
+    : topSlots.slice(0, -1).join(', ') + ' and ' + topSlots[topSlots.length - 1];
+
+  return new Response(
+    JSON.stringify({
+      result: `I have openings tomorrow morning at ${slotText}. Which time works best for you?`,
+      available_slots: slots.slice(0, 3),
+      recruiter_user_id: connections[0].user_id,
+      recruiter_email: connections[0].email,
+    }),
+    { status: 200, headers }
+  );
+}
+
+/**
+ * Book a callback slot after the driver confirms a time
+ */
+async function handleBookCallback(
+  params: any,
+  headers: Record<string, string>
+) {
+  const {
+    recruiter_user_id,
+    organization_id,
+    application_id,
+    driver_name,
+    driver_phone,
+    selected_slot_start,
+    selected_slot_end,
+    notes,
+  } = params;
+
+  if (!recruiter_user_id || !selected_slot_start) {
+    return new Response(
+      JSON.stringify({ result: 'I need the recruiter and time slot to book the callback.' }),
+      { status: 200, headers }
+    );
+  }
+
+  // Calculate end time if not provided (default 15 min)
+  const endTime = selected_slot_end || new Date(
+    new Date(selected_slot_start).getTime() + 15 * 60 * 1000
+  ).toISOString();
+
+  const bookResponse = await fetch(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify({
+      action: 'book_slot',
+      recruiterUserId: recruiter_user_id,
+      applicationId: application_id,
+      organizationId: organization_id,
+      driverName: driver_name,
+      driverPhone: driver_phone,
+      startTime: selected_slot_start,
+      endTime: endTime,
+      durationMinutes: 15,
+      notes: notes || 'Scheduled by AI Voice Agent',
+    }),
+  });
+
+  const bookData = await bookResponse.json();
+
+  if (!bookData.success) {
+    return new Response(
+      JSON.stringify({ 
+        result: 'I was unable to lock that time slot. It may have just been taken. Would you like me to check for other available times?' 
+      }),
+      { status: 200, headers }
+    );
+  }
+
+  // Trigger SMS confirmation if we have a phone number
+  if (driver_phone) {
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          to: driver_phone,
+          message: `Your callback with a recruiter has been scheduled for ${new Date(selected_slot_start).toLocaleString('en-US', { 
+            weekday: 'long',
+            month: 'long', 
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })}. Reply STOP to cancel.`,
+          applicationId: application_id,
+        }),
+      });
+    } catch (e) {
+      console.warn('SMS confirmation failed:', e);
+    }
+  }
+
+  const scheduledTime = new Date(selected_slot_start).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+  return new Response(
+    JSON.stringify({
+      result: `All set! Your callback has been scheduled for ${scheduledTime} tomorrow morning. You'll receive a text confirmation shortly. A recruiter will call you at that time. Is there anything else I can help with?`,
+      callback_id: bookData.callback?.id,
+      calendar_event_created: bookData.calendarEventCreated,
+    }),
+    { status: 200, headers }
+  );
+}
+
+/**
+ * Get next available slots (simpler version for quick queries)
+ */
+async function handleGetNextSlots(
+  params: any,
+  headers: Record<string, string>
+) {
+  const { organization_id, count = 3 } = params;
+  
+  // Delegate to check_availability with defaults
+  return handleCheckAvailability(
+    { organization_id, driver_timezone: 'America/Chicago' },
+    headers
+  );
+}
