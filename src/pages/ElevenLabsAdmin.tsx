@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw, Bot, MessageSquare, AudioLines, Volume2, Mic, BarChart3, PhoneOutgoing, Clock } from 'lucide-react';
 import { CallScheduleSettings } from '@/components/voice/CallScheduleSettings';
 import { RecruiterCalendarConnect } from '@/components/voice/RecruiterCalendarConnect';
+import { ScheduledCallbacksDashboard } from '@/components/voice/ScheduledCallbacksDashboard';
 import { useVoiceAgents } from '@/hooks/useVoiceAgents';
 import { OutboundCallHistory } from '@/components/voice/OutboundCallHistory';
 import { OutboundCallAnalytics } from '@/components/voice/OutboundCallAnalytics';
