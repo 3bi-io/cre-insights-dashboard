@@ -25,7 +25,7 @@ import type { Application } from '@/types/common.types';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 import { getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
-import * as XLSX from 'xlsx';
+import { writeExcelFile } from '@/lib/excelHelper';
 
 export default function AdminApplicationsPage() {
   const { user, userRole, organization } = useAuth();
@@ -161,7 +161,7 @@ export default function AdminApplicationsPage() {
     }
   };
 
-  const handleBulkExportSelected = () => {
+  const handleBulkExportSelected = async () => {
     try {
       const selectedApps = applications.filter(app => selectedApplications.has(app.id));
       const exportData = selectedApps.map(app => ({
@@ -175,10 +175,10 @@ export default function AdminApplicationsPage() {
         'Recruiter': (app as any).recruiters ? `${(app as any).recruiters.first_name} ${(app as any).recruiters.last_name}` : 'Unassigned',
       }));
 
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Selected Applications');
-      XLSX.writeFile(wb, `selected-applications-${new Date().toISOString().split('T')[0]}.xlsx`);
+      await writeExcelFile(
+        [{ name: 'Selected Applications', data: exportData }],
+        `selected-applications-${new Date().toISOString().split('T')[0]}.xlsx`,
+      );
 
       toast({
         title: "Export Complete",

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { readExcelFile } from '@/lib/excelHelper';
 import { generateCsvFromExcelData, ExcelRow } from '@/utils/csvApplicationImporter';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,16 +37,12 @@ const BulkApplicationImporter: React.FC = () => {
 
     try {
       const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const excelData = XLSX.utils.sheet_to_json<ExcelRow>(firstSheet);
+      const excelData = await readExcelFile<ExcelRow>(data);
 
       logger.debug('Processing Excel file for import', { rowCount: excelData.length });
 
-      // Generate clean CSV
       const csvContent = generateCsvFromExcelData(excelData);
       
-      // Import via edge function
       const { data: result, error } = await supabase.functions.invoke('import-applications', {
         body: {
           csv: csvContent,
@@ -100,12 +96,7 @@ const BulkApplicationImporter: React.FC = () => {
             id="excel-import-input"
           />
           <label htmlFor="excel-import-input">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={processing}
-              asChild
-            >
+            <Button type="button" variant="outline" disabled={processing} asChild>
               <span>
                 <Upload className="w-4 h-4 mr-2" />
                 {processing ? 'Importing...' : 'Select Excel File'}

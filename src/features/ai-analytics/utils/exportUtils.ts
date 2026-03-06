@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+import { createExcelBlob } from '@/lib/excelHelper';
 import type { AIAnalyticsData, DateRangeType } from '../hooks/useAIAnalyticsData';
 
 interface ExportSection {
@@ -15,7 +15,6 @@ interface ExportOptions {
   sections: ExportSection[];
 }
 
-// Helper to format date range for display
 function formatDateRangeLabel(dateRange: DateRangeType): string {
   const labels: Record<DateRangeType, string> = {
     week: 'Last Week',
@@ -162,112 +161,110 @@ export async function exportToPDF(data: AIAnalyticsData, options: ExportOptions)
 }
 
 // Export to Excel
-export function exportToExcel(data: AIAnalyticsData, options: ExportOptions): Blob {
-  const workbook = XLSX.utils.book_new();
+export async function exportToExcel(data: AIAnalyticsData, options: ExportOptions): Promise<Blob> {
+  const sheets: Array<{ name: string; data: (string | number | null)[][] }> = [];
 
-  // Performance Sheet
   if (options.sections.find(s => s.id === 'performance' && s.enabled)) {
-    const performanceData = [
-      ['AI Performance Metrics', ''],
-      ['Generated', format(new Date(), 'PPpp')],
-      ['Period', formatDateRangeLabel(options.dateRange)],
-      ['', ''],
-      ['Metric', 'Value'],
-      ['Model Accuracy', `${data.performance.modelAccuracy}%`],
-      ['Prediction Confidence', `${data.performance.predictionConfidence}%`],
-      ['Candidates Analyzed', data.performance.candidatesAnalyzed],
-      ['Success Rate', `${data.performance.successRate}%`],
-      ['Processing Time', data.performance.avgProcessingTime],
-      ['Bias Score', `${data.performance.biasScore}/100`],
-      ['Precision', `${(data.performance.precision * 100).toFixed(1)}%`],
-      ['Recall', `${(data.performance.recall * 100).toFixed(1)}%`],
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(performanceData);
-    XLSX.utils.book_append_sheet(workbook, ws, 'Performance');
+    sheets.push({
+      name: 'Performance',
+      data: [
+        ['AI Performance Metrics', ''],
+        ['Generated', format(new Date(), 'PPpp')],
+        ['Period', formatDateRangeLabel(options.dateRange)],
+        ['', ''],
+        ['Metric', 'Value'],
+        ['Model Accuracy', `${data.performance.modelAccuracy}%`],
+        ['Prediction Confidence', `${data.performance.predictionConfidence}%`],
+        ['Candidates Analyzed', data.performance.candidatesAnalyzed],
+        ['Success Rate', `${data.performance.successRate}%`],
+        ['Processing Time', data.performance.avgProcessingTime],
+        ['Bias Score', `${data.performance.biasScore}/100`],
+        ['Precision', `${(data.performance.precision * 100).toFixed(1)}%`],
+        ['Recall', `${(data.performance.recall * 100).toFixed(1)}%`],
+      ],
+    });
   }
 
-  // Predictions Sheet
   if (options.sections.find(s => s.id === 'predictions' && s.enabled)) {
-    const predictionsData = [
-      ['Predictive Analytics', '', '', ''],
-      ['', '', '', ''],
-      ['Hiring Forecast', '', '', ''],
-      ['Month', 'Actual', 'Predicted', 'Confidence'],
-      ...data.predictions.forecastData.map(f => [f.month, f.actual ?? 'N/A', f.predicted, `${f.confidence}%`]),
-      ['', '', '', ''],
-      ['Cost Predictions', '', '', ''],
-      ['Category', 'Current', 'Predicted', 'Savings'],
-      ...data.predictions.costPredictions.map(c => [c.category, `$${c.current}`, `$${c.predicted}`, `$${c.savings}`]),
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(predictionsData);
-    XLSX.utils.book_append_sheet(workbook, ws, 'Predictions');
+    sheets.push({
+      name: 'Predictions',
+      data: [
+        ['Predictive Analytics', '', '', ''],
+        ['', '', '', ''],
+        ['Hiring Forecast', '', '', ''],
+        ['Month', 'Actual', 'Predicted', 'Confidence'],
+        ...data.predictions.forecastData.map(f => [f.month, f.actual ?? 'N/A', f.predicted, `${f.confidence}%`] as (string | number | null)[]),
+        ['', '', '', ''],
+        ['Cost Predictions', '', '', ''],
+        ['Category', 'Current', 'Predicted', 'Savings'],
+        ...data.predictions.costPredictions.map(c => [c.category, `$${c.current}`, `$${c.predicted}`, `$${c.savings}`] as (string | number | null)[]),
+      ],
+    });
   }
 
-  // Comparison Sheet
   if (options.sections.find(s => s.id === 'comparison' && s.enabled)) {
-    const comparisonData = [
-      ['AI vs Traditional Comparison', '', '', '', ''],
-      ['', '', '', '', ''],
-      ['Summary', '', '', '', ''],
-      ['Total Savings', `$${data.comparison.totalSavings.toLocaleString()}`, '', '', ''],
-      ['Time Saved', `${data.comparison.timeSaved} hours`, '', '', ''],
-      ['Quality Increase', `+${data.comparison.qualityIncrease}%`, '', '', ''],
-      ['', '', '', '', ''],
-      ['Detailed Metrics', '', '', '', ''],
-      ['Metric', 'Traditional', 'AI-Enhanced', 'Unit', 'Improvement'],
-      ...data.comparison.metrics.map(m => [m.metric, m.traditional, m.aiEnhanced, m.unit, `+${m.improvement}%`]),
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(comparisonData);
-    XLSX.utils.book_append_sheet(workbook, ws, 'Comparison');
+    sheets.push({
+      name: 'Comparison',
+      data: [
+        ['AI vs Traditional Comparison', '', '', '', ''],
+        ['', '', '', '', ''],
+        ['Summary', '', '', '', ''],
+        ['Total Savings', `$${data.comparison.totalSavings.toLocaleString()}`, '', '', ''],
+        ['Time Saved', `${data.comparison.timeSaved} hours`, '', '', ''],
+        ['Quality Increase', `+${data.comparison.qualityIncrease}%`, '', '', ''],
+        ['', '', '', '', ''],
+        ['Detailed Metrics', '', '', '', ''],
+        ['Metric', 'Traditional', 'AI-Enhanced', 'Unit', 'Improvement'],
+        ...data.comparison.metrics.map(m => [m.metric, m.traditional, m.aiEnhanced, m.unit, `+${m.improvement}%`] as (string | number | null)[]),
+      ],
+    });
   }
 
-  // Bias Sheet
   if (options.sections.find(s => s.id === 'bias' && s.enabled)) {
-    const biasData = [
-      ['Bias & Fairness Analysis', '', '', ''],
-      ['', '', '', ''],
-      ['Summary', '', '', ''],
-      ['Fairness Score', `${data.bias.fairnessScore}/100`, '', ''],
-      ['Overall Bias Score', `${data.bias.overallBiasScore}/100`, '', ''],
-      ['Issues Detected', data.bias.issuesDetected, '', ''],
-      ['', '', '', ''],
-      ['Bias by Category', '', '', ''],
-      ['Category', 'Score', 'Threshold', 'Status'],
-      ...data.bias.metrics.map(m => [m.category, m.score, m.threshold, m.status]),
-      ['', '', '', ''],
-      ['Diversity Data', '', '', ''],
-      ['Stage', 'Diverse', 'Non-Diverse', ''],
-      ...data.bias.diversityData.map(d => [d.name, d.diverse, d.nonDiverse, '']),
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(biasData);
-    XLSX.utils.book_append_sheet(workbook, ws, 'Bias Analysis');
+    sheets.push({
+      name: 'Bias Analysis',
+      data: [
+        ['Bias & Fairness Analysis', '', '', ''],
+        ['', '', '', ''],
+        ['Summary', '', '', ''],
+        ['Fairness Score', `${data.bias.fairnessScore}/100`, '', ''],
+        ['Overall Bias Score', `${data.bias.overallBiasScore}/100`, '', ''],
+        ['Issues Detected', data.bias.issuesDetected, '', ''],
+        ['', '', '', ''],
+        ['Bias by Category', '', '', ''],
+        ['Category', 'Score', 'Threshold', 'Status'],
+        ...data.bias.metrics.map(m => [m.category, m.score, m.threshold, m.status] as (string | number | null)[]),
+        ['', '', '', ''],
+        ['Diversity Data', '', '', ''],
+        ['Stage', 'Diverse', 'Non-Diverse', ''],
+        ...data.bias.diversityData.map(d => [d.name, d.diverse, d.nonDiverse, ''] as (string | number | null)[]),
+      ],
+    });
   }
 
-  // Insights Sheet
   if (options.sections.find(s => s.id === 'insights' && s.enabled)) {
-    const insightsData = [
-      ['Model Insights', '', ''],
-      ['', '', ''],
-      ['Model Information', '', ''],
-      ['Version', data.insights.modelVersion, ''],
-      ['Training Data Points', data.insights.trainingDataPoints.toLocaleString(), ''],
-      ['Last Updated', data.insights.lastUpdated, ''],
-      ['', '', ''],
-      ['Feature Importance', '', ''],
-      ['Feature', 'Importance', 'Category'],
-      ...data.insights.featureImportance.map(f => [f.feature, `${(f.importance * 100).toFixed(1)}%`, f.category]),
-      ['', '', ''],
-      ['Confidence Distribution', '', ''],
-      ['Range', 'Count', ''],
-      ...data.insights.confidenceDistribution.map(c => [c.range, c.count, '']),
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(insightsData);
-    XLSX.utils.book_append_sheet(workbook, ws, 'Insights');
+    sheets.push({
+      name: 'Insights',
+      data: [
+        ['Model Insights', '', ''],
+        ['', '', ''],
+        ['Model Information', '', ''],
+        ['Version', data.insights.modelVersion, ''],
+        ['Training Data Points', data.insights.trainingDataPoints.toLocaleString(), ''],
+        ['Last Updated', data.insights.lastUpdated, ''],
+        ['', '', ''],
+        ['Feature Importance', '', ''],
+        ['Feature', 'Importance', 'Category'],
+        ...data.insights.featureImportance.map(f => [f.feature, `${(f.importance * 100).toFixed(1)}%`, f.category] as (string | number | null)[]),
+        ['', '', ''],
+        ['Confidence Distribution', '', ''],
+        ['Range', 'Count', ''],
+        ...data.insights.confidenceDistribution.map(c => [c.range, c.count, ''] as (string | number | null)[]),
+      ],
+    });
   }
 
-  // Generate blob
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  return createExcelBlob(sheets);
 }
 
 // Export to CSV
@@ -335,7 +332,7 @@ export async function exportAnalytics(
       filename = `ai-analytics-report-${timestamp}.pdf`;
       break;
     case 'excel':
-      blob = exportToExcel(data, options);
+      blob = await exportToExcel(data, options);
       filename = `ai-analytics-report-${timestamp}.xlsx`;
       break;
     case 'csv':
