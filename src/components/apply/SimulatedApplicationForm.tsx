@@ -189,7 +189,7 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
 
   const STEP_SECTIONS = [
     { id: 1, Component: PersonalInfoSection },
-    { id: 2, Component: CDLInfoSection },
+    { id: 2, Component: isTech ? TechInfoSection : CDLInfoSection },
     { id: 3, Component: BackgroundInfoSection },
     { id: 4, Component: ConsentSection, hasClientName: true },
   ];
