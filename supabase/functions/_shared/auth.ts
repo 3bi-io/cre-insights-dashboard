@@ -137,6 +137,37 @@ export function isServiceRequest(req: Request): boolean {
 }
 
 /**
+ * Checks if a URL is safe (not targeting internal/private networks).
+ * Blocks RFC-1918, link-local, localhost, and cloud metadata endpoints.
+ */
+export function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') return false;
+    if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') return false;
+
+    const parts = hostname.split('.');
+    if (parts.length === 4 && parts.every(p => /^\d+$/.test(p))) {
+      const first = parseInt(parts[0]);
+      const second = parseInt(parts[1]);
+      if (first === 10) return false;
+      if (first === 172 && second >= 16 && second <= 31) return false;
+      if (first === 192 && second === 168) return false;
+      if (first === 169 && second === 254) return false;
+      if (first === 0) return false;
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Get organization ID from authenticated user
  */
 export async function getUserOrganizationId(req: Request): Promise<string | null> {

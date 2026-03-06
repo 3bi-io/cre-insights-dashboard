@@ -1,3 +1,5 @@
+import { verifyUser, isSafeUrl } from '../_shared/auth.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -186,11 +188,32 @@ Deno.serve(async (req) => {
   }
 
   try {
+    await verifyUser(req);
+  } catch {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Unauthorized' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  try {
     const { url, client_id, client_name, organization_id, user_id, dry_run } = await req.json();
 
     if (!url) {
       return new Response(
         JSON.stringify({ success: false, error: 'URL is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let formattedUrl = url.trim();
+    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
+    if (!isSafeUrl(formattedUrl)) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'URL not allowed' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
