@@ -43,6 +43,7 @@ const ShortLinkRedirect = React.lazy(() => import("@/pages/ShortLinkRedirect"));
 const SharedVoicePage = React.lazy(() => import("@/pages/public/SharedVoicePage"));
 const AudioShowcasePage = React.lazy(() => import("@/pages/public/AudioShowcasePage"));
 const CalendarCallback = React.lazy(() => import("@/pages/CalendarCallback"));
+const RecruiterCalendarPage = React.lazy(() => import("@/pages/RecruiterCalendarPage"));
 
 // Main application pages
 const Dashboard = React.lazy(() => import("@/pages/Dashboard"));
