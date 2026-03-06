@@ -131,6 +131,7 @@ export const useApplyContext = (): ApplyContext => {
         organizationId: organizationId || null,
         clientId: clientId || null,
         source: utmSource,
+        industryVertical: null,
         isLoading: false,
       });
     };
