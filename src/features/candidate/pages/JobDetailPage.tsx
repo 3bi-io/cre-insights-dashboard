@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJobDetail, useRecommendedJobs } from '../hooks/useJobDetail';
 import { useSavedJobs } from '../hooks';
@@ -217,7 +218,7 @@ const JobDetailPage = () => {
                     prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-5 prose-ol:space-y-1.5
                     prose-li:text-foreground/90 prose-li:leading-relaxed
                     prose-blockquote:border-l-4 prose-blockquote:border-primary/50 prose-blockquote:bg-muted/30 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:text-muted-foreground prose-blockquote:italic"
-                  dangerouslySetInnerHTML={{ __html: job.job_summary }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(job.job_summary) }}
                 />
               ) : (
                 <p className="text-muted-foreground">No description available.</p>
