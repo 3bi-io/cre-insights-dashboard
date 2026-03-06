@@ -20,6 +20,7 @@ const Apply = () => {
     location, 
     source,
     jobListingId,
+    industryVertical,
     isLoading 
   } = useApplyContext();
 
