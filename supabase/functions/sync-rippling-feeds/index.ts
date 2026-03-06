@@ -427,7 +427,6 @@ const handler = wrapHandler(async (req: Request) => {
           job_id: job.jobId,
           client_id: ASPENVIEW_CONFIG.clientId,
           client: ASPENVIEW_CONFIG.clientName,
-          source: ASPENVIEW_CONFIG.source,
           experience_level: null,
           salary_type: null,
           updated_at: new Date().toISOString(),
