@@ -23,7 +23,9 @@ async function callFunction(body: Record<string, unknown>, token?: string) {
     },
     body: JSON.stringify(body),
   });
-  const data = await resp.json();
+  const text = await resp.text();
+  let data: any;
+  try { data = JSON.parse(text); } catch { data = { error: text, _raw: true }; }
   return { status: resp.status, data };
 }
 
