@@ -1,4 +1,5 @@
 import React from 'react';
+import DOMPurify from 'dompurify';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJobDetail, useRecommendedJobs } from '../hooks/useJobDetail';
 import { useSavedJobs } from '../hooks';
