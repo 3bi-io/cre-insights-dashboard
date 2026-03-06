@@ -270,6 +270,7 @@ export const ApplicationForm = ({ clientName, clientLogoUrl, industryVertical }:
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            industryVertical={industryVertical}
           />
         </nav>
 
