@@ -71,22 +71,41 @@ function extractJobUuid(url: string): string | null {
 function parseLocation(location: string | null): { city: string | null; state: string | null; remote_type: string | null; location: string | null } {
   if (!location) return { city: null, state: null, remote_type: null, location: null };
 
-  const loc = location.trim();
+  let loc = location.trim();
 
-  // Check for remote indicators
+  // Fix truncated parentheses like "Remoto (Bogotá"
+  if (loc.includes('(') && !loc.includes(')')) {
+    loc = loc + ')';
+  }
+
+  // Check for remote indicators (Spanish and English)
   if (/remoto|remote/i.test(loc)) {
-    // If it's purely remote
+    // Purely remote
     if (/^(remoto|remote)$/i.test(loc)) {
       return { city: null, state: null, remote_type: 'remote', location: 'Remote' };
     }
-    // Remote with location (e.g. "San Francisco, CA - Remote")
+    
+    // "Remoto (City)" or "Remoto (City, Country)" pattern
+    const parenMatch = loc.match(/(?:remoto|remote)\s*\(([^)]+)\)/i);
+    if (parenMatch) {
+      const inner = parenMatch[1].trim();
+      const parts = inner.split(',').map(p => p.trim());
+      return {
+        city: parts[0] || null,
+        state: parts.length > 1 ? parts[parts.length - 1] : null,
+        remote_type: 'remote',
+        location: `${parts[0] || 'Remote'} (Remote)`,
+      };
+    }
+
+    // "City, State - Remote" pattern
     const cleanLoc = loc.replace(/[-–]\s*(remoto|remote)/i, '').trim();
     const parts = cleanLoc.split(',').map(p => p.trim());
     return {
       city: parts[0] || null,
       state: parts[1] || null,
-      remote_type: 'hybrid',
-      location: cleanLoc || 'Remote',
+      remote_type: 'remote',
+      location: cleanLoc ? `${cleanLoc} (Remote)` : 'Remote',
     };
   }
 
