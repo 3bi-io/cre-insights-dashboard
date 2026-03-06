@@ -5729,6 +5729,75 @@ export type Database = {
         }
         Relationships: []
       }
+      recruiter_calendar_connections: {
+        Row: {
+          calendar_id: string | null
+          connected_at: string
+          created_at: string
+          email: string | null
+          expires_at: string | null
+          id: string
+          metadata: Json | null
+          nylas_grant_id: string
+          organization_id: string | null
+          provider: string
+          provider_type: string | null
+          scopes: string[] | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_id?: string | null
+          connected_at?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          nylas_grant_id: string
+          organization_id?: string | null
+          provider?: string
+          provider_type?: string | null
+          scopes?: string[] | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_id?: string | null
+          connected_at?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          metadata?: Json | null
+          nylas_grant_id?: string
+          organization_id?: string | null
+          provider?: string
+          provider_type?: string | null
+          scopes?: string[] | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recruiter_calendar_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruiter_calendar_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recruiters: {
         Row: {
           created_at: string
@@ -5827,6 +5896,122 @@ export type Database = {
           },
           {
             foreignKeyName: "saved_filters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_callbacks: {
+        Row: {
+          application_id: string | null
+          booking_source: string | null
+          calendar_connection_id: string | null
+          created_at: string
+          digest_email_sent: boolean | null
+          driver_name: string | null
+          driver_phone: string | null
+          duration_minutes: number
+          id: string
+          metadata: Json | null
+          notes: string | null
+          nylas_event_id: string | null
+          organization_id: string | null
+          recruiter_user_id: string
+          scheduled_end: string
+          scheduled_start: string
+          sms_confirmation_sent: boolean | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id?: string | null
+          booking_source?: string | null
+          calendar_connection_id?: string | null
+          created_at?: string
+          digest_email_sent?: boolean | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          duration_minutes?: number
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          nylas_event_id?: string | null
+          organization_id?: string | null
+          recruiter_user_id: string
+          scheduled_end: string
+          scheduled_start: string
+          sms_confirmation_sent?: boolean | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string | null
+          booking_source?: string | null
+          calendar_connection_id?: string | null
+          created_at?: string
+          digest_email_sent?: boolean | null
+          driver_name?: string | null
+          driver_phone?: string | null
+          duration_minutes?: number
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          nylas_event_id?: string | null
+          organization_id?: string | null
+          recruiter_user_id?: string
+          scheduled_end?: string
+          scheduled_start?: string
+          sms_confirmation_sent?: boolean | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_callbacks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_callbacks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_callbacks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_callbacks_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_callbacks_calendar_connection_id_fkey"
+            columns: ["calendar_connection_id"]
+            isOneToOne: false
+            referencedRelation: "recruiter_calendar_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_callbacks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_callbacks_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "public_organization_info"
