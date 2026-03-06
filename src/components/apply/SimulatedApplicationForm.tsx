@@ -220,6 +220,7 @@ export const SimulatedApplicationForm = ({ clientName, country, countryCode, job
             completedSteps={completedSteps}
             onStepClick={goToStep}
             canGoToStep={canGoToStep}
+            industryVertical={industryVertical}
           />
         </nav>
 
