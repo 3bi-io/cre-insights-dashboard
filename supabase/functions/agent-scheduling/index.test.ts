@@ -24,7 +24,13 @@ async function callFunction(body: Record<string, unknown>) {
     },
     body: JSON.stringify(body),
   });
-  const data = await resp.json();
+  let data: any;
+  const text = await resp.text();
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = { result: text, _raw: true };
+  }
   return { status: resp.status, data };
 }
 
