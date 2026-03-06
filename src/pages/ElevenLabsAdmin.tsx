@@ -392,6 +392,7 @@ const ElevenLabsAdmin = () => {
           </TabsContent>
 
           <TabsContent value="schedule" className="space-y-4">
+            <RecruiterCalendarConnect />
             <CallScheduleSettings />
           </TabsContent>
 
