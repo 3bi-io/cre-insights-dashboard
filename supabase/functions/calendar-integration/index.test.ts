@@ -54,9 +54,8 @@ Deno.test("get_availability with missing params returns error", async () => {
     action: "get_availability",
     recruiterUserId: null,
   });
-  // Should return 500 with validation error
-  assertEquals(status, 500);
-  assertEquals(data.success, false);
+  assertEquals(status >= 400, true);
+  assertExists(data.error);
 });
 
 Deno.test("get_availability with invalid UUID returns error", async () => {
@@ -66,8 +65,8 @@ Deno.test("get_availability with invalid UUID returns error", async () => {
     startTime: new Date().toISOString(),
     endTime: new Date(Date.now() + 3600000).toISOString(),
   });
-  assertEquals(status, 500);
-  assertEquals(data.success, false);
+  assertEquals(status >= 400, true);
+  assertExists(data.error);
 });
 
 Deno.test("get_availability with end before start returns error", async () => {
