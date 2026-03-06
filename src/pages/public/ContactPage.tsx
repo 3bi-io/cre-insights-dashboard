@@ -205,39 +205,39 @@ const ContactPage = () => {
                         <Button onClick={() => setIsSubmitted(false)} variant="ghost" className="mt-4 min-h-[44px]">Send Another Message</Button>
                       </div>
                     ) : (
-                      <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1.5 block">First Name *</label>
-                            <Input id="firstName" name="firstName" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className={`min-h-[44px] ${errors.firstName ? 'border-destructive' : ''}`} required autoComplete="given-name" />
-                            {errors.firstName && <p className="text-destructive text-xs mt-1">{errors.firstName}</p>}
+                            <label htmlFor="firstName" className="text-sm font-medium text-foreground mb-1.5 block">First Name *</label>
+                            <Input id="firstName" name="firstName" value={formData.firstName} onChange={(e) => handleInputChange('firstName', e.target.value)} className={`min-h-[44px] ${errors.firstName ? 'border-destructive' : ''}`} required autoComplete="given-name" aria-invalid={!!errors.firstName} aria-describedby={errors.firstName ? 'firstName-error' : undefined} />
+                            {errors.firstName && <p id="firstName-error" className="text-destructive text-xs mt-1" role="alert">{errors.firstName}</p>}
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1.5 block">Last Name *</label>
-                            <Input id="lastName" name="lastName" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className={`min-h-[44px] ${errors.lastName ? 'border-destructive' : ''}`} required autoComplete="family-name" />
-                            {errors.lastName && <p className="text-destructive text-xs mt-1">{errors.lastName}</p>}
+                            <label htmlFor="lastName" className="text-sm font-medium text-foreground mb-1.5 block">Last Name *</label>
+                            <Input id="lastName" name="lastName" value={formData.lastName} onChange={(e) => handleInputChange('lastName', e.target.value)} className={`min-h-[44px] ${errors.lastName ? 'border-destructive' : ''}`} required autoComplete="family-name" aria-invalid={!!errors.lastName} aria-describedby={errors.lastName ? 'lastName-error' : undefined} />
+                            {errors.lastName && <p id="lastName-error" className="text-destructive text-xs mt-1" role="alert">{errors.lastName}</p>}
                           </div>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">Email Address *</label>
-                          <Input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`min-h-[44px] ${errors.email ? 'border-destructive' : ''}`} required autoComplete="email" inputMode="email" />
-                          {errors.email && <p className="text-destructive text-xs mt-1">{errors.email}</p>}
+                          <label htmlFor="email" className="text-sm font-medium text-foreground mb-1.5 block">Email Address *</label>
+                          <Input id="email" name="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`min-h-[44px] ${errors.email ? 'border-destructive' : ''}`} required autoComplete="email" inputMode="email" aria-invalid={!!errors.email} aria-describedby={errors.email ? 'email-error' : undefined} />
+                          {errors.email && <p id="email-error" className="text-destructive text-xs mt-1" role="alert">{errors.email}</p>}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1.5 block">Company *</label>
-                            <Input id="company" name="company" value={formData.company} onChange={(e) => handleInputChange('company', e.target.value)} className={`min-h-[44px] ${errors.company ? 'border-destructive' : ''}`} required autoComplete="organization" />
-                            {errors.company && <p className="text-destructive text-xs mt-1">{errors.company}</p>}
+                            <label htmlFor="company" className="text-sm font-medium text-foreground mb-1.5 block">Company *</label>
+                            <Input id="company" name="company" value={formData.company} onChange={(e) => handleInputChange('company', e.target.value)} className={`min-h-[44px] ${errors.company ? 'border-destructive' : ''}`} required autoComplete="organization" aria-invalid={!!errors.company} aria-describedby={errors.company ? 'company-error' : undefined} />
+                            {errors.company && <p id="company-error" className="text-destructive text-xs mt-1" role="alert">{errors.company}</p>}
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1.5 block">Job Title</label>
+                            <label htmlFor="jobTitle" className="text-sm font-medium text-foreground mb-1.5 block">Job Title</label>
                             <Input id="jobTitle" name="jobTitle" value={formData.jobTitle} onChange={(e) => handleInputChange('jobTitle', e.target.value)} className="min-h-[44px]" autoComplete="organization-title" />
                           </div>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">Company Size</label>
+                          <label htmlFor="companySize" className="text-sm font-medium text-foreground mb-1.5 block">Company Size</label>
                           <Select name="companySize" onValueChange={(value) => handleInputChange('companySize', value)}>
-                            <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Select company size" /></SelectTrigger>
+                            <SelectTrigger id="companySize" className="min-h-[44px]"><SelectValue placeholder="Select company size" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="1-10">1-10 employees</SelectItem>
                               <SelectItem value="11-50">11-50 employees</SelectItem>
@@ -248,9 +248,9 @@ const ContactPage = () => {
                           </Select>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">Subject *</label>
+                          <label htmlFor="subject" className="text-sm font-medium text-foreground mb-1.5 block">Subject *</label>
                           <Select name="subject" onValueChange={(value) => handleInputChange('subject', value)}>
-                            <SelectTrigger className={`min-h-[44px] ${errors.subject ? 'border-destructive' : ''}`}><SelectValue placeholder="What can we help you with?" /></SelectTrigger>
+                            <SelectTrigger id="subject" className={`min-h-[44px] ${errors.subject ? 'border-destructive' : ''}`} aria-invalid={!!errors.subject} aria-describedby={errors.subject ? 'subject-error' : undefined}><SelectValue placeholder="What can we help you with?" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="demo">Schedule a Demo</SelectItem>
                               <SelectItem value="enterprise">Enterprise Inquiry</SelectItem>
@@ -261,12 +261,12 @@ const ContactPage = () => {
                               <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
                           </Select>
-                          {errors.subject && <p className="text-destructive text-xs mt-1">{errors.subject}</p>}
+                          {errors.subject && <p id="subject-error" className="text-destructive text-xs mt-1" role="alert">{errors.subject}</p>}
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">Message *</label>
-                          <Textarea id="message" name="message" value={formData.message} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Tell us more about your requirements..." className={`min-h-[100px] md:min-h-[120px] ${errors.message ? 'border-destructive' : ''}`} required />
-                          {errors.message && <p className="text-destructive text-xs mt-1">{errors.message}</p>}
+                          <label htmlFor="message" className="text-sm font-medium text-foreground mb-1.5 block">Message *</label>
+                          <Textarea id="message" name="message" value={formData.message} onChange={(e) => handleInputChange('message', e.target.value)} placeholder="Tell us more about your requirements..." className={`min-h-[100px] md:min-h-[120px] ${errors.message ? 'border-destructive' : ''}`} required aria-invalid={!!errors.message} aria-describedby={errors.message ? 'message-error' : undefined} />
+                          {errors.message && <p id="message-error" className="text-destructive text-xs mt-1" role="alert">{errors.message}</p>}
                         </div>
                         <Button type="submit" className="w-full bg-primary hover:bg-primary/90 min-h-[48px] text-base" disabled={isSubmitting}>
                           {isSubmitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="mr-2 h-4 w-4" />Send Message</>)}

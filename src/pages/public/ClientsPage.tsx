@@ -25,7 +25,7 @@ const ClientsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');
 
-  const { data: clients, isLoading } = useQuery({
+  const { data: clients, isLoading, error, refetch } = useQuery({
     queryKey: ['public-clients-grid'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -35,6 +35,8 @@ const ClientsPage = () => {
       if (error) throw error;
       return (data || []) as PublicClient[];
     },
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
   const filteredClients = useMemo(() => {

@@ -48,6 +48,8 @@ export function useBlogPosts(category?: string) {
       if (error) throw error;
       return (data || []) as BlogPost[];
     },
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -69,6 +71,8 @@ export function useBlogPost(slug: string) {
       return data as BlogPost;
     },
     enabled: !!slug,
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
