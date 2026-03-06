@@ -26,6 +26,7 @@ export const useApplyContext = (): ApplyContext => {
     organizationId: null,
     clientId: null,
     source: null,
+    industryVertical: null,
     isLoading: true,
   });
 
