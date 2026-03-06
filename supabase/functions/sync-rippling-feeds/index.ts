@@ -484,7 +484,7 @@ const handler = wrapHandler(async (req: Request) => {
               .single();
 
             if (insertError) {
-              logger.error('Failed to insert job', insertError, { jobId: job.jobId });
+              logger.error('Failed to insert job', new Error(JSON.stringify(insertError)), { jobId: job.jobId });
             } else if (newJob) {
               const applyUrl = generateApplyUrl(newJob.id);
               await supabase
