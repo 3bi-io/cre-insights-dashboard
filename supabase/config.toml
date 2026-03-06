@@ -201,6 +201,9 @@ verify_jwt = false
 [functions.sync-cdl-feeds]
 verify_jwt = false
 
+[functions.sync-rippling-feeds]
+verify_jwt = false
+
 [functions.cdl-jobcast-inbound]
 verify_jwt = false
 
