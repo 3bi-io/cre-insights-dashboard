@@ -455,7 +455,7 @@ const handler = wrapHandler(async (req: Request) => {
             .eq('id', existingJob.id);
 
           if (updateError) {
-            logger.error('Failed to update job', updateError, { jobId: job.jobId });
+            logger.error('Failed to update job', new Error(JSON.stringify(updateError)), { jobId: job.jobId });
           } else {
             result.jobsUpdated++;
           }
