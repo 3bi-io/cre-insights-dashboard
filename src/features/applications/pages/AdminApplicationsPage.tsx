@@ -25,7 +25,7 @@ import type { Application } from '@/types/common.types';
 import { logger } from '@/lib/logger';
 import { useToast } from '@/hooks/use-toast';
 import { getApplicantName, getApplicantEmail } from '@/utils/applicationHelpers';
-import * as XLSX from 'xlsx';
+import { writeExcelFile } from '@/lib/excelHelper';
 
 export default function AdminApplicationsPage() {
   const { user, userRole, organization } = useAuth();
