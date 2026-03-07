@@ -75,13 +75,14 @@ export const initSentry = () => {
  */
 export const captureException = (error: Error, context?: Record<string, any>) => {
   if (!isProduction || !SENTRY_DSN) {
-    logger.error('Exception (not sent to Sentry)', error, context);
-    return;
+    return; // No Sentry in non-production — caller already logged to console
   }
 
-  Sentry.captureException(error, {
-    extra: context,
-  });
+  try {
+    Sentry.captureException(error, { extra: context });
+  } catch {
+    // Silently fail — never call logger here to avoid recursion
+  }
 };
 
 /**
