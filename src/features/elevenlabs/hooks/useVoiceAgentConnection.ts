@@ -308,19 +308,25 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           });
         }, CONNECTION_TIMEOUT_MS);
 
-        logger.info('Starting conversation', { agentId, attempt, dynamicVariables }, 'VoiceAgentConnection');
+        // Build conversation overrides from job context
+        const jobContext = context?.jobContext as JobContext | undefined;
+        const overrides = jobContext ? createAgentOverrides(jobContext) : undefined;
+
+        logger.info('Starting conversation', { agentId, attempt, dynamicVariables, hasOverrides: !!overrides }, 'VoiceAgentConnection');
         
         // Use signedUrl from edge function
         if (urlResponse.data?.signedUrl) {
           await conversation.startSession({
             signedUrl: urlResponse.data.signedUrl,
-            dynamicVariables
+            dynamicVariables,
+            ...(overrides && { overrides })
           });
         } else {
           // Direct agentId connection for public agents
           await conversation.startSession({
             agentId,
-            dynamicVariables
+            dynamicVariables,
+            ...(overrides && { overrides })
           });
         }
 
