@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 import { Brand } from './Brand';
 import { Badge } from '@/components/ui/badge';
 import ThemeToggle from '@/components/ThemeToggle';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { publicNavigation, type PublicNavItem } from '@/config/publicNavigationConfig';
 import { isActivePath } from '@/utils/navigationUtils';
-import { Mic, Bot, BarChart3, Link2, Sparkles, X, ChevronDown } from 'lucide-react';
+import { Mic, Bot, BarChart3, Link2, Sparkles, X, ChevronDown, Menu } from 'lucide-react';
 
 interface HeaderProps {
   navigation?: PublicNavItem[];
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const location = useLocation();
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [announcementVisible, setAnnouncementVisible] = useState(() => {
     return !localStorage.getItem('announcement-dismissed');
@@ -40,9 +42,10 @@ export const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mega menu on route change
+  // Close menus on route change
   useEffect(() => {
     setMegaMenuOpen(false);
+    setMobileMenuOpen(false);
   }, [location.pathname]);
 
   const isActive = (path: string) => isActivePath(location.pathname, path);
@@ -156,26 +159,79 @@ export const Header: React.FC<HeaderProps> = ({
               })}
             </div>
 
-            {/* Factor 3: Auth Buttons + Theme Toggle */}
+            {/* Factor 3: Auth Buttons + Theme Toggle + Mobile Hamburger */}
             <div className="flex items-center space-x-2 md:space-x-3" role="group" aria-label="Authentication">
               <ThemeToggle />
               {showAuth && (
-                <>
-                  <Link to="/auth" className="hidden sm:block">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    >
-                      Sign In
-                    </Button>
-                  </Link>
-                </>
+                <Link to="/auth" className="hidden sm:block">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="min-h-[44px] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
               )}
+              {/* Mobile hamburger */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden min-h-[44px] min-w-[44px]"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Mobile slide-in drawer */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="right" className="w-[300px] p-0">
+          <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-left">
+              <Brand variant="auto" size="auto" />
+            </SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col py-2" aria-label="Mobile navigation">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 min-h-[48px] text-sm font-medium transition-colors",
+                  isActive(item.href)
+                    ? "text-primary bg-primary/5"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )}
+              >
+                {item.icon && <item.icon className="h-5 w-5 shrink-0" />}
+                <div className="flex-1 min-w-0">
+                  <span className="block">{item.name}</span>
+                  {item.description && (
+                    <span className="block text-xs text-muted-foreground mt-0.5">{item.description}</span>
+                  )}
+                </div>
+                {item.isNew && (
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-semibold bg-primary/10 text-primary border-0 shrink-0">
+                    NEW
+                  </Badge>
+                )}
+              </Link>
+            ))}
+            {showAuth && (
+              <div className="border-t mt-2 pt-2 px-4">
+                <Link to="/auth">
+                  <Button className="w-full min-h-[48px]">Sign In</Button>
+                </Link>
+              </div>
+            )}
+          </nav>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

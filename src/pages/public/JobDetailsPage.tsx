@@ -227,17 +227,22 @@ const JobDetailsContent: React.FC = () => {
           />
         </div>
 
-        {/* Mobile share row */}
+        {/* Mobile share row — native share first */}
         <div className="flex gap-2 mt-4 lg:hidden">
-          <Button variant="outline" size="sm" onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`, '_blank')} className="flex-1">
-            LinkedIn
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(canonicalUrl); }} className="flex-1">
-            Copy Link
-          </Button>
-          <Button variant="outline" size="sm" onClick={async () => { if (navigator.share) { try { await navigator.share({ title: displayTitle, url: canonicalUrl }); } catch {} } }} className="flex-1">
-            Share
-          </Button>
+          {typeof navigator !== 'undefined' && navigator.share ? (
+            <Button variant="outline" size="sm" onClick={async () => { try { await navigator.share({ title: displayTitle, url: canonicalUrl }); } catch {} }} className="flex-1 min-h-[44px]">
+              Share
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`, '_blank')} className="flex-1 min-h-[44px]">
+                LinkedIn
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(canonicalUrl); }} className="flex-1 min-h-[44px]">
+                Copy Link
+              </Button>
+            </>
+          )}
         </div>
 
         <StickyApplyCTA applyUrl={applyUrl} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />

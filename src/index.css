@@ -4,6 +4,10 @@
 
 /* Comprehensive Design System - All colors, gradients, fonts, spacing, and animations */
 
+  html {
+    scroll-behavior: smooth;
+  }
+
 @layer base {
   :root {
     /* === CORE COLORS === */
@@ -258,9 +262,8 @@
       font-size: 18px !important;
     }
 
-    /* Smooth scrolling with momentum for iOS */
+    /* Momentum scrolling for iOS */
     html {
-      scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
     }
 
