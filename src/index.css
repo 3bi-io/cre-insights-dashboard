@@ -4,6 +4,10 @@
 
 /* Comprehensive Design System - All colors, gradients, fonts, spacing, and animations */
 
+  html {
+    scroll-behavior: smooth;
+  }
+
 @layer base {
   :root {
     /* === CORE COLORS === */
