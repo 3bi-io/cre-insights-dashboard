@@ -90,14 +90,14 @@ export const captureException = (error: Error, context?: Record<string, any>) =>
  */
 export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info', context?: Record<string, any>) => {
   if (!isProduction || !SENTRY_DSN) {
-    logger.log(`Message (not sent to Sentry): ${message}`, context);
-    return;
+    return; // No Sentry in non-production — caller already logged to console
   }
 
-  Sentry.captureMessage(message, {
-    level,
-    extra: context,
-  });
+  try {
+    Sentry.captureMessage(message, { level, extra: context });
+  } catch {
+    // Silently fail — never call logger here to avoid recursion
+  }
 };
 
 /**
