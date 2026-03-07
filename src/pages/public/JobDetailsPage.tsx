@@ -32,11 +32,17 @@ const JobDetailsPage: React.FC = () => {
     isConnected,
     selectedJob,
     isSpeaking,
+    canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
     startVoiceApplication,
     endVoiceApplication,
+    setVolume,
+    sendFeedback,
+    sendUserActivity,
+    getInputFrequencyData,
+    getOutputFrequencyData,
   } = useElevenLabsVoice();
 
   if (isLoading) {
