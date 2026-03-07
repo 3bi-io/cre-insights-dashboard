@@ -141,20 +141,20 @@ const HeroSection = () => {
           variants={itemVariants}
           className="flex flex-col sm:flex-row gap-4 items-start mb-10"
         >
-          <Link to="/jobs">
+          <Link to="/jobs" className="w-full sm:w-auto">
             <Button
               size="lg"
-              className="min-h-[56px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground px-10 py-5 text-lg font-bold shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.6)] hover:scale-105 transition-all duration-300"
+              className="w-full sm:w-auto min-h-[56px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground px-10 py-5 text-lg font-bold shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_50px_hsl(var(--primary)/0.6)] hover:scale-105 transition-all duration-300"
             >
               <Search className="mr-2 h-5 w-5" />
               {heroContent.cta.primary}
             </Button>
           </Link>
-          <Link to="/auth">
+          <Link to="/auth" className="w-full sm:w-auto">
             <Button
               variant="outline"
               size="lg"
-              className="min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-primary bg-white text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300 shadow-lg"
+              className="w-full sm:w-auto min-h-[56px] px-10 py-5 text-lg font-bold border-2 border-primary bg-white text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300 shadow-lg"
             >
               {heroContent.cta.secondary}
               <ArrowRight className="ml-2 h-5 w-5" />
