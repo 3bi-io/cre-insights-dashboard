@@ -72,11 +72,11 @@ export const Header: React.FC<HeaderProps> = ({
             "flex justify-between items-center transition-all duration-300",
             scrolled ? "h-12" : "h-14 md:h-12"
           )}>
-            {/* Factor 1: Brand */}
-            <Brand variant="auto" size="auto" priority={true} />
+            {/* Factor 1: Brand — always show full logo on one line */}
+            <Brand variant="horizontal" size="sm" priority={true} className="shrink-0" />
 
-            {/* Factor 2: Desktop Navigation Links */}
-            <div className="hidden md:flex items-center space-x-1" role="menubar" aria-label="Primary navigation">
+            {/* Factor 2: Desktop Navigation Links — hidden below lg */}
+            <div className="hidden lg:flex items-center space-x-1" role="menubar" aria-label="Primary navigation">
               {navigation.map((item) => {
                 // Features gets a mega-menu
                 if (item.href === '/features') {
