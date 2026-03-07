@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CheckCircle, X, Check, Mic, Phone, Bot, Zap } from 'lucide-react';
+import { GradientCTA } from '@/components/shared';
 import featuresHeroBg from '@/assets/hero/features-hero-bg.jpg';
 import { motion } from 'framer-motion';
 import { useScrollSpy } from '@/hooks/useScrollSpy';
