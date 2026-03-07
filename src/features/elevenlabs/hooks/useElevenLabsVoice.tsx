@@ -104,6 +104,7 @@ export const useElevenLabsVoice = () => {
     connectionProgress,
     selectedJob,
     isSpeaking,
+    canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
@@ -111,5 +112,10 @@ export const useElevenLabsVoice = () => {
     startVoiceApplication,
     endVoiceApplication,
     cancelVoiceApplication,
+    setVolume,
+    sendFeedback,
+    sendUserActivity,
+    getInputFrequencyData,
+    getOutputFrequencyData,
   };
 };
