@@ -139,7 +139,7 @@ export interface AgentOverrides {
       prompt: string;
     };
     firstMessage: string;
-    language: string;
+    language: 'en';
   };
 }
 

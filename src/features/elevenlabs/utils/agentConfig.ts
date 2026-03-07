@@ -32,7 +32,7 @@ export function createAgentOverrides(job: JobContext): AgentOverrides {
         prompt: createJobContextPrompt(job)
       },
       firstMessage: createFirstMessage(job),
-      language: 'en'
+      language: 'en' as const
     }
   };
 }
