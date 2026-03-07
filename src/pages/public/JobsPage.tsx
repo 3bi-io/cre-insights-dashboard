@@ -231,11 +231,17 @@ const JobsPage = () => {
           <VoiceApplicationPanel
             isConnected={isConnected}
             isSpeaking={isSpeaking}
+            canSendFeedback={canSendFeedback}
             selectedJob={selectedJob}
             transcripts={transcripts}
             pendingUserTranscript={pendingUserTranscript}
             pendingAgentTranscript={pendingAgentTranscript}
             onEnd={endVoiceApplication}
+            setVolume={setVolume}
+            sendFeedback={sendFeedback}
+            sendUserActivity={sendUserActivity}
+            getInputFrequencyData={getInputFrequencyData}
+            getOutputFrequencyData={getOutputFrequencyData}
           />
           </div>
       </div>
