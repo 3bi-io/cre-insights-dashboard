@@ -67,17 +67,17 @@ const DemoPage: React.FC = () => {
         {/* Main Demo Tabs */}
         <section className="py-16 container mx-auto px-4">
           <Tabs defaultValue="voice" className="space-y-8">
-            <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-4">
-              <TabsTrigger value="voice" className="flex items-center gap-2">
+            <TabsList className="flex overflow-x-auto scrollbar-hide sm:grid sm:grid-cols-4 w-full max-w-3xl mx-auto">
+              <TabsTrigger value="voice" className="flex items-center gap-2 whitespace-nowrap min-h-[44px]">
                 <Bot className="h-4 w-4" /><span className="hidden sm:inline">Voice Tech</span><span className="sm:hidden">Voice</span>
               </TabsTrigger>
-              <TabsTrigger value="kanban" className="flex items-center gap-2">
+              <TabsTrigger value="kanban" className="flex items-center gap-2 whitespace-nowrap min-h-[44px]">
                 <Kanban className="h-4 w-4" /><span className="hidden sm:inline">Pipeline View</span><span className="sm:hidden">Pipeline</span>
               </TabsTrigger>
-              <TabsTrigger value="platform" className="flex items-center gap-2">
+              <TabsTrigger value="platform" className="flex items-center gap-2 whitespace-nowrap min-h-[44px]">
                 <BarChart3 className="h-4 w-4" /><span className="hidden sm:inline">Platform</span><span className="sm:hidden">Platform</span>
               </TabsTrigger>
-              <TabsTrigger value="flow" className="flex items-center gap-2">
+              <TabsTrigger value="flow" className="flex items-center gap-2 whitespace-nowrap min-h-[44px]">
                 <Zap className="h-4 w-4" /><span className="hidden sm:inline">Flow</span><span className="sm:hidden">Flow</span>
               </TabsTrigger>
             </TabsList>
