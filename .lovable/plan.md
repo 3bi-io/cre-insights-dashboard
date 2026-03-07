@@ -1,37 +1,40 @@
 
+Issue diagnosis:
+- Do I know what the issue is? Yes.
+- Root cause is an infinite logging loop between `src/lib/logger.ts` and `src/utils/sentry.ts`:
+  1) `logger.error(...)` always calls `sendToMonitoring(...)`
+  2) `sendToMonitoring` dynamically imports `captureException(...)`
+  3) `captureException` (when no DSN / non-production) calls `logger.error('Exception (not sent to Sentry)', ...)`
+  4) This recursively re-enters step 1, producing the massive repeated message chain.
 
-# Invert DFW Geo-Fence: Block Inside, Allow Outside
+Implementation plan:
 
-## Current behavior (wrong)
-- Users **inside** 200 miles of DFW → allowed
-- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
+1) Break recursion at the source (`src/utils/sentry.ts`)
+- Remove logger-based fallback inside `captureException` / `captureMessage`.
+- In non-production or missing DSN, return early (or use plain `console.error/console.warn` only, never `logger`).
+- Wrap `Sentry.captureException` / `Sentry.captureMessage` in `try/catch` to prevent secondary crashes.
 
-## Desired behavior
-- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
-- Users **outside** 200 miles of DFW → **allowed**
-- OFAC sanctions countries → still blocked (no change)
+2) Add strict monitoring gate in logger (`src/lib/logger.ts`)
+- In `sendToMonitoring`, short-circuit unless:
+  - `import.meta.env.MODE === 'production'`
+  - `VITE_SENTRY_DSN` exists
+- This prevents any Sentry forwarding attempt in dev/staging when not configured.
 
-## Changes
+3) Add anti-recursion safety guard (`src/lib/logger.ts`)
+- Add a small re-entrancy flag (`isForwardingToMonitoring`) so if monitoring forwarding itself fails, logger does not recursively re-enter forwarding.
 
-### 1. `supabase/functions/_shared/geo-fence.ts`
-- Rename concept from "service area" to "restricted zone"
-- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
-- Update JSDoc comments to reflect the new semantics
+4) Improve error payload construction (`src/lib/logger.ts`)
+- Avoid creating chained messages like `A: B: C...` by sending:
+  - `message` unchanged
+  - error details in context/extra field
+- Keep one clean console line per error.
 
-### 2. `supabase/functions/geo-check/index.ts`
-- Gate 2 now blocks when user **is inside** the DFW radius
-- Change reason from `outside_service_area` to `inside_restricted_zone`
-- Update log messages accordingly
+5) Validate the fix
+- Trigger one `logger.error` path (e.g. voice connection failure) and confirm only a single/few logs appear.
+- Confirm no repeated `Exception (not sent to Sentry)` flood.
+- Confirm voice agent flow still connects/disconnects normally and toasts still show expected errors.
 
-### 3. `src/contexts/GeoBlockingContext.tsx`
-- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
-- Match on new reason `inside_restricted_zone`
-
-### 4. `src/pages/RegionBlocked.tsx`
-- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
-- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
-
-### 5. Deploy updated `geo-check` edge function
-
-No database changes needed. All changes are in edge function code and frontend components.
-
+Technical details (for implementation quality):
+- Files to update: `src/utils/sentry.ts`, `src/lib/logger.ts`
+- No database/schema changes required.
+- This is a runtime safety and observability fix; behavior of user-facing features stays unchanged except removal of console flood and performance degradation from recursive logging.
