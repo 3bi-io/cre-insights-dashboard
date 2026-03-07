@@ -126,7 +126,9 @@ const JobsPage = () => {
       jobDescription: job.job_summary || job.description || `${displayTitle} position at our company`,
       company: job.clients?.name || job.client || 'C.R. England',
       location: displayLocation || 'Various locations',
-      salary: salary || 'Competitive compensation package'
+      salary: salary || 'Competitive compensation package',
+      organizationId: job.organization_id || undefined,
+      clientId: job.client_id || undefined,
     };
 
     await startVoiceApplication(jobContext);

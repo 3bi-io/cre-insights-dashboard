@@ -58,6 +58,8 @@ export const useElevenLabsVoice = () => {
         company: job.company || 'Company',
         location: job.location || 'Various locations',
         salary: job.salary || 'Competitive salary',
+        organizationId: job.organizationId,
+        clientId: job.clientId,
         candidateName: job.candidateName,
         requirements: job.requirements,
         benefits: job.benefits
@@ -65,7 +67,12 @@ export const useElevenLabsVoice = () => {
 
       setSelectedJob(jobContext);
       
-      await connect(null, { jobContext, useGlobalAgent: true });
+      // Use org/client-aware routing if org context is available, otherwise fall back to global agent
+      const connectionOptions = jobContext.organizationId
+        ? { jobContext, organizationId: jobContext.organizationId, clientId: jobContext.clientId }
+        : { jobContext, useGlobalAgent: true };
+      
+      await connect(null, connectionOptions);
       
     } catch (error: any) {
       toast({

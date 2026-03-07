@@ -139,6 +139,8 @@ const JobDetailsPage: React.FC = () => {
       company: companyName,
       location: displayLocation || 'Various locations',
       salary: salary || 'Competitive salary',
+      organizationId: job.organization_id || undefined,
+      clientId: job.client_id || undefined,
     });
   };
 
