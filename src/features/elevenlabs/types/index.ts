@@ -99,6 +99,9 @@ export interface JobContext {
   company?: string;
   location?: string;
   salary?: string;
+  // Organization/client-aware agent routing
+  organizationId?: string;
+  clientId?: string;
   // Interview agent fields
   candidateName?: string;
   requirements?: string;
