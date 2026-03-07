@@ -47,7 +47,7 @@ export const FilterBar = ({
                 variant={activeTab === tab.id ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onTabChange(tab.id)}
-                className="min-h-[36px] whitespace-nowrap gap-1.5"
+                className="min-h-[44px] whitespace-nowrap gap-1.5 touch-action-manipulation"
               >
                 {tab.icon && <tab.icon className="h-3.5 w-3.5" />}
                 {tab.label}
