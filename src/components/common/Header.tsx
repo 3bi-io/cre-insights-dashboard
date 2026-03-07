@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 import { Brand } from './Brand';
 import { Badge } from '@/components/ui/badge';
 import ThemeToggle from '@/components/ThemeToggle';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { publicNavigation, type PublicNavItem } from '@/config/publicNavigationConfig';
 import { isActivePath } from '@/utils/navigationUtils';
-import { Mic, Bot, BarChart3, Link2, Sparkles, X, ChevronDown } from 'lucide-react';
+import { Mic, Bot, BarChart3, Link2, Sparkles, X, ChevronDown, Menu } from 'lucide-react';
 
 interface HeaderProps {
   navigation?: PublicNavItem[];
