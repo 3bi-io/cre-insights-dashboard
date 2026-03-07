@@ -57,9 +57,9 @@ const DemoPage: React.FC = () => {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
               Explore our AI-powered recruitment platform with interactive demos, audio samples, and a complete walkthrough of the candidate journey.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" asChild><Link to="/contact">Schedule a Demo<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
-              <Button size="lg" variant="outline" asChild><Link to="/contact">Contact Sales</Link></Button>
+            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 px-4 sm:px-0">
+              <Button size="lg" className="w-full sm:w-auto min-h-[48px]" asChild><Link to="/contact">Schedule a Demo<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+              <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-[48px]" asChild><Link to="/contact">Contact Sales</Link></Button>
             </div>
           </div>
         </HeroBackground>

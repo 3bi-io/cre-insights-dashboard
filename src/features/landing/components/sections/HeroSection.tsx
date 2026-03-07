@@ -184,7 +184,7 @@ const HeroSection = () => {
             variants={tagContainerVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-wrap items-center gap-2"
+            className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto scrollbar-hide pb-1"
           >
             {heroContent.industryTags?.map((tag, index) => (
               <motion.span
