@@ -72,11 +72,11 @@ export const Header: React.FC<HeaderProps> = ({
             "flex justify-between items-center transition-all duration-300",
             scrolled ? "h-12" : "h-14 md:h-12"
           )}>
-            {/* Factor 1: Brand */}
-            <Brand variant="auto" size="auto" priority={true} />
+            {/* Factor 1: Brand — always show full logo on one line */}
+            <Brand variant="horizontal" size="sm" priority={true} className="shrink-0" />
 
-            {/* Factor 2: Desktop Navigation Links */}
-            <div className="hidden md:flex items-center space-x-1" role="menubar" aria-label="Primary navigation">
+            {/* Factor 2: Desktop Navigation Links — hidden below lg */}
+            <div className="hidden lg:flex items-center space-x-1" role="menubar" aria-label="Primary navigation">
               {navigation.map((item) => {
                 // Features gets a mega-menu
                 if (item.href === '/features') {
@@ -159,11 +159,11 @@ export const Header: React.FC<HeaderProps> = ({
               })}
             </div>
 
-            {/* Factor 3: Auth Buttons + Theme Toggle + Mobile Hamburger */}
-            <div className="flex items-center space-x-2 md:space-x-3" role="group" aria-label="Authentication">
+            {/* Factor 3: Auth + Theme + Mobile Hamburger */}
+            <div className="flex items-center space-x-2" role="group" aria-label="Authentication">
               <ThemeToggle />
               {showAuth && (
-                <Link to="/auth" className="hidden sm:block">
+                <Link to="/auth" className="hidden lg:block">
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -173,11 +173,11 @@ export const Header: React.FC<HeaderProps> = ({
                   </Button>
                 </Link>
               )}
-              {/* Mobile hamburger */}
+              {/* Mobile/tablet hamburger — visible below lg */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden min-h-[44px] min-w-[44px]"
+                className="lg:hidden min-h-[44px] min-w-[44px]"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Open menu"
               >
