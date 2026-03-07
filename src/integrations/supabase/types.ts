@@ -8563,6 +8563,44 @@ export type Database = {
           publisher_slug: string
         }[]
       }
+      get_random_jobs: {
+        Args: {
+          _client_id?: string
+          _limit?: number
+          _location?: string
+          _offset?: number
+          _search?: string
+          _seed: string
+        }
+        Returns: {
+          apply_url: string
+          category_id: string
+          city: string
+          client_id: string
+          created_at: string
+          dest_city: string
+          dest_state: string
+          experience_level: string
+          id: string
+          is_hidden: boolean
+          job_summary: string
+          job_title: string
+          job_type: string
+          location: string
+          organization_id: string
+          remote_type: string
+          salary_max: number
+          salary_min: number
+          salary_type: string
+          state: string
+          status: string
+          title: string
+          total_count: number
+          updated_at: string
+          url: string
+          user_id: string
+        }[]
+      }
       get_screening_questions_for_job: {
         Args: { p_job_listing_id: string }
         Returns: Json
