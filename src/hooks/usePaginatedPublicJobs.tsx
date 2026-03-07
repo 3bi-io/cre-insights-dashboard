@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { queryKeys } from '@/lib/queryKeys';
@@ -30,6 +30,17 @@ const getSortConfig = (sortBy: PublicJobSortOption): { column: string; ascending
   }
 };
 
+/** Get or create a deterministic session seed for randomized job ordering */
+function getSessionSeed(): string {
+  const KEY = 'job_seed';
+  let seed = sessionStorage.getItem(KEY);
+  if (!seed) {
+    seed = crypto.randomUUID();
+    sessionStorage.setItem(KEY, seed);
+  }
+  return seed;
+}
+
 export function usePaginatedPublicJobs({
   searchTerm = '',
   locationFilter = '',
@@ -39,6 +50,11 @@ export function usePaginatedPublicJobs({
 }: UsePaginatedPublicJobsParams = {}) {
   const [page, setPage] = useState(0);
   const [allJobs, setAllJobs] = useState<any[]>([]);
+
+  // Stable session seed — generated once per browser session
+  const sessionSeed = useMemo(() => getSessionSeed(), []);
+
+  const useRandomOrder = sortBy === 'recent';
 
   // Reset pagination when filters or sort change
   useEffect(() => {
@@ -52,9 +68,38 @@ export function usePaginatedPublicJobs({
     queryKey: queryKeys.public.jobsPaginated(page, { searchTerm, locationFilter, categoryFilter, clientFilter, sortBy }),
     queryFn: async () => {
       const from = page * PAGE_SIZE;
+
+      // ── Randomised path (default "recent" sort) ──
+      if (useRandomOrder) {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_random_jobs', {
+          _seed: sessionSeed,
+          _limit: PAGE_SIZE,
+          _offset: from,
+          _search: searchTerm,
+          _location: locationFilter,
+          _client_id: clientFilter || null,
+        });
+
+        if (rpcError) throw rpcError;
+
+        const rows = rpcData || [];
+        const totalCount = rows.length > 0 ? (rows[0] as any).total_count : 0;
+
+        // Strip total_count from each row and enrich with client info
+        const cleanRows = rows.map((r: any) => {
+          const { total_count, ...rest } = r;
+          return rest;
+        });
+
+        // Fetch client + category info for these jobs
+        const enriched = await enrichJobs(cleanRows);
+
+        return { jobs: enriched, count: Number(totalCount) };
+      }
+
+      // ── Deterministic sort path (title, salary) ──
       const to = from + PAGE_SIZE - 1;
 
-      // Build query with server-side sorting
       let query = supabase
         .from('job_listings')
         .select(`
@@ -66,17 +111,12 @@ export function usePaginatedPublicJobs({
         .order(sortConfig.column, { ascending: sortConfig.ascending })
         .range(from, to);
 
-      // Apply search filter
       if (searchTerm) {
         query = query.or(`title.ilike.%${searchTerm}%,job_title.ilike.%${searchTerm}%,job_summary.ilike.%${searchTerm}%`);
       }
-
-      // Apply location filter (empty string means "all")
       if (locationFilter) {
         query = query.or(`city.ilike.%${locationFilter}%,state.ilike.%${locationFilter}%,location.ilike.%${locationFilter}%`);
       }
-
-      // Apply client filter (empty string means "all")
       if (clientFilter) {
         query = query.eq('client_id', clientFilter);
       }
@@ -84,39 +124,10 @@ export function usePaginatedPublicJobs({
       const { data, error, count } = await query;
       if (error) throw error;
 
-        // Fetch client info securely via public view (org info hidden for privacy)
-        // Note: Voice agent matching removed - using global agent for all jobs
-        if (data && data.length > 0) {
-          const clientIds = [...new Set(data.map(job => job.client_id).filter(Boolean))] as string[];
-          
-          // Fetch client data only (organization hidden for privacy)
-          const { data: clientData } = await supabase
-            .from('public_client_info')
-            .select('id, name, logo_url')
-            .in('id', clientIds);
-          
-          // Create lookup map
-          const clientMap = new Map(clientData?.map(client => [client.id, client]) || []);
-          
-          // Attach client info to jobs (no org info exposed)
-          // All jobs now have voice apply enabled via global agent
-          const jobsWithClients = data
-            .map(job => {
-              const client = job.client_id ? clientMap.get(job.client_id) : null;
-              
-              return {
-                ...job,
-                clients: client,
-                voiceAgent: { global: true } // Global agent available for all jobs
-              };
-            });
-          
-          return { jobs: jobsWithClients, count: count || 0 };
-        }
-
-      return { jobs: data || [], count: count || 0 };
+      const enriched = await enrichJobs(data || []);
+      return { jobs: enriched, count: count || 0 };
     },
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 2,
   });
 
   // Accumulate jobs as pages load
@@ -125,7 +136,7 @@ export function usePaginatedPublicJobs({
       setAllJobs(prev => {
         if (page === 0) return data.jobs;
         const existingIds = new Set(prev.map(j => j.id));
-        const newJobs = data.jobs.filter(j => !existingIds.has(j.id));
+        const newJobs = data.jobs.filter((j: any) => !existingIds.has(j.id));
         return [...prev, ...newJobs];
       });
     }
@@ -146,4 +157,30 @@ export function usePaginatedPublicJobs({
     hasMore,
     loadMore
   };
+}
+
+/**
+ * Enrich raw job rows with client info and voice agent flag.
+ * Shared by both the RPC and regular query paths.
+ */
+async function enrichJobs(jobs: any[]): Promise<any[]> {
+  if (!jobs || jobs.length === 0) return jobs;
+
+  const clientIds = [...new Set(jobs.map(job => job.client_id).filter(Boolean))] as string[];
+
+  const { data: clientData } = await supabase
+    .from('public_client_info')
+    .select('id, name, logo_url')
+    .in('id', clientIds);
+
+  const clientMap = new Map(clientData?.map(client => [client.id, client]) || []);
+
+  return jobs.map(job => {
+    const client = job.client_id ? clientMap.get(job.client_id) : null;
+    return {
+      ...job,
+      clients: client,
+      voiceAgent: { global: true },
+    };
+  });
 }
