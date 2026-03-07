@@ -11,7 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { parseVoiceAgentError, getErrorTitle, getUserFriendlyErrorMessage } from '../utils/errorHandling';
 import { checkBrowserCompatibility } from '../utils/browserCompatibility';
-import { SignedUrlResponse, LiveTranscriptMessage, ConnectionProgress } from '../types';
+import { createAgentOverrides } from '../utils/agentConfig';
+import { SignedUrlResponse, LiveTranscriptMessage, ConnectionProgress, JobContext } from '../types';
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
@@ -307,19 +308,25 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           });
         }, CONNECTION_TIMEOUT_MS);
 
-        logger.info('Starting conversation', { agentId, attempt, dynamicVariables }, 'VoiceAgentConnection');
+        // Build conversation overrides from job context
+        const jobContext = context?.jobContext as JobContext | undefined;
+        const overrides = jobContext ? createAgentOverrides(jobContext) : undefined;
+
+        logger.info('Starting conversation', { agentId, attempt, dynamicVariables, hasOverrides: !!overrides }, 'VoiceAgentConnection');
         
         // Use signedUrl from edge function
         if (urlResponse.data?.signedUrl) {
           await conversation.startSession({
             signedUrl: urlResponse.data.signedUrl,
-            dynamicVariables
+            dynamicVariables,
+            ...(overrides && { overrides })
           });
         } else {
           // Direct agentId connection for public agents
           await conversation.startSession({
             agentId,
-            dynamicVariables
+            dynamicVariables,
+            ...(overrides && { overrides })
           });
         }
 
@@ -415,11 +422,41 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     logger.info('Connection cancelled by user', undefined, 'VoiceAgentConnection');
   }, []);
 
+  // Expose SDK methods for advanced features
+  const setVolume = useCallback((volume: number) => {
+    conversation.setVolume({ volume: Math.max(0, Math.min(1, volume)) });
+  }, [conversation]);
+
+  const sendContextualUpdate = useCallback((text: string) => {
+    if (isConnectedRef.current) {
+      conversation.sendContextualUpdate(text);
+    }
+  }, [conversation]);
+
+  const sendUserActivity = useCallback(() => {
+    if (isConnectedRef.current) {
+      conversation.sendUserActivity();
+    }
+  }, [conversation]);
+
+  const sendFeedback = useCallback((positive: boolean) => {
+    conversation.sendFeedback(positive);
+  }, [conversation]);
+
+  const getInputFrequencyData = useCallback(() => {
+    return conversation.getInputByteFrequencyData();
+  }, [conversation]);
+
+  const getOutputFrequencyData = useCallback(() => {
+    return conversation.getOutputByteFrequencyData();
+  }, [conversation]);
+
   return {
     isConnected,
     isConnecting,
     connectionProgress,
     isSpeaking: conversation.isSpeaking,
+    canSendFeedback: conversation.canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
@@ -427,6 +464,12 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     connect,
     disconnect,
     cancelConnection,
+    setVolume,
+    sendContextualUpdate,
+    sendUserActivity,
+    sendFeedback,
+    getInputFrequencyData,
+    getOutputFrequencyData,
     conversation
   };
 }

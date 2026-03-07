@@ -32,11 +32,17 @@ const JobDetailsPage: React.FC = () => {
     isConnected,
     selectedJob,
     isSpeaking,
+    canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
     startVoiceApplication,
     endVoiceApplication,
+    setVolume,
+    sendFeedback,
+    sendUserActivity,
+    getInputFrequencyData,
+    getOutputFrequencyData,
   } = useElevenLabsVoice();
 
   if (isLoading) {
@@ -393,7 +399,7 @@ const JobDetailsPage: React.FC = () => {
         <StickyApplyCTA applyUrl={applyUrl} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
 
         {/* Voice Application Panel */}
-        <VoiceApplicationPanel isConnected={isConnected} isSpeaking={isSpeaking} selectedJob={selectedJob} transcripts={transcripts} pendingUserTranscript={pendingUserTranscript} pendingAgentTranscript={pendingAgentTranscript} onEnd={endVoiceApplication} />
+        <VoiceApplicationPanel isConnected={isConnected} isSpeaking={isSpeaking} canSendFeedback={canSendFeedback} selectedJob={selectedJob} transcripts={transcripts} pendingUserTranscript={pendingUserTranscript} pendingAgentTranscript={pendingAgentTranscript} onEnd={endVoiceApplication} setVolume={setVolume} sendFeedback={sendFeedback} sendUserActivity={sendUserActivity} getInputFrequencyData={getInputFrequencyData} getOutputFrequencyData={getOutputFrequencyData} />
       </div>
     </div>
   );

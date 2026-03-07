@@ -19,13 +19,19 @@ export const useElevenLabsVoice = () => {
     isConnecting,
     connectionProgress,
     isSpeaking, 
+    canSendFeedback,
     transcripts, 
     pendingUserTranscript,
     pendingAgentTranscript,
     clearTranscripts,
     connect, 
     disconnect,
-    cancelConnection
+    cancelConnection,
+    setVolume,
+    sendFeedback,
+    sendUserActivity,
+    getInputFrequencyData,
+    getOutputFrequencyData,
   } = useVoiceAgentConnection({
     onConnect: () => {
       toast({
@@ -98,6 +104,7 @@ export const useElevenLabsVoice = () => {
     connectionProgress,
     selectedJob,
     isSpeaking,
+    canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
@@ -105,5 +112,10 @@ export const useElevenLabsVoice = () => {
     startVoiceApplication,
     endVoiceApplication,
     cancelVoiceApplication,
+    setVolume,
+    sendFeedback,
+    sendUserActivity,
+    getInputFrequencyData,
+    getOutputFrequencyData,
   };
 };
