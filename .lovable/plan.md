@@ -1,37 +1,83 @@
 
 
-# Invert DFW Geo-Fence: Block Inside, Allow Outside
+## Best-in-Class Voice Agent Implementation for Agent `agent_7001kk37nfd8f5jv8zcpv5a96q8z`
 
-## Current behavior (wrong)
-- Users **inside** 200 miles of DFW → allowed
-- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
+Since all overrides and unrestricted API are enabled, we can leverage the full ElevenLabs SDK capabilities. The current implementation is solid but leaves several advanced features unused. Here's what to build:
 
-## Desired behavior
-- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
-- Users **outside** 200 miles of DFW → **allowed**
-- OFAC sanctions countries → still blocked (no change)
+---
 
-## Changes
+### 1. Conversation Overrides — Use Agent Prompt + First Message Overrides
 
-### 1. `supabase/functions/_shared/geo-fence.ts`
-- Rename concept from "service area" to "restricted zone"
-- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
-- Update JSDoc comments to reflect the new semantics
+**Current**: Dynamic variables are passed but prompt/firstMessage overrides from `agentConfig.ts` are never used in `startSession()`.
 
-### 2. `supabase/functions/geo-check/index.ts`
-- Gate 2 now blocks when user **is inside** the DFW radius
-- Change reason from `outside_service_area` to `inside_restricted_zone`
-- Update log messages accordingly
+**Change**: Since overrides are active, pass `overrides` in `startSession()` to dynamically customize the agent's greeting and system prompt per job. This makes the agent context-aware without needing separate ElevenLabs agents per job.
 
-### 3. `src/contexts/GeoBlockingContext.tsx`
-- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
-- Match on new reason `inside_restricted_zone`
+**File**: `src/features/elevenlabs/hooks/useVoiceAgentConnection.ts`
+- Import `createAgentOverrides` from `../utils/agentConfig`
+- Add `overrides` to `startSession()` call alongside `dynamicVariables`
+- Pass the job context to generate prompt + first message overrides
 
-### 4. `src/pages/RegionBlocked.tsx`
-- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
-- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
+### 2. Real-Time Audio Visualization — Frequency Data Bars
 
-### 5. Deploy updated `geo-check` edge function
+**Current**: Static pulsing CSS animations for speaking/listening. No actual audio data visualization.
 
-No database changes needed. All changes are in edge function code and frontend components.
+**Change**: Use `conversation.getInputByteFrequencyData()` and `conversation.getOutputByteFrequencyData()` to render real-time frequency bars in the VoiceApplicationPanel. This creates a professional, responsive audio visualizer.
+
+**Files**:
+- **Create**: `src/features/elevenlabs/components/AudioVisualizer.tsx` — Canvas-based component that renders frequency data as animated bars using `requestAnimationFrame`
+- **Edit**: `src/features/elevenlabs/components/VoiceApplicationPanel.tsx` — Replace static pulsing icon with `AudioVisualizer`, passing the conversation object
+
+### 3. Volume Control — User-Adjustable Agent Volume
+
+**Current**: Volume hardcoded to 1 (max) on connect.
+
+**Change**: Add a volume slider to the VoiceApplicationPanel footer so users can adjust agent volume mid-conversation.
+
+**File**: `src/features/elevenlabs/components/VoiceApplicationPanel.tsx`
+- Add Slider component from Radix UI
+- Call `conversation.setVolume({ volume })` on change
+- Show mute/unmute toggle
+
+### 4. Contextual Updates — Send Job Data Mid-Conversation
+
+**Current**: Job context only passed at connection time via dynamic variables.
+
+**Change**: Expose `sendContextualUpdate()` so the system can inject additional context (e.g., if user navigates to a different section or asks about benefits) without triggering a response.
+
+**File**: `src/features/elevenlabs/hooks/useVoiceAgentConnection.ts`
+- Expose `sendContextualUpdate` from the conversation object in the return value
+
+### 5. Conversation Feedback — Thumbs Up/Down
+
+**Current**: No feedback mechanism.
+
+**Change**: After call ends, show a feedback prompt using `conversation.sendFeedback(positive)`. This feeds back into ElevenLabs analytics.
+
+**File**: `src/features/elevenlabs/components/VoiceApplicationPanel.tsx`
+- Add post-call feedback UI (thumbs up/down) that appears when `isConnected` transitions to false
+- Call `sendFeedback()` via the conversation ref
+
+### 6. User Activity Signal — Prevent Interruption
+
+**Current**: No user activity signaling.
+
+**Change**: Call `conversation.sendUserActivity()` when the user is typing or interacting with the UI to prevent the agent from interpreting silence as disengagement.
+
+**File**: `src/features/elevenlabs/hooks/useVoiceAgentConnection.ts`
+- Expose `sendUserActivity` in return value
+
+---
+
+### Summary of Changes
+
+| File | Change |
+|------|--------|
+| `useVoiceAgentConnection.ts` | Add overrides to startSession, expose sendContextualUpdate/sendUserActivity/setVolume |
+| `agentConfig.ts` | Already has `createAgentOverrides` — will be used |
+| **New** `AudioVisualizer.tsx` | Real-time frequency bar visualization component |
+| `VoiceApplicationPanel.tsx` | Audio visualizer, volume slider, post-call feedback UI |
+| `VoiceConnectionStatus.tsx` | Minor: remove redundant Alert wrapper |
+| `components/index.ts` | Export new AudioVisualizer |
+
+This transforms the voice experience from a basic call interface into a polished, interactive voice application with real-time audio feedback, dynamic agent personalization, and post-call analytics.
 
