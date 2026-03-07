@@ -45,11 +45,17 @@ const JobsPage = () => {
     isConnected,
     selectedJob,
     isSpeaking,
+    canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
     startVoiceApplication,
     endVoiceApplication,
+    setVolume,
+    sendFeedback,
+    sendUserActivity,
+    getInputFrequencyData,
+    getOutputFrequencyData,
   } = useElevenLabsVoice();
 
   // Build ItemList structured data for job listings
