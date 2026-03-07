@@ -45,7 +45,6 @@ export interface PublicJob {
   dest_state?: string | null;
   organization_id?: string | null;
   client_id?: string | null;
-  client_id?: string | null;
   organizations?: PublicJobOrganization | null;
   clients?: PublicJobClient | null;
   job_categories?: PublicJobCategory | null;
