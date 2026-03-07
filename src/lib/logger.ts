@@ -21,9 +21,18 @@ function formatError(error: unknown): string {
 }
 
 /**
- * Send error to monitoring service
+ * Send error to monitoring service.
+ * Guarded against recursion and gated to production-only.
  */
+let _isForwarding = false;
+
 function sendToMonitoring(level: 'error' | 'warn', message: string, context?: LogContext) {
+  // Gate: only forward in production with a configured DSN
+  if (import.meta.env.MODE !== 'production' || !import.meta.env.VITE_SENTRY_DSN) return;
+  // Anti-recursion guard
+  if (_isForwarding) return;
+  _isForwarding = true;
+
   import('@/utils/sentry').then(({ captureMessage, captureException }) => {
     if (level === 'error') {
       captureException(new Error(message), context);
@@ -31,7 +40,9 @@ function sendToMonitoring(level: 'error' | 'warn', message: string, context?: Lo
       captureMessage(message, 'warning' as any, context);
     }
   }).catch(() => {
-    // Silently fail if Sentry is not configured
+    // Silently fail
+  }).finally(() => {
+    _isForwarding = false;
   });
 }
 
