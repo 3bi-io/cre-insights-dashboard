@@ -422,11 +422,41 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     logger.info('Connection cancelled by user', undefined, 'VoiceAgentConnection');
   }, []);
 
+  // Expose SDK methods for advanced features
+  const setVolume = useCallback((volume: number) => {
+    conversation.setVolume({ volume: Math.max(0, Math.min(1, volume)) });
+  }, [conversation]);
+
+  const sendContextualUpdate = useCallback((text: string) => {
+    if (isConnectedRef.current) {
+      conversation.sendContextualUpdate(text);
+    }
+  }, [conversation]);
+
+  const sendUserActivity = useCallback(() => {
+    if (isConnectedRef.current) {
+      conversation.sendUserActivity();
+    }
+  }, [conversation]);
+
+  const sendFeedback = useCallback((positive: boolean) => {
+    conversation.sendFeedback(positive);
+  }, [conversation]);
+
+  const getInputFrequencyData = useCallback(() => {
+    return conversation.getInputByteFrequencyData();
+  }, [conversation]);
+
+  const getOutputFrequencyData = useCallback(() => {
+    return conversation.getOutputByteFrequencyData();
+  }, [conversation]);
+
   return {
     isConnected,
     isConnecting,
     connectionProgress,
     isSpeaking: conversation.isSpeaking,
+    canSendFeedback: conversation.canSendFeedback,
     transcripts,
     pendingUserTranscript,
     pendingAgentTranscript,
@@ -434,6 +464,12 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     connect,
     disconnect,
     cancelConnection,
+    setVolume,
+    sendContextualUpdate,
+    sendUserActivity,
+    sendFeedback,
+    getInputFrequencyData,
+    getOutputFrequencyData,
     conversation
   };
 }
