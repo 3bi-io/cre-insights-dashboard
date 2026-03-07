@@ -42,9 +42,10 @@ export const Header: React.FC<HeaderProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mega menu on route change
+  // Close menus on route change
   useEffect(() => {
     setMegaMenuOpen(false);
+    setMobileMenuOpen(false);
   }, [location.pathname]);
 
   const isActive = (path: string) => isActivePath(location.pathname, path);
