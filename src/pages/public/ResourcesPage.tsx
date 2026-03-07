@@ -10,29 +10,28 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { 
   BookOpen, FileText, Download, ExternalLink, Code,
   MessageCircle, Zap, Users, Settings, BarChart3,
-  Loader2, Search, Wrench, Video
+  Loader2, Wrench, Video
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateFeatureGuidePDF, generateImplementationChecklistPDF, generateBestPracticesPDF } from '@/utils/resourcesPdfGenerator';
 import { generateRoiCalculatorXLSX } from '@/utils/roiCalculatorGenerator';
 import { logger } from '@/lib/logger';
-import { HeroBackground } from '@/components/shared';
+import { PublicPageHero, FilterBar } from '@/components/shared';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
 import trustHero from '@/assets/hero/trust-hero.png';
 import { motion } from 'framer-motion';
 
 type ResourceTab = 'all' | 'guides' | 'templates' | 'tools' | 'webinars';
 
-const tabs: { id: ResourceTab; label: string; icon: React.ElementType }[] = [
-  { id: 'all', label: 'All', icon: BookOpen },
-  { id: 'guides', label: 'Guides', icon: FileText },
-  { id: 'templates', label: 'Templates', icon: Download },
-  { id: 'tools', label: 'Tools', icon: Wrench },
-  { id: 'webinars', label: 'Webinars', icon: Video },
+const tabs = [
+  { id: 'all' as const, label: 'All', icon: BookOpen },
+  { id: 'guides' as const, label: 'Guides', icon: FileText },
+  { id: 'templates' as const, label: 'Templates', icon: Download },
+  { id: 'tools' as const, label: 'Tools', icon: Wrench },
+  { id: 'webinars' as const, label: 'Webinars', icon: Video },
 ];
 
 const ResourcesPage = () => {
@@ -77,30 +76,21 @@ const ResourcesPage = () => {
   const filteredGuides = useMemo(() => {
     let items = gettingStarted;
     if (activeTab !== 'all') items = items.filter(i => i.type === activeTab);
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      items = items.filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
-    }
+    if (searchQuery) { const q = searchQuery.toLowerCase(); items = items.filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q)); }
     return items;
   }, [activeTab, searchQuery]);
 
   const filteredDocs = useMemo(() => {
     let items = documentation;
     if (activeTab !== 'all') items = items.filter(i => i.type === activeTab);
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      items = items.filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
-    }
+    if (searchQuery) { const q = searchQuery.toLowerCase(); items = items.filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q)); }
     return items;
   }, [activeTab, searchQuery]);
 
   const filteredDownloads = useMemo(() => {
     let items = downloads;
     if (activeTab !== 'all') items = items.filter(i => i.type === activeTab);
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      items = items.filter(i => i.title.toLowerCase().includes(q));
-    }
+    if (searchQuery) { const q = searchQuery.toLowerCase(); items = items.filter(i => i.title.toLowerCase().includes(q)); }
     return items;
   }, [activeTab, searchQuery]);
 
@@ -125,39 +115,23 @@ const ResourcesPage = () => {
       <SEO title="Resources & Documentation | Guides & Best Practices" description="Comprehensive knowledge base for Apply AI. Quick start guides, API docs, and downloadable resources." canonical="https://applyai.jobs/resources" ogImage="https://applyai.jobs/og-resources.png" />
       <StructuredData data={[resourcesSchema, breadcrumbs]} />
       <div className="min-h-screen animate-page-in">
-        <HeroBackground imageSrc={trustHero} imageAlt="Professional knowledge base and documentation" variant="compact" overlayVariant="dark" overlayOpacity={65}>
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl">
-              <span className="inline-block text-xs sm:text-sm font-semibold text-black bg-white rounded-full px-4 py-1.5 mb-4 md:mb-6">Knowledge Base</span>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2 lg:mb-4 text-foreground">
-                Resources & <span className="text-gradient-primary">Documentation</span>
-              </h1>
-              <span className="inline-block text-base lg:text-xl text-black font-medium bg-white rounded-full px-6 py-2">
-                Guides, tutorials, and best practices for your team
-              </span>
-            </div>
-          </div>
-        </HeroBackground>
+        <PublicPageHero
+          imageSrc={trustHero}
+          imageAlt="Professional knowledge base and documentation"
+          badge="Knowledge Base"
+          title="Resources &"
+          titleAccent="Documentation"
+          subtitle="Guides, tutorials, and best practices for your team"
+        />
 
-        {/* Tabs + Search Bar */}
-        <section className="border-b bg-muted/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                {tabs.map(tab => (
-                  <Button key={tab.id} variant={activeTab === tab.id ? 'default' : 'outline'} size="sm" onClick={() => setActiveTab(tab.id)} className="min-h-[36px] whitespace-nowrap gap-1.5">
-                    <tab.icon className="h-3.5 w-3.5" />
-                    {tab.label}
-                  </Button>
-                ))}
-              </div>
-              <div className="relative max-w-xs w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search resources..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-9 text-sm" />
-              </div>
-            </div>
-          </div>
-        </section>
+        <FilterBar
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabChange={(id) => setActiveTab(id as ResourceTab)}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search resources..."
+        />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
           {/* Getting Started */}
@@ -216,7 +190,7 @@ const ResourcesPage = () => {
             </section>
           )}
 
-          {/* Downloads with download counts */}
+          {/* Downloads */}
           {filteredDownloads.length > 0 && (
             <section className="mb-10 md:mb-16">
               <h2 className="text-2xl md:text-3xl font-playfair font-bold text-foreground mb-6 md:mb-8">Downloadable Resources</h2>
