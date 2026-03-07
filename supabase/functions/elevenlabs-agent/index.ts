@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       return errorResponse('Too many requests. Please try again later.', 429, undefined, origin ?? undefined);
     }
 
-    const { agentId, useGlobalAgent, directAgentId } = await req.json();
+    const { agentId, useGlobalAgent, directAgentId, organizationId, clientId } = await req.json();
 
     // Determine effective agent ID
     let effectiveAgentId: string;
@@ -45,6 +45,57 @@ Deno.serve(async (req) => {
       // Direct mode - use the provided ElevenLabs agent ID without DB lookup
       effectiveAgentId = directAgentId;
       logger.info('Using direct agent ID', { agentId: effectiveAgentId.substring(0, 8) + '...' });
+    } else if (organizationId) {
+      // Org/client-aware mode - find best matching agent (client > org > global fallback)
+      const supabase = getServiceClient();
+      let foundAgent = false;
+
+      // PRIORITY 1: Client-specific agent
+      if (clientId) {
+        const { data: clientAgent } = await supabase
+          .from('voice_agents')
+          .select('agent_id')
+          .eq('organization_id', organizationId)
+          .eq('client_id', clientId)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (clientAgent) {
+          effectiveAgentId = clientAgent.agent_id;
+          foundAgent = true;
+          logger.info('Using client-specific agent', { agentId: effectiveAgentId.substring(0, 8) + '...', clientId: clientId.substring(0, 8) + '...' });
+        }
+      }
+
+      // PRIORITY 2: Org-level agent (no client)
+      if (!foundAgent) {
+        const { data: orgAgent } = await supabase
+          .from('voice_agents')
+          .select('agent_id')
+          .eq('organization_id', organizationId)
+          .is('client_id', null)
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+
+        if (orgAgent) {
+          effectiveAgentId = orgAgent.agent_id;
+          foundAgent = true;
+          logger.info('Using org-level agent', { agentId: effectiveAgentId.substring(0, 8) + '...', orgId: organizationId.substring(0, 8) + '...' });
+        }
+      }
+
+      // PRIORITY 3: Global fallback
+      if (!foundAgent) {
+        const globalAgentId = Deno.env.get('GLOBAL_VOICE_AGENT_ID');
+        if (!globalAgentId) {
+          logger.error('No matching agent found and global fallback not configured');
+          return errorResponse('No voice agent available for this organization', 404, undefined, origin ?? undefined);
+        }
+        effectiveAgentId = globalAgentId;
+        logger.info('Falling back to global agent', { orgId: organizationId.substring(0, 8) + '...' });
+      }
     } else if (useGlobalAgent) {
       // Global agent mode - use system-configured agent for all jobs
       const globalAgentId = Deno.env.get('GLOBAL_VOICE_AGENT_ID');
@@ -76,7 +127,6 @@ Deno.serve(async (req) => {
       }
 
       // Organization validation for authenticated users
-      // Parse auth token to check if user is from the same organization
       const authHeader = req.headers.get('Authorization');
       if (authHeader?.startsWith('Bearer ')) {
         const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.50.0");
@@ -88,7 +138,6 @@ Deno.serve(async (req) => {
         const { data: { user } } = await supabaseAuth.auth.getUser();
         
         if (user) {
-          // Get user's organization
           const { data: profile } = await supabase
             .from('profiles')
             .select('organization_id')
@@ -97,7 +146,6 @@ Deno.serve(async (req) => {
           
           const userOrgId = profile?.organization_id;
           
-          // Validate: user can only access their org's agents (unless platform default)
           if (!agent.is_platform_default && userOrgId && agent.organization_id !== userOrgId) {
             logger.warn('Unauthorized agent access attempt', { 
               requestedAgent: agentId.substring(0, 8) + '...', 

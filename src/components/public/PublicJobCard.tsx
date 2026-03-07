@@ -67,7 +67,8 @@ export const PublicJobCard: React.FC<PublicJobCardProps> = ({
       company: companyName,
       location: displayLocation || 'Various locations',
       salary: salary || 'Competitive salary',
-      voiceAgentId: job.voiceAgent?.agent_id
+      organizationId: job.organization_id || undefined,
+      clientId: job.client_id || undefined,
     });
   };
 

@@ -212,10 +212,12 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
     try {
       const useGlobalAgent = context?.useGlobalAgent || false;
       const directAgentId = context?.directAgentId || undefined;
-      logger.debug('Requesting signed URL', { agentId, useGlobalAgent, directAgentId }, 'VoiceAgentConnection');
+      const organizationId = context?.organizationId || undefined;
+      const clientId = context?.clientId || undefined;
+      logger.debug('Requesting signed URL', { agentId, useGlobalAgent, directAgentId, organizationId, clientId }, 'VoiceAgentConnection');
       
       const { data, error } = await supabase.functions.invoke('elevenlabs-agent', {
-        body: { agentId, useGlobalAgent, directAgentId }
+        body: { agentId, useGlobalAgent, directAgentId, organizationId, clientId }
       });
 
       if (error) {
