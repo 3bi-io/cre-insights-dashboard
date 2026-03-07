@@ -5,45 +5,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui/logo-avatar';
-import { 
-  MapPin, DollarSign, Building2, Clock, Briefcase, 
-  ArrowLeft, ExternalLink, Share2, Mic, Linkedin, Copy, Check
-} from 'lucide-react';
+import { MapPin, DollarSign, Building2, Clock, Briefcase, ArrowLeft, Mic } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData, buildJobPostingSchema, buildBreadcrumbSchema, getSalaryUnitText } from '@/components/StructuredData';
 import { useJobDetails } from '@/hooks/useJobDetails';
 import { extractExperienceFromDescription, extractQualificationsFromDescription } from '@/utils/jobSchemaExtraction';
 import { RelatedJobs } from '@/components/public/RelatedJobs';
 import { StickyApplyCTA } from '@/components/public/StickyApplyCTA';
-import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import { VoiceApplicationPanel } from '@/features/elevenlabs';
-import { useToast } from '@/hooks/use-toast';
+import { VoiceApplicationContainer, useVoiceApplication } from '@/components/shared';
 import { sanitizers } from '@/utils/validation';
-import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
-import { toast } from 'sonner';
+import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
+import { JobShareActions } from '@/features/jobs/components/public/JobShareActions';
+import { JobSidebar } from '@/features/jobs/components/public/JobSidebar';
 
-const JobDetailsPage: React.FC = () => {
+const JobDetailsContent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: job, isLoading, error } = useJobDetails(id);
-  const [copied, setCopied] = React.useState(false);
-  
-  const {
-    isConnected,
-    selectedJob,
-    isSpeaking,
-    canSendFeedback,
-    transcripts,
-    pendingUserTranscript,
-    pendingAgentTranscript,
-    startVoiceApplication,
-    endVoiceApplication,
-    setVolume,
-    sendFeedback,
-    sendUserActivity,
-    getInputFrequencyData,
-    getOutputFrequencyData,
-  } = useElevenLabsVoice();
+  const { isConnected, startVoiceApplication } = useVoiceApplication();
 
   if (isLoading) {
     return (
@@ -52,19 +31,15 @@ const JobDetailsPage: React.FC = () => {
           <Skeleton className="h-5 w-32 mb-4 lg:mb-6" />
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <Card>
-                <CardContent className="p-6 lg:p-8">
-                  <Skeleton className="h-8 w-3/4 mb-3" />
-                  <Skeleton className="h-5 w-1/2 mb-6" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </CardContent>
-              </Card>
+              <Card><CardContent className="p-6 lg:p-8">
+                <Skeleton className="h-8 w-3/4 mb-3" />
+                <Skeleton className="h-5 w-1/2 mb-6" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-2/3" />
+              </CardContent></Card>
             </div>
-            <div>
-              <Skeleton className="h-64 rounded-xl" />
-            </div>
+            <div><Skeleton className="h-64 rounded-xl" /></div>
           </div>
         </div>
       </div>
@@ -76,17 +51,12 @@ const JobDetailsPage: React.FC = () => {
       <div className="min-h-screen bg-background">
         <SEO title="Job Not Found" description="The job listing you're looking for is no longer available." noindex />
         <div className="container mx-auto px-4 py-6 lg:py-8 max-w-4xl">
-          <Card>
-            <CardContent className="p-6 lg:p-8 text-center">
-              <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-              <h1 className="text-xl lg:text-2xl font-bold mb-2">Job Not Found</h1>
-              <p className="text-muted-foreground mb-6">This job listing is no longer available.</p>
-              <Button onClick={() => navigate('/jobs')}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Browse All Jobs
-              </Button>
-            </CardContent>
-          </Card>
+          <Card><CardContent className="p-6 lg:p-8 text-center">
+            <Building2 className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+            <h1 className="text-xl lg:text-2xl font-bold mb-2">Job Not Found</h1>
+            <p className="text-muted-foreground mb-6">This job listing is no longer available.</p>
+            <Button onClick={() => navigate('/jobs')}><ArrowLeft className="w-4 h-4 mr-2" />Browse All Jobs</Button>
+          </CardContent></Card>
         </div>
       </div>
     );
@@ -98,44 +68,7 @@ const JobDetailsPage: React.FC = () => {
   const companyName = getDisplayCompanyName(job);
   const canonicalUrl = `https://applyai.jobs/jobs/${job.id}`;
   const applyUrl = `/apply?job_id=${job.id}`;
-
-  const formatSalary = (min: number | null, max: number | null, type: string | null) => {
-    if (!min && !max) return null;
-    const formatAmount = (amount: number) => {
-      if (type === 'hourly') return `$${amount}/hr`;
-      if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
-      return `$${amount.toLocaleString()}`;
-    };
-    if (min && max) return `${formatAmount(min)} - ${formatAmount(max)}`;
-    return formatAmount(min || max || 0);
-  };
-
   const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: displayTitle, text: `Check out this job: ${displayTitle} at ${companyName}`, url: canonicalUrl });
-      } catch {}
-    } else {
-      handleCopyLink();
-    }
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(canonicalUrl);
-    setCopied(true);
-    toast.success('Link copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareOnLinkedIn = () => {
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`, '_blank');
-  };
-
-  const shareOnX = () => {
-    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`${displayTitle} at ${companyName}`)}&url=${encodeURIComponent(canonicalUrl)}`, '_blank');
-  };
 
   const handleVoiceApply = () => {
     startVoiceApplication({
@@ -189,7 +122,6 @@ const JobDetailsPage: React.FC = () => {
       <StructuredData data={[jobPostingSchema, breadcrumbSchema]} />
 
       <div className="container mx-auto px-4 py-6 lg:py-8 max-w-6xl">
-        {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4 lg:mb-6 overflow-x-auto whitespace-nowrap pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide" aria-label="Breadcrumb">
           <Link to="/" className="hover:text-foreground transition-colors shrink-0">Home</Link>
           <span className="shrink-0">/</span>
@@ -198,13 +130,10 @@ const JobDetailsPage: React.FC = () => {
           <span className="text-foreground truncate max-w-[200px] lg:max-w-none">{displayTitle}</span>
         </nav>
 
-        {/* 2-Column Layout: Content + Sticky Sidebar */}
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Content (left 2/3) */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardContent className="p-4 sm:p-6 lg:p-8">
-                {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-6">
                   <LogoAvatar size="2xl">
                     {job.clients?.logo_url ? (
@@ -224,45 +153,31 @@ const JobDetailsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Quick Info Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-muted/50 rounded-xl">
                   {displayLocation && (
                     <div className="flex items-start gap-2">
                       <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">Location</p>
-                        <p className="font-medium text-sm truncate">{displayLocation}</p>
-                      </div>
+                      <div className="min-w-0"><p className="text-xs text-muted-foreground">Location</p><p className="font-medium text-sm truncate">{displayLocation}</p></div>
                     </div>
                   )}
                   {salary && (
                     <div className="flex items-start gap-2">
                       <DollarSign className="w-4 h-4 text-success/70 flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">Salary</p>
-                        <p className="font-medium text-sm truncate">{salary}</p>
-                      </div>
+                      <div className="min-w-0"><p className="text-xs text-muted-foreground">Salary</p><p className="font-medium text-sm truncate">{salary}</p></div>
                     </div>
                   )}
                   {job.job_type && (
                     <div className="flex items-start gap-2">
                       <Briefcase className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">Type</p>
-                        <p className="font-medium text-sm">{job.job_type}</p>
-                      </div>
+                      <div className="min-w-0"><p className="text-xs text-muted-foreground">Type</p><p className="font-medium text-sm">{job.job_type}</p></div>
                     </div>
                   )}
                   <div className="flex items-start gap-2">
                     <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Posted</p>
-                      <p className="font-medium text-sm">{new Date(job.created_at).toLocaleDateString()}</p>
-                    </div>
+                    <div className="min-w-0"><p className="text-xs text-muted-foreground">Posted</p><p className="font-medium text-sm">{new Date(job.created_at).toLocaleDateString()}</p></div>
                   </div>
                 </div>
 
-                {/* Route Info */}
                 {job.dest_city && job.dest_state && (
                   <div className="mb-6 p-4 border rounded-lg">
                     <h3 className="font-semibold text-sm mb-1">Route Information</h3>
@@ -272,7 +187,6 @@ const JobDetailsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Description */}
                 {displayDescription && (
                   <div>
                     <h2 className="text-lg lg:text-xl font-semibold mb-4">Job Description</h2>
@@ -291,118 +205,51 @@ const JobDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Related Jobs */}
             <RelatedJobs currentJobId={job.id} clientId={job.client_id} categoryId={job.category_id} organizationId={job.organization_id} />
 
             <div className="text-center pb-4">
               <Link to="/jobs">
-                <Button variant="ghost" className="min-h-[44px]">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to All Jobs
-                </Button>
+                <Button variant="ghost" className="min-h-[44px]"><ArrowLeft className="w-4 h-4 mr-2" />Back to All Jobs</Button>
               </Link>
             </div>
           </div>
 
-          {/* Sticky Sidebar (right 1/3 - desktop only) */}
-          <div className="hidden lg:block">
-            <div className="sticky top-20 space-y-4">
-              {/* Apply Card */}
-              <Card className="border-primary/20 shadow-md">
-                <CardContent className="p-6 space-y-4">
-                  <div className="text-center">
-                    <LogoAvatar size="xl" className="mx-auto mb-3">
-                      {job.clients?.logo_url ? (
-                        <LogoAvatarImage src={job.clients.logo_url} alt={`${companyName} logo`} />
-                      ) : (
-                        <LogoAvatarFallback iconSize="lg" />
-                      )}
-                    </LogoAvatar>
-                    <h3 className="font-semibold text-lg">{displayTitle}</h3>
-                    <p className="text-sm text-muted-foreground">{companyName}</p>
-                  </div>
-
-                  {salary && (
-                    <div className="flex items-center gap-2 justify-center text-sm bg-success/10 text-success rounded-lg px-3 py-2">
-                      <DollarSign className="h-4 w-4" />
-                      <span className="font-semibold">{salary}</span>
-                    </div>
-                  )}
-
-                  {displayLocation && (
-                    <div className="flex items-center gap-2 justify-center text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{displayLocation}</span>
-                    </div>
-                  )}
-
-                  <Link to={applyUrl} className="block">
-                    <Button className="w-full min-h-[48px] text-base font-semibold" size="lg">
-                      Apply Now
-                      <ExternalLink className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleVoiceApply}
-                    disabled={isConnected}
-                  >
-                    <Mic className="w-4 h-4 mr-2" />
-                    Apply with Voice
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Share Card */}
-              <Card>
-                <CardContent className="p-4">
-                  <p className="text-sm font-medium text-muted-foreground mb-3">Share this job</p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={shareOnLinkedIn} className="flex-1" aria-label="Share on LinkedIn">
-                      <Linkedin className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={shareOnX} className="flex-1" aria-label="Share on X">
-                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                      </svg>
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1" aria-label="Copy link">
-                      {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleShare} className="flex-1 sm:hidden" aria-label="Share">
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <JobSidebar
+            title={displayTitle}
+            company={companyName}
+            logoUrl={job.clients?.logo_url}
+            salary={salary}
+            location={displayLocation}
+            applyUrl={applyUrl}
+            canonicalUrl={canonicalUrl}
+            onVoiceApply={handleVoiceApply}
+            isVoiceConnected={isConnected}
+          />
         </div>
 
         {/* Mobile share row */}
         <div className="flex gap-2 mt-4 lg:hidden">
-          <Button variant="outline" size="sm" onClick={shareOnLinkedIn} className="flex-1">
-            <Linkedin className="h-4 w-4 mr-1.5" /> LinkedIn
+          <Button variant="outline" size="sm" onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(canonicalUrl)}`, '_blank')} className="flex-1">
+            LinkedIn
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyLink} className="flex-1">
-            {copied ? <Check className="h-4 w-4 mr-1.5 text-success" /> : <Copy className="h-4 w-4 mr-1.5" />}
-            {copied ? 'Copied' : 'Copy Link'}
+          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(canonicalUrl); }} className="flex-1">
+            Copy Link
           </Button>
-          <Button variant="outline" size="sm" onClick={handleShare} className="flex-1">
-            <Share2 className="h-4 w-4 mr-1.5" /> Share
+          <Button variant="outline" size="sm" onClick={async () => { if (navigator.share) { try { await navigator.share({ title: displayTitle, url: canonicalUrl }); } catch {} } }} className="flex-1">
+            Share
           </Button>
         </div>
 
-        {/* Sticky Mobile CTA */}
         <StickyApplyCTA applyUrl={applyUrl} onVoiceApply={handleVoiceApply} isVoiceConnected={isConnected} jobTitle={displayTitle} showVoiceButton={true} />
-
-        {/* Voice Application Panel */}
-        <VoiceApplicationPanel isConnected={isConnected} isSpeaking={isSpeaking} canSendFeedback={canSendFeedback} selectedJob={selectedJob} transcripts={transcripts} pendingUserTranscript={pendingUserTranscript} pendingAgentTranscript={pendingAgentTranscript} onEnd={endVoiceApplication} setVolume={setVolume} sendFeedback={sendFeedback} sendUserActivity={sendUserActivity} getInputFrequencyData={getInputFrequencyData} getOutputFrequencyData={getOutputFrequencyData} />
       </div>
     </div>
   );
 };
+
+const JobDetailsPage = () => (
+  <VoiceApplicationContainer>
+    <JobDetailsContent />
+  </VoiceApplicationContainer>
+);
 
 export default JobDetailsPage;

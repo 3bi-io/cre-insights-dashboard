@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, CheckCircle, X, Check, Mic, Phone, Bot, Zap } from 'lucide-react';
+import { GradientCTA } from '@/components/shared';
 import featuresHeroBg from '@/assets/hero/features-hero-bg.jpg';
 import { motion } from 'framer-motion';
 import { useScrollSpy } from '@/hooks/useScrollSpy';
@@ -316,28 +317,12 @@ const FeaturesPage = () => {
       </SectionWrapper>
 
       {/* Final CTA */}
-      <section className="py-12 md:py-20 bg-gradient-to-r from-primary to-accent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-playfair font-bold text-primary-foreground mb-3 md:mb-4">
-            Experience All Features Risk-Free
-          </h2>
-          <p className="text-base md:text-xl text-primary-foreground/90 mb-6 md:mb-8 max-w-2xl mx-auto">
-            Experience AI-powered voice recruitment, instant callbacks, and smart hiring automation — all in one platform.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
-            <Link to="/auth">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto px-8 py-3 text-base md:text-lg bg-background text-primary hover:bg-background/90 min-h-[52px]">
-                Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/contact">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto px-8 py-3 text-base md:text-lg border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 min-h-[52px]">
-                Contact Sales
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <GradientCTA
+        title="Experience All Features Risk-Free"
+        description="Experience AI-powered voice recruitment, instant callbacks, and smart hiring automation — all in one platform."
+        primaryAction={{ label: 'Start Free Trial', to: '/auth' }}
+        secondaryAction={{ label: 'Contact Sales', to: '/contact' }}
+      />
     </div>
   );
 };

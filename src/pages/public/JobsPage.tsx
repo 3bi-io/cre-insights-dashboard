@@ -1,14 +1,11 @@
 import React from 'react';
 import { buildBreadcrumbSchema } from '@/utils/breadcrumbSchema';
-import { Building2, X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Building2 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { StructuredData } from '@/components/StructuredData';
 import { PublicJobCard } from '@/components/public/PublicJobCard';
 import { MobileFilterSheet } from '@/components/public/MobileFilterSheet';
-import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
-import { VoiceApplicationPanel } from '@/features/elevenlabs';
-import { DataLoadingStateHandler, HeroBackground } from '@/components/shared';
+import { DataLoadingStateHandler, HeroBackground, ActiveFilterChips, VoiceApplicationContainer, useVoiceApplication } from '@/components/shared';
 import { 
   usePublicJobsPage,
   JobFiltersDesktop,
@@ -20,45 +17,18 @@ import {
 import type { PublicJob } from '@/features/jobs';
 import jobsHero from '@/assets/hero/jobs-hero.png';
 
-const JobsPage = () => {
+const JobsPageContent = () => {
   const {
-    searchTerm,
-    setSearchTerm,
-    locationFilter,
-    setLocationFilter,
-    clientFilter,
-    setClientFilter,
-    sortBy,
-    setSortBy,
-    jobs,
-    totalCount,
-    locations,
-    clients,
-    isLoading,
-    isFetchingMore,
-    hasMore,
-    error,
-    loadMore
+    searchTerm, setSearchTerm,
+    locationFilter, setLocationFilter,
+    clientFilter, setClientFilter,
+    sortBy, setSortBy,
+    jobs, totalCount, locations, clients,
+    isLoading, isFetchingMore, hasMore, error, loadMore
   } = usePublicJobsPage();
 
-  const {
-    isConnected,
-    selectedJob,
-    isSpeaking,
-    canSendFeedback,
-    transcripts,
-    pendingUserTranscript,
-    pendingAgentTranscript,
-    startVoiceApplication,
-    endVoiceApplication,
-    setVolume,
-    sendFeedback,
-    sendUserActivity,
-    getInputFrequencyData,
-    getOutputFrequencyData,
-  } = useElevenLabsVoice();
+  const { startVoiceApplication, isVoiceConnectedToJob } = useVoiceApplication();
 
-  // Build ItemList structured data for job listings
   const jobListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -90,10 +60,15 @@ const JobsPage = () => {
     { name: 'Jobs', href: '/jobs' },
   ]);
 
-  // Show loading skeleton for initial load
   if (isLoading) {
     return <JobsLoadingSkeleton />;
   }
+
+  const filterChips = [
+    { label: `Search: "${searchTerm}"`, value: searchTerm, onClear: () => setSearchTerm('') },
+    { label: locationFilter, value: locationFilter, onClear: () => setLocationFilter(''), emoji: '📍' },
+    { label: clients.find(c => c.id === clientFilter)?.name || clientFilter, value: clientFilter, onClear: () => setClientFilter(''), emoji: '🏢' },
+  ];
 
   return (
     <>
@@ -107,7 +82,6 @@ const JobsPage = () => {
       <StructuredData data={[jobListSchema, breadcrumbs]} />
       
       <div className="min-h-screen bg-background">
-        {/* Hero Section */}
         <HeroBackground
           imageSrc={jobsHero}
           imageAlt="Diverse workforce professionals representing multiple industries"
@@ -121,87 +95,35 @@ const JobsPage = () => {
         </HeroBackground>
 
         <div className="container mx-auto px-4 py-6 lg:py-8">
-          
-          {/* Mobile Filter Sheet */}
           <MobileFilterSheet
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            locationFilter={locationFilter}
-            setLocationFilter={setLocationFilter}
-            clientFilter={clientFilter}
-            setClientFilter={setClientFilter}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            locations={locations}
-            clients={clients}
-            totalCount={totalCount}
+            searchTerm={searchTerm} setSearchTerm={setSearchTerm}
+            locationFilter={locationFilter} setLocationFilter={setLocationFilter}
+            clientFilter={clientFilter} setClientFilter={setClientFilter}
+            sortBy={sortBy} setSortBy={setSortBy}
+            locations={locations} clients={clients} totalCount={totalCount}
           />
 
-          {/* Desktop Filters */}
           <JobFiltersDesktop
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            locationFilter={locationFilter}
-            onLocationChange={setLocationFilter}
-            clientFilter={clientFilter}
-            onClientChange={setClientFilter}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            locations={locations}
-            clients={clients}
+            searchTerm={searchTerm} onSearchChange={setSearchTerm}
+            locationFilter={locationFilter} onLocationChange={setLocationFilter}
+            clientFilter={clientFilter} onClientChange={setClientFilter}
+            sortBy={sortBy} onSortChange={setSortBy}
+            locations={locations} clients={clients}
           />
 
-          {/* Active filter chips */}
-          {(searchTerm || locationFilter || clientFilter) && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              {searchTerm && (
-                <Badge variant="secondary" className="pl-3 pr-1.5 py-1.5 text-sm flex items-center gap-1.5">
-                  Search: "{searchTerm}"
-                  <button onClick={() => setSearchTerm('')} className="ml-1 hover:bg-muted rounded-full p-0.5" aria-label="Clear search">
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {locationFilter && (
-                <Badge variant="secondary" className="pl-3 pr-1.5 py-1.5 text-sm flex items-center gap-1.5">
-                  📍 {locationFilter}
-                  <button onClick={() => setLocationFilter('')} className="ml-1 hover:bg-muted rounded-full p-0.5" aria-label="Clear location filter">
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {clientFilter && (
-                <Badge variant="secondary" className="pl-3 pr-1.5 py-1.5 text-sm flex items-center gap-1.5">
-                  🏢 {clients.find(c => c.id === clientFilter)?.name || clientFilter}
-                  <button onClick={() => setClientFilter('')} className="ml-1 hover:bg-muted rounded-full p-0.5" aria-label="Clear company filter">
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              <button 
-                onClick={() => { setSearchTerm(''); setLocationFilter(''); setClientFilter(''); }}
-                className="text-xs text-muted-foreground hover:text-primary transition-colors py-1.5 px-2"
-              >
-                Clear all
-              </button>
-            </div>
-          )}
+          <ActiveFilterChips
+            chips={filterChips}
+            onClearAll={() => { setSearchTerm(''); setLocationFilter(''); setClientFilter(''); }}
+          />
 
-          {/* Results Count */}
           <JobsResultsCount filteredCount={jobs.length} totalCount={totalCount} />
 
-          {/* Job Listings with DataLoadingStateHandler */}
           <DataLoadingStateHandler
-            data={jobs}
-            isLoading={false}
-            isError={!!error}
-            error={error}
+            data={jobs} isLoading={false} isError={!!error} error={error}
             emptyCheck={(data) => data.length === 0}
-            emptyIcon={Building2}
-            emptyTitle="No Jobs Found"
+            emptyIcon={Building2} emptyTitle="No Jobs Found"
             emptyDescription="Try adjusting your search criteria or check back later."
-            dataLabel="jobs"
-            className="mt-6"
+            dataLabel="jobs" className="mt-6"
           >
             {(jobsData: PublicJob[]) => (
               <>
@@ -211,42 +133,26 @@ const JobsPage = () => {
                       key={job.id} 
                       job={job}
                       onVoiceApply={startVoiceApplication}
-                      isVoiceConnected={isConnected && selectedJob?.jobId === job.id}
+                      isVoiceConnected={isVoiceConnectedToJob(job.id)}
                     />
                   ))}
                 </div>
-                
-                {/* Load More Button */}
                 {hasMore && (
-                  <JobsLoadMoreButton 
-                    onClick={loadMore} 
-                    isLoading={isFetchingMore} 
-                  />
+                  <JobsLoadMoreButton onClick={loadMore} isLoading={isFetchingMore} />
                 )}
               </>
             )}
           </DataLoadingStateHandler>
-          
-          {/* Voice Application Panel with Transcripts */}
-          <VoiceApplicationPanel
-            isConnected={isConnected}
-            isSpeaking={isSpeaking}
-            canSendFeedback={canSendFeedback}
-            selectedJob={selectedJob}
-            transcripts={transcripts}
-            pendingUserTranscript={pendingUserTranscript}
-            pendingAgentTranscript={pendingAgentTranscript}
-            onEnd={endVoiceApplication}
-            setVolume={setVolume}
-            sendFeedback={sendFeedback}
-            sendUserActivity={sendUserActivity}
-            getInputFrequencyData={getInputFrequencyData}
-            getOutputFrequencyData={getOutputFrequencyData}
-          />
-          </div>
+        </div>
       </div>
     </>
   );
 };
+
+const JobsPage = () => (
+  <VoiceApplicationContainer>
+    <JobsPageContent />
+  </VoiceApplicationContainer>
+);
 
 export default JobsPage;

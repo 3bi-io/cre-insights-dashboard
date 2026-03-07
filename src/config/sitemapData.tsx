@@ -1,0 +1,174 @@
+/**
+ * Sitemap route data configuration
+ * Extracted from SitemapPage for maintainability
+ */
+
+import React from 'react';
+import {
+  Globe, Shield, UserPlus, LayoutDashboard, Briefcase, BarChart3,
+  Plug, Settings, Wrench, FileText, Home, Phone, Sparkles, Users,
+  Building2, Radio, Route, Megaphone, TrendingUp, Brain, Mic,
+  Server, Lock, Boxes, Rss, Webhook, Database, HelpCircle, Eye,
+  Import, WifiOff, Download, UserCheck, Search, Bookmark,
+  MessageSquare, Bell, User, Terminal, Map, Image
+} from 'lucide-react';
+
+export interface RouteItem {
+  path: string;
+  label: string;
+  icon: React.ReactNode;
+  description?: string;
+}
+
+export interface RouteCategory {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  routes: RouteItem[];
+}
+
+export const sitemapCategories: RouteCategory[] = [
+  {
+    title: 'Public Pages',
+    description: 'Publicly accessible pages and information',
+    icon: <Globe className="w-5 h-5" />,
+    routes: [
+      { path: '/', label: 'Home', icon: <Home className="w-4 h-4" />, description: 'Homepage and landing page' },
+      { path: '/jobs', label: 'Jobs', icon: <Briefcase className="w-4 h-4" />, description: 'Browse available positions' },
+      { path: '/features', label: 'Features', icon: <Sparkles className="w-4 h-4" />, description: 'Platform features and capabilities' },
+      { path: '/resources', label: 'Resources', icon: <FileText className="w-4 h-4" />, description: 'Guides and documentation' },
+      { path: '/contact', label: 'Contact', icon: <Phone className="w-4 h-4" />, description: 'Get in touch with us' },
+      { path: '/sitemap', label: 'Sitemap', icon: <Map className="w-4 h-4" />, description: 'Site navigation directory' },
+    ],
+  },
+  {
+    title: 'Legal & Privacy',
+    description: 'Legal documents and privacy information',
+    icon: <Shield className="w-5 h-5" />,
+    routes: [
+      { path: '/privacy-policy', label: 'Privacy Policy', icon: <Lock className="w-4 h-4" />, description: 'Data protection and privacy' },
+      { path: '/terms-of-service', label: 'Terms of Service', icon: <FileText className="w-4 h-4" />, description: 'Terms and conditions' },
+      { path: '/cookie-policy', label: 'Cookie Policy', icon: <FileText className="w-4 h-4" />, description: 'Cookie usage information' },
+    ],
+  },
+  {
+    title: 'Authentication & Applications',
+    description: 'Sign in, sign up, and job application pages',
+    icon: <UserPlus className="w-5 h-5" />,
+    routes: [
+      { path: '/auth', label: 'Sign In / Sign Up', icon: <UserPlus className="w-4 h-4" />, description: 'User authentication' },
+      { path: '/apply', label: 'Quick Apply', icon: <FileText className="w-4 h-4" />, description: 'Quick job application' },
+      { path: '/apply/detailed', label: 'Detailed Application', icon: <FileText className="w-4 h-4" />, description: 'Comprehensive application form' },
+      { path: '/onboarding', label: 'Onboarding', icon: <UserPlus className="w-4 h-4" />, description: 'New user onboarding' },
+      { path: '/thank-you', label: 'Thank You', icon: <Sparkles className="w-4 h-4" />, description: 'Application confirmation' },
+    ],
+  },
+  {
+    title: 'Candidate Portal',
+    description: 'Job seeker dashboard and tools',
+    icon: <UserCheck className="w-5 h-5" />,
+    routes: [
+      { path: '/my-jobs', label: 'Candidate Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, description: 'Your personalized dashboard' },
+      { path: '/my-jobs/applications', label: 'My Applications', icon: <FileText className="w-4 h-4" />, description: 'Track your applications' },
+      { path: '/my-jobs/search', label: 'Job Search', icon: <Search className="w-4 h-4" />, description: 'Search for jobs' },
+      { path: '/my-jobs/saved', label: 'Saved Jobs', icon: <Bookmark className="w-4 h-4" />, description: 'View saved positions' },
+      { path: '/my-jobs/notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" />, description: 'Notification preferences' },
+      { path: '/my-jobs/profile', label: 'Profile', icon: <User className="w-4 h-4" />, description: 'Manage your profile' },
+    ],
+  },
+  {
+    title: 'Dashboard',
+    description: 'Main dashboard and overview',
+    icon: <LayoutDashboard className="w-5 h-5" />,
+    routes: [
+      { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, description: 'Main dashboard overview' },
+      { path: '/admin', label: 'Admin Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, description: 'Administrative dashboard' },
+    ],
+  },
+  {
+    title: 'Recruitment',
+    description: 'Manage applications, jobs, clients, and voice agents',
+    icon: <Briefcase className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/applications', label: 'Applications', icon: <FileText className="w-4 h-4" />, description: 'View and manage applications' },
+      { path: '/admin/applications/import', label: 'Import Applications', icon: <Import className="w-4 h-4" />, description: 'Bulk import applications' },
+      { path: '/admin/jobs', label: 'Job Listings', icon: <Briefcase className="w-4 h-4" />, description: 'Manage job listings' },
+      { path: '/admin/clients', label: 'Clients', icon: <Users className="w-4 h-4" />, description: 'Client management' },
+      { path: '/admin/routes', label: 'Routes', icon: <Route className="w-4 h-4" />, description: 'Transportation routes' },
+      { path: '/admin/elevenlabs-admin', label: 'Voice Agents', icon: <Mic className="w-4 h-4" />, description: 'ElevenLabs voice integration' },
+    ],
+  },
+  {
+    title: 'Campaigns',
+    description: 'Marketing campaigns and job groupings',
+    icon: <Megaphone className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/campaigns', label: 'Campaigns', icon: <Megaphone className="w-4 h-4" />, description: 'Marketing campaign management' },
+      { path: '/admin/job-groups', label: 'Job Groups', icon: <Boxes className="w-4 h-4" />, description: 'Organize jobs into groups' },
+    ],
+  },
+  {
+    title: 'Integrations',
+    description: 'ATS connections, publishers, and webhooks',
+    icon: <Plug className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/ats-command', label: 'ATS Command Center', icon: <Terminal className="w-4 h-4" />, description: 'Unified Tenstreet management' },
+      { path: '/admin/publishers', label: 'Publishers', icon: <Server className="w-4 h-4" />, description: 'Publisher management' },
+      { path: '/admin/webhook-management', label: 'Webhooks', icon: <Webhook className="w-4 h-4" />, description: 'Configure webhooks' },
+      { path: '/admin/universal-feeds', label: 'Universal Feeds', icon: <Rss className="w-4 h-4" />, description: 'Universal job feeds' },
+    ],
+  },
+  {
+    title: 'AI Platform',
+    description: 'AI-powered tools and analytics',
+    icon: <Brain className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/grok', label: 'AI Assistant', icon: <Brain className="w-4 h-4" />, description: 'AI-powered assistant' },
+      { path: '/admin/ai-tools', label: 'AI Tools', icon: <Sparkles className="w-4 h-4" />, description: 'AI-powered tools and features' },
+      { path: '/admin/ai-analytics', label: 'AI Analytics', icon: <BarChart3 className="w-4 h-4" />, description: 'AI-powered analytics' },
+      { path: '/admin/ai-impact', label: 'AI Impact Dashboard', icon: <TrendingUp className="w-4 h-4" />, description: 'AI impact metrics' },
+    ],
+  },
+  {
+    title: 'Analytics',
+    description: 'Performance metrics and reporting dashboards',
+    icon: <BarChart3 className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/visitor-analytics', label: 'Visitor Analytics', icon: <Eye className="w-4 h-4" />, description: 'Website visitor tracking' },
+      { path: '/admin/meta-analytics', label: 'Meta Analytics', icon: <BarChart3 className="w-4 h-4" />, description: 'Consolidated Meta ad performance' },
+    ],
+  },
+  {
+    title: 'Settings & Administration',
+    description: 'System settings, users, and configuration',
+    icon: <Settings className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/settings', label: 'Settings', icon: <Settings className="w-4 h-4" />, description: 'System configuration' },
+      { path: '/admin/ai-configuration', label: 'AI Configuration', icon: <Brain className="w-4 h-4" />, description: 'AI settings and privacy controls' },
+      { path: '/admin/user-management', label: 'User Management', icon: <Users className="w-4 h-4" />, description: 'Manage users and permissions' },
+      { path: '/admin/organizations', label: 'Organizations', icon: <Building2 className="w-4 h-4" />, description: 'Organization settings' },
+      { path: '/admin/media', label: 'Media', icon: <Image className="w-4 h-4" />, description: 'Media library' },
+      { path: '/admin/support', label: 'Support', icon: <HelpCircle className="w-4 h-4" />, description: 'Help and support' },
+    ],
+  },
+  {
+    title: 'Platform Tools',
+    description: 'Publishing platforms, feeds, and data tools',
+    icon: <Wrench className="w-5 h-5" />,
+    routes: [
+      { path: '/admin/platforms', label: 'Platforms', icon: <Server className="w-4 h-4" />, description: 'Job board platforms' },
+      { path: '/admin/feeds', label: 'Feeds Management', icon: <Rss className="w-4 h-4" />, description: 'RSS and XML feeds' },
+      { path: '/admin/super-admin-feeds', label: 'Super Admin Feeds', icon: <Rss className="w-4 h-4" />, description: 'Admin feed management' },
+      { path: '/admin/data-population', label: 'Data Population', icon: <Database className="w-4 h-4" />, description: 'Organization data import' },
+    ],
+  },
+  {
+    title: 'System Pages',
+    description: 'System utilities and error pages',
+    icon: <Wrench className="w-5 h-5" />,
+    routes: [
+      { path: '/offline', label: 'Offline', icon: <WifiOff className="w-4 h-4" />, description: 'Offline mode page' },
+      { path: '/access-denied', label: 'Access Denied', icon: <Shield className="w-4 h-4" />, description: 'Access denied page' },
+    ],
+  },
+];

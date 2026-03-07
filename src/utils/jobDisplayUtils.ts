@@ -19,3 +19,21 @@ export const getDisplayCompanyName = (job: {
   
   return clientName;
 };
+
+/**
+ * Format salary range for display
+ */
+export const formatSalary = (
+  min: number | null,
+  max: number | null,
+  type: string | null
+): string | null => {
+  if (!min && !max) return null;
+  const formatAmount = (amount: number) => {
+    if (type === 'hourly') return `$${amount}/hr`;
+    if (type === 'yearly') return `$${amount.toLocaleString()}/yr`;
+    return `$${amount.toLocaleString()}`;
+  };
+  if (min && max) return `${formatAmount(min)} - ${formatAmount(max)}`;
+  return formatAmount(min || max || 0);
+};
