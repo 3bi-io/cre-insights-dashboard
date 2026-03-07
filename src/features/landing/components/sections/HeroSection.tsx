@@ -168,7 +168,7 @@ const HeroSection = () => {
           className="flex flex-col items-start gap-3"
         >
           {/* Dynamic company count */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
             <span className="inline-flex items-center text-sm lg:text-base text-black font-semibold bg-white rounded-full px-5 py-2 shadow-lg">
               <span className="w-2 h-2 bg-success rounded-full mr-2 animate-pulse" />
               {companyCount.toLocaleString()} Companies Hiring
