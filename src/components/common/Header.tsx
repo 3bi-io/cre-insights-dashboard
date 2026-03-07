@@ -159,11 +159,11 @@ export const Header: React.FC<HeaderProps> = ({
               })}
             </div>
 
-            {/* Factor 3: Auth Buttons + Theme Toggle + Mobile Hamburger */}
-            <div className="flex items-center space-x-2 md:space-x-3" role="group" aria-label="Authentication">
+            {/* Factor 3: Auth + Theme + Mobile Hamburger */}
+            <div className="flex items-center space-x-2" role="group" aria-label="Authentication">
               <ThemeToggle />
               {showAuth && (
-                <Link to="/auth" className="hidden sm:block">
+                <Link to="/auth" className="hidden lg:block">
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -173,11 +173,11 @@ export const Header: React.FC<HeaderProps> = ({
                   </Button>
                 </Link>
               )}
-              {/* Mobile hamburger */}
+              {/* Mobile/tablet hamburger — visible below lg */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden min-h-[44px] min-w-[44px]"
+                className="lg:hidden min-h-[44px] min-w-[44px]"
                 onClick={() => setMobileMenuOpen(true)}
                 aria-label="Open menu"
               >
