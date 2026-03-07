@@ -1,57 +1,37 @@
 
 
-## Randomize Job Listings Per Session
+# Invert DFW Geo-Fence: Block Inside, Allow Outside
 
-**Problem**: Jobs are always sorted by `created_at DESC` (most recent first). Every visitor sees the same order, which disadvantages older listings.
+## Current behavior (wrong)
+- Users **inside** 200 miles of DFW → allowed
+- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
 
-**Approach**: Generate a random seed once per browser session (`sessionStorage`), pass it to a Postgres function that shuffles results deterministically for that seed. This ensures:
-- Same order within a session (pagination works correctly)
-- Different order for each new session/visitor
-- Only applies when `sortBy === 'recent'` (the default) — explicit sorts like "title" or "salary" remain deterministic
+## Desired behavior
+- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
+- Users **outside** 200 miles of DFW → **allowed**
+- OFAC sanctions countries → still blocked (no change)
 
-### Implementation
+## Changes
 
-**1. Database function** (`supabase migration`):
-Create a `get_random_jobs` Postgres function that uses `md5(id::text || seed)` as a deterministic shuffle key. It accepts filters (search, location, client), the seed, and pagination params. Returns jobs ordered by the hash.
+### 1. `supabase/functions/_shared/geo-fence.ts`
+- Rename concept from "service area" to "restricted zone"
+- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
+- Update JSDoc comments to reflect the new semantics
 
-```sql
-CREATE OR REPLACE FUNCTION public.get_random_jobs(
-  _seed text,
-  _limit int DEFAULT 50,
-  _offset int DEFAULT 0,
-  _search text DEFAULT '',
-  _location text DEFAULT '',
-  _client_id uuid DEFAULT NULL
-)
-RETURNS SETOF job_listings AS $$
-  SELECT * FROM job_listings
-  WHERE status = 'active' AND is_hidden = false
-    AND (_search = '' OR title ILIKE '%' || _search || '%' OR job_title ILIKE '%' || _search || '%')
-    AND (_location = '' OR city ILIKE '%' || _location || '%' OR state ILIKE '%' || _location || '%')
-    AND (_client_id IS NULL OR client_id = _client_id)
-  ORDER BY md5(id::text || _seed)
-  LIMIT _limit OFFSET _offset;
-$$
-LANGUAGE sql STABLE SECURITY DEFINER;
-```
+### 2. `supabase/functions/geo-check/index.ts`
+- Gate 2 now blocks when user **is inside** the DFW radius
+- Change reason from `outside_service_area` to `inside_restricted_zone`
+- Update log messages accordingly
 
-**2. Session seed** (`usePaginatedPublicJobs.tsx`):
-- Generate a random seed on mount: `sessionStorage.getItem('job_seed') || crypto.randomUUID()`
-- Store in `sessionStorage` so it persists across navigations but resets on new tab/session
-- When `sortBy === 'recent'` (default), call `supabase.rpc('get_random_jobs', { _seed, _limit, _offset, ... })` instead of the regular query
-- When user explicitly sorts by title/salary, use the existing `.order()` query as-is
+### 3. `src/contexts/GeoBlockingContext.tsx`
+- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
+- Match on new reason `inside_restricted_zone`
 
-**3. Add "random" as default sort option**:
-- Rename the default sort from `'recent'` to `'random'` in the UI, or keep `'recent'` label but apply random logic under the hood
-- Option: add a visible "Shuffle" sort option so users understand the randomization
+### 4. `src/pages/RegionBlocked.tsx`
+- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
+- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
 
-### Trade-offs
+### 5. Deploy updated `geo-check` edge function
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| **DB function with seed** (recommended) | Consistent pagination, server-side, performant | Requires migration |
-| Client-side shuffle | No migration | Breaks pagination, only shuffles loaded page |
-| `ORDER BY random()` | Simple | Different order on every page load, breaks pagination |
-
-**Files affected**: 1 migration, `usePaginatedPublicJobs.tsx`, `usePublicJobsPage.ts` (seed generation)
+No database changes needed. All changes are in edge function code and frontend components.
 
