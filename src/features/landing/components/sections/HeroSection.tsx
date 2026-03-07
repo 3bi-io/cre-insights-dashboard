@@ -120,7 +120,7 @@ const HeroSection = () => {
         {/* Headline - impactful with gradient accent */}
         <motion.h1
           variants={itemVariants}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-playfair font-bold text-foreground mb-6 leading-[1.1] tracking-tight"
+          className="text-[2rem] sm:text-5xl md:text-6xl lg:text-7xl font-playfair font-bold text-foreground mb-6 leading-[1.1] tracking-tight"
         >
           {heroContent.headline}
           <span className="text-white">
