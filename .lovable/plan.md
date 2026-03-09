@@ -1,37 +1,28 @@
 
 
-# Invert DFW Geo-Fence: Block Inside, Allow Outside
+## Fix: RovingFocusGroupItem Error in DashboardTabs
 
-## Current behavior (wrong)
-- Users **inside** 200 miles of DFW → allowed
-- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
+**Root cause**: `src/features/dashboard/components/DashboardTabs.tsx` renders `TabsTrigger` components inside a plain `<div>` instead of `TabsList`. Radix UI's `TabsList` provides the `RovingFocusGroup` context that `TabsTrigger` (a `RovingFocusGroupItem`) requires.
 
-## Desired behavior
-- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
-- Users **outside** 200 miles of DFW → **allowed**
-- OFAC sanctions countries → still blocked (no change)
+### Change
 
-## Changes
+**`src/features/dashboard/components/DashboardTabs.tsx`**:
+1. Add `TabsList` to the import from `@/components/ui/tabs`
+2. Replace the inner `<div>` wrapping the `TabsTrigger` items (line 36-61) with `<TabsList>`, moving the styling classes onto it
 
-### 1. `supabase/functions/_shared/geo-fence.ts`
-- Rename concept from "service area" to "restricted zone"
-- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
-- Update JSDoc comments to reflect the new semantics
+The outer scroll wrapper `<div>` (line 35) stays as-is for horizontal scroll behavior. Only the inner container becomes `TabsList`.
 
-### 2. `supabase/functions/geo-check/index.ts`
-- Gate 2 now blocks when user **is inside** the DFW radius
-- Change reason from `outside_service_area` to `inside_restricted_zone`
-- Update log messages accordingly
+```text
+Before:
+  <div className="inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1 ...">
+    <TabsTrigger ... />
+  </div>
 
-### 3. `src/contexts/GeoBlockingContext.tsx`
-- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
-- Match on new reason `inside_restricted_zone`
+After:
+  <TabsList className="inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1 ...">
+    <TabsTrigger ... />
+  </TabsList>
+```
 
-### 4. `src/pages/RegionBlocked.tsx`
-- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
-- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
-
-### 5. Deploy updated `geo-check` edge function
-
-No database changes needed. All changes are in edge function code and frontend components.
+Single file, ~3 lines changed. This will resolve the crash immediately.
 
