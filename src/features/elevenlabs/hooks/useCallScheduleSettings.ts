@@ -80,20 +80,57 @@ export function useCallScheduleSettings(clientId?: string | null) {
   const { mutate: updateSettings, isPending: isUpdating } = useMutation({
     mutationFn: async (updates: Partial<Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id'>>) => {
       if (!organizationId) throw new Error('No organization');
+
+      // Check if a row already exists
+      let existingQuery = supabase
+        .from('organization_call_settings' as any)
+        .select('id')
+        .eq('organization_id', organizationId);
+
+      if (effectiveClientId) {
+        existingQuery = existingQuery.eq('client_id', effectiveClientId);
+      } else {
+        existingQuery = existingQuery.is('client_id', null);
+      }
+
+      const { data: existing, error: fetchError } = await existingQuery.maybeSingle();
+      if (fetchError) throw fetchError;
+
       const payload: any = {
-        organization_id: organizationId,
         ...updates,
         updated_at: new Date().toISOString(),
       };
-      if (effectiveClientId) {
-        payload.client_id = effectiveClientId;
+
+      if (existing) {
+        // Update existing row
+        let updateQuery = supabase
+          .from('organization_call_settings' as any)
+          .update(payload as any)
+          .eq('organization_id', organizationId);
+
+        if (effectiveClientId) {
+          updateQuery = updateQuery.eq('client_id', effectiveClientId);
+        } else {
+          updateQuery = updateQuery.is('client_id', null);
+        }
+
+        const { error } = await updateQuery;
+        if (error) throw error;
+      } else {
+        // Insert new row
+        const insertPayload: any = {
+          organization_id: organizationId,
+          ...payload,
+        };
+        if (effectiveClientId) {
+          insertPayload.client_id = effectiveClientId;
+        }
+
+        const { error } = await supabase
+          .from('organization_call_settings' as any)
+          .insert(insertPayload as any);
+        if (error) throw error;
       }
-
-      const { error } = await supabase
-        .from('organization_call_settings' as any)
-        .upsert(payload as any, { onConflict: 'organization_id,client_id' });
-
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['call-schedule-settings', organizationId, effectiveClientId] });
