@@ -33,8 +33,8 @@ export const useOutboundCalls = (options: UseOutboundCallsOptions = {}) => {
         .from('outbound_calls')
         .select(`
           *,
-          voice_agent:voice_agents(id, name),
-          application:applications(id, first_name, last_name, phone)
+          voice_agent:voice_agents!outbound_calls_voice_agent_id_fkey(id, name),
+          application:applications!outbound_calls_application_id_fkey(id, first_name, last_name, phone)
         `)
         .order('created_at', { ascending: false });
 
