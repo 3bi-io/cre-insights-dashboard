@@ -85,24 +85,31 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
       
       logger.debug('Fetched conversations', { count: conversationsData?.length || 0 }, 'ElevenLabs');
       
-      // Fetch transcript counts for each conversation
+      // Fetch transcript counts for each conversation (batched to avoid URL length limits)
       if (conversationsData && conversationsData.length > 0) {
         const conversationIds = conversationsData.map(c => c.id);
-        
-        const { data: transcriptCounts, error: countError } = await supabase
-          .from('elevenlabs_transcripts')
-          .select('conversation_id')
-          .in('conversation_id', conversationIds);
+        const BATCH_SIZE = 100;
+        const allTranscriptRows: { conversation_id: string }[] = [];
 
-        if (countError) {
-          logger.error('Error fetching transcript counts', countError, 'ElevenLabs');
+        for (let i = 0; i < conversationIds.length; i += BATCH_SIZE) {
+          const batch = conversationIds.slice(i, i + BATCH_SIZE);
+          const { data: batchData, error: batchError } = await supabase
+            .from('elevenlabs_transcripts')
+            .select('conversation_id')
+            .in('conversation_id', batch);
+
+          if (batchError) {
+            logger.error('Error fetching transcript counts batch', batchError, 'ElevenLabs');
+          } else if (batchData) {
+            allTranscriptRows.push(...batchData);
+          }
         }
 
         // Count messages per conversation
-        const messageCounts = transcriptCounts?.reduce((acc, t) => {
+        const messageCounts = allTranscriptRows.reduce((acc, t) => {
           acc[t.conversation_id] = (acc[t.conversation_id] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>) || {};
+        }, {} as Record<string, number>);
 
         // Return all conversations with message count
         return conversationsData.map(conv => ({

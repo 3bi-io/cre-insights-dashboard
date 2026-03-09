@@ -91,7 +91,7 @@ export function useCallScheduleSettings(clientId?: string | null) {
 
       const { error } = await supabase
         .from('organization_call_settings' as any)
-        .upsert(payload as any, { onConflict: 'organization_id' });
+        .upsert(payload as any, { onConflict: 'organization_id,client_id' });
 
       if (error) throw error;
     },
