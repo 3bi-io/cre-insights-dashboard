@@ -1,37 +1,35 @@
 
 
-# Invert DFW Geo-Fence: Block Inside, Allow Outside
+## Two Issues Found
 
-## Current behavior (wrong)
-- Users **inside** 200 miles of DFW → allowed
-- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
+### Issue 1: 403 on `organization_call_settings` upsert (org admins)
 
-## Desired behavior
-- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
-- Users **outside** 200 miles of DFW → **allowed**
-- OFAC sanctions countries → still blocked (no change)
+**Root cause**: Two problems in the upsert flow:
 
-## Changes
+1. **Missing INSERT policy**: RLS has UPDATE and SELECT for org admins, but no INSERT. Supabase upsert requires both INSERT and UPDATE policies. Only super_admins have ALL access.
+2. **Wrong `onConflict`**: The hook uses `onConflict: 'organization_id'` but the unique constraint was changed to `(organization_id, COALESCE(client_id, '00000000-...'))`. The conflict target must include `client_id`.
 
-### 1. `supabase/functions/_shared/geo-fence.ts`
-- Rename concept from "service area" to "restricted zone"
-- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
-- Update JSDoc comments to reflect the new semantics
+**Fix**:
+- Add an INSERT policy for org admins on `organization_call_settings`
+- Update the UPDATE policy's `WITH CHECK` clause (currently null -- needs one)
+- Change `onConflict` in the hook from `'organization_id'` to `'organization_id,client_id'`
 
-### 2. `supabase/functions/geo-check/index.ts`
-- Gate 2 now blocks when user **is inside** the DFW radius
-- Change reason from `outside_service_area` to `inside_restricted_zone`
-- Update log messages accordingly
+### Issue 2: 400 on `elevenlabs_transcripts` (URL too long)
 
-### 3. `src/contexts/GeoBlockingContext.tsx`
-- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
-- Match on new reason `inside_restricted_zone`
+**Root cause**: `useElevenLabsConversations.tsx` line 95 passes 600+ UUIDs into `.in('conversation_id', conversationIds)`, generating a GET URL that exceeds the ~8KB URL limit, returning a 400.
 
-### 4. `src/pages/RegionBlocked.tsx`
-- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
-- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
+**Fix**: Batch the `.in()` query into chunks of 100 IDs, then merge results. Alternatively, use an RPC or skip transcript counts for large result sets.
 
-### 5. Deploy updated `geo-check` edge function
+### Plan
 
-No database changes needed. All changes are in edge function code and frontend components.
+**Migration** (1 file):
+- Add INSERT policy for org admins: `organization_id = get_user_organization_id() AND has_role(auth.uid(), 'admin')`
+- Add WITH CHECK to existing UPDATE policy
+
+**Hook fix** (`useCallScheduleSettings.ts`):
+- Change `onConflict: 'organization_id'` to `'organization_id,client_id'`
+
+**Transcript batching** (`useElevenLabsConversations.tsx`):
+- Batch the `.in()` call into chunks of 100 conversation IDs
+- Merge transcript count results across batches
 
