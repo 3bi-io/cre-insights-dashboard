@@ -106,6 +106,8 @@ export interface JobContext {
   candidateName?: string;
   requirements?: string;
   benefits?: string;
+  // Scheduling context
+  applicationId?: string;
 }
 
 // ============= Connection Types =============
