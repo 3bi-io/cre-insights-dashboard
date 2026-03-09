@@ -7,7 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingButton } from '@/components/shared/LoadingButton';
 import { useCallScheduleSettings, type CallScheduleSettings as Settings } from '@/features/elevenlabs/hooks/useCallScheduleSettings';
-import { Clock, CalendarDays, RotateCcw } from 'lucide-react';
+import { useClientsService } from '@/features/clients/hooks/useClientsService';
+import { Clock, CalendarDays, RotateCcw, Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const TIMEZONES = [
@@ -27,8 +28,12 @@ const DAYS = [
   { value: 7, label: 'Sun' },
 ];
 
+const ORG_DEFAULT_VALUE = '__org_default__';
+
 export function CallScheduleSettings() {
-  const { settings, isLoading, updateSettings, isUpdating } = useCallScheduleSettings();
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const { settings, isLoading, updateSettings, isUpdating, clientOverrides } = useCallScheduleSettings(selectedClientId);
+  const { clients } = useClientsService();
 
   const [form, setForm] = useState({
     business_hours_start: '09:00',
@@ -106,6 +111,68 @@ export function CallScheduleSettings() {
 
   return (
     <div className="space-y-6">
+      {/* Client Selector */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <CardTitle>Schedule Scope</CardTitle>
+              <CardDescription>
+                Configure schedule at the organization level or override for a specific client
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Label>Apply settings to</Label>
+            <Select
+              value={selectedClientId || ORG_DEFAULT_VALUE}
+              onValueChange={v => setSelectedClientId(v === ORG_DEFAULT_VALUE ? null : v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ORG_DEFAULT_VALUE}>
+                  Organization Default
+                </SelectItem>
+                {clients.map(client => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                    {clientOverrides.includes(client.id) ? ' ✦' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedClientId && !clientOverrides.includes(selectedClientId) && (
+              <p className="text-xs text-muted-foreground">
+                This client currently inherits the organization default. Saving will create a custom override.
+              </p>
+            )}
+            {clientOverrides.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="text-xs text-muted-foreground">Custom schedules:</span>
+                {clientOverrides.map(cid => {
+                  const client = clients.find(c => c.id === cid);
+                  return client ? (
+                    <Badge
+                      key={cid}
+                      variant="outline"
+                      className="text-xs cursor-pointer"
+                      onClick={() => setSelectedClientId(cid)}
+                    >
+                      {client.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Business Hours */}
       <Card>
         <CardHeader>
