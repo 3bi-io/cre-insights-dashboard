@@ -1,35 +1,37 @@
 
 
-## Remove DFW Geo-Fence Restriction
+# Invert DFW Geo-Fence: Block Inside, Allow Outside
 
-The DFW 200-mile restricted zone is implemented across 4 files. The OFAC sanctions blocking remains untouched.
+## Current behavior (wrong)
+- Users **inside** 200 miles of DFW → allowed
+- Users **outside** 200 miles of DFW → blocked with "We're Not in Your Area Yet"
 
-### Changes
+## Desired behavior
+- Users **inside** 200 miles of DFW → **blocked** (restricted zone)
+- Users **outside** 200 miles of DFW → **allowed**
+- OFAC sanctions countries → still blocked (no change)
 
-**1. `supabase/functions/geo-check/index.ts`**
-- Remove the import of `checkRestrictedZone` and `RESTRICTED_RADIUS_MILES` from `geo-fence.ts`
-- Remove Gate 2 entirely (lines 79-101) — the restricted zone check and its 403 response
-- Remove `distanceMiles` from the allowed response (lines 111, 118)
+## Changes
 
-**2. `supabase/functions/_shared/geo-fence.ts`**
-- Delete the entire file (no longer needed)
+### 1. `supabase/functions/_shared/geo-fence.ts`
+- Rename concept from "service area" to "restricted zone"
+- Invert the logic: `allowed = distance > RESTRICTED_RADIUS_MILES` (was `<=`)
+- Update JSDoc comments to reflect the new semantics
 
-**3. `src/contexts/GeoBlockingContext.tsx`**
-- Remove `isInsideRestrictedZone`, `distanceMiles`, and `restrictedRadiusMiles` from the state interface and all state initializations
-- Remove the `inside_restricted_zone` reason mapping
+### 2. `supabase/functions/geo-check/index.ts`
+- Gate 2 now blocks when user **is inside** the DFW radius
+- Change reason from `outside_service_area` to `inside_restricted_zone`
+- Update log messages accordingly
 
-**4. `src/pages/RegionBlocked.tsx`**
-- Remove the restricted zone branch (lines 18-100 approximately) — keep only the OFAC sanctions blocked UI
-- Remove `distanceMiles`, `restrictedRadiusMiles` from the destructured context
+### 3. `src/contexts/GeoBlockingContext.tsx`
+- Rename `isOutsideServiceArea` to `isInsideRestrictedZone`
+- Match on new reason `inside_restricted_zone`
 
-**5. `src/components/GeoBlockingGate.tsx`**
-- No changes needed (it only checks `isBlocked`, which still works for OFAC)
+### 4. `src/pages/RegionBlocked.tsx`
+- Update the service-area block to show a "DFW Restricted Zone" message instead of "We're Not in Your Area Yet"
+- Adjust copy: "Access is restricted within 200 miles of Dallas-Fort Worth"
 
-**6. Deploy updated `geo-check` edge function**
+### 5. Deploy updated `geo-check` edge function
 
-### What stays
-- OFAC sanctions country blocking (Russia, Iran, Cuba, North Korea, Syria, Belarus)
-- `isOutsideAmericas` simulation mode logic
-- Lovable preview bypass
-- Fail-open policy
+No database changes needed. All changes are in edge function code and frontend components.
 
