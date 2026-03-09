@@ -4908,6 +4908,7 @@ export type Database = {
           business_hours_end: string
           business_hours_start: string
           business_hours_timezone: string
+          client_id: string | null
           created_at: string
           follow_up_delay_hours: number
           id: string
@@ -4921,6 +4922,7 @@ export type Database = {
           business_hours_end?: string
           business_hours_start?: string
           business_hours_timezone?: string
+          client_id?: string | null
           created_at?: string
           follow_up_delay_hours?: number
           id?: string
@@ -4934,6 +4936,7 @@ export type Database = {
           business_hours_end?: string
           business_hours_start?: string
           business_hours_timezone?: string
+          client_id?: string | null
           created_at?: string
           follow_up_delay_hours?: number
           id?: string
@@ -4942,6 +4945,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_call_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_call_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "organization_call_settings_organization_id_fkey"
             columns: ["organization_id"]
@@ -8485,10 +8502,9 @@ export type Database = {
       }
       get_current_user_role: { Args: never; Returns: string }
       get_dashboard_metrics: { Args: never; Returns: Json }
-      get_next_business_hours_start: {
-        Args: { p_org_id?: string }
-        Returns: string
-      }
+      get_next_business_hours_start:
+        | { Args: { p_org_id?: string }; Returns: string }
+        | { Args: { p_client_id?: string; p_org_id?: string }; Returns: string }
       get_org_id_by_slug: { Args: { _slug: string }; Returns: string }
       get_organization_applications: {
         Args: { _limit?: number; _offset?: number; _org_id: string }
@@ -8641,10 +8657,12 @@ export type Database = {
         Returns: undefined
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_within_business_hours: {
-        Args: { p_org_id?: string }
-        Returns: boolean
-      }
+      is_within_business_hours:
+        | { Args: { p_org_id?: string }; Returns: boolean }
+        | {
+            Args: { p_client_id?: string; p_org_id?: string }
+            Returns: boolean
+          }
       normalize_phone_number: { Args: { phone_input: string }; Returns: string }
       organization_has_platform_access: {
         Args: { _org_id: string; _platform_name: string }
