@@ -33,7 +33,7 @@ export const DashboardTabsComponent: React.FC = () => {
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       {/* Mobile: Horizontal scroll, Desktop: Grid */}
       <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-1">
-        <div
+        <TabsList
           className={cn(
             "inline-flex h-10 items-center gap-1 rounded-md bg-muted p-1 text-muted-foreground",
             "min-w-max md:min-w-0 md:w-full",
