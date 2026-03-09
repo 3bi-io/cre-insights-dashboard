@@ -71,13 +71,23 @@ const AuthPage = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/choose-account-type`,
+          redirectTo: `${window.location.origin}/auth`,
         },
       });
       
       if (error) throw error;
     } catch (error: any) {
-      setError(error.message || `Failed to sign in with ${provider}`);
+      const providerNames: Record<string, string> = {
+        google: 'Google',
+        azure: 'Microsoft',
+      };
+      const providerName = providerNames[provider] || provider;
+      
+      if (error.message?.includes('provider is not enabled')) {
+        setError(`${providerName} sign-in is not configured. Please contact support or use email/password.`);
+      } else {
+        setError(error.message || `Failed to sign in with ${providerName}`);
+      }
       setOauthLoading(null);
     }
   };
