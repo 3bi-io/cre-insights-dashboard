@@ -109,19 +109,32 @@ export function useCallScheduleSettings(clientId?: string | null) {
           .eq('id', (existingRows[0] as any).id);
         if (error) throw error;
       } else {
-        // Insert new row
+        // Insert new row with upsert to handle race conditions
         const insertPayload: any = {
           organization_id: organizationId,
+          client_id: effectiveClientId,
           ...payload,
         };
-        if (effectiveClientId) {
-          insertPayload.client_id = effectiveClientId;
-        }
 
         const { error } = await supabase
           .from('organization_call_settings' as any)
-          .insert(insertPayload as any);
-        if (error) throw error;
+          .upsert(insertPayload as any, { onConflict: 'id', ignoreDuplicates: true } as any);
+        if (error) {
+          // If upsert also fails, try a plain update as fallback
+          let fallbackQuery = supabase
+            .from('organization_call_settings' as any)
+            .update(payload as any)
+            .eq('organization_id', organizationId);
+          
+          if (effectiveClientId) {
+            fallbackQuery = fallbackQuery.eq('client_id', effectiveClientId);
+          } else {
+            fallbackQuery = fallbackQuery.is('client_id', null);
+          }
+          
+          const { error: fallbackError } = await fallbackQuery;
+          if (fallbackError) throw fallbackError;
+        }
       }
     },
     onSuccess: () => {
