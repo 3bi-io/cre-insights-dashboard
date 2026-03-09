@@ -93,7 +93,7 @@ export function useCallScheduleSettings(clientId?: string | null) {
         existingQuery = existingQuery.is('client_id', null);
       }
 
-      const { data: existing, error: fetchError } = await existingQuery.maybeSingle();
+      const { data: existingRows, error: fetchError } = await existingQuery;
       if (fetchError) throw fetchError;
 
       const payload: any = {
@@ -101,20 +101,12 @@ export function useCallScheduleSettings(clientId?: string | null) {
         updated_at: new Date().toISOString(),
       };
 
-      if (existing) {
-        // Update existing row
-        let updateQuery = supabase
+      if (existingRows && existingRows.length > 0) {
+        // Update existing row by id
+        const { error } = await supabase
           .from('organization_call_settings' as any)
           .update(payload as any)
-          .eq('organization_id', organizationId);
-
-        if (effectiveClientId) {
-          updateQuery = updateQuery.eq('client_id', effectiveClientId);
-        } else {
-          updateQuery = updateQuery.is('client_id', null);
-        }
-
-        const { error } = await updateQuery;
+          .eq('id', (existingRows[0] as any).id);
         if (error) throw error;
       } else {
         // Insert new row
