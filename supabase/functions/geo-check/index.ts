@@ -1,7 +1,6 @@
 /**
  * Geo-Check Edge Function
- * Validates visitor geographic location for OFAC sanctions compliance
- * and DFW 200-mile restricted zone.
+ * Validates visitor geographic location for OFAC sanctions compliance.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -10,7 +9,6 @@ import { successResponse, errorResponse } from '../_shared/response.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { extractIPFromRequest, getGeoLocation } from '../_shared/geo-lookup.ts';
 import { checkGeoAccess, getAllowedRegionsDescription, GeoBlockResult } from '../_shared/geo-blocking.ts';
-import { checkRestrictedZone, RESTRICTED_RADIUS_MILES } from '../_shared/geo-fence.ts';
 
 const logger = createLogger('geo-check');
 
@@ -57,7 +55,7 @@ serve(async (req) => {
     // Perform geo lookup
     const geo = await getGeoLocation(ip);
     
-    // Gate 1: Check against OFAC sanctions block list
+    // Check against OFAC sanctions block list
     const result: GeoBlockResult = checkGeoAccess(geo);
     
     if (!result.allowed) {
@@ -76,46 +74,17 @@ serve(async (req) => {
       );
     }
 
-    // Gate 2: DFW 200-mile restricted zone — block users INSIDE the radius
-    const restrictedZone = checkRestrictedZone(geo);
-
-    if (restrictedZone.blocked) {
-      const duration = Date.now() - startTime;
-      logger.info('Geo check blocked (restricted zone)', {
-        countryCode: result.countryCode,
-        distanceMiles: restrictedZone.distanceMiles,
-        duration_ms: duration,
-      });
-      return new Response(
-        JSON.stringify({
-          allowed: false,
-          countryCode: result.countryCode,
-          country: result.country,
-          reason: 'inside_restricted_zone',
-          distanceMiles: restrictedZone.distanceMiles,
-          restrictedRadiusMiles: RESTRICTED_RADIUS_MILES,
-          checkedAt: new Date().toISOString(),
-        }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
     // Allowed
     const duration = Date.now() - startTime;
     logger.info('Geo check complete', { 
       allowed: true, 
       countryCode: result.countryCode,
-      distanceMiles: restrictedZone.distanceMiles,
       duration_ms: duration 
     });
 
     return new Response(
       JSON.stringify({
         ...result,
-        distanceMiles: restrictedZone.distanceMiles,
         checkedAt: new Date().toISOString(),
       }),
       {

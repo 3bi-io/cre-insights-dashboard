@@ -1,7 +1,6 @@
 /**
  * Geo-Blocking Context Provider
- * Checks visitor location and blocks access from OFAC-sanctioned countries
- * and from within the DFW 200-mile restricted zone.
+ * Checks visitor location and blocks access from OFAC-sanctioned countries.
  * Open-world policy: allow all countries by default, block only sanctioned ones.
  * Non-Americas users get simulation mode on apply pages (cannot submit real applications).
  */
@@ -30,15 +29,11 @@ interface GeoBlockingState {
   isBlocked: boolean;
   /** True when country is known and NOT in the Americas — triggers simulation mode on apply pages */
   isOutsideAmericas: boolean;
-  /** True when user is inside the DFW 200-mile restricted zone */
-  isInsideRestrictedZone: boolean;
   countryCode: string | null;
   country: string | null;
   reason: string | null;
   message: string | null;
   allowedRegions: string | null;
-  distanceMiles: number | null;
-  restrictedRadiusMiles: number | null;
 }
 
 interface GeoBlockingContextType extends GeoBlockingState {
@@ -65,14 +60,11 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
     isChecking: true,
     isBlocked: false,
     isOutsideAmericas: false,
-    isInsideRestrictedZone: false,
     countryCode: null,
     country: null,
     reason: null,
     message: null,
     allowedRegions: null,
-    distanceMiles: null,
-    restrictedRadiusMiles: null,
   });
 
   const [simulationModeOverride, setSimulationModeOverride] = useState<boolean>(() => {
@@ -95,7 +87,6 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
           setState(parsed.state);
           return;
         }
-        // Cache expired, remove it
         sessionStorage.removeItem(CACHE_KEY);
       }
     } catch {
@@ -115,14 +106,11 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
           isChecking: false,
           isBlocked: false,
           isOutsideAmericas: false,
-          isInsideRestrictedZone: false,
           countryCode: null,
           country: null,
           reason: 'lookup_failed',
           message: null,
           allowedRegions: null,
-          distanceMiles: null,
-          restrictedRadiusMiles: null,
         };
         setState(allowedState);
         return;
@@ -135,8 +123,6 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         reason: string;
         message?: string;
         blockedRegions?: string;
-        distanceMiles?: number | null;
-        restrictedRadiusMiles?: number | null;
       };
 
       const resolvedCode = result.countryCode;
@@ -146,14 +132,11 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         isChecking: false,
         isBlocked: !result.allowed,
         isOutsideAmericas,
-        isInsideRestrictedZone: result.reason === 'inside_restricted_zone',
         countryCode: resolvedCode,
         country: result.country,
         reason: result.reason,
         message: result.message || null,
         allowedRegions: result.blockedRegions || null,
-        distanceMiles: result.distanceMiles ?? null,
-        restrictedRadiusMiles: result.restrictedRadiusMiles ?? null,
       };
 
       setState(newState);
@@ -183,14 +166,11 @@ export function GeoBlockingProvider({ children }: { children: ReactNode }) {
         isChecking: false,
         isBlocked: false,
         isOutsideAmericas: false,
-        isInsideRestrictedZone: false,
         countryCode: null,
         country: null,
         reason: 'lookup_failed',
         message: null,
         allowedRegions: null,
-        distanceMiles: null,
-        restrictedRadiusMiles: null,
       });
     }
   }, []);
