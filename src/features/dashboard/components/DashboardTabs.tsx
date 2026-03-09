@@ -58,7 +58,7 @@ export const DashboardTabsComponent: React.FC = () => {
               </TabsTrigger>
             );
           })}
-        </div>
+        </TabsList>
       </div>
 
       {allTabs.map((tab) => (
