@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tabs, TabsContent, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FeatureGuard } from '@/components/FeatureGuard';
 import { useDashboardTabs } from '../hooks/useDashboardTabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
