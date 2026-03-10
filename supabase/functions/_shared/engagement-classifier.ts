@@ -39,6 +39,7 @@ const INTENT_KEYWORDS: Record<IntentType, string[]> = {
   benefits_question: [
     'benefits', 'insurance', 'health', '401k', 'retirement', 'pto',
     'vacation', 'medical', 'dental', 'vision', 'home time',
+    // Additional keywords loaded dynamically from benefits_catalog at runtime
   ],
   support: [
     'help', 'issue', 'problem', 'can\'t', 'unable', 'error',
