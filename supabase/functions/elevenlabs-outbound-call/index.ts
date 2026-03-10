@@ -703,6 +703,22 @@ async function processOutboundCall(
       }
     }
 
+    // Fetch org call settings for timezone-aware business hours in dynamic variables
+    if (organizationId) {
+      const { data: callSettings } = await supabase
+        .from('organization_call_settings')
+        .select('business_hours_start, business_hours_end, business_hours_timezone')
+        .eq('organization_id', organizationId)
+        .is('client_id', null)
+        .maybeSingle();
+      
+      if (callSettings) {
+        metadata._business_hours_timezone = callSettings.business_hours_timezone;
+        metadata._business_hours_start = callSettings.business_hours_start?.substring(0, 5);
+        metadata._business_hours_end = callSettings.business_hours_end?.substring(0, 5);
+      }
+    }
+
     // Build dynamic variables for ElevenLabs agent context
     const dynamicVariables = buildDynamicVariables(application, jobListing, organization, metadata);
     logger.info('Dynamic variables for ElevenLabs', { variables: dynamicVariables });
@@ -923,23 +939,34 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
-  // Business hours context for agent after-hours logic (CST = America/Chicago)
-  const nowCST = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const hour = nowCST.getHours();
-  const minute = nowCST.getMinutes();
-  const currentTimeCST = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  const dayOfWeek = nowCST.getDay(); // 0=Sun, 6=Sat
+  // Business hours context — use org timezone if available, fallback to CST
+  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+  const orgStart = (metadata._business_hours_start as string) || '09:00';
+  const orgEnd = (metadata._business_hours_end as string) || '16:30';
+  const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
+  const hour = nowLocal.getHours();
+  const minute = nowLocal.getMinutes();
+  const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const dayOfWeek = nowLocal.getDay(); // 0=Sun, 6=Sat
   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-  const isWithinBusinessHours = isWeekday && (hour > 9 || (hour === 9 && minute >= 0)) && (hour < 16 || (hour === 16 && minute < 30));
   
+  const [startH, startM] = orgStart.split(':').map(Number);
+  const [endH, endM] = orgEnd.split(':').map(Number);
+  const nowMinutes = hour * 60 + minute;
+  const startMinutes = (startH || 9) * 60 + (startM || 0);
+  const endMinutes = (endH || 16) * 60 + (endM || 30);
+  const isWithinBusinessHours = isWeekday && nowMinutes >= startMinutes && nowMinutes < endMinutes;
+  
+  const tzLabel = orgTz.replace(/_/g, ' ').split('/').pop() || orgTz;
   vars.is_after_hours = isWithinBusinessHours ? 'no' : 'yes';
-  vars.current_time_cst = currentTimeCST;
+  vars.current_time = currentTime;
+  vars.current_time_cst = currentTime; // backward compat
   vars.is_weekend = !isWeekday ? 'yes' : 'no';
   vars.business_hours_note = isWithinBusinessHours 
-    ? 'Currently within business hours (9:00 AM - 4:30 PM CST). Recruiter transfer is available.'
-    : 'Currently outside business hours (9:00 AM - 4:30 PM CST). Do NOT attempt to transfer to a recruiter. Instead, let the driver know a recruiter will call them back after 9 AM CST on the next business day.';
+    ? `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available.`
+    : `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day.`;
 
-  // Job context inference
+  // Trucking-specific job context inference
   vars.job_requires_cdl = inferCDLRequirement(jobListing);
   vars.job_cdl_class = inferCDLClass(jobListing);
   vars.job_requires_hazmat = inferHazmatRequirement(jobListing);
@@ -949,6 +976,12 @@ function buildDynamicVariables(
   vars.job_is_otr = inferOTR(jobListing);
   vars.job_is_team = inferTeamDriving(jobListing);
   vars.job_freight_type = inferFreightType(jobListing);
+  
+  // Industry detection and vertical-specific variables
+  vars.job_industry = inferJobIndustry(jobListing, organization);
+  vars.applicant_certifications = inferCertifications(application, jobListing);
+  vars.applicant_clearance_level = inferClearanceLevel(application);
+  vars.job_certifications_required = inferRequiredCertifications(jobListing);
   
   return vars;
 }
@@ -1078,4 +1111,89 @@ function inferFreightType(jobListing: Record<string, unknown> | null): string {
   if (combined.includes('dedicated')) return 'dedicated';
   if (combined.includes('intermodal')) return 'intermodal';
   return 'general';
+}
+
+// Industry detection based on job title, summary, and organization
+function inferJobIndustry(
+  jobListing: Record<string, unknown> | null,
+  organization: Record<string, unknown> | null
+): string {
+  const combined = [
+    (jobListing?.title || jobListing?.job_title) as string || '',
+    jobListing?.job_summary as string || '',
+    organization?.name as string || '',
+    organization?.description as string || ''
+  ].join(' ').toLowerCase();
+
+  if (combined.match(/cyber|infosec|information security|soc |siem|penetration|vulnerability|threat/)) return 'cybersecurity';
+  if (combined.match(/software|developer|engineer|devops|cloud|full.?stack|frontend|backend/)) return 'technology';
+  if (combined.match(/truck|cdl|driver|freight|dispatch|fleet|otr|ltl/)) return 'trucking';
+  if (combined.match(/nurse|rn |lpn|healthcare|medical|clinical|hospital/)) return 'healthcare';
+  if (combined.match(/warehouse|forklift|logistics|supply chain/)) return 'logistics';
+  return 'general';
+}
+
+// Extract certifications from application custom data or infer from job context
+function inferCertifications(
+  application: Record<string, unknown> | null,
+  jobListing: Record<string, unknown> | null
+): string {
+  // Check custom_questions for certification answers
+  const customQ = application?.custom_questions as Record<string, unknown>;
+  if (customQ) {
+    const certKeys = Object.keys(customQ).filter(k => 
+      k.toLowerCase().includes('cert') || k.toLowerCase().includes('license')
+    );
+    if (certKeys.length > 0) {
+      const vals = certKeys.map(k => String(customQ[k])).filter(Boolean);
+      if (vals.length > 0) return vals.join(', ');
+    }
+  }
+  
+  // Check education_level for certification mentions
+  const edu = (application?.education_level as string) || '';
+  const certPatterns = ['cissp', 'cism', 'ceh', 'comptia', 'security+', 'network+', 'aws', 'azure', 'gcp', 'oscp', 'ccna', 'ccnp'];
+  const found = certPatterns.filter(c => edu.toLowerCase().includes(c));
+  if (found.length > 0) return found.join(', ').toUpperCase();
+  
+  return 'not specified';
+}
+
+// Infer security clearance level from application data
+function inferClearanceLevel(application: Record<string, unknown> | null): string {
+  if (!application) return 'not specified';
+  
+  const customQ = application.custom_questions as Record<string, unknown>;
+  if (customQ) {
+    const clearanceKeys = Object.keys(customQ).filter(k =>
+      k.toLowerCase().includes('clearance') || k.toLowerCase().includes('security level')
+    );
+    if (clearanceKeys.length > 0) {
+      const val = String(customQ[clearanceKeys[0]]).trim();
+      if (val && val.toLowerCase() !== 'no' && val.toLowerCase() !== 'none') return val;
+    }
+  }
+  
+  return 'not specified';
+}
+
+// Infer required certifications from job listing
+function inferRequiredCertifications(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'not specified';
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
+  
+  const certMap: Record<string, string> = {
+    'cissp': 'CISSP', 'cism': 'CISM', 'ceh': 'CEH', 'oscp': 'OSCP',
+    'comptia': 'CompTIA', 'security+': 'Security+', 'network+': 'Network+',
+    'aws certified': 'AWS Certified', 'azure': 'Azure Certified',
+    'ccna': 'CCNA', 'ccnp': 'CCNP', 'itil': 'ITIL',
+    'pmp': 'PMP', 'scrum': 'Scrum Certified'
+  };
+  
+  const found: string[] = [];
+  for (const [pattern, label] of Object.entries(certMap)) {
+    if (combined.includes(pattern)) found.push(label);
+  }
+  
+  return found.length > 0 ? found.join(', ') : 'not specified';
 }
