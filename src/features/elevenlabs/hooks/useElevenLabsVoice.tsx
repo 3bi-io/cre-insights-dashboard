@@ -9,6 +9,7 @@ import {
   useVoiceAgentConnection, 
   JobContext 
 } from '@/features/elevenlabs';
+import { useJobBenefits, benefitsToVoiceContext } from '@/config/benefits.config';
 
 export const useElevenLabsVoice = () => {
   const [selectedJob, setSelectedJob] = useState<JobContext | null>(null);
