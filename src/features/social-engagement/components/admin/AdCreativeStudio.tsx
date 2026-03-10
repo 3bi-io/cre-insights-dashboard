@@ -18,13 +18,12 @@ import { ExportMenu } from './ExportMenu';
 import { SavedCreativesGallery } from './SavedCreativesGallery';
 import { useAdCreative } from '../../hooks/useAdCreative';
 import { validateContent, PLATFORM_LIMITS, getCharacterCount } from '../../utils/platformLimits';
+import { BENEFIT_OPTIONS, type BenefitId } from '@/config/benefits.config';
 import { 
   JOB_TYPES, 
-  BENEFIT_OPTIONS, 
   ASPECT_RATIOS, 
   MEDIA_TYPES,
   type JobType,
-  type BenefitId,
   type AspectRatio,
   type MediaType,
   type SocialBeaconPlatform,

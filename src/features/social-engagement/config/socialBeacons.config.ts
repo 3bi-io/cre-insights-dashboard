@@ -230,23 +230,10 @@ export type JobType = typeof JOB_TYPES[number]['id'];
 
 /**
  * Benefit options for ad creative generation
+ * Re-exported from centralized benefits config
  */
-export const BENEFIT_OPTIONS = [
-  { id: 'sign_on_bonus', label: '$5k Sign-on Bonus', icon: 'DollarSign' },
-  { id: 'home_weekly', label: 'Home Weekly', icon: 'Home' },
-  { id: 'new_equipment', label: 'New Equipment', icon: 'Truck' },
-  { id: 'full_benefits', label: 'Full Benefits', icon: 'Heart' },
-  { id: 'pet_friendly', label: 'Pet Friendly', icon: 'PawPrint' },
-  { id: 'no_touch_freight', label: 'No Touch Freight', icon: 'Package' },
-  { id: 'paid_orientation', label: 'Paid Orientation', icon: 'GraduationCap' },
-  { id: 'safety_bonuses', label: 'Safety Bonuses', icon: 'Shield' },
-  { id: 'rider_policy', label: 'Rider Policy', icon: 'Users' },
-  { id: 'direct_deposit', label: 'Direct Deposit', icon: 'Wallet' },
-  { id: 'referral_bonus', label: 'Referral Bonus', icon: 'Gift' },
-  { id: 'health_insurance', label: 'Health Insurance', icon: 'HeartPulse' },
-] as const;
-
-export type BenefitId = typeof BENEFIT_OPTIONS[number]['id'];
+export { BENEFIT_OPTIONS } from '@/config/benefits.config';
+export type { BenefitId } from '@/config/benefits.config';
 
 /**
  * Aspect ratio options for ad creatives
