@@ -56,8 +56,16 @@ export const useElevenLabsVoice = () => {
     },
   });
 
+  // Fetch structured benefits for the selected job
+  const { data: jobBenefits } = useJobBenefits(selectedJob?.jobId);
+
   const startVoiceApplication = async (job: JobContext) => {
     try {
+      // Build benefits string from structured data if available
+      const benefitsText = jobBenefits?.length 
+        ? benefitsToVoiceContext(jobBenefits)
+        : job.benefits;
+
       const jobContext = {
         jobId: job.jobId,
         jobTitle: job.jobTitle,
@@ -65,11 +73,11 @@ export const useElevenLabsVoice = () => {
         company: job.company || 'Company',
         location: job.location || 'Various locations',
         salary: job.salary || 'Competitive salary',
+        benefits: benefitsText,
         organizationId: job.organizationId,
         clientId: job.clientId,
         candidateName: job.candidateName,
         requirements: job.requirements,
-        benefits: job.benefits
       };
 
       setSelectedJob(jobContext);
