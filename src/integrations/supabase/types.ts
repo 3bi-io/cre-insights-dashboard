@@ -7965,6 +7965,7 @@ export type Database = {
           agent_id: string
           agent_name: string
           agent_phone_number_id: string | null
+          channels: string[]
           client_id: string | null
           created_at: string
           created_by: string | null
@@ -7978,11 +7979,13 @@ export type Database = {
           organization_id: string | null
           updated_at: string
           voice_id: string | null
+          whatsapp_phone_number_id: string | null
         }
         Insert: {
           agent_id: string
           agent_name: string
           agent_phone_number_id?: string | null
+          channels?: string[]
           client_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -7996,11 +7999,13 @@ export type Database = {
           organization_id?: string | null
           updated_at?: string
           voice_id?: string | null
+          whatsapp_phone_number_id?: string | null
         }
         Update: {
           agent_id?: string
           agent_name?: string
           agent_phone_number_id?: string | null
+          channels?: string[]
           client_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -8014,6 +8019,7 @@ export type Database = {
           organization_id?: string | null
           updated_at?: string
           voice_id?: string | null
+          whatsapp_phone_number_id?: string | null
         }
         Relationships: [
           {
