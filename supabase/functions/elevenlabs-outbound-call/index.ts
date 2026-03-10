@@ -1096,3 +1096,88 @@ function inferFreightType(jobListing: Record<string, unknown> | null): string {
   if (combined.includes('intermodal')) return 'intermodal';
   return 'general';
 }
+
+// Industry detection based on job title, summary, and organization
+function inferJobIndustry(
+  jobListing: Record<string, unknown> | null,
+  organization: Record<string, unknown> | null
+): string {
+  const combined = [
+    (jobListing?.title || jobListing?.job_title) as string || '',
+    jobListing?.job_summary as string || '',
+    organization?.name as string || '',
+    organization?.description as string || ''
+  ].join(' ').toLowerCase();
+
+  if (combined.match(/cyber|infosec|information security|soc |siem|penetration|vulnerability|threat/)) return 'cybersecurity';
+  if (combined.match(/software|developer|engineer|devops|cloud|full.?stack|frontend|backend/)) return 'technology';
+  if (combined.match(/truck|cdl|driver|freight|dispatch|fleet|otr|ltl/)) return 'trucking';
+  if (combined.match(/nurse|rn |lpn|healthcare|medical|clinical|hospital/)) return 'healthcare';
+  if (combined.match(/warehouse|forklift|logistics|supply chain/)) return 'logistics';
+  return 'general';
+}
+
+// Extract certifications from application custom data or infer from job context
+function inferCertifications(
+  application: Record<string, unknown> | null,
+  jobListing: Record<string, unknown> | null
+): string {
+  // Check custom_questions for certification answers
+  const customQ = application?.custom_questions as Record<string, unknown>;
+  if (customQ) {
+    const certKeys = Object.keys(customQ).filter(k => 
+      k.toLowerCase().includes('cert') || k.toLowerCase().includes('license')
+    );
+    if (certKeys.length > 0) {
+      const vals = certKeys.map(k => String(customQ[k])).filter(Boolean);
+      if (vals.length > 0) return vals.join(', ');
+    }
+  }
+  
+  // Check education_level for certification mentions
+  const edu = (application?.education_level as string) || '';
+  const certPatterns = ['cissp', 'cism', 'ceh', 'comptia', 'security+', 'network+', 'aws', 'azure', 'gcp', 'oscp', 'ccna', 'ccnp'];
+  const found = certPatterns.filter(c => edu.toLowerCase().includes(c));
+  if (found.length > 0) return found.join(', ').toUpperCase();
+  
+  return 'not specified';
+}
+
+// Infer security clearance level from application data
+function inferClearanceLevel(application: Record<string, unknown> | null): string {
+  if (!application) return 'not specified';
+  
+  const customQ = application.custom_questions as Record<string, unknown>;
+  if (customQ) {
+    const clearanceKeys = Object.keys(customQ).filter(k =>
+      k.toLowerCase().includes('clearance') || k.toLowerCase().includes('security level')
+    );
+    if (clearanceKeys.length > 0) {
+      const val = String(customQ[clearanceKeys[0]]).trim();
+      if (val && val.toLowerCase() !== 'no' && val.toLowerCase() !== 'none') return val;
+    }
+  }
+  
+  return 'not specified';
+}
+
+// Infer required certifications from job listing
+function inferRequiredCertifications(jobListing: Record<string, unknown> | null): string {
+  if (!jobListing) return 'not specified';
+  const combined = `${(jobListing?.title || jobListing?.job_title) as string || ''} ${jobListing?.job_summary || ''}`.toLowerCase();
+  
+  const certMap: Record<string, string> = {
+    'cissp': 'CISSP', 'cism': 'CISM', 'ceh': 'CEH', 'oscp': 'OSCP',
+    'comptia': 'CompTIA', 'security+': 'Security+', 'network+': 'Network+',
+    'aws certified': 'AWS Certified', 'azure': 'Azure Certified',
+    'ccna': 'CCNA', 'ccnp': 'CCNP', 'itil': 'ITIL',
+    'pmp': 'PMP', 'scrum': 'Scrum Certified'
+  };
+  
+  const found: string[] = [];
+  for (const [pattern, label] of Object.entries(certMap)) {
+    if (combined.includes(pattern)) found.push(label);
+  }
+  
+  return found.length > 0 ? found.join(', ') : 'not specified';
+}
