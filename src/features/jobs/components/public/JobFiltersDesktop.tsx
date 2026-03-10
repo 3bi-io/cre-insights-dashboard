@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search } from 'lucide-react';
 import type { PublicJobSortOption, PublicClientOption } from '../../types';
+import type { PublicCategoryOption } from '../../hooks/usePublicJobsPage';
 
 interface JobFiltersDesktopProps {
   searchTerm: string;
@@ -11,10 +12,13 @@ interface JobFiltersDesktopProps {
   onLocationChange: (value: string) => void;
   clientFilter: string;
   onClientChange: (value: string) => void;
+  categoryFilter: string;
+  onCategoryChange: (value: string) => void;
   sortBy: PublicJobSortOption;
   onSortChange: (value: PublicJobSortOption) => void;
   locations: string[];
   clients: PublicClientOption[];
+  categories: PublicCategoryOption[];
 }
 
 /**
@@ -28,10 +32,13 @@ export function JobFiltersDesktop({
   onLocationChange,
   clientFilter,
   onClientChange,
+  categoryFilter,
+  onCategoryChange,
   sortBy,
   onSortChange,
   locations,
-  clients
+  clients,
+  categories
 }: JobFiltersDesktopProps) {
   return (
     <div className="hidden lg:block">
@@ -69,7 +76,7 @@ export function JobFiltersDesktop({
           </Select>
         </div>
 
-        {/* Location and Sort Row */}
+        {/* Location, Category and Sort Row */}
         <div className="flex gap-4">
           <Select 
             name="location-filter" 
@@ -84,6 +91,24 @@ export function JobFiltersDesktop({
               {locations.map((location) => (
                 <SelectItem key={location} value={location}>
                   {location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select 
+            name="category-filter" 
+            value={categoryFilter || "all"} 
+            onValueChange={(val) => onCategoryChange(val === "all" ? "" : val)}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border shadow-md z-50">
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
                 </SelectItem>
               ))}
             </SelectContent>

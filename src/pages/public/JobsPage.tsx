@@ -22,8 +22,9 @@ const JobsPageContent = () => {
     searchTerm, setSearchTerm,
     locationFilter, setLocationFilter,
     clientFilter, setClientFilter,
+    categoryFilter, setCategoryFilter,
     sortBy, setSortBy,
-    jobs, totalCount, locations, clients,
+    jobs, totalCount, locations, clients, categories,
     isLoading, isFetchingMore, hasMore, error, loadMore
   } = usePublicJobsPage();
 
@@ -68,6 +69,7 @@ const JobsPageContent = () => {
     { label: `Search: "${searchTerm}"`, value: searchTerm, onClear: () => setSearchTerm('') },
     { label: locationFilter, value: locationFilter, onClear: () => setLocationFilter(''), emoji: '📍' },
     { label: clients.find(c => c.id === clientFilter)?.name || clientFilter, value: clientFilter, onClear: () => setClientFilter(''), emoji: '🏢' },
+    { label: categories.find(c => c.id === categoryFilter)?.name || categoryFilter, value: categoryFilter, onClear: () => setCategoryFilter(''), emoji: '📂' },
   ];
 
   return (
@@ -99,21 +101,23 @@ const JobsPageContent = () => {
             searchTerm={searchTerm} setSearchTerm={setSearchTerm}
             locationFilter={locationFilter} setLocationFilter={setLocationFilter}
             clientFilter={clientFilter} setClientFilter={setClientFilter}
+            categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
             sortBy={sortBy} setSortBy={setSortBy}
-            locations={locations} clients={clients} totalCount={totalCount}
+            locations={locations} clients={clients} categories={categories} totalCount={totalCount}
           />
 
           <JobFiltersDesktop
             searchTerm={searchTerm} onSearchChange={setSearchTerm}
             locationFilter={locationFilter} onLocationChange={setLocationFilter}
             clientFilter={clientFilter} onClientChange={setClientFilter}
+            categoryFilter={categoryFilter} onCategoryChange={setCategoryFilter}
             sortBy={sortBy} onSortChange={setSortBy}
-            locations={locations} clients={clients}
+            locations={locations} clients={clients} categories={categories}
           />
 
           <ActiveFilterChips
             chips={filterChips}
-            onClearAll={() => { setSearchTerm(''); setLocationFilter(''); setClientFilter(''); }}
+            onClearAll={() => { setSearchTerm(''); setLocationFilter(''); setClientFilter(''); setCategoryFilter(''); }}
           />
 
           <JobsResultsCount filteredCount={jobs.length} totalCount={totalCount} />
