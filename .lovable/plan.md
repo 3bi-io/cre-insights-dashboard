@@ -1,40 +1,41 @@
 
 
-## /jobs Page Improvements Plan
+# Centralized Benefits Data Source — IMPLEMENTED
 
-### 1. Server-Side Location Filter Options
-**Problem**: Locations are derived from currently loaded jobs (max 50 per page), giving users an incomplete filter list.
-**Fix**: Add a query to fetch distinct `city, state` combinations from `job_listings` where `status = 'active'` and `is_hidden = false`. Similar pattern to how `clients` are fetched from `public_client_info`.
+## What was done
 
-### 2. Debounce Search Input
-**Problem**: Every keystroke fires a new paginated query, causing unnecessary API calls and UI flicker.
-**Fix**: Add a 300ms debounce to `searchTerm` before passing it to `usePaginatedPublicJobs`. Use a `useDebouncedValue` hook — keep the input responsive with local state, debounce the query trigger.
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-### 3. Remove Duplicate `formatSalary`
-**Problem**: `PublicJobCard` defines its own `formatSalary` inline (lines 47-56) while `src/utils/jobDisplayUtils.ts` exports an identical function.
-**Fix**: Import and use `formatSalary` from `jobDisplayUtils` in `PublicJobCard`. Delete the inline copy.
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-### 4. URL-Persisted Filters
-**Problem**: Only `clientFilter` reads from URL params. Search, location, and sort are ephemeral — users can't share or bookmark a filtered view.
-**Fix**: Sync all filter state to URL search params (`?q=`, `&location=`, `&client=`, `&sort=`). Initialize from `useSearchParams` and update params on change. This also gives browser back/forward navigation through filter states.
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-### 5. Expose Category Filter
-**Problem**: The type system and backend support `categoryFilter`, but no UI exposes it.
-**Fix**: Add a category filter dropdown to both `JobFiltersDesktop` and `MobileFilterSheet`. Fetch categories from `job_categories` table. Wire through `usePublicJobsPage`.
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-### Implementation Order
-1. Debounce search (quick win, biggest UX impact)
-2. Remove duplicate `formatSalary` (cleanup)
-3. Server-side locations query
-4. URL-persisted filters
-5. Category filter UI
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
-### Files to Change
-| File | Change |
-|------|--------|
-| `src/features/jobs/hooks/usePublicJobsPage.ts` | Add debounce, URL param sync, server-side locations query, category state |
-| `src/components/public/PublicJobCard.tsx` | Import shared `formatSalary`, remove inline copy |
-| `src/features/jobs/components/public/JobFiltersDesktop.tsx` | Add category dropdown |
-| `src/components/public/MobileFilterSheet.tsx` | Add category dropdown |
-| `src/pages/public/JobsPage.tsx` | Wire category filter + chips |
-
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`

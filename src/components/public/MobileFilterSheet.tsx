@@ -23,10 +23,13 @@ interface MobileFilterSheetProps {
   setLocationFilter: (value: string) => void;
   clientFilter: string;
   setClientFilter: (value: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (value: string) => void;
   sortBy: 'recent' | 'title' | 'salary-high' | 'salary-low';
   setSortBy: (value: 'recent' | 'title' | 'salary-high' | 'salary-low') => void;
   locations: string[];
   clients: FilterOption[];
+  categories: FilterOption[];
   totalCount: number;
 }
 
@@ -37,16 +40,20 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
   setLocationFilter,
   clientFilter,
   setClientFilter,
+  categoryFilter,
+  setCategoryFilter,
   sortBy,
   setSortBy,
   locations,
   clients,
+  categories,
   totalCount,
 }) => {
   // Count active filters (excluding search)
   const activeFilterCount = [
     locationFilter,
     clientFilter,
+    categoryFilter,
     sortBy !== 'recent' ? sortBy : '',
   ].filter(Boolean).length;
 
@@ -54,10 +61,12 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
     setSearchTerm('');
     setLocationFilter('');
     setClientFilter('');
+    setCategoryFilter('');
     setSortBy('recent');
   };
 
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || '';
+  const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || '';
 
   return (
     <div className="lg:hidden">
@@ -119,6 +128,28 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
                       {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Category Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Category</label>
+                  <Select 
+                    name="category-filter"
+                    value={categoryFilter || "all"} 
+                    onValueChange={(val) => setCategoryFilter(val === "all" ? "" : val)}
+                  >
+                    <SelectTrigger className="w-full h-12">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border shadow-md z-50">
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -190,6 +221,14 @@ export const MobileFilterSheet: React.FC<MobileFilterSheetProps> = ({
               <Badge variant="secondary" className="gap-1 shrink-0">
                 {getClientName(clientFilter)}
                 <button onClick={() => setClientFilter('')} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {categoryFilter && (
+              <Badge variant="secondary" className="gap-1 shrink-0">
+                {getCategoryName(categoryFilter)}
+                <button onClick={() => setCategoryFilter('')} className="ml-1">
                   <X className="h-3 w-3" />
                 </button>
               </Badge>

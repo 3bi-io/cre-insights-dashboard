@@ -1,10 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { usePaginatedPublicJobs } from '@/hooks/usePaginatedPublicJobs';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { queryKeys } from '@/lib/queryKeys';
 import type { PublicJob, PublicJobSortOption, PublicClientOption } from '../types';
+
+export interface PublicCategoryOption {
+  id: string;
+  name: string;
+}
 
 export interface UsePublicJobsPageReturn {
   // Filter state
@@ -14,6 +20,8 @@ export interface UsePublicJobsPageReturn {
   setLocationFilter: (value: string) => void;
   clientFilter: string;
   setClientFilter: (value: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (value: string) => void;
   sortBy: PublicJobSortOption;
   setSortBy: (value: PublicJobSortOption) => void;
 
@@ -22,6 +30,7 @@ export interface UsePublicJobsPageReturn {
   totalCount: number;
   locations: string[];
   clients: PublicClientOption[];
+  categories: PublicCategoryOption[];
 
   // Loading states
   isLoading: boolean;
@@ -33,18 +42,50 @@ export interface UsePublicJobsPageReturn {
   loadMore: () => void;
 }
 
+const VALID_SORTS: PublicJobSortOption[] = ['recent', 'title', 'salary-high', 'salary-low'];
+
 /**
  * Hook to manage all state and data for the public jobs page
  * Encapsulates filter state, pagination, and derived data
+ * All filters are synced to URL search params for shareability
  */
 export function usePublicJobsPage(): UsePublicJobsPageReturn {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter state — initialise clientFilter from URL ?client= param
-  const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [clientFilter, setClientFilter] = useState(() => searchParams.get('client') ?? '');
-  const [sortBy, setSortBy] = useState<PublicJobSortOption>('recent');
+  // Initialise filter state from URL params
+  const [searchTerm, setSearchTermLocal] = useState(() => searchParams.get('q') ?? '');
+  const [locationFilter, setLocationFilterLocal] = useState(() => searchParams.get('location') ?? '');
+  const [clientFilter, setClientFilterLocal] = useState(() => searchParams.get('client') ?? '');
+  const [categoryFilter, setCategoryFilterLocal] = useState(() => searchParams.get('category') ?? '');
+  const [sortBy, setSortByLocal] = useState<PublicJobSortOption>(() => {
+    const param = searchParams.get('sort');
+    return param && VALID_SORTS.includes(param as PublicJobSortOption)
+      ? (param as PublicJobSortOption)
+      : 'recent';
+  });
+
+  // URL sync helper — updates URL params without navigation
+  const updateParams = useCallback((key: string, value: string) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (value) {
+        next.set(key, value);
+      } else {
+        next.delete(key);
+      }
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // Wrapped setters that sync to URL
+  const setSearchTerm = useCallback((v: string) => { setSearchTermLocal(v); updateParams('q', v); }, [updateParams]);
+  const setLocationFilter = useCallback((v: string) => { setLocationFilterLocal(v); updateParams('location', v); }, [updateParams]);
+  const setClientFilter = useCallback((v: string) => { setClientFilterLocal(v); updateParams('client', v); }, [updateParams]);
+  const setCategoryFilter = useCallback((v: string) => { setCategoryFilterLocal(v); updateParams('category', v); }, [updateParams]);
+  const setSortBy = useCallback((v: PublicJobSortOption) => { setSortByLocal(v); updateParams('sort', v === 'recent' ? '' : v); }, [updateParams]);
+
+  // Debounce search term for API calls (300ms)
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   // Fetch paginated jobs with filters and sorting
   const {
@@ -56,9 +97,10 @@ export function usePublicJobsPage(): UsePublicJobsPageReturn {
     loadMore,
     error
   } = usePaginatedPublicJobs({
-    searchTerm,
+    searchTerm: debouncedSearchTerm,
     locationFilter,
     clientFilter,
+    categoryFilter,
     sortBy
   });
 
@@ -77,51 +119,77 @@ export function usePublicJobsPage(): UsePublicJobsPageReturn {
       if (error) throw error;
       return (data || []) as PublicClientOption[];
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Derive unique locations from loaded jobs
-  const locations = useMemo(() => {
-    if (!jobs || jobs.length === 0) return [];
-    const locationSet = new Set<string>();
-    jobs.forEach(job => {
-      if (job.city && job.state) {
-        locationSet.add(`${job.city}, ${job.state}`);
-      }
-      if (job.location) {
-        locationSet.add(job.location);
-      }
-    });
-    return Array.from(locationSet).sort();
-  }, [jobs]);
+  // Fetch distinct locations server-side
+  const { data: serverLocations } = useQuery({
+    queryKey: [...queryKeys.public.all, 'locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('job_listings')
+        .select('city, state, location')
+        .eq('status', 'active')
+        .eq('is_hidden', false);
 
-  // Memoized clients list
+      if (error) throw error;
+
+      const locationSet = new Set<string>();
+      (data || []).forEach((row: any) => {
+        if (row.city && row.state) {
+          locationSet.add(`${row.city}, ${row.state}`);
+        }
+        if (row.location) {
+          locationSet.add(row.location);
+        }
+      });
+      return Array.from(locationSet).sort();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Fetch job categories
+  const { data: allCategories } = useQuery({
+    queryKey: [...queryKeys.public.all, 'categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('job_categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      return (data || []) as PublicCategoryOption[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const locations = useMemo(() => serverLocations || [], [serverLocations]);
   const clients = useMemo(() => allClients || [], [allClients]);
+  const categories = useMemo(() => allCategories || [], [allCategories]);
 
   return {
-    // Filter state
     searchTerm,
     setSearchTerm,
     locationFilter,
     setLocationFilter,
     clientFilter,
     setClientFilter,
+    categoryFilter,
+    setCategoryFilter,
     sortBy,
     setSortBy,
 
-    // Data
     jobs,
     totalCount,
     locations,
     clients,
+    categories,
 
-    // Loading states
     isLoading,
     isFetchingMore,
     hasMore,
     error: error as Error | null,
 
-    // Actions
     loadMore
   };
 }
