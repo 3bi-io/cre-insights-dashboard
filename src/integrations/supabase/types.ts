@@ -8569,6 +8569,13 @@ export type Database = {
           zip: string
         }[]
       }
+      get_conversation_message_counts: {
+        Args: { conversation_ids: string[] }
+        Returns: {
+          conversation_id: string
+          message_count: number
+        }[]
+      }
       get_current_user_role: { Args: never; Returns: string }
       get_dashboard_metrics: { Args: never; Returns: Json }
       get_next_business_hours_start:
