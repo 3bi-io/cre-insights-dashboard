@@ -24,7 +24,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { useOutboundCallAnalytics } from '@/hooks/useOutboundCallAnalytics';
+import { useOutboundCallAnalytics } from '@/features/elevenlabs/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface OutboundCallAnalyticsProps {

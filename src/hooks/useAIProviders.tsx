@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useOpenAI } from './useOpenAI';
 import { useAnthropic } from './useAnthropic';
-import { useElevenLabsVoice } from './useElevenLabsVoice';
+import { useElevenLabsVoice } from '@/features/elevenlabs/hooks';
 import { useAIConnectionManager } from './useAIConnectionManager';
 import { logger } from '@/lib/logger';
 
