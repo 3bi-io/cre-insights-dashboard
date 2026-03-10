@@ -8,7 +8,7 @@ import { LogoAvatar, LogoAvatarImage, LogoAvatarFallback } from '@/components/ui
 import { JobContext } from '@/features/elevenlabs';
 import { sanitizers } from '@/utils/validation';
 import { useIsVoiceSupported } from '@/hooks/useVoiceCompatibility';
-import { getDisplayCompanyName } from '@/utils/jobDisplayUtils';
+import { getDisplayCompanyName, formatSalary } from '@/utils/jobDisplayUtils';
 import {
   Tooltip,
   TooltipContent,
