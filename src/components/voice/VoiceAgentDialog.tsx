@@ -5,11 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Edit, ExternalLink, Info } from 'lucide-react';
+import { Plus, Edit, ExternalLink, Info, MessageCircle } from 'lucide-react';
 import { useOrganizations } from '@/hooks/useOrganizations';
 import { LLMModelSelect } from '@/features/elevenlabs';
+import { AgentChannel } from '@/features/elevenlabs/types';
 
 interface VoiceAgentDialogProps {
   agent?: any;
