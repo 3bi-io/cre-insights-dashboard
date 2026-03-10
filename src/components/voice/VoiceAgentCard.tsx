@@ -12,7 +12,9 @@ import {
   Edit, 
   Trash2, 
   Building,
-  AlertTriangle
+  AlertTriangle,
+  Globe,
+  MessageCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import VoiceAgentDialog from './VoiceAgentDialog';
@@ -172,6 +174,18 @@ const VoiceAgentCard: React.FC<VoiceAgentCardProps> = ({
             <Badge variant={browserCompatible ? "outline" : "destructive"} className="text-xs">
               {browserCompatible ? "Compatible ✓" : "Not Supported"}
             </Badge>
+          </div>
+          {/* Channel Badges */}
+          <div className="flex items-center gap-1 flex-wrap">
+            <span>Channels:</span>
+            {(agent.channels || ['phone']).map((ch) => (
+              <Badge key={ch} variant="outline" className="text-xs gap-1">
+                {ch === 'phone' && <Phone className="w-3 h-3" />}
+                {ch === 'web' && <Globe className="w-3 h-3" />}
+                {ch === 'whatsapp' && <MessageCircle className="w-3 h-3" />}
+                {ch.charAt(0).toUpperCase() + ch.slice(1)}
+              </Badge>
+            ))}
           </div>
           {agent.is_outbound_enabled && (
             <div className="flex items-center gap-2">
