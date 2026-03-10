@@ -36,7 +36,9 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
     llm_model: 'gpt-4o-mini',
     is_active: true,
     agent_phone_number_id: '',
-    is_outbound_enabled: false
+    is_outbound_enabled: false,
+    channels: ['phone', 'web'] as AgentChannel[],
+    whatsapp_phone_number_id: ''
   });
 
   const { organizations } = useOrganizations();
