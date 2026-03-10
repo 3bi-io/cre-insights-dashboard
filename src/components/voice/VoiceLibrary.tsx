@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useElevenLabsVoices, ElevenLabsVoice } from '@/hooks/useElevenLabsAPI';
+import { useElevenLabsVoices } from '@/features/elevenlabs/hooks';
+import type { ElevenLabsVoice } from '@/features/elevenlabs/hooks';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';

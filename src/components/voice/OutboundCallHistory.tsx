@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useOutboundCalls } from '@/hooks/useOutboundCalls';
+import { useOutboundCalls } from '@/features/elevenlabs/hooks';
 import type { OutboundCallStatus } from '@/features/elevenlabs/types/outboundCall';
 
 interface OutboundCallHistoryProps {

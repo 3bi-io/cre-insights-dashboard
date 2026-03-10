@@ -8,44 +8,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
+import type { Conversation, Transcript, Audio } from '@/features/elevenlabs/types';
 
-interface Conversation {
-  id: string;
-  organization_id: string;
-  voice_agent_id: string;
-  conversation_id: string;
-  agent_id: string;
-  status: string;
-  started_at: string;
-  ended_at: string | null;
-  duration_seconds: number | null;
-  metadata: Record<string, unknown>;
+// Extend Conversation with message_count for local use
+interface ConversationWithCount extends Conversation {
   message_count?: number;
-  voice_agents?: {
-    agent_name: string;
-    organizations?: {
-      name: string;
-    };
-  };
-}
-
-interface Transcript {
-  id: string;
-  conversation_id: string;
-  speaker: string;
-  message: string;
-  timestamp: string;
-  sequence_number: number;
-  confidence_score: number | null;
-}
-
-interface Audio {
-  id: string;
-  conversation_id: string;
-  audio_url: string;
-  duration_seconds: number | null;
-  file_size_bytes: number | null;
-  format: string;
 }
 
 export const useElevenLabsConversations = (voiceAgentId?: string) => {
