@@ -54,7 +54,9 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         llm_model: agent.llm_model || 'gpt-4o-mini',
         is_active: agent.is_active ?? true,
         agent_phone_number_id: agent.agent_phone_number_id || '',
-        is_outbound_enabled: agent.is_outbound_enabled ?? false
+        is_outbound_enabled: agent.is_outbound_enabled ?? false,
+        channels: agent.channels || ['phone', 'web'],
+        whatsapp_phone_number_id: agent.whatsapp_phone_number_id || ''
       });
     } else {
       setFormData({
@@ -66,7 +68,9 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
         llm_model: 'gpt-4o-mini',
         is_active: true,
         agent_phone_number_id: '',
-        is_outbound_enabled: false
+        is_outbound_enabled: false,
+        channels: ['phone', 'web'],
+        whatsapp_phone_number_id: ''
       });
     }
   }, [agent, open]);
