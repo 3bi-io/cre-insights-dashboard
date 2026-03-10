@@ -1543,6 +1543,42 @@ export type Database = {
           },
         ]
       }
+      benefits_catalog: {
+        Row: {
+          category: string
+          created_at: string
+          icon: string
+          id: string
+          is_active: boolean
+          keywords: string[]
+          label: string
+          social_copy: Json
+          sort_order: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id: string
+          is_active?: boolean
+          keywords?: string[]
+          label: string
+          social_copy?: Json
+          sort_order?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          keywords?: string[]
+          label?: string
+          social_copy?: Json
+          sort_order?: number
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -4046,6 +4082,39 @@ export type Database = {
           xml_feed_settings?: Json | null
         }
         Relationships: []
+      }
+      job_listing_benefits: {
+        Row: {
+          benefit_id: string
+          custom_value: string | null
+          job_id: string
+        }
+        Insert: {
+          benefit_id: string
+          custom_value?: string | null
+          job_id: string
+        }
+        Update: {
+          benefit_id?: string
+          custom_value?: string | null
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listing_benefits_benefit_id_fkey"
+            columns: ["benefit_id"]
+            isOneToOne: false
+            referencedRelation: "benefits_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_listing_benefits_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_listings: {
         Row: {

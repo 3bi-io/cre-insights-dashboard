@@ -10,6 +10,7 @@ import {
   classifyInteraction,
   SocialPlatform 
 } from './social-ai-service.ts';
+import { getBenefitsKeywords } from './benefits-catalog.ts';
 
 // ============= Quick Classification (No AI) =============
 
@@ -38,6 +39,7 @@ const INTENT_KEYWORDS: Record<IntentType, string[]> = {
   benefits_question: [
     'benefits', 'insurance', 'health', '401k', 'retirement', 'pto',
     'vacation', 'medical', 'dental', 'vision', 'home time',
+    // Additional keywords loaded dynamically from benefits_catalog at runtime
   ],
   support: [
     'help', 'issue', 'problem', 'can\'t', 'unable', 'error',
@@ -135,6 +137,20 @@ export async function hybridClassify(
     };
   }
 ): Promise<ClassificationResult> {
+  // Enrich benefits keywords from catalog before classifying
+  try {
+    const catalogKeywords = await getBenefitsKeywords();
+    const existingKeywords = new Set(INTENT_KEYWORDS.benefits_question);
+    for (const kw of catalogKeywords) {
+      if (!existingKeywords.has(kw)) {
+        INTENT_KEYWORDS.benefits_question.push(kw);
+        existingKeywords.add(kw);
+      }
+    }
+  } catch {
+    // Proceed with static keywords if catalog unavailable
+  }
+
   // Quick classification first
   const quick = quickClassify(content);
   const quickSent = quickSentiment(content);
