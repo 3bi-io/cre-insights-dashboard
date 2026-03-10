@@ -225,6 +225,57 @@ const VoiceAgentDialog: React.FC<VoiceAgentDialogProps> = ({
             <Label htmlFor="is_active">Active</Label>
           </div>
 
+          {/* Channels Configuration */}
+          <div className="border-t pt-4 mt-4 space-y-3">
+            <Label className="font-medium">Deployment Channels</Label>
+            <p className="text-xs text-muted-foreground">
+              Select where this agent is deployed. WhatsApp must also be configured in the ElevenLabs dashboard.
+            </p>
+            <div className="space-y-2">
+              {([
+                { id: 'phone' as AgentChannel, label: 'Phone', desc: 'Inbound & outbound phone calls' },
+                { id: 'web' as AgentChannel, label: 'Web', desc: 'Browser-based voice widget' },
+                { id: 'whatsapp' as AgentChannel, label: 'WhatsApp', desc: 'WhatsApp Business messaging' },
+              ]).map((channel) => (
+                <div key={channel.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`channel-${channel.id}`}
+                    checked={formData.channels.includes(channel.id)}
+                    onCheckedChange={(checked) => {
+                      setFormData({
+                        ...formData,
+                        channels: checked
+                          ? [...formData.channels, channel.id]
+                          : formData.channels.filter(c => c !== channel.id)
+                      });
+                    }}
+                  />
+                  <Label htmlFor={`channel-${channel.id}`} className="text-sm font-normal cursor-pointer">
+                    {channel.label} <span className="text-muted-foreground">— {channel.desc}</span>
+                  </Label>
+                </div>
+              ))}
+            </div>
+
+            {formData.channels.includes('whatsapp') && (
+              <div className="space-y-2 pl-6">
+                <Label htmlFor="whatsapp_phone_number_id">WhatsApp Phone Number ID</Label>
+                <Input
+                  id="whatsapp_phone_number_id"
+                  placeholder="e.g., 1234567890"
+                  value={formData.whatsapp_phone_number_id}
+                  onChange={(e) => setFormData({ ...formData, whatsapp_phone_number_id: e.target.value })}
+                />
+                <Alert>
+                  <MessageCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    WhatsApp is configured natively in ElevenLabs. Go to your agent's <strong>Channels → WhatsApp</strong> in the dashboard to connect your WhatsApp Business account.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+          </div>
+
           {/* Outbound Calling Configuration */}
           <div className="border-t pt-4 mt-4 space-y-4">
             <div className="flex items-center justify-between">
