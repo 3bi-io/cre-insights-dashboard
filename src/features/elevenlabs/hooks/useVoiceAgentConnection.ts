@@ -329,7 +329,7 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           await conversation.startSession({
             agentId,
             dynamicVariables,
-            ...(overrides && { overrides })
+            ...(overrides && { overrides: overrides as any })
           });
         }
 
