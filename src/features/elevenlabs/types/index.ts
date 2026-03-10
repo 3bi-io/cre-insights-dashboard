@@ -137,11 +137,14 @@ export interface ConversationSession {
 
 export interface AgentOverrides {
   agent: {
-    prompt: {
+    prompt?: {
       prompt: string;
     };
     firstMessage: string;
     language: 'en';
+  };
+  tts?: {
+    voiceId: string;
   };
 }
 

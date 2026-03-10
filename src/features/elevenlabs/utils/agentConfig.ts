@@ -5,36 +5,39 @@
 
 import { AgentOverrides, JobContext } from '../types';
 
-export function createJobContextPrompt(job: JobContext): string {
-  const company = job.company || 'our company';
-  const location = job.location || 'various locations';
-  const salary = job.salary || 'competitive compensation package';
-  const description = job.jobDescription || 'Details will be collected during application.';
-
-  return `You are assisting a candidate to apply for ${job.jobTitle} at ${company}. 
-Location: ${location}. 
-Salary: ${salary}. 
-Job Description: ${description}
-
-Personalize the conversation to this specific job and guide the applicant through the application process. 
-Be professional, friendly, and helpful throughout the conversation.`;
-}
-
+/**
+ * Create a personalized first message for the candidate.
+ * The system prompt is managed in the ElevenLabs dashboard;
+ * job context is injected via dynamicVariables.
+ */
 export function createFirstMessage(job: JobContext): string {
   const company = job.company || 'our company';
-  return `I can help you apply for ${job.jobTitle} at ${company}. May I start with your first name?`;
+  const candidateName = job.candidateName;
+  
+  if (candidateName && candidateName !== 'there') {
+    return `Hi ${candidateName}! I can help you apply for the ${job.jobTitle} position at ${company}. Shall we get started?`;
+  }
+  return `Hi there! I can help you apply for the ${job.jobTitle} position at ${company}. May I start with your first name?`;
 }
 
-export function createAgentOverrides(job: JobContext): AgentOverrides {
-  return {
+/**
+ * Build agent overrides — only firstMessage and optional TTS.
+ * The system prompt is NOT overridden so dashboard-configured
+ * instructions (scheduling, data collection, tone) remain intact.
+ */
+export function createAgentOverrides(job: JobContext, voiceId?: string): AgentOverrides {
+  const overrides: AgentOverrides = {
     agent: {
-      prompt: {
-        prompt: createJobContextPrompt(job)
-      },
       firstMessage: createFirstMessage(job),
-      language: 'en' as const
-    }
+      language: 'en' as const,
+    },
   };
+
+  if (voiceId) {
+    overrides.tts = { voiceId };
+  }
+
+  return overrides;
 }
 
 export function normalizeAgentId(agentId: string): string {

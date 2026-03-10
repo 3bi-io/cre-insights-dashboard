@@ -310,9 +310,10 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           });
         }, CONNECTION_TIMEOUT_MS);
 
-        // Build conversation overrides from job context
+        // Build overrides: firstMessage only (prompt managed in ElevenLabs dashboard)
         const jobContext = context?.jobContext as JobContext | undefined;
-        const overrides = jobContext ? createAgentOverrides(jobContext) : undefined;
+        const voiceId = context?.voiceId as string | undefined;
+        const overrides = jobContext ? createAgentOverrides(jobContext, voiceId) : undefined;
 
         logger.info('Starting conversation', { agentId, attempt, dynamicVariables, hasOverrides: !!overrides }, 'VoiceAgentConnection');
         
