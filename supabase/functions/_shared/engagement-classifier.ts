@@ -10,6 +10,7 @@ import {
   classifyInteraction,
   SocialPlatform 
 } from './social-ai-service.ts';
+import { getBenefitsKeywords } from './benefits-catalog.ts';
 
 // ============= Quick Classification (No AI) =============
 
