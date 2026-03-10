@@ -12,7 +12,9 @@ import {
   Edit, 
   Trash2, 
   Building,
-  AlertTriangle
+  AlertTriangle,
+  Globe,
+  MessageCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import VoiceAgentDialog from './VoiceAgentDialog';
