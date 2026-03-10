@@ -221,6 +221,7 @@ function fallbackClassification(content: string): ClassificationResult {
   const supportKeywords = ['help', 'application', 'status', 'submitted', 'interview', 'update'];
   const complaintKeywords = ['frustrated', 'angry', 'terrible', 'worst', 'never', 'lawsuit', 'discrimination'];
   const spamKeywords = ['click here', 'free money', 'bitcoin', 'crypto', 'prize', 'winner'];
+  const salaryKeywords = ['pay', 'salary', 'wage', 'compensation', 'per mile', 'cpm', 'bonus'];
   const benefitsKeywords = ['benefits', 'insurance', 'health', '401k', 'pto', 'vacation', 'retirement',
     'medical', 'dental', 'vision', 'home time', 'pet friendly', 'sign on', 'paid orientation',
     'safety bonus', 'rider policy', 'direct deposit', 'referral bonus', 'no touch freight'];
