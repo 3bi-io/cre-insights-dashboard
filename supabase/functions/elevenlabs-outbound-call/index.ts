@@ -703,6 +703,22 @@ async function processOutboundCall(
       }
     }
 
+    // Fetch org call settings for timezone-aware business hours in dynamic variables
+    if (organizationId) {
+      const { data: callSettings } = await supabase
+        .from('organization_call_settings')
+        .select('business_hours_start, business_hours_end, business_hours_timezone')
+        .eq('organization_id', organizationId)
+        .is('client_id', null)
+        .maybeSingle();
+      
+      if (callSettings) {
+        metadata._business_hours_timezone = callSettings.business_hours_timezone;
+        metadata._business_hours_start = callSettings.business_hours_start?.substring(0, 5);
+        metadata._business_hours_end = callSettings.business_hours_end?.substring(0, 5);
+      }
+    }
+
     // Build dynamic variables for ElevenLabs agent context
     const dynamicVariables = buildDynamicVariables(application, jobListing, organization, metadata);
     logger.info('Dynamic variables for ElevenLabs', { variables: dynamicVariables });
