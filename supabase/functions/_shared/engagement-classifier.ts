@@ -137,6 +137,20 @@ export async function hybridClassify(
     };
   }
 ): Promise<ClassificationResult> {
+  // Enrich benefits keywords from catalog before classifying
+  try {
+    const catalogKeywords = await getBenefitsKeywords();
+    const existingKeywords = new Set(INTENT_KEYWORDS.benefits_question);
+    for (const kw of catalogKeywords) {
+      if (!existingKeywords.has(kw)) {
+        INTENT_KEYWORDS.benefits_question.push(kw);
+        existingKeywords.add(kw);
+      }
+    }
+  } catch {
+    // Proceed with static keywords if catalog unavailable
+  }
+
   // Quick classification first
   const quick = quickClassify(content);
   const quickSent = quickSentiment(content);
