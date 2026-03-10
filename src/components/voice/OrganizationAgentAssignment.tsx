@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Building2, Bot, ExternalLink, Save, X, Edit, Plus } from 'lucide-react';
 import { useOrganizations } from '@/hooks/useOrganizations';
-import { useVoiceAgents } from '@/hooks/useVoiceAgents';
+import { useVoiceAgents } from '@/features/elevenlabs/hooks';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LLMModelSelect } from '@/features/elevenlabs';
 import { useToast } from '@/hooks/use-toast';

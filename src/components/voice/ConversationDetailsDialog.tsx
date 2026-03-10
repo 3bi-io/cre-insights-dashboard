@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { User, Bot, Clock, Calendar, AlertCircle, Share2, Copy, Search, FileText, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
-import { useElevenLabsConversations } from '@/hooks/useElevenLabsConversations';
+import { useElevenLabsConversations } from '@/features/elevenlabs/hooks';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';

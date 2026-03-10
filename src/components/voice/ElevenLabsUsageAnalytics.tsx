@@ -1,4 +1,4 @@
-import { useElevenLabsConnection, useElevenLabsSubscription, useConnectionTest } from '@/hooks/useElevenLabsAPI';
+import { useElevenLabsConnection, useElevenLabsSubscription, useConnectionTest } from '@/features/elevenlabs/hooks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

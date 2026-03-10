@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { useElevenLabsVoice } from '@/hooks/useElevenLabsVoice';
+import { useElevenLabsVoice } from '@/features/elevenlabs/hooks';
 import { VoiceApplicationPanel } from '@/features/elevenlabs';
 import type { JobContext } from '@/features/elevenlabs';
 

@@ -8,44 +8,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
+import type { Conversation, Transcript, Audio } from '@/features/elevenlabs/types';
 
-interface Conversation {
-  id: string;
-  organization_id: string;
-  voice_agent_id: string;
-  conversation_id: string;
-  agent_id: string;
-  status: string;
-  started_at: string;
-  ended_at: string | null;
-  duration_seconds: number | null;
-  metadata: Record<string, unknown>;
+// Extend Conversation with message_count for local use
+interface ConversationWithCount extends Conversation {
   message_count?: number;
-  voice_agents?: {
-    agent_name: string;
-    organizations?: {
-      name: string;
-    };
-  };
-}
-
-interface Transcript {
-  id: string;
-  conversation_id: string;
-  speaker: string;
-  message: string;
-  timestamp: string;
-  sequence_number: number;
-  confidence_score: number | null;
-}
-
-interface Audio {
-  id: string;
-  conversation_id: string;
-  audio_url: string;
-  duration_seconds: number | null;
-  file_size_bytes: number | null;
-  format: string;
 }
 
 export const useElevenLabsConversations = (voiceAgentId?: string) => {
@@ -85,37 +52,26 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
       
       logger.debug('Fetched conversations', { count: conversationsData?.length || 0 }, 'ElevenLabs');
       
-      // Fetch transcript counts for each conversation (batched to avoid URL length limits)
+      // Fetch transcript counts via RPC (single query instead of fetching all rows)
       if (conversationsData && conversationsData.length > 0) {
         const conversationIds = conversationsData.map(c => c.id);
-        const BATCH_SIZE = 100;
-        const allTranscriptRows: { conversation_id: string }[] = [];
+        
+        const { data: countData, error: countError } = await supabase
+          .rpc('get_conversation_message_counts', { conversation_ids: conversationIds });
 
-        for (let i = 0; i < conversationIds.length; i += BATCH_SIZE) {
-          const batch = conversationIds.slice(i, i + BATCH_SIZE);
-          const { data: batchData, error: batchError } = await supabase
-            .from('elevenlabs_transcripts')
-            .select('conversation_id')
-            .in('conversation_id', batch);
-
-          if (batchError) {
-            logger.error('Error fetching transcript counts batch', batchError, 'ElevenLabs');
-          } else if (batchData) {
-            allTranscriptRows.push(...batchData);
+        const messageCounts: Record<string, number> = {};
+        if (countError) {
+          logger.error('Error fetching message counts', countError, 'ElevenLabs');
+        } else if (countData) {
+          for (const row of countData) {
+            messageCounts[row.conversation_id] = Number(row.message_count);
           }
         }
 
-        // Count messages per conversation
-        const messageCounts = allTranscriptRows.reduce((acc, t) => {
-          acc[t.conversation_id] = (acc[t.conversation_id] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-
-        // Return all conversations with message count
         return conversationsData.map(conv => ({
           ...conv,
           message_count: messageCounts[conv.id] || 0
-        })) as Conversation[];
+        })) as ConversationWithCount[];
       }
 
       return [];

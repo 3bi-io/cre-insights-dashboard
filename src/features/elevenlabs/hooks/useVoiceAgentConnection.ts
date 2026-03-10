@@ -322,14 +322,14 @@ export function useVoiceAgentConnection(options: UseVoiceAgentConnectionOptions 
           await conversation.startSession({
             signedUrl: urlResponse.data.signedUrl,
             dynamicVariables,
-            ...(overrides && { overrides })
+            ...(overrides && { overrides: overrides as any })
           });
         } else {
           // Direct agentId connection for public agents
           await conversation.startSession({
             agentId,
             dynamicVariables,
-            ...(overrides && { overrides })
+            ...(overrides && { overrides: overrides as any })
           });
         }
 

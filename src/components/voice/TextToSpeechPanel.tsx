@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useElevenLabsVoices, useTextToSpeech } from '@/hooks/useElevenLabsAPI';
+import { useElevenLabsVoices, useTextToSpeech } from '@/features/elevenlabs/hooks';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
