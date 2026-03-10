@@ -82,7 +82,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
         return conversationsData.map(conv => ({
           ...conv,
           message_count: messageCounts[conv.id] || 0
-        })) as Conversation[];
+        })) as ConversationWithCount[];
       }
 
       return [];
