@@ -42,7 +42,11 @@ export interface CreateVoiceAgentData {
   llm_model?: string;
   agent_phone_number_id?: string;
   is_outbound_enabled?: boolean;
+  channels?: AgentChannel[];
+  whatsapp_phone_number_id?: string;
 }
+
+export type AgentChannel = 'phone' | 'web' | 'whatsapp';
 
 export interface UpdateVoiceAgentData extends Partial<CreateVoiceAgentData> {
   id: string;
