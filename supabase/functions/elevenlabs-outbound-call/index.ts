@@ -923,23 +923,34 @@ function buildDynamicVariables(
   vars.company_name = (organization?.name as string) || 'our company';
   vars.company_description = (organization?.description as string) || '';
   
-  // Business hours context for agent after-hours logic (CST = America/Chicago)
-  const nowCST = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
-  const hour = nowCST.getHours();
-  const minute = nowCST.getMinutes();
-  const currentTimeCST = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  const dayOfWeek = nowCST.getDay(); // 0=Sun, 6=Sat
+  // Business hours context — use org timezone if available, fallback to CST
+  const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+  const orgStart = (metadata._business_hours_start as string) || '09:00';
+  const orgEnd = (metadata._business_hours_end as string) || '16:30';
+  const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
+  const hour = nowLocal.getHours();
+  const minute = nowLocal.getMinutes();
+  const currentTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const dayOfWeek = nowLocal.getDay(); // 0=Sun, 6=Sat
   const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-  const isWithinBusinessHours = isWeekday && (hour > 9 || (hour === 9 && minute >= 0)) && (hour < 16 || (hour === 16 && minute < 30));
   
+  const [startH, startM] = orgStart.split(':').map(Number);
+  const [endH, endM] = orgEnd.split(':').map(Number);
+  const nowMinutes = hour * 60 + minute;
+  const startMinutes = (startH || 9) * 60 + (startM || 0);
+  const endMinutes = (endH || 16) * 60 + (endM || 30);
+  const isWithinBusinessHours = isWeekday && nowMinutes >= startMinutes && nowMinutes < endMinutes;
+  
+  const tzLabel = orgTz.replace(/_/g, ' ').split('/').pop() || orgTz;
   vars.is_after_hours = isWithinBusinessHours ? 'no' : 'yes';
-  vars.current_time_cst = currentTimeCST;
+  vars.current_time = currentTime;
+  vars.current_time_cst = currentTime; // backward compat
   vars.is_weekend = !isWeekday ? 'yes' : 'no';
   vars.business_hours_note = isWithinBusinessHours 
-    ? 'Currently within business hours (9:00 AM - 4:30 PM CST). Recruiter transfer is available.'
-    : 'Currently outside business hours (9:00 AM - 4:30 PM CST). Do NOT attempt to transfer to a recruiter. Instead, let the driver know a recruiter will call them back after 9 AM CST on the next business day.';
+    ? `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available.`
+    : `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day.`;
 
-  // Job context inference
+  // Trucking-specific job context inference
   vars.job_requires_cdl = inferCDLRequirement(jobListing);
   vars.job_cdl_class = inferCDLClass(jobListing);
   vars.job_requires_hazmat = inferHazmatRequirement(jobListing);
@@ -949,6 +960,12 @@ function buildDynamicVariables(
   vars.job_is_otr = inferOTR(jobListing);
   vars.job_is_team = inferTeamDriving(jobListing);
   vars.job_freight_type = inferFreightType(jobListing);
+  
+  // Industry detection and vertical-specific variables
+  vars.job_industry = inferJobIndustry(jobListing, organization);
+  vars.applicant_certifications = inferCertifications(application, jobListing);
+  vars.applicant_clearance_level = inferClearanceLevel(application);
+  vars.job_certifications_required = inferRequiredCertifications(jobListing);
   
   return vars;
 }
