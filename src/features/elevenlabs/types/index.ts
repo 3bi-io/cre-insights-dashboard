@@ -141,7 +141,7 @@ export interface AgentOverrides {
       prompt: string;
     };
     firstMessage: string;
-    language: string;
+    language: 'en';
   };
   tts?: {
     voiceId: string;

@@ -29,7 +29,7 @@ export function createAgentOverrides(job: JobContext, voiceId?: string): AgentOv
   const overrides: AgentOverrides = {
     agent: {
       firstMessage: createFirstMessage(job),
-      language: 'en',
+      language: 'en' as const,
     },
   };
 
