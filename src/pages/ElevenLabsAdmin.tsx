@@ -394,12 +394,14 @@ const ElevenLabsAdmin = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="schedule" className="space-y-4">
-            <SchedulingAnalytics />
-            <RecruiterCalendarConnect />
-            <ScheduledCallbacksDashboard />
-            <CallScheduleSettings />
-          </TabsContent>
+          {(userRole === 'admin' || userRole === 'super_admin') && (
+            <TabsContent value="schedule" className="space-y-4">
+              <SchedulingAnalytics />
+              <RecruiterCalendarConnect />
+              <ScheduledCallbacksDashboard />
+              <CallScheduleSettings />
+            </TabsContent>
+          )}
 
           <TabsContent value="tts" className="space-y-4">
             <TextToSpeechPanel />
