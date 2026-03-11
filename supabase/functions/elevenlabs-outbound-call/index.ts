@@ -1105,6 +1105,7 @@ function buildDynamicVariables(
   vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
   vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
+  vars.is_holiday = (metadata._is_holiday as string) || 'no';
   
   return vars;
 }
