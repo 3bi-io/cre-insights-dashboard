@@ -1308,6 +1308,11 @@ function buildDynamicVariables(
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
   vars.is_holiday = (metadata._is_holiday as string) || 'no';
   
+  // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
+  const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
+  vars.is_after_hours_callback = isAfterHoursCallback ? 'yes' : 'no';
+  vars.callback_purpose = (metadata.callback_purpose as string) || '';
+  
   return vars;
 }
 
