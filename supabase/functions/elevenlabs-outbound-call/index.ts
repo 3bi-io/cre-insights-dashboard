@@ -491,7 +491,7 @@ serve(async (req) => {
           // Fetch the call's org to check business hours and org-specific holidays
           const { data: callMeta } = await supabase
             .from('outbound_calls')
-            .select('organization_id, metadata')
+            .select('organization_id, metadata, retry_count')
             .eq('id', call.id)
             .single();
           
