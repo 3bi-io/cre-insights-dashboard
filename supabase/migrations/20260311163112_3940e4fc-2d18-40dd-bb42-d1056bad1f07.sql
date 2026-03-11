@@ -1,0 +1,1 @@
+ALTER TABLE public.organization_call_settings DROP CONSTRAINT IF EXISTS unique_org_call_settings;
