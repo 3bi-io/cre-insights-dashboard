@@ -1083,6 +1083,12 @@ function buildDynamicVariables(
   vars.applicant_clearance_level = inferClearanceLevel(application);
   vars.job_certifications_required = inferRequiredCertifications(jobListing);
   
+  // Follow-up context for retry calls
+  vars.is_follow_up = (metadata._is_follow_up as string) || 'no';
+  vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
+  vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
+  vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
+  
   return vars;
 }
 
