@@ -656,7 +656,13 @@ export function CallScheduleSettings() {
         </Card>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {lastSavedAt && !isUpdating && (
+          <span className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 animate-in fade-in slide-in-from-right-2 duration-300">
+            <Check className="h-4 w-4" />
+            Saved at {format(lastSavedAt, 'h:mm a')}
+          </span>
+        )}
         <LoadingButton onClick={handleSave} isLoading={isUpdating} loadingText="Saving...">
           Save Schedule Settings
         </LoadingButton>
