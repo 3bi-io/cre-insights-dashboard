@@ -176,73 +176,139 @@ serve(async (req) => {
             syncResults.push({ call_id: call.id, status: 'synced', new_status: mappedStatus });
             logger.info(`Synced call ${call.id}`, { new_status: mappedStatus });
 
-            // Auto-retry on no_answer/busy: schedule with delay to avoid carrier spam filtering
-            if (mappedStatus === 'no_answer' || mappedStatus === 'busy') {
+            // Auto-retry on no_answer/busy/failed: use org follow-up rules
+            if (mappedStatus === 'no_answer' || mappedStatus === 'busy' || mappedStatus === 'failed') {
               // Fetch full call details for retry
               const { data: fullCall } = await supabase
                 .from('outbound_calls')
-                .select('application_id, voice_agent_id, organization_id, phone_number, metadata, retry_count')
+                .select('application_id, voice_agent_id, organization_id, phone_number, metadata, retry_count, created_at')
                 .eq('id', call.id)
                 .single();
 
               if (fullCall) {
-                const currentRetry = (fullCall.retry_count as number) || 0;
-                const MAX_RETRY = 3;
-
-                if (currentRetry < MAX_RETRY - 1) {
-                  // Check if a completed call already exists for this application — skip retry if so
-                  let skipRetry = false;
-                  if (fullCall.application_id) {
-                    const { data: completedCall } = await supabase
-                      .from('outbound_calls')
-                      .select('id')
-                      .eq('application_id', fullCall.application_id)
-                      .eq('status', 'completed')
-                      .limit(1)
+                // Fetch org follow-up settings
+                let followUpSettings: Record<string, unknown> | null = null;
+                if (fullCall.organization_id) {
+                  // Try client-specific settings first
+                  const clientId = (fullCall.metadata as Record<string, unknown>)?.client_id as string | null;
+                  if (clientId) {
+                    const { data: clientSettings } = await supabase
+                      .from('organization_call_settings')
+                      .select('*')
+                      .eq('organization_id', fullCall.organization_id)
+                      .eq('client_id', clientId)
                       .maybeSingle();
-
-                    if (completedCall) {
-                      logger.info(`Skipping retry for call ${call.id} - completed call ${completedCall.id} already exists for application ${fullCall.application_id}`);
-                      skipRetry = true;
-                    }
+                    if (clientSettings) followUpSettings = clientSettings;
                   }
-
-                  if (!skipRetry) {
-                    // Schedule retry with increasing delay (15min per attempt) to prevent carrier spam filtering
-                    const delayMinutes = (currentRetry + 1) * 15;
-                    const scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
-
-                    const retryMetadata = {
-                      ...(fullCall.metadata as Record<string, unknown> || {}),
-                      retry_of: call.id,
-                      retry_attempt: currentRetry + 1,
-                      triggered_by: 'auto_retry_no_answer',
-                    };
-
-                    const { data: newCall, error: retryError } = await supabase
-                      .from('outbound_calls')
-                      .insert({
-                        application_id: fullCall.application_id,
-                        voice_agent_id: fullCall.voice_agent_id,
-                        organization_id: fullCall.organization_id,
-                        phone_number: fullCall.phone_number,
-                        status: 'scheduled',
-                        scheduled_at: scheduledAt,
-                        retry_count: currentRetry + 1,
-                        metadata: retryMetadata,
-                      })
-                      .select('id')
-                      .single();
-
-                    if (retryError) {
-                      logger.error(`Failed to schedule retry for call ${call.id}`, { error: retryError });
-                    } else {
-                      logger.info(`Scheduled retry for call ${call.id} → new call ${newCall?.id} at ${scheduledAt} (attempt ${currentRetry + 2}/${MAX_RETRY}, delay ${delayMinutes}min)`);
-                      syncResults.push({ call_id: newCall?.id || 'unknown', status: 'retry_scheduled', new_status: 'scheduled', scheduled_at: scheduledAt });
-                    }
+                  if (!followUpSettings) {
+                    const { data: orgSettings } = await supabase
+                      .from('organization_call_settings')
+                      .select('*')
+                      .eq('organization_id', fullCall.organization_id)
+                      .is('client_id', null)
+                      .maybeSingle();
+                    if (orgSettings) followUpSettings = orgSettings;
                   }
+                }
+
+                const autoFollowUpEnabled = (followUpSettings?.auto_follow_up_enabled as boolean) ?? false;
+                const followUpOnNoAnswer = (followUpSettings?.follow_up_on_no_answer as boolean) ?? true;
+                const followUpOnFailed = (followUpSettings?.follow_up_on_failed as boolean) ?? true;
+                const followUpOnBusy = (followUpSettings?.follow_up_on_busy as boolean) ?? true;
+                const maxAttempts = (followUpSettings?.max_attempts as number) ?? 3;
+                const delayMinutesBase = (followUpSettings?.follow_up_delay_minutes as number) ?? 15;
+                const escalationMultiplier = Number(followUpSettings?.follow_up_escalation_multiplier ?? 2.0);
+                const cooldownHrs = (followUpSettings?.cooldown_hours as number) ?? 24;
+                const callbackRefEnabled = (followUpSettings?.callback_reference_enabled as boolean) ?? true;
+
+                // Check if auto follow-up is enabled
+                if (!autoFollowUpEnabled) {
+                  logger.info(`Call ${call.id} - auto follow-up disabled for org, skipping retry`);
                 } else {
-                  logger.info(`Call ${call.id} reached max retries (${MAX_RETRY}) - no further retries`);
+                  // Check per-status toggle
+                  const shouldRetryStatus =
+                    (mappedStatus === 'no_answer' && followUpOnNoAnswer) ||
+                    (mappedStatus === 'failed' && followUpOnFailed) ||
+                    (mappedStatus === 'busy' && followUpOnBusy);
+
+                  if (!shouldRetryStatus) {
+                    logger.info(`Call ${call.id} - follow-up disabled for status "${mappedStatus}"`);
+                  } else {
+                    const currentRetry = (fullCall.retry_count as number) || 0;
+
+                    // Check max attempts
+                    if (currentRetry >= maxAttempts - 1) {
+                      logger.info(`Call ${call.id} reached max retries (${maxAttempts}) - no further retries`);
+                    } else {
+                      // Check cooldown window — don't retry if first call was too long ago
+                      const firstCallAge = Date.now() - new Date(fullCall.created_at as string).getTime();
+                      const cooldownMs = cooldownHrs * 60 * 60 * 1000;
+
+                      if (firstCallAge > cooldownMs) {
+                        logger.info(`Call ${call.id} outside cooldown window (${cooldownHrs}h) - no further retries`);
+                      } else {
+                        // Check completion guard
+                        let skipRetry = false;
+                        if (fullCall.application_id) {
+                          const { data: completedCall } = await supabase
+                            .from('outbound_calls')
+                            .select('id')
+                            .eq('application_id', fullCall.application_id)
+                            .eq('status', 'completed')
+                            .limit(1)
+                            .maybeSingle();
+
+                          if (completedCall) {
+                            logger.info(`Skipping retry for call ${call.id} - completed call already exists`);
+                            skipRetry = true;
+                          }
+                        }
+
+                        if (!skipRetry) {
+                          // Escalating delay: base * multiplier^attempt
+                          const delayMinutes = Math.round(delayMinutesBase * Math.pow(escalationMultiplier, currentRetry));
+                          const scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+
+                          // Build retry metadata with callback context
+                          const retryMetadata: Record<string, unknown> = {
+                            ...(fullCall.metadata as Record<string, unknown> || {}),
+                            retry_of: call.id,
+                            retry_attempt: currentRetry + 1,
+                            triggered_by: 'auto_follow_up',
+                            previous_call_outcome: mappedStatus,
+                            is_follow_up: true,
+                          };
+
+                          // If callback reference enabled, fetch original conversation ID for context
+                          if (callbackRefEnabled && call.elevenlabs_conversation_id) {
+                            retryMetadata.original_conversation_id = call.elevenlabs_conversation_id;
+                          }
+
+                          const { data: newCall, error: retryError } = await supabase
+                            .from('outbound_calls')
+                            .insert({
+                              application_id: fullCall.application_id,
+                              voice_agent_id: fullCall.voice_agent_id,
+                              organization_id: fullCall.organization_id,
+                              phone_number: fullCall.phone_number,
+                              status: 'scheduled',
+                              scheduled_at: scheduledAt,
+                              retry_count: currentRetry + 1,
+                              metadata: retryMetadata,
+                            })
+                            .select('id')
+                            .single();
+
+                          if (retryError) {
+                            logger.error(`Failed to schedule retry for call ${call.id}`, { error: retryError });
+                          } else {
+                            logger.info(`Scheduled retry for call ${call.id} → new call ${newCall?.id} at ${scheduledAt} (attempt ${currentRetry + 2}/${maxAttempts}, delay ${delayMinutes}min)`);
+                            syncResults.push({ call_id: newCall?.id || 'unknown', status: 'retry_scheduled', new_status: 'scheduled' });
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
