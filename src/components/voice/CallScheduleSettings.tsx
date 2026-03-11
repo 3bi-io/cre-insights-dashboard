@@ -154,6 +154,8 @@ export function CallScheduleSettings() {
       follow_up_escalation_multiplier: form.follow_up_escalation_multiplier,
       cooldown_hours: form.cooldown_hours,
       callback_reference_enabled: form.callback_reference_enabled,
+      smart_scheduling_enabled: form.smart_scheduling_enabled,
+      time_rotation_enabled: form.time_rotation_enabled,
     });
   };
 
