@@ -13,7 +13,7 @@ import { LoadingButton } from '@/components/shared/LoadingButton';
 import { useCallScheduleSettings, type CallScheduleSettings as Settings } from '@/features/elevenlabs/hooks/useCallScheduleSettings';
 import { useHolidayCalendar } from '@/features/elevenlabs/hooks/useHolidayCalendar';
 import { useClientsService } from '@/features/clients/hooks/useClientsService';
-import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare, CalendarOff, Plus, Trash2 } from 'lucide-react';
+import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare, CalendarOff, Plus, Trash2, Zap, Shuffle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
