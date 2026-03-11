@@ -515,16 +515,25 @@ serve(async (req) => {
               continue;
             }
             
-            // Check business hours using DB function
-            const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
-              p_org_id: orgId,
-              p_client_id: clientId || null,
-            });
+            // Check business hours — but SKIP the gate for first-attempt calls (retry_count = 0)
+            // First attempts always go through so candidates are screened immediately at time of apply.
+            // Only follow-up/retry calls are gated by business hours.
+            const retryCount = ((callMeta as Record<string, unknown>)?.retry_count as number) || 0;
+            const isFirstAttempt = retryCount === 0;
             
-            if (withinHours === false) {
-              logger.info(`Outside business hours for org ${orgId} — skipping call ${call.id}`);
-              results.results.push({ call_id: call.id, status: 'skipped', error: 'Outside business hours' });
-              continue;
+            if (!isFirstAttempt) {
+              const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
+                p_org_id: orgId,
+                p_client_id: clientId || null,
+              });
+              
+              if (withinHours === false) {
+                logger.info(`Outside business hours for org ${orgId} — skipping retry call ${call.id} (attempt ${retryCount + 1})`);
+                results.results.push({ call_id: call.id, status: 'skipped', error: 'Outside business hours (retry gated)' });
+                continue;
+              }
+            } else {
+              logger.info(`First-attempt call ${call.id} — bypassing business hours gate`);
             }
           }
 
