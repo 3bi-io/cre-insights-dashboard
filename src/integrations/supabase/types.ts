@@ -5110,6 +5110,51 @@ export type Database = {
           },
         ]
       }
+      organization_holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          id: string
+          name: string
+          organization_id: string | null
+          recurring: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          id?: string
+          name: string
+          organization_id?: string | null
+          recurring?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          name?: string
+          organization_id?: string | null
+          recurring?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_holidays_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_holidays_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_platform_access: {
         Row: {
           created_at: string
@@ -8466,6 +8511,10 @@ export type Database = {
             }
             Returns: string
           }
+      delete_organization_holiday: {
+        Args: { p_holiday_id: string; p_org_id: string }
+        Returns: boolean
+      }
       ensure_admin_for_email: {
         Args: {
           _email: string
@@ -8759,6 +8808,10 @@ export type Database = {
         Args: { p_amount?: number; p_metric: string; p_organization_id: string }
         Returns: undefined
       }
+      is_holiday: {
+        Args: { p_date: string; p_org_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_within_business_hours:
         | { Args: { p_org_id?: string }; Returns: boolean }
@@ -8827,6 +8880,15 @@ export type Database = {
             }
             Returns: Json
           }
+      upsert_organization_holiday: {
+        Args: {
+          p_date: string
+          p_name: string
+          p_org_id: string
+          p_recurring?: boolean
+        }
+        Returns: string
+      }
       validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {

@@ -331,6 +331,23 @@ serve(async (req) => {
       const limit = Math.min(body.limit || 10, 50);
       logger.info(`Processing queued outbound calls (limit: ${limit})`);
 
+      // ── Holiday gate: check if today is a holiday for any org before processing ──
+      // We check globally first; per-org checks happen per-call below
+      const nowUtc = new Date();
+      const todayDateStr = nowUtc.toISOString().split('T')[0]; // UTC date as fallback
+      const { data: globalHoliday } = await supabase
+        .from('organization_holidays')
+        .select('id, name')
+        .is('organization_id', null)
+        .eq('holiday_date', todayDateStr)
+        .limit(1)
+        .maybeSingle();
+
+      if (globalHoliday) {
+        logger.info(`Global holiday detected: "${globalHoliday.name}" (${todayDateStr}) — skipping queue processing`);
+        return successResponse({ message: `Skipped: holiday "${globalHoliday.name}"`, processed: 0 }, undefined, undefined, origin);
+      }
+
       // Promote scheduled calls whose scheduled_at has passed to queued
       const { data: promoted, error: promoteError } = await supabase
         .from('outbound_calls')
@@ -1088,6 +1105,7 @@ function buildDynamicVariables(
   vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
   vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
+  vars.is_holiday = (metadata._is_holiday as string) || 'no';
   
   return vars;
 }
