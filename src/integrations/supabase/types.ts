@@ -4977,9 +4977,16 @@ export type Database = {
           business_hours_end: string
           business_hours_start: string
           business_hours_timezone: string
+          callback_reference_enabled: boolean
           client_id: string | null
+          cooldown_hours: number
           created_at: string
           follow_up_delay_hours: number
+          follow_up_delay_minutes: number
+          follow_up_escalation_multiplier: number
+          follow_up_on_busy: boolean
+          follow_up_on_failed: boolean
+          follow_up_on_no_answer: boolean
           id: string
           max_attempts: number
           organization_id: string
@@ -4991,9 +4998,16 @@ export type Database = {
           business_hours_end?: string
           business_hours_start?: string
           business_hours_timezone?: string
+          callback_reference_enabled?: boolean
           client_id?: string | null
+          cooldown_hours?: number
           created_at?: string
           follow_up_delay_hours?: number
+          follow_up_delay_minutes?: number
+          follow_up_escalation_multiplier?: number
+          follow_up_on_busy?: boolean
+          follow_up_on_failed?: boolean
+          follow_up_on_no_answer?: boolean
           id?: string
           max_attempts?: number
           organization_id: string
@@ -5005,9 +5019,16 @@ export type Database = {
           business_hours_end?: string
           business_hours_start?: string
           business_hours_timezone?: string
+          callback_reference_enabled?: boolean
           client_id?: string | null
+          cooldown_hours?: number
           created_at?: string
           follow_up_delay_hours?: number
+          follow_up_delay_minutes?: number
+          follow_up_escalation_multiplier?: number
+          follow_up_on_busy?: boolean
+          follow_up_on_failed?: boolean
+          follow_up_on_no_answer?: boolean
           id?: string
           max_attempts?: number
           organization_id?: string
@@ -8770,20 +8791,42 @@ export type Database = {
         Args: { _enabled: boolean; _user_id: string }
         Returns: undefined
       }
-      upsert_call_schedule_settings: {
-        Args: {
-          p_auto_follow_up_enabled?: boolean
-          p_business_days?: number[]
-          p_business_hours_end?: string
-          p_business_hours_start?: string
-          p_business_hours_timezone?: string
-          p_client_id?: string
-          p_follow_up_delay_hours?: number
-          p_max_attempts?: number
-          p_organization_id: string
-        }
-        Returns: Json
-      }
+      upsert_call_schedule_settings:
+        | {
+            Args: {
+              p_auto_follow_up_enabled?: boolean
+              p_business_days?: number[]
+              p_business_hours_end?: string
+              p_business_hours_start?: string
+              p_business_hours_timezone?: string
+              p_client_id?: string
+              p_follow_up_delay_hours?: number
+              p_max_attempts?: number
+              p_organization_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_auto_follow_up_enabled?: boolean
+              p_business_days?: number[]
+              p_business_hours_end?: string
+              p_business_hours_start?: string
+              p_business_hours_timezone?: string
+              p_callback_reference_enabled?: boolean
+              p_client_id?: string
+              p_cooldown_hours?: number
+              p_follow_up_delay_hours?: number
+              p_follow_up_delay_minutes?: number
+              p_follow_up_escalation_multiplier?: number
+              p_follow_up_on_busy?: boolean
+              p_follow_up_on_failed?: boolean
+              p_follow_up_on_no_answer?: boolean
+              p_max_attempts?: number
+              p_organization_id: string
+            }
+            Returns: Json
+          }
       validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {
