@@ -1,39 +1,41 @@
 
 
-## After-Hours Call Strategy: Screen Immediately, Callback During Business Hours
+# Centralized Benefits Data Source — IMPLEMENTED
 
-### Current Behavior
-The business hours gate (lines 518-528) blocks ALL calls outside business hours. The agent already has `is_after_hours` and `business_hours_note` dynamic variables telling it not to transfer to a recruiter after hours — but the call never fires because the gate prevents it.
+## What was done
 
-### New Behavior
-1. **First-attempt calls always go through** — no business hours gate. When someone applies at 10pm, call them immediately. The agent already knows it's after hours and won't attempt recruiter transfer.
-2. **After-hours first calls auto-schedule ONE callback** for the next business day during business hours. This callback is specifically for recruiter transfer.
-3. **Follow-up/retry calls remain gated** — they only fire during business hours (existing behavior stays for retries).
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-### Changes
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-#### 1. Edge Function — Queue processor gate (lines 488-528)
-Modify the per-call business hours check: if the call's `retry_count = 0` (first attempt), skip the business hours gate and let it through. Only gate calls where `retry_count > 0`.
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-#### 2. Edge Function — Auto-schedule next-day callback after after-hours calls
-After a successful first-attempt call that was placed outside business hours, automatically insert a new `scheduled` call for the next business day morning. This call will have metadata like `{ is_after_hours_callback: true, callback_purpose: "recruiter_transfer" }` so the agent knows to offer the transfer.
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-Logic location: after the call record is updated to `initiated` (line 1028-1038), check if it's outside business hours + first attempt → insert a scheduled callback using `next_business_datetime` RPC.
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
-#### 3. Dynamic variables — Add callback context
-Add `is_after_hours_callback` variable so the ElevenLabs agent can say "Hi [name], we spoke last night about the [job] position — let me connect you with a recruiter now."
-
-#### 4. Edge Function — Cap after-hours callbacks to one
-Before scheduling the callback, check if one already exists for this application with `is_after_hours_callback: true` in metadata. If so, skip creating a duplicate.
-
-#### 5. UI — No changes needed
-The existing smart scheduling toggles and business hours settings already cover this. The `business_hours_note` dynamic variable already instructs the agent correctly for after-hours behavior.
-
-### Summary
-
-| File | Change |
-|------|--------|
-| `supabase/functions/elevenlabs-outbound-call/index.ts` | Skip biz-hours gate for first attempts; auto-schedule next-day callback after after-hours calls; add `is_after_hours_callback` dynamic var |
-
-No DB migration needed — uses existing `metadata` jsonb and `next_business_datetime` RPC.
-
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`

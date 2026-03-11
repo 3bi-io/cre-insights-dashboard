@@ -491,7 +491,7 @@ serve(async (req) => {
           // Fetch the call's org to check business hours and org-specific holidays
           const { data: callMeta } = await supabase
             .from('outbound_calls')
-            .select('organization_id, metadata')
+            .select('organization_id, metadata, retry_count')
             .eq('id', call.id)
             .single();
           
@@ -515,16 +515,25 @@ serve(async (req) => {
               continue;
             }
             
-            // Check business hours using DB function
-            const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
-              p_org_id: orgId,
-              p_client_id: clientId || null,
-            });
+            // Check business hours — but SKIP the gate for first-attempt calls (retry_count = 0)
+            // First attempts always go through so candidates are screened immediately at time of apply.
+            // Only follow-up/retry calls are gated by business hours.
+            const retryCount = ((callMeta as Record<string, unknown>)?.retry_count as number) || 0;
+            const isFirstAttempt = retryCount === 0;
             
-            if (withinHours === false) {
-              logger.info(`Outside business hours for org ${orgId} — skipping call ${call.id}`);
-              results.results.push({ call_id: call.id, status: 'skipped', error: 'Outside business hours' });
-              continue;
+            if (!isFirstAttempt) {
+              const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
+                p_org_id: orgId,
+                p_client_id: clientId || null,
+              });
+              
+              if (withinHours === false) {
+                logger.info(`Outside business hours for org ${orgId} — skipping retry call ${call.id} (attempt ${retryCount + 1})`);
+                results.results.push({ call_id: call.id, status: 'skipped', error: 'Outside business hours (retry gated)' });
+                continue;
+              }
+            } else {
+              logger.info(`First-attempt call ${call.id} — bypassing business hours gate`);
             }
           }
 
@@ -986,7 +995,7 @@ async function processOutboundCall(
         const isTransientError = elevenLabsResponse.status >= 500 && elevenLabsResponse.status < 600;
         const currentRetryCount = (callRecord.retry_count as number) || 0;
         
-        if (isTransientError && currentRetryCount < MAX_RETRY_ATTEMPTS - 1) {
+        if (isTransientError && currentRetryCount < 2) {
           // Keep as queued for retry, increment retry count
           await supabase
             .from('outbound_calls')
@@ -997,7 +1006,7 @@ async function processOutboundCall(
               updated_at: new Date().toISOString()
             })
             .eq('id', callRecord.id);
-          logger.info(`Call ${callRecord.id} will be retried (attempt ${currentRetryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
+          logger.info(`Call ${callRecord.id} will be retried (attempt ${currentRetryCount + 1}/3)`);
         } else {
           // Permanent failure
           await supabase
@@ -1036,6 +1045,93 @@ async function processOutboundCall(
           updated_at: new Date().toISOString()
         })
         .eq('id', callRecord.id);
+      
+      // ── After-hours callback scheduling ──
+      // If this was a first-attempt call placed outside business hours,
+      // auto-schedule ONE callback for the next business day morning (for recruiter transfer).
+      const currentRetryCount = (callRecord.retry_count as number) || 0;
+      const isAfterHoursFirstAttempt = currentRetryCount === 0 && metadata.is_after_hours_callback !== true;
+      
+      if (isAfterHoursFirstAttempt && organizationId) {
+        // Check if we're outside business hours right now
+        const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+        const orgStart = (metadata._business_hours_start as string) || '09:00';
+        const orgEnd = (metadata._business_hours_end as string) || '16:30';
+        const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
+        const localHour = nowLocal.getHours();
+        const localMinute = nowLocal.getMinutes();
+        const dayOfWeek = nowLocal.getDay();
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+        const [sH, sM] = orgStart.split(':').map(Number);
+        const [eH, eM] = orgEnd.split(':').map(Number);
+        const nowMins = localHour * 60 + localMinute;
+        const startMins = (sH || 9) * 60 + (sM || 0);
+        const endMins = (eH || 16) * 60 + (eM || 30);
+        const currentlyAfterHours = !isWeekday || nowMins < startMins || nowMins >= endMins;
+        
+        if (currentlyAfterHours) {
+          // Check if a callback already exists for this application to avoid duplicates
+          let callbackExists = false;
+          if (applicationId) {
+            const { data: existingCallback } = await supabase
+              .from('outbound_calls')
+              .select('id')
+              .eq('application_id', applicationId)
+              .in('status', ['queued', 'scheduled'])
+              .contains('metadata', { is_after_hours_callback: true })
+              .limit(1)
+              .maybeSingle();
+            
+            if (existingCallback) {
+              callbackExists = true;
+              logger.info(`After-hours callback already exists for application ${applicationId} — skipping`);
+            }
+          }
+          
+          if (!callbackExists) {
+            // Schedule callback for next business day morning using next_business_datetime RPC
+            const callbackFrom = new Date(Date.now() + 60 * 60 * 1000); // at least 1 hour from now
+            const orgClientId = (metadata.client_id as string) || clientId || null;
+            const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+              p_org_id: organizationId,
+              p_from: callbackFrom.toISOString(),
+              p_client_id: orgClientId,
+            });
+            
+            const callbackAt = nextBizTime ? new Date(nextBizTime).toISOString() : callbackFrom.toISOString();
+            
+            const callbackMetadata: Record<string, unknown> = {
+              ...(metadata || {}),
+              is_after_hours_callback: true,
+              callback_purpose: 'recruiter_transfer',
+              original_call_id: callRecord.id,
+              original_conversation_id: elevenLabsData.conversation_id || null,
+              triggered_by: 'after_hours_auto_callback',
+            };
+            
+            const { data: callbackCall, error: callbackError } = await supabase
+              .from('outbound_calls')
+              .insert({
+                application_id: applicationId || null,
+                voice_agent_id: voiceAgentId,
+                organization_id: organizationId,
+                phone_number: normalizedPhone,
+                status: 'scheduled',
+                scheduled_at: callbackAt,
+                retry_count: 1, // treat as a follow-up
+                metadata: callbackMetadata,
+              })
+              .select('id')
+              .single();
+            
+            if (callbackError) {
+              logger.error('Failed to schedule after-hours callback', { error: callbackError });
+            } else {
+              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (next business day)`);
+            }
+          }
+        }
+      }
     }
 
     logger.info('Outbound call initiated successfully', { call_sid: callSid, conversation_id: elevenLabsData.conversation_id });
@@ -1211,6 +1307,11 @@ function buildDynamicVariables(
   vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
   vars.is_holiday = (metadata._is_holiday as string) || 'no';
+  
+  // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
+  const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
+  vars.is_after_hours_callback = isAfterHoursCallback ? 'yes' : 'no';
+  vars.callback_purpose = (metadata.callback_purpose as string) || '';
   
   return vars;
 }
