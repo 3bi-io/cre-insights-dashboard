@@ -5031,14 +5031,14 @@ export type Database = {
           {
             foreignKeyName: "organization_call_settings_organization_id_fkey"
             columns: ["organization_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "organization_call_settings_organization_id_fkey"
             columns: ["organization_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "public_organization_info"
             referencedColumns: ["id"]
           },
