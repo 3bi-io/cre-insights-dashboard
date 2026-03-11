@@ -487,6 +487,47 @@ serve(async (req) => {
 
       for (const call of queuedCalls) {
         try {
+          // ── Per-call business hours + holiday gate ──
+          // Fetch the call's org to check business hours and org-specific holidays
+          const { data: callMeta } = await supabase
+            .from('outbound_calls')
+            .select('organization_id, metadata')
+            .eq('id', call.id)
+            .single();
+          
+          if (callMeta?.organization_id) {
+            const orgId = callMeta.organization_id;
+            const clientId = (callMeta.metadata as Record<string, unknown>)?.client_id as string | null;
+            
+            // Check org-specific holidays
+            const orgTodayStr = todayDateStr; // already computed above
+            const { data: orgHoliday } = await supabase
+              .from('organization_holidays')
+              .select('id, name')
+              .eq('organization_id', orgId)
+              .eq('holiday_date', orgTodayStr)
+              .limit(1)
+              .maybeSingle();
+            
+            if (orgHoliday) {
+              logger.info(`Org holiday "${orgHoliday.name}" for org ${orgId} — skipping call ${call.id}`);
+              results.results.push({ call_id: call.id, status: 'skipped', error: `Holiday: ${orgHoliday.name}` });
+              continue;
+            }
+            
+            // Check business hours using DB function
+            const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
+              p_org_id: orgId,
+              p_client_id: clientId || null,
+            });
+            
+            if (withinHours === false) {
+              logger.info(`Outside business hours for org ${orgId} — skipping call ${call.id}`);
+              results.results.push({ call_id: call.id, status: 'skipped', error: 'Outside business hours' });
+              continue;
+            }
+          }
+
           const callResponse = await processOutboundCall(
             supabase,
             elevenLabsApiKey,
