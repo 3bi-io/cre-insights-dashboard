@@ -224,10 +224,12 @@ const ElevenLabsAdmin = () => {
               <Volume2 className="h-4 w-4 mr-1" />
               Voices
             </TabsTrigger>
-            <TabsTrigger value="schedule">
-              <Clock className="h-4 w-4 mr-1" />
-              Schedule
-            </TabsTrigger>
+            {(userRole === 'admin' || userRole === 'super_admin') && (
+              <TabsTrigger value="schedule">
+                <Clock className="h-4 w-4 mr-1" />
+                Schedule
+              </TabsTrigger>
+            )}
             <TabsTrigger value="outbound">
               <PhoneOutgoing className="h-4 w-4 mr-1" />
               Outbound Calls
@@ -392,12 +394,14 @@ const ElevenLabsAdmin = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="schedule" className="space-y-4">
-            <SchedulingAnalytics />
-            <RecruiterCalendarConnect />
-            <ScheduledCallbacksDashboard />
-            <CallScheduleSettings />
-          </TabsContent>
+          {(userRole === 'admin' || userRole === 'super_admin') && (
+            <TabsContent value="schedule" className="space-y-4">
+              <SchedulingAnalytics />
+              <RecruiterCalendarConnect />
+              <ScheduledCallbacksDashboard />
+              <CallScheduleSettings />
+            </TabsContent>
+          )}
 
           <TabsContent value="tts" className="space-y-4">
             <TextToSpeechPanel />
