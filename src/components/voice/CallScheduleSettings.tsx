@@ -62,6 +62,8 @@ export function CallScheduleSettings() {
     follow_up_escalation_multiplier: 2.0,
     cooldown_hours: 24,
     callback_reference_enabled: true,
+    smart_scheduling_enabled: true,
+    time_rotation_enabled: true,
   });
 
   const settingsKey = `${settings?.id ?? 'default'}-${settings?.client_id ?? 'org'}-${selectedClientId}`;
