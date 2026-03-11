@@ -1045,6 +1045,93 @@ async function processOutboundCall(
           updated_at: new Date().toISOString()
         })
         .eq('id', callRecord.id);
+      
+      // ── After-hours callback scheduling ──
+      // If this was a first-attempt call placed outside business hours,
+      // auto-schedule ONE callback for the next business day morning (for recruiter transfer).
+      const currentRetryCount = (callRecord.retry_count as number) || 0;
+      const isAfterHoursFirstAttempt = currentRetryCount === 0 && metadata.is_after_hours_callback !== true;
+      
+      if (isAfterHoursFirstAttempt && organizationId) {
+        // Check if we're outside business hours right now
+        const orgTz = (metadata._business_hours_timezone as string) || 'America/Chicago';
+        const orgStart = (metadata._business_hours_start as string) || '09:00';
+        const orgEnd = (metadata._business_hours_end as string) || '16:30';
+        const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: orgTz }));
+        const localHour = nowLocal.getHours();
+        const localMinute = nowLocal.getMinutes();
+        const dayOfWeek = nowLocal.getDay();
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+        const [sH, sM] = orgStart.split(':').map(Number);
+        const [eH, eM] = orgEnd.split(':').map(Number);
+        const nowMins = localHour * 60 + localMinute;
+        const startMins = (sH || 9) * 60 + (sM || 0);
+        const endMins = (eH || 16) * 60 + (eM || 30);
+        const currentlyAfterHours = !isWeekday || nowMins < startMins || nowMins >= endMins;
+        
+        if (currentlyAfterHours) {
+          // Check if a callback already exists for this application to avoid duplicates
+          let callbackExists = false;
+          if (applicationId) {
+            const { data: existingCallback } = await supabase
+              .from('outbound_calls')
+              .select('id')
+              .eq('application_id', applicationId)
+              .in('status', ['queued', 'scheduled'])
+              .contains('metadata', { is_after_hours_callback: true })
+              .limit(1)
+              .maybeSingle();
+            
+            if (existingCallback) {
+              callbackExists = true;
+              logger.info(`After-hours callback already exists for application ${applicationId} — skipping`);
+            }
+          }
+          
+          if (!callbackExists) {
+            // Schedule callback for next business day morning using next_business_datetime RPC
+            const callbackFrom = new Date(Date.now() + 60 * 60 * 1000); // at least 1 hour from now
+            const orgClientId = (metadata.client_id as string) || clientId || null;
+            const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+              p_org_id: organizationId,
+              p_from: callbackFrom.toISOString(),
+              p_client_id: orgClientId,
+            });
+            
+            const callbackAt = nextBizTime ? new Date(nextBizTime).toISOString() : callbackFrom.toISOString();
+            
+            const callbackMetadata: Record<string, unknown> = {
+              ...(metadata || {}),
+              is_after_hours_callback: true,
+              callback_purpose: 'recruiter_transfer',
+              original_call_id: callRecord.id,
+              original_conversation_id: elevenLabsData.conversation_id || null,
+              triggered_by: 'after_hours_auto_callback',
+            };
+            
+            const { data: callbackCall, error: callbackError } = await supabase
+              .from('outbound_calls')
+              .insert({
+                application_id: applicationId || null,
+                voice_agent_id: voiceAgentId,
+                organization_id: organizationId,
+                phone_number: normalizedPhone,
+                status: 'scheduled',
+                scheduled_at: callbackAt,
+                retry_count: 1, // treat as a follow-up
+                metadata: callbackMetadata,
+              })
+              .select('id')
+              .single();
+            
+            if (callbackError) {
+              logger.error('Failed to schedule after-hours callback', { error: callbackError });
+            } else {
+              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (next business day)`);
+            }
+          }
+        }
+      }
     }
 
     logger.info('Outbound call initiated successfully', { call_sid: callSid, conversation_id: elevenLabsData.conversation_id });
