@@ -8770,6 +8770,20 @@ export type Database = {
         Args: { _enabled: boolean; _user_id: string }
         Returns: undefined
       }
+      upsert_call_schedule_settings: {
+        Args: {
+          p_auto_follow_up_enabled?: boolean
+          p_business_days?: number[]
+          p_business_hours_end?: string
+          p_business_hours_start?: string
+          p_business_hours_timezone?: string
+          p_client_id?: string
+          p_follow_up_delay_hours?: number
+          p_max_attempts?: number
+          p_organization_id: string
+        }
+        Returns: Json
+      }
       validate_phone_number: { Args: { phone: string }; Returns: boolean }
     }
     Enums: {
