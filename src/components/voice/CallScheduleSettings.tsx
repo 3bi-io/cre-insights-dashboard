@@ -13,7 +13,7 @@ import { LoadingButton } from '@/components/shared/LoadingButton';
 import { useCallScheduleSettings, type CallScheduleSettings as Settings } from '@/features/elevenlabs/hooks/useCallScheduleSettings';
 import { useHolidayCalendar } from '@/features/elevenlabs/hooks/useHolidayCalendar';
 import { useClientsService } from '@/features/clients/hooks/useClientsService';
-import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare, CalendarOff, Plus, Trash2, Zap, Shuffle } from 'lucide-react';
+import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare, CalendarOff, Plus, Trash2, Zap, Shuffle, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
@@ -138,6 +138,8 @@ export function CallScheduleSettings() {
     }));
   };
 
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
   const handleSave = () => {
     updateSettings({
       business_hours_start: form.business_hours_start + ':00',
@@ -156,6 +158,8 @@ export function CallScheduleSettings() {
       callback_reference_enabled: form.callback_reference_enabled,
       smart_scheduling_enabled: form.smart_scheduling_enabled,
       time_rotation_enabled: form.time_rotation_enabled,
+    }, {
+      onSuccess: () => setLastSavedAt(new Date()),
     });
   };
 
@@ -652,7 +656,13 @@ export function CallScheduleSettings() {
         </Card>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-3">
+        {lastSavedAt && !isUpdating && (
+          <span className="flex items-center gap-1.5 text-sm text-success animate-in fade-in slide-in-from-right-2 duration-300">
+            <Check className="h-4 w-4" />
+            Saved at {format(lastSavedAt, 'h:mm a')}
+          </span>
+        )}
         <LoadingButton onClick={handleSave} isLoading={isUpdating} loadingText="Saving...">
           Save Schedule Settings
         </LoadingButton>
