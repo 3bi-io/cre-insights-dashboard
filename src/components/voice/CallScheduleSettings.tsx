@@ -4,11 +4,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingButton } from '@/components/shared/LoadingButton';
 import { useCallScheduleSettings, type CallScheduleSettings as Settings } from '@/features/elevenlabs/hooks/useCallScheduleSettings';
 import { useClientsService } from '@/features/clients/hooks/useClientsService';
-import { Clock, CalendarDays, RotateCcw, Building2 } from 'lucide-react';
+import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const TIMEZONES = [
@@ -43,10 +44,15 @@ export function CallScheduleSettings() {
     auto_follow_up_enabled: false,
     max_attempts: 3,
     follow_up_delay_hours: 24,
+    follow_up_on_no_answer: true,
+    follow_up_on_failed: true,
+    follow_up_on_busy: true,
+    follow_up_delay_minutes: 15,
+    follow_up_escalation_multiplier: 2.0,
+    cooldown_hours: 24,
+    callback_reference_enabled: true,
   });
 
-  // Use a stable key so the form re-syncs when the underlying record changes
-  // (e.g., after save returns a new id, or when switching clients)
   const settingsKey = `${settings?.id ?? 'default'}-${settings?.client_id ?? 'org'}-${selectedClientId}`;
 
   useEffect(() => {
@@ -59,6 +65,13 @@ export function CallScheduleSettings() {
         auto_follow_up_enabled: settings.auto_follow_up_enabled ?? false,
         max_attempts: settings.max_attempts ?? 3,
         follow_up_delay_hours: settings.follow_up_delay_hours ?? 24,
+        follow_up_on_no_answer: settings.follow_up_on_no_answer ?? true,
+        follow_up_on_failed: settings.follow_up_on_failed ?? true,
+        follow_up_on_busy: settings.follow_up_on_busy ?? true,
+        follow_up_delay_minutes: settings.follow_up_delay_minutes ?? 15,
+        follow_up_escalation_multiplier: settings.follow_up_escalation_multiplier ?? 2.0,
+        cooldown_hours: settings.cooldown_hours ?? 24,
+        callback_reference_enabled: settings.callback_reference_enabled ?? true,
       });
     }
   }, [settingsKey]);
@@ -88,6 +101,19 @@ export function CallScheduleSettings() {
     }
   }, [form.business_hours_start, form.business_hours_end, form.business_hours_timezone, form.business_days]);
 
+  // Compute follow-up timeline preview
+  const timelinePreview = useMemo(() => {
+    if (!form.auto_follow_up_enabled) return [];
+    const attempts: { attempt: number; delayMinutes: number; cumulativeMinutes: number }[] = [];
+    let cumulative = 0;
+    for (let i = 0; i < form.max_attempts - 1; i++) {
+      const delay = Math.round(form.follow_up_delay_minutes * Math.pow(form.follow_up_escalation_multiplier, i));
+      cumulative += delay;
+      attempts.push({ attempt: i + 2, delayMinutes: delay, cumulativeMinutes: cumulative });
+    }
+    return attempts;
+  }, [form.auto_follow_up_enabled, form.max_attempts, form.follow_up_delay_minutes, form.follow_up_escalation_multiplier]);
+
   const toggleDay = (day: number) => {
     setForm(prev => ({
       ...prev,
@@ -106,7 +132,21 @@ export function CallScheduleSettings() {
       auto_follow_up_enabled: form.auto_follow_up_enabled,
       max_attempts: form.max_attempts,
       follow_up_delay_hours: form.follow_up_delay_hours,
+      follow_up_on_no_answer: form.follow_up_on_no_answer,
+      follow_up_on_failed: form.follow_up_on_failed,
+      follow_up_on_busy: form.follow_up_on_busy,
+      follow_up_delay_minutes: form.follow_up_delay_minutes,
+      follow_up_escalation_multiplier: form.follow_up_escalation_multiplier,
+      cooldown_hours: form.cooldown_hours,
+      callback_reference_enabled: form.callback_reference_enabled,
     });
+  };
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
   };
 
   if (isLoading) {
@@ -256,15 +296,16 @@ export function CallScheduleSettings() {
             <RotateCcw className="h-5 w-5 text-muted-foreground" />
             <div>
               <CardTitle>Follow-Up Rules</CardTitle>
-              <CardDescription>Configure automatic follow-up call behavior</CardDescription>
+              <CardDescription>Configure automatic follow-up call behavior for unanswered, failed, and busy calls</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Master toggle */}
           <div className="flex items-center justify-between">
             <div>
               <Label>Auto Follow-Up</Label>
-              <p className="text-sm text-muted-foreground">Automatically retry calls that weren't answered</p>
+              <p className="text-sm text-muted-foreground">Automatically retry calls based on outcome</p>
             </div>
             <Switch
               checked={form.auto_follow_up_enabled}
@@ -273,32 +314,154 @@ export function CallScheduleSettings() {
           </div>
 
           {form.auto_follow_up_enabled && (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <>
+              {/* Per-status toggles */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Retry on Status</Label>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                    <PhoneMissed className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">No Answer</p>
+                      <p className="text-xs text-muted-foreground">Recipient didn't pick up</p>
+                    </div>
+                    <Switch
+                      checked={form.follow_up_on_no_answer}
+                      onCheckedChange={v => setForm(prev => ({ ...prev, follow_up_on_no_answer: v }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Failed</p>
+                      <p className="text-xs text-muted-foreground">API or transient error</p>
+                    </div>
+                    <Switch
+                      checked={form.follow_up_on_failed}
+                      onCheckedChange={v => setForm(prev => ({ ...prev, follow_up_on_failed: v }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                    <PhoneOff className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Busy</p>
+                      <p className="text-xs text-muted-foreground">Line was busy</p>
+                    </div>
+                    <Switch
+                      checked={form.follow_up_on_busy}
+                      onCheckedChange={v => setForm(prev => ({ ...prev, follow_up_on_busy: v }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Timing controls */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="max-attempts">Max Attempts</Label>
+                  <Input
+                    id="max-attempts"
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={form.max_attempts}
+                    onChange={e => setForm(prev => ({ ...prev, max_attempts: Math.min(10, Math.max(1, Number(e.target.value))) }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Total attempts including initial call (1–10)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="delay-minutes" className="flex items-center gap-2">
+                    <Timer className="h-3.5 w-3.5" />
+                    First Retry Delay (minutes)
+                  </Label>
+                  <Input
+                    id="delay-minutes"
+                    type="number"
+                    min={5}
+                    max={1440}
+                    value={form.follow_up_delay_minutes}
+                    onChange={e => setForm(prev => ({ ...prev, follow_up_delay_minutes: Math.min(1440, Math.max(5, Number(e.target.value))) }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Wait time before first retry (5–1440 min)</p>
+                </div>
+              </div>
+
+              {/* Escalation multiplier */}
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Escalation Multiplier: {form.follow_up_escalation_multiplier}x
+                </Label>
+                <Slider
+                  value={[form.follow_up_escalation_multiplier]}
+                  onValueChange={([v]) => setForm(prev => ({ ...prev, follow_up_escalation_multiplier: v }))}
+                  min={1}
+                  max={4}
+                  step={0.5}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Each subsequent retry waits {form.follow_up_escalation_multiplier}× longer than the previous
+                </p>
+              </div>
+
+              {/* Cooldown */}
               <div className="space-y-2">
-                <Label htmlFor="max-attempts">Max Attempts</Label>
+                <Label htmlFor="cooldown-hours" className="flex items-center gap-2">
+                  <Shield className="h-3.5 w-3.5" />
+                  Cooldown Window (hours)
+                </Label>
                 <Input
-                  id="max-attempts"
+                  id="cooldown-hours"
                   type="number"
                   min={1}
-                  max={10}
-                  value={form.max_attempts}
-                  onChange={e => setForm(prev => ({ ...prev, max_attempts: Math.min(10, Math.max(1, Number(e.target.value))) }))}
+                  max={168}
+                  value={form.cooldown_hours}
+                  onChange={e => setForm(prev => ({ ...prev, cooldown_hours: Math.min(168, Math.max(1, Number(e.target.value))) }))}
                 />
-                <p className="text-xs text-muted-foreground">1–10 attempts total</p>
+                <p className="text-xs text-muted-foreground">Stop all retries after this many hours from the first call (1–168h)</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="delay-hours">Delay Between Attempts (hours)</Label>
-                <Input
-                  id="delay-hours"
-                  type="number"
-                  min={1}
-                  max={72}
-                  value={form.follow_up_delay_hours}
-                  onChange={e => setForm(prev => ({ ...prev, follow_up_delay_hours: Math.min(72, Math.max(1, Number(e.target.value))) }))}
+
+              {/* Callback context */}
+              <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Callback Context</p>
+                  <p className="text-xs text-muted-foreground">
+                    When retrying, inject previous call context so the agent can say "We tried reaching you earlier about..."
+                  </p>
+                </div>
+                <Switch
+                  checked={form.callback_reference_enabled}
+                  onCheckedChange={v => setForm(prev => ({ ...prev, callback_reference_enabled: v }))}
                 />
-                <p className="text-xs text-muted-foreground">1–72 hours between retries</p>
               </div>
-            </div>
+
+              {/* Timeline preview */}
+              {timelinePreview.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Follow-Up Timeline Preview</Label>
+                  <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Badge variant="default" className="shrink-0 text-xs w-20 justify-center">Attempt 1</Badge>
+                      <span className="text-muted-foreground">Initial call — now</span>
+                    </div>
+                    {timelinePreview.map((item) => (
+                      <div key={item.attempt} className="flex items-center gap-3 text-sm">
+                        <Badge variant="outline" className="shrink-0 text-xs w-20 justify-center">
+                          Attempt {item.attempt}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          +{formatDuration(item.delayMinutes)} delay → {formatDuration(item.cumulativeMinutes)} total
+                        </span>
+                        {item.cumulativeMinutes > form.cooldown_hours * 60 && (
+                          <Badge variant="destructive" className="text-xs">Outside cooldown</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
