@@ -603,19 +603,31 @@ async function processOutboundCall(
         return { success: false, error: 'Queued call not found or already processed', status: 404 };
       }
 
-      // Check retry count - if exceeded, mark as permanently failed
+      // Check retry count - fetch org's max_attempts dynamically
       const retryCount = (queuedCall.retry_count as number) || 0;
-      if (retryCount >= MAX_RETRY_ATTEMPTS) {
-        logger.warn(`Call ${outboundCallId} exceeded max retry attempts (${MAX_RETRY_ATTEMPTS})`, { retryCount });
+      let dynamicMaxAttempts = 3; // fallback
+      if (queuedCall.organization_id) {
+        const { data: retrySettings } = await supabase
+          .from('organization_call_settings')
+          .select('max_attempts')
+          .eq('organization_id', queuedCall.organization_id)
+          .is('client_id', null)
+          .maybeSingle();
+        if (retrySettings?.max_attempts) {
+          dynamicMaxAttempts = retrySettings.max_attempts;
+        }
+      }
+      if (retryCount >= dynamicMaxAttempts) {
+        logger.warn(`Call ${outboundCallId} exceeded max retry attempts (${dynamicMaxAttempts})`, { retryCount });
         await supabase
           .from('outbound_calls')
           .update({
             status: 'failed',
-            error_message: `Exceeded maximum retry attempts (${MAX_RETRY_ATTEMPTS})`,
+            error_message: `Exceeded maximum retry attempts (${dynamicMaxAttempts})`,
             updated_at: new Date().toISOString()
           })
           .eq('id', outboundCallId);
-        return { success: false, error: `Exceeded maximum retry attempts (${MAX_RETRY_ATTEMPTS})`, status: 400 };
+        return { success: false, error: `Exceeded maximum retry attempts (${dynamicMaxAttempts})`, status: 400 };
       }
 
       // Validate phone number early - skip invalid numbers immediately
