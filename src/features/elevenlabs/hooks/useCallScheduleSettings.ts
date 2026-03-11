@@ -106,6 +106,13 @@ export function useCallScheduleSettings(clientId?: string | null) {
         p_auto_follow_up_enabled: updates.auto_follow_up_enabled ?? null,
         p_max_attempts: updates.max_attempts ?? null,
         p_follow_up_delay_hours: updates.follow_up_delay_hours ?? null,
+        p_follow_up_on_no_answer: updates.follow_up_on_no_answer ?? null,
+        p_follow_up_on_failed: updates.follow_up_on_failed ?? null,
+        p_follow_up_on_busy: updates.follow_up_on_busy ?? null,
+        p_follow_up_delay_minutes: updates.follow_up_delay_minutes ?? null,
+        p_follow_up_escalation_multiplier: updates.follow_up_escalation_multiplier ?? null,
+        p_cooldown_hours: updates.cooldown_hours ?? null,
+        p_callback_reference_enabled: updates.callback_reference_enabled ?? null,
       });
 
       if (error) throw error;
