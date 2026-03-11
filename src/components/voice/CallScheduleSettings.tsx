@@ -85,6 +85,8 @@ export function CallScheduleSettings() {
         follow_up_escalation_multiplier: settings.follow_up_escalation_multiplier ?? 2.0,
         cooldown_hours: settings.cooldown_hours ?? 24,
         callback_reference_enabled: settings.callback_reference_enabled ?? true,
+        smart_scheduling_enabled: settings.smart_scheduling_enabled ?? true,
+        time_rotation_enabled: settings.time_rotation_enabled ?? true,
       });
     }
   }, [settingsKey]);
