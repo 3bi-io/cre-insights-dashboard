@@ -45,6 +45,10 @@ export function CallScheduleSettings() {
     follow_up_delay_hours: 24,
   });
 
+  // Use a stable key so the form re-syncs when the underlying record changes
+  // (e.g., after save returns a new id, or when switching clients)
+  const settingsKey = `${settings?.id ?? 'default'}-${settings?.client_id ?? 'org'}-${selectedClientId}`;
+
   useEffect(() => {
     if (settings) {
       setForm({
@@ -57,7 +61,7 @@ export function CallScheduleSettings() {
         follow_up_delay_hours: settings.follow_up_delay_hours ?? 24,
       });
     }
-  }, [settings]);
+  }, [settingsKey]);
 
   const isWithinBusinessHours = useMemo(() => {
     try {
