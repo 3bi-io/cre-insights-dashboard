@@ -41,6 +41,9 @@ const DEFAULTS: Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id
   follow_up_escalation_multiplier: 2.0,
   cooldown_hours: 24,
   callback_reference_enabled: true,
+  smart_scheduling_enabled: true,
+  time_rotation_enabled: true,
+  preferred_call_windows: ['morning', 'afternoon'],
 };
 
 export function useCallScheduleSettings(clientId?: string | null) {
