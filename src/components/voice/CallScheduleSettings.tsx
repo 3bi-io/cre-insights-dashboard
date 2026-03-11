@@ -40,6 +40,12 @@ export function CallScheduleSettings() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { settings, isLoading, updateSettings, isUpdating, clientOverrides } = useCallScheduleSettings(selectedClientId);
   const { clients } = useClientsService();
+  const { holidays, isLoading: holidaysLoading, addHoliday, isAdding, deleteHoliday } = useHolidayCalendar();
+
+  const [showPastHolidays, setShowPastHolidays] = useState(false);
+  const [newHolidayDate, setNewHolidayDate] = useState<Date | undefined>();
+  const [newHolidayName, setNewHolidayName] = useState('');
+  const [addHolidayOpen, setAddHolidayOpen] = useState(false);
 
   const [form, setForm] = useState({
     business_hours_start: '09:00',
