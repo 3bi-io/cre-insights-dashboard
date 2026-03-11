@@ -397,6 +397,9 @@ serve(async (req) => {
         return successResponse({ message: `Skipped: holiday "${globalHoliday.name}"`, processed: 0 }, undefined, undefined, origin);
       }
 
+      // ── Business hours gate: check if current time is within business hours ──
+      // We use the is_within_business_hours DB function for each org when processing individual calls
+
       // Promote scheduled calls whose scheduled_at has passed to queued
       const { data: promoted, error: promoteError } = await supabase
         .from('outbound_calls')
