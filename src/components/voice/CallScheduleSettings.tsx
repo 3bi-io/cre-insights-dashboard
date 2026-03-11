@@ -300,6 +300,123 @@ export function CallScheduleSettings() {
         </CardContent>
       </Card>
 
+      {/* Holiday Calendar */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarOff className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle>Holiday Calendar</CardTitle>
+                <CardDescription>Outbound calls are automatically skipped on holidays</CardDescription>
+              </div>
+            </div>
+            <Badge variant="outline">
+              {holidays.filter(h => h.holiday_date >= new Date().toISOString().split('T')[0]).length} upcoming
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Add Holiday */}
+          <div className="flex items-center gap-2">
+            <Popover open={addHolidayOpen} onOpenChange={setAddHolidayOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Holiday
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4 space-y-3" align="start">
+                <div className="space-y-2">
+                  <Label>Holiday Name</Label>
+                  <Input
+                    placeholder="e.g. Company Anniversary"
+                    value={newHolidayName}
+                    onChange={e => setNewHolidayName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Calendar
+                    mode="single"
+                    selected={newHolidayDate}
+                    onSelect={setNewHolidayDate}
+                    className="rounded-md border"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  disabled={!newHolidayDate || !newHolidayName.trim() || isAdding}
+                  onClick={() => {
+                    if (newHolidayDate && newHolidayName.trim()) {
+                      addHoliday({
+                        date: format(newHolidayDate, 'yyyy-MM-dd'),
+                        name: newHolidayName.trim(),
+                      });
+                      setNewHolidayName('');
+                      setNewHolidayDate(undefined);
+                      setAddHolidayOpen(false);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  {isAdding ? 'Adding...' : 'Add Holiday'}
+                </Button>
+              </PopoverContent>
+            </Popover>
+
+            <label className="flex items-center gap-2 text-sm text-muted-foreground ml-auto cursor-pointer">
+              <Checkbox
+                checked={showPastHolidays}
+                onCheckedChange={(v) => setShowPastHolidays(!!v)}
+              />
+              Show past
+            </label>
+          </div>
+
+          {/* Holiday List */}
+          {holidaysLoading ? (
+            <p className="text-sm text-muted-foreground">Loading holidays...</p>
+          ) : (
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {holidays
+                .filter(h => showPastHolidays || h.holiday_date >= new Date().toISOString().split('T')[0])
+                .map(holiday => {
+                  const isGlobal = !holiday.organization_id;
+                  const isPast = holiday.holiday_date < new Date().toISOString().split('T')[0];
+                  return (
+                    <div
+                      key={holiday.id}
+                      className={`flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm ${isPast ? 'opacity-50' : ''}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{holiday.name}</span>
+                        <span className="text-muted-foreground">{format(new Date(holiday.holiday_date + 'T00:00:00'), 'MMM d, yyyy')}</span>
+                        <Badge variant={isGlobal ? 'secondary' : 'outline'} className="text-xs">
+                          {isGlobal ? 'Default' : 'Custom'}
+                        </Badge>
+                      </div>
+                      {!isGlobal && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteHoliday(holiday.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              {holidays.filter(h => showPastHolidays || h.holiday_date >= new Date().toISOString().split('T')[0]).length === 0 && (
+                <p className="text-sm text-muted-foreground py-2">No holidays configured</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Follow-Up Rules */}
       <Card>
         <CardHeader>
