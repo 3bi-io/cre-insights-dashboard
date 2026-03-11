@@ -21,6 +21,9 @@ export interface CallScheduleSettings {
   follow_up_escalation_multiplier: number;
   cooldown_hours: number;
   callback_reference_enabled: boolean;
+  smart_scheduling_enabled: boolean;
+  time_rotation_enabled: boolean;
+  preferred_call_windows: string[];
 }
 
 const DEFAULTS: Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id'> = {
