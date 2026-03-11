@@ -600,6 +600,58 @@ export function CallScheduleSettings() {
         </CardContent>
       </Card>
 
+      {/* Smart Scheduling */}
+      {form.auto_follow_up_enabled && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle>Smart Scheduling</CardTitle>
+                <CardDescription>Optimize retry timing to maximize contact rates</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Business Hours Gate</p>
+                <p className="text-xs text-muted-foreground">
+                  Only schedule retries during business hours. Calls outside the window are automatically pushed to the next business day.
+                </p>
+              </div>
+              <Switch
+                checked={form.smart_scheduling_enabled}
+                onCheckedChange={v => setForm(prev => ({ ...prev, smart_scheduling_enabled: v }))}
+              />
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <Shuffle className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Time-of-Day Rotation</p>
+                <p className="text-xs text-muted-foreground">
+                  Rotate retry times across morning, midday, and afternoon windows. If attempt 1 was in the morning, attempt 2 tries the afternoon.
+                </p>
+              </div>
+              <Switch
+                checked={form.time_rotation_enabled}
+                onCheckedChange={v => setForm(prev => ({ ...prev, time_rotation_enabled: v }))}
+              />
+            </div>
+
+            {form.smart_scheduling_enabled && (
+              <div className="rounded-lg bg-muted/30 border border-border p-3">
+                <p className="text-xs text-muted-foreground">
+                  <strong>How it works:</strong> When a retry is scheduled, the system checks if the resulting time falls within your configured business hours, on a business day, and not on a holiday. If not, the retry is pushed to the next valid slot. Combined with time rotation, each attempt reaches the candidate at a different part of the day — significantly improving contact rates.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex justify-end">
         <LoadingButton onClick={handleSave} isLoading={isUpdating} loadingText="Saving...">
           Save Schedule Settings
