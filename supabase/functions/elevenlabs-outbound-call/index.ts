@@ -587,7 +587,7 @@ async function processOutboundCall(
     let outboundCallId = body.outbound_call_id;
     let metadata: Record<string, unknown> = {};
 
-    const MAX_RETRY_ATTEMPTS = 3;
+    // Dynamic max retry from org settings - fetched below after we know the org
 
     // If processing a queued call, fetch the details
     if (outboundCallId) {
