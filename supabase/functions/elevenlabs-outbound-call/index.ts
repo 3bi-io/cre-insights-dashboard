@@ -267,7 +267,56 @@ serve(async (req) => {
                         if (!skipRetry) {
                           // Escalating delay: base * multiplier^attempt
                           const delayMinutes = Math.round(delayMinutesBase * Math.pow(escalationMultiplier, currentRetry));
-                          const scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+                          let scheduledAt: string;
+                          
+                          const smartSchedulingEnabled = (followUpSettings?.smart_scheduling_enabled as boolean) ?? true;
+                          const timeRotationEnabled = (followUpSettings?.time_rotation_enabled as boolean) ?? true;
+                          const preferredWindows = (followUpSettings?.preferred_call_windows as string[]) ?? ['morning', 'afternoon'];
+
+                          if (smartSchedulingEnabled && fullCall.organization_id) {
+                            // Use DB function to find next valid business datetime
+                            const rawScheduled = new Date(Date.now() + delayMinutes * 60 * 1000);
+                            const orgClientId = (fullCall.metadata as Record<string, unknown>)?.client_id as string | null;
+                            const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+                              p_org_id: fullCall.organization_id,
+                              p_from: rawScheduled.toISOString(),
+                              p_client_id: orgClientId || null,
+                            });
+                            
+                            let smartTime = nextBizTime ? new Date(nextBizTime) : rawScheduled;
+                            
+                            // Time-of-day rotation: shift retry into a different call window
+                            if (timeRotationEnabled && preferredWindows.length > 0) {
+                              const bizStart = followUpSettings?.business_hours_start as string || '09:00:00';
+                              const bizEnd = followUpSettings?.business_hours_end as string || '16:30:00';
+                              const [startH] = bizStart.split(':').map(Number);
+                              const [endH] = bizEnd.split(':').map(Number);
+                              const totalHours = (endH || 16) - (startH || 9);
+                              const windowSize = Math.max(1, Math.floor(totalHours / preferredWindows.length));
+                              
+                              // Pick window based on attempt number to rotate
+                              const windowIndex = currentRetry % preferredWindows.length;
+                              const windowStartHour = (startH || 9) + (windowIndex * windowSize);
+                              // Add 15-45min random offset within window for natural timing
+                              const offsetMinutes = 15 + Math.floor(Math.random() * 30);
+                              
+                              const tz = (followUpSettings?.business_hours_timezone as string) || 'America/Chicago';
+                              // Construct time in org timezone
+                              const dateStr = smartTime.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD
+                              const targetLocal = new Date(`${dateStr}T${String(windowStartHour).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}:00`);
+                              // Convert back to UTC by computing offset
+                              const utcEquiv = new Date(targetLocal.toLocaleString('en-US', { timeZone: 'UTC' }));
+                              const localEquiv = new Date(targetLocal.toLocaleString('en-US', { timeZone: tz }));
+                              const tzOffsetMs = utcEquiv.getTime() - localEquiv.getTime();
+                              smartTime = new Date(targetLocal.getTime() + tzOffsetMs);
+                              
+                              logger.info(`Time rotation: attempt ${currentRetry + 2} → window "${preferredWindows[windowIndex]}" (${windowStartHour}:${String(offsetMinutes).padStart(2, '0')} ${tz})`);
+                            }
+                            
+                            scheduledAt = smartTime.toISOString();
+                          } else {
+                            scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+                          }
 
                           // Build retry metadata with callback context
                           const retryMetadata: Record<string, unknown> = {
