@@ -785,6 +785,40 @@ async function processOutboundCall(
       }
     }
 
+    // Inject follow-up context into dynamic variables if this is a retry call
+    if (metadata.is_follow_up || metadata.triggered_by === 'auto_follow_up') {
+      metadata._is_follow_up = 'yes';
+      metadata._follow_up_attempt = String((metadata.retry_attempt as number) || 1);
+      metadata._previous_call_outcome = (metadata.previous_call_outcome as string) || 'unknown';
+      
+      // If callback reference is available, fetch a brief summary from the original conversation
+      const originalConvId = metadata.original_conversation_id as string;
+      if (originalConvId) {
+        try {
+          const { data: origTranscripts } = await supabase
+            .from('elevenlabs_transcripts')
+            .select('role, message')
+            .eq('conversation_id', originalConvId)
+            .order('created_at', { ascending: true })
+            .limit(5);
+          
+          if (origTranscripts && origTranscripts.length > 0) {
+            const summary = origTranscripts
+              .filter((t: { role: string }) => t.role === 'agent')
+              .slice(0, 2)
+              .map((t: { message: string }) => t.message)
+              .join(' ')
+              .substring(0, 200);
+            if (summary) {
+              metadata._previous_conversation_summary = summary;
+            }
+          }
+        } catch (err) {
+          logger.warn('Failed to fetch previous conversation summary', { error: err });
+        }
+      }
+    }
+
     // Build dynamic variables for ElevenLabs agent context
     const dynamicVariables = buildDynamicVariables(application, jobListing, organization, metadata);
     logger.info('Dynamic variables for ElevenLabs', { variables: dynamicVariables });
