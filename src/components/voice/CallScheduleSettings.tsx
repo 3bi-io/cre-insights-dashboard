@@ -5,12 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { LoadingButton } from '@/components/shared/LoadingButton';
 import { useCallScheduleSettings, type CallScheduleSettings as Settings } from '@/features/elevenlabs/hooks/useCallScheduleSettings';
+import { useHolidayCalendar } from '@/features/elevenlabs/hooks/useHolidayCalendar';
 import { useClientsService } from '@/features/clients/hooks/useClientsService';
-import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare } from 'lucide-react';
+import { Clock, CalendarDays, RotateCcw, Building2, PhoneOff, PhoneMissed, AlertTriangle, Timer, TrendingUp, Shield, MessageSquare, CalendarOff, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern (ET)' },
