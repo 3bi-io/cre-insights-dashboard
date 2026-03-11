@@ -138,6 +138,8 @@ export function CallScheduleSettings() {
     }));
   };
 
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
   const handleSave = () => {
     updateSettings({
       business_hours_start: form.business_hours_start + ':00',
@@ -156,6 +158,8 @@ export function CallScheduleSettings() {
       callback_reference_enabled: form.callback_reference_enabled,
       smart_scheduling_enabled: form.smart_scheduling_enabled,
       time_rotation_enabled: form.time_rotation_enabled,
+    }, {
+      onSuccess: () => setLastSavedAt(new Date()),
     });
   };
 
