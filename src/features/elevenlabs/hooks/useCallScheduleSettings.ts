@@ -119,6 +119,9 @@ export function useCallScheduleSettings(clientId?: string | null) {
         p_follow_up_escalation_multiplier: updates.follow_up_escalation_multiplier ?? null,
         p_cooldown_hours: updates.cooldown_hours ?? null,
         p_callback_reference_enabled: updates.callback_reference_enabled ?? null,
+        p_smart_scheduling_enabled: updates.smart_scheduling_enabled ?? null,
+        p_time_rotation_enabled: updates.time_rotation_enabled ?? null,
+        p_preferred_call_windows: updates.preferred_call_windows ?? null,
       });
 
       if (error) throw error;
