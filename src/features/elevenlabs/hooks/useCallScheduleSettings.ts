@@ -33,9 +33,10 @@ export function useCallScheduleSettings(clientId?: string | null) {
   const queryClient = useQueryClient();
 
   const effectiveClientId = clientId || null;
+  const queryKey = ['call-schedule-settings', organizationId, effectiveClientId];
 
   const { data: settings, isLoading } = useQuery({
-    queryKey: ['call-schedule-settings', organizationId, effectiveClientId],
+    queryKey,
     queryFn: async () => {
       if (!organizationId) return null;
 
@@ -102,12 +103,15 @@ export function useCallScheduleSettings(clientId?: string | null) {
       };
 
       if (existingRows && existingRows.length > 0) {
-        // Update existing row by id
-        const { error } = await supabase
+        // Update existing row by id, return saved data
+        const { data: savedRow, error } = await supabase
           .from('organization_call_settings' as any)
           .update(payload as any)
-          .eq('id', (existingRows[0] as any).id);
+          .eq('id', (existingRows[0] as any).id)
+          .select()
+          .maybeSingle();
         if (error) throw error;
+        return savedRow as unknown as CallScheduleSettings;
       } else {
         // Insert new row
         const insertPayload: any = {
@@ -116,9 +120,11 @@ export function useCallScheduleSettings(clientId?: string | null) {
           ...payload,
         };
 
-        const { error } = await supabase
+        const { data: savedRow, error } = await supabase
           .from('organization_call_settings' as any)
-          .insert(insertPayload as any);
+          .insert(insertPayload as any)
+          .select()
+          .maybeSingle();
         if (error) {
           // If insert fails (race condition / duplicate), fall back to update
           let fallbackQuery = supabase
@@ -132,18 +138,45 @@ export function useCallScheduleSettings(clientId?: string | null) {
             fallbackQuery = fallbackQuery.is('client_id', null);
           }
           
-          const { error: fallbackError } = await fallbackQuery;
+          const { data: fallbackRow, error: fallbackError } = await fallbackQuery.select().maybeSingle();
           if (fallbackError) throw fallbackError;
+          return fallbackRow as unknown as CallScheduleSettings;
         }
+        return savedRow as unknown as CallScheduleSettings;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['call-schedule-settings', organizationId, effectiveClientId] });
-      queryClient.invalidateQueries({ queryKey: ['call-schedule-client-overrides', organizationId] });
+    onMutate: async (updates) => {
+      // Cancel in-flight fetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousSettings = queryClient.getQueryData(queryKey);
+
+      // Optimistically update the cache with the new values
+      queryClient.setQueryData(queryKey, (old: any) => ({
+        ...(old || { ...DEFAULTS, organization_id: organizationId, client_id: effectiveClientId }),
+        ...updates,
+      }));
+
+      return { previousSettings };
+    },
+    onSuccess: (savedRow) => {
+      // Confirm cache with server-returned data
+      if (savedRow) {
+        queryClient.setQueryData(queryKey, savedRow);
+      }
       toast({ title: 'Schedule settings saved' });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _variables, context) => {
+      // Rollback to previous state
+      if (context?.previousSettings) {
+        queryClient.setQueryData(queryKey, context.previousSettings);
+      }
       toast({ title: 'Failed to save settings', description: error.message, variant: 'destructive' });
+    },
+    onSettled: () => {
+      // Always refetch for eventual consistency
+      queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['call-schedule-client-overrides', organizationId] });
     },
   });
 

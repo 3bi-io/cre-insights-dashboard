@@ -1,33 +1,41 @@
 
 
-## Bug: Schedule settings not persisting after save
+# Centralized Benefits Data Source — IMPLEMENTED
 
-### Root Cause
+## What was done
 
-The `useCallScheduleSettings` hook's mutation (`updateSettings`) saves to the database but relies solely on `invalidateQueries` to refresh the UI. Two problems:
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-1. **No optimistic cache update** — after saving, the query is invalidated and refetches in the background. If the user navigates away before the refetch completes, the stale cached data persists.
-2. **No `.select()` on upsert** — the mutation doesn't return the saved row, so we can't directly update the cache with confirmed server data.
-3. **`useEffect([settings])` dependency** — React Query's structural sharing may not trigger a re-render if the refetched data shape is identical to what's already cached (e.g., when updating from defaults to the same values with an added `id`).
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-### Fix
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-**File: `src/features/elevenlabs/hooks/useCallScheduleSettings.ts`**
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-1. Add `.select().single()` to both the `update` and `insert` paths so the mutation returns the saved row.
-2. In `onMutate`: optimistically update the query cache with the new values and return the previous snapshot for rollback.
-3. In `onSuccess`: set query data directly from the returned server row (confirming the optimistic update).
-4. In `onError`: rollback to the previous snapshot and show error toast.
-5. Always `invalidateQueries` in `onSettled` to ensure eventual consistency.
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
-**File: `src/components/voice/CallScheduleSettings.tsx`**
-
-6. Add `settings` object identity check — use a stable key (e.g., `settings.id` or a hash) as the `useEffect` dependency instead of the whole `settings` object, ensuring the form re-syncs when the underlying record changes.
-
-### Summary of Changes
-
-| File | Change |
-|------|--------|
-| `useCallScheduleSettings.ts` | Add `.select().single()` to DB calls; implement optimistic update with rollback in `onMutate`/`onError`/`onSettled` |
-| `CallScheduleSettings.tsx` | Stabilize `useEffect` dependency to reliably sync form from refetched settings |
-
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
