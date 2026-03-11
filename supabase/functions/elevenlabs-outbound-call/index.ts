@@ -995,7 +995,7 @@ async function processOutboundCall(
         const isTransientError = elevenLabsResponse.status >= 500 && elevenLabsResponse.status < 600;
         const currentRetryCount = (callRecord.retry_count as number) || 0;
         
-        if (isTransientError && currentRetryCount < MAX_RETRY_ATTEMPTS - 1) {
+        if (isTransientError && currentRetryCount < 2) {
           // Keep as queued for retry, increment retry count
           await supabase
             .from('outbound_calls')
@@ -1006,7 +1006,7 @@ async function processOutboundCall(
               updated_at: new Date().toISOString()
             })
             .eq('id', callRecord.id);
-          logger.info(`Call ${callRecord.id} will be retried (attempt ${currentRetryCount + 1}/${MAX_RETRY_ATTEMPTS})`);
+          logger.info(`Call ${callRecord.id} will be retried (attempt ${currentRetryCount + 1}/3)`);
         } else {
           // Permanent failure
           await supabase
