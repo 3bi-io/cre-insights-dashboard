@@ -224,10 +224,12 @@ const ElevenLabsAdmin = () => {
               <Volume2 className="h-4 w-4 mr-1" />
               Voices
             </TabsTrigger>
-            <TabsTrigger value="schedule">
-              <Clock className="h-4 w-4 mr-1" />
-              Schedule
-            </TabsTrigger>
+            {(userRole === 'admin' || userRole === 'super_admin') && (
+              <TabsTrigger value="schedule">
+                <Clock className="h-4 w-4 mr-1" />
+                Schedule
+              </TabsTrigger>
+            )}
             <TabsTrigger value="outbound">
               <PhoneOutgoing className="h-4 w-4 mr-1" />
               Outbound Calls
