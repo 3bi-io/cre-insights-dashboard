@@ -4990,6 +4990,9 @@ export type Database = {
           id: string
           max_attempts: number
           organization_id: string
+          preferred_call_windows: Json
+          smart_scheduling_enabled: boolean
+          time_rotation_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -5011,6 +5014,9 @@ export type Database = {
           id?: string
           max_attempts?: number
           organization_id: string
+          preferred_call_windows?: Json
+          smart_scheduling_enabled?: boolean
+          time_rotation_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -5032,6 +5038,9 @@ export type Database = {
           id?: string
           max_attempts?: number
           organization_id?: string
+          preferred_call_windows?: Json
+          smart_scheduling_enabled?: boolean
+          time_rotation_enabled?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -8819,6 +8828,10 @@ export type Database = {
             Args: { p_client_id?: string; p_org_id?: string }
             Returns: boolean
           }
+      next_business_datetime: {
+        Args: { p_client_id?: string; p_from?: string; p_org_id: string }
+        Returns: string
+      }
       normalize_phone_number: { Args: { phone_input: string }; Returns: string }
       organization_has_platform_access: {
         Args: { _org_id: string; _platform_name: string }
@@ -8877,6 +8890,30 @@ export type Database = {
               p_follow_up_on_no_answer?: boolean
               p_max_attempts?: number
               p_organization_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_auto_follow_up_enabled?: boolean
+              p_business_days?: number[]
+              p_business_hours_end?: string
+              p_business_hours_start?: string
+              p_business_hours_timezone?: string
+              p_callback_reference_enabled?: boolean
+              p_client_id?: string
+              p_cooldown_hours?: number
+              p_follow_up_delay_hours?: number
+              p_follow_up_delay_minutes?: number
+              p_follow_up_escalation_multiplier?: number
+              p_follow_up_on_busy?: boolean
+              p_follow_up_on_failed?: boolean
+              p_follow_up_on_no_answer?: boolean
+              p_max_attempts?: number
+              p_organization_id: string
+              p_preferred_call_windows?: Json
+              p_smart_scheduling_enabled?: boolean
+              p_time_rotation_enabled?: boolean
             }
             Returns: Json
           }

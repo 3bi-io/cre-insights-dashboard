@@ -21,6 +21,9 @@ export interface CallScheduleSettings {
   follow_up_escalation_multiplier: number;
   cooldown_hours: number;
   callback_reference_enabled: boolean;
+  smart_scheduling_enabled: boolean;
+  time_rotation_enabled: boolean;
+  preferred_call_windows: string[];
 }
 
 const DEFAULTS: Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id'> = {
@@ -38,6 +41,9 @@ const DEFAULTS: Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id
   follow_up_escalation_multiplier: 2.0,
   cooldown_hours: 24,
   callback_reference_enabled: true,
+  smart_scheduling_enabled: true,
+  time_rotation_enabled: true,
+  preferred_call_windows: ['morning', 'afternoon'],
 };
 
 export function useCallScheduleSettings(clientId?: string | null) {
@@ -113,6 +119,9 @@ export function useCallScheduleSettings(clientId?: string | null) {
         p_follow_up_escalation_multiplier: updates.follow_up_escalation_multiplier ?? null,
         p_cooldown_hours: updates.cooldown_hours ?? null,
         p_callback_reference_enabled: updates.callback_reference_enabled ?? null,
+        p_smart_scheduling_enabled: updates.smart_scheduling_enabled ?? null,
+        p_time_rotation_enabled: updates.time_rotation_enabled ?? null,
+        p_preferred_call_windows: updates.preferred_call_windows ?? null,
       });
 
       if (error) throw error;

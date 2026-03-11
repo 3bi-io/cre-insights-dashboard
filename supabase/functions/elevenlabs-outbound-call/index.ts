@@ -267,7 +267,56 @@ serve(async (req) => {
                         if (!skipRetry) {
                           // Escalating delay: base * multiplier^attempt
                           const delayMinutes = Math.round(delayMinutesBase * Math.pow(escalationMultiplier, currentRetry));
-                          const scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+                          let scheduledAt: string;
+                          
+                          const smartSchedulingEnabled = (followUpSettings?.smart_scheduling_enabled as boolean) ?? true;
+                          const timeRotationEnabled = (followUpSettings?.time_rotation_enabled as boolean) ?? true;
+                          const preferredWindows = (followUpSettings?.preferred_call_windows as string[]) ?? ['morning', 'afternoon'];
+
+                          if (smartSchedulingEnabled && fullCall.organization_id) {
+                            // Use DB function to find next valid business datetime
+                            const rawScheduled = new Date(Date.now() + delayMinutes * 60 * 1000);
+                            const orgClientId = (fullCall.metadata as Record<string, unknown>)?.client_id as string | null;
+                            const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+                              p_org_id: fullCall.organization_id,
+                              p_from: rawScheduled.toISOString(),
+                              p_client_id: orgClientId || null,
+                            });
+                            
+                            let smartTime = nextBizTime ? new Date(nextBizTime) : rawScheduled;
+                            
+                            // Time-of-day rotation: shift retry into a different call window
+                            if (timeRotationEnabled && preferredWindows.length > 0) {
+                              const bizStart = followUpSettings?.business_hours_start as string || '09:00:00';
+                              const bizEnd = followUpSettings?.business_hours_end as string || '16:30:00';
+                              const [startH] = bizStart.split(':').map(Number);
+                              const [endH] = bizEnd.split(':').map(Number);
+                              const totalHours = (endH || 16) - (startH || 9);
+                              const windowSize = Math.max(1, Math.floor(totalHours / preferredWindows.length));
+                              
+                              // Pick window based on attempt number to rotate
+                              const windowIndex = currentRetry % preferredWindows.length;
+                              const windowStartHour = (startH || 9) + (windowIndex * windowSize);
+                              // Add 15-45min random offset within window for natural timing
+                              const offsetMinutes = 15 + Math.floor(Math.random() * 30);
+                              
+                              const tz = (followUpSettings?.business_hours_timezone as string) || 'America/Chicago';
+                              // Construct time in org timezone
+                              const dateStr = smartTime.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD
+                              const targetLocal = new Date(`${dateStr}T${String(windowStartHour).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}:00`);
+                              // Convert back to UTC by computing offset
+                              const utcEquiv = new Date(targetLocal.toLocaleString('en-US', { timeZone: 'UTC' }));
+                              const localEquiv = new Date(targetLocal.toLocaleString('en-US', { timeZone: tz }));
+                              const tzOffsetMs = utcEquiv.getTime() - localEquiv.getTime();
+                              smartTime = new Date(targetLocal.getTime() + tzOffsetMs);
+                              
+                              logger.info(`Time rotation: attempt ${currentRetry + 2} → window "${preferredWindows[windowIndex]}" (${windowStartHour}:${String(offsetMinutes).padStart(2, '0')} ${tz})`);
+                            }
+                            
+                            scheduledAt = smartTime.toISOString();
+                          } else {
+                            scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000).toISOString();
+                          }
 
                           // Build retry metadata with callback context
                           const retryMetadata: Record<string, unknown> = {
@@ -347,6 +396,9 @@ serve(async (req) => {
         logger.info(`Global holiday detected: "${globalHoliday.name}" (${todayDateStr}) — skipping queue processing`);
         return successResponse({ message: `Skipped: holiday "${globalHoliday.name}"`, processed: 0 }, undefined, undefined, origin);
       }
+
+      // ── Business hours gate: check if current time is within business hours ──
+      // We use the is_within_business_hours DB function for each org when processing individual calls
 
       // Promote scheduled calls whose scheduled_at has passed to queued
       const { data: promoted, error: promoteError } = await supabase
@@ -435,6 +487,47 @@ serve(async (req) => {
 
       for (const call of queuedCalls) {
         try {
+          // ── Per-call business hours + holiday gate ──
+          // Fetch the call's org to check business hours and org-specific holidays
+          const { data: callMeta } = await supabase
+            .from('outbound_calls')
+            .select('organization_id, metadata')
+            .eq('id', call.id)
+            .single();
+          
+          if (callMeta?.organization_id) {
+            const orgId = callMeta.organization_id;
+            const clientId = (callMeta.metadata as Record<string, unknown>)?.client_id as string | null;
+            
+            // Check org-specific holidays
+            const orgTodayStr = todayDateStr; // already computed above
+            const { data: orgHoliday } = await supabase
+              .from('organization_holidays')
+              .select('id, name')
+              .eq('organization_id', orgId)
+              .eq('holiday_date', orgTodayStr)
+              .limit(1)
+              .maybeSingle();
+            
+            if (orgHoliday) {
+              logger.info(`Org holiday "${orgHoliday.name}" for org ${orgId} — skipping call ${call.id}`);
+              results.results.push({ call_id: call.id, status: 'skipped', error: `Holiday: ${orgHoliday.name}` });
+              continue;
+            }
+            
+            // Check business hours using DB function
+            const { data: withinHours } = await supabase.rpc('is_within_business_hours', {
+              p_org_id: orgId,
+              p_client_id: clientId || null,
+            });
+            
+            if (withinHours === false) {
+              logger.info(`Outside business hours for org ${orgId} — skipping call ${call.id}`);
+              results.results.push({ call_id: call.id, status: 'skipped', error: 'Outside business hours' });
+              continue;
+            }
+          }
+
           const callResponse = await processOutboundCall(
             supabase,
             elevenLabsApiKey,
@@ -494,7 +587,7 @@ async function processOutboundCall(
     let outboundCallId = body.outbound_call_id;
     let metadata: Record<string, unknown> = {};
 
-    const MAX_RETRY_ATTEMPTS = 3;
+    // Dynamic max retry from org settings - fetched below after we know the org
 
     // If processing a queued call, fetch the details
     if (outboundCallId) {
@@ -510,19 +603,31 @@ async function processOutboundCall(
         return { success: false, error: 'Queued call not found or already processed', status: 404 };
       }
 
-      // Check retry count - if exceeded, mark as permanently failed
+      // Check retry count - fetch org's max_attempts dynamically
       const retryCount = (queuedCall.retry_count as number) || 0;
-      if (retryCount >= MAX_RETRY_ATTEMPTS) {
-        logger.warn(`Call ${outboundCallId} exceeded max retry attempts (${MAX_RETRY_ATTEMPTS})`, { retryCount });
+      let dynamicMaxAttempts = 3; // fallback
+      if (queuedCall.organization_id) {
+        const { data: retrySettings } = await supabase
+          .from('organization_call_settings')
+          .select('max_attempts')
+          .eq('organization_id', queuedCall.organization_id)
+          .is('client_id', null)
+          .maybeSingle();
+        if (retrySettings?.max_attempts) {
+          dynamicMaxAttempts = retrySettings.max_attempts;
+        }
+      }
+      if (retryCount >= dynamicMaxAttempts) {
+        logger.warn(`Call ${outboundCallId} exceeded max retry attempts (${dynamicMaxAttempts})`, { retryCount });
         await supabase
           .from('outbound_calls')
           .update({
             status: 'failed',
-            error_message: `Exceeded maximum retry attempts (${MAX_RETRY_ATTEMPTS})`,
+            error_message: `Exceeded maximum retry attempts (${dynamicMaxAttempts})`,
             updated_at: new Date().toISOString()
           })
           .eq('id', outboundCallId);
-        return { success: false, error: `Exceeded maximum retry attempts (${MAX_RETRY_ATTEMPTS})`, status: 400 };
+        return { success: false, error: `Exceeded maximum retry attempts (${dynamicMaxAttempts})`, status: 400 };
       }
 
       // Validate phone number early - skip invalid numbers immediately
