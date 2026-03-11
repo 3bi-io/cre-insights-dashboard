@@ -1,43 +1,41 @@
 
 
-## Bug: Schedule settings not persisting
+# Centralized Benefits Data Source — IMPLEMENTED
 
-### Root Cause
+## What was done
 
-I traced the full save flow and found the likely issue: **the UPDATE operation silently fails (returns 0 rows) but the UI still shows "Schedule settings saved"**.
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-Here is the evidence:
-- The DB shows `updated_at` dates of March 9-10, meaning no writes have succeeded since then (today is March 11)
-- The mutation uses `.update().eq('id', ...).select().maybeSingle()` — if RLS blocks the write, PostgREST returns **0 rows with no error**
-- When `savedRow` is null, `onSuccess` skips the cache update, but the toast still fires saying "saved"
-- Then `onSettled` invalidates the query, refetching the old (unchanged) data from the DB
-- The `useEffect` that syncs the form depends on `settingsKey` (id-based), which doesn't change, so the form keeps showing the user's edits
-- When navigating away and back, the component remounts and loads the old DB data — revealing the failed save
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-**Why the write fails silently**: There are duplicate UPDATE RLS policies. While that alone shouldn't cause issues, the core problem is that a silent 0-row update is treated as success. Additionally, the `has_role()` function requires `organization_id` matching on the `user_roles` table, whereas `get_current_user_role()` (used for UI gating) does NOT check organization_id — so a mismatch could cause the UI to show the Schedule tab while RLS blocks the actual writes.
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-### Fix (2 files + 1 SQL migration)
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-**1. `src/features/elevenlabs/hooks/useCallScheduleSettings.ts`** — Detect and handle silent write failures:
-- After UPDATE: if `savedRow` is null, throw an error ("Update failed — settings were not saved")
-- After INSERT: same null check
-- This ensures `onError` fires, rolling back the optimistic update and showing an error toast
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
-**2. SQL migration** — Fix the potential RLS mismatch by creating a `SECURITY DEFINER` function that performs the upsert directly, bypassing row-level policies:
-- Create `upsert_call_schedule_settings(p_organization_id, p_client_id, p_updates)` as a `SECURITY DEFINER` function
-- Inside the function, verify the caller is admin/super_admin for that organization
-- Perform the INSERT ON CONFLICT UPDATE and RETURN the saved row
-- This eliminates the silent failure mode entirely
-
-**3. `src/features/elevenlabs/hooks/useCallScheduleSettings.ts`** — Call the new RPC instead of raw table operations:
-- Replace the select-then-insert/update logic with a single `supabase.rpc('upsert_call_schedule_settings', { ... })` call
-- The RPC returns the saved row directly, making the flow much simpler and more reliable
-
-### Summary
-
-| Change | Purpose |
-|--------|---------|
-| Add null-check after UPDATE/INSERT | Detect silent write failures immediately |
-| Create `upsert_call_schedule_settings` RPC | Single reliable write path with built-in auth check |
-| Simplify mutation to use RPC | Eliminate race conditions and RLS bypass issues |
-
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
