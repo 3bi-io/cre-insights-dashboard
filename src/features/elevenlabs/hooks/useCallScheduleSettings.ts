@@ -82,68 +82,21 @@ export function useCallScheduleSettings(clientId?: string | null) {
     mutationFn: async (updates: Partial<Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id'>>) => {
       if (!organizationId) throw new Error('No organization');
 
-      // Check if a row already exists
-      let existingQuery = supabase
-        .from('organization_call_settings' as any)
-        .select('id')
-        .eq('organization_id', organizationId);
+      const { data, error } = await supabase.rpc('upsert_call_schedule_settings', {
+        p_organization_id: organizationId,
+        p_client_id: effectiveClientId,
+        p_business_hours_start: updates.business_hours_start ?? null,
+        p_business_hours_end: updates.business_hours_end ?? null,
+        p_business_hours_timezone: updates.business_hours_timezone ?? null,
+        p_business_days: updates.business_days ?? null,
+        p_auto_follow_up_enabled: updates.auto_follow_up_enabled ?? null,
+        p_max_attempts: updates.max_attempts ?? null,
+        p_follow_up_delay_hours: updates.follow_up_delay_hours ?? null,
+      });
 
-      if (effectiveClientId) {
-        existingQuery = existingQuery.eq('client_id', effectiveClientId);
-      } else {
-        existingQuery = existingQuery.is('client_id', null);
-      }
-
-      const { data: existingRows, error: fetchError } = await existingQuery;
-      if (fetchError) throw fetchError;
-
-      const payload: any = {
-        ...updates,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (existingRows && existingRows.length > 0) {
-        // Update existing row by id, return saved data
-        const { data: savedRow, error } = await supabase
-          .from('organization_call_settings' as any)
-          .update(payload as any)
-          .eq('id', (existingRows[0] as any).id)
-          .select()
-          .maybeSingle();
-        if (error) throw error;
-        return savedRow as unknown as CallScheduleSettings;
-      } else {
-        // Insert new row
-        const insertPayload: any = {
-          organization_id: organizationId,
-          client_id: effectiveClientId,
-          ...payload,
-        };
-
-        const { data: savedRow, error } = await supabase
-          .from('organization_call_settings' as any)
-          .insert(insertPayload as any)
-          .select()
-          .maybeSingle();
-        if (error) {
-          // If insert fails (race condition / duplicate), fall back to update
-          let fallbackQuery = supabase
-            .from('organization_call_settings' as any)
-            .update(payload as any)
-            .eq('organization_id', organizationId);
-          
-          if (effectiveClientId) {
-            fallbackQuery = fallbackQuery.eq('client_id', effectiveClientId);
-          } else {
-            fallbackQuery = fallbackQuery.is('client_id', null);
-          }
-          
-          const { data: fallbackRow, error: fallbackError } = await fallbackQuery.select().maybeSingle();
-          if (fallbackError) throw fallbackError;
-          return fallbackRow as unknown as CallScheduleSettings;
-        }
-        return savedRow as unknown as CallScheduleSettings;
-      }
+      if (error) throw error;
+      if (!data) throw new Error('Update failed — settings were not saved');
+      return data as unknown as CallScheduleSettings;
     },
     onMutate: async (updates) => {
       // Cancel in-flight fetches so they don't overwrite our optimistic update
