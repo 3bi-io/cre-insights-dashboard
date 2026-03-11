@@ -14,6 +14,13 @@ export interface CallScheduleSettings {
   auto_follow_up_enabled: boolean;
   max_attempts: number;
   follow_up_delay_hours: number;
+  follow_up_on_no_answer: boolean;
+  follow_up_on_failed: boolean;
+  follow_up_on_busy: boolean;
+  follow_up_delay_minutes: number;
+  follow_up_escalation_multiplier: number;
+  cooldown_hours: number;
+  callback_reference_enabled: boolean;
 }
 
 const DEFAULTS: Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id'> = {
@@ -24,6 +31,13 @@ const DEFAULTS: Omit<CallScheduleSettings, 'id' | 'organization_id' | 'client_id
   auto_follow_up_enabled: false,
   max_attempts: 3,
   follow_up_delay_hours: 24,
+  follow_up_on_no_answer: true,
+  follow_up_on_failed: true,
+  follow_up_on_busy: true,
+  follow_up_delay_minutes: 15,
+  follow_up_escalation_multiplier: 2.0,
+  cooldown_hours: 24,
+  callback_reference_enabled: true,
 };
 
 export function useCallScheduleSettings(clientId?: string | null) {
