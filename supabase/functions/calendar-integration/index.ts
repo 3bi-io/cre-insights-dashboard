@@ -17,7 +17,7 @@ import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-con
 const NYLAS_API_KEY = Deno.env.get('NYLAS_API_KEY') || '';
 const NYLAS_CLIENT_ID = Deno.env.get('NYLAS_CLIENT_ID') || '';
 const NYLAS_REDIRECT_URI = Deno.env.get('NYLAS_REDIRECT_URI') || '';
-const NYLAS_API_BASE = 'https://api.us.nylas.com';
+const NYLAS_API_BASE = Deno.env.get('NYLAS_API_BASE') || 'https://api.us.nylas.com';
 
 /** Fetch with timeout to prevent hanging on external API calls */
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
