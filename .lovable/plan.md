@@ -1,41 +1,29 @@
 
 
-# Centralized Benefits Data Source — IMPLEMENTED
+## Clean Up E2E Test Data
 
-## What was done
+Found the following test records to delete:
 
-### 1. Database (`benefits_catalog` + `job_listing_benefits`)
-- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
-- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
-- Created `job_listing_benefits` junction table linking structured benefits to job listings
-- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
+| Table | ID | Details |
+|-------|-----|---------|
+| `outbound_calls` | `be3f6b0a-009c-418c-a270-914a8c77f701` | +15555550199, status: initiated |
+| `outbound_calls` | `556b7567-5dee-4585-8667-c667e30696a5` | +15550009999, status: initiated |
+| `applications` | `a4081b0b-33f1-46ca-abcb-9fa0008248ae` | Created Mar 12 13:01 |
+| `applications` | `af7f9c44-8ef5-4eb7-b55d-141363da8383` | Created Mar 12 13:11 |
 
-### 2. Shared Config (`src/config/benefits.config.ts`)
-- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
-- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
-- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
-- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
-- `BENEFITS_FALLBACK` — static array matching seed data
+### Execution
 
-### 3. Frontend Consumers Updated
-- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
-- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
+Delete outbound calls first (they reference applications via FK), then delete the applications.
 
-### 4. Edge Function Consumers Updated
-- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
-  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
-- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
-- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
+```sql
+DELETE FROM outbound_calls WHERE id IN (
+  'be3f6b0a-009c-418c-a270-914a8c77f701',
+  '556b7567-5dee-4585-8667-c667e30696a5'
+);
 
-### 5. Voice Agent Integration
-- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
+DELETE FROM applications WHERE id IN (
+  'a4081b0b-33f1-46ca-abcb-9fa0008248ae',
+  'af7f9c44-8ef5-4eb7-b55d-141363da8383'
+);
+```
 
-## Files changed
-- **New**: `supabase/migrations/..._benefits_schema.sql`
-- **New**: `src/config/benefits.config.ts`
-- **New**: `supabase/functions/_shared/benefits-catalog.ts`
-- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
-- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
-- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
-- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
-- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
