@@ -967,7 +967,7 @@ async function processOutboundCall(
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
-      to_number: `+1${normalizedPhone}`,
+      to_number: normalizedPhone,
       conversation_initiation_client_data: conversationInitData
     };
 
