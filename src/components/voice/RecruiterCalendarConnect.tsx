@@ -137,6 +137,33 @@ export function RecruiterCalendarConnect() {
     }
   };
 
+  const handleTestConnection = async (connectionId: string) => {
+    setTestingId(connectionId);
+    try {
+      const { data, error } = await supabase.functions.invoke('calendar-integration', {
+        body: { action: 'test_connection', connectionId },
+      });
+      if (error) throw error;
+      setTestResults(prev => ({
+        ...prev,
+        [connectionId]: { healthy: data?.healthy ?? false, error: data?.error },
+      }));
+      toast({
+        title: data?.healthy ? 'Connection Healthy' : 'Connection Issue',
+        description: data?.healthy ? `Calendar for ${data.email} is active.` : (data?.error || 'Grant may be expired'),
+        variant: data?.healthy ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      setTestResults(prev => ({
+        ...prev,
+        [connectionId]: { healthy: false, error: err.message },
+      }));
+      toast({ title: 'Test Failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   const activeConnections = connections.filter(c => c.status === 'active');
   const clientName = selectedClientId === 'all' 
     ? 'All' 
