@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, Settings2, CalendarCheck, Loader2, Save, Link2, Unlink, ExternalLink, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, Clock, Settings2, CalendarCheck, Loader2, Save, Link2, Unlink, ExternalLink, RefreshCw, CheckCircle2, XCircle, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
