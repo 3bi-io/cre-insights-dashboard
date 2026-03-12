@@ -231,23 +231,63 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
     connected_at: new Date().toISOString(),
   };
 
-  // Use insert with ON CONFLICT since we have a functional unique index
-  const { error: upsertError } = await supabase
+  // Manual select-then-insert/update to handle functional unique index (user_id, provider, COALESCE(client_id))
+  const { data: existing } = await supabase
     .from('recruiter_calendar_connections')
-    .upsert(connectionRecord, { 
-      onConflict: 'user_id,provider',
-      ignoreDuplicates: false,
-    });
+    .select('id')
+    .eq('user_id', userId)
+    .eq('provider', 'nylas')
+    .then(({ data }) => ({
+      data: (data || []).find((row: any) => {
+        // Match on client_id (both null = org-level, or same UUID)
+        if (clientId === null) return row.client_id === null || row.client_id === undefined;
+        return row.client_id === clientId;
+      }),
+    }));
 
-  if (upsertError) {
-    console.error('Failed to store calendar connection:', upsertError);
-    // Try insert instead (functional index may not work with upsert)
+  // Fetch client_id to filter properly - need to re-query with client_id
+  let matchQuery = supabase
+    .from('recruiter_calendar_connections')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('provider', 'nylas');
+
+  if (clientId) {
+    matchQuery = matchQuery.eq('client_id', clientId);
+  } else {
+    matchQuery = matchQuery.is('client_id', null);
+  }
+
+  const { data: matchedRows } = await matchQuery;
+  const existingRow = matchedRows?.[0];
+
+  if (existingRow) {
+    // Update existing connection
+    const { error: updateError } = await supabase
+      .from('recruiter_calendar_connections')
+      .update({
+        nylas_grant_id: grantId,
+        calendar_id: calendarId,
+        email,
+        provider_type: provider,
+        status: 'active',
+        connected_at: new Date().toISOString(),
+        organization_id: profile?.organization_id,
+      })
+      .eq('id', existingRow.id);
+
+    if (updateError) {
+      console.error('Failed to update calendar connection:', updateError);
+      throw new Error('Failed to update calendar connection');
+    }
+  } else {
+    // Insert new connection
     const { error: insertError } = await supabase
       .from('recruiter_calendar_connections')
       .insert(connectionRecord);
-    
+
     if (insertError) {
-      console.error('Insert also failed:', insertError);
+      console.error('Failed to insert calendar connection:', insertError);
       throw new Error('Failed to store calendar connection');
     }
   }
