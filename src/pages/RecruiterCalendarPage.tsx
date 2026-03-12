@@ -148,8 +148,12 @@ export default function RecruiterCalendarPage() {
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
+      const body: Record<string, any> = { action: 'oauth_url' };
+      if (selectedClientId) {
+        body.client_id = selectedClientId;
+      }
       const { data, error } = await supabase.functions.invoke('calendar-integration', {
-        body: { action: 'oauth_url' },
+        body,
       });
       if (error) throw error;
       if (data?.url) {
