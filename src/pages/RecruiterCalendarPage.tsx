@@ -97,6 +97,10 @@ export default function RecruiterCalendarPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
+  // Client selector state
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+
   // Preferences state
   const [prefs, setPrefs] = useState<AvailabilityPreferences>(DEFAULT_PREFS);
   const [prefsLoading, setPrefsLoading] = useState(true);
@@ -113,8 +117,17 @@ export default function RecruiterCalendarPage() {
       fetchConnections();
       fetchPreferences();
       fetchCallbacks();
+      fetchClients();
     }
   }, [user?.id]);
+
+  const fetchClients = async () => {
+    const { data } = await supabase
+      .from('clients')
+      .select('id, name')
+      .order('name');
+    setClients(data || []);
+  };
 
   // ---------- Calendar Connections ----------
 
