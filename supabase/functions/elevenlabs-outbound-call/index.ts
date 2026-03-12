@@ -1157,16 +1157,16 @@ async function processOutboundCall(
   }
 }
 
-// Normalize US phone number to 10 digits
+// Normalize US phone number to E.164 format (+1XXXXXXXXXX)
 function normalizePhoneNumber(phone: string): string | null {
   const digits = phone.replace(/\D/g, '');
   
   if (digits.length === 11 && digits.startsWith('1')) {
-    return digits.substring(1);
+    return `+${digits}`;
   }
   
   if (digits.length === 10) {
-    return digits;
+    return `+1${digits}`;
   }
   
   return null;
