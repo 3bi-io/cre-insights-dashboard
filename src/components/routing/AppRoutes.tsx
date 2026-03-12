@@ -215,6 +215,7 @@ const AppRoutes: React.FC = () => {
       
       {/* Calendar OAuth Callback */}
       <Route path="/calendar/callback" element={<RouteWrapper><CalendarCallback /></RouteWrapper>} />
+      <Route path="/calendar/connect" element={<RouteWrapper><CalendarInviteConnect /></RouteWrapper>} />
       
       <Route path="/auth" element={<RouteWrapper><Auth /></RouteWrapper>} />
       
