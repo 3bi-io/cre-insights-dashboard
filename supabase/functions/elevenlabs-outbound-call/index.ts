@@ -446,7 +446,10 @@ serve(async (req) => {
 
           if (completedApps && completedApps.length > 0) {
             const completedAppIds = new Set(completedApps.map(c => c.application_id));
-            const toCancel = queuedForGuard.filter(c => completedAppIds.has(c.application_id)).map(c => c.id);
+            const toCancel = queuedForGuard
+              .filter(c => completedAppIds.has(c.application_id))
+              .filter(c => !(c.metadata as any)?.is_after_hours_callback)
+              .map(c => c.id);
             if (toCancel.length > 0) {
               const { error: cancelErr } = await supabase
                 .from('outbound_calls')
