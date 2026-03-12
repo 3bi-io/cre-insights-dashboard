@@ -171,137 +171,128 @@ async function handleCheckAvailability(
     );
   }
 
-  // Use first available recruiter (could be enhanced to round-robin across all)
-  const recruiterId = connections[0].user_id;
+  // Round-robin: check availability across ALL connected recruiters and pick earliest slot
+  let bestResult: { recruiterId: string; recruiterEmail: string; slots: any[]; duration: number } | null = null;
 
-  // Load recruiter availability preferences
-  const { data: prefs } = await supabase
-    .from('recruiter_availability_preferences')
-    .select('*')
-    .eq('user_id', recruiterId)
-    .maybeSingle();
+  for (const conn of connections) {
+    const recruiterId = conn.user_id;
 
-  const workStart = parseInt((prefs as any)?.working_hours_start?.slice(0, 2) || '8', 10);
-  const workEnd = parseInt((prefs as any)?.working_hours_end?.slice(0, 2) || '12', 10);
-  const workingDays: number[] = (prefs as any)?.working_days || [1, 2, 3, 4, 5];
-  const duration: number = (prefs as any)?.default_call_duration_minutes || 15;
-  const maxDaily: number = (prefs as any)?.max_daily_callbacks || 20;
-  const minNoticeHours: number = (prefs as any)?.min_booking_notice_hours || 1;
-  const allowSameDay: boolean = (prefs as any)?.allow_same_day_booking ?? true;
-  const recruiterTz = (prefs as any)?.timezone || 'America/Chicago';
+    // Load recruiter availability preferences
+    const { data: prefs } = await supabase
+      .from('recruiter_availability_preferences')
+      .select('*')
+      .eq('user_id', recruiterId)
+      .maybeSingle();
 
-  // Calculate next available business window respecting recruiter preferences
-  const tz = driver_timezone || recruiterTz;
-  const now = new Date();
-  const minBookingTime = new Date(now.getTime() + minNoticeHours * 60 * 60 * 1000);
+    const workStart = parseInt((prefs as any)?.working_hours_start?.slice(0, 2) || '8', 10);
+    const workEnd = parseInt((prefs as any)?.working_hours_end?.slice(0, 2) || '12', 10);
+    const workingDays: number[] = (prefs as any)?.working_days || [1, 2, 3, 4, 5];
+    const duration: number = (prefs as any)?.default_call_duration_minutes || 15;
+    const maxDaily: number = (prefs as any)?.max_daily_callbacks || 20;
+    const minNoticeHours: number = (prefs as any)?.min_booking_notice_hours || 1;
+    const allowSameDay: boolean = (prefs as any)?.allow_same_day_booking ?? true;
+    const recruiterTz = (prefs as any)?.timezone || 'America/Chicago';
 
-  // Find next business day
-  let candidate = new Date(now);
-  if (!allowSameDay || now.getUTCHours() >= workEnd) {
-    candidate.setDate(candidate.getDate() + 1);
+    const tz = driver_timezone || recruiterTz;
+    const now = new Date();
+    const minBookingTime = new Date(now.getTime() + minNoticeHours * 60 * 60 * 1000);
+
+    let candidate = new Date(now);
+    if (!allowSameDay || now.getUTCHours() >= workEnd) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+
+    for (let i = 0; i < 7; i++) {
+      const iso = candidate.getDay() === 0 ? 7 : candidate.getDay();
+      if (workingDays.includes(iso)) break;
+      candidate.setDate(candidate.getDate() + 1);
+    }
+
+    const startTime = new Date(candidate);
+    startTime.setHours(workStart, 0, 0, 0);
+    const endTime = new Date(candidate);
+    endTime.setHours(workEnd, 0, 0, 0);
+    const effectiveStart = startTime > minBookingTime ? startTime : minBookingTime;
+
+    // Check daily cap
+    const dayStart = new Date(candidate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(candidate);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const { count: existingCallbacks } = await supabase
+      .from('scheduled_callbacks')
+      .select('id', { count: 'exact', head: true })
+      .eq('recruiter_user_id', recruiterId)
+      .gte('scheduled_start', dayStart.toISOString())
+      .lte('scheduled_start', dayEnd.toISOString())
+      .neq('status', 'cancelled');
+
+    if ((existingCallbacks || 0) >= maxDaily) continue;
+
+    // Query calendar availability
+    let calData: any = { slots: [] };
+    try {
+      const calResponse = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'get_availability',
+          recruiterUserId: recruiterId,
+          startTime: effectiveStart.toISOString(),
+          endTime: endTime.toISOString(),
+          durationMinutes: duration,
+        }),
+      });
+      calData = await calResponse.json();
+    } catch (e: any) {
+      console.error(`Calendar check failed for recruiter ${recruiterId}:`, e.message);
+      continue;
+    }
+
+    const slots = calData.slots || [];
+    if (slots.length === 0) continue;
+
+    // Compare: pick recruiter with earliest first slot
+    if (!bestResult || new Date(slots[0].start) < new Date(bestResult.slots[0].start)) {
+      bestResult = { recruiterId, recruiterEmail: conn.email, slots, duration };
+    }
   }
-  
-  // Skip non-working days (ISO: Mon=1, Sun=7)
-  for (let i = 0; i < 7; i++) {
-    const iso = candidate.getDay() === 0 ? 7 : candidate.getDay(); // Convert JS day to ISO
-    if (workingDays.includes(iso)) break;
-    candidate.setDate(candidate.getDate() + 1);
-  }
 
-  const startTime = new Date(candidate);
-  startTime.setHours(workStart, 0, 0, 0);
-  const endTime = new Date(candidate);
-  endTime.setHours(workEnd, 0, 0, 0);
-
-  // Ensure we respect minimum notice
-  const effectiveStart = startTime > minBookingTime ? startTime : minBookingTime;
-
-  // Check daily callback cap
-  const dayStart = new Date(candidate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(candidate);
-  dayEnd.setHours(23, 59, 59, 999);
-  
-  const { count: existingCallbacks } = await supabase
-    .from('scheduled_callbacks')
-    .select('id', { count: 'exact', head: true })
-    .eq('recruiter_user_id', recruiterId)
-    .gte('scheduled_start', dayStart.toISOString())
-    .lte('scheduled_start', dayEnd.toISOString())
-    .neq('status', 'cancelled');
-
-  if ((existingCallbacks || 0) >= maxDaily) {
+  if (!bestResult) {
     return new Response(
       JSON.stringify({
-        result: 'The recruiter\'s schedule is full for that day. Would you like me to check the next available day?',
+        result: 'All recruiters are fully booked right now. Would you like a recruiter to call you back when they are free?',
         available_slots: [],
       }),
       { status: 200, headers }
     );
   }
 
-  // Query calendar-integration for availability with timeout
-  let calData: any = { slots: [] };
-  try {
-    const calResponse = await fetchWithTimeout(`${SUPABASE_URL}/functions/v1/calendar-integration`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
-      body: JSON.stringify({
-        action: 'get_availability',
-        recruiterUserId: recruiterId,
-        startTime: effectiveStart.toISOString(),
-        endTime: endTime.toISOString(),
-        durationMinutes: duration,
-      }),
-    });
-    calData = await calResponse.json();
-  } catch (e: any) {
-    console.error('Calendar availability check failed:', e.message);
-    return new Response(
-      JSON.stringify({
-        result: 'I couldn\'t check the schedule right now. Would you like a recruiter to call you back tomorrow morning?',
-        available_slots: [],
-      }),
-      { status: 200, headers }
-    );
-  }
-
-  const slots = calData.slots || [];
-
-  if (slots.length === 0) {
-    return new Response(
-      JSON.stringify({
-        result: 'Tomorrow morning is fully booked. Would you like me to check the afternoon, or would you prefer a recruiter calls you when they are free?',
-        available_slots: [],
-      }),
-      { status: 200, headers }
-    );
-  }
-
-  // Format top 2-3 slots for the agent to speak
-  const topSlots = slots.slice(0, 3).map((s: any) => {
+  const tz = driver_timezone || 'America/Chicago';
+  const topSlots = bestResult.slots.slice(0, 3).map((s: any) => {
     const time = new Date(s.start);
-    return time.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+    return time.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
       timeZone: tz,
     });
   });
 
-  const slotText = topSlots.length === 1 
+  const slotText = topSlots.length === 1
     ? topSlots[0]
     : topSlots.slice(0, -1).join(', ') + ' and ' + topSlots[topSlots.length - 1];
 
   return new Response(
     JSON.stringify({
       result: `I have openings at ${slotText}. Which time works best for you?`,
-      available_slots: slots.slice(0, 3),
-      recruiter_user_id: recruiterId,
-      recruiter_email: connections[0].email,
-      call_duration_minutes: duration,
+      available_slots: bestResult.slots.slice(0, 3),
+      recruiter_user_id: bestResult.recruiterId,
+      recruiter_email: bestResult.recruiterEmail,
+      call_duration_minutes: bestResult.duration,
     }),
     { status: 200, headers }
   );

@@ -334,6 +334,30 @@ export default function RecruiterCalendarPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Client selector for connecting */}
+              {clients.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Connect for Client (optional)
+                  </Label>
+                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Organization-level (all clients)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Organization-level (all clients)</SelectItem>
+                      {clients.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a client to connect a calendar specifically for them, or leave blank for org-wide availability.
+                  </p>
+                </div>
+              )}
+
               {connectionsLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground py-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -351,7 +375,9 @@ export default function RecruiterCalendarPage() {
                           <p className="font-medium">{conn.email}</p>
                           <p className="text-sm text-muted-foreground capitalize">
                             {conn.provider_type || 'Calendar'} · Connected {new Date(conn.connected_at).toLocaleDateString()}
-                            {conn.client_id && <Badge variant="outline" className="ml-2 text-xs py-0">Client-specific</Badge>}
+                            {conn.client_id && <Badge variant="outline" className="ml-2 text-xs py-0">
+                              {clients.find(c => c.id === conn.client_id)?.name || 'Client-specific'}
+                            </Badge>}
                             {!conn.client_id && <Badge variant="secondary" className="ml-2 text-xs py-0">Org-Level</Badge>}
                           </p>
                         </div>
