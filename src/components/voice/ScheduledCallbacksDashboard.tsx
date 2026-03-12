@@ -47,12 +47,30 @@ export function ScheduledCallbacksDashboard() {
     try {
       const { data, error } = await supabase
         .from('scheduled_callbacks')
-        .select('*')
+        .select('*, applications!scheduled_callbacks_application_id_fkey(job_listing_id, job_listings!applications_job_listing_id_fkey(client_id, clients!job_listings_client_id_fkey(name)))')
         .order('scheduled_start', { ascending: true })
         .limit(100);
 
-      if (error) throw error;
-      setCallbacks((data as ScheduledCallback[]) || []);
+      if (error) {
+        // Fallback without join if the FK path doesn't exist
+        console.warn('Join query failed, falling back:', error.message);
+        const { data: fallbackData, error: fbErr } = await supabase
+          .from('scheduled_callbacks')
+          .select('*')
+          .order('scheduled_start', { ascending: true })
+          .limit(100);
+        if (fbErr) throw fbErr;
+        setCallbacks((fallbackData as ScheduledCallback[]) || []);
+        return;
+      }
+
+      // Extract client name from nested join
+      const enriched = (data || []).map((cb: any) => {
+        const clientName = cb.applications?.job_listings?.clients?.name || null;
+        const { applications, ...rest } = cb;
+        return { ...rest, client_name: clientName } as ScheduledCallback;
+      });
+      setCallbacks(enriched);
     } catch (err: any) {
       console.error('Failed to fetch callbacks:', err);
     } finally {
