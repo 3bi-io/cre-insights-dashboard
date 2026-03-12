@@ -115,16 +115,22 @@ async function handleOAuthUrl(req: Request, params: any, headers: Record<string,
   });
   const stateEncoded = btoa(statePayload);
 
-  const oauthParams = new URLSearchParams({
+  const oauthParams: Record<string, string> = {
     client_id: NYLAS_CLIENT_ID,
     redirect_uri: NYLAS_REDIRECT_URI,
     response_type: 'code',
     access_type: 'online',
     state: stateEncoded,
-    provider: 'google',
-  });
+  };
 
-  const authUrl = `https://api.us.nylas.com/v3/connect/auth?${oauthParams.toString()}`;
+  // Only add provider if explicitly requested and valid
+  const { provider } = params;
+  const VALID_PROVIDERS = ['google', 'microsoft', 'icloud'];
+  if (provider && VALID_PROVIDERS.includes(provider)) {
+    oauthParams.provider = provider;
+  }
+
+  const authUrl = `${NYLAS_API_BASE}/v3/connect/auth?${new URLSearchParams(oauthParams).toString()}`;
 
   return new Response(
     JSON.stringify({ success: true, url: authUrl }),
