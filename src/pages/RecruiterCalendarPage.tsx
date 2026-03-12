@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, Settings2, CalendarCheck, Loader2, Save, Link2, Unlink, ExternalLink, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, Clock, Settings2, CalendarCheck, Loader2, Save, Link2, Unlink, ExternalLink, RefreshCw, CheckCircle2, XCircle, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -97,6 +97,10 @@ export default function RecruiterCalendarPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
+  // Client selector state
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+
   // Preferences state
   const [prefs, setPrefs] = useState<AvailabilityPreferences>(DEFAULT_PREFS);
   const [prefsLoading, setPrefsLoading] = useState(true);
@@ -113,8 +117,17 @@ export default function RecruiterCalendarPage() {
       fetchConnections();
       fetchPreferences();
       fetchCallbacks();
+      fetchClients();
     }
   }, [user?.id]);
+
+  const fetchClients = async () => {
+    const { data } = await supabase
+      .from('clients')
+      .select('id, name')
+      .order('name');
+    setClients(data || []);
+  };
 
   // ---------- Calendar Connections ----------
 
@@ -135,8 +148,12 @@ export default function RecruiterCalendarPage() {
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
+      const body: Record<string, any> = { action: 'oauth_url' };
+      if (selectedClientId) {
+        body.client_id = selectedClientId;
+      }
       const { data, error } = await supabase.functions.invoke('calendar-integration', {
-        body: { action: 'oauth_url' },
+        body,
       });
       if (error) throw error;
       if (data?.url) {
@@ -317,6 +334,30 @@ export default function RecruiterCalendarPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Client selector for connecting */}
+              {clients.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Connect for Client (optional)
+                  </Label>
+                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Organization-level (all clients)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Organization-level (all clients)</SelectItem>
+                      {clients.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a client to connect a calendar specifically for them, or leave blank for org-wide availability.
+                  </p>
+                </div>
+              )}
+
               {connectionsLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground py-4">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -334,7 +375,9 @@ export default function RecruiterCalendarPage() {
                           <p className="font-medium">{conn.email}</p>
                           <p className="text-sm text-muted-foreground capitalize">
                             {conn.provider_type || 'Calendar'} · Connected {new Date(conn.connected_at).toLocaleDateString()}
-                            {conn.client_id && <Badge variant="outline" className="ml-2 text-xs py-0">Client-specific</Badge>}
+                            {conn.client_id && <Badge variant="outline" className="ml-2 text-xs py-0">
+                              {clients.find(c => c.id === conn.client_id)?.name || 'Client-specific'}
+                            </Badge>}
                             {!conn.client_id && <Badge variant="secondary" className="ml-2 text-xs py-0">Org-Level</Badge>}
                           </p>
                         </div>

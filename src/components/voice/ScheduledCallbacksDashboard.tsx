@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, Clock, User, CalendarCheck, Loader2, XCircle } from 'lucide-react';
+import { Phone, Clock, User, CalendarCheck, Loader2, XCircle, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
@@ -25,6 +25,8 @@ interface ScheduledCallback {
   notes: string | null;
   sms_confirmation_sent: boolean;
   created_at: string;
+  application_id: string | null;
+  client_name?: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -45,12 +47,30 @@ export function ScheduledCallbacksDashboard() {
     try {
       const { data, error } = await supabase
         .from('scheduled_callbacks')
-        .select('*')
+        .select('*, applications!scheduled_callbacks_application_id_fkey(job_listing_id, job_listings!applications_job_listing_id_fkey(client_id, clients!job_listings_client_id_fkey(name)))')
         .order('scheduled_start', { ascending: true })
         .limit(100);
 
-      if (error) throw error;
-      setCallbacks((data as ScheduledCallback[]) || []);
+      if (error) {
+        // Fallback without join if the FK path doesn't exist
+        console.warn('Join query failed, falling back:', error.message);
+        const { data: fallbackData, error: fbErr } = await supabase
+          .from('scheduled_callbacks')
+          .select('*')
+          .order('scheduled_start', { ascending: true })
+          .limit(100);
+        if (fbErr) throw fbErr;
+        setCallbacks((fallbackData as ScheduledCallback[]) || []);
+        return;
+      }
+
+      // Extract client name from nested join
+      const enriched = (data || []).map((cb: any) => {
+        const clientName = cb.applications?.job_listings?.clients?.name || null;
+        const { applications, ...rest } = cb;
+        return { ...rest, client_name: clientName } as ScheduledCallback;
+      });
+      setCallbacks(enriched);
     } catch (err: any) {
       console.error('Failed to fetch callbacks:', err);
     } finally {
@@ -133,6 +153,12 @@ export function ScheduledCallbacksDashboard() {
           <div className="flex items-center gap-2 mt-1">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{cb.duration_minutes} min · {cb.booking_source}</span>
+            {cb.client_name && (
+              <Badge variant="outline" className="text-xs py-0 gap-1">
+                <Building2 className="h-3 w-3" />
+                {cb.client_name}
+              </Badge>
+            )}
             {cb.sms_confirmation_sent && (
               <Badge variant="outline" className="text-xs">SMS Sent</Badge>
             )}

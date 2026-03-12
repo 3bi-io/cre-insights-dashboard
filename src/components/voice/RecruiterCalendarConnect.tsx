@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Link2, Unlink, Loader2, ExternalLink, RefreshCw, Users, Building2 } from 'lucide-react';
+import { Calendar, Link2, Unlink, Loader2, ExternalLink, RefreshCw, Users, Building2, HeartPulse, CheckCircle2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,6 +37,8 @@ export function RecruiterCalendarConnect() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { healthy: boolean; error?: string }>>({});
   const { toast } = useToast();
 
   // Fetch clients for the selector
@@ -135,6 +137,33 @@ export function RecruiterCalendarConnect() {
     }
   };
 
+  const handleTestConnection = async (connectionId: string) => {
+    setTestingId(connectionId);
+    try {
+      const { data, error } = await supabase.functions.invoke('calendar-integration', {
+        body: { action: 'test_connection', connectionId },
+      });
+      if (error) throw error;
+      setTestResults(prev => ({
+        ...prev,
+        [connectionId]: { healthy: data?.healthy ?? false, error: data?.error },
+      }));
+      toast({
+        title: data?.healthy ? 'Connection Healthy' : 'Connection Issue',
+        description: data?.healthy ? `Calendar for ${data.email} is active.` : (data?.error || 'Grant may be expired'),
+        variant: data?.healthy ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      setTestResults(prev => ({
+        ...prev,
+        [connectionId]: { healthy: false, error: err.message },
+      }));
+      toast({ title: 'Test Failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   const activeConnections = connections.filter(c => c.status === 'active');
   const clientName = selectedClientId === 'all' 
     ? 'All' 
@@ -222,18 +251,44 @@ export function RecruiterCalendarConnect() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDisconnect(conn.id)}
-                  disabled={disconnectingId === conn.id}
-                >
-                  {disconnectingId === conn.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Unlink className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                  {testResults[conn.id] && (
+                    testResults[conn.id].healthy ? (
+                      <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-600">
+                        <CheckCircle2 className="h-3 w-3" /> Healthy
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs gap-1 text-destructive border-destructive">
+                        <XCircle className="h-3 w-3" /> Unhealthy
+                      </Badge>
+                    )
                   )}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleTestConnection(conn.id)}
+                    disabled={testingId === conn.id}
+                    title="Test connection health"
+                  >
+                    {testingId === conn.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <HeartPulse className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDisconnect(conn.id)}
+                    disabled={disconnectingId === conn.id}
+                  >
+                    {disconnectingId === conn.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Unlink className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
