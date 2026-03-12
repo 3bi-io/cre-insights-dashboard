@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'oauth_url':
-        return handleOAuthUrl(req, jsonHeaders);
+        return handleOAuthUrl(req, params, jsonHeaders);
 
       case 'oauth_callback':
         return handleOAuthCallback(req, params, jsonHeaders);
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         return handleCancelBooking(req, params, jsonHeaders);
 
       case 'list_connections':
-        return handleListConnections(req, jsonHeaders);
+        return handleListConnections(req, params, jsonHeaders);
 
       case 'disconnect':
         return handleDisconnect(req, params, jsonHeaders);
