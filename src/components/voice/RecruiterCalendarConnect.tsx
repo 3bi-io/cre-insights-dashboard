@@ -37,6 +37,8 @@ export function RecruiterCalendarConnect() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, { healthy: boolean; error?: string }>>({});
   const { toast } = useToast();
 
   // Fetch clients for the selector
