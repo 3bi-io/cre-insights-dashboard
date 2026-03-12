@@ -694,6 +694,54 @@ async function handleListConnections(req: Request, params: any, headers: Record<
   );
 }
 
+async function handleTestConnection(_req: Request, params: any, headers: Record<string, string>) {
+  const { connectionId } = params;
+  if (!connectionId || !isValidUUID(connectionId)) {
+    throw new Error('Missing or invalid connectionId');
+  }
+
+  const supabase = getServiceClient();
+  const { data: conn } = await supabase
+    .from('recruiter_calendar_connections')
+    .select('nylas_grant_id, email')
+    .eq('id', connectionId)
+    .single();
+
+  if (!conn) throw new Error('Connection not found');
+  if (!conn.nylas_grant_id) {
+    return new Response(
+      JSON.stringify({ success: true, healthy: false, error: 'No Nylas grant ID stored' }),
+      { headers }
+    );
+  }
+
+  try {
+    const resp = await fetchWithTimeout(
+      `${NYLAS_API_BASE}/v3/grants/${conn.nylas_grant_id}`,
+      { headers: { 'Authorization': `Bearer ${NYLAS_API_KEY}` } }
+    );
+    const body = await resp.text();
+
+    if (resp.ok) {
+      return new Response(
+        JSON.stringify({ success: true, healthy: true, email: conn.email }),
+        { headers }
+      );
+    } else {
+      console.warn('Nylas grant check failed:', body);
+      return new Response(
+        JSON.stringify({ success: true, healthy: false, error: 'Grant is invalid or expired' }),
+        { headers }
+      );
+    }
+  } catch (e: any) {
+    return new Response(
+      JSON.stringify({ success: true, healthy: false, error: e.message || 'Connection test timed out' }),
+      { headers }
+    );
+  }
+}
+
 async function handleDisconnect(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
   const { connectionId } = params;
