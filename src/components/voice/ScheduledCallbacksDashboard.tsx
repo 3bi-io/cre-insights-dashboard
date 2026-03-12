@@ -25,6 +25,8 @@ interface ScheduledCallback {
   notes: string | null;
   sms_confirmation_sent: boolean;
   created_at: string;
+  application_id: string | null;
+  client_name?: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
