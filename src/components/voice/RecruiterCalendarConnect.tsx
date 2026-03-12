@@ -251,18 +251,44 @@ export function RecruiterCalendarConnect() {
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDisconnect(conn.id)}
-                  disabled={disconnectingId === conn.id}
-                >
-                  {disconnectingId === conn.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Unlink className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                  {testResults[conn.id] && (
+                    testResults[conn.id].healthy ? (
+                      <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-600">
+                        <CheckCircle2 className="h-3 w-3" /> Healthy
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs gap-1 text-destructive border-destructive">
+                        <XCircle className="h-3 w-3" /> Unhealthy
+                      </Badge>
+                    )
                   )}
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleTestConnection(conn.id)}
+                    disabled={testingId === conn.id}
+                    title="Test connection health"
+                  >
+                    {testingId === conn.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <HeartPulse className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDisconnect(conn.id)}
+                    disabled={disconnectingId === conn.id}
+                  >
+                    {disconnectingId === conn.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Unlink className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

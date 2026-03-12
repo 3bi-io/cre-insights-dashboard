@@ -153,6 +153,12 @@ export function ScheduledCallbacksDashboard() {
           <div className="flex items-center gap-2 mt-1">
             <Clock className="h-3 w-3 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">{cb.duration_minutes} min · {cb.booking_source}</span>
+            {cb.client_name && (
+              <Badge variant="outline" className="text-xs py-0 gap-1">
+                <Building2 className="h-3 w-3" />
+                {cb.client_name}
+              </Badge>
+            )}
             {cb.sms_confirmation_sent && (
               <Badge variant="outline" className="text-xs">SMS Sent</Badge>
             )}
