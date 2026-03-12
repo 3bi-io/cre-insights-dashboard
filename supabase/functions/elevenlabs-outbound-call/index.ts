@@ -967,7 +967,7 @@ async function processOutboundCall(
     const elevenLabsPayload: Record<string, unknown> = {
       agent_id: voiceAgent.elevenlabs_agent_id,
       agent_phone_number_id: voiceAgent.agent_phone_number_id,
-      to_number: `+1${normalizedPhone}`,
+      to_number: normalizedPhone,
       conversation_initiation_client_data: conversationInitData
     };
 
@@ -1157,16 +1157,16 @@ async function processOutboundCall(
   }
 }
 
-// Normalize US phone number to 10 digits
+// Normalize US phone number to E.164 format (+1XXXXXXXXXX)
 function normalizePhoneNumber(phone: string): string | null {
   const digits = phone.replace(/\D/g, '');
   
   if (digits.length === 11 && digits.startsWith('1')) {
-    return digits.substring(1);
+    return `+${digits}`;
   }
   
   if (digits.length === 10) {
-    return digits;
+    return `+1${digits}`;
   }
   
   return null;

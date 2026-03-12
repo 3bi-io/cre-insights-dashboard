@@ -1,28 +1,41 @@
 
 
-## Phone Number Format Analysis
+# Centralized Benefits Data Source — IMPLEMENTED
 
-**Finding: Not a bug — the system is consistent.**
+## What was done
 
-The `normalizePhoneNumber()` function in this edge function (line 1161) intentionally normalizes to **bare 10 digits** (not E.164). The `+1` prefix is only added at the point of the ElevenLabs API call (line 970: `to_number: \`+1${normalizedPhone}\``).
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-All outbound call records — both original calls and after-hours callbacks — store bare 10-digit numbers. This is by design in the current architecture.
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-### Flow for After-Hours Callbacks
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-1. Callback stored with `phone_number: "8109646088"` (line 1121)
-2. Queue processor reads it back (line 663)
-3. `normalizePhoneNumber()` confirms it's valid 10 digits (line 733)
-4. `+1` prepended at API call time (line 970)
-5. ElevenLabs receives `+18109646088` ✓
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-### Optional Improvement
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
-The edge function's `normalizePhoneNumber()` (lines 1160-1173) differs from the shared `_shared/phone-utils.ts` `normalizePhone()` which returns full E.164 (`+1XXXXXXXXXX`), and the frontend's `src/utils/phoneNormalizer.ts` which also returns E.164. This inconsistency is cosmetic but could be unified:
-
-- **Change**: Update the edge function's `normalizePhoneNumber()` to return E.164 format (`+1XXXXXXXXXX`)
-- **Update line 970**: Change `to_number: \`+1${normalizedPhone}\`` to `to_number: normalizedPhone`
-- **Benefit**: All phone numbers stored in `outbound_calls` would be E.164, matching the shared utility and frontend conventions
-
-This is a cleanup/consistency improvement, not a functional fix. The calls work correctly as-is.
-
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
