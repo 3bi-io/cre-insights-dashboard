@@ -17,7 +17,7 @@ import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-con
 const NYLAS_API_KEY = Deno.env.get('NYLAS_API_KEY') || '';
 const NYLAS_CLIENT_ID = Deno.env.get('NYLAS_CLIENT_ID') || '';
 const NYLAS_REDIRECT_URI = Deno.env.get('NYLAS_REDIRECT_URI') || '';
-const NYLAS_API_BASE = 'https://api.us.nylas.com';
+const NYLAS_API_BASE = Deno.env.get('NYLAS_API_BASE') || 'https://api.us.nylas.com';
 
 /** Fetch with timeout to prevent hanging on external API calls */
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
@@ -80,6 +80,9 @@ Deno.serve(async (req) => {
       case 'test_connection':
         return handleTestConnection(req, params, jsonHeaders);
 
+      case 'oauth_diagnostics':
+        return handleOAuthDiagnostics(req, jsonHeaders);
+
       default:
         return new Response(
           JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
@@ -112,16 +115,22 @@ async function handleOAuthUrl(req: Request, params: any, headers: Record<string,
   });
   const stateEncoded = btoa(statePayload);
 
-  const oauthParams = new URLSearchParams({
+  const oauthParams: Record<string, string> = {
     client_id: NYLAS_CLIENT_ID,
     redirect_uri: NYLAS_REDIRECT_URI,
     response_type: 'code',
     access_type: 'online',
     state: stateEncoded,
-    provider: 'google',
-  });
+  };
 
-  const authUrl = `https://api.us.nylas.com/v3/connect/auth?${oauthParams.toString()}`;
+  // Only add provider if explicitly requested and valid
+  const { provider } = params;
+  const VALID_PROVIDERS = ['google', 'microsoft', 'icloud'];
+  if (provider && VALID_PROVIDERS.includes(provider)) {
+    oauthParams.provider = provider;
+  }
+
+  const authUrl = `${NYLAS_API_BASE}/v3/connect/auth?${new URLSearchParams(oauthParams).toString()}`;
 
   return new Response(
     JSON.stringify({ success: true, url: authUrl }),
@@ -740,6 +749,27 @@ async function handleTestConnection(_req: Request, params: any, headers: Record<
       { headers }
     );
   }
+}
+
+// ============= Diagnostics =============
+
+async function handleOAuthDiagnostics(req: Request, headers: Record<string, string>) {
+  await verifyUser(req);
+
+  const diagnostics = {
+    nylas_client_id_set: !!NYLAS_CLIENT_ID,
+    nylas_client_id_preview: NYLAS_CLIENT_ID ? `${NYLAS_CLIENT_ID.slice(0, 8)}...` : null,
+    nylas_api_key_set: !!NYLAS_API_KEY,
+    nylas_redirect_uri: NYLAS_REDIRECT_URI || null,
+    nylas_api_base: NYLAS_API_BASE,
+    auth_endpoint: `${NYLAS_API_BASE}/v3/connect/auth`,
+    token_endpoint: `${NYLAS_API_BASE}/v3/connect/token`,
+  };
+
+  return new Response(
+    JSON.stringify({ success: true, diagnostics }),
+    { headers }
+  );
 }
 
 async function handleDisconnect(req: Request, params: any, headers: Record<string, string>) {

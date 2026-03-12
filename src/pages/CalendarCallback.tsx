@@ -6,26 +6,46 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 type CallbackStatus = 'processing' | 'success' | 'error';
+
+const KNOWN_ERROR_HINTS: Record<string, string> = {
+  '31004': 'This usually means the Nylas API region or Client ID is misconfigured. Verify that NYLAS_API_BASE matches your Nylas app region (US vs EU) and that NYLAS_CLIENT_ID is correct.',
+  'integration_not_found': 'The Nylas integration was not found. Check that your Nylas Client ID and API Key belong to the same application.',
+  'invalid_redirect_uri': 'The redirect URI does not match what is configured in Nylas. Ensure NYLAS_REDIRECT_URI matches exactly.',
+};
+
+function getErrorHint(error: string, description: string): string | null {
+  const combined = `${error} ${description}`.toLowerCase();
+  for (const [key, hint] of Object.entries(KNOWN_ERROR_HINTS)) {
+    if (combined.includes(key.toLowerCase())) return hint;
+  }
+  return null;
+}
 
 const CalendarCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<CallbackStatus>('processing');
   const [message, setMessage] = useState('Connecting your calendar...');
+  const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description') || '';
 
     if (error) {
+      const displayMsg = errorDescription
+        ? `Authorization failed: ${error} — ${errorDescription}`
+        : `Authorization failed: ${error}`;
       setStatus('error');
-      setMessage(`Authorization failed: ${error}`);
+      setMessage(displayMsg);
+      setHint(getErrorHint(error, errorDescription));
       return;
     }
 
@@ -74,6 +94,13 @@ const CalendarCallback = () => {
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-sm text-muted-foreground">{message}</p>
+          
+          {hint && (
+            <div className="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 text-left">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">{hint}</p>
+            </div>
+          )}
           
           {status !== 'processing' && (
             <div className="flex gap-2 justify-center">
