@@ -27,6 +27,7 @@ interface CalendarConnection {
   status: string;
   connected_at: string;
   calendar_id: string | null;
+  client_id: string | null;
 }
 
 interface AvailabilityPreferences {
