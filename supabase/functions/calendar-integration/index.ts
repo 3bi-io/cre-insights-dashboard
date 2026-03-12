@@ -600,13 +600,44 @@ async function handleCancelBooking(req: Request, params: any, headers: Record<st
 
 // ============= List / Disconnect =============
 
-async function handleListConnections(req: Request, headers: Record<string, string>) {
+async function handleListConnections(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
   const supabase = getServiceClient();
+  const { client_id: clientId, organization_id: orgId, include_org } = params;
 
+  // If include_org or orgId is set, return all org connections (admin view)
+  if (include_org || orgId) {
+    const targetOrgId = orgId || (await supabase.from('profiles').select('organization_id').eq('id', userId).single()).data?.organization_id;
+    
+    if (!targetOrgId) {
+      throw new Error('Could not determine organization');
+    }
+
+    let query = supabase
+      .from('recruiter_calendar_connections')
+      .select('id, user_id, email, provider_type, status, connected_at, calendar_id, client_id')
+      .eq('organization_id', targetOrgId);
+
+    if (clientId && isValidUUID(clientId)) {
+      query = query.eq('client_id', clientId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to list org connections:', error);
+      throw new Error('Failed to list calendar connections');
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, connections: data || [] }),
+      { headers }
+    );
+  }
+
+  // Default: user's own connections
   const { data, error } = await supabase
     .from('recruiter_calendar_connections')
-    .select('id, email, provider_type, status, connected_at, calendar_id')
+    .select('id, email, provider_type, status, connected_at, calendar_id, client_id')
     .eq('user_id', userId);
 
   if (error) {
@@ -630,11 +661,34 @@ async function handleDisconnect(req: Request, params: any, headers: Record<strin
 
   const supabase = getServiceClient();
 
+  // Check if user owns this connection OR is an admin in the same org
+  const { data: conn } = await supabase
+    .from('recruiter_calendar_connections')
+    .select('id, user_id, organization_id')
+    .eq('id', connectionId)
+    .single();
+
+  if (!conn) {
+    throw new Error('Connection not found');
+  }
+
+  // Allow if user owns it or is in the same org (RLS will enforce org check)
+  if (conn.user_id !== userId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', userId)
+      .single();
+    
+    if (profile?.organization_id !== conn.organization_id) {
+      throw new Error('Not authorized to disconnect this calendar');
+    }
+  }
+
   const { error } = await supabase
     .from('recruiter_calendar_connections')
     .delete()
-    .eq('id', connectionId)
-    .eq('user_id', userId);
+    .eq('id', connectionId);
 
   if (error) {
     console.error('Failed to disconnect:', error);
