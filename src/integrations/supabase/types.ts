@@ -1706,6 +1706,74 @@ export type Database = {
           },
         ]
       }
+      calendar_invitations: {
+        Row: {
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          recruiter_email: string
+          status: string
+          token: string
+        }
+        Insert: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          recruiter_email: string
+          status?: string
+          token: string
+        }
+        Update: {
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          recruiter_email?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_invitations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_invitations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_webhook_logs: {
         Row: {
           created_at: string | null

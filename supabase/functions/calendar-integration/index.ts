@@ -9,6 +9,9 @@
  * - cancel_booking: Cancel a scheduled callback
  * - list_connections: List recruiter's calendar connections
  * - disconnect: Remove a calendar connection
+ * - send_calendar_invite: Admin sends invite email to recruiter
+ * - redeem_calendar_invite: Validate token and return OAuth URL
+ * - list_invitations: List pending/completed invitations for org
  */
 
 import { getServiceClient, verifyUser } from '../_shared/supabase-client.ts';
@@ -18,6 +21,7 @@ const NYLAS_API_KEY = Deno.env.get('NYLAS_API_KEY') || '';
 const NYLAS_CLIENT_ID = Deno.env.get('NYLAS_CLIENT_ID') || '';
 const NYLAS_REDIRECT_URI = Deno.env.get('NYLAS_REDIRECT_URI') || '';
 const NYLAS_API_BASE = Deno.env.get('NYLAS_API_BASE') || 'https://api.us.nylas.com';
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
 
 /** Fetch with timeout to prevent hanging on external API calls */
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 15000): Promise<Response> {
@@ -34,6 +38,13 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = 1500
 function isValidUUID(s: string | null | undefined): boolean {
   if (!s) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+
+/** Generate a cryptographically secure URL-safe token */
+function generateSecureToken(length = 48): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, length);
 }
 
 Deno.serve(async (req) => {
@@ -82,6 +93,15 @@ Deno.serve(async (req) => {
 
       case 'oauth_diagnostics':
         return handleOAuthDiagnostics(req, jsonHeaders);
+
+      case 'send_calendar_invite':
+        return handleSendCalendarInvite(req, params, jsonHeaders);
+
+      case 'redeem_calendar_invite':
+        return handleRedeemCalendarInvite(params, jsonHeaders);
+
+      case 'list_invitations':
+        return handleListInvitations(req, params, jsonHeaders);
 
       default:
         return new Response(
@@ -148,22 +168,57 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
     throw new Error('Missing state parameter');
   }
 
-  // Parse state: either raw userId (legacy) or base64 JSON
-  let userId: string;
+  // Parse state: either raw userId (legacy), base64 JSON with userId, or invite-based
+  let userId: string | null = null;
   let clientId: string | null = null;
+  let inviteToken: string | null = null;
   
   try {
     const decoded = atob(state);
     const parsed = JSON.parse(decoded);
-    userId = parsed.userId;
+    userId = parsed.userId || null;
     clientId = parsed.clientId || null;
+    inviteToken = parsed.inviteToken || null;
   } catch {
     // Legacy: state is just the userId
     userId = state;
   }
 
-  if (!userId || !isValidUUID(userId)) {
-    throw new Error('Missing or invalid userId in state');
+  const supabase = getServiceClient();
+
+  // If invite-based flow, resolve org/client from the invitation
+  let organizationId: string | null = null;
+  let inviteEmail: string | null = null;
+
+  if (inviteToken) {
+    const { data: invitation, error: invErr } = await supabase
+      .from('calendar_invitations')
+      .select('id, organization_id, client_id, recruiter_email, status, expires_at')
+      .eq('token', inviteToken)
+      .single();
+
+    if (invErr || !invitation) {
+      throw new Error('Invalid or expired invitation token');
+    }
+    if (invitation.status !== 'pending') {
+      throw new Error('This invitation has already been used');
+    }
+    if (new Date(invitation.expires_at) < new Date()) {
+      // Mark as expired
+      await supabase.from('calendar_invitations').update({ status: 'expired' }).eq('id', invitation.id);
+      throw new Error('This invitation has expired');
+    }
+
+    organizationId = invitation.organization_id;
+    clientId = invitation.client_id || clientId;
+    inviteEmail = invitation.recruiter_email;
+  }
+
+  if (!userId && !inviteToken) {
+    throw new Error('Missing userId or invite token in state');
+  }
+  if (userId && !isValidUUID(userId)) {
+    throw new Error('Invalid userId format');
   }
   if (clientId && !isValidUUID(clientId)) {
     clientId = null;
@@ -217,19 +272,46 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
     console.warn('Could not fetch calendars:', e);
   }
 
-  // Store in DB
-  const supabase = getServiceClient();
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id')
-    .eq('id', userId)
-    .single();
+  // For invite-based flow without a userId, try to find or create a profile by email
+  if (!userId && inviteEmail) {
+    // Look up existing profile by email
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', inviteEmail)
+      .single();
 
-  // Build the upsert record with client_id
+    if (existingProfile) {
+      userId = existingProfile.id;
+    } else {
+      // Use the email from the OAuth response as the connection owner
+      // Store with a placeholder user_id — the invite email is the identifier
+      const { data: emailProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (emailProfile) {
+        userId = emailProfile.id;
+      }
+    }
+  }
+
+  // Determine organization_id
+  if (!organizationId && userId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', userId)
+      .single();
+    organizationId = profile?.organization_id || null;
+  }
+
+  // Build the connection record
   const connectionRecord: Record<string, any> = {
     user_id: userId,
-    organization_id: profile?.organization_id,
+    organization_id: organizationId,
     client_id: clientId,
     provider: 'nylas',
     nylas_grant_id: grantId,
@@ -240,69 +322,302 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
     connected_at: new Date().toISOString(),
   };
 
-  // Manual select-then-insert/update to handle functional unique index (user_id, provider, COALESCE(client_id))
-  const { data: existing } = await supabase
-    .from('recruiter_calendar_connections')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('provider', 'nylas')
-    .then(({ data }) => ({
-      data: (data || []).find((row: any) => {
-        // Match on client_id (both null = org-level, or same UUID)
-        if (clientId === null) return row.client_id === null || row.client_id === undefined;
-        return row.client_id === clientId;
-      }),
-    }));
+  if (userId) {
+    // Manual select-then-insert/update to handle functional unique index
+    let matchQuery = supabase
+      .from('recruiter_calendar_connections')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('provider', 'nylas');
 
-  // Fetch client_id to filter properly - need to re-query with client_id
-  let matchQuery = supabase
-    .from('recruiter_calendar_connections')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('provider', 'nylas');
+    if (clientId) {
+      matchQuery = matchQuery.eq('client_id', clientId);
+    } else {
+      matchQuery = matchQuery.is('client_id', null);
+    }
 
-  if (clientId) {
-    matchQuery = matchQuery.eq('client_id', clientId);
+    const { data: matchedRows } = await matchQuery;
+    const existingRow = matchedRows?.[0];
+
+    if (existingRow) {
+      const { error: updateError } = await supabase
+        .from('recruiter_calendar_connections')
+        .update({
+          nylas_grant_id: grantId,
+          calendar_id: calendarId,
+          email,
+          provider_type: provider,
+          status: 'active',
+          connected_at: new Date().toISOString(),
+          organization_id: organizationId,
+        })
+        .eq('id', existingRow.id);
+
+      if (updateError) {
+        console.error('Failed to update calendar connection:', updateError);
+        throw new Error('Failed to update calendar connection');
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('recruiter_calendar_connections')
+        .insert(connectionRecord);
+
+      if (insertError) {
+        console.error('Failed to insert calendar connection:', insertError);
+        throw new Error('Failed to store calendar connection');
+      }
+    }
   } else {
-    matchQuery = matchQuery.is('client_id', null);
+    // No userId found — store connection with email as identifier
+    // Remove user_id since it's null and the column may be NOT NULL
+    console.warn('No user_id found for invite-based connection, email:', email);
+    throw new Error('Could not find a user profile for the connected email. The recruiter may need to create an account first.');
   }
 
-  const { data: matchedRows } = await matchQuery;
-  const existingRow = matchedRows?.[0];
-
-  if (existingRow) {
-    // Update existing connection
-    const { error: updateError } = await supabase
-      .from('recruiter_calendar_connections')
-      .update({
-        nylas_grant_id: grantId,
-        calendar_id: calendarId,
-        email,
-        provider_type: provider,
-        status: 'active',
-        connected_at: new Date().toISOString(),
-        organization_id: profile?.organization_id,
-      })
-      .eq('id', existingRow.id);
-
-    if (updateError) {
-      console.error('Failed to update calendar connection:', updateError);
-      throw new Error('Failed to update calendar connection');
-    }
-  } else {
-    // Insert new connection
-    const { error: insertError } = await supabase
-      .from('recruiter_calendar_connections')
-      .insert(connectionRecord);
-
-    if (insertError) {
-      console.error('Failed to insert calendar connection:', insertError);
-      throw new Error('Failed to store calendar connection');
-    }
+  // Mark invitation as completed
+  if (inviteToken) {
+    await supabase
+      .from('calendar_invitations')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('token', inviteToken);
   }
 
   return new Response(
-    JSON.stringify({ success: true, email, provider }),
+    JSON.stringify({ success: true, email, provider, inviteCompleted: !!inviteToken }),
+    { headers }
+  );
+}
+
+// ============= Calendar Invite Flow =============
+
+async function handleSendCalendarInvite(req: Request, params: any, headers: Record<string, string>) {
+  const { userId } = await verifyUser(req);
+  const { recruiter_email, client_id: clientId } = params;
+
+  if (!recruiter_email || typeof recruiter_email !== 'string' || !recruiter_email.includes('@')) {
+    throw new Error('A valid recruiter email is required');
+  }
+
+  const supabase = getServiceClient();
+
+  // Get admin's organization
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', userId)
+    .single();
+
+  if (!profile?.organization_id) {
+    throw new Error('Could not determine your organization');
+  }
+
+  // Get organization name for the email
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name')
+    .eq('id', profile.organization_id)
+    .single();
+
+  const orgName = org?.name || 'Your Organization';
+
+  // Generate secure token
+  const token = generateSecureToken();
+
+  // Create invitation record
+  const { error: insertError } = await supabase
+    .from('calendar_invitations')
+    .insert({
+      organization_id: profile.organization_id,
+      client_id: clientId && isValidUUID(clientId) ? clientId : null,
+      recruiter_email: recruiter_email.trim().toLowerCase(),
+      invited_by: userId,
+      token,
+      status: 'pending',
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+  if (insertError) {
+    console.error('Failed to create calendar invitation:', insertError);
+    throw new Error('Failed to create invitation');
+  }
+
+  // Send email via Resend
+  if (!RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY not configured, invitation created but email not sent');
+    return new Response(
+      JSON.stringify({ success: true, emailSent: false, message: 'Invitation created but email service is not configured' }),
+      { headers }
+    );
+  }
+
+  const inviteUrl = `https://applyai.jobs/calendar/connect?token=${token}`;
+
+  try {
+    const emailResponse = await fetchWithTimeout('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'ApplyAI <noreply@applyai.jobs>',
+        to: [recruiter_email.trim()],
+        subject: `${orgName} — Connect Your Calendar`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f4f4f5;">
+            <div style="max-width: 560px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 32px 24px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Connect Your Calendar</h1>
+              </div>
+              <div style="padding: 32px 24px;">
+                <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                  Hi there,
+                </p>
+                <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                  <strong>${orgName}</strong> has invited you to connect your calendar. This allows the AI scheduling agent to check your availability and book driver callbacks on your behalf.
+                </p>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                    Connect Calendar
+                  </a>
+                </div>
+                <p style="color: #6b7280; font-size: 14px; line-height: 1.5; margin: 24px 0 0;">
+                  This link expires in 7 days. If you didn't expect this email, you can safely ignore it.
+                </p>
+              </div>
+              <div style="background: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+                <p style="color: #9ca3af; font-size: 12px; margin: 0;">Powered by ApplyAI</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!emailResponse.ok) {
+      const errText = await emailResponse.text();
+      console.error('Resend email failed:', errText);
+      return new Response(
+        JSON.stringify({ success: true, emailSent: false, message: 'Invitation created but email failed to send' }),
+        { headers }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, emailSent: true }),
+      { headers }
+    );
+  } catch (e: any) {
+    console.error('Email send error:', e);
+    return new Response(
+      JSON.stringify({ success: true, emailSent: false, message: 'Invitation created but email failed: ' + e.message }),
+      { headers }
+    );
+  }
+}
+
+async function handleRedeemCalendarInvite(params: any, headers: Record<string, string>) {
+  const { token } = params;
+
+  if (!token || typeof token !== 'string') {
+    throw new Error('Missing invitation token');
+  }
+
+  if (!NYLAS_CLIENT_ID || !NYLAS_REDIRECT_URI) {
+    throw new Error('Calendar integration not configured');
+  }
+
+  const supabase = getServiceClient();
+
+  // Look up invitation
+  const { data: invitation, error } = await supabase
+    .from('calendar_invitations')
+    .select('id, organization_id, client_id, recruiter_email, status, expires_at')
+    .eq('token', token)
+    .single();
+
+  if (error || !invitation) {
+    throw new Error('Invalid invitation token');
+  }
+
+  if (invitation.status === 'completed') {
+    throw new Error('This invitation has already been used');
+  }
+
+  if (new Date(invitation.expires_at) < new Date()) {
+    await supabase.from('calendar_invitations').update({ status: 'expired' }).eq('id', invitation.id);
+    throw new Error('This invitation has expired');
+  }
+
+  // Get organization name
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name')
+    .eq('id', invitation.organization_id)
+    .single();
+
+  // Generate OAuth URL with invite context in state
+  const statePayload = JSON.stringify({
+    inviteToken: token,
+    clientId: invitation.client_id,
+  });
+  const stateEncoded = btoa(statePayload);
+
+  const oauthParams: Record<string, string> = {
+    client_id: NYLAS_CLIENT_ID,
+    redirect_uri: NYLAS_REDIRECT_URI,
+    response_type: 'code',
+    access_type: 'online',
+    state: stateEncoded,
+    login_hint: invitation.recruiter_email,
+  };
+
+  const authUrl = `${NYLAS_API_BASE}/v3/connect/auth?${new URLSearchParams(oauthParams).toString()}`;
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      url: authUrl,
+      organization_name: org?.name || 'Organization',
+      recruiter_email: invitation.recruiter_email,
+      status: invitation.status,
+    }),
+    { headers }
+  );
+}
+
+async function handleListInvitations(req: Request, params: any, headers: Record<string, string>) {
+  const { userId } = await verifyUser(req);
+  const supabase = getServiceClient();
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('organization_id')
+    .eq('id', userId)
+    .single();
+
+  if (!profile?.organization_id) {
+    throw new Error('Could not determine organization');
+  }
+
+  const { data: invitations, error } = await supabase
+    .from('calendar_invitations')
+    .select('id, recruiter_email, client_id, status, created_at, expires_at, completed_at')
+    .eq('organization_id', profile.organization_id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error('Failed to list invitations:', error);
+    throw new Error('Failed to list invitations');
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, invitations: invitations || [] }),
     { headers }
   );
 }
