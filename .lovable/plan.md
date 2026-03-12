@@ -1,27 +1,41 @@
 
 
-## Problem
+# Centralized Benefits Data Source — IMPLEMENTED
 
-The seed data timestamps are stored in **UTC** (`+00`), but the business timezone is `America/Chicago` (CDT = UTC-5). So `09:00 UTC` renders as **4:00 AM CDT** and `11:00 UTC` renders as **6:00 AM CDT** in the browser. The dates also shift — a `Mar 13 09:00 UTC` becomes `Mar 13 4:00 AM` local, which is technically correct but looks wrong because no one schedules callbacks at 4 AM.
+## What was done
 
-Additionally, today's callbacks (Mar 12 at `14:00 UTC` / `15:00 UTC` = 9-10 AM CDT) may have already passed depending on when you loaded the page, pushing them to the "Past" tab.
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-## Fix
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-Re-seed with corrected UTC offsets so the times land within business hours in CDT:
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-| Desired CDT Time | Correct UTC Value |
-|---|---|
-| 9:00 AM CDT | 14:00:00+00 |
-| 10:00 AM CDT | 15:00:00+00 |
-| 11:00 AM CDT | 16:00:00+00 |
-| 1:00 PM CDT | 18:00:00+00 |
-| 2:00 PM CDT | 19:00:00+00 |
-| 3:00 PM CDT | 20:00:00+00 |
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-### Steps
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
-1. **Delete existing seed data** — remove the 25 seeded rows (identifiable by the fake phone numbers `+1555123400x`).
-2. **Re-insert with correct UTC offsets** — all `scheduled_start`/`scheduled_end` values adjusted so they fall within 9 AM – 4:30 PM CDT. Today's upcoming callbacks will use afternoon CDT times so they appear in "Upcoming."
-3. **No code changes needed** — the dashboard component correctly renders times in the browser's local timezone. The issue is purely the seed data.
-
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
