@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'oauth_url':
-        return handleOAuthUrl(req, jsonHeaders);
+        return handleOAuthUrl(req, params, jsonHeaders);
 
       case 'oauth_callback':
         return handleOAuthCallback(req, params, jsonHeaders);
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         return handleCancelBooking(req, params, jsonHeaders);
 
       case 'list_connections':
-        return handleListConnections(req, jsonHeaders);
+        return handleListConnections(req, params, jsonHeaders);
 
       case 'disconnect':
         return handleDisconnect(req, params, jsonHeaders);
@@ -94,23 +94,31 @@ Deno.serve(async (req) => {
 
 // ============= OAuth =============
 
-async function handleOAuthUrl(req: Request, headers: Record<string, string>) {
+async function handleOAuthUrl(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
+  const { client_id: clientId } = params;
 
   if (!NYLAS_CLIENT_ID || !NYLAS_REDIRECT_URI) {
     throw new Error('Nylas OAuth not configured. Missing NYLAS_CLIENT_ID or NYLAS_REDIRECT_URI.');
   }
 
-  const params = new URLSearchParams({
+  // Encode userId and optional clientId in state as JSON
+  const statePayload = JSON.stringify({
+    userId,
+    clientId: clientId && isValidUUID(clientId) ? clientId : null,
+  });
+  const stateEncoded = btoa(statePayload);
+
+  const oauthParams = new URLSearchParams({
     client_id: NYLAS_CLIENT_ID,
     redirect_uri: NYLAS_REDIRECT_URI,
     response_type: 'code',
     access_type: 'online',
-    state: userId,
+    state: stateEncoded,
     provider: 'google',
   });
 
-  const authUrl = `https://api.us.nylas.com/v3/connect/auth?${params.toString()}`;
+  const authUrl = `https://api.us.nylas.com/v3/connect/auth?${oauthParams.toString()}`;
 
   return new Response(
     JSON.stringify({ success: true, url: authUrl }),
@@ -119,13 +127,34 @@ async function handleOAuthUrl(req: Request, headers: Record<string, string>) {
 }
 
 async function handleOAuthCallback(req: Request, params: any, headers: Record<string, string>) {
-  const { code, state: userId } = params;
+  const { code, state } = params;
 
   if (!code || typeof code !== 'string') {
     throw new Error('Missing or invalid authorization code');
   }
+  if (!state) {
+    throw new Error('Missing state parameter');
+  }
+
+  // Parse state: either raw userId (legacy) or base64 JSON
+  let userId: string;
+  let clientId: string | null = null;
+  
+  try {
+    const decoded = atob(state);
+    const parsed = JSON.parse(decoded);
+    userId = parsed.userId;
+    clientId = parsed.clientId || null;
+  } catch {
+    // Legacy: state is just the userId
+    userId = state;
+  }
+
   if (!userId || !isValidUUID(userId)) {
-    throw new Error('Missing or invalid state (userId)');
+    throw new Error('Missing or invalid userId in state');
+  }
+  if (clientId && !isValidUUID(clientId)) {
+    clientId = null;
   }
 
   // Exchange code for grant
@@ -170,7 +199,7 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
       const primary = calendars.data?.find((c: any) => c.is_primary) || calendars.data?.[0];
       calendarId = primary?.id || null;
     } else {
-      await calResponse.text(); // consume body
+      await calResponse.text();
     }
   } catch (e) {
     console.warn('Could not fetch calendars:', e);
@@ -185,23 +214,39 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
     .eq('id', userId)
     .single();
 
+  // Build the upsert record with client_id
+  const connectionRecord: Record<string, any> = {
+    user_id: userId,
+    organization_id: profile?.organization_id,
+    client_id: clientId,
+    provider: 'nylas',
+    nylas_grant_id: grantId,
+    calendar_id: calendarId,
+    email,
+    provider_type: provider,
+    status: 'active',
+    connected_at: new Date().toISOString(),
+  };
+
+  // Use insert with ON CONFLICT since we have a functional unique index
   const { error: upsertError } = await supabase
     .from('recruiter_calendar_connections')
-    .upsert({
-      user_id: userId,
-      organization_id: profile?.organization_id,
-      provider: 'nylas',
-      nylas_grant_id: grantId,
-      calendar_id: calendarId,
-      email,
-      provider_type: provider,
-      status: 'active',
-      connected_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,provider' });
+    .upsert(connectionRecord, { 
+      onConflict: 'user_id,provider',
+      ignoreDuplicates: false,
+    });
 
   if (upsertError) {
     console.error('Failed to store calendar connection:', upsertError);
-    throw new Error('Failed to store calendar connection');
+    // Try insert instead (functional index may not work with upsert)
+    const { error: insertError } = await supabase
+      .from('recruiter_calendar_connections')
+      .insert(connectionRecord);
+    
+    if (insertError) {
+      console.error('Insert also failed:', insertError);
+      throw new Error('Failed to store calendar connection');
+    }
   }
 
   return new Response(
@@ -555,13 +600,44 @@ async function handleCancelBooking(req: Request, params: any, headers: Record<st
 
 // ============= List / Disconnect =============
 
-async function handleListConnections(req: Request, headers: Record<string, string>) {
+async function handleListConnections(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
   const supabase = getServiceClient();
+  const { client_id: clientId, organization_id: orgId, include_org } = params;
 
+  // If include_org or orgId is set, return all org connections (admin view)
+  if (include_org || orgId) {
+    const targetOrgId = orgId || (await supabase.from('profiles').select('organization_id').eq('id', userId).single()).data?.organization_id;
+    
+    if (!targetOrgId) {
+      throw new Error('Could not determine organization');
+    }
+
+    let query = supabase
+      .from('recruiter_calendar_connections')
+      .select('id, user_id, email, provider_type, status, connected_at, calendar_id, client_id')
+      .eq('organization_id', targetOrgId);
+
+    if (clientId && isValidUUID(clientId)) {
+      query = query.eq('client_id', clientId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to list org connections:', error);
+      throw new Error('Failed to list calendar connections');
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, connections: data || [] }),
+      { headers }
+    );
+  }
+
+  // Default: user's own connections
   const { data, error } = await supabase
     .from('recruiter_calendar_connections')
-    .select('id, email, provider_type, status, connected_at, calendar_id')
+    .select('id, email, provider_type, status, connected_at, calendar_id, client_id')
     .eq('user_id', userId);
 
   if (error) {
@@ -585,11 +661,34 @@ async function handleDisconnect(req: Request, params: any, headers: Record<strin
 
   const supabase = getServiceClient();
 
+  // Check if user owns this connection OR is an admin in the same org
+  const { data: conn } = await supabase
+    .from('recruiter_calendar_connections')
+    .select('id, user_id, organization_id')
+    .eq('id', connectionId)
+    .single();
+
+  if (!conn) {
+    throw new Error('Connection not found');
+  }
+
+  // Allow if user owns it or is in the same org (RLS will enforce org check)
+  if (conn.user_id !== userId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organization_id')
+      .eq('id', userId)
+      .single();
+    
+    if (profile?.organization_id !== conn.organization_id) {
+      throw new Error('Not authorized to disconnect this calendar');
+    }
+  }
+
   const { error } = await supabase
     .from('recruiter_calendar_connections')
     .delete()
-    .eq('id', connectionId)
-    .eq('user_id', userId);
+    .eq('id', connectionId);
 
   if (error) {
     console.error('Failed to disconnect:', error);

@@ -27,6 +27,7 @@ interface CalendarConnection {
   status: string;
   connected_at: string;
   calendar_id: string | null;
+  client_id: string | null;
 }
 
 interface AvailabilityPreferences {
@@ -333,6 +334,8 @@ export default function RecruiterCalendarPage() {
                           <p className="font-medium">{conn.email}</p>
                           <p className="text-sm text-muted-foreground capitalize">
                             {conn.provider_type || 'Calendar'} · Connected {new Date(conn.connected_at).toLocaleDateString()}
+                            {conn.client_id && <Badge variant="outline" className="ml-2 text-xs py-0">Client-specific</Badge>}
+                            {!conn.client_id && <Badge variant="secondary" className="ml-2 text-xs py-0">Org-Level</Badge>}
                           </p>
                         </div>
                       </div>

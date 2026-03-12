@@ -5965,6 +5965,7 @@ export type Database = {
       recruiter_calendar_connections: {
         Row: {
           calendar_id: string | null
+          client_id: string | null
           connected_at: string
           created_at: string
           email: string | null
@@ -5982,6 +5983,7 @@ export type Database = {
         }
         Insert: {
           calendar_id?: string | null
+          client_id?: string | null
           connected_at?: string
           created_at?: string
           email?: string | null
@@ -5999,6 +6001,7 @@ export type Database = {
         }
         Update: {
           calendar_id?: string | null
+          client_id?: string | null
           connected_at?: string
           created_at?: string
           email?: string | null
@@ -6015,6 +6018,20 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "recruiter_calendar_connections_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recruiter_calendar_connections_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "recruiter_calendar_connections_organization_id_fkey"
             columns: ["organization_id"]

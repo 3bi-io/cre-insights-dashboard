@@ -99,7 +99,7 @@ async function handleCheckAvailability(
   params: any,
   headers: Record<string, string>
 ) {
-  const { organization_id, driver_timezone } = params;
+  const { organization_id, driver_timezone, client_id, application_id } = params;
 
   if (!organization_id || !isValidUUID(organization_id)) {
     return new Response(
@@ -110,22 +110,59 @@ async function handleCheckAvailability(
 
   const supabase = getServiceClient();
 
-  // Find recruiters with connected calendars in this org
-  const { data: connections, error: connErr } = await supabase
-    .from('recruiter_calendar_connections')
-    .select('user_id, email, calendar_id')
-    .eq('organization_id', organization_id)
-    .eq('status', 'active');
-
-  if (connErr) {
-    console.error('Failed to query calendar connections:', connErr);
-    return new Response(
-      JSON.stringify({ result: 'I\'m having trouble checking schedules right now. A recruiter will call you back during business hours.' }),
-      { status: 200, headers }
-    );
+  // Resolve client_id from application if not provided
+  let resolvedClientId = client_id && isValidUUID(client_id) ? client_id : null;
+  if (!resolvedClientId && application_id && isValidUUID(application_id)) {
+    const { data: app } = await supabase
+      .from('applications')
+      .select('job_listing_id')
+      .eq('id', application_id)
+      .single();
+    if (app?.job_listing_id) {
+      const { data: job } = await supabase
+        .from('job_listings')
+        .select('client_id')
+        .eq('id', app.job_listing_id)
+        .single();
+      resolvedClientId = (job as any)?.client_id || null;
+    }
   }
 
-  if (!connections || connections.length === 0) {
+  // Find recruiters with connected calendars - prefer client-specific, fallback to org-level
+  let connections: any[] = [];
+  
+  if (resolvedClientId) {
+    // First try client-specific connections
+    const { data: clientConns } = await supabase
+      .from('recruiter_calendar_connections')
+      .select('user_id, email, calendar_id')
+      .eq('organization_id', organization_id)
+      .eq('client_id', resolvedClientId)
+      .eq('status', 'active');
+    
+    connections = clientConns || [];
+  }
+
+  // Fallback to org-level connections (no client_id)
+  if (connections.length === 0) {
+    const { data: orgConns, error: connErr } = await supabase
+      .from('recruiter_calendar_connections')
+      .select('user_id, email, calendar_id')
+      .eq('organization_id', organization_id)
+      .is('client_id', null)
+      .eq('status', 'active');
+
+    if (connErr) {
+      console.error('Failed to query calendar connections:', connErr);
+      return new Response(
+        JSON.stringify({ result: 'I\'m having trouble checking schedules right now. A recruiter will call you back during business hours.' }),
+        { status: 200, headers }
+      );
+    }
+    connections = orgConns || [];
+  }
+
+  if (connections.length === 0) {
     return new Response(
       JSON.stringify({ 
         result: 'No recruiters have connected their calendars yet. I can take your information and have a recruiter call you back during business hours.' 
@@ -134,6 +171,7 @@ async function handleCheckAvailability(
     );
   }
 
+  // Use first available recruiter (could be enhanced to round-robin across all)
   const recruiterId = connections[0].user_id;
 
   // Load recruiter availability preferences
