@@ -80,6 +80,9 @@ Deno.serve(async (req) => {
       case 'test_connection':
         return handleTestConnection(req, params, jsonHeaders);
 
+      case 'oauth_diagnostics':
+        return handleOAuthDiagnostics(req, jsonHeaders);
+
       default:
         return new Response(
           JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
