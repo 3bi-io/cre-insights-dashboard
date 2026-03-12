@@ -751,6 +751,27 @@ async function handleTestConnection(_req: Request, params: any, headers: Record<
   }
 }
 
+// ============= Diagnostics =============
+
+async function handleOAuthDiagnostics(req: Request, headers: Record<string, string>) {
+  await verifyUser(req);
+
+  const diagnostics = {
+    nylas_client_id_set: !!NYLAS_CLIENT_ID,
+    nylas_client_id_preview: NYLAS_CLIENT_ID ? `${NYLAS_CLIENT_ID.slice(0, 8)}...` : null,
+    nylas_api_key_set: !!NYLAS_API_KEY,
+    nylas_redirect_uri: NYLAS_REDIRECT_URI || null,
+    nylas_api_base: NYLAS_API_BASE,
+    auth_endpoint: `${NYLAS_API_BASE}/v3/connect/auth`,
+    token_endpoint: `${NYLAS_API_BASE}/v3/connect/token`,
+  };
+
+  return new Response(
+    JSON.stringify({ success: true, diagnostics }),
+    { headers }
+  );
+}
+
 async function handleDisconnect(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
   const { connectionId } = params;
