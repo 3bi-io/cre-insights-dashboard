@@ -94,23 +94,31 @@ Deno.serve(async (req) => {
 
 // ============= OAuth =============
 
-async function handleOAuthUrl(req: Request, headers: Record<string, string>) {
+async function handleOAuthUrl(req: Request, params: any, headers: Record<string, string>) {
   const { userId } = await verifyUser(req);
+  const { client_id: clientId } = params;
 
   if (!NYLAS_CLIENT_ID || !NYLAS_REDIRECT_URI) {
     throw new Error('Nylas OAuth not configured. Missing NYLAS_CLIENT_ID or NYLAS_REDIRECT_URI.');
   }
 
-  const params = new URLSearchParams({
+  // Encode userId and optional clientId in state as JSON
+  const statePayload = JSON.stringify({
+    userId,
+    clientId: clientId && isValidUUID(clientId) ? clientId : null,
+  });
+  const stateEncoded = btoa(statePayload);
+
+  const oauthParams = new URLSearchParams({
     client_id: NYLAS_CLIENT_ID,
     redirect_uri: NYLAS_REDIRECT_URI,
     response_type: 'code',
     access_type: 'online',
-    state: userId,
+    state: stateEncoded,
     provider: 'google',
   });
 
-  const authUrl = `https://api.us.nylas.com/v3/connect/auth?${params.toString()}`;
+  const authUrl = `https://api.us.nylas.com/v3/connect/auth?${oauthParams.toString()}`;
 
   return new Response(
     JSON.stringify({ success: true, url: authUrl }),
@@ -119,13 +127,34 @@ async function handleOAuthUrl(req: Request, headers: Record<string, string>) {
 }
 
 async function handleOAuthCallback(req: Request, params: any, headers: Record<string, string>) {
-  const { code, state: userId } = params;
+  const { code, state } = params;
 
   if (!code || typeof code !== 'string') {
     throw new Error('Missing or invalid authorization code');
   }
+  if (!state) {
+    throw new Error('Missing state parameter');
+  }
+
+  // Parse state: either raw userId (legacy) or base64 JSON
+  let userId: string;
+  let clientId: string | null = null;
+  
+  try {
+    const decoded = atob(state);
+    const parsed = JSON.parse(decoded);
+    userId = parsed.userId;
+    clientId = parsed.clientId || null;
+  } catch {
+    // Legacy: state is just the userId
+    userId = state;
+  }
+
   if (!userId || !isValidUUID(userId)) {
-    throw new Error('Missing or invalid state (userId)');
+    throw new Error('Missing or invalid userId in state');
+  }
+  if (clientId && !isValidUUID(clientId)) {
+    clientId = null;
   }
 
   // Exchange code for grant
@@ -170,7 +199,7 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
       const primary = calendars.data?.find((c: any) => c.is_primary) || calendars.data?.[0];
       calendarId = primary?.id || null;
     } else {
-      await calResponse.text(); // consume body
+      await calResponse.text();
     }
   } catch (e) {
     console.warn('Could not fetch calendars:', e);
@@ -185,23 +214,39 @@ async function handleOAuthCallback(req: Request, params: any, headers: Record<st
     .eq('id', userId)
     .single();
 
+  // Build the upsert record with client_id
+  const connectionRecord: Record<string, any> = {
+    user_id: userId,
+    organization_id: profile?.organization_id,
+    client_id: clientId,
+    provider: 'nylas',
+    nylas_grant_id: grantId,
+    calendar_id: calendarId,
+    email,
+    provider_type: provider,
+    status: 'active',
+    connected_at: new Date().toISOString(),
+  };
+
+  // Use insert with ON CONFLICT since we have a functional unique index
   const { error: upsertError } = await supabase
     .from('recruiter_calendar_connections')
-    .upsert({
-      user_id: userId,
-      organization_id: profile?.organization_id,
-      provider: 'nylas',
-      nylas_grant_id: grantId,
-      calendar_id: calendarId,
-      email,
-      provider_type: provider,
-      status: 'active',
-      connected_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,provider' });
+    .upsert(connectionRecord, { 
+      onConflict: 'user_id,provider',
+      ignoreDuplicates: false,
+    });
 
   if (upsertError) {
     console.error('Failed to store calendar connection:', upsertError);
-    throw new Error('Failed to store calendar connection');
+    // Try insert instead (functional index may not work with upsert)
+    const { error: insertError } = await supabase
+      .from('recruiter_calendar_connections')
+      .insert(connectionRecord);
+    
+    if (insertError) {
+      console.error('Insert also failed:', insertError);
+      throw new Error('Failed to store calendar connection');
+    }
   }
 
   return new Response(
