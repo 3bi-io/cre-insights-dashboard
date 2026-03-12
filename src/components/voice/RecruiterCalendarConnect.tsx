@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Link2, Unlink, Loader2, ExternalLink, RefreshCw, Users, Building2 } from 'lucide-react';
+import { Calendar, Link2, Unlink, Loader2, ExternalLink, RefreshCw, Users, Building2, HeartPulse, CheckCircle2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
