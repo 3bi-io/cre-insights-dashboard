@@ -431,7 +431,7 @@ serve(async (req) => {
       // Completion guard: cancel any queued calls whose application already has a completed call
       const { data: queuedForGuard } = await supabase
         .from('outbound_calls')
-        .select('id, application_id')
+        .select('id, application_id, metadata')
         .eq('status', 'queued')
         .not('application_id', 'is', null);
 
