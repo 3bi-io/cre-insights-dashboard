@@ -77,6 +77,9 @@ Deno.serve(async (req) => {
       case 'disconnect':
         return handleDisconnect(req, params, jsonHeaders);
 
+      case 'test_connection':
+        return handleTestConnection(req, params, jsonHeaders);
+
       default:
         return new Response(
           JSON.stringify({ success: false, error: `Unknown action: ${action}` }),
