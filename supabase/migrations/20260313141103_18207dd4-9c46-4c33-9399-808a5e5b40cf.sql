@@ -1,0 +1,1 @@
+DELETE FROM calendar_invitations WHERE id IN ('82a5ae08-1024-452a-8945-c114205319df', '1cf21290-954f-4d2f-8a53-4f68c87ba7ee')
