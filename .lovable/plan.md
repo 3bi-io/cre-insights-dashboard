@@ -1,41 +1,31 @@
 
 
-# Centralized Benefits Data Source — IMPLEMENTED
+## Two Issues to Fix
 
-## What was done
+### Issue 1: "Connect Calendar" Button Text Invisible in Light Mode
 
-### 1. Database (`benefits_catalog` + `job_listing_benefits`)
-- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
-- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
-- Created `job_listing_benefits` junction table linking structured benefits to job listings
-- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
+Looking at the email HTML (line 484), the button uses `color: #ffffff` (white text) on a blue gradient background — that's correct and should be visible. However, the screenshot you shared shows the button area is blank, which means the button itself is likely not rendering.
 
-### 2. Shared Config (`src/config/benefits.config.ts`)
-- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
-- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
-- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
-- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
-- `BENEFITS_FALLBACK` — static array matching seed data
+The issue is that some email clients strip `<a>` tags with `background: linear-gradient(...)`. Linear gradients are not universally supported in email clients (notably Outlook and some mobile clients). The fix is to use a solid `background-color` as the primary style with the gradient as a progressive enhancement.
 
-### 3. Frontend Consumers Updated
-- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
-- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
+**Fix in `supabase/functions/calendar-integration/index.ts` (line 484):**
+- Replace `background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)` with `background-color: #2563eb; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)`
+- This ensures a solid blue fallback when gradients aren't supported
 
-### 4. Edge Function Consumers Updated
-- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
-  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
-- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
-- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
+### Issue 2: Only Google Calendar Option — Microsoft Not Available
 
-### 5. Voice Agent Integration
-- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
+The `redeem_calendar_invite` handler (line 571-578) does **not** pass a `provider` parameter in the Nylas OAuth URL. This means Nylas should show all configured providers (Google, Microsoft, iCloud). However, if **only Google is configured as a Connector in the Nylas Dashboard**, that's the only option users will see.
 
-## Files changed
-- **New**: `supabase/migrations/..._benefits_schema.sql`
-- **New**: `src/config/benefits.config.ts`
-- **New**: `supabase/functions/_shared/benefits-catalog.ts`
-- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
-- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
-- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
-- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
-- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
+**This is a Nylas Dashboard configuration issue, not a code issue.** The fix is:
+1. Go to the **Nylas Dashboard** → **Connectors**
+2. Add a **Microsoft** connector (requires Azure AD app registration with appropriate permissions)
+3. Once configured, Nylas hosted auth will automatically show both Google and Microsoft as options
+
+No code change is needed for this — the OAuth URL already omits the `provider` param, which lets Nylas show all available connectors.
+
+### Files to Update
+- **`supabase/functions/calendar-integration/index.ts`** — Fix button styling on line 484 for email client compatibility
+
+### Action Required (External)
+- **Nylas Dashboard** — Add Microsoft connector so recruiters can connect Outlook/Teams calendars
+
