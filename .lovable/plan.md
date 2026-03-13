@@ -1,23 +1,41 @@
 
 
-## Fix: Calendar Invitation Email Failing to Send
+# Centralized Benefits Data Source — IMPLEMENTED
 
-### Root Cause
-The `send_calendar_invite` function in `calendar-integration/index.ts` is using `noreply@applyai.jobs` as the sender address (line 463), but only `notifications.3bi.io` is verified in Resend. The logs confirm:
+## What was done
 
-> "The applyai.jobs domain is not verified. Please, add and verify your domain on https://resend.com/domains"
+### 1. Database (`benefits_catalog` + `job_listing_benefits`)
+- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
+- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
+- Created `job_listing_benefits` junction table linking structured benefits to job listings
+- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
 
-### Fix
-Change line 463 in `supabase/functions/calendar-integration/index.ts` from:
-```
-from: 'ApplyAI <noreply@applyai.jobs>',
-```
-to use the shared email config's `getSender('invites')` which resolves to `Apply AI <invites@notifications.3bi.io>` — the verified domain already used by all other email functions (e.g., `send-invite-email`).
+### 2. Shared Config (`src/config/benefits.config.ts`)
+- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
+- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
+- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
+- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
+- `BENEFITS_FALLBACK` — static array matching seed data
 
-This requires importing `getSender` from `../_shared/email-config.ts` (if not already imported) and replacing the hardcoded sender.
+### 3. Frontend Consumers Updated
+- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
+- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
 
-### Files to Update
-- **`supabase/functions/calendar-integration/index.ts`** — Replace hardcoded `from` address with `getSender('invites')`, adding the import if needed.
+### 4. Edge Function Consumers Updated
+- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
+  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
+- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
+- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
 
-Then redeploy the edge function.
+### 5. Voice Agent Integration
+- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
 
+## Files changed
+- **New**: `supabase/migrations/..._benefits_schema.sql`
+- **New**: `src/config/benefits.config.ts`
+- **New**: `supabase/functions/_shared/benefits-catalog.ts`
+- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
+- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
+- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
+- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
+- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`

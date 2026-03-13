@@ -16,6 +16,7 @@
 
 import { getServiceClient, verifyUser } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+import { getSender } from '../_shared/email-config.ts';
 
 const NYLAS_API_KEY = Deno.env.get('NYLAS_API_KEY') || '';
 const NYLAS_CLIENT_ID = Deno.env.get('NYLAS_CLIENT_ID') || '';
@@ -460,7 +461,7 @@ async function handleSendCalendarInvite(req: Request, params: any, headers: Reco
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ApplyAI <noreply@applyai.jobs>',
+        from: getSender('invites'),
         to: [recruiter_email.trim()],
         subject: `${orgName} — Connect Your Calendar`,
         html: `
