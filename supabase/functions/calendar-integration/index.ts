@@ -481,7 +481,7 @@ async function handleSendCalendarInvite(req: Request, params: any, headers: Reco
                   <strong>${orgName}</strong> has invited you to connect your calendar. This allows the AI scheduling agent to check your availability and book driver callbacks on your behalf.
                 </p>
                 <div style="text-align: center; margin: 32px 0;">
-                  <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+                  <a href="${inviteUrl}" style="display: inline-block; background-color: #2563eb; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
                     Connect Calendar
                   </a>
                 </div>
