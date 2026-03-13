@@ -461,7 +461,7 @@ async function handleSendCalendarInvite(req: Request, params: any, headers: Reco
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ApplyAI <noreply@applyai.jobs>',
+        from: getSender('invites'),
         to: [recruiter_email.trim()],
         subject: `${orgName} — Connect Your Calendar`,
         html: `
