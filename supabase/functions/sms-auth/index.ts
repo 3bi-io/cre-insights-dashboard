@@ -1,10 +1,11 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 
 const logger = createLogger('sms-auth');
+
+type CorsHeaders = Record<string, string>;
 
 function escapeXML(unsafe: string): string {
   if (!unsafe) return '';
@@ -17,20 +18,16 @@ function escapeXML(unsafe: string): string {
 }
 
 function validatePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
-  // Remove all non-digit characters
   const digitsOnly = phone.replace(/[^\d]/g, '');
   
-  // Must be 10 or 11 digits
   if (digitsOnly.length < 10 || digitsOnly.length > 11) {
     return { valid: false, error: 'Phone number must be 10 or 11 digits' };
   }
   
-  // If 11 digits, must start with 1
   if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
     return { valid: false, error: 'Invalid phone number format' };
   }
   
-  // Normalize to E.164 format
   const normalized = digitsOnly.length === 10 
     ? `+1${digitsOnly}` 
     : `+${digitsOnly}`;
@@ -45,11 +42,24 @@ interface SmsAuthRequest {
   message?: string;
 }
 
+interface SupabaseClient {
+  from: (table: string) => {
+    insert: (data: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+    select: (columns: string) => {
+      eq: (col: string, val: unknown) => ReturnType<ReturnType<SupabaseClient['from']>['select']>;
+      gt: (col: string, val: unknown) => ReturnType<ReturnType<SupabaseClient['from']>['select']>;
+      single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
+    };
+    update: (data: Record<string, unknown>) => {
+      eq: (col: string, val: unknown) => Promise<{ error: { message: string } | null }>;
+    };
+  };
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -64,21 +74,22 @@ serve(async (req) => {
 
     switch (action) {
       case 'send_magic_link':
-        return await sendMagicLink(phoneNumber, supabase);
+        return await sendMagicLink(phoneNumber, supabase, corsHeaders);
       
       case 'verify_token':
-        return await verifyToken(phoneNumber, token!, supabase);
+        return await verifyToken(phoneNumber, token!, supabase, corsHeaders);
       
       case 'make_call':
-        return await makeCall(phoneNumber, message || 'Hello from IntelliApp!');
+        return await makeCall(phoneNumber, message || 'Hello from IntelliApp!', corsHeaders);
       
       default:
         throw new Error('Invalid action');
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Error in sms-auth function', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -87,8 +98,7 @@ serve(async (req) => {
   }
 });
 
-async function sendMagicLink(phoneNumber: string, supabase: any) {
-  // Validate phone number
+async function sendMagicLink(phoneNumber: string, supabase: ReturnType<typeof createClient>, corsHeaders: CorsHeaders) {
   const validation = validatePhoneNumber(phoneNumber);
   if (!validation.valid) {
     throw new Error(validation.error || 'Invalid phone number');
@@ -96,26 +106,23 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
   
   const normalizedPhone = validation.normalized!;
   
-  // Generate a 6-digit token
-  const token = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+  const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-  // Store the token in the database
   const { error: dbError } = await supabase
     .from('sms_magic_links')
     .insert({
       phone_number: normalizedPhone,
-      token: token,
+      token: verificationToken,
       expires_at: expiresAt.toISOString(),
       used: false,
-      user_id: null // Will be associated when verified or during application process
+      user_id: null,
     });
 
   if (dbError) {
     throw new Error(`Database error: ${dbError.message}`);
   }
 
-  // Send SMS using Twilio
   const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
@@ -124,7 +131,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
     throw new Error('Twilio credentials not configured');
   }
 
-  const message = `Your IntelliApp verification code is: ${token}. This code expires in 15 minutes.`;
+  const smsMessage = `Your IntelliApp verification code is: ${verificationToken}. This code expires in 15 minutes.`;
 
   const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
   const twilioCredentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
@@ -138,7 +145,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
     body: new URLSearchParams({
       From: twilioPhoneNumber,
       To: normalizedPhone,
-      Body: message,
+      Body: smsMessage,
     }),
   });
 
@@ -163,8 +170,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any) {
   );
 }
 
-async function verifyToken(phoneNumber: string, token: string, supabase: any) {
-  // Find valid token
+async function verifyToken(phoneNumber: string, token: string, supabase: ReturnType<typeof createClient>, corsHeaders: CorsHeaders) {
   const { data: linkData, error: findError } = await supabase
     .from('sms_magic_links')
     .select('*')
@@ -184,26 +190,25 @@ async function verifyToken(phoneNumber: string, token: string, supabase: any) {
     );
   }
 
-  // Mark token as used
+  const record = linkData as Record<string, unknown>;
   const { error: updateError } = await supabase
     .from('sms_magic_links')
     .update({ used: true })
-    .eq('id', linkData.id);
+    .eq('id', record.id as string);
 
   if (updateError) {
     throw new Error(`Database update error: ${updateError.message}`);
   }
 
-  // Create a temporary session token for the application process
   const sessionToken = crypto.randomUUID();
-  const sessionExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  const sessionExpiry = new Date(Date.now() + 60 * 60 * 1000);
 
   return new Response(
     JSON.stringify({ 
       success: true, 
       sessionToken,
       expiresAt: sessionExpiry.toISOString(),
-      phoneNumber: linkData.phone_number
+      phoneNumber: record.phone_number
     }),
     {
       status: 200,
@@ -212,8 +217,7 @@ async function verifyToken(phoneNumber: string, token: string, supabase: any) {
   );
 }
 
-async function makeCall(phoneNumber: string, message: string) {
-  // Validate phone number
+async function makeCall(phoneNumber: string, message: string, corsHeaders: CorsHeaders) {
   const validation = validatePhoneNumber(phoneNumber);
   if (!validation.valid) {
     throw new Error(validation.error || 'Invalid phone number');
@@ -229,10 +233,8 @@ async function makeCall(phoneNumber: string, message: string) {
     throw new Error('Twilio credentials not configured');
   }
 
-  // Escape message to prevent TwiML injection
   const safeMessage = escapeXML(message);
   
-  // Create TwiML for the call
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
       <Say voice="alice">${safeMessage}</Say>

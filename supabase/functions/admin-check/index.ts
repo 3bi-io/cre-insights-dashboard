@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
@@ -12,23 +11,16 @@ const logger = createLogger('admin-check');
  * CRITICAL SECURITY: Always validate admin/super_admin status server-side.
  * Client-side checks can be bypassed. This edge function provides
  * authoritative authorization validation.
- * 
- * Usage:
- *   const { data, error } = await supabase.functions.invoke('admin-check', {
- *     body: { requiredRole: 'admin' }
- *   });
  */
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -43,7 +35,6 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client with user's auth token
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -54,7 +45,6 @@ serve(async (req) => {
       }
     );
 
-    // Verify user authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -71,10 +61,8 @@ serve(async (req) => {
       );
     }
 
-    // Get required role from request (default to 'admin')
-    const { requiredRole = 'admin' } = await req.json().catch(() => ({}));
+    const { requiredRole = 'admin' } = await req.json().catch(() => ({ requiredRole: 'admin' }));
 
-    // Check user role server-side using database function
     const { data: roleData, error: roleError } = await supabase
       .rpc('get_current_user_role');
 
@@ -94,7 +82,6 @@ serve(async (req) => {
 
     const userRole = roleData as string;
 
-    // Super admins have access to everything
     if (userRole === 'super_admin') {
       return new Response(
         JSON.stringify({ 
@@ -109,7 +96,6 @@ serve(async (req) => {
       );
     }
 
-    // Check if user has required role
     const allowedRoles: Record<string, string[]> = {
       'admin': ['admin', 'super_admin'],
       'moderator': ['moderator', 'admin', 'super_admin'],
@@ -119,13 +105,12 @@ serve(async (req) => {
     const isAuthorized = allowedRoles[requiredRole]?.includes(userRole) ?? false;
 
     if (!isAuthorized) {
-      // Log unauthorized access attempt
       await supabase.from('audit_logs').insert({
         user_id: user.id,
         table_name: 'authorization',
         action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
         sensitive_fields: ['role_check'],
-      }).catch(err => logger.error('Audit log failed', err));
+      }).catch((err: unknown) => logger.error('Audit log failed', err));
 
       return new Response(
         JSON.stringify({ 
@@ -141,7 +126,6 @@ serve(async (req) => {
       );
     }
 
-    // Success - user is authorized
     return new Response(
       JSON.stringify({ 
         authorized: true, 
@@ -154,7 +138,7 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Admin check error', error);
     return new Response(
       JSON.stringify({ 
