@@ -9,6 +9,7 @@
 
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+import { getSender } from '../_shared/email-config.ts';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
 
