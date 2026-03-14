@@ -18,7 +18,7 @@
 ## Remaining
 
 ### Short-term
-- [ ] #7: Update OrganizationApplicationsTab.tsx to use usePaginatedApplications, remove deprecated hooks
+- ✅ #7: Updated OrganizationApplicationsTab.tsx to use usePaginatedApplications + useApplicationsMutations, deleted deprecated useApplications hook
 
 ### Medium-term
 - [ ] #4: Migrate ~58 functions from manual createClient() to getServiceClient()
