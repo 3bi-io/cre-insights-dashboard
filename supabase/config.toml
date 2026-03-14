@@ -314,3 +314,6 @@ verify_jwt = false
 
 [functions.morning-digest]
 verify_jwt = false
+
+[functions.grok-chat]
+verify_jwt = true
