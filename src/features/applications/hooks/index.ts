@@ -8,10 +8,6 @@ export { useApplicationsMutations } from './useApplicationsMutations';
 export { useApplicationsManagement } from './useApplicationsManagement';
 export type { ViewMode, ApplicationsManagementConfig, ApplicationsUIState } from './useApplicationsManagement';
 
-// Legacy hook - deprecated, use usePaginatedApplications + useApplicationsMutations instead
-/** @deprecated Use usePaginatedApplications for data and useApplicationsMutations for CRUD */
-export { useApplications } from './useApplications';
-export type { ApplicationFilters } from './useApplications';
 
 // Dialog state management
 export { useApplicationDialogs } from './useApplicationDialogs';

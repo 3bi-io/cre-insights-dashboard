@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,8 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react';
-import { useApplications } from '@/features/applications/hooks/useApplications';
+import { usePaginatedApplications } from '@/features/applications/hooks/usePaginatedApplications';
+import { useApplicationsMutations } from '@/features/applications/hooks/useApplicationsMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { generateApplicationsPDF } from '@/utils/pdfGenerator';
@@ -31,17 +32,20 @@ export const OrganizationApplicationsTab = () => {
   const { toast } = useToast();
 
   const {
-    applications,
-    loading,
+    data,
+    isLoading: loading,
     error,
-    updateApplication,
-  } = useApplications({
-    filters: {
-      search: searchTerm,
-      organization_id: organization?.id,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-    }
+  } = usePaginatedApplications({
+    organizationId: organization?.id,
+    search: searchTerm || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
   });
+
+  const { updateApplication } = useApplicationsMutations();
+
+  const applications = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) || [];
+  }, [data]);
 
   const filteredApplications = filterApplications(applications || [], searchTerm, 'all', 'all');
   const statusCounts = getStatusCounts(applications || []);
