@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 
@@ -22,7 +21,13 @@ const lastNames = [
   "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores", "Green", "Adams"
 ];
 
-const cities = [
+interface CityData {
+  name: string;
+  state: string;
+  zip: string;
+}
+
+const cities: CityData[] = [
   { name: "Phoenix", state: "AZ", zip: "85001" },
   { name: "Tucson", state: "AZ", zip: "85701" },
   { name: "Mesa", state: "AZ", zip: "85201" },
@@ -45,7 +50,7 @@ const cities = [
   { name: "Mobile", state: "AL", zip: "36601" }
 ];
 
-const cdlEndorsements = [
+const cdlEndorsements: string[][] = [
   ["Hazmat", "Tanker"],
   ["Hazmat"],
   ["Tanker"],
@@ -65,28 +70,63 @@ const sources = [
   "LinkedIn", "Facebook", "Google Jobs", "Craigslist"
 ];
 
-const random = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
-const randomPhone = () => {
+function random<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const randomPhone = (): string => {
   const area = Math.floor(Math.random() * 900) + 100;
   const prefix = Math.floor(Math.random() * 900) + 100;
   const line = Math.floor(Math.random() * 9000) + 1000;
   return `+1${area}${prefix}${line}`;
 };
 
-const randomEmail = (first: string, last: string) => {
+const randomEmail = (first: string, last: string): string => {
   const domains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com"];
   const separators = [".", "_", ""];
   const separator = random(separators);
-  const number = Math.random() > 0.5 ? Math.floor(Math.random() * 99) : "";
+  const number = Math.random() > 0.5 ? Math.floor(Math.random() * 99).toString() : "";
   return `${first.toLowerCase()}${separator}${last.toLowerCase()}${number}@${random(domains)}`;
 };
 
-const generateApplication = (jobListingId: string, organizationId: string) => {
+interface GeneratedApplication {
+  job_listing_id: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  applicant_email: string;
+  phone: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  cdl: string;
+  cdl_class: string | null;
+  cdl_state: string | null;
+  cdl_endorsements: string[] | null;
+  exp: string;
+  age: string;
+  veteran: string;
+  education_level: string;
+  work_authorization: string;
+  consent: string;
+  drug: string;
+  privacy: string;
+  convicted_felony: string;
+  source: string;
+  campaign_id: string;
+  ad_id: string;
+  status: string;
+  notes: string | null;
+  applied_at: string;
+}
+
+const generateApplication = (jobListingId: string): GeneratedApplication => {
   const firstName = random(firstNames);
   const lastName = random(lastNames);
   const location = random(cities);
   const isVeteran = Math.random() > 0.7;
-  const hasCDL = Math.random() > 0.1; // 90% have CDL
+  const hasCDL = Math.random() > 0.1;
   const endorsements = hasCDL ? random(cdlEndorsements) : [];
   const experience = random(experienceLevels);
   
@@ -97,35 +137,29 @@ const generateApplication = (jobListingId: string, organizationId: string) => {
     full_name: `${firstName} ${lastName}`,
     applicant_email: randomEmail(firstName, lastName),
     phone: randomPhone(),
-    
     city: location.name,
     state: location.state,
     zip: location.zip,
     country: "US",
-    
     cdl: hasCDL ? "Yes" : "In Process",
     cdl_class: hasCDL ? "A" : null,
     cdl_state: hasCDL ? location.state : null,
     cdl_endorsements: endorsements.length > 0 ? endorsements : null,
     exp: experience,
-    
     age: "Yes",
     veteran: isVeteran ? "Yes" : "No",
     education_level: random(["High School", "GED", "Some College", "Associate Degree"]),
     work_authorization: random(["US Citizen", "Permanent Resident", "Work Visa"]),
-    
     consent: "Yes",
     drug: "Yes",
     privacy: "Yes",
     convicted_felony: Math.random() > 0.85 ? "Yes" : "No",
-    
     source: random(sources),
     campaign_id: `campaign_${Math.floor(Math.random() * 1000)}`,
     ad_id: `ad_${Math.floor(Math.random() * 10000)}`,
-    
     status: random(["pending", "pending", "pending", "reviewed", "contacted"]),
     notes: Math.random() > 0.7 ? `Applied via ${random(sources)}. ${isVeteran ? "Military veteran." : ""}` : null,
-    applied_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString() // Random within last 30 days
+    applied_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
   };
 };
 
@@ -156,9 +190,8 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const body = await req.json();
-    const { count = 50, organization_id } = body;
+    const { count = 50, organization_id } = body as { count?: number; organization_id?: string };
 
-    // Validate organization_id is provided
     if (!organization_id) {
       return new Response(
         JSON.stringify({ 
@@ -174,7 +207,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     logger.info('Generating applications', { count, organization_id });
 
-    // Verify the organization exists
     const { data: org, error: orgError } = await supabase
       .from('organizations')
       .select('id, name')
@@ -194,7 +226,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get all active job listings for the organization
     const { data: jobListings, error: jobError } = await supabase
       .from('job_listings')
       .select('id, title')
@@ -221,20 +252,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     logger.info('Found job listings', { count: jobListings.length, organization: org.name });
 
-    // Generate applications
-    const applications = [];
+    const applications: GeneratedApplication[] = [];
     for (let i = 0; i < count; i++) {
       const jobListing = random(jobListings);
-      const application = generateApplication(jobListing.id, organization_id);
+      const application = generateApplication(jobListing.id);
       applications.push(application);
     }
 
     logger.info('Generated applications', { count: applications.length });
 
-    // Insert applications in batches of 100
     const batchSize = 100;
     let insertedCount = 0;
-    const errors = [];
+    const errors: Array<{ batch: number; error: string }> = [];
 
     for (let i = 0; i < applications.length; i += batchSize) {
       const batch = applications.slice(i, i + batchSize);
@@ -258,16 +287,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     logger.info('Successfully inserted applications', { count: insertedCount, organization: org.name });
 
-    // Get statistics
     const { data: stats } = await supabase
       .from('applications')
       .select('status')
-      .in('job_listing_id', jobListings.map(j => j.id));
+      .in('job_listing_id', jobListings.map((j: { id: string }) => j.id));
 
-    const statusCounts = stats?.reduce((acc: any, app: any) => {
-      acc[app.status] = (acc[app.status] || 0) + 1;
+    const statusCounts = (stats || []).reduce((acc: Record<string, number>, app: { status: string | null }) => {
+      const status = app.status || 'unknown';
+      acc[status] = (acc[status] || 0) + 1;
       return acc;
-    }, {}) || {};
+    }, {} as Record<string, number>);
 
     return new Response(
       JSON.stringify({ 
@@ -289,7 +318,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error generating applications', error);
     
     return new Response(

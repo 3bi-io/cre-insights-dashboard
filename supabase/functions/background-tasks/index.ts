@@ -1,12 +1,15 @@
-// @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 const logger = createLogger('background-tasks');
 
 type TaskParameters = {
-  data: any;
+  data: {
+    applications?: Array<Record<string, unknown>>;
+    application_ids?: string[];
+  };
   sensitivity: string;
   task_type: string;
   user_id: string;
@@ -18,21 +21,20 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// CORS headers
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Declare EdgeRuntime for Supabase edge function background tasks
+declare const EdgeRuntime: {
+  waitUntil: (promise: Promise<unknown>) => void;
 };
 
-// Main handler
 serve(async (req) => {
-  // Enable CORS
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Get request body
     const { task_id, parameters } = await req.json() as {
       task_id: string;
       parameters: TaskParameters;
@@ -51,9 +53,7 @@ serve(async (req) => {
       );
     }
 
-    // Start background execution using EdgeRuntime
     const backgroundTask = processTaskInBackground(task_id, parameters);
-    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
     EdgeRuntime.waitUntil(backgroundTask);
 
     return new Response(
@@ -70,9 +70,10 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 500, 
         headers: { 
@@ -84,16 +85,13 @@ serve(async (req) => {
   }
 });
 
-// Background task processing
 async function processTaskInBackground(taskId: string, parameters: TaskParameters): Promise<void> {
   logger.info('Starting background task', { taskId, taskType: parameters.task_type });
   
   try {
-    // Update task status to processing
     await updateTaskStatus(taskId, "processing");
     
-    // Process based on task type
-    let result;
+    let result: Record<string, unknown>;
     switch (parameters.task_type) {
       case "application_analysis":
         result = await processApplications(parameters);
@@ -108,22 +106,20 @@ async function processTaskInBackground(taskId: string, parameters: TaskParameter
         throw new Error(`Unknown task type: ${parameters.task_type}`);
     }
     
-    // Store results and update status
     await storeTaskResults(taskId, result);
     await updateTaskStatus(taskId, "completed");
     
     logger.info('Task completed successfully', { taskId });
-  } catch (error) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error('Task failed', error, { taskId });
-    await updateTaskStatus(taskId, "failed", error.message);
+    await updateTaskStatus(taskId, "failed", errorMessage);
   }
 }
 
-// Helper for application processing
-async function processApplications(parameters: TaskParameters): Promise<any> {
+async function processApplications(parameters: TaskParameters): Promise<Record<string, unknown>> {
   const { data } = parameters;
   
-  // Fetch applications if IDs are provided
   let applications = data.applications;
   if (data.application_ids && !applications) {
     const { data: fetchedApps, error } = await supabase
@@ -132,21 +128,17 @@ async function processApplications(parameters: TaskParameters): Promise<any> {
       .in("id", data.application_ids);
       
     if (error) throw error;
-    applications = fetchedApps;
+    applications = fetchedApps || [];
   }
   
   if (!applications?.length) {
     throw new Error("No applications to process");
   }
   
-  // Here you'd call AI services to analyze applications
-  // For example, send each to OpenAI or Anthropic for analysis
-  
-  // For now, return a simple analysis
   return {
     processed_count: applications.length,
     summary: `Processed ${applications.length} applications`,
-    applications: applications.map(app => ({
+    applications: applications.map((app: Record<string, unknown>) => ({
       id: app.id,
       score: Math.random() * 100,
       insights: "Application processed in background task"
@@ -154,16 +146,13 @@ async function processApplications(parameters: TaskParameters): Promise<any> {
   };
 }
 
-// Helper for metric calculations
-async function calculateMetrics(parameters: TaskParameters): Promise<any> {
+async function calculateMetrics(parameters: TaskParameters): Promise<Record<string, unknown>> {
   const { user_id } = parameters;
   
-  // Calculate AI vs traditional metrics
   const today = new Date();
   const monthAgo = new Date();
   monthAgo.setMonth(today.getMonth() - 1);
   
-  // Get metrics data
   const { data: jobData, error: jobError } = await supabase
     .from("job_listings")
     .select("id, title, created_at")
@@ -172,7 +161,6 @@ async function calculateMetrics(parameters: TaskParameters): Promise<any> {
   
   if (jobError) throw jobError;
   
-  // Simulate calculating metrics
   const metrics = [
     {
       metric_type: "time_to_hire",
@@ -188,7 +176,6 @@ async function calculateMetrics(parameters: TaskParameters): Promise<any> {
     }
   ];
   
-  // Store metrics in the database
   for (const metric of metrics) {
     await supabase.from("ai_metrics").insert({
       ...metric,
@@ -204,9 +191,7 @@ async function calculateMetrics(parameters: TaskParameters): Promise<any> {
   };
 }
 
-// Helper for cache cleanup
-async function cleanupCache(): Promise<any> {
-  // Call the database function to clean expired cache
+async function cleanupCache(): Promise<Record<string, unknown>> {
   await supabase.rpc("cleanup_expired_cache");
   
   return { 
@@ -215,7 +200,6 @@ async function cleanupCache(): Promise<any> {
   };
 }
 
-// Update task status in the database
 async function updateTaskStatus(
   taskId: string, 
   status: "queued" | "processing" | "completed" | "failed",
@@ -225,14 +209,13 @@ async function updateTaskStatus(
     .from("background_tasks")
     .update({
       status,
-      error_message: error,
+      error_message: error || null,
       updated_at: new Date().toISOString()
     })
     .eq("id", taskId);
 }
 
-// Store task results
-async function storeTaskResults(taskId: string, results: any): Promise<void> {
+async function storeTaskResults(taskId: string, results: Record<string, unknown>): Promise<void> {
   await supabase
     .from("background_tasks")
     .update({

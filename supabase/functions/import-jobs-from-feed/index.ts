@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
@@ -16,10 +15,31 @@ const importSchema = z.object({
   clientId: z.string().uuid().nullable().optional()
 })
 
+interface FeedJob {
+  title?: string;
+  description?: string;
+  city?: string;
+  state?: string;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  salary_type?: string;
+  experience?: string;
+  jobtype?: string;
+  url?: string;
+  referencenumber?: string;
+  company?: string;
+  jobreferrer?: string;
+  is_sponsored?: boolean;
+  feed_date?: string;
+  indeed_apply_api_token?: string;
+  indeed_apply_job_id?: string;
+  indeed_apply_post_url?: string;
+  tracking_pixel_url?: string;
+}
+
 const handler = wrapHandler(async (req: Request) => {
   const origin = req.headers.get('origin');
   
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: getCorsHeaders(origin) });
   }
@@ -30,13 +50,11 @@ const handler = wrapHandler(async (req: Request) => {
 
   const supabase = getServiceClient();
 
-  // Validate request body
   const body = await req.json();
   const { feedUrl, organizationId, clientId = null } = importSchema.parse(body);
 
   logger.info('Fetching jobs from feed', { feedUrl, organizationId });
 
-  // Fetch jobs from the feed
   const feedResponse = await fetch(feedUrl, {
     method: 'GET',
     headers: {
@@ -52,7 +70,7 @@ const handler = wrapHandler(async (req: Request) => {
   }
 
   const contentType = feedResponse.headers.get('content-type');
-  let jobs = [];
+  let jobs: FeedJob[] = [];
   
   const text = await feedResponse.text();
   logger.debug('Feed response received', { preview: text.substring(0, 200) });
@@ -69,8 +87,7 @@ const handler = wrapHandler(async (req: Request) => {
       jobs = [feedData];
     }
   } else if (contentType?.includes('xml') || text.trim().startsWith('<?xml')) {
-    // Parse XML feed using shared utility
-    jobs = parseXMLFeed(text);
+    jobs = parseXMLFeed(text) as FeedJob[];
     logger.info('Parsed jobs from XML feed', { count: jobs.length });
   } else {
     throw new ValidationError('Unsupported content type. Expected JSON or XML.');
@@ -85,7 +102,6 @@ const handler = wrapHandler(async (req: Request) => {
     );
   }
 
-  // Get default category for jobs
   const { data: categories, error: categoryError } = await supabase
     .from('job_categories')
     .select('id')
@@ -97,7 +113,6 @@ const handler = wrapHandler(async (req: Request) => {
 
   const defaultCategoryId = categories[0].id;
 
-  // Get super admin user ID for creating jobs
   const { data: profiles, error: profileError } = await supabase
     .from('profiles')
     .select('id')
@@ -111,13 +126,9 @@ const handler = wrapHandler(async (req: Request) => {
   const superAdminId = profiles[0].id;
   let importedCount = 0;
 
-  /**
-   * Generate internal apply URL with UTM parameters for imported jobs
-   */
   const generateApplyUrl = (jobListingId: string, clientName: string): string => {
     const baseUrl = 'https://applyai.jobs/apply';
     
-    // Generate campaign name from client
     const clientSlug = (clientName || 'unknown')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_')
@@ -138,19 +149,15 @@ const handler = wrapHandler(async (req: Request) => {
     return `${baseUrl}?${params.toString()}`;
   };
 
-  // Import each job
   for (const job of jobs) {
     try {
-        // Map XML fields to database schema
         const location = job.city && job.state ? `${job.city}, ${job.state}` : 
                         job.city || job.state || null;
         
-        // Handle client_id: if not provided, find or create client based on company name
-        let finalClientId = clientId;
+        let finalClientId: string | null = clientId;
         if (!finalClientId && job.company) {
           const companyName = job.company.trim();
           
-          // Try to find existing client
           const { data: existingClients } = await supabase
             .from('clients')
             .select('id')
@@ -162,7 +169,6 @@ const handler = wrapHandler(async (req: Request) => {
             finalClientId = existingClients[0].id;
             logger.debug('Found existing client', { companyName });
           } else {
-            // Create new client
             const { data: newClient, error: clientError } = await supabase
               .from('clients')
               .insert({
@@ -183,7 +189,6 @@ const handler = wrapHandler(async (req: Request) => {
           }
         }
         
-        // If still no client_id, use "Unassigned" (will be handled by trigger)
         const jobData = {
           title: job.title || 'Untitled Position',
           job_summary: job.description || null,
@@ -194,23 +199,19 @@ const handler = wrapHandler(async (req: Request) => {
           salary_max: job.salary_max || null,
           salary_type: job.salary_type || 'yearly',
           experience_level: job.experience || null,
-          remote_type: 'on-site', // Default for trucking jobs (must match DB constraint)
-          job_type: job.jobtype === 'Full-time' ? 'full-time' : 'full-time',
-          status: 'active',
+          remote_type: 'on-site' as const,
+          job_type: 'full-time' as const,
+          status: 'active' as const,
           user_id: superAdminId,
           organization_id: organizationId,
           category_id: defaultCategoryId,
           url: job.url || null,
-          // apply_url will be set after insert with UTM-enriched URL
           apply_url: null as string | null,
           job_id: job.referencenumber || null,
           client_id: finalClientId || null,
-          // Keep client text field for backward compatibility
           client: job.company || null,
-          // Sponsorship tracking from jobreferrer field
           jobreferrer: job.jobreferrer || null,
           is_sponsored: job.is_sponsored ?? false,
-          // NEW: Feed data capture fields
           feed_date: job.feed_date || null,
           indeed_apply_api_token: job.indeed_apply_api_token || null,
           indeed_apply_job_id: job.indeed_apply_job_id || null,
@@ -218,8 +219,7 @@ const handler = wrapHandler(async (req: Request) => {
           tracking_pixel_url: job.tracking_pixel_url || null,
         };
 
-        // Check if job already exists by reference number or title + location
-        let existingJob = null;
+        let existingJob: { id: string } | null = null;
         if (job.referencenumber) {
           const { data: existing } = await supabase
             .from('job_listings')
@@ -227,7 +227,7 @@ const handler = wrapHandler(async (req: Request) => {
             .eq('job_id', job.referencenumber)
             .eq('organization_id', organizationId)
             .limit(1);
-          existingJob = existing?.[0];
+          existingJob = existing?.[0] || null;
         }
 
         if (!existingJob && jobData.title && jobData.location) {
@@ -238,11 +238,10 @@ const handler = wrapHandler(async (req: Request) => {
             .eq('location', jobData.location)
             .eq('organization_id', organizationId)
             .limit(1);
-          existingJob = existing?.[0];
+          existingJob = existing?.[0] || null;
         }
 
         if (existingJob) {
-          // Update existing job with UTM-enriched apply URL
           const applyUrl = generateApplyUrl(existingJob.id, job.company || 'imported');
           await supabase
             .from('job_listings')
@@ -262,7 +261,6 @@ const handler = wrapHandler(async (req: Request) => {
         if (insertError) {
           logger.error('Error inserting job', insertError, { title: jobData.title });
         } else if (newJob) {
-          // Update with UTM-enriched apply URL now that we have the ID
           const applyUrl = generateApplyUrl(newJob.id, job.company || 'imported');
           await supabase
             .from('job_listings')
@@ -272,7 +270,7 @@ const handler = wrapHandler(async (req: Request) => {
           importedCount++;
           logger.debug('Imported job with UTM apply URL', { title: jobData.title, applyUrl });
         }
-      } catch (jobError) {
+      } catch (jobError: unknown) {
         logger.error('Error processing job', jobError);
       }
     }
