@@ -1,41 +1,31 @@
 
 
-# Centralized Benefits Data Source — IMPLEMENTED
+# Platform Refactoring & Best Practices — Progress
 
-## What was done
+## Completed
 
-### 1. Database (`benefits_catalog` + `job_listing_benefits`)
-- Created `benefits_catalog` table with 16 seeded benefits (compensation, insurance, lifestyle, operations, retirement categories)
-- Each entry has: id, label, category, icon, keywords (for classifier), social_copy (per-platform response snippets)
-- Created `job_listing_benefits` junction table linking structured benefits to job listings
-- RLS: public-read for catalog, super-admin write; junction table follows job_listings access
+### Phase 1 (Previous session)
+- ✅ Fixed morning-digest sender domain (verified email)
+- ✅ Migrated inbound-applications CORS to getCorsHeaders
+- ✅ Migrated elevenlabs-outbound-call CORS to getCorsHeaders
 
-### 2. Shared Config (`src/config/benefits.config.ts`)
-- `useBenefitsCatalog()` hook — fetches from DB with React Query, 10min cache, static fallback
-- `useJobBenefits(jobId)` hook — fetches structured benefits for a specific job listing
-- `benefitsToVoiceContext()` — converts benefit items to readable string for voice agents
-- `BENEFIT_OPTIONS` — backward-compatible re-export for Ad Creative Studio
-- `BENEFITS_FALLBACK` — static array matching seed data
+### Phase 2 (Current session)
+- ✅ **#1 Security Fix**: `can_access_sensitive_applicant_data` now uses `has_role()` + `is_super_admin()` from `user_roles` table instead of reading role from `profiles`
+- ✅ **#2 Config**: Added `grok-chat` to `config.toml` with `verify_jwt = true`
+- ✅ **#3 CORS Migration** (8 functions): data-analysis, chatbot-analytics, visitor-analytics, generate-logo, admin-check, domain-configuration, social-oauth-init, generate-applications — all migrated to `getCorsHeaders()`
+- ✅ **#6 Trigger Consolidation**: Dropped 7 duplicate `updated_at` trigger functions, reassigned all triggers to use single `update_updated_at_column()`
 
-### 3. Frontend Consumers Updated
-- `socialBeacons.config.ts` — removed hardcoded `BENEFIT_OPTIONS`, re-exports from centralized config
-- `AdCreativeStudio.tsx` — imports from `@/config/benefits.config` instead
+## Remaining
 
-### 4. Edge Function Consumers Updated
-- New `supabase/functions/_shared/benefits-catalog.ts` — shared helper with in-memory cache (5min TTL)
-  - `getBenefitsCatalog()`, `getBenefitsKeywords()`, `getBenefitsSocialCopy()`, `matchBenefitsInContent()`, `getJobBenefits()`
-- `engagement-classifier.ts` — enriches `benefits_question` keywords from catalog at runtime via `hybridClassify()`
-- `social-ai-service.ts` — expanded static fallback keywords to include all catalog entries
+### Short-term
+- [ ] #7: Update OrganizationApplicationsTab.tsx to use usePaginatedApplications, remove deprecated hooks
 
-### 5. Voice Agent Integration
-- `useElevenLabsVoice.tsx` — fetches structured job benefits via `useJobBenefits()` and passes them as `benefits` in the job context dynamic variables
+### Medium-term
+- [ ] #4: Migrate ~58 functions from manual createClient() to getServiceClient()
+- [ ] #5: Remove @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
+- [ ] #8: Pin all edge functions to supabase-js@2.50.0
 
-## Files changed
-- **New**: `supabase/migrations/..._benefits_schema.sql`
-- **New**: `src/config/benefits.config.ts`
-- **New**: `supabase/functions/_shared/benefits-catalog.ts`
-- **Modified**: `src/features/social-engagement/config/socialBeacons.config.ts`
-- **Modified**: `src/features/social-engagement/components/admin/AdCreativeStudio.tsx`
-- **Modified**: `supabase/functions/_shared/engagement-classifier.ts`
-- **Modified**: `supabase/functions/_shared/social-ai-service.ts`
-- **Modified**: `src/features/elevenlabs/hooks/useElevenLabsVoice.tsx`
+### Long-term
+- [ ] #3 remaining: ~38 more functions need CORS migration
+- [ ] #9: Replace console.log/error with createLogger() in 21 functions
+- [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function
