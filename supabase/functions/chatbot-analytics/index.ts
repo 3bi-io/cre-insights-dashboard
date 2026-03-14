@@ -298,6 +298,9 @@ const generateAnalyticalResponse = async (query: string, analytics: any): Promis
 };
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

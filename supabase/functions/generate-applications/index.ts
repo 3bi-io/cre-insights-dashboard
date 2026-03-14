@@ -130,6 +130,9 @@ const generateApplication = (jobListingId: string, organizationId: string) => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   logger.info('Generate applications function called');
 
   if (req.method === 'OPTIONS') {
