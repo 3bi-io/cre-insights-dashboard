@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'ApplyAI <noreply@applyai.jobs>',
+            from: getSender('notifications'),
             to: [profile.email],
             subject: `📋 ${recruiterCallbacks.length} AI-Scheduled Callback${recruiterCallbacks.length > 1 ? 's' : ''} for ${dateStr}`,
             html: emailHtml,
