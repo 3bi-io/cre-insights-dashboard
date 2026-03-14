@@ -22,7 +22,7 @@
 
 ### Medium-term
 - [ ] #4: Migrate ~58 functions from manual createClient() to getServiceClient()
-- [ ] #5: Remove @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
+- ✅ #5: Removed @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks) — added proper types, typed error catches, declared EdgeRuntime, migrated background-tasks CORS to getCorsHeaders + pinned to SDK @2.50.0
 - [ ] #8: Pin all edge functions to supabase-js@2.50.0
 
 ### Long-term
