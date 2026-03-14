@@ -1,31 +1,41 @@
 
 
-# Platform Refactoring & Best Practices — Progress
+# Phase 3: Migrate OrganizationApplicationsTab + Remove Deprecated Hook
 
-## Completed
+Continuing from the approved refactoring plan, this implements item #7 — the last short-term task.
 
-### Phase 1 (Previous session)
-- ✅ Fixed morning-digest sender domain (verified email)
-- ✅ Migrated inbound-applications CORS to getCorsHeaders
-- ✅ Migrated elevenlabs-outbound-call CORS to getCorsHeaders
+---
 
-### Phase 2 (Current session)
-- ✅ **#1 Security Fix**: `can_access_sensitive_applicant_data` now uses `has_role()` + `is_super_admin()` from `user_roles` table instead of reading role from `profiles`
-- ✅ **#2 Config**: Added `grok-chat` to `config.toml` with `verify_jwt = true`
-- ✅ **#3 CORS Migration** (8 functions): data-analysis, chatbot-analytics, visitor-analytics, generate-logo, admin-check, domain-configuration, social-oauth-init, generate-applications — all migrated to `getCorsHeaders()`
-- ✅ **#6 Trigger Consolidation**: Dropped 7 duplicate `updated_at` trigger functions, reassigned all triggers to use single `update_updated_at_column()`
+## Changes
 
-## Remaining
+### 1. Update `OrganizationApplicationsTab.tsx`
 
-### Short-term
-- [ ] #7: Update OrganizationApplicationsTab.tsx to use usePaginatedApplications, remove deprecated hooks
+Replace the deprecated `useApplications` import with the canonical hooks:
 
-### Medium-term
-- [ ] #4: Migrate ~58 functions from manual createClient() to getServiceClient()
-- [ ] #5: Remove @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
-- [ ] #8: Pin all edge functions to supabase-js@2.50.0
+- **Import**: `usePaginatedApplications` + `useApplicationsMutations` instead of `useApplications`
+- **Add**: `useMemo` import from React
+- **Data fetching**: Use `usePaginatedApplications({ organizationId, search, status })` — filters map directly
+- **Mutations**: Use `useApplicationsMutations()` for `updateApplication`
+- **Flatten pages**: Add `useMemo` to flatten `data?.pages` into a flat array (same pattern used in `ApplicationsPage.tsx`)
+- **Loading state**: Rename `isLoading` to `loading` via destructuring alias for minimal template changes
 
-### Long-term
-- [ ] #3 remaining: ~38 more functions need CORS migration
-- [ ] #9: Replace console.log/error with createLogger() in 21 functions
-- [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function
+All UI rendering, helpers (`filterApplications`, `getStatusCounts`, `getCategoryCounts`), and PDF export remain unchanged.
+
+### 2. Delete `src/features/applications/hooks/useApplications.tsx`
+
+This was the only consumer. The file is a deprecated shim wrapping `usePaginatedApplications` + `useApplicationsMutations` — no unique logic.
+
+### 3. Update `src/features/applications/hooks/index.ts`
+
+Remove the two lines exporting `useApplications` and `ApplicationFilters` from the barrel file.
+
+### 4. Update `.lovable/plan.md`
+
+Mark #7 as completed.
+
+---
+
+## Risk
+
+Low. The component's data shape doesn't change — `usePaginatedApplications` returns the same `applications` rows with the same joins. The `updateApplication` signature is identical in both hooks.
+
