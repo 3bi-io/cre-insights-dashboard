@@ -1,14 +1,10 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 
 const logger = createLogger('generate-applications');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 // Realistic CDL driver data for generating applications
 const firstNames = [
@@ -134,6 +130,9 @@ const generateApplication = (jobListingId: string, organizationId: string) => {
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   logger.info('Generate applications function called');
 
   if (req.method === 'OPTIONS') {
