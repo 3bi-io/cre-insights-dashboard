@@ -1,13 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 
 const logger = createLogger('visitor-analytics');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
 
 // Parse browser from user agent
 const parseBrowser = (ua: string): string => {
