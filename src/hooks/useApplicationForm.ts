@@ -124,6 +124,8 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
       utm_medium: getParam('utm_medium', 'utmMedium', 'medium'),
       utm_campaign: getParam('utm_campaign', 'utmCampaign', 'campaign_name'),
       referral_source: document.referrer || '',
+      fbclid: getParam('fbclid'),
+      gclid: getParam('gclid'),
     };
 
     setFormData(prev => ({ ...prev, ...urlParams }));

@@ -206,57 +206,57 @@ Deno.serve(async (req) => {
       benefits: job.benefits,
     }));
 
-    // Generate XML based on format
+    // Generate XML based on format — pass format as feedSource for UTM attribution
     let xmlContent: string;
     switch (format) {
       case 'indeed':
       case 'simplyhired':
-        xmlContent = generateIndeedXML(transformedJobs);
+        xmlContent = generateIndeedXML(transformedJobs, format);
         break;
       case 'google':
-        xmlContent = generateGoogleJobsXML(transformedJobs, organizationId);
+        xmlContent = generateGoogleJobsXML(transformedJobs, organizationId, format);
         break;
       case 'talent':
-        xmlContent = generateTalentXML(transformedJobs);
+        xmlContent = generateTalentXML(transformedJobs, format);
         break;
       case 'careerjet':
-        xmlContent = generateCareerJetXML(transformedJobs);
+        xmlContent = generateCareerJetXML(transformedJobs, format);
         break;
       case 'trovit':
-        xmlContent = generateTrovitXML(transformedJobs);
+        xmlContent = generateTrovitXML(transformedJobs, format);
         break;
       case 'adzuna':
-        xmlContent = generateAdzunaXML(transformedJobs);
+        xmlContent = generateAdzunaXML(transformedJobs, format);
         break;
       case 'dice':
-        xmlContent = generateDiceXML(transformedJobs);
+        xmlContent = generateDiceXML(transformedJobs, format);
         break;
       case 'jooble':
-        xmlContent = generateJoobleXML(transformedJobs);
+        xmlContent = generateJoobleXML(transformedJobs, format);
         break;
       case 'hcareers':
-        xmlContent = generateHcareersXML(transformedJobs);
+        xmlContent = generateHcareersXML(transformedJobs, format);
         break;
       case 'snagajob':
-        xmlContent = generateSnagajobXML(transformedJobs);
+        xmlContent = generateSnagajobXML(transformedJobs, format);
         break;
       case 'healthecareers':
-        xmlContent = generateHealthEcareersXML(transformedJobs);
+        xmlContent = generateHealthEcareersXML(transformedJobs, format);
         break;
       case 'nurse':
-        xmlContent = generateNurseXML(transformedJobs);
+        xmlContent = generateNurseXML(transformedJobs, format);
         break;
       case 'wellfound':
-        xmlContent = generateWellfoundXML(transformedJobs);
+        xmlContent = generateWellfoundXML(transformedJobs, format);
         break;
       case 'jobrapido':
-        xmlContent = generateJobRapidoXML(transformedJobs);
+        xmlContent = generateJobRapidoXML(transformedJobs, format);
         break;
       case 'recruitnet':
-        xmlContent = generateRecruitNetXML(transformedJobs);
+        xmlContent = generateRecruitNetXML(transformedJobs, format);
         break;
       default:
-        xmlContent = generateGenericXML(transformedJobs);
+        xmlContent = generateGenericXML(transformedJobs, format);
     }
 
     const responseTime = Date.now() - startTime;

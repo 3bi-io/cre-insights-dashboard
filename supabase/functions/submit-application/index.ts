@@ -835,9 +835,9 @@ Deno.serve(async (req) => {
     
     const applicantEmail = (formData.email || formData.applicant_email || '').toLowerCase();
 
-    // Detect integration source from headers, UTM params, referrer, or explicit source
-    const detectedSource = detectIntegrationSource(req, formData.source, formData.utm_source, formData.referral_source);
-    logger.info('Integration source detection', { detectedSource, explicitSource: formData.source, utm_source: formData.utm_source, referral_source: formData.referral_source });
+    // Detect integration source from headers, UTM params, click IDs, referrer, or explicit source
+    const detectedSource = detectIntegrationSource(req, formData.source, formData.utm_source, formData.referral_source, formData.fbclid, formData.gclid);
+    logger.info('Integration source detection', { detectedSource, explicitSource: formData.source, utm_source: formData.utm_source, referral_source: formData.referral_source, fbclid: formData.fbclid ? 'present' : 'none', gclid: formData.gclid ? 'present' : 'none' });
 
     // Resolve organization and job details dynamically (source-based routing takes priority)
     // Normalize job_listing_id to avoid empty string issues
