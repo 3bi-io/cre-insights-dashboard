@@ -3,6 +3,7 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { 
   getSender,
   getReplyTo,
@@ -17,11 +18,6 @@ import {
 } from "../_shared/email-config.ts";
 
 const logger = createLogger('send-screening-request');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 interface ScreeningRequestBody {
   applicationId: string;
@@ -205,8 +201,10 @@ function generateScreeningEmail(
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   // Rate limiting - 10 requests per minute per IP (50/min for DFW/Alabama devs)
@@ -233,7 +231,7 @@ const handler = async (req: Request): Promise<Response> => {
         status: 429,
         headers: { 
           'Content-Type': 'application/json', 
-          ...corsHeaders,
+          ...getCorsHeaders(origin),
           "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
           "Retry-After": (rateLimitResult.retryAfter || 60).toString()
         },
@@ -379,7 +377,7 @@ const handler = async (req: Request): Promise<Response> => {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders,
+          ...getCorsHeaders(origin),
           "X-RateLimit-Remaining": rateLimitResult.remaining.toString()
         },
       }
@@ -396,7 +394,7 @@ const handler = async (req: Request): Promise<Response> => {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders
+          ...getCorsHeaders(origin)
         },
       }
     );

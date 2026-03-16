@@ -26,6 +26,6 @@
 - [ ] #8: Pin all edge functions to supabase-js@2.50.0
 
 ### Long-term
-- [ ] #3 remaining: ~38 more functions need CORS migration
+- [ ] #3 remaining: ~46 more functions need CORS migration (9 completed this session: firecrawl-crawl, firecrawl-search, blog-rss, trigger-webhook, send-welcome-email, backfill-webhook, generate-sitemap, client-webhook, send-screening-request)
 - [ ] #9: Replace console.log/error with createLogger() in 21 functions
 - [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function

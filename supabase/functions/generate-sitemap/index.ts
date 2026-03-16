@@ -6,6 +6,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { createLogger } from '../_shared/logger.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 const logger = createLogger('generate-sitemap');
 
@@ -14,7 +15,6 @@ const STATIC_ROUTES = [
   { loc: 'https://applyai.jobs/jobs', changefreq: 'daily', priority: 0.9 },
   { loc: 'https://applyai.jobs/apply', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://applyai.jobs/features', changefreq: 'weekly', priority: 0.9 },
-  // Pricing page removed - all features available to all users
   { loc: 'https://applyai.jobs/resources', changefreq: 'weekly', priority: 0.7 },
   { loc: 'https://applyai.jobs/contact', changefreq: 'monthly', priority: 0.8 },
   { loc: 'https://applyai.jobs/auth', changefreq: 'monthly', priority: 0.6 },
@@ -59,13 +59,10 @@ ${urlElements}
 }
 
 serve(async (req) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
+  const origin = req.headers.get('origin');
 
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   try {
@@ -140,7 +137,7 @@ serve(async (req) => {
 
     return new Response(sitemapXML, {
       headers: {
-        ...corsHeaders,
+        ...getCorsHeaders(origin),
         'Content-Type': 'application/xml',
         'Cache-Control': 'public, max-age=3600, s-maxage=7200',
       },
@@ -151,7 +148,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' },
       }
     );
   }

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { 
   EMAIL_CONFIG, 
   getSender, 
@@ -18,11 +19,6 @@ import {
 const logger = createLogger('send-welcome-email');
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 interface WelcomeEmailRequest {
   to: string;
   userName: string;
@@ -30,8 +26,10 @@ interface WelcomeEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   try {
@@ -133,7 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ success: true, data: emailResponse }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(origin) },
       }
     );
   } catch (error: any) {
@@ -142,7 +140,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(origin) },
       }
     );
   }
