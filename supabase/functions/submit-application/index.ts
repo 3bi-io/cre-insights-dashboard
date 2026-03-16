@@ -50,6 +50,7 @@ const REFERRER_SOURCE_MAP: Record<string, string> = {
   'facebook.com': 'Facebook',
   'l.facebook.com': 'Facebook',
   'lm.facebook.com': 'Facebook',
+  'm.facebook.com': 'Facebook',
   'fb.com': 'Facebook',
   'instagram.com': 'Instagram',
   'l.instagram.com': 'Instagram',
@@ -73,6 +74,11 @@ const REFERRER_SOURCE_MAP: Record<string, string> = {
   'x.com': 'Twitter/X',
   't.co': 'Twitter/X',
   'tiktok.com': 'TikTok',
+  'appcast.io': 'Appcast',
+  'talent.com': 'Talent.com',
+  'neuvoo.com': 'Talent.com',
+  'jobrapido.com': 'JobRapido',
+  'trovit.com': 'Trovit',
 };
 
 // Maps utm_source values to normalized source names
