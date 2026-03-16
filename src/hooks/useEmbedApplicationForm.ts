@@ -31,6 +31,8 @@ interface FormData {
   utm_medium: string;
   utm_campaign: string;
   referral_source: string;
+  fbclid: string;
+  gclid: string;
 }
 
 const initialFormData: FormData = {
@@ -59,6 +61,8 @@ const initialFormData: FormData = {
   utm_medium: '',
   utm_campaign: '',
   referral_source: '',
+  fbclid: '',
+  gclid: '',
 };
 
 interface SubmitResponse {
@@ -114,6 +118,8 @@ export const useEmbedApplicationForm = (options?: UseEmbedApplicationFormOptions
       utm_medium: getParam('utm_medium', 'utmMedium', 'medium'),
       utm_campaign: getParam('utm_campaign', 'utmCampaign', 'campaign_name'),
       referral_source: document.referrer || '',
+      fbclid: getParam('fbclid'),
+      gclid: getParam('gclid'),
     };
 
     setFormData(prev => ({ ...prev, ...urlParams }));

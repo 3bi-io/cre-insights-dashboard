@@ -336,6 +336,8 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
         organization_id: getParam('organization_id', 'organizationId', 'org_id'),
         client_id: getParam('client_id', 'clientId'),
         referral_source: document.referrer || undefined,
+        fbclid: getParam('fbclid') || undefined,
+        gclid: getParam('gclid') || undefined,
         
         // Location
         city: data.city || undefined,

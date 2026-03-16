@@ -206,57 +206,57 @@ Deno.serve(async (req) => {
       benefits: job.benefits,
     }));
 
-    // Generate XML based on format
+    // Generate XML based on format — pass format as feedSource for UTM attribution
     let xmlContent: string;
     switch (format) {
       case 'indeed':
       case 'simplyhired':
-        xmlContent = generateIndeedXML(transformedJobs);
+        xmlContent = generateIndeedXML(transformedJobs, format);
         break;
       case 'google':
-        xmlContent = generateGoogleJobsXML(transformedJobs, organizationId);
+        xmlContent = generateGoogleJobsXML(transformedJobs, organizationId, format);
         break;
       case 'talent':
-        xmlContent = generateTalentXML(transformedJobs);
+        xmlContent = generateTalentXML(transformedJobs, format);
         break;
       case 'careerjet':
-        xmlContent = generateCareerJetXML(transformedJobs);
+        xmlContent = generateCareerJetXML(transformedJobs, format);
         break;
       case 'trovit':
-        xmlContent = generateTrovitXML(transformedJobs);
+        xmlContent = generateTrovitXML(transformedJobs, format);
         break;
       case 'adzuna':
-        xmlContent = generateAdzunaXML(transformedJobs);
+        xmlContent = generateAdzunaXML(transformedJobs, format);
         break;
       case 'dice':
-        xmlContent = generateDiceXML(transformedJobs);
+        xmlContent = generateDiceXML(transformedJobs, format);
         break;
       case 'jooble':
-        xmlContent = generateJoobleXML(transformedJobs);
+        xmlContent = generateJoobleXML(transformedJobs, format);
         break;
       case 'hcareers':
-        xmlContent = generateHcareersXML(transformedJobs);
+        xmlContent = generateHcareersXML(transformedJobs, format);
         break;
       case 'snagajob':
-        xmlContent = generateSnagajobXML(transformedJobs);
+        xmlContent = generateSnagajobXML(transformedJobs, format);
         break;
       case 'healthecareers':
-        xmlContent = generateHealthEcareersXML(transformedJobs);
+        xmlContent = generateHealthEcareersXML(transformedJobs, format);
         break;
       case 'nurse':
-        xmlContent = generateNurseXML(transformedJobs);
+        xmlContent = generateNurseXML(transformedJobs, format);
         break;
       case 'wellfound':
-        xmlContent = generateWellfoundXML(transformedJobs);
+        xmlContent = generateWellfoundXML(transformedJobs, format);
         break;
       case 'jobrapido':
-        xmlContent = generateJobRapidoXML(transformedJobs);
+        xmlContent = generateJobRapidoXML(transformedJobs, format);
         break;
       case 'recruitnet':
-        xmlContent = generateRecruitNetXML(transformedJobs);
+        xmlContent = generateRecruitNetXML(transformedJobs, format);
         break;
       default:
-        xmlContent = generateGenericXML(transformedJobs);
+        xmlContent = generateGenericXML(transformedJobs, format);
     }
 
     const responseTime = Date.now() - startTime;
@@ -298,21 +298,25 @@ Deno.serve(async (req) => {
 
 // ============ UTILITY: Build apply URL with client context ============
 
-function buildApplyUrl(job: JobListing): string {
+function buildApplyUrl(job: JobListing, feedSource?: string): string {
   if (job.apply_url) return job.apply_url;
   let url = `https://applyai.jobs/apply?job_listing_id=${job.id}`;
   if (job.organization_id) url += `&organization_id=${job.organization_id}`;
   if (job.client_id) url += `&client_id=${job.client_id}`;
+  // Append UTM parameters for source attribution
+  if (feedSource) {
+    url += `&utm_source=${encodeURIComponent(feedSource)}&utm_medium=job_board`;
+  }
   return url;
 }
 
 // ============ XML GENERATORS ============
 
-function generateIndeedXML(jobs: JobListing[]): string {
+function generateIndeedXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     
     return `    <job>
       <title>${escapeXML(job.title)}</title>
@@ -341,9 +345,9 @@ function generateIndeedXML(jobs: JobListing[]): string {
 </source>`;
 }
 
-function generateGoogleJobsXML(jobs: JobListing[], organizationId: string): string {
+function generateGoogleJobsXML(jobs: JobListing[], organizationId: string, feedSource: string): string {
   const jobsXML = jobs.map(job => {
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     
     return `  <url>
     <loc>${jobUrl}</loc>
@@ -359,18 +363,17 @@ ${jobsXML}
 </urlset>`;
 }
 
-function generateTalentXML(jobs: JobListing[]): string {
+function generateTalentXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
-    const applyUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     
     return `  <job>
     <title>${escapeXML(job.title)}</title>
     <date>${new Date(job.created_at).toISOString().split('T')[0]}</date>
     <referencenumber>${escapeXML(job.id)}</referencenumber>
     <url>${jobUrl}</url>
-    <apply_url>${applyUrl}</apply_url>
+    <apply_url>${jobUrl}</apply_url>
     <company>${company}</company>
     <city>${escapeXML(job.city || '')}</city>
     <state>${escapeXML(job.state || '')}</state>
@@ -395,10 +398,10 @@ ${jobsXML}
 </jobs>`;
 }
 
-function generateCareerJetXML(jobs: JobListing[]): string {
+function generateCareerJetXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     
     return `  <offer>
@@ -422,10 +425,10 @@ ${jobsXML}
 </jobs>`;
 }
 
-function generateTrovitXML(jobs: JobListing[]): string {
+function generateTrovitXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     
     return `  <ad>
     <id>${escapeXML(job.id)}</id>
@@ -450,11 +453,10 @@ ${jobsXML}
 </trovit>`;
 }
 
-function generateAdzunaXML(jobs: JobListing[]): string {
+function generateAdzunaXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
-    const applyUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -463,7 +465,7 @@ function generateAdzunaXML(jobs: JobListing[]): string {
     <company>${company}</company>
     <location>${escapeXML(formatLocation(job.location, job.city, job.state))}</location>
     <url>${jobUrl}</url>
-    <apply_url>${applyUrl}</apply_url>
+    <apply_url>${jobUrl}</apply_url>
     <date>${new Date(job.created_at).toISOString()}</date>
     ${job.salary_min ? `<salary_min>${job.salary_min}</salary_min>` : ''}
     ${job.salary_max ? `<salary_max>${job.salary_max}</salary_max>` : ''}
@@ -482,11 +484,10 @@ ${jobsXML}
 </jobs>`;
 }
 
-function generateDiceXML(jobs: JobListing[]): string {
-  // Dice format is similar to Indeed but with tech-specific fields
+function generateDiceXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     
     return `  <job>
@@ -516,10 +517,10 @@ ${jobsXML}
 </dice_jobs>`;
 }
 
-function generateJoobleXML(jobs: JobListing[]): string {
+function generateJoobleXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     
     return `  <job>
@@ -545,13 +546,12 @@ ${jobsXML}
 </jobs>`;
 }
 
-function generateGenericXML(jobs: JobListing[]): string {
+function generateGenericXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
     const location = formatLocation(job.location, job.city, job.state);
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
-    const jobUrl = escapeXML(buildApplyUrl(job));
-    const applyUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -572,7 +572,7 @@ function generateGenericXML(jobs: JobListing[]): string {
     ${job.category_name ? `<category>${escapeXML(job.category_name)}</category>` : ''}
     ${job.remote_type ? `<remote_type>${escapeXML(job.remote_type)}</remote_type>` : ''}
     <url>${jobUrl}</url>
-    <apply_url>${applyUrl}</apply_url>
+    <apply_url>${jobUrl}</apply_url>
     <posted>${new Date(job.created_at).toISOString()}</posted>
     <updated>${new Date(job.updated_at || job.created_at).toISOString()}</updated>
   </job>`;
@@ -589,10 +589,10 @@ ${jobsXML}
 
 // ============ ADDITIONAL FEED GENERATORS ============
 
-function generateHcareersXML(jobs: JobListing[]): string {
+function generateHcareersXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     return `  <job>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -608,10 +608,10 @@ function generateHcareersXML(jobs: JobListing[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <publisher>Apply AI</publisher>\n${jobsXML}\n</jobs>`;
 }
 
-function generateSnagajobXML(jobs: JobListing[]): string {
+function generateSnagajobXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     const salary = formatSalary(job.salary_min, job.salary_max, job.salary_type);
     return `  <job>
     <id>${escapeXML(job.id)}</id>
@@ -630,10 +630,10 @@ function generateSnagajobXML(jobs: JobListing[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>Apply AI</source>\n${jobsXML}\n</jobs>`;
 }
 
-function generateHealthEcareersXML(jobs: JobListing[]): string {
+function generateHealthEcareersXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     return `  <position>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -650,14 +650,14 @@ function generateHealthEcareersXML(jobs: JobListing[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<positions>\n${jobsXML}\n</positions>`;
 }
 
-function generateNurseXML(jobs: JobListing[]): string {
-  return generateHealthEcareersXML(jobs); // Similar format
+function generateNurseXML(jobs: JobListing[], feedSource: string): string {
+  return generateHealthEcareersXML(jobs, feedSource);
 }
 
-function generateWellfoundXML(jobs: JobListing[]): string {
+function generateWellfoundXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     return `  <job>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -674,10 +674,10 @@ function generateWellfoundXML(jobs: JobListing[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n  <source>Apply AI</source>\n${jobsXML}\n</jobs>`;
 }
 
-function generateJobRapidoXML(jobs: JobListing[]): string {
+function generateJobRapidoXML(jobs: JobListing[], feedSource: string): string {
   const jobsXML = jobs.map(job => {
     const company = escapeXML(job.company || job.client_name || 'Company');
-    const jobUrl = escapeXML(buildApplyUrl(job));
+    const jobUrl = escapeXML(buildApplyUrl(job, feedSource));
     return `  <job>
     <id>${escapeXML(job.id)}</id>
     <title>${escapeXML(job.title)}</title>
@@ -692,8 +692,8 @@ function generateJobRapidoXML(jobs: JobListing[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<jobs>\n${jobsXML}\n</jobs>`;
 }
 
-function generateRecruitNetXML(jobs: JobListing[]): string {
-  return generateJobRapidoXML(jobs); // Similar format
+function generateRecruitNetXML(jobs: JobListing[], feedSource: string): string {
+  return generateJobRapidoXML(jobs, feedSource);
 }
 
 function generateErrorXML(message: string): string {

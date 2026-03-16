@@ -106,10 +106,11 @@ function generateIndeedXML(jobs: any[]): string {
     const remotetype = escapeXml(job.remote_type || '')
     const experience = escapeXml(job.experience_level || '')
     const referencenumber = escapeXml(job.id || '')
-    // Build apply URL with client context for proper routing
+    // Build apply URL with client context and UTM attribution for proper routing
     let applyUrl = `https://applyai.jobs/apply?job_listing_id=${job.id}`;
     if (job.organization_id) applyUrl += `&organization_id=${job.organization_id}`;
     if (job.client_id) applyUrl += `&client_id=${job.client_id}`;
+    applyUrl += '&utm_source=indeed&utm_medium=job_board';
     const url = escapeXml(applyUrl)
     
     // Format salary
