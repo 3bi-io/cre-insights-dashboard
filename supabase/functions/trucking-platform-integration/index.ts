@@ -106,7 +106,7 @@ async function checkPlatformConnection(platform: string) {
   )
 }
 
-async function postJobToPlatform(platform: string, supabaseClient: any) {
+async function postJobToPlatform(platform: string, _supabaseClient: ReturnType<typeof createClient>) {
   logger.info('Posting job to platform', { platform })
   
   // For free platforms, we primarily use XML feeds
