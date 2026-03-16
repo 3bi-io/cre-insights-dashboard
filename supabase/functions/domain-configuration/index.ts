@@ -139,7 +139,7 @@ async function configureDomain(supabase: ReturnType<typeof createClient>, organi
   }
 }
 
-async function verifyDomain(supabase: any, organizationId: string, domain: string) {
+async function verifyDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Verifying domain', { domain })
   
   try {
