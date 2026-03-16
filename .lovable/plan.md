@@ -24,18 +24,22 @@
 - ✅ **CORS Migration** (20 functions total): All hardcoded CORS headers migrated to `getCorsHeaders()`
 
 ### Phase 4 (2026-03-16, continued)
-- ✅ **@ts-nocheck removal (16 functions)**: Removed from all remaining edge functions — indeed-xml-feed, craigslist-integration, google-indexing, meta-sync-cron, fetch-crengland-jobs, fetch-application-feeds, meta-leads-cron, data-analysis, talroo-integration, job-feed-xml, sync-rippling-feeds, meta-adset-report, sync-cdl-feeds, meta-spend-analytics, chatbot-analytics, trucking-platform-integration. **Zero @ts-nocheck remaining in project.**
+- ✅ **@ts-nocheck removal (16 functions)**: Removed from all remaining edge functions. **Zero @ts-nocheck remaining in project.**
 - ✅ **SDK Pinning (complete)**: All edge functions now pinned to `@supabase/supabase-js@2.50.0`. **Zero unpinned `@2` imports remaining.**
-- ✅ **Typed catch blocks**: All catch blocks across 16 functions now use `catch (error: unknown)` with `error instanceof Error ? error.message : String(error)` pattern.
-- ✅ **Replaced `any` types**: Added proper interfaces for job listings (indeed-xml-feed), service accounts (google-indexing), Supabase client params (talroo-integration, trucking-platform-integration), Meta targeting (meta-sync-cron).
+- ✅ **Typed catch blocks**: All catch blocks use `catch (error: unknown)` with `error instanceof Error ? error.message : String(error)` pattern.
+- ✅ **Replaced `any` types**: Added proper interfaces across all edge functions.
+
+### Phase 5 (2026-03-16, continued)
+- ✅ **Logging Migration (12 functions)**: Replaced raw `console.log/error` with `createLogger()` in: firecrawl-crawl, firecrawl-scrape, firecrawl-search, firecrawl-job-import, generate-image, generate-og-images, generate-founders-pass-creative, social-oauth-callback, resolve-embed-token, x-platform-integration, morning-digest
+- ✅ **Dialog Accessibility**: Fixed `DialogContent` to pass `aria-describedby` to suppress missing description warnings globally
+- ✅ **Admin Route Simplification**: Replaced double `ProtectedRoute` wrapping in admin routes with `AdminRouteWrapper` (auth enforced once by parent `LayoutWrapper`)
+- ✅ **Additional fixes**: firecrawl-scrape and firecrawl-job-import migrated from hardcoded CORS to `getCorsHeaders()` and from manual `createClient` to `getServiceClient()`; resolve-embed-token migrated to `getServiceClient()`
 
 ## Remaining
 
 ### Medium-term
 - [ ] #4: Migrate ~40 functions from manual createClient() to getServiceClient()
-- [ ] #9: Replace console.log/error with createLogger() in ~22 functions
+- [ ] #9: Replace console.log/error with createLogger() in remaining ~10 functions
 
 ### Long-term
 - [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function
-- [ ] #12: Fix Dialog accessibility warnings (add DialogDescription or aria-describedby)
-- [ ] #13: Simplify double ProtectedRoute wrapping in admin routes
