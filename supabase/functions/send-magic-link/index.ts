@@ -18,10 +18,7 @@ import {
 
 const logger = createLogger('send-magic-link');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 interface MagicLinkRequest {
   email?: string;
