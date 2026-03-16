@@ -163,12 +163,143 @@ async function handleCheckAvailability(
   }
 
   if (connections.length === 0) {
-    return new Response(
-      JSON.stringify({ 
-        result: 'No recruiters have connected their calendars yet. I can take your information and have a recruiter call you back during business hours.' 
-      }),
-      { status: 200, headers }
-    );
+    // No calendar fallback: schedule an AI callback during business hours + create recruiter task
+    console.log(`No calendar connections for org ${organization_id} — using no-calendar fallback`);
+    
+    try {
+      // 1. Find next business hour slot
+      const callbackFrom = new Date(Date.now() + 60 * 60 * 1000); // at least 1h from now
+      const resolvedClientIdForFallback = resolvedClientId || null;
+      const { data: nextBizTime } = await supabase.rpc('next_business_datetime', {
+        p_org_id: organization_id,
+        p_from: callbackFrom.toISOString(),
+        p_client_id: resolvedClientIdForFallback,
+      });
+      
+      // 2. Add jitter: 5-30 minutes to avoid clustering
+      const baseTime = nextBizTime ? new Date(nextBizTime) : callbackFrom;
+      const jitterMinutes = 5 + Math.floor(Math.random() * 25); // 5-30 min spread
+      const scheduledTime = new Date(baseTime.getTime() + jitterMinutes * 60 * 1000);
+      const scheduledAtIso = scheduledTime.toISOString();
+      
+      // 3. Resolve application details for the callback
+      let appPhone: string | null = null;
+      let appName: string | null = null;
+      let voiceAgentId: string | null = null;
+      
+      if (application_id && isValidUUID(application_id)) {
+        const { data: app } = await supabase
+          .from('applications')
+          .select('phone, first_name, last_name')
+          .eq('id', application_id)
+          .single();
+        if (app) {
+          appPhone = sanitizePhone(app.phone);
+          appName = [app.first_name, app.last_name].filter(Boolean).join(' ') || null;
+        }
+      }
+      
+      // Find voice agent for this org
+      if (resolvedClientIdForFallback) {
+        const { data: clientAgent } = await supabase
+          .from('voice_agents')
+          .select('id')
+          .eq('organization_id', organization_id)
+          .eq('client_id', resolvedClientIdForFallback)
+          .eq('is_outbound_enabled', true)
+          .eq('is_active', true)
+          .not('agent_phone_number_id', 'is', null)
+          .limit(1)
+          .maybeSingle();
+        if (clientAgent) voiceAgentId = clientAgent.id;
+      }
+      if (!voiceAgentId) {
+        const { data: orgAgent } = await supabase
+          .from('voice_agents')
+          .select('id')
+          .eq('organization_id', organization_id)
+          .is('client_id', null)
+          .eq('is_outbound_enabled', true)
+          .eq('is_active', true)
+          .not('agent_phone_number_id', 'is', null)
+          .limit(1)
+          .maybeSingle();
+        if (orgAgent) voiceAgentId = orgAgent.id;
+      }
+      
+      // 4. Schedule outbound AI callback
+      if (appPhone && voiceAgentId) {
+        const { data: callbackCall, error: callbackErr } = await supabase
+          .from('outbound_calls')
+          .insert({
+            application_id: application_id && isValidUUID(application_id) ? application_id : null,
+            voice_agent_id: voiceAgentId,
+            organization_id: organization_id,
+            phone_number: appPhone,
+            status: 'scheduled',
+            scheduled_at: scheduledAtIso,
+            retry_count: 1,
+            metadata: {
+              callback_purpose: 'business_hours_callback',
+              no_calendar_fallback: true,
+              is_after_hours_callback: true,
+              triggered_by: 'agent_scheduling_no_calendar',
+              client_id: resolvedClientIdForFallback,
+            },
+          })
+          .select('id')
+          .single();
+        
+        if (callbackErr) {
+          console.error('Failed to schedule no-calendar fallback call:', callbackErr);
+        } else {
+          console.log(`Scheduled no-calendar fallback call ${callbackCall?.id} at ${scheduledAtIso}`);
+        }
+      }
+      
+      // 5. Create scheduled_callbacks record for recruiter dashboard visibility
+      const { error: scErr } = await supabase
+        .from('scheduled_callbacks')
+        .insert({
+          organization_id: organization_id,
+          application_id: application_id && isValidUUID(application_id) ? application_id : null,
+          client_id: resolvedClientIdForFallback,
+          scheduled_start: scheduledAtIso,
+          scheduled_end: new Date(scheduledTime.getTime() + 15 * 60 * 1000).toISOString(),
+          status: 'pending',
+          notes: `Auto-scheduled callback (no calendar connected). Candidate: ${appName || 'Unknown'}. AI will call back at this time — recruiter follow-up recommended.`,
+          source: 'ai_agent',
+        });
+      
+      if (scErr) {
+        console.error('Failed to create scheduled_callbacks record:', scErr);
+      }
+      
+      // Format time for the agent to tell the candidate
+      const readableTime = scheduledTime.toLocaleString('en-US', {
+        weekday: 'long',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'America/Chicago',
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          result: `I've scheduled a callback for you on ${readableTime} Central Time. A recruiter will also be notified to follow up with you. Is there anything else I can help with?`,
+          scheduled_at: scheduledAtIso,
+          no_calendar_fallback: true,
+        }),
+        { status: 200, headers }
+      );
+    } catch (fallbackErr: any) {
+      console.error('No-calendar fallback error:', fallbackErr);
+      return new Response(
+        JSON.stringify({ 
+          result: 'I\'ll make sure a recruiter calls you back during business hours. They\'ll reach out to you directly.' 
+        }),
+        { status: 200, headers }
+      );
+    }
   }
 
   // Round-robin: check availability across ALL connected recruiters and pick earliest slot
