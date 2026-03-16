@@ -17,6 +17,9 @@ const logger = createLogger('background-check');
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

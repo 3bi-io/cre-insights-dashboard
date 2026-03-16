@@ -195,7 +195,9 @@ const generatePreferencesPage = (email: string, preferences: any, token: string)
 };
 
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

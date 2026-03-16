@@ -226,7 +226,7 @@ async function deployDomain(supabase: ReturnType<typeof createClient>, organizat
   }
 }
 
-async function removeDomain(supabase: any, organizationId: string, domain: string) {
+async function removeDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Removing domain', { domain })
   
   try {

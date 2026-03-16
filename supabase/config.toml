@@ -317,3 +317,18 @@ verify_jwt = false
 
 [functions.grok-chat]
 verify_jwt = true
+
+[functions.hayes-danny-herman-inbound]
+verify_jwt = false
+
+[functions.hayes-dayross-inbound]
+verify_jwt = false
+
+[functions.hayes-jamesburg-inbound]
+verify_jwt = false
+
+[functions.hayes-novco-inbound]
+verify_jwt = false
+
+[functions.hayes-pemberton-inbound]
+verify_jwt = false

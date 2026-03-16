@@ -465,8 +465,8 @@ export const findClientByIdentifier = async (
  */
 export const insertApplication = async (
   supabase: SupabaseClient,
-  applicationData: any
-): Promise<{ data: any; error: any }> => {
+  applicationData: Record<string, unknown>
+): Promise<{ data: Record<string, unknown> | null; error: { message: string; code?: string } | null }> => {
   const { data, error } = await supabase
     .from('applications')
     .insert(applicationData)

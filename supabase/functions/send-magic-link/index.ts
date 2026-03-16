@@ -74,7 +74,9 @@ const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): s
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
