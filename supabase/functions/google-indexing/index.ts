@@ -159,9 +159,10 @@ serve(async (req) => {
         await notifyGoogleIndexing(url, notificationType, accessToken)
         result.successes++
         logger.info('Successfully notified Google', { url })
-      } catch (error) {
+      } catch (error: unknown) {
         result.failures++
-        result.errors.push(`${url}: ${error.message}`)
+        const message = error instanceof Error ? error.message : String(error);
+        result.errors.push(`${url}: ${message}`)
         logger.error('Failed to notify Google', error, { url })
       }
     }
