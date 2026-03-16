@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
         results,
         test_mode,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
