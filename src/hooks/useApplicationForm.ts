@@ -75,6 +75,8 @@ const initialFormData: FormData = {
   utm_medium: '',
   utm_campaign: '',
   referral_source: '',
+  fbclid: '',
+  gclid: '',
 };
 
 interface SubmitResponse {
