@@ -554,7 +554,8 @@ serve(async (req) => {
             results.results.push({ call_id: call.id, status: 'failed', error: callResponse.error });
           }
           
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Stagger: 2-5 seconds between calls to prevent API congestion from burst scheduling
+          await new Promise(resolve => setTimeout(resolve, 2000 + Math.floor(Math.random() * 3000)));
         } catch (error) {
           logger.error(`Failed to process call ${call.id}`, { error });
           results.failed++;
