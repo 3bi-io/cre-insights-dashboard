@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
           success: true, 
           message: 'No webhook configured for this client or organization' 
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
       );
     }
 
