@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createLogger } from '../_shared/logger.ts'
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
 
 const logger = createLogger('fetch-application-feeds')
 
