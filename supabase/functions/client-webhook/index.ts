@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       logger.error('Application not found', appError);
       return new Response(
         JSON.stringify({ error: 'Application not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 404, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
       );
     }
 
