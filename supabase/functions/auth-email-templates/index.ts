@@ -17,10 +17,7 @@ import {
 
 const logger = createLogger('auth-email-templates');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 /**
  * Supabase Auth Hook payload for custom email templates
@@ -396,7 +393,9 @@ function generateDefaultEmail(actionUrl: string, actionType: string): string {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

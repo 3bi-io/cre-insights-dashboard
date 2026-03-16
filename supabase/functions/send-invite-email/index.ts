@@ -18,10 +18,7 @@ import {
 const logger = createLogger('send-invite-email');
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 interface InviteEmailRequest {
   email: string;
@@ -42,7 +39,9 @@ const getRoleDisplayName = (role: string): string => {
 };
 
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

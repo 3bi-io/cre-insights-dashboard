@@ -1,12 +1,7 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { createLogger } from "../_shared/logger.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 const logger = createLogger('outbound-webhook');
 
@@ -17,9 +12,11 @@ interface OutboundWebhookPayload {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   logger.info('Outbound webhook triggered', { method: req.method });
 
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -35,7 +32,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Initialize Supabase client with service role key
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -59,7 +55,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     logger.info('Processing outbound webhook', { application_id });
 
-    // Get complete application data
     const { data: application, error: fetchError } = await supabase
       .from('applications')
       .select('*')
@@ -80,33 +75,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Prepare the webhook payload with all application data as individual nodes
     const webhookPayload = {
-      // Event metadata
       event_type,
       timestamp: new Date().toISOString(),
-      
-      // Core fields
       id: application.id,
       job_listing_id: application.job_listing_id,
       job_id: application.job_id,
-      
-      // Personal information
       first_name: application.first_name,
       last_name: application.last_name,
       applicant_email: application.applicant_email,
       phone: application.phone,
       secondary_phone: application.secondary_phone,
-      
-      // Address information
       address_1: application.address_1,
       address_2: application.address_2,
       city: application.city,
       state: application.state,
       zip: application.zip,
       country: application.country,
-      
-      // Personal details
       date_of_birth: application.date_of_birth,
       prefix: application.prefix,
       middle_name: application.middle_name,
@@ -114,100 +99,67 @@ const handler = async (req: Request): Promise<Response> => {
       ssn: application.ssn,
       government_id: application.government_id,
       government_id_type: application.government_id_type,
-      
-      // Contact preferences
       preferred_contact_method: application.preferred_contact_method,
       emergency_contact_name: application.emergency_contact_name,
       emergency_contact_phone: application.emergency_contact_phone,
       emergency_contact_relationship: application.emergency_contact_relationship,
-      
-      // CDL Information
       cdl: application.cdl,
       cdl_class: application.cdl_class,
       cdl_endorsements: application.cdl_endorsements,
       cdl_expiration_date: application.cdl_expiration_date,
       cdl_state: application.cdl_state,
-      
-      // Driving experience
       driving_experience_years: application.driving_experience_years,
       accident_history: application.accident_history,
       violation_history: application.violation_history,
-      
-      // Employment and education
       employment_history: application.employment_history,
       education_level: application.education_level,
-      
-      // Military service
       military_service: application.military_service,
       military_branch: application.military_branch,
       military_start_date: application.military_start_date,
       military_end_date: application.military_end_date,
       veteran: application.veteran,
-      
-      // Background and consent
       convicted_felony: application.convicted_felony,
       felony_details: application.felony_details,
       work_authorization: application.work_authorization,
-      
-      // Work preferences
       can_work_weekends: application.can_work_weekends,
       can_work_nights: application.can_work_nights,
       willing_to_relocate: application.willing_to_relocate,
       preferred_start_date: application.preferred_start_date,
       salary_expectations: application.salary_expectations,
-      
-      // Health and testing
       over_21: application.over_21,
       can_pass_drug_test: application.can_pass_drug_test,
       can_pass_physical: application.can_pass_physical,
       medical_card_expiration: application.medical_card_expiration,
       dot_physical_date: application.dot_physical_date,
-      
-      // Endorsements and cards
       hazmat_endorsement: application.hazmat_endorsement,
       passport_card: application.passport_card,
       twic_card: application.twic_card,
-      
-      // Application metadata
       source: application.source,
       status: application.status,
       notes: application.notes,
       applied_at: application.applied_at,
       created_at: application.created_at,
       updated_at: application.updated_at,
-      
-      // Recruiter information
       recruiter_id: application.recruiter_id,
-      
-      // Driver information
       driver_id: application.driver_id,
-      
-      // Referral information
       how_did_you_hear: application.how_did_you_hear,
       referral_source: application.referral_source,
-      
-      // Consent fields
       agree_privacy_policy: application.agree_privacy_policy,
       consent_to_sms: application.consent_to_sms,
       consent_to_email: application.consent_to_email,
       background_check_consent: application.background_check_consent,
-      
-      // Legacy fields (for backward compatibility)
       age: application.age,
       privacy: application.privacy,
       consent: application.consent,
       drug: application.drug,
       exp: application.exp,
       months: application.months,
-      
-      // Custom data
       custom_questions: application.custom_questions,
       display_fields: application.display_fields
     };
 
     logger.info('Sending webhook payload', { webhook_url });
 
-    // Send webhook to Zapier
     const webhookResponse = await fetch(webhook_url, {
       method: 'POST',
       headers: {
@@ -216,6 +168,9 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify(webhookPayload)
     });
+
+    // Consume response body to prevent resource leak
+    const responseText = await webhookResponse.text();
 
     if (!webhookResponse.ok) {
       logger.error('Webhook delivery failed', null, { status: webhookResponse.status, statusText: webhookResponse.statusText });
@@ -248,13 +203,14 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-  } catch (error) {
-    logger.error('Outbound webhook error', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Outbound webhook error', error instanceof Error ? error : null);
     
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message
+        message
       }),
       { 
         status: 500,

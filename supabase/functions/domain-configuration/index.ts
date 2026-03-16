@@ -1,6 +1,5 @@
-// @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
 
@@ -75,10 +74,11 @@ serve(async (req) => {
         } 
       }
     )
-  } catch (error) {
-    logger.error('Domain configuration error', error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Domain configuration error', error instanceof Error ? error : null)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { 
         status: 400, 
         headers: { 
@@ -90,7 +90,7 @@ serve(async (req) => {
   }
 })
 
-async function configureDomain(supabase: any, organizationId: string, domain: string) {
+async function configureDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Configuring domain', { domain })
   
   // Generate verification token
@@ -139,7 +139,7 @@ async function configureDomain(supabase: any, organizationId: string, domain: st
   }
 }
 
-async function verifyDomain(supabase: any, organizationId: string, domain: string) {
+async function verifyDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Verifying domain', { domain })
   
   try {
@@ -184,7 +184,7 @@ async function verifyDomain(supabase: any, organizationId: string, domain: strin
   }
 }
 
-async function deployDomain(supabase: any, organizationId: string, domain: string) {
+async function deployDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Deploying domain', { domain })
   
   try {
@@ -226,7 +226,7 @@ async function deployDomain(supabase: any, organizationId: string, domain: strin
   }
 }
 
-async function removeDomain(supabase: any, organizationId: string, domain: string) {
+async function removeDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Removing domain', { domain })
   
   try {

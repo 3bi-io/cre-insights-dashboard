@@ -18,10 +18,7 @@ import {
 
 const logger = createLogger('send-magic-link');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 interface MagicLinkRequest {
   email?: string;
@@ -77,7 +74,9 @@ const generateMagicLinkEmail = (actionLink: string, isAdmin: boolean = false): s
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
