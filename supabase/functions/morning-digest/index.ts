@@ -10,7 +10,9 @@
 import { getServiceClient } from '../_shared/supabase-client.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { getSender } from '../_shared/email-config.ts';
+import { createLogger } from '../_shared/logger.ts';
 
+const logger = createLogger('morning-digest');
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || '';
 
 /** Fetch with timeout */
@@ -52,7 +54,6 @@ Deno.serve(async (req) => {
       targetUserId = body.userId || null;
     }
 
-    // Validate targetUserId if provided
     if (targetUserId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetUserId)) {
       throw new Error('Invalid userId format');
     }
@@ -63,7 +64,6 @@ Deno.serve(async (req) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Get today's scheduled callbacks grouped by recruiter
     let query = supabase
       .from('scheduled_callbacks')
       .select(`
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     const { data: callbacks, error: cbError } = await query;
 
     if (cbError) {
-      console.error('Failed to fetch callbacks:', cbError);
+      logger.error('Failed to fetch callbacks', cbError);
       throw new Error('Failed to fetch scheduled callbacks');
     }
 
@@ -94,11 +94,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Group by recruiter
     const byRecruiter = new Map<string, typeof callbacks>();
     for (const cb of callbacks) {
       const key = cb.recruiter_user_id;
-      if (!key) continue; // skip if no recruiter assigned
+      if (!key) continue;
       if (!byRecruiter.has(key)) byRecruiter.set(key, []);
       byRecruiter.get(key)!.push(cb);
     }
@@ -110,7 +109,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get recruiter profiles
     const recruiterIds = Array.from(byRecruiter.keys());
     const { data: profiles } = await supabase
       .from('profiles')
@@ -132,7 +130,6 @@ Deno.serve(async (req) => {
       const recruiterName = escapeHtml(profile.full_name?.split(' ')[0] || 'Recruiter');
       const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-      // Build email HTML
       const callRows = recruiterCallbacks.map(cb => {
         const time = new Date(cb.scheduled_start).toLocaleTimeString('en-US', {
           hour: 'numeric',
@@ -196,7 +193,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Send via Resend
       if (!RESEND_API_KEY) {
         errors.push('RESEND_API_KEY not configured');
         continue;
@@ -218,9 +214,8 @@ Deno.serve(async (req) => {
         }, 10000);
 
         if (emailResponse.ok) {
-          await emailResponse.text(); // consume body
+          await emailResponse.text();
           sentCount++;
-          // Mark as sent
           const cbIds = recruiterCallbacks.map(cb => cb.id);
           await supabase
             .from('scheduled_callbacks')
@@ -230,8 +225,9 @@ Deno.serve(async (req) => {
           const errText = await emailResponse.text();
           errors.push(`Email to ${profile.email} failed: ${errText}`);
         }
-      } catch (e: any) {
-        errors.push(`Email to ${profile.email} error: ${e.message}`);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`Email to ${profile.email} error: ${msg}`);
       }
     }
 
@@ -245,10 +241,11 @@ Deno.serve(async (req) => {
       }),
       { headers }
     );
-  } catch (error: any) {
-    console.error('Morning digest error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Morning digest error', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: message }),
       { status: 500, headers }
     );
   }

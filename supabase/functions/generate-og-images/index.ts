@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors-config.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('generate-og-images');
 
 const OG_IMAGES = [
   {
@@ -73,7 +76,7 @@ serve(async (req) => {
     const results: Record<string, { success: boolean; url?: string; error?: string }> = {};
 
     for (const image of OG_IMAGES) {
-      console.log(`Generating OG image: ${image.key}`);
+      logger.info(`Generating OG image: ${image.key}`);
       try {
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -121,10 +124,10 @@ serve(async (req) => {
           .getPublicUrl(filePath);
 
         results[image.key] = { success: true, url: publicUrlData.publicUrl };
-        console.log(`✓ ${image.key}: ${publicUrlData.publicUrl}`);
+        logger.info(`OG image generated: ${image.key}`, { url: publicUrlData.publicUrl });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.error(`✗ ${image.key}: ${msg}`);
+        logger.error(`OG image failed: ${image.key}`, err);
         results[image.key] = { success: false, error: msg };
       }
     }
@@ -135,6 +138,7 @@ serve(async (req) => {
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    logger.error('OG image generation error', error);
     return new Response(JSON.stringify({ success: false, error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

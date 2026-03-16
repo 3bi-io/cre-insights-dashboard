@@ -6,7 +6,10 @@
  */
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getServiceClient } from '../_shared/supabase-client.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('resolve-embed-token');
 
 // This endpoint must allow ANY origin since it's designed for 
 // embedding on third-party websites. Domain security is handled 
@@ -16,15 +19,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
-
-function getServiceClient() {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing required Supabase environment variables');
-  }
-  return createClient(supabaseUrl, supabaseServiceKey);
-}
 
 interface TokenData {
   id: string;
@@ -37,6 +31,7 @@ interface TokenData {
   allowed_domains: string[] | null;
   is_active: boolean;
   expires_at: string | null;
+  impression_count: number;
   job_listings: {
     title: string;
     clients: {
@@ -47,12 +42,10 @@ interface TokenData {
 }
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Only allow GET requests
   if (req.method !== 'GET') {
     return new Response(
       JSON.stringify({ success: false, error: 'Method not allowed' }),
@@ -73,7 +66,6 @@ serve(async (req: Request) => {
 
     const supabase = getServiceClient();
 
-    // Fetch token data with job and client info
     const { data: tokenData, error: fetchError } = await supabase
       .from('embed_tokens')
       .select(`
@@ -87,6 +79,7 @@ serve(async (req: Request) => {
         allowed_domains,
         is_active,
         expires_at,
+        impression_count,
         job_listings (
           title,
           clients (
@@ -99,7 +92,7 @@ serve(async (req: Request) => {
       .single();
 
     if (fetchError || !tokenData) {
-      console.error('Token lookup failed:', fetchError);
+      logger.error('Token lookup failed', fetchError);
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid token' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -108,7 +101,6 @@ serve(async (req: Request) => {
 
     const typedTokenData = tokenData as TokenData;
 
-    // Check if token is active
     if (!typedTokenData.is_active) {
       return new Response(
         JSON.stringify({ success: false, error: 'Token is inactive' }),
@@ -116,7 +108,6 @@ serve(async (req: Request) => {
       );
     }
 
-    // Check if token has expired
     if (typedTokenData.expires_at && new Date(typedTokenData.expires_at) < new Date()) {
       return new Response(
         JSON.stringify({ success: false, error: 'Token has expired' }),
@@ -124,14 +115,12 @@ serve(async (req: Request) => {
       );
     }
 
-    // Validate domain if allowed_domains is set
     const referer = req.headers.get('referer');
     if (typedTokenData.allowed_domains && typedTokenData.allowed_domains.length > 0 && referer) {
       try {
         const refererUrl = new URL(referer);
         const refererHost = refererUrl.hostname;
         const isAllowed = typedTokenData.allowed_domains.some(domain => {
-          // Support wildcard subdomains (*.example.com)
           if (domain.startsWith('*.')) {
             const baseDomain = domain.slice(2);
             return refererHost === baseDomain || refererHost.endsWith('.' + baseDomain);
@@ -140,27 +129,25 @@ serve(async (req: Request) => {
         });
 
         if (!isAllowed) {
-          console.warn(`Domain not allowed: ${refererHost}, allowed: ${typedTokenData.allowed_domains}`);
+          logger.warn(`Domain not allowed: ${refererHost}`, { allowed: typedTokenData.allowed_domains });
           return new Response(
             JSON.stringify({ success: false, error: 'Domain not authorized' }),
             { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-      } catch (e) {
-        // Invalid referer URL, skip domain check
-        console.warn('Invalid referer URL:', referer);
+      } catch {
+        logger.warn('Invalid referer URL', { referer });
       }
     }
 
     // Increment impression count (fire and forget)
     supabase
       .from('embed_tokens')
-      .update({ impression_count: (tokenData as any).impression_count + 1 })
+      .update({ impression_count: typedTokenData.impression_count + 1 })
       .eq('id', typedTokenData.id)
       .then(() => {})
-      .catch((err: Error) => console.error('Failed to increment impression:', err));
+      .catch((err: Error) => logger.error('Failed to increment impression', err));
 
-    // Build the embed URL with UTM parameters
     const params = new URLSearchParams();
     params.set('job_id', typedTokenData.job_listing_id);
     
@@ -176,7 +163,6 @@ serve(async (req: Request) => {
 
     const embedUrl = `/embed/apply?${params.toString()}`;
 
-    // Return the resolved URL along with metadata for loading state
     return new Response(
       JSON.stringify({
         success: true,
@@ -195,8 +181,8 @@ serve(async (req: Request) => {
       }
     );
 
-  } catch (error) {
-    console.error('Error resolving embed token:', error);
+  } catch (error: unknown) {
+    logger.error('Error resolving embed token', error);
     return new Response(
       JSON.stringify({ success: false, error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

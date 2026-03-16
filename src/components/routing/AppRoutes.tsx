@@ -143,7 +143,12 @@ const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </Suspense>
 );
 
-// Protected route wrapper
+// Route wrapper for admin child routes (auth already enforced by LayoutWrapper parent)
+const AdminRouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <RouteWrapper>{children}</RouteWrapper>
+);
+
+// Protected route wrapper for standalone routes outside admin layout
 const ProtectedRouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <ProtectedRoute>
     <RouteWrapper>{children}</RouteWrapper>
@@ -254,22 +259,22 @@ const AppRoutes: React.FC = () => {
       {/* Admin Routes */}
       <Route path="/admin" element={<LayoutWrapper />}>
         <Route index element={<RouteWrapper><Dashboard /></RouteWrapper>} />
-        <Route path="jobs" element={<ProtectedRouteWrapper><Jobs /></ProtectedRouteWrapper>} />
-        <Route path="campaigns" element={<ProtectedRouteWrapper><Campaigns /></ProtectedRouteWrapper>} />
-        <Route path="job-groups" element={<ProtectedRouteWrapper><JobGroups /></ProtectedRouteWrapper>} />
-        <Route path="applications" element={<ProtectedRouteWrapper><Applications /></ProtectedRouteWrapper>} />
-        <Route path="applications/import" element={<ProtectedRouteWrapper><ImportApplications /></ProtectedRouteWrapper>} />
-        <Route path="ai-impact" element={<ProtectedRouteWrapper><AIImpactDashboard /></ProtectedRouteWrapper>} />
-        <Route path="ai-analytics" element={<ProtectedRouteWrapper><AIAnalytics /></ProtectedRouteWrapper>} />
-        <Route path="ai-tools" element={<ProtectedRouteWrapper><AITools /></ProtectedRouteWrapper>} />
-        <Route path="voice-agent" element={<ProtectedRouteWrapper><VoiceAgent /></ProtectedRouteWrapper>} />
-        <Route path="elevenlabs-admin" element={<ProtectedRouteWrapper><ElevenLabsAdmin /></ProtectedRouteWrapper>} />
-        <Route path="my-calendar" element={<ProtectedRouteWrapper><RecruiterCalendarPage /></ProtectedRouteWrapper>} />
+        <Route path="jobs" element={<AdminRouteWrapper><Jobs /></AdminRouteWrapper>} />
+        <Route path="campaigns" element={<AdminRouteWrapper><Campaigns /></AdminRouteWrapper>} />
+        <Route path="job-groups" element={<AdminRouteWrapper><JobGroups /></AdminRouteWrapper>} />
+        <Route path="applications" element={<AdminRouteWrapper><Applications /></AdminRouteWrapper>} />
+        <Route path="applications/import" element={<AdminRouteWrapper><ImportApplications /></AdminRouteWrapper>} />
+        <Route path="ai-impact" element={<AdminRouteWrapper><AIImpactDashboard /></AdminRouteWrapper>} />
+        <Route path="ai-analytics" element={<AdminRouteWrapper><AIAnalytics /></AdminRouteWrapper>} />
+        <Route path="ai-tools" element={<AdminRouteWrapper><AITools /></AdminRouteWrapper>} />
+        <Route path="voice-agent" element={<AdminRouteWrapper><VoiceAgent /></AdminRouteWrapper>} />
+        <Route path="elevenlabs-admin" element={<AdminRouteWrapper><ElevenLabsAdmin /></AdminRouteWrapper>} />
+        <Route path="my-calendar" element={<AdminRouteWrapper><RecruiterCalendarPage /></AdminRouteWrapper>} />
         
         {/* Consolidated Routes */}
-        <Route path="ats-command" element={<ProtectedRouteWrapper><ATSCommandCenterPage /></ProtectedRouteWrapper>} />
-        <Route path="meta-analytics" element={<ProtectedRouteWrapper><MetaAnalyticsPage /></ProtectedRouteWrapper>} />
-        <Route path="ai-configuration" element={<ProtectedRouteWrapper><AIConfigurationPage /></ProtectedRouteWrapper>} />
+        <Route path="ats-command" element={<AdminRouteWrapper><ATSCommandCenterPage /></AdminRouteWrapper>} />
+        <Route path="meta-analytics" element={<AdminRouteWrapper><MetaAnalyticsPage /></AdminRouteWrapper>} />
+        <Route path="ai-configuration" element={<AdminRouteWrapper><AIConfigurationPage /></AdminRouteWrapper>} />
         
         {/* Legacy routes - redirect to consolidated pages */}
         <Route path="tenstreet" element={<Navigate to="/admin/ats-command" replace />} />
@@ -284,45 +289,45 @@ const AppRoutes: React.FC = () => {
         <Route path="privacy-controls" element={<Navigate to="/admin/ai-configuration" replace />} />
         
         {/* Remaining routes */}
-        <Route path="tenstreet-integration" element={<ProtectedRouteWrapper><TenstreetIntegration /></ProtectedRouteWrapper>} />
-        <Route path="routes" element={<ProtectedRouteWrapper><RoutesPage /></ProtectedRouteWrapper>} />
+        <Route path="tenstreet-integration" element={<AdminRouteWrapper><TenstreetIntegration /></AdminRouteWrapper>} />
+        <Route path="routes" element={<AdminRouteWrapper><RoutesPage /></AdminRouteWrapper>} />
         <Route path="platforms" element={<Navigate to="/admin/ad-networks" replace />} />
         <Route path="publishers" element={<Navigate to="/admin/ad-networks" replace />} />
-        <Route path="ad-networks" element={<ProtectedRouteWrapper><AdNetworks /></ProtectedRouteWrapper>} />
-        <Route path="job-boards" element={<ProtectedRouteWrapper><JobBoards /></ProtectedRouteWrapper>} />
-        <Route path="feeds" element={<ProtectedRouteWrapper><FeedsManagement /></ProtectedRouteWrapper>} />
-        <Route path="universal-feeds" element={<ProtectedRouteWrapper><UniversalFeeds /></ProtectedRouteWrapper>} />
-        <Route path="clients" element={<ProtectedRouteWrapper><ClientsPage /></ProtectedRouteWrapper>} />
-        <Route path="organizations" element={<ProtectedRouteWrapper><Organizations /></ProtectedRouteWrapper>} />
-        <Route path="settings" element={<ProtectedRouteWrapper><Settings /></ProtectedRouteWrapper>} />
-        <Route path="media" element={<ProtectedRouteWrapper><Media /></ProtectedRouteWrapper>} />
-        <Route path="brand-assets" element={<ProtectedRouteWrapper><BrandAssets /></ProtectedRouteWrapper>} />
-        <Route path="user-management" element={<ProtectedRouteWrapper><UserManagement /></ProtectedRouteWrapper>} />
-        <Route path="super-admin-feeds" element={<ProtectedRouteWrapper><SuperAdminFeeds /></ProtectedRouteWrapper>} />
-        <Route path="webhook-management" element={<ProtectedRouteWrapper><WebhookManagement /></ProtectedRouteWrapper>} />
-        <Route path="active-job-ids" element={<ProtectedRouteWrapper><ActiveJobIds /></ProtectedRouteWrapper>} />
-        <Route path="tenstreet-sync" element={<ProtectedRouteWrapper><TenstreetSyncDashboard /></ProtectedRouteWrapper>} />
-        <Route path="driverreach-integration" element={<ProtectedRouteWrapper><DriverReachIntegration /></ProtectedRouteWrapper>} />
-        <Route path="driverreach-sync" element={<ProtectedRouteWrapper><DriverReachSyncDashboard /></ProtectedRouteWrapper>} />
-        <Route path="data-population" element={<ProtectedRouteWrapper><DataPopulation /></ProtectedRouteWrapper>} />
-        <Route path="visitor-analytics" element={<ProtectedRouteWrapper><VisitorAnalytics /></ProtectedRouteWrapper>} />
-        <Route path="edge-functions-test" element={<ProtectedRouteWrapper><EdgeFunctionsTest /></ProtectedRouteWrapper>} />
-        <Route path="web-scraper" element={<ProtectedRouteWrapper><WebScraperPage /></ProtectedRouteWrapper>} />
-        <Route path="support" element={<ProtectedRouteWrapper><Support /></ProtectedRouteWrapper>} />
-        <Route path="ai-assistant" element={<ProtectedRouteWrapper><GrokChatPage /></ProtectedRouteWrapper>} />
+        <Route path="ad-networks" element={<AdminRouteWrapper><AdNetworks /></AdminRouteWrapper>} />
+        <Route path="job-boards" element={<AdminRouteWrapper><JobBoards /></AdminRouteWrapper>} />
+        <Route path="feeds" element={<AdminRouteWrapper><FeedsManagement /></AdminRouteWrapper>} />
+        <Route path="universal-feeds" element={<AdminRouteWrapper><UniversalFeeds /></AdminRouteWrapper>} />
+        <Route path="clients" element={<AdminRouteWrapper><ClientsPage /></AdminRouteWrapper>} />
+        <Route path="organizations" element={<AdminRouteWrapper><Organizations /></AdminRouteWrapper>} />
+        <Route path="settings" element={<AdminRouteWrapper><Settings /></AdminRouteWrapper>} />
+        <Route path="media" element={<AdminRouteWrapper><Media /></AdminRouteWrapper>} />
+        <Route path="brand-assets" element={<AdminRouteWrapper><BrandAssets /></AdminRouteWrapper>} />
+        <Route path="user-management" element={<AdminRouteWrapper><UserManagement /></AdminRouteWrapper>} />
+        <Route path="super-admin-feeds" element={<AdminRouteWrapper><SuperAdminFeeds /></AdminRouteWrapper>} />
+        <Route path="webhook-management" element={<AdminRouteWrapper><WebhookManagement /></AdminRouteWrapper>} />
+        <Route path="active-job-ids" element={<AdminRouteWrapper><ActiveJobIds /></AdminRouteWrapper>} />
+        <Route path="tenstreet-sync" element={<AdminRouteWrapper><TenstreetSyncDashboard /></AdminRouteWrapper>} />
+        <Route path="driverreach-integration" element={<AdminRouteWrapper><DriverReachIntegration /></AdminRouteWrapper>} />
+        <Route path="driverreach-sync" element={<AdminRouteWrapper><DriverReachSyncDashboard /></AdminRouteWrapper>} />
+        <Route path="data-population" element={<AdminRouteWrapper><DataPopulation /></AdminRouteWrapper>} />
+        <Route path="visitor-analytics" element={<AdminRouteWrapper><VisitorAnalytics /></AdminRouteWrapper>} />
+        <Route path="edge-functions-test" element={<AdminRouteWrapper><EdgeFunctionsTest /></AdminRouteWrapper>} />
+        <Route path="web-scraper" element={<AdminRouteWrapper><WebScraperPage /></AdminRouteWrapper>} />
+        <Route path="support" element={<AdminRouteWrapper><Support /></AdminRouteWrapper>} />
+        <Route path="ai-assistant" element={<AdminRouteWrapper><GrokChatPage /></AdminRouteWrapper>} />
         <Route path="grok" element={<Navigate to="/admin/ai-assistant" replace />} />
         
         {/* Talent Routes */}
-        <Route path="talent/pools" element={<ProtectedRouteWrapper><TalentPoolsPage /></ProtectedRouteWrapper>} />
+        <Route path="talent/pools" element={<AdminRouteWrapper><TalentPoolsPage /></AdminRouteWrapper>} />
         
         {/* Social Engagement Routes */}
-        <Route path="social-engagement" element={<ProtectedRouteWrapper><SocialEngagementDashboard /></ProtectedRouteWrapper>} />
-        <Route path="social-beacons" element={<ProtectedRouteWrapper><SuperAdminSocialBeacons /></ProtectedRouteWrapper>} />
+        <Route path="social-engagement" element={<AdminRouteWrapper><SocialEngagementDashboard /></AdminRouteWrapper>} />
+        <Route path="social-beacons" element={<AdminRouteWrapper><SuperAdminSocialBeacons /></AdminRouteWrapper>} />
         
         
-        <Route path="settings/profile" element={<ProtectedRouteWrapper><ProfileSettings /></ProtectedRouteWrapper>} />
-        <Route path="settings/organization" element={<ProtectedRouteWrapper><OrganizationSettings /></ProtectedRouteWrapper>} />
-        <Route path="settings/security" element={<ProtectedRouteWrapper><SecuritySettings /></ProtectedRouteWrapper>} />
+        <Route path="settings/profile" element={<AdminRouteWrapper><ProfileSettings /></AdminRouteWrapper>} />
+        <Route path="settings/organization" element={<AdminRouteWrapper><OrganizationSettings /></AdminRouteWrapper>} />
+        <Route path="settings/security" element={<AdminRouteWrapper><SecuritySettings /></AdminRouteWrapper>} />
         {/* Billing settings removed - all features available to all users */}
       </Route>
 

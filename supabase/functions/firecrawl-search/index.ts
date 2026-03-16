@@ -1,5 +1,8 @@
 import { verifyUser } from '../_shared/auth.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('firecrawl-search');
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -35,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Searching:', query);
+    logger.info('Searching', { query });
 
     const response = await fetch('https://api.firecrawl.dev/v1/search', {
       method: 'POST',
@@ -66,10 +69,11 @@ Deno.serve(async (req) => {
       JSON.stringify(data),
       { headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('Error searching:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Error searching', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to search' }),
+      JSON.stringify({ success: false, error: message || 'Failed to search' }),
       { status: 500, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
     );
   }

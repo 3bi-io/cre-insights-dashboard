@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('social-oauth-callback');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +35,6 @@ interface FacebookPage {
 serve(async (req) => {
   const url = new URL(req.url);
   
-  // Handle both GET (redirect from OAuth provider) and OPTIONS (CORS)
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -43,11 +45,10 @@ serve(async (req) => {
     const error = url.searchParams.get('error');
     const errorDescription = url.searchParams.get('error_description');
 
-    // Get the frontend URL for redirects
     const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://applyai.jobs';
 
     if (error) {
-      console.error('OAuth error from provider:', error, errorDescription);
+      logger.error('OAuth error from provider', undefined, { error, errorDescription: errorDescription || '' });
       return Response.redirect(
         `${frontendUrl}/social-engagement?error=${encodeURIComponent(errorDescription || error)}`,
         302
@@ -61,7 +62,6 @@ serve(async (req) => {
       );
     }
 
-    // Decode state
     let statePayload: StatePayload;
     try {
       statePayload = JSON.parse(atob(state));
@@ -74,7 +74,6 @@ serve(async (req) => {
 
     const { organizationId, platform, codeVerifier } = statePayload;
 
-    // Verify state isn't too old (15 minutes max)
     if (Date.now() - statePayload.timestamp > 15 * 60 * 1000) {
       return Response.redirect(
         `${frontendUrl}/social-engagement?error=state_expired`,
@@ -82,7 +81,6 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -94,9 +92,7 @@ serve(async (req) => {
     let platformUserId: string | null = null;
     let platformUsername: string | null = null;
 
-    // Exchange code for token based on platform
     if (platform === 'facebook' || platform === 'instagram') {
-      // Exchange code for short-lived token
       const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
       tokenUrl.searchParams.set('client_id', Deno.env.get('META_APP_ID')!);
       tokenUrl.searchParams.set('client_secret', Deno.env.get('META_APP_SECRET')!);
@@ -106,7 +102,7 @@ serve(async (req) => {
       const tokenResponse = await fetch(tokenUrl.toString());
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
-        console.error('Token exchange failed:', errorText);
+        logger.error('Token exchange failed', undefined, { errorText });
         return Response.redirect(
           `${frontendUrl}/social-engagement?error=token_exchange_failed`,
           302
@@ -115,7 +111,6 @@ serve(async (req) => {
 
       tokenData = await tokenResponse.json();
 
-      // Exchange for long-lived token
       const longLivedUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
       longLivedUrl.searchParams.set('grant_type', 'fb_exchange_token');
       longLivedUrl.searchParams.set('client_id', Deno.env.get('META_APP_ID')!);
@@ -129,7 +124,6 @@ serve(async (req) => {
         tokenData.expires_in = longLivedData.expires_in;
       }
 
-      // Get user info
       const userResponse = await fetch(
         `https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${tokenData.access_token}`
       );
@@ -139,7 +133,6 @@ serve(async (req) => {
         platformUsername = userData.name;
       }
 
-      // Get pages the user manages
       const pagesResponse = await fetch(
         `https://graph.facebook.com/v18.0/me/accounts?access_token=${tokenData.access_token}`
       );
@@ -148,7 +141,6 @@ serve(async (req) => {
         pages = pagesData.data || [];
       }
 
-      // For Instagram, also get Instagram Business accounts
       if (platform === 'instagram') {
         for (const page of pages) {
           const igResponse = await fetch(
@@ -173,12 +165,10 @@ serve(async (req) => {
             }
           }
         }
-        // Filter to only Instagram accounts
         pages = pages.filter(p => p.category === 'instagram');
       }
 
     } else if (platform === 'twitter') {
-      // Twitter OAuth 2.0 token exchange
       const clientId = Deno.env.get('TWITTER_CLIENT_ID')!;
       const clientSecret = Deno.env.get('TWITTER_CLIENT_SECRET')!;
       
@@ -198,7 +188,7 @@ serve(async (req) => {
 
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
-        console.error('Twitter token exchange failed:', errorText);
+        logger.error('Twitter token exchange failed', undefined, { errorText });
         return Response.redirect(
           `${frontendUrl}/social-engagement?error=token_exchange_failed`,
           302
@@ -207,7 +197,6 @@ serve(async (req) => {
 
       tokenData = await tokenResponse.json();
 
-      // Get user info
       const userResponse = await fetch('https://api.twitter.com/2/users/me', {
         headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
       });
@@ -240,7 +229,7 @@ serve(async (req) => {
 
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
-        console.error('LinkedIn token exchange failed:', errorText);
+        logger.error('LinkedIn token exchange failed', undefined, { errorText });
         return Response.redirect(
           `${frontendUrl}/social-engagement?error=token_exchange_failed`,
           302
@@ -249,13 +238,11 @@ serve(async (req) => {
 
       tokenData = await tokenResponse.json();
 
-      // Get user info using OpenID Connect userinfo endpoint (v2/me is deprecated)
       const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
       });
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        // OpenID Connect returns 'sub' instead of 'id', and 'name' instead of localizedFirstName/lastName
         platformUserId = userData.sub;
         platformUsername = userData.name || `${userData.given_name || ''} ${userData.family_name || ''}`.trim();
         pages = [{
@@ -263,21 +250,19 @@ serve(async (req) => {
           name: platformUsername || userData.email || 'LinkedIn User',
           access_token: tokenData.access_token,
         }];
-        console.log('LinkedIn user info retrieved:', { sub: userData.sub, name: platformUsername });
+        logger.info('LinkedIn user info retrieved', { sub: userData.sub, name: platformUsername });
       } else {
         const errorText = await userResponse.text();
-        console.error('LinkedIn userinfo fetch failed:', errorText);
+        logger.error('LinkedIn userinfo fetch failed', undefined, { errorText });
       }
     }
 
-    // If we have pages/accounts, store the first one (or redirect to page selection)
     if (pages.length > 0) {
       const selectedPage = pages[0];
-      const tokenExpiresAt = tokenData.expires_in 
-        ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+      const tokenExpiresAt = tokenData!.expires_in 
+        ? new Date(Date.now() + tokenData!.expires_in * 1000).toISOString()
         : null;
 
-      // Upsert the connection
       const { error: upsertError } = await supabase
         .from('social_platform_connections')
         .upsert({
@@ -288,7 +273,7 @@ serve(async (req) => {
           page_id: selectedPage.id,
           page_name: selectedPage.name,
           access_token: selectedPage.access_token,
-          refresh_token: tokenData.refresh_token || null,
+          refresh_token: tokenData!.refresh_token || null,
           token_expires_at: tokenExpiresAt,
           is_active: true,
           auto_respond_enabled: false,
@@ -298,17 +283,15 @@ serve(async (req) => {
         });
 
       if (upsertError) {
-        console.error('Failed to save connection:', upsertError);
+        logger.error('Failed to save connection', upsertError);
         return Response.redirect(
           `${frontendUrl}/social-engagement?error=save_failed`,
           302
         );
       }
 
-      console.log(`Successfully connected ${platform} for org ${organizationId}`);
+      logger.info(`Successfully connected ${platform}`, { organizationId });
 
-      // If there are multiple pages, we could redirect to a page selection screen
-      // For now, just redirect with success and page count
       const redirectUrl = pages.length > 1
         ? `${frontendUrl}/social-engagement?connected=${platform}&pages=${pages.length}`
         : `${frontendUrl}/social-engagement?connected=${platform}`;
@@ -321,8 +304,8 @@ serve(async (req) => {
       302
     );
 
-  } catch (error) {
-    console.error('OAuth callback error:', error);
+  } catch (error: unknown) {
+    logger.error('OAuth callback error', error);
     const frontendUrl = Deno.env.get('FRONTEND_URL') || 'https://applyai.jobs';
     return Response.redirect(
       `${frontendUrl}/social-engagement?error=callback_error`,

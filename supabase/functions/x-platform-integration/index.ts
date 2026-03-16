@@ -6,14 +6,12 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { getCorsHeaders } from '../_shared/cors-config.ts'
+import { createLogger } from '../_shared/logger.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-}
+const logger = createLogger('x-platform-integration')
 
 const X_API_BASE = 'https://api.twitter.com'
-const X_ADS_API_BASE = 'https://ads-api.twitter.com'
 
 interface XCredentials {
   clientId: string;
@@ -52,14 +50,15 @@ async function getXBearerToken(credentials: XCredentials): Promise<string | null
     })
     
     if (!response.ok) {
-      console.error('Failed to get X bearer token:', await response.text())
+      const errorText = await response.text()
+      logger.error('Failed to get X bearer token', undefined, { errorText })
       return null
     }
     
     const data = await response.json()
     return data.access_token
-  } catch (error) {
-    console.error('X OAuth error:', error)
+  } catch (error: unknown) {
+    logger.error('X OAuth error', error)
     return null
   }
 }
@@ -77,7 +76,6 @@ async function testConnection(credentials: XCredentials) {
   }
 
   try {
-    // Test with a simple user lookup
     const response = await fetch(`${X_API_BASE}/2/users/me`, {
       headers: {
         'Authorization': `Bearer ${bearerToken}`,
@@ -109,7 +107,7 @@ async function testConnection(credentials: XCredentials) {
         error: errorText
       }
     }
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       success: false,
       connected: false,
@@ -123,13 +121,10 @@ async function getMetrics(credentials: XCredentials) {
   const bearerToken = await getXBearerToken(credentials)
   
   if (!bearerToken) {
-    // Return simulated metrics when credentials work but real API isn't accessible
     return generateSimulatedMetrics()
   }
 
   try {
-    // Note: Real X Ads API requires additional permissions and account setup
-    // For now, return simulated data with a note about configuration
     const metrics = generateSimulatedMetrics()
     metrics.source = 'simulated'
     metrics.note = 'Configure X Ads API access for real campaign metrics'
@@ -138,8 +133,8 @@ async function getMetrics(credentials: XCredentials) {
       success: true,
       ...metrics
     }
-  } catch (error) {
-    console.error('Failed to get X metrics:', error)
+  } catch (error: unknown) {
+    logger.error('Failed to get X metrics', error)
     return generateSimulatedMetrics()
   }
 }
@@ -190,7 +185,8 @@ function generateSimulatedMetrics() {
       ctr: Number(((totals.clicks / totals.impressions) * 100).toFixed(2)),
       cpc: Number((totals.spend / Math.max(totals.clicks, 1)).toFixed(2)),
     },
-    source: 'simulated',
+    source: 'simulated' as string,
+    note: undefined as string | undefined,
     period: {
       days: 30,
       from: metrics[0]?.date,
@@ -200,6 +196,9 @@ function generateSimulatedMetrics() {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -257,8 +256,8 @@ serve(async (req) => {
         )
     }
 
-  } catch (error) {
-    console.error('X platform integration error:', error)
+  } catch (error: unknown) {
+    logger.error('X platform integration error', error)
     return new Response(
       JSON.stringify({ 
         success: false, 

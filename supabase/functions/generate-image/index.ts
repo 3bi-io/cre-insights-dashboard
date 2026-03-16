@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors-config.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const logger = createLogger('generate-image');
 
 serve(async (req) => {
   const preflight = handleCorsPreflightIfNeeded(req);
@@ -24,7 +27,6 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Generate image using Nano banana model
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -50,7 +52,6 @@ serve(async (req) => {
       throw new Error("No image returned from AI model");
     }
 
-    // Extract base64 data
     const base64Match = imageDataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
     if (!base64Match) {
       throw new Error("Invalid image data format");
@@ -60,7 +61,6 @@ serve(async (req) => {
     const base64Data = base64Match[2];
     const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
 
-    // Upload to Supabase storage
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -92,8 +92,8 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Error generating image:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    logger.error("Error generating image", error);
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
