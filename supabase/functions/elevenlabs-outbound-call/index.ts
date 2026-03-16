@@ -918,6 +918,32 @@ async function processOutboundCall(
         metadata._business_hours_start = callSettings.business_hours_start?.substring(0, 5);
         metadata._business_hours_end = callSettings.business_hours_end?.substring(0, 5);
       }
+      
+      // Check if org/client has active calendar connections for agent awareness
+      let calConnFound = false;
+      if (clientId) {
+        const { data: clientCalConn } = await supabase
+          .from('recruiter_calendar_connections')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('client_id', clientId)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        if (clientCalConn) calConnFound = true;
+      }
+      if (!calConnFound) {
+        const { data: orgCalConn } = await supabase
+          .from('recruiter_calendar_connections')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .is('client_id', null)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        if (orgCalConn) calConnFound = true;
+      }
+      metadata._has_calendar_connections = calConnFound ? 'yes' : 'no';
     }
 
     // Inject follow-up context into dynamic variables if this is a retry call
