@@ -1,12 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger } from '../_shared/logger.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 const logger = createLogger('client-webhook');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 interface WebhookRequest {
   application_id: string;
@@ -15,9 +11,11 @@ interface WebhookRequest {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   try {
