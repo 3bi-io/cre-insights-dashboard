@@ -90,7 +90,7 @@ serve(async (req) => {
   }
 })
 
-async function configureDomain(supabase: any, organizationId: string, domain: string) {
+async function configureDomain(supabase: ReturnType<typeof createClient>, organizationId: string, domain: string) {
   logger.info('Configuring domain', { domain })
   
   // Generate verification token
