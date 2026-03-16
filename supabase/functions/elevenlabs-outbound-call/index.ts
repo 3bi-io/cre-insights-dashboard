@@ -1357,8 +1357,29 @@ function buildDynamicVariables(
   }
 
   // Trucking-specific job context inference
-...
+  vars.job_requires_cdl = inferCDLRequirement(jobListing);
+  vars.job_cdl_class = inferCDLClass(jobListing);
+  vars.job_requires_hazmat = inferHazmatRequirement(jobListing);
+  vars.job_requires_tanker = inferTankerRequirement(jobListing);
+  vars.job_is_entry_level = inferEntryLevel(jobListing);
+  vars.job_is_local = inferLocalRoute(jobListing);
+  vars.job_is_otr = inferOTR(jobListing);
+  vars.job_is_team = inferTeamDriving(jobListing);
+  vars.job_freight_type = inferFreightType(jobListing);
   
+  // Industry detection and vertical-specific variables
+  vars.job_industry = inferJobIndustry(jobListing, organization);
+  vars.applicant_certifications = inferCertifications(application, jobListing);
+  vars.applicant_clearance_level = inferClearanceLevel(application);
+  vars.job_certifications_required = inferRequiredCertifications(jobListing);
+  
+  // Follow-up context for retry calls
+  vars.is_follow_up = (metadata._is_follow_up as string) || 'no';
+  vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
+  vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
+  vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
+  vars.is_holiday = (metadata._is_holiday as string) || 'no';
+
   // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
   const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
   vars.is_after_hours_callback = isAfterHoursCallback ? 'yes' : 'no';
