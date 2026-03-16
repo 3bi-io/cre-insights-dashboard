@@ -111,7 +111,7 @@ async function syncTalrooAnalytics(
   )
 }
 
-async function getTalrooStats(campaignId: string, userId: string, supabaseClient: any) {
+async function getTalrooStats(campaignId: string, userId: string, supabaseClient: ReturnType<typeof createClient>) {
   const { data, error } = await supabaseClient
     .from('talroo_analytics')
     .select('*')
