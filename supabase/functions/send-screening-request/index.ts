@@ -201,8 +201,10 @@ function generateScreeningEmail(
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('origin');
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(origin) });
   }
 
   // Rate limiting - 10 requests per minute per IP (50/min for DFW/Alabama devs)
