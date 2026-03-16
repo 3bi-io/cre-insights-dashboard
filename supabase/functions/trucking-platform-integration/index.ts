@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { createLogger } from '../_shared/logger.ts'
 
 const logger = createLogger('trucking-platform-integration')
@@ -41,10 +40,11 @@ serve(async (req) => {
         throw new Error(`Unknown action: ${action}`)
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Trucking platform integration error', error)
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -106,7 +106,7 @@ async function checkPlatformConnection(platform: string) {
   )
 }
 
-async function postJobToPlatform(platform: string, supabaseClient: any) {
+async function postJobToPlatform(platform: string, _supabaseClient: ReturnType<typeof createClient>) {
   logger.info('Posting job to platform', { platform })
   
   // For free platforms, we primarily use XML feeds
@@ -126,7 +126,7 @@ async function postJobToPlatform(platform: string, supabaseClient: any) {
   )
 }
 
-async function getPlatformStats(platform: string, supabaseClient: any) {
+async function getPlatformStats(platform: string, _supabaseClient: ReturnType<typeof createClient>) {
   logger.info('Getting stats for platform', { platform })
   
   // Simulate platform statistics

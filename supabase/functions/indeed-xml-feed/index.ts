@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { createLogger } from '../_shared/logger.ts'
 
 const logger = createLogger('indeed-xml-feed')
@@ -80,10 +79,11 @@ serve(async (req) => {
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
       },
     })
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error generating Indeed XML feed', error)
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -92,7 +92,28 @@ serve(async (req) => {
   }
 })
 
-function generateIndeedXML(jobs: any[]): string {
+interface JobListing {
+  id?: string;
+  title?: string;
+  job_title?: string;
+  clients?: { company?: string; name?: string; email?: string; city?: string; state?: string; zip_code?: string };
+  city?: string;
+  state?: string;
+  job_summary?: string;
+  job_description?: string;
+  job_categories?: { name?: string };
+  job_type?: string;
+  remote_type?: string;
+  experience_level?: string;
+  salary_min?: number;
+  salary_max?: number;
+  salary_type?: string;
+  organization_id?: string;
+  client_id?: string;
+  created_at?: string;
+}
+
+function generateIndeedXML(jobs: JobListing[]): string {
   const xmlJobs = jobs.map(job => {
     const title = escapeXml(job.title || job.job_title || '')
     const company = escapeXml(job.clients?.company || job.clients?.name || job.client || 'Company Name')

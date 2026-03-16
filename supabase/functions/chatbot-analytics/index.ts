@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
@@ -345,10 +344,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in chatbot-analytics function', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: message,
       response: "I'm sorry, I encountered an error while analyzing your data. Please try rephrasing your question or contact support if the issue persists."
     }), {
       status: 500,

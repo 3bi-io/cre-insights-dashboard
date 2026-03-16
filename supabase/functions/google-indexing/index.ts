@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { createLogger } from '../_shared/logger.ts'
 
@@ -160,9 +159,10 @@ serve(async (req) => {
         await notifyGoogleIndexing(url, notificationType, accessToken)
         result.successes++
         logger.info('Successfully notified Google', { url })
-      } catch (error) {
+      } catch (error: unknown) {
         result.failures++
-        result.errors.push(`${url}: ${error.message}`)
+        const message = error instanceof Error ? error.message : String(error);
+        result.errors.push(`${url}: ${message}`)
         logger.error('Failed to notify Google', error, { url })
       }
     }
@@ -171,10 +171,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in google-indexing function', error)
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -183,7 +184,9 @@ serve(async (req) => {
   }
 })
 
-async function getAccessToken(serviceAccount: any): Promise<string> {
+interface ServiceAccount { client_email: string; private_key: string; }
+
+async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
   const jwtHeader = {
     alg: 'RS256',
     typ: 'JWT'
@@ -221,7 +224,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   return tokenData.access_token
 }
 
-async function createJWT(header: any, payload: any, privateKey: string): Promise<string> {
+async function createJWT(header: Record<string, string>, payload: Record<string, unknown>, privateKey: string): Promise<string> {
   // This is a simplified JWT creation - in production use a proper library
   const encoder = new TextEncoder()
   

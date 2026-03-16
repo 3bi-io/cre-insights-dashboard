@@ -1,7 +1,6 @@
-// @ts-nocheck
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { createLogger } from '../_shared/logger.ts';
 
 const logger = createLogger('meta-spend-analytics');
@@ -281,12 +280,13 @@ Format your response as a JSON object:
         } 
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in meta-spend-analytics function', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to analyze Meta spend data',
-        details: error.message 
+        details: message
       }),
       { 
         status: 500,

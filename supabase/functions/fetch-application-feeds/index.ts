@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createLogger } from '../_shared/logger.ts'
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0"
 
 const logger = createLogger('fetch-application-feeds')
 
@@ -237,9 +236,10 @@ serve(async (req) => {
             };
           }
           
-        } catch (error) {
+        } catch (error: unknown) {
           logger.error('Error parsing XML', error);
-          data = { feeds: [], message: 'Failed to parse XML feed', error: error.message };
+          const errMsg = error instanceof Error ? error.message : String(error);
+          data = { feeds: [], message: 'Failed to parse XML feed', error: errMsg };
         }
       } else {
         try {

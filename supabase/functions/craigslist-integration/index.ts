@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
 import { createLogger } from '../_shared/logger.ts';
@@ -120,12 +119,13 @@ serve(async (req) => {
         );
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Craigslist integration error', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 
@@ -153,13 +153,14 @@ async function handleConnectionStatus(username: string, accountId: string) {
       JSON.stringify(status),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Connection status check failed', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         connected: false,
         error: 'Connection check failed',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 
@@ -206,13 +207,14 @@ async function handleJobPosting(
       JSON.stringify(postResult),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Job posting failed', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         success: false,
         error: 'Job posting failed',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 
@@ -255,12 +257,13 @@ async function handleGetCategories() {
       JSON.stringify({ categories }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Failed to get categories', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to get categories',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 

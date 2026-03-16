@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { createLogger } from '../_shared/logger.ts';
@@ -23,7 +22,7 @@ interface MetaAdSet {
   id: string;
   name: string;
   status?: string;
-  targeting?: any;
+  targeting?: Record<string, unknown>;
   bid_amount?: string;
   daily_budget?: string;
   lifetime_budget?: string;

@@ -1,7 +1,5 @@
-// @ts-nocheck
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { createLogger } from '../_shared/logger.ts'
 
 const logger = createLogger('job-feed-xml')
@@ -133,10 +131,11 @@ serve(async (req) => {
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
       },
     })
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error generating XML feed', error)
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

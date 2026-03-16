@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { createLogger } from '../_shared/logger.ts'
 
 const logger = createLogger('talroo-integration')
@@ -46,10 +45,11 @@ serve(async (req) => {
         throw new Error(`Unknown action: ${action}`)
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Integration error', error)
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -63,7 +63,7 @@ async function syncTalrooAnalytics(
   startDate: string,
   endDate: string,
   userId: string,
-  supabaseClient: any
+  supabaseClient: ReturnType<typeof createClient>
 ) {
   logger.info('Syncing analytics', { campaignId, startDate, endDate })
   
@@ -111,7 +111,7 @@ async function syncTalrooAnalytics(
   )
 }
 
-async function getTalrooStats(campaignId: string, userId: string, supabaseClient: any) {
+async function getTalrooStats(campaignId: string, userId: string, supabaseClient: ReturnType<typeof createClient>) {
   const { data, error } = await supabaseClient
     .from('talroo_analytics')
     .select('*')
@@ -124,11 +124,11 @@ async function getTalrooStats(campaignId: string, userId: string, supabaseClient
     throw error
   }
 
-  const totals = data.reduce((acc, row) => ({
-    spend: acc.spend + (row.spend || 0),
-    clicks: acc.clicks + (row.clicks || 0),
-    impressions: acc.impressions + (row.impressions || 0),
-    applications: acc.applications + (row.applications || 0),
+  const totals = (data || []).reduce((acc: { spend: number; clicks: number; impressions: number; applications: number }, row: Record<string, unknown>) => ({
+    spend: acc.spend + (Number(row.spend) || 0),
+    clicks: acc.clicks + (Number(row.clicks) || 0),
+    impressions: acc.impressions + (Number(row.impressions) || 0),
+    applications: acc.applications + (Number(row.applications) || 0),
   }), { spend: 0, clicks: 0, impressions: 0, applications: 0 })
 
   return new Response(
