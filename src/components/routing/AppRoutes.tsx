@@ -143,7 +143,12 @@ const RouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   </Suspense>
 );
 
-// Protected route wrapper
+// Route wrapper for admin child routes (auth already enforced by LayoutWrapper parent)
+const AdminRouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <RouteWrapper>{children}</RouteWrapper>
+);
+
+// Protected route wrapper for standalone routes outside admin layout
 const ProtectedRouteWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <ProtectedRoute>
     <RouteWrapper>{children}</RouteWrapper>
