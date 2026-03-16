@@ -38,6 +38,8 @@ interface FormData {
   utm_medium: string;
   utm_campaign: string;
   referral_source: string;
+  fbclid: string;
+  gclid: string;
 }
 
 const initialFormData: FormData = {
