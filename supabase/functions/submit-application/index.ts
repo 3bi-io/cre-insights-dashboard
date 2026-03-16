@@ -325,6 +325,10 @@ const ApplicationSubmissionSchema = z.object({
   utm_campaign: z.string().max(100).optional(),
   referral_source: z.string().max(2000).optional(),
   
+  // Click ID tracking (Meta/Google ads)
+  fbclid: z.string().max(500).optional(),
+  gclid: z.string().max(500).optional(),
+  
   // Explicit source override (for embed forms, etc.)
   source: z.string().max(100).optional(),
   
