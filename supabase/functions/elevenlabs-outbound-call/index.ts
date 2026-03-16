@@ -1314,33 +1314,24 @@ function buildDynamicVariables(
   vars.current_time = currentTime;
   vars.current_time_cst = currentTime; // backward compat
   vars.is_weekend = !isWeekday ? 'yes' : 'no';
-  vars.business_hours_note = isWithinBusinessHours 
-    ? `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available.`
-    : `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day.`;
+  
+  // Calendar awareness — check if org has calendar connections (passed via metadata)
+  const hasCalendar = (metadata._has_calendar_connections as string) || 'unknown';
+  vars.has_calendar_connections = hasCalendar;
+  
+  // Business hours note — varies based on both time AND calendar availability
+  if (isWithinBusinessHours) {
+    if (hasCalendar === 'yes') {
+      vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available. You can use the scheduling tools to book a callback.`;
+    } else {
+      vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). No recruiter calendars are connected. Do NOT attempt to transfer to a recruiter. Let the candidate know a recruiter will reach out to them directly. Complete the screening and gather their information.`;
+    }
+  } else {
+    vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
+  }
 
   // Trucking-specific job context inference
-  vars.job_requires_cdl = inferCDLRequirement(jobListing);
-  vars.job_cdl_class = inferCDLClass(jobListing);
-  vars.job_requires_hazmat = inferHazmatRequirement(jobListing);
-  vars.job_requires_tanker = inferTankerRequirement(jobListing);
-  vars.job_is_entry_level = inferEntryLevel(jobListing);
-  vars.job_is_local = inferLocalRoute(jobListing);
-  vars.job_is_otr = inferOTR(jobListing);
-  vars.job_is_team = inferTeamDriving(jobListing);
-  vars.job_freight_type = inferFreightType(jobListing);
-  
-  // Industry detection and vertical-specific variables
-  vars.job_industry = inferJobIndustry(jobListing, organization);
-  vars.applicant_certifications = inferCertifications(application, jobListing);
-  vars.applicant_clearance_level = inferClearanceLevel(application);
-  vars.job_certifications_required = inferRequiredCertifications(jobListing);
-  
-  // Follow-up context for retry calls
-  vars.is_follow_up = (metadata._is_follow_up as string) || 'no';
-  vars.follow_up_attempt = (metadata._follow_up_attempt as string) || '0';
-  vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
-  vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
-  vars.is_holiday = (metadata._is_holiday as string) || 'no';
+...
   
   // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
   const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
