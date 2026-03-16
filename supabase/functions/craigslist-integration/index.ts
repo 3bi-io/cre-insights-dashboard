@@ -153,13 +153,14 @@ async function handleConnectionStatus(username: string, accountId: string) {
       JSON.stringify(status),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Connection status check failed', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         connected: false,
         error: 'Connection check failed',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 
