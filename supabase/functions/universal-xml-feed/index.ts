@@ -298,11 +298,15 @@ Deno.serve(async (req) => {
 
 // ============ UTILITY: Build apply URL with client context ============
 
-function buildApplyUrl(job: JobListing): string {
+function buildApplyUrl(job: JobListing, feedSource?: string): string {
   if (job.apply_url) return job.apply_url;
   let url = `https://applyai.jobs/apply?job_listing_id=${job.id}`;
   if (job.organization_id) url += `&organization_id=${job.organization_id}`;
   if (job.client_id) url += `&client_id=${job.client_id}`;
+  // Append UTM parameters for source attribution
+  if (feedSource) {
+    url += `&utm_source=${encodeURIComponent(feedSource)}&utm_medium=job_board`;
+  }
   return url;
 }
 
