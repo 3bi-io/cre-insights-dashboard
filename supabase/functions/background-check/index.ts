@@ -14,10 +14,7 @@ import { createLogger } from '../_shared/logger.ts';
 
 const logger = createLogger('background-check');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
