@@ -74,10 +74,11 @@ serve(async (req) => {
         } 
       }
     )
-  } catch (error) {
-    logger.error('Domain configuration error', error)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Domain configuration error', error instanceof Error ? error : null)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       { 
         status: 400, 
         headers: { 
