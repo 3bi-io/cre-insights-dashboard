@@ -229,7 +229,7 @@ const handler = async (req: Request): Promise<Response> => {
         status: 429,
         headers: { 
           'Content-Type': 'application/json', 
-          ...corsHeaders,
+          ...getCorsHeaders(origin),
           "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
           "Retry-After": (rateLimitResult.retryAfter || 60).toString()
         },
