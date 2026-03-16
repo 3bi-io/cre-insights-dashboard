@@ -16,11 +16,7 @@ import {
 
 const logger = createLogger('send-application-email');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 interface EmailRequest {
   to: string;
