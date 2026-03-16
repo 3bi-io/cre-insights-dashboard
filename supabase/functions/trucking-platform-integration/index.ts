@@ -126,7 +126,7 @@ async function postJobToPlatform(platform: string, _supabaseClient: ReturnType<t
   )
 }
 
-async function getPlatformStats(platform: string, supabaseClient: any) {
+async function getPlatformStats(platform: string, _supabaseClient: ReturnType<typeof createClient>) {
   logger.info('Getting stats for platform', { platform })
   
   // Simulate platform statistics

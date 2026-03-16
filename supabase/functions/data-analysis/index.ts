@@ -292,10 +292,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in data-analysis function', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: message,
       analysis: "I encountered an error while analyzing your data. Please try again or contact support if the issue persists."
     }), {
       status: 500,

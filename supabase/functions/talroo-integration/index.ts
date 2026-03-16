@@ -124,11 +124,11 @@ async function getTalrooStats(campaignId: string, userId: string, supabaseClient
     throw error
   }
 
-  const totals = data.reduce((acc, row) => ({
-    spend: acc.spend + (row.spend || 0),
-    clicks: acc.clicks + (row.clicks || 0),
-    impressions: acc.impressions + (row.impressions || 0),
-    applications: acc.applications + (row.applications || 0),
+  const totals = (data || []).reduce((acc: { spend: number; clicks: number; impressions: number; applications: number }, row: Record<string, unknown>) => ({
+    spend: acc.spend + (Number(row.spend) || 0),
+    clicks: acc.clicks + (Number(row.clicks) || 0),
+    impressions: acc.impressions + (Number(row.impressions) || 0),
+    applications: acc.applications + (Number(row.applications) || 0),
   }), { spend: 0, clicks: 0, impressions: 0, applications: 0 })
 
   return new Response(

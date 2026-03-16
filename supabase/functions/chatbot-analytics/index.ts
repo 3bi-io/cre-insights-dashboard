@@ -344,10 +344,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in chatbot-analytics function', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: message,
       response: "I'm sorry, I encountered an error while analyzing your data. Please try rephrasing your question or contact support if the issue persists."
     }), {
       status: 500,

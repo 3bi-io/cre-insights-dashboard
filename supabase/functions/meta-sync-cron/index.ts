@@ -22,7 +22,7 @@ interface MetaAdSet {
   id: string;
   name: string;
   status?: string;
-  targeting?: any;
+  targeting?: Record<string, unknown>;
   bid_amount?: string;
   daily_budget?: string;
   lifetime_budget?: string;

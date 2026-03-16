@@ -92,7 +92,28 @@ serve(async (req) => {
   }
 })
 
-function generateIndeedXML(jobs: any[]): string {
+interface JobListing {
+  id?: string;
+  title?: string;
+  job_title?: string;
+  clients?: { company?: string; name?: string; email?: string; city?: string; state?: string; zip_code?: string };
+  city?: string;
+  state?: string;
+  job_summary?: string;
+  job_description?: string;
+  job_categories?: { name?: string };
+  job_type?: string;
+  remote_type?: string;
+  experience_level?: string;
+  salary_min?: number;
+  salary_max?: number;
+  salary_type?: string;
+  organization_id?: string;
+  client_id?: string;
+  created_at?: string;
+}
+
+function generateIndeedXML(jobs: JobListing[]): string {
   const xmlJobs = jobs.map(job => {
     const title = escapeXml(job.title || job.job_title || '')
     const company = escapeXml(job.clients?.company || job.clients?.name || job.client || 'Company Name')

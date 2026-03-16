@@ -236,9 +236,10 @@ serve(async (req) => {
             };
           }
           
-        } catch (error) {
+        } catch (error: unknown) {
           logger.error('Error parsing XML', error);
-          data = { feeds: [], message: 'Failed to parse XML feed', error: error.message };
+          const errMsg = error instanceof Error ? error.message : String(error);
+          data = { feeds: [], message: 'Failed to parse XML feed', error: errMsg };
         }
       } else {
         try {

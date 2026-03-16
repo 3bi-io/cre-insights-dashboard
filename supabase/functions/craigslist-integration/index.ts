@@ -257,12 +257,13 @@ async function handleGetCategories() {
       JSON.stringify({ categories }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Failed to get categories', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to get categories',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 

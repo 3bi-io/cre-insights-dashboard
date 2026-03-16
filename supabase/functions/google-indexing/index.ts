@@ -224,7 +224,7 @@ async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
   return tokenData.access_token
 }
 
-async function createJWT(header: any, payload: any, privateKey: string): Promise<string> {
+async function createJWT(header: Record<string, string>, payload: Record<string, unknown>, privateKey: string): Promise<string> {
   // This is a simplified JWT creation - in production use a proper library
   const encoder = new TextEncoder()
   

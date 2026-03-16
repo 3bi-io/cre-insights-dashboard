@@ -280,12 +280,13 @@ Format your response as a JSON object:
         } 
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in meta-spend-analytics function', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         error: 'Failed to analyze Meta spend data',
-        details: error.message 
+        details: message
       }),
       { 
         status: 500,

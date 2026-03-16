@@ -252,12 +252,13 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error in report function', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
+        error: message,
         adSets: [],
         summary: null
       }),
