@@ -79,10 +79,11 @@ serve(async (req) => {
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
       },
     })
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error generating Indeed XML feed', error)
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
