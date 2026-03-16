@@ -17,10 +17,7 @@ import {
 
 const logger = createLogger('auth-email-templates');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 /**
  * Supabase Auth Hook payload for custom email templates
