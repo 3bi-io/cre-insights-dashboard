@@ -184,7 +184,9 @@ serve(async (req) => {
   }
 })
 
-async function getAccessToken(serviceAccount: any): Promise<string> {
+interface ServiceAccount { client_email: string; private_key: string; }
+
+async function getAccessToken(serviceAccount: ServiceAccount): Promise<string> {
   const jwtHeader = {
     alg: 'RS256',
     typ: 'JWT'
