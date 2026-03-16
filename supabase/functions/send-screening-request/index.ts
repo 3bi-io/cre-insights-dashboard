@@ -3,6 +3,7 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { 
   getSender,
   getReplyTo,
@@ -17,11 +18,6 @@ import {
 } from "../_shared/email-config.ts";
 
 const logger = createLogger('send-screening-request');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 interface ScreeningRequestBody {
   applicationId: string;
