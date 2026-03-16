@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
       logger.error('Error fetching webhooks', webhookError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch webhook configurations' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
       );
     }
 
