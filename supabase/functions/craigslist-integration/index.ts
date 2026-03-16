@@ -119,12 +119,13 @@ serve(async (req) => {
         );
     }
 
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Craigslist integration error', error);
+    const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        message: error.message 
+        message
       }),
       { 
         status: 500, 
