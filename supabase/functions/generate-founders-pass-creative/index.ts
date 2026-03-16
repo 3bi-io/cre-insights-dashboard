@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
-
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('generate-founders-pass-creative');
 
 const TEXT_MODEL = "google/gemini-3-flash-preview";
 const IMAGE_MODEL = "google/gemini-3-pro-image-preview";
@@ -58,7 +60,6 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from auth header
     const authHeader = req.headers.get("Authorization");
     let userId: string | null = null;
     let organizationId: string | null = null;
@@ -76,9 +77,8 @@ serve(async (req) => {
       }
     }
 
-    console.log("Starting Founders Pass creative generation...");
+    logger.info("Starting Founders Pass creative generation");
 
-    // Generate image and ad copy in parallel
     const [imageResponse, textResponse] = await Promise.all([
       fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -110,7 +110,6 @@ serve(async (req) => {
       }),
     ]);
 
-    // Process image
     if (!imageResponse.ok) {
       const errText = await imageResponse.text();
       throw new Error(`Image generation failed [${imageResponse.status}]: ${errText}`);
@@ -120,7 +119,6 @@ serve(async (req) => {
     const imageDataUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     if (!imageDataUrl) throw new Error("No image returned from AI model");
 
-    // Extract base64 and upload to storage
     const base64Match = imageDataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
     if (!base64Match) throw new Error("Invalid image data format");
 
@@ -143,9 +141,8 @@ serve(async (req) => {
       .getPublicUrl(filename);
 
     const mediaUrl = publicUrlData.publicUrl;
-    console.log("Image uploaded to:", mediaUrl);
+    logger.info("Image uploaded", { mediaUrl });
 
-    // Process ad copy
     let adCopy = {
       headline: "Recruit CDL Drivers for Just $3/Apply",
       body: "Founders Pass: Zero upfront cost, AI-powered intake, instant ATS delivery. Only $3 per qualified application. Limited spots for founding partners.",
@@ -160,18 +157,16 @@ serve(async (req) => {
         if (toolCall?.function?.arguments) {
           adCopy = JSON.parse(toolCall.function.arguments);
         }
-      } catch (e) {
-        console.error("Failed to parse ad copy, using fallback:", e);
+      } catch (e: unknown) {
+        logger.error("Failed to parse ad copy, using fallback", e);
       }
     }
 
-    // Clean hashtags
     adCopy.hashtags = (adCopy.hashtags || [])
       .map((tag: string) => tag.replace(/^#/, "").trim())
       .filter((tag: string) => tag.length > 0)
       .slice(0, 5);
 
-    // Save to generated_ad_creatives
     const { data: creative, error: insertError } = await supabase
       .from("generated_ad_creatives")
       .insert({
@@ -191,11 +186,11 @@ serve(async (req) => {
       .single();
 
     if (insertError) {
-      console.error("Failed to save creative:", insertError);
+      logger.error("Failed to save creative", insertError);
       throw new Error(`Failed to save creative: ${insertError.message}`);
     }
 
-    console.log("Founders Pass creative saved:", creative.id);
+    logger.info("Founders Pass creative saved", { creativeId: creative.id });
 
     return new Response(
       JSON.stringify({
@@ -211,12 +206,13 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Founders Pass creative generation error:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error("Founders Pass creative generation error", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "Failed to generate creative",
+        error: message || "Failed to generate creative",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

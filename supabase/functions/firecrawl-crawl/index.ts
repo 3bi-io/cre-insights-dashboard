@@ -1,5 +1,8 @@
 import { verifyUser, isSafeUrl } from '../_shared/auth.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('firecrawl-crawl');
 
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -47,7 +50,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Crawling URL:', formattedUrl);
+    logger.info('Crawling URL', { url: formattedUrl });
 
     const response = await fetch('https://api.firecrawl.dev/v1/crawl', {
       method: 'POST',
@@ -78,10 +81,11 @@ Deno.serve(async (req) => {
       JSON.stringify(data),
       { headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('Error crawling:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Error crawling', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to crawl' }),
+      JSON.stringify({ success: false, error: message || 'Failed to crawl' }),
       { status: 500, headers: { ...getCorsHeaders(origin), 'Content-Type': 'application/json' } }
     );
   }

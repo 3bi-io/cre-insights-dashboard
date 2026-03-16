@@ -1,9 +1,9 @@
 import { verifyUser, isSafeUrl } from '../_shared/auth.ts';
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { createLogger } from '../_shared/logger.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+const logger = createLogger('firecrawl-job-import');
 
 const JOB_CATEGORIES = [
   { id: '61bd5f79-b3c1-4804-a6a0-d568773c3d84', name: 'Driver Recruitment' },
@@ -36,7 +36,7 @@ async function scrapeJobs(url: string, apiKey: string): Promise<ScrapedJob[]> {
     formattedUrl = `https://${formattedUrl}`;
   }
 
-  console.log('Scraping jobs from:', formattedUrl);
+  logger.info('Scraping jobs from URL', { url: formattedUrl });
 
   const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
     method: 'POST',
@@ -83,7 +83,7 @@ async function scrapeJobs(url: string, apiKey: string): Promise<ScrapedJob[]> {
   const data = await response.json();
 
   if (!response.ok) {
-    console.error('Firecrawl error:', data);
+    logger.error('Firecrawl error', undefined, { responseData: JSON.stringify(data) });
     throw new Error(data.error || `Firecrawl request failed: ${response.status}`);
   }
 
@@ -143,8 +143,7 @@ async function categorizeJobs(jobs: ScrapedJob[], lovableApiKey: string): Promis
   });
 
   if (!response.ok) {
-    console.error('AI categorization failed:', response.status);
-    // Fall back to default category
+    logger.error('AI categorization failed', undefined, { status: response.status });
     return new Map();
   }
 
@@ -183,6 +182,9 @@ function parseSalary(payRange: string | undefined): { min: number | null; max: n
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -228,7 +230,7 @@ Deno.serve(async (req) => {
 
     // Step 1: Scrape
     const jobs = await scrapeJobs(url, firecrawlKey);
-    console.log(`Scraped ${jobs.length} jobs from ${url}`);
+    logger.info('Scraped jobs', { count: jobs.length, url });
 
     if (jobs.length === 0) {
       return new Response(
@@ -242,7 +244,7 @@ Deno.serve(async (req) => {
     let categories = new Map<number, string>();
     if (lovableKey) {
       categories = await categorizeJobs(jobs, lovableKey);
-      console.log(`Categorized ${categories.size}/${jobs.length} jobs`);
+      logger.info('Categorized jobs', { categorized: categories.size, total: jobs.length });
     }
 
     const defaultCategoryId = JOB_CATEGORIES[0].id; // Driver Recruitment
@@ -271,11 +273,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    const supabase = getServiceClient();
 
     const inserts = enrichedJobs.map((job) => ({
       title: job.title || 'Untitled Position',
@@ -304,28 +302,29 @@ Deno.serve(async (req) => {
       .select('id, title, category_id');
 
     if (insertError) {
-      console.error('Insert error:', insertError);
+      logger.error('Insert error', insertError);
       return new Response(
         JSON.stringify({ success: false, error: insertError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Imported ${inserted?.length || 0} jobs`);
+    logger.info('Imported jobs', { count: inserted?.length || 0 });
 
     return new Response(
       JSON.stringify({
         success: true,
         jobs: enrichedJobs,
         imported: inserted?.length || 0,
-        imported_ids: inserted?.map((r: any) => r.id) || [],
+        imported_ids: inserted?.map((r: Record<string, unknown>) => r.id) || [],
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('Job import error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    logger.error('Job import error', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to import jobs' }),
+      JSON.stringify({ success: false, error: message || 'Failed to import jobs' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
