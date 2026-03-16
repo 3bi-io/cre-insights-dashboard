@@ -150,14 +150,16 @@ const classifyFromUtmSource = (utmSource: string): string | null => {
 };
 
 /**
- * Detect integration source from request headers, UTM params, or referrer
- * Priority: explicit source > header detection > utm_source > referral_source > fallback
+ * Detect integration source from request headers, UTM params, referrer, or click IDs
+ * Priority: explicit source > header detection > utm_source > click IDs > referral_source > fallback
  */
 const detectIntegrationSource = (
   req: Request, 
   explicitSource?: string,
   utmSource?: string,
-  referralSource?: string
+  referralSource?: string,
+  fbclid?: string,
+  gclid?: string
 ): string => {
   // Priority 0: Check Referer header for /embed/apply path (most reliable for embed)
   const refererHeader = req.headers.get('referer') || '';
@@ -190,6 +192,16 @@ const detectIntegrationSource = (
   if (utmClassified) {
     logger.info('Classified source from utm_source', { utm_source: utmSource, classified: utmClassified });
     return utmClassified;
+  }
+
+  // Priority 3.5: Click ID detection (fbclid = Facebook, gclid = Google Ads)
+  if (fbclid && fbclid.trim() !== '') {
+    logger.info('Classified source from fbclid', { fbclid: fbclid.substring(0, 10) + '...' });
+    return 'Facebook';
+  }
+  if (gclid && gclid.trim() !== '') {
+    logger.info('Classified source from gclid', { gclid: gclid.substring(0, 10) + '...' });
+    return 'Google Ads';
   }
 
   // Priority 4: document.referrer captured by frontend
