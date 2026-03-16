@@ -63,7 +63,7 @@ async function syncTalrooAnalytics(
   startDate: string,
   endDate: string,
   userId: string,
-  supabaseClient: any
+  supabaseClient: ReturnType<typeof createClient>
 ) {
   logger.info('Syncing analytics', { campaignId, startDate, endDate })
   
