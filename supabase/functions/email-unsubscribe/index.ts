@@ -16,10 +16,7 @@ import { EMAIL_CONFIG, baseEmailStyles } from "../_shared/email-config.ts";
 
 const logger = createLogger('email-unsubscribe');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 /**
  * Generate unsubscribe confirmation page HTML
