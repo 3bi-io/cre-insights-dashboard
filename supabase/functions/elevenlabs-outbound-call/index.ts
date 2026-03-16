@@ -554,7 +554,8 @@ serve(async (req) => {
             results.results.push({ call_id: call.id, status: 'failed', error: callResponse.error });
           }
           
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Stagger: 2-5 seconds between calls to prevent API congestion from burst scheduling
+          await new Promise(resolve => setTimeout(resolve, 2000 + Math.floor(Math.random() * 3000)));
         } catch (error) {
           logger.error(`Failed to process call ${call.id}`, { error });
           results.failed++;
@@ -917,6 +918,32 @@ async function processOutboundCall(
         metadata._business_hours_start = callSettings.business_hours_start?.substring(0, 5);
         metadata._business_hours_end = callSettings.business_hours_end?.substring(0, 5);
       }
+      
+      // Check if org/client has active calendar connections for agent awareness
+      let calConnFound = false;
+      if (clientId) {
+        const { data: clientCalConn } = await supabase
+          .from('recruiter_calendar_connections')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .eq('client_id', clientId)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        if (clientCalConn) calConnFound = true;
+      }
+      if (!calConnFound) {
+        const { data: orgCalConn } = await supabase
+          .from('recruiter_calendar_connections')
+          .select('id')
+          .eq('organization_id', organizationId)
+          .is('client_id', null)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        if (orgCalConn) calConnFound = true;
+      }
+      metadata._has_calendar_connections = calConnFound ? 'yes' : 'no';
     }
 
     // Inject follow-up context into dynamic variables if this is a retry call
@@ -1101,15 +1128,45 @@ async function processOutboundCall(
               p_client_id: orgClientId,
             });
             
-            const callbackAt = nextBizTime ? new Date(nextBizTime).toISOString() : callbackFrom.toISOString();
+            // Add jitter: 2-45 minutes offset to prevent all callbacks firing at exact business hours start
+            const baseCallbackTime = nextBizTime ? new Date(nextBizTime) : callbackFrom;
+            const jitterMinutes = 2 + Math.floor(Math.random() * 43); // 2-45 min spread
+            const jitteredCallbackTime = new Date(baseCallbackTime.getTime() + jitterMinutes * 60 * 1000);
+            const callbackAt = jitteredCallbackTime.toISOString();
+            
+            // Check if org/client has calendar connections for callback_purpose
+            let hasCalendarConnections = false;
+            if (orgClientId) {
+              const { data: clientCalConns } = await supabase
+                .from('recruiter_calendar_connections')
+                .select('id')
+                .eq('organization_id', organizationId)
+                .eq('client_id', orgClientId)
+                .eq('status', 'active')
+                .limit(1)
+                .maybeSingle();
+              if (clientCalConns) hasCalendarConnections = true;
+            }
+            if (!hasCalendarConnections) {
+              const { data: orgCalConns } = await supabase
+                .from('recruiter_calendar_connections')
+                .select('id')
+                .eq('organization_id', organizationId)
+                .is('client_id', null)
+                .eq('status', 'active')
+                .limit(1)
+                .maybeSingle();
+              if (orgCalConns) hasCalendarConnections = true;
+            }
             
             const callbackMetadata: Record<string, unknown> = {
               ...(metadata || {}),
               is_after_hours_callback: true,
-              callback_purpose: 'recruiter_transfer',
+              callback_purpose: hasCalendarConnections ? 'recruiter_transfer' : 'business_hours_callback',
               original_call_id: callRecord.id,
               original_conversation_id: elevenLabsData.conversation_id || null,
               triggered_by: 'after_hours_auto_callback',
+              no_calendar_fallback: !hasCalendarConnections,
             };
             
             const { data: callbackCall, error: callbackError } = await supabase
@@ -1130,7 +1187,7 @@ async function processOutboundCall(
             if (callbackError) {
               logger.error('Failed to schedule after-hours callback', { error: callbackError });
             } else {
-              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (next business day)`);
+              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (jitter: +${jitterMinutes}min, calendar: ${hasCalendarConnections})`);
             }
           }
         }
@@ -1283,9 +1340,21 @@ function buildDynamicVariables(
   vars.current_time = currentTime;
   vars.current_time_cst = currentTime; // backward compat
   vars.is_weekend = !isWeekday ? 'yes' : 'no';
-  vars.business_hours_note = isWithinBusinessHours 
-    ? `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available.`
-    : `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day.`;
+  
+  // Calendar awareness — check if org has calendar connections (passed via metadata)
+  const hasCalendar = (metadata._has_calendar_connections as string) || 'unknown';
+  vars.has_calendar_connections = hasCalendar;
+  
+  // Business hours note — varies based on both time AND calendar availability
+  if (isWithinBusinessHours) {
+    if (hasCalendar === 'yes') {
+      vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). Recruiter transfer is available. You can use the scheduling tools to book a callback.`;
+    } else {
+      vars.business_hours_note = `Currently within business hours (${orgStart} - ${orgEnd} ${tzLabel}). No recruiter calendars are connected. Do NOT attempt to transfer to a recruiter. Let the candidate know a recruiter will reach out to them directly. Complete the screening and gather their information.`;
+    }
+  } else {
+    vars.business_hours_note = `Currently outside business hours (${orgStart} - ${orgEnd} ${tzLabel}). Do NOT attempt to transfer to a recruiter. Instead, let the candidate know a recruiter will call them back during business hours on the next business day. Complete the screening and gather their information.`;
+  }
 
   // Trucking-specific job context inference
   vars.job_requires_cdl = inferCDLRequirement(jobListing);
@@ -1310,7 +1379,7 @@ function buildDynamicVariables(
   vars.previous_call_outcome = (metadata._previous_call_outcome as string) || '';
   vars.previous_conversation_summary = (metadata._previous_conversation_summary as string) || '';
   vars.is_holiday = (metadata._is_holiday as string) || 'no';
-  
+
   // After-hours callback context — tells the agent this is a scheduled callback from a previous after-hours screening
   const isAfterHoursCallback = (metadata.is_after_hours_callback as boolean) || false;
   vars.is_after_hours_callback = isAfterHoursCallback ? 'yes' : 'no';
