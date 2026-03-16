@@ -375,7 +375,7 @@ const handler = async (req: Request): Promise<Response> => {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders,
+          ...getCorsHeaders(origin),
           "X-RateLimit-Remaining": rateLimitResult.remaining.toString()
         },
       }
