@@ -1102,15 +1102,45 @@ async function processOutboundCall(
               p_client_id: orgClientId,
             });
             
-            const callbackAt = nextBizTime ? new Date(nextBizTime).toISOString() : callbackFrom.toISOString();
+            // Add jitter: 2-45 minutes offset to prevent all callbacks firing at exact business hours start
+            const baseCallbackTime = nextBizTime ? new Date(nextBizTime) : callbackFrom;
+            const jitterMinutes = 2 + Math.floor(Math.random() * 43); // 2-45 min spread
+            const jitteredCallbackTime = new Date(baseCallbackTime.getTime() + jitterMinutes * 60 * 1000);
+            const callbackAt = jitteredCallbackTime.toISOString();
+            
+            // Check if org/client has calendar connections for callback_purpose
+            let hasCalendarConnections = false;
+            if (orgClientId) {
+              const { data: clientCalConns } = await supabase
+                .from('recruiter_calendar_connections')
+                .select('id')
+                .eq('organization_id', organizationId)
+                .eq('client_id', orgClientId)
+                .eq('status', 'active')
+                .limit(1)
+                .maybeSingle();
+              if (clientCalConns) hasCalendarConnections = true;
+            }
+            if (!hasCalendarConnections) {
+              const { data: orgCalConns } = await supabase
+                .from('recruiter_calendar_connections')
+                .select('id')
+                .eq('organization_id', organizationId)
+                .is('client_id', null)
+                .eq('status', 'active')
+                .limit(1)
+                .maybeSingle();
+              if (orgCalConns) hasCalendarConnections = true;
+            }
             
             const callbackMetadata: Record<string, unknown> = {
               ...(metadata || {}),
               is_after_hours_callback: true,
-              callback_purpose: 'recruiter_transfer',
+              callback_purpose: hasCalendarConnections ? 'recruiter_transfer' : 'business_hours_callback',
               original_call_id: callRecord.id,
               original_conversation_id: elevenLabsData.conversation_id || null,
               triggered_by: 'after_hours_auto_callback',
+              no_calendar_fallback: !hasCalendarConnections,
             };
             
             const { data: callbackCall, error: callbackError } = await supabase
@@ -1131,7 +1161,7 @@ async function processOutboundCall(
             if (callbackError) {
               logger.error('Failed to schedule after-hours callback', { error: callbackError });
             } else {
-              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (next business day)`);
+              logger.info(`Scheduled after-hours callback ${callbackCall?.id} for ${callbackAt} (jitter: +${jitterMinutes}min, calendar: ${hasCalendarConnections})`);
             }
           }
         }
