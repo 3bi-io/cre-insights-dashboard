@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 // Fallback static origins (Lovable previews always allowed)
 function isLovablePreview(origin: string): boolean {
