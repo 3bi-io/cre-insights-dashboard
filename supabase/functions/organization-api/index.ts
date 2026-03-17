@@ -69,9 +69,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Missing x-api-key header' }, 401, getCorsHeaders(origin));
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = getServiceClient();
 
   // Look up API key with allowed_origins and rate limit
   const { data: keyRow, error: keyError } = await supabase

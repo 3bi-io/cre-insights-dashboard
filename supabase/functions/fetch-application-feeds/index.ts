@@ -140,10 +140,9 @@ serve(async (req) => {
           // Forward applications to inbound-applications endpoint
           if (applications.length > 0) {
             const supabaseUrl = Deno.env.get('SUPABASE_URL');
-            const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
             
-            if (supabaseUrl && supabaseServiceKey) {
-              const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            if (supabaseUrl) {
+              const supabase = getServiceClient();
               let insertedCount = 0;
               let skippedCount = 0;
               let errorCount = 0;

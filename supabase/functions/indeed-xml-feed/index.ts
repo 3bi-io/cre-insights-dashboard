@@ -20,11 +20,7 @@ serve(async (req) => {
   const userAgent = req.headers.get('user-agent') || 'unknown';
 
   try {
-    // Create Supabase client with service role to bypass RLS
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    const supabaseClient = getServiceClient()
 
     // Parse URL for query parameters
     const url = new URL(req.url)

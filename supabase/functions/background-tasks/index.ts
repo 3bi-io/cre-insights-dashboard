@@ -16,10 +16,7 @@ type TaskParameters = {
   expires_at?: string;
 };
 
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = getServiceClient();
 
 // Declare EdgeRuntime for Supabase edge function background tasks
 declare const EdgeRuntime: {

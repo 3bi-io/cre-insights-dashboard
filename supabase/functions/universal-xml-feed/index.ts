@@ -117,10 +117,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Initialize Supabase client with service role (bypasses RLS)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Database-based rate limiting using feed_access_logs
     const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
