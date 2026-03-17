@@ -23,10 +23,7 @@ serve(async (req) => {
     const isAdminAction = adminActions.includes(action);
     
     // Client with service role for database operations
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const supabase = getServiceClient();
 
     // For non-admin actions, require user authentication
     if (!isAdminAction) {
