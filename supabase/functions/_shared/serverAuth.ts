@@ -3,8 +3,8 @@
  * CRITICAL SECURITY: Always validate roles server-side, never trust client
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createLogger } from './logger.ts';
 
 const logger = createLogger('serverAuth');

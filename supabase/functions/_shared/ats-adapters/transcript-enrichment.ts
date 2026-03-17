@@ -4,7 +4,7 @@
  * Used by both ats-integration (manual re-send) and auto-post-engine (automated flow).
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createLogger } from '../logger.ts';
 
 const logger = createLogger('transcript-enrichment');
