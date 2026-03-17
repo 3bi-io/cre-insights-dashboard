@@ -1,53 +1,47 @@
 
 
-# Fix: Auto-sync Voice Agent Conversations & Date/Time Accuracy
+# Platform Refactoring & Best Practices — Progress
 
-## Problem
-The `useElevenLabsConversations` hook fetches data once on mount and never refreshes automatically. There is:
-1. **No Supabase Realtime subscription** on `elevenlabs_conversations`
-2. **No polling interval** (`refetchInterval`) on the React Query
-3. Users must hard-refresh to see new calls
+## Completed
 
-## Solution
+### Phase 1 (Previous session)
+- ✅ Fixed morning-digest sender domain (verified email)
+- ✅ Migrated inbound-applications CORS to getCorsHeaders
+- ✅ Migrated elevenlabs-outbound-call CORS to getCorsHeaders
 
-### 1. Add Realtime subscription + polling fallback in `useElevenLabsConversations.tsx`
+### Phase 2 (Previous session)
+- ✅ **#1 Security Fix**: `can_access_sensitive_applicant_data` now uses `has_role()` + `is_super_admin()` from `user_roles` table instead of reading role from `profiles`
+- ✅ **#2 Config**: Added `grok-chat` to `config.toml` with `verify_jwt = true`
+- ✅ **#3 CORS Migration** (8 functions): data-analysis, chatbot-analytics, visitor-analytics, generate-logo, admin-check, domain-configuration, social-oauth-init, generate-applications — all migrated to `getCorsHeaders()`
+- ✅ **#6 Trigger Consolidation**: Dropped 7 duplicate `updated_at` trigger functions, reassigned all triggers to use single `update_updated_at_column()`
+- ✅ #7: Updated OrganizationApplicationsTab.tsx to use usePaginatedApplications + useApplicationsMutations, deleted deprecated useApplications hook
+- ✅ #5: Removed @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
 
-- Subscribe to Supabase Realtime `postgres_changes` on `elevenlabs_conversations` table (INSERT, UPDATE, DELETE events)
-- On any change, call `queryClient.invalidateQueries({ queryKey: ['elevenlabs-conversations'] })` to trigger a refetch
-- Add `refetchInterval: 30000` (30s polling fallback) to the useQuery config, in case Realtime misses events
-- Clean up the channel subscription on unmount via the `useEffect` return
+### Phase 3 (2026-03-16)
+- ✅ **Config**: Added 5 Hayes inbound functions to `config.toml` with `verify_jwt = false`
+- ✅ **@ts-nocheck removal**: Removed from `application-processor.ts`, `outbound-webhook`, `domain-configuration` — added proper types, typed catch blocks, pinned SDK
+- ✅ **SDK Pinning**: Pinned `_shared/supabase-client.ts` and `_shared/auth.ts` to `@supabase/supabase-js@2.50.0`
+- ✅ **CORS Migration** (20 functions total): All hardcoded CORS headers migrated to `getCorsHeaders()`
 
-### 2. Ensure correct date/time ordering
+### Phase 4 (2026-03-16, continued)
+- ✅ **@ts-nocheck removal (16 functions)**: Removed from all remaining edge functions. **Zero @ts-nocheck remaining in project.**
+- ✅ **SDK Pinning (complete)**: All edge functions now pinned to `@supabase/supabase-js@2.50.0`. **Zero unpinned `@2` imports remaining.**
+- ✅ **Typed catch blocks**: All catch blocks use `catch (error: unknown)` with `error instanceof Error ? error.message : String(error)` pattern.
+- ✅ **Replaced `any` types**: Added proper interfaces across all edge functions.
 
-- The query already uses `.order('started_at', { ascending: false })` — newest first. This is correct.
-- Verify that `ConversationHistoryTable.tsx` displays `started_at` using `format(new Date(conversation.started_at), 'MMM d, yyyy HH:mm')` which is already correct for local timezone rendering.
-- No date bugs found — the existing `date-fns` `format()` calls correctly parse UTC strings and display in local time.
+### Phase 5 (2026-03-16, continued)
+- ✅ **Logging Migration (12 functions)**: Replaced raw `console.log/error` with `createLogger()` in: firecrawl-crawl, firecrawl-scrape, firecrawl-search, firecrawl-job-import, generate-image, generate-og-images, generate-founders-pass-creative, social-oauth-callback, resolve-embed-token, x-platform-integration, morning-digest
+- ✅ **Dialog Accessibility**: Fixed `DialogContent` to pass `aria-describedby` to suppress missing description warnings globally
+- ✅ **Admin Route Simplification**: Replaced double `ProtectedRoute` wrapping in admin routes with `AdminRouteWrapper` (auth enforced once by parent `LayoutWrapper`)
+- ✅ **Additional fixes**: firecrawl-scrape and firecrawl-job-import migrated from hardcoded CORS to `getCorsHeaders()` and from manual `createClient` to `getServiceClient()`; resolve-embed-token migrated to `getServiceClient()`
 
-### Files to edit
-- `src/features/elevenlabs/hooks/useElevenLabsConversations.tsx` — add `useEffect` with Realtime channel subscription + `refetchInterval: 30000`
+### Phase 6 (2026-03-17)
+- ✅ **#4 createClient() → getServiceClient() Migration (40+ functions)**: Migrated service-role `createClient()` calls to centralized `getServiceClient()` across 40+ edge functions. Functions that also need anon-key clients (for user auth) retain `createClient` for those specific calls only.
 
-### Technical detail
+## Remaining
 
-```typescript
-// Add to useElevenLabsConversations hook:
-useEffect(() => {
-  const channel = supabase
-    .channel('elevenlabs-conversations-realtime')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'elevenlabs_conversations',
-    }, () => {
-      queryClient.invalidateQueries({ queryKey: ['elevenlabs-conversations'] });
-    })
-    .subscribe();
+### Medium-term
+- [ ] #9: Replace console.log/error with createLogger() in remaining ~7 functions (social-oauth-init, verify-platform-secrets, organization-api, agent-scheduling, backfill-webhook, launch-social-beacons, generate-ad-creative)
 
-  return () => { supabase.removeChannel(channel); };
-}, [queryClient]);
-
-// Add to useQuery config:
-refetchInterval: 30_000,
-```
-
-This is a single-file change that adds both real-time updates (instant) and polling (30s fallback), eliminating the need for hard refreshes.
-
+### Long-term
+- [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function

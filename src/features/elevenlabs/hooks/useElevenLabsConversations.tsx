@@ -3,6 +3,7 @@
  * Manages conversation data, transcripts, and audio from ElevenLabs
  */
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
   const { data: conversations, isLoading: loadingConversations, error: conversationsError } = useQuery({
     queryKey: ['elevenlabs-conversations', voiceAgentId],
     enabled: !!session && (userRole === 'super_admin' || userRole === 'admin'),
+    refetchInterval: 30_000,
     queryFn: async () => {
       logger.debug('Fetching ElevenLabs conversations', { agentId: voiceAgentId || 'all' }, 'ElevenLabs');
       let query = supabase
@@ -77,6 +79,22 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
       return [];
     },
   });
+
+  // Realtime subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('elevenlabs-conversations-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'elevenlabs_conversations',
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['elevenlabs-conversations'] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   // Fetch transcript for a conversation
   const fetchTranscript = async (conversationDbId: string) => {
