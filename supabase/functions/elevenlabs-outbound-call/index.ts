@@ -4,7 +4,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { successResponse, errorResponse } from "../_shared/response.ts";
 import { createLogger } from "../_shared/logger.ts";

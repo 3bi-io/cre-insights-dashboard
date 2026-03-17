@@ -3,7 +3,7 @@
  * Generates an Atom feed from published blog posts for AI crawlability
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 
 const BASE_URL = 'https://applyai.jobs';
