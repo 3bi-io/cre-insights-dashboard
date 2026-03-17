@@ -8,8 +8,8 @@
  * Delete this function after successful execution.
  */
 
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/hooks/catch/23823129/u28navp/';
 
