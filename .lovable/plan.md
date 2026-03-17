@@ -35,11 +35,13 @@
 - ✅ **Admin Route Simplification**: Replaced double `ProtectedRoute` wrapping in admin routes with `AdminRouteWrapper` (auth enforced once by parent `LayoutWrapper`)
 - ✅ **Additional fixes**: firecrawl-scrape and firecrawl-job-import migrated from hardcoded CORS to `getCorsHeaders()` and from manual `createClient` to `getServiceClient()`; resolve-embed-token migrated to `getServiceClient()`
 
+### Phase 6 (2026-03-17)
+- ✅ **#4 createClient() → getServiceClient() Migration (40+ functions)**: Migrated service-role `createClient()` calls to centralized `getServiceClient()` across 40+ edge functions. Functions that also need anon-key clients (for user auth) retain `createClient` for those specific calls only.
+
 ## Remaining
 
 ### Medium-term
-- [ ] #4: Migrate ~40 functions from manual createClient() to getServiceClient()
-- [ ] #9: Replace console.log/error with createLogger() in remaining ~10 functions
+- [ ] #9: Replace console.log/error with createLogger() in remaining ~7 functions (social-oauth-init, verify-platform-secrets, organization-api, agent-scheduling, backfill-webhook, launch-social-beacons, generate-ad-creative)
 
 ### Long-term
 - [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function
