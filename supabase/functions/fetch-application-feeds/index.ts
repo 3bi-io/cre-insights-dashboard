@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createLogger } from '../_shared/logger.ts'
-import { createClient } from "npm:@supabase/supabase-js@2.50.0"
+import { getServiceClient } from '../_shared/supabase-client.ts'
 
 const logger = createLogger('fetch-application-feeds')
 
