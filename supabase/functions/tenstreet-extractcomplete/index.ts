@@ -20,7 +20,7 @@
  * - IP allowlisting (TODO: configure Tenstreet IP ranges)
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import {
   parseSOAPEnvelope,
   parseTenstreetExtractComplete,
