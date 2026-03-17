@@ -1,9 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { createLogger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+const logger = createLogger('verify-platform-secrets');
 
 // Map of platform to required secret environment variable names
 const PLATFORM_SECRETS: Record<string, string[]> = {
@@ -18,7 +17,9 @@ const PLATFORM_SECRETS: Record<string, string[]> = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -26,19 +27,12 @@ serve(async (req) => {
   try {
     const { platform, platforms } = await req.json();
 
-    // Support both single platform and array of platforms
     const platformsToCheck = platforms || (platform ? [platform] : []);
 
     if (platformsToCheck.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Platform or platforms array required' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ success: false, error: 'Platform or platforms array required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -69,39 +63,24 @@ serve(async (req) => {
       };
     }
 
-    // If single platform requested, return simplified response
     if (platform && !platforms) {
       const result = results[platform];
       return new Response(
-        JSON.stringify({
-          success: true,
-          platform,
-          ...result,
-        }),
+        JSON.stringify({ success: true, platform, ...result }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Return all results for batch request
     return new Response(
-      JSON.stringify({
-        success: true,
-        results,
-      }),
+      JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('Error verifying platform secrets:', error);
+  } catch (error: unknown) {
+    logger.error('Error verifying platform secrets', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

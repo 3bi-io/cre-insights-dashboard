@@ -1,47 +1,47 @@
 
 
-# Remaining Production Refactoring — Plan
+# Platform Refactoring & Best Practices — Progress
 
-Two remaining items from the audit:
+## Completed
 
-## Task 1: Migrate `console.log/error` → `createLogger()` in 7 functions
+### Phase 1 (Previous session)
+- ✅ Fixed morning-digest sender domain (verified email)
+- ✅ Migrated inbound-applications CORS to getCorsHeaders
+- ✅ Migrated elevenlabs-outbound-call CORS to getCorsHeaders
 
-Each function gets a logger instance via `createLogger('function-name')` and replaces raw `console.*` calls:
+### Phase 2 (Previous session)
+- ✅ **#1 Security Fix**: `can_access_sensitive_applicant_data` now uses `has_role()` + `is_super_admin()` from `user_roles` table instead of reading role from `profiles`
+- ✅ **#2 Config**: Added `grok-chat` to `config.toml` with `verify_jwt = true`
+- ✅ **#3 CORS Migration** (8 functions): data-analysis, chatbot-analytics, visitor-analytics, generate-logo, admin-check, domain-configuration, social-oauth-init, generate-applications — all migrated to `getCorsHeaders()`
+- ✅ **#6 Trigger Consolidation**: Dropped 7 duplicate `updated_at` trigger functions, reassigned all triggers to use single `update_updated_at_column()`
+- ✅ #7: Updated OrganizationApplicationsTab.tsx to use usePaginatedApplications + useApplicationsMutations, deleted deprecated useApplications hook
+- ✅ #5: Removed @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
 
-| Function | Console calls | Notes |
-|----------|--------------|-------|
-| `verify-platform-secrets` | 1 error | Also needs CORS migration to `getCorsHeaders()` — still has hardcoded `corsHeaders` |
-| `social-oauth-init` | 1 log, 1 error | Already uses `getCorsHeaders` |
-| `organization-api` | 1 error | Has custom CORS (API key auth, intentional) — only add logger |
-| `agent-scheduling` | ~10 calls | Already uses `getCorsHeaders`; also has `catch (error: any)` that needs `catch (error: unknown)` and several `any` types |
-| `backfill-webhook` | 4 calls | Already uses `getCorsHeaders` and `getServiceClient` |
-| `launch-social-beacons` | 2 errors | Has unused `createClient` import to remove |
-| `generate-ad-creative` | 8 calls | Already uses `getCorsHeaders`; uses `serve()` from std — fine |
+### Phase 3 (2026-03-16)
+- ✅ **Config**: Added 5 Hayes inbound functions to `config.toml` with `verify_jwt = false`
+- ✅ **@ts-nocheck removal**: Removed from `application-processor.ts`, `outbound-webhook`, `domain-configuration` — added proper types, typed catch blocks, pinned SDK
+- ✅ **SDK Pinning**: Pinned `_shared/supabase-client.ts` and `_shared/auth.ts` to `@supabase/supabase-js@2.50.0`
+- ✅ **CORS Migration** (20 functions total): All hardcoded CORS headers migrated to `getCorsHeaders()`
 
-### Changes per function:
-1. Add `import { createLogger } from '../_shared/logger.ts'` 
-2. Create `const logger = createLogger('function-name')` 
-3. Replace `console.log(...)` → `logger.info(...)` and `console.error(...)` → `logger.error(...)`
-4. Fix any remaining `catch (error: any)` → `catch (error: unknown)`
-5. `verify-platform-secrets`: migrate hardcoded CORS to `getCorsHeaders()`
-6. `launch-social-beacons`: remove unused `createClient` import
-7. `agent-scheduling`: type `any` params/variables where feasible
+### Phase 4 (2026-03-16, continued)
+- ✅ **@ts-nocheck removal (16 functions)**: Removed from all remaining edge functions. **Zero @ts-nocheck remaining in project.**
+- ✅ **SDK Pinning (complete)**: All edge functions now pinned to `@supabase/supabase-js@2.50.0`. **Zero unpinned `@2` imports remaining.**
+- ✅ **Typed catch blocks**: All catch blocks use `catch (error: unknown)` with `error instanceof Error ? error.message : String(error)` pattern.
+- ✅ **Replaced `any` types**: Added proper interfaces across all edge functions.
 
-## Task 2: Consolidate 5 Hayes inbound functions into single parameterized function
+### Phase 5 (2026-03-16, continued)
+- ✅ **Logging Migration (12 functions)**: Replaced raw `console.log/error` with `createLogger()` in: firecrawl-crawl, firecrawl-scrape, firecrawl-search, firecrawl-job-import, generate-image, generate-og-images, generate-founders-pass-creative, social-oauth-callback, resolve-embed-token, x-platform-integration, morning-digest
+- ✅ **Dialog Accessibility**: Fixed `DialogContent` to pass `aria-describedby` to suppress missing description warnings globally
+- ✅ **Admin Route Simplification**: Replaced double `ProtectedRoute` wrapping in admin routes with `AdminRouteWrapper` (auth enforced once by parent `LayoutWrapper`)
+- ✅ **Additional fixes**: firecrawl-scrape and firecrawl-job-import migrated from hardcoded CORS to `getCorsHeaders()` and from manual `createClient` to `getServiceClient()`; resolve-embed-token migrated to `getServiceClient()`
 
-Replace the 5 identical 3-line wrapper functions with a single `hayes-inbound` function that reads the client key from a query parameter:
+### Phase 6 (2026-03-17)
+- ✅ **#4 createClient() → getServiceClient() Migration (40+ functions)**: Migrated service-role `createClient()` calls to centralized `getServiceClient()` across 40+ edge functions. Functions that also need anon-key clients (for user auth) retain `createClient` for those specific calls only.
 
-1. Create `supabase/functions/hayes-inbound/index.ts` that reads `?client=danny-herman` (or similar) from the URL and calls `createClientHandler(HAYES_CLIENT_CONFIGS[client])`
-2. Add `hayes-inbound` to `config.toml` with `verify_jwt = false`
-3. Keep the 5 existing functions as-is for backward compatibility (they're already deployed and may have external integrations pointing to them) — but they could be simplified to redirect or kept as thin aliases
+## Remaining
 
-**Decision**: Keep existing 5 functions (external systems depend on their URLs) but add the unified endpoint as the canonical one going forward. No breaking changes.
+### Medium-term
+- [ ] #9: Replace console.log/error with createLogger() in remaining ~7 functions (social-oauth-init, verify-platform-secrets, organization-api, agent-scheduling, backfill-webhook, launch-social-beacons, generate-ad-creative)
 
-## Task 3: Update `.lovable/plan.md` to mark everything complete
-
-### Files to edit:
-- 7 edge function `index.ts` files (logging migration)
-- 1 new `hayes-inbound/index.ts` 
-- `config.toml` (add hayes-inbound)
-- `.lovable/plan.md`
-
+### Long-term
+- [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function

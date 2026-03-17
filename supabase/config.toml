@@ -332,3 +332,6 @@ verify_jwt = false
 
 [functions.hayes-pemberton-inbound]
 verify_jwt = false
+
+[functions.hayes-inbound]
+verify_jwt = false

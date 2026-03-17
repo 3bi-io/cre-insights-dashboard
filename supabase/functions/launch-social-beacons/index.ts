@@ -1,6 +1,9 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { getServiceClient } from '../_shared/supabase-client.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('launch-social-beacons');
 
 interface LaunchResult {
   creativeId: string;
@@ -17,7 +20,6 @@ Deno.serve(async (req) => {
   const headers = { ...getCorsHeaders(origin), 'Content-Type': 'application/json' };
 
   try {
-    // Auth check
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers });
@@ -36,21 +38,14 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub as string;
 
-    // Verify admin role
     const { data: roles } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
+      .from('user_roles').select('role').eq('user_id', userId);
 
-    const userRoles = roles?.map((r: any) => r.role) || [];
+    const userRoles = roles?.map((r: { role: string }) => r.role) || [];
     const isAdmin = userRoles.includes('admin') || userRoles.includes('super_admin');
 
-    // Also check super admin by email
     const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('email, organization_id')
-      .eq('id', userId)
-      .single();
+      .from('profiles').select('email, organization_id').eq('id', userId).single();
 
     const isSuperByEmail = profile?.email === 'c@3bi.io';
 
@@ -60,50 +55,30 @@ Deno.serve(async (req) => {
 
     const organizationId = profile?.organization_id;
 
-    // Fetch unpublished creatives (draft, ready, queued)
     let creativesQuery = supabaseAdmin
-      .from('generated_ad_creatives')
-      .select('*')
-      .in('status', ['draft', 'ready', 'queued']);
-
-    if (organizationId) {
-      creativesQuery = creativesQuery.eq('organization_id', organizationId);
-    }
+      .from('generated_ad_creatives').select('*').in('status', ['draft', 'ready', 'queued']);
+    if (organizationId) creativesQuery = creativesQuery.eq('organization_id', organizationId);
 
     const { data: creatives, error: creativesError } = await creativesQuery;
     if (creativesError) throw creativesError;
 
     if (!creatives || creatives.length === 0) {
       return new Response(JSON.stringify({
-        success: true,
-        launched: 0,
-        failed: 0,
-        skipped: 0,
-        details: [],
+        success: true, launched: 0, failed: 0, skipped: 0, details: [],
         message: 'No unpublished creatives found',
       }), { status: 200, headers });
     }
 
-    // Fetch active social platform connections
     let connectionsQuery = supabaseAdmin
-      .from('social_platform_connections')
-      .select('*')
-      .eq('is_active', true);
-
-    if (organizationId) {
-      connectionsQuery = connectionsQuery.eq('organization_id', organizationId);
-    }
+      .from('social_platform_connections').select('*').eq('is_active', true);
+    if (organizationId) connectionsQuery = connectionsQuery.eq('organization_id', organizationId);
 
     const { data: connections, error: connectionsError } = await connectionsQuery;
     if (connectionsError) throw connectionsError;
 
     if (!connections || connections.length === 0) {
       return new Response(JSON.stringify({
-        success: true,
-        launched: 0,
-        failed: 0,
-        skipped: creatives.length,
-        details: [],
+        success: true, launched: 0, failed: 0, skipped: creatives.length, details: [],
         message: 'No active platform connections found',
       }), { status: 200, headers });
     }
@@ -113,21 +88,17 @@ Deno.serve(async (req) => {
     let failed = 0;
     let skipped = 0;
 
-    // Process each creative x connection combination
-    for (const creative of creatives) {
+    // deno-lint-ignore no-explicit-any
+    for (const creative of creatives as any[]) {
       const alreadyPublished = creative.platforms_published || [];
 
-      for (const connection of connections) {
+      // deno-lint-ignore no-explicit-any
+      for (const connection of connections as any[]) {
         const platform = connection.platform;
 
-        // Skip if already published to this platform
         if (alreadyPublished.includes(platform)) {
           skipped++;
-          results.push({
-            creativeId: creative.id,
-            platform,
-            status: 'skipped',
-          });
+          results.push({ creativeId: creative.id, platform, status: 'skipped' });
           continue;
         }
 
@@ -140,60 +111,35 @@ Deno.serve(async (req) => {
             case 'facebook': {
               const pageId = connection.platform_user_id;
               if (pageId && accessToken) {
-                const fbResponse = await fetch(
-                  `https://graph.facebook.com/v19.0/${pageId}/feed`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      message: content,
-                      access_token: accessToken,
-                      ...(creative.media_url ? { link: creative.media_url } : {}),
-                    }),
-                  }
-                );
+                const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    message: content, access_token: accessToken,
+                    ...(creative.media_url ? { link: creative.media_url } : {}),
+                  }),
+                });
                 const fbBody = await fbResponse.text();
                 postSuccess = fbResponse.ok;
-                if (!postSuccess) {
-                  throw new Error(`Facebook API error: ${fbBody}`);
-                }
+                if (!postSuccess) throw new Error(`Facebook API error: ${fbBody}`);
               } else {
                 throw new Error('Missing Facebook page ID or access token');
               }
               break;
             }
-
             case 'instagram': {
               const igUserId = connection.platform_user_id;
               if (igUserId && accessToken && creative.media_url) {
-                // Step 1: Create media container
-                const containerRes = await fetch(
-                  `https://graph.facebook.com/v19.0/${igUserId}/media`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      image_url: creative.media_url,
-                      caption: content,
-                      access_token: accessToken,
-                    }),
-                  }
-                );
+                const containerRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ image_url: creative.media_url, caption: content, access_token: accessToken }),
+                });
                 const containerData = await containerRes.json();
                 if (!containerRes.ok) throw new Error(`IG container error: ${JSON.stringify(containerData)}`);
-
-                // Step 2: Publish
-                const publishRes = await fetch(
-                  `https://graph.facebook.com/v19.0/${igUserId}/media_publish`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      creation_id: containerData.id,
-                      access_token: accessToken,
-                    }),
-                  }
-                );
+                const publishRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media_publish`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ creation_id: containerData.id, access_token: accessToken }),
+                });
                 const publishBody = await publishRes.text();
                 postSuccess = publishRes.ok;
                 if (!postSuccess) throw new Error(`IG publish error: ${publishBody}`);
@@ -202,15 +148,11 @@ Deno.serve(async (req) => {
               }
               break;
             }
-
             case 'x': {
               if (accessToken) {
                 const tweetRes = await fetch('https://api.twitter.com/2/tweets', {
                   method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${accessToken}`,
-                  },
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
                   body: JSON.stringify({ text: content.substring(0, 280) }),
                 });
                 const tweetBody = await tweetRes.text();
@@ -221,29 +163,17 @@ Deno.serve(async (req) => {
               }
               break;
             }
-
             case 'linkedin': {
               const linkedinUserId = connection.platform_user_id;
               if (linkedinUserId && accessToken) {
                 const liRes = await fetch('https://api.linkedin.com/v2/ugcPosts', {
                   method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${accessToken}`,
-                    'X-Restli-Protocol-Version': '2.0.0',
-                  },
+                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, 'X-Restli-Protocol-Version': '2.0.0' },
                   body: JSON.stringify({
                     author: `urn:li:person:${linkedinUserId}`,
                     lifecycleState: 'PUBLISHED',
-                    specificContent: {
-                      'com.linkedin.ugc.ShareContent': {
-                        shareCommentary: { text: content },
-                        shareMediaCategory: 'NONE',
-                      },
-                    },
-                    visibility: {
-                      'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
-                    },
+                    specificContent: { 'com.linkedin.ugc.ShareContent': { shareCommentary: { text: content }, shareMediaCategory: 'NONE' } },
+                    visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
                   }),
                 });
                 const liBody = await liRes.text();
@@ -254,89 +184,52 @@ Deno.serve(async (req) => {
               }
               break;
             }
-
             case 'tiktok':
             case 'reddit': {
-              // Queued - no direct posting API available yet
               skipped++;
-              results.push({
-                creativeId: creative.id,
-                platform,
-                status: 'skipped',
-                error: `${platform} direct posting not yet supported`,
-              });
+              results.push({ creativeId: creative.id, platform, status: 'skipped', error: `${platform} direct posting not yet supported` });
               continue;
             }
-
             default:
               skipped++;
-              results.push({
-                creativeId: creative.id,
-                platform,
-                status: 'skipped',
-                error: `Unknown platform: ${platform}`,
-              });
+              results.push({ creativeId: creative.id, platform, status: 'skipped', error: `Unknown platform: ${platform}` });
               continue;
           }
 
           if (postSuccess) {
-            // Update creative: append platform to platforms_published
             const updatedPlatforms = [...alreadyPublished, platform];
-            await supabaseAdmin
-              .from('generated_ad_creatives')
-              .update({
-                platforms_published: updatedPlatforms,
-                published_at: new Date().toISOString(),
-                status: 'published',
-              })
-              .eq('id', creative.id);
-
+            await supabaseAdmin.from('generated_ad_creatives').update({
+              platforms_published: updatedPlatforms, published_at: new Date().toISOString(), status: 'published',
+            }).eq('id', creative.id);
             launched++;
             results.push({ creativeId: creative.id, platform, status: 'launched' });
           }
-        } catch (err) {
+        } catch (err: unknown) {
           failed++;
           const errorMsg = err instanceof Error ? err.message : String(err);
-          console.error(`Failed to publish creative ${creative.id} to ${platform}:`, errorMsg);
-          results.push({
-            creativeId: creative.id,
-            platform,
-            status: 'failed',
-            error: errorMsg,
-          });
-
-          // Mark creative as failed if all attempts fail
-          await supabaseAdmin
-            .from('generated_ad_creatives')
-            .update({ status: 'failed' })
-            .eq('id', creative.id);
+          logger.error(`Failed to publish creative ${creative.id} to ${platform}`, err);
+          results.push({ creativeId: creative.id, platform, status: 'failed', error: errorMsg });
+          await supabaseAdmin.from('generated_ad_creatives').update({ status: 'failed' }).eq('id', creative.id);
         }
       }
     }
 
-    // Log to audit_logs
     await supabaseAdmin.from('audit_logs').insert({
-      user_id: userId,
-      organization_id: organizationId,
+      user_id: userId, organization_id: organizationId,
       table_name: 'generated_ad_creatives',
       action: `ROCKET_LAUNCH: ${launched} launched, ${failed} failed, ${skipped} skipped`,
       sensitive_fields: ['social_platform_tokens'],
     });
 
     return new Response(JSON.stringify({
-      success: true,
-      launched,
-      failed,
-      skipped,
-      details: results,
+      success: true, launched, failed, skipped, details: results,
       message: `🚀 Launch complete: ${launched} published, ${failed} failed, ${skipped} skipped`,
     }), { status: 200, headers });
 
-  } catch (error) {
-    console.error('Launch error:', error);
+  } catch (error: unknown) {
+    logger.error('Launch error', error);
     return new Response(JSON.stringify({
-      success: false,
-      error: error instanceof Error ? error.message : 'Internal server error',
+      success: false, error: error instanceof Error ? error.message : 'Internal server error',
     }), { status: 500, headers });
   }
 });
