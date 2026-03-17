@@ -4,7 +4,7 @@
   */
  
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from "npm:@supabase/supabase-js@2.50.0"
+import { getServiceClient } from "../_shared/supabase-client.ts"
 import { createLogger } from "../_shared/logger.ts"
 import { lookupCityState } from "../_shared/zip-lookup.ts"
 import { findOrCreateJobListing, getOrganizationFromJobId, getClientIdFromJobId } from "../_shared/application-processor.ts"
