@@ -34,7 +34,7 @@ serve(async (req: Request) => {
 
     logger.info('Fetching shared conversation', { shareCode });
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get shared conversation info from public view
     const { data: shareInfo, error: shareError } = await supabase

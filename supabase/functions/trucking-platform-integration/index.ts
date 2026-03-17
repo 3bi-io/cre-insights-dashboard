@@ -20,11 +20,7 @@ serve(async (req) => {
     
     logger.info('Processing request', { action, platform })
 
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    const supabaseClient = getServiceClient()
 
     switch (action) {
       case 'check_connection':

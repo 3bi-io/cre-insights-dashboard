@@ -51,8 +51,6 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
 
     if (!elevenLabsApiKey) {
@@ -60,7 +58,7 @@ serve(async (req) => {
       return errorResponse('ElevenLabs API key not configured', 500, undefined, origin);
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
     const rawBody = await req.json();
     
     // Validate request body

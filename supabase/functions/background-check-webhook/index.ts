@@ -22,10 +22,7 @@ serve(async (req) => {
   logger.info(`Webhook received`, { correlationId, providerSlug });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabase = getServiceClient();
 
     if (!providerSlug) {
       return new Response(JSON.stringify({ error: "provider required" }), {

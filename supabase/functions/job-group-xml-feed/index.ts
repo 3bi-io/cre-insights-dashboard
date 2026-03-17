@@ -19,9 +19,7 @@ Deno.serve(async (req) => {
   const userAgent = req.headers.get('user-agent') || 'unknown';
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getServiceClient();
 
     const { jobGroupId } = await req.json();
 

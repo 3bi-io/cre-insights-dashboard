@@ -255,10 +255,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Application ID and request type are required');
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get application details (include client for applicant-facing email branding)
     const { data: application, error: appError } = await supabase
