@@ -82,8 +82,9 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
 
   // Realtime subscription for instant updates
   useEffect(() => {
+    const channelName = `elevenlabs-conversations-rt-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel('elevenlabs-conversations-realtime')
+      .channel(channelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
