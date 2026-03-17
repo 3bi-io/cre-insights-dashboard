@@ -80,6 +80,22 @@ export const useElevenLabsConversations = (voiceAgentId?: string) => {
     },
   });
 
+  // Realtime subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('elevenlabs-conversations-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'elevenlabs_conversations',
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['elevenlabs-conversations'] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   // Fetch transcript for a conversation
   const fetchTranscript = async (conversationDbId: string) => {
     const { data, error } = await supabase
