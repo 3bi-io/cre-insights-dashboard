@@ -3,7 +3,7 @@
  * Provides user verification and authorization helpers
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { AuthenticationError, AuthorizationError } from './error-handler.ts';
 
 export interface AuthUser {

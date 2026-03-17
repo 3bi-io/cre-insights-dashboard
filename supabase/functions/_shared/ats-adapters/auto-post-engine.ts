@@ -3,7 +3,7 @@
  * Replaces hardcoded Tenstreet/DriverReach auto-posting with dynamic ATS routing
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createATSAdapter } from './index.ts';
 import { enrichWithTranscript } from './transcript-enrichment.ts';
 import { calculateReadinessScore } from './readiness-scorer.ts';

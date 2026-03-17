@@ -3,7 +3,7 @@
  * Centralized client creation and management
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 
 /**
  * Get Supabase service role client (bypasses RLS)

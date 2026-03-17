@@ -6,7 +6,7 @@
  * to their specific jobs and applies client-specific UTM tracking.
  */
 
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from './cors-config.ts';
 import { successResponse, errorResponse } from './response.ts';
 import { createLogger } from './logger.ts';
