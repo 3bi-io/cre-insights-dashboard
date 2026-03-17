@@ -1,5 +1,5 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createLogger } from '../_shared/logger.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('universal-xml-feed');
 
