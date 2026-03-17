@@ -82,11 +82,7 @@ serve(async (req) => {
 
     const serviceAccount = JSON.parse(serviceAccountJson)
     
-    // Create Supabase client with service role for querying jobs
-    const supabaseServiceClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    const supabaseServiceClient = getServiceClient()
 
     let urlsToProcess: string[] = []
 

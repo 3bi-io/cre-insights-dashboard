@@ -34,7 +34,7 @@ serve(async (req) => {
     });
 
     // Admin client for privileged operations
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const admin = getServiceClient();
 
     const {
       data: { user: currentUser },

@@ -184,10 +184,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabase = getServiceClient();
 
     const body = await req.json();
     const { count = 50, organization_id } = body as { count?: number; organization_id?: string };
