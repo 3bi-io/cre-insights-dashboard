@@ -3,8 +3,8 @@
  * Generates an Atom feed from published blog posts for AI crawlability
  */
 
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const BASE_URL = 'https://applyai.jobs';
 
@@ -29,9 +29,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getServiceClient();
 
     const { data: posts, error } = await supabase
       .from('blog_posts')

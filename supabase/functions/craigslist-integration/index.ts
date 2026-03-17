@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { enforceAuth } from '../_shared/serverAuth.ts';
 import { createLogger } from '../_shared/logger.ts';
@@ -45,10 +45,7 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getServiceClient();
 
     // Get Craigslist credentials
     const username = Deno.env.get('CRAIGSLIST_USERNAME');

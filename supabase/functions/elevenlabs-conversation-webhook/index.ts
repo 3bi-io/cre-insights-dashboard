@@ -16,8 +16,8 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
+import { getServiceClient } from "../_shared/supabase-client.ts";
 import { normalizeSpokenEmail, isValidEmail } from "../_shared/email-utils.ts";
 import { lookupCityState } from "../_shared/zip-lookup.ts";
 import { extractFromTranscript } from "../_shared/transcript-parser.ts";
@@ -156,10 +156,7 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const supabase = getServiceClient();
 
     const payload: ElevenLabsWebhookPayload = await req.json();
     

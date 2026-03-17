@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.50.0'
+import { getServiceClient } from '../_shared/supabase-client.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { successResponse, errorResponse, validationErrorResponse } from '../_shared/response.ts'
@@ -62,10 +63,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const supabase = getServiceClient();
 
     const rawBody = await req.json();
     

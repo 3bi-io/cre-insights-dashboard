@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 import { checkRateLimitWithGeo, getRateLimitIdentifier } from "../_shared/rate-limiter.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
@@ -255,10 +255,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Application ID and request type are required');
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get application details (include client for applicant-facing email branding)
     const { data: application, error: appError } = await supabase

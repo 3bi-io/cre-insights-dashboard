@@ -20,7 +20,7 @@
  * - IP allowlisting (TODO: configure Tenstreet IP ranges)
  */
 
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 import {
   parseSOAPEnvelope,
   parseTenstreetExtractComplete,
@@ -45,10 +45,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
+  const supabase = getServiceClient();
 
   try {
     logger.info('Received extractcomplete callback');

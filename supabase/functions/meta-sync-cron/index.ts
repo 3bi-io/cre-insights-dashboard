@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createLogger } from '../_shared/logger.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('meta-sync-cron');
 
@@ -69,14 +69,11 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const metaAccessToken = Deno.env.get('META_ACCESS_TOKEN');
 
-    if (!supabaseUrl || !serviceKey) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
     if (!metaAccessToken) throw new Error('META_ACCESS_TOKEN is required');
 
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = getServiceClient();
 
     // Optional: allow running for a single account via query param ?account_id=...
     const url = new URL(req.url);

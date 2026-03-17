@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors-config.ts";
+import { getServiceClient } from "../_shared/supabase-client.ts";
 
 const logger = createLogger('elevenlabs-conversations');
 
@@ -22,10 +23,7 @@ serve(async (req) => {
     const isAdminAction = adminActions.includes(action);
     
     // Client with service role for database operations
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    );
+    const supabase = getServiceClient();
 
     // For non-admin actions, require user authentication
     if (!isAdminAction) {

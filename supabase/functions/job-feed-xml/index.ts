@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0'
 import { createLogger } from '../_shared/logger.ts'
+import { getServiceClient } from '../_shared/supabase-client.ts'
 
 const logger = createLogger('job-feed-xml')
 
@@ -26,10 +26,7 @@ serve(async (req) => {
     const user_id = url.searchParams.get('user_id')
 
     // Create Supabase client with service role to bypass RLS
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-    )
+    const supabaseClient = getServiceClient()
 
     // Build query for job listings (include ALL active jobs)
     const selectFields = `

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse, validationErrorResponse, rateLimitResponse } from '../_shared/response.ts';
@@ -96,9 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
     const normalizedPhone = phoneValidation.normalized!;
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get Twilio credentials
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');

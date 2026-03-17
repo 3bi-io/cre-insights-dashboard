@@ -4,10 +4,10 @@
  */
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { successResponse, errorResponse, validationErrorResponse } from "../_shared/response.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { getServiceClient } from "../_shared/supabase-client.ts";
 import { 
   normalizePhone, 
   findOrCreateJobListing, 
@@ -430,10 +430,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabase = getServiceClient();
 
     // Parse URL query parameters FIRST
     const url = new URL(req.url);

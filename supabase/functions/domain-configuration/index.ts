@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0'
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('domain-configuration');
 
@@ -15,10 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabase = getServiceClient()
 
     const { organizationId, domain, action } = await req.json()
 

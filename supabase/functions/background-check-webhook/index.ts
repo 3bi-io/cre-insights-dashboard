@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
+import { getServiceClient } from "../_shared/supabase-client.ts";
 import { validateBGCWebhook, BGCProvider, BGCConnection } from "../_shared/bgc-adapters/index.ts";
 import { createLogger } from "../_shared/logger.ts";
 
@@ -22,10 +22,7 @@ serve(async (req) => {
   logger.info(`Webhook received`, { correlationId, providerSlug });
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabase = getServiceClient();
 
     if (!providerSlug) {
       return new Response(JSON.stringify({ error: "provider required" }), {

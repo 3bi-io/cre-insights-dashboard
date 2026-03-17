@@ -1,5 +1,5 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createLogger } from "../_shared/logger.ts";
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,9 +22,7 @@ Deno.serve(async (req) => {
   const userAgent = req.headers.get('user-agent') || 'unknown';
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get user_id from query params
     const url = new URL(req.url);

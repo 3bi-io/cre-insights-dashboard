@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('background-tasks');
 
@@ -16,10 +16,7 @@ type TaskParameters = {
   expires_at?: string;
 };
 
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = getServiceClient();
 
 // Declare EdgeRuntime for Supabase edge function background tasks
 declare const EdgeRuntime: {

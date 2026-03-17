@@ -5,14 +5,12 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('get-shared-conversation');
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
 
 serve(async (req: Request) => {
@@ -36,7 +34,7 @@ serve(async (req: Request) => {
 
     logger.info('Fetching shared conversation', { shareCode });
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get shared conversation info from public view
     const { data: shareInfo, error: shareError } = await supabase

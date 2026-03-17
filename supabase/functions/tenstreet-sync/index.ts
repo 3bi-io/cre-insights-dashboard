@@ -6,7 +6,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0'
+import { getServiceClient } from '../_shared/supabase-client.ts'
 import { getCorsHeaders } from '../_shared/cors-config.ts'
 import { getTenstreetAPIClient } from '../_shared/tenstreet-api-client.ts'
 import { 
@@ -34,10 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseClient = getServiceClient()
 
     const { action, organizationId, companyId, ...params } = await req.json()
     

@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from '../_shared/logger.ts';
 import { autoPostToATS } from '../_shared/ats-adapters/auto-post-engine.ts';
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors-config.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('elevenlabs-call-status');
 
@@ -72,9 +72,7 @@ serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = getServiceClient();
 
   try {
     const body = await req.json();

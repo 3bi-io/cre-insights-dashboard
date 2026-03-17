@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.50.0";
 import { createLogger } from "../_shared/logger.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('admin-update-password');
 
@@ -33,7 +34,7 @@ serve(async (req) => {
     });
 
     // Admin client for privileged operations
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const admin = getServiceClient();
 
     const {
       data: { user: currentUser },

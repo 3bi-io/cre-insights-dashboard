@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'npm:@supabase/supabase-js@2.50.0';
 import { createLogger } from '../_shared/logger.ts';
+import { getServiceClient } from '../_shared/supabase-client.ts';
 
 const logger = createLogger('meta-adset-report');
 
@@ -41,14 +41,7 @@ serve(async (req) => {
   try {
     const { dateRange = 'last_30d', organizationId } = await req.json();
     
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase configuration is missing');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = getServiceClient();
 
     // Get user ID from the request
     const authHeader = req.headers.get('authorization');

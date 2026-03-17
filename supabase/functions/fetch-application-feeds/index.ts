@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createLogger } from '../_shared/logger.ts'
-import { createClient } from "npm:@supabase/supabase-js@2.50.0"
+import { getServiceClient } from '../_shared/supabase-client.ts'
 
 const logger = createLogger('fetch-application-feeds')
 
@@ -140,10 +140,9 @@ serve(async (req) => {
           // Forward applications to inbound-applications endpoint
           if (applications.length > 0) {
             const supabaseUrl = Deno.env.get('SUPABASE_URL');
-            const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
             
-            if (supabaseUrl && supabaseServiceKey) {
-              const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            if (supabaseUrl) {
+              const supabase = getServiceClient();
               let insertedCount = 0;
               let skippedCount = 0;
               let errorCount = 0;
