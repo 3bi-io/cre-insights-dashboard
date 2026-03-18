@@ -1,47 +1,92 @@
 
 
-# Platform Refactoring & Best Practices — Progress
+# Fix: Agent Scheduling Timezone Bug & After-Hours Callback Logic
 
-## Completed
+## Problem Analysis
 
-### Phase 1 (Previous session)
-- ✅ Fixed morning-digest sender domain (verified email)
-- ✅ Migrated inbound-applications CORS to getCorsHeaders
-- ✅ Migrated elevenlabs-outbound-call CORS to getCorsHeaders
+### 1. No "failed" or "initiated" calls today
+The database shows **zero** calls with `failed` or `initiated` status in the last 7 days. The sync reconciliation is working correctly. What appears as "failed" in the UI are likely `no_answer` calls (10 of 14 calls in last 24h = 71% no-answer rate). This is a contact rate issue, not a system failure.
 
-### Phase 2 (Previous session)
-- ✅ **#1 Security Fix**: `can_access_sensitive_applicant_data` now uses `has_role()` + `is_super_admin()` from `user_roles` table instead of reading role from `profiles`
-- ✅ **#2 Config**: Added `grok-chat` to `config.toml` with `verify_jwt = true`
-- ✅ **#3 CORS Migration** (8 functions): data-analysis, chatbot-analytics, visitor-analytics, generate-logo, admin-check, domain-configuration, social-oauth-init, generate-applications — all migrated to `getCorsHeaders()`
-- ✅ **#6 Trigger Consolidation**: Dropped 7 duplicate `updated_at` trigger functions, reassigned all triggers to use single `update_updated_at_column()`
-- ✅ #7: Updated OrganizationApplicationsTab.tsx to use usePaginatedApplications + useApplicationsMutations, deleted deprecated useApplications hook
-- ✅ #5: Removed @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
+### 2. Agent scheduling not scheduling calls after hours (the real bug)
+In `agent-scheduling/index.ts` `handleCheckAvailability()`, **all date/time math is done in UTC but uses local-hour recruiter preferences**, causing completely wrong slot calculations at night.
 
-### Phase 3 (2026-03-16)
-- ✅ **Config**: Added 5 Hayes inbound functions to `config.toml` with `verify_jwt = false`
-- ✅ **@ts-nocheck removal**: Removed from `application-processor.ts`, `outbound-webhook`, `domain-configuration` — added proper types, typed catch blocks, pinned SDK
-- ✅ **SDK Pinning**: Pinned `_shared/supabase-client.ts` and `_shared/auth.ts` to `@supabase/supabase-js@2.50.0`
-- ✅ **CORS Migration** (20 functions total): All hardcoded CORS headers migrated to `getCorsHeaders()`
+**Lines 299-312 — the broken code:**
+```typescript
+// BUG: compares UTC hour to local-hour workEnd
+if (!allowSameDay || now.getUTCHours() >= workEnd) {
+  candidate.setDate(candidate.getDate() + 1);
+}
+// BUG: sets hours in UTC, not in recruiter's timezone
+startTime.setHours(workStart, 0, 0, 0);  
+endTime.setHours(workEnd, 0, 0, 0);
+```
 
-### Phase 4 (2026-03-16, continued)
-- ✅ **@ts-nocheck removal (16 functions)**: Removed from all remaining edge functions. **Zero @ts-nocheck remaining in project.**
-- ✅ **SDK Pinning (complete)**: All edge functions now pinned to `@supabase/supabase-js@2.50.0`. **Zero unpinned `@2` imports remaining.**
-- ✅ **Typed catch blocks**: All catch blocks use `catch (error: unknown)` with `error instanceof Error ? error.message : String(error)` pattern.
-- ✅ **Replaced `any` types**: Added proper interfaces across all edge functions.
+**Example**: At 10 PM EDT (2 AM UTC), with `workEnd = 17` (5 PM):
+- `getUTCHours()` = 2, so `2 >= 17` is **false** → doesn't advance to next day
+- Then `setHours(8, 0, 0, 0)` sets 8 AM **UTC** (4 AM EDT) as the start
+- Calendar integration receives a window of 4 AM - 5 PM UTC, which is nonsensical
+- Returns zero slots → agent tells the driver "all recruiters are fully booked"
 
-### Phase 5 (2026-03-16, continued)
-- ✅ **Logging Migration (12 functions)**: Replaced raw `console.log/error` with `createLogger()` in: firecrawl-crawl, firecrawl-scrape, firecrawl-search, firecrawl-job-import, generate-image, generate-og-images, generate-founders-pass-creative, social-oauth-callback, resolve-embed-token, x-platform-integration, morning-digest
-- ✅ **Dialog Accessibility**: Fixed `DialogContent` to pass `aria-describedby` to suppress missing description warnings globally
-- ✅ **Admin Route Simplification**: Replaced double `ProtectedRoute` wrapping in admin routes with `AdminRouteWrapper` (auth enforced once by parent `LayoutWrapper`)
-- ✅ **Additional fixes**: firecrawl-scrape and firecrawl-job-import migrated from hardcoded CORS to `getCorsHeaders()` and from manual `createClient` to `getServiceClient()`; resolve-embed-token migrated to `getServiceClient()`
+The org's actual settings: timezone `America/New_York`, business hours `08:00-17:00`.
 
-### Phase 6 (2026-03-17)
-- ✅ **#4 createClient() → getServiceClient() Migration (40+ functions)**: Migrated service-role `createClient()` calls to centralized `getServiceClient()` across 40+ edge functions. Functions that also need anon-key clients (for user auth) retain `createClient` for those specific calls only.
+### 3. `get_next_slots` hardcodes timezone
+Line 541: `handleGetNextSlots` hardcodes `driver_timezone: 'America/Chicago'` instead of passing through the actual driver/org timezone.
 
-## Remaining
+## Solution
 
-### Medium-term
-- [ ] #9: Replace console.log/error with createLogger() in remaining ~7 functions (social-oauth-init, verify-platform-secrets, organization-api, agent-scheduling, backfill-webhook, launch-social-beacons, generate-ad-creative)
+### Fix `handleCheckAvailability` — timezone-aware slot generation
 
-### Long-term
-- [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function
+Replace the broken UTC-based date math with proper timezone-aware calculations:
+
+1. **Convert "now" to recruiter's local time** before comparing against work hours
+2. **Use the recruiter's timezone** to construct proper UTC start/end times for calendar queries
+3. **Use `Intl.DateTimeFormat`** with the recruiter's timezone to get correct local hour/day
+
+```typescript
+// Convert current time to recruiter's local perspective
+const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: recruiterTz }));
+const localHour = nowLocal.getHours();
+const localMinute = nowLocal.getMinutes();
+const localDayOfWeek = nowLocal.getDay() === 0 ? 7 : nowLocal.getDay();
+
+// Determine if we need to look at next day
+const isPastWorkEnd = localHour > workEnd || (localHour === workEnd && localMinute > 0);
+const isBeforeWorkStart = localHour < workStart;
+
+let candidateDate = new Date(nowLocal);
+if (!allowSameDay || isPastWorkEnd) {
+  candidateDate.setDate(candidateDate.getDate() + 1);
+}
+
+// Find next working day
+for (let i = 0; i < 7; i++) {
+  const dow = candidateDate.getDay() === 0 ? 7 : candidateDate.getDay();
+  if (workingDays.includes(dow)) break;
+  candidateDate.setDate(candidateDate.getDate() + 1);
+}
+
+// Build local date string (YYYY-MM-DD) and construct UTC equivalents
+const dateStr = candidateDate.toLocaleDateString('en-CA'); // YYYY-MM-DD
+const startLocal = new Date(`${dateStr}T${String(workStart).padStart(2,'0')}:00:00`);
+const endLocal = new Date(`${dateStr}T${String(workEnd).padStart(2,'0')}:00:00`);
+
+// Convert local times to UTC using timezone offset math
+function localToUtc(localDate: Date, tz: string): Date {
+  const utcStr = localDate.toLocaleString('en-US', { timeZone: 'UTC' });
+  const tzStr = localDate.toLocaleString('en-US', { timeZone: tz });
+  const diff = new Date(utcStr).getTime() - new Date(tzStr).getTime();
+  return new Date(localDate.getTime() + diff);
+}
+
+const startTimeUtc = localToUtc(startLocal, recruiterTz);
+const endTimeUtc = localToUtc(endLocal, recruiterTz);
+const effectiveStart = startTimeUtc > minBookingTime ? startTimeUtc : minBookingTime;
+```
+
+### Fix `handleGetNextSlots` — pass through org timezone
+
+Instead of hardcoding `America/Chicago`, pass the params through so the org's actual timezone is used.
+
+### Files to edit
+- `supabase/functions/agent-scheduling/index.ts` — Fix timezone math in `handleCheckAvailability` and `handleGetNextSlots`
+
