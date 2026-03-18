@@ -295,27 +295,50 @@ async function handleCheckAvailability(
     const now = new Date();
     const minBookingTime = new Date(now.getTime() + minNoticeHours * 60 * 60 * 1000);
 
-    const candidate = new Date(now);
-    if (!allowSameDay || now.getUTCHours() >= workEnd) {
-      candidate.setDate(candidate.getDate() + 1);
+    // Convert current time to recruiter's local timezone for accurate comparison
+    const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: recruiterTz }));
+    const localHour = nowLocal.getHours();
+    const localMinute = nowLocal.getMinutes();
+
+    // Determine if we need to look at next day (in recruiter's local time)
+    const isPastWorkEnd = localHour > workEnd || (localHour === workEnd && localMinute > 0);
+
+    const candidateDate = new Date(nowLocal);
+    if (!allowSameDay || isPastWorkEnd) {
+      candidateDate.setDate(candidateDate.getDate() + 1);
     }
 
+    // Find next working day
     for (let i = 0; i < 7; i++) {
-      const iso = candidate.getDay() === 0 ? 7 : candidate.getDay();
-      if (workingDays.includes(iso)) break;
-      candidate.setDate(candidate.getDate() + 1);
+      const dow = candidateDate.getDay() === 0 ? 7 : candidateDate.getDay();
+      if (workingDays.includes(dow)) break;
+      candidateDate.setDate(candidateDate.getDate() + 1);
     }
 
-    const startTime = new Date(candidate);
-    startTime.setHours(workStart, 0, 0, 0);
-    const endTime = new Date(candidate);
-    endTime.setHours(workEnd, 0, 0, 0);
+    // Build local date string and construct UTC equivalents
+    const dateStr = candidateDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+    const startLocal = new Date(`${dateStr}T${String(workStart).padStart(2, '0')}:00:00`);
+    const endLocal = new Date(`${dateStr}T${String(workEnd).padStart(2, '0')}:00:00`);
+
+    // Convert recruiter-local times to UTC
+    function localToUtc(localDate: Date, tzName: string): Date {
+      const utcStr = localDate.toLocaleString('en-US', { timeZone: 'UTC' });
+      const tzStr = localDate.toLocaleString('en-US', { timeZone: tzName });
+      const diff = new Date(utcStr).getTime() - new Date(tzStr).getTime();
+      return new Date(localDate.getTime() + diff);
+    }
+
+    const startTime = localToUtc(startLocal, recruiterTz);
+    const endTime = localToUtc(endLocal, recruiterTz);
     const effectiveStart = startTime > minBookingTime ? startTime : minBookingTime;
 
-    const dayStart = new Date(candidate);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(candidate);
-    dayEnd.setHours(23, 59, 59, 999);
+    logger.info(`Scheduling window for recruiter ${recruiterId}: ${startTime.toISOString()} - ${endTime.toISOString()} (tz: ${recruiterTz}, localHour: ${localHour})`);
+
+    // Day boundaries in recruiter's local timezone (for daily cap check)
+    const dayStartLocal = new Date(`${dateStr}T00:00:00`);
+    const dayEndLocal = new Date(`${dateStr}T23:59:59.999`);
+    const dayStart = localToUtc(dayStartLocal, recruiterTz);
+    const dayEnd = localToUtc(dayEndLocal, recruiterTz);
 
     const { count: existingCallbacks } = await supabase
       .from('scheduled_callbacks')
@@ -536,9 +559,9 @@ async function handleGetNextSlots(
   params: SchedulingParams,
   headers: Record<string, string>
 ) {
-  const { organization_id } = params;
+  const { organization_id, driver_timezone, client_id, application_id } = params;
   return handleCheckAvailability(
-    { organization_id, driver_timezone: 'America/Chicago' },
+    { organization_id, driver_timezone, client_id, application_id },
     headers
   );
 }
