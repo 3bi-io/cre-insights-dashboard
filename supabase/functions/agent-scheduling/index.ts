@@ -559,9 +559,9 @@ async function handleGetNextSlots(
   params: SchedulingParams,
   headers: Record<string, string>
 ) {
-  const { organization_id } = params;
+  const { organization_id, driver_timezone, client_id, application_id } = params;
   return handleCheckAvailability(
-    { organization_id, driver_timezone: 'America/Chicago' },
+    { organization_id, driver_timezone, client_id, application_id },
     headers
   );
 }
