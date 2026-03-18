@@ -1,47 +1,58 @@
 
 
-# Platform Refactoring & Best Practices — Progress
+# SMS Follow-Up After First Unanswered AI Call
 
-## Completed
+## Overview
+When the first AI agent call to a driver results in `no_answer`, automatically send a single SMS text message containing the key application details the agent was trying to confirm. Only one SMS per application — no spam.
 
-### Phase 1 (Previous session)
-- ✅ Fixed morning-digest sender domain (verified email)
-- ✅ Migrated inbound-applications CORS to getCorsHeaders
-- ✅ Migrated elevenlabs-outbound-call CORS to getCorsHeaders
+## Prerequisites: Twilio Credentials
+The project currently has **no Twilio secrets configured** (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` are missing). The existing `send-sms` and `sms-auth` functions reference them but they would fail today. We need these secrets added before SMS will work. There is also no Twilio connector linked.
 
-### Phase 2 (Previous session)
-- ✅ **#1 Security Fix**: `can_access_sensitive_applicant_data` now uses `has_role()` + `is_super_admin()` from `user_roles` table instead of reading role from `profiles`
-- ✅ **#2 Config**: Added `grok-chat` to `config.toml` with `verify_jwt = true`
-- ✅ **#3 CORS Migration** (8 functions): data-analysis, chatbot-analytics, visitor-analytics, generate-logo, admin-check, domain-configuration, social-oauth-init, generate-applications — all migrated to `getCorsHeaders()`
-- ✅ **#6 Trigger Consolidation**: Dropped 7 duplicate `updated_at` trigger functions, reassigned all triggers to use single `update_updated_at_column()`
-- ✅ #7: Updated OrganizationApplicationsTab.tsx to use usePaginatedApplications + useApplicationsMutations, deleted deprecated useApplications hook
-- ✅ #5: Removed @ts-nocheck from 5 security-critical functions (sms-auth, admin-check, generate-applications, import-jobs-from-feed, background-tasks)
+## Database Changes
 
-### Phase 3 (2026-03-16)
-- ✅ **Config**: Added 5 Hayes inbound functions to `config.toml` with `verify_jwt = false`
-- ✅ **@ts-nocheck removal**: Removed from `application-processor.ts`, `outbound-webhook`, `domain-configuration` — added proper types, typed catch blocks, pinned SDK
-- ✅ **SDK Pinning**: Pinned `_shared/supabase-client.ts` and `_shared/auth.ts` to `@supabase/supabase-js@2.50.0`
-- ✅ **CORS Migration** (20 functions total): All hardcoded CORS headers migrated to `getCorsHeaders()`
+**1. Add `sms_followup_sent` boolean to `outbound_calls`**
+- Default `false`. Set to `true` after the SMS is sent. Prevents duplicate texts.
 
-### Phase 4 (2026-03-16, continued)
-- ✅ **@ts-nocheck removal (16 functions)**: Removed from all remaining edge functions. **Zero @ts-nocheck remaining in project.**
-- ✅ **SDK Pinning (complete)**: All edge functions now pinned to `@supabase/supabase-js@2.50.0`. **Zero unpinned `@2` imports remaining.**
-- ✅ **Typed catch blocks**: All catch blocks use `catch (error: unknown)` with `error instanceof Error ? error.message : String(error)` pattern.
-- ✅ **Replaced `any` types**: Added proper interfaces across all edge functions.
+**2. Add `sms_followup_enabled` boolean to `organization_call_settings`**
+- Default `true`. Allows orgs to opt out of SMS follow-ups.
 
-### Phase 5 (2026-03-16, continued)
-- ✅ **Logging Migration (12 functions)**: Replaced raw `console.log/error` with `createLogger()` in: firecrawl-crawl, firecrawl-scrape, firecrawl-search, firecrawl-job-import, generate-image, generate-og-images, generate-founders-pass-creative, social-oauth-callback, resolve-embed-token, x-platform-integration, morning-digest
-- ✅ **Dialog Accessibility**: Fixed `DialogContent` to pass `aria-describedby` to suppress missing description warnings globally
-- ✅ **Admin Route Simplification**: Replaced double `ProtectedRoute` wrapping in admin routes with `AdminRouteWrapper` (auth enforced once by parent `LayoutWrapper`)
-- ✅ **Additional fixes**: firecrawl-scrape and firecrawl-job-import migrated from hardcoded CORS to `getCorsHeaders()` and from manual `createClient` to `getServiceClient()`; resolve-embed-token migrated to `getServiceClient()`
+## Edge Function Changes
 
-### Phase 6 (2026-03-17)
-- ✅ **#4 createClient() → getServiceClient() Migration (40+ functions)**: Migrated service-role `createClient()` calls to centralized `getServiceClient()` across 40+ edge functions. Functions that also need anon-key clients (for user auth) retain `createClient` for those specific calls only.
+**`elevenlabs-outbound-call/index.ts`** — In the sync reconciliation block (lines 177-361), after a call is mapped to `no_answer`:
 
-## Remaining
+1. Check guard conditions:
+   - `retry_count === 0` (first attempt only)
+   - `sms_followup_sent === false` on the outbound call record
+   - Org setting `sms_followup_enabled !== false`
+   - Application has `consent_to_sms` = 'Yes' or 'yes'
+   - Application has a valid phone number
 
-### Medium-term
-- [ ] #9: Replace console.log/error with createLogger() in remaining ~7 functions (social-oauth-init, verify-platform-secrets, organization-api, agent-scheduling, backfill-webhook, launch-social-beacons, generate-ad-creative)
+2. Build SMS message from application data (same fields the agent uses):
+   ```
+   Hi {first_name}, this is {company_name} following up on your {job_title} application.
+   We'd like to confirm a few details:
+   - CDL: {cdl_class}
+   - Location: {city}, {state}
+   - Experience: {experience}
+   Please call us back at {company_phone} or reply to this text.
+   ```
 
-### Long-term
-- [ ] #10: Consolidate 5 Hayes inbound functions into single parameterized function
+3. Send via Twilio (using existing `TWILIO_*` env vars pattern from `send-sms` function)
+
+4. Mark `sms_followup_sent = true` on the outbound call record
+
+5. Log the SMS in `sms_messages` table for audit trail
+
+## Guard Rails
+- **One SMS per application**: The `sms_followup_sent` flag on the outbound call + a check for existing SMS messages for the same `application_id` ensures no duplicates
+- **First call only**: Only triggers when `retry_count === 0` — subsequent no-answer retries don't send another text
+- **Consent check**: Only sends if `consent_to_sms` is affirmative on the application
+- **Org toggle**: `sms_followup_enabled` setting lets orgs disable this feature
+
+## Files to Edit
+- `supabase/functions/elevenlabs-outbound-call/index.ts` — Add SMS follow-up logic after `no_answer` detection in sync block
+- Database migration — Add `sms_followup_sent` column and `sms_followup_enabled` setting
+
+## Secret Requirements
+Before this can work, Twilio credentials (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`) must be added as secrets, **or** the Twilio connector must be linked to the project.
+
