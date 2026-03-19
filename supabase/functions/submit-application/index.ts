@@ -218,6 +218,9 @@ const detectIntegrationSource = (
 // Zod validation schema for application submissions
 // Extended to support both quick apply and detailed application forms
 const ApplicationSubmissionSchema = z.object({
+  // Update mode: existing application ID from short form
+  existing_application_id: z.string().uuid('Invalid application ID').optional(),
+  
   // Required fields (support both camelCase and snake_case)
   firstName: z.string().trim().min(1, 'First name is required').max(100, 'First name too long').optional(),
   first_name: z.string().trim().min(1, 'First name is required').max(100, 'First name too long').optional(),
