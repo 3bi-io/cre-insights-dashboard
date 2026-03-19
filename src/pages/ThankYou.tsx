@@ -40,6 +40,7 @@ const ThankYou = () => {
   const organizationName = state?.organizationName || 'our team';
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
   const logoUrl = state?.logoUrl;
+  const applicationId = state?.applicationId;
   const formData = state?.formData;
 
   const handleContinueToFullApplication = () => {
