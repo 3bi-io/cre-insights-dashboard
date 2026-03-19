@@ -11,6 +11,7 @@ import { Settings2 } from 'lucide-react';
 
 export interface ColumnVisibility {
   applicant: boolean;
+  formType: boolean;
   job: boolean;
   contact: boolean;
   location: boolean;
