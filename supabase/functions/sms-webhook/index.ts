@@ -7,6 +7,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
+import { sendSms } from "../_shared/twilio-client.ts";
 
 const logger = createLogger('sms-webhook');
 
@@ -113,38 +114,11 @@ serve(async (req) => {
       });
     }
 
-    // Get Twilio credentials for sending reply SMS
-    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-      logger.error('Twilio credentials not configured');
-      return new Response('<?xml version="1.0" encoding="UTF-8"?><Response/>', {
-        headers: { ...corsHeaders, 'Content-Type': 'text/xml' },
-      });
-    }
-
-    // Helper to send SMS reply via Twilio
+    // Helper to send SMS reply via shared Twilio client
     const sendReply = async (message: string) => {
-      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-      const response = await fetch(twilioUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          To: fromNumber,
-          From: twilioPhoneNumber,
-          Body: message,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        logger.error('Failed to send reply SMS', { error: result });
-      } else {
-        logger.info('Reply SMS sent', { sid: result.sid });
+      const result = await sendSms(fromNumber, message);
+      if (!result.success) {
+        logger.error('Failed to send reply SMS', { error: result.error });
       }
     };
 

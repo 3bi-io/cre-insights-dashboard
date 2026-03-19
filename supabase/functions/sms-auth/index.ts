@@ -2,38 +2,13 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { sendSms as twilioSendSms, makeCall as twilioMakeCall } from '../_shared/twilio-client.ts';
 
 const logger = createLogger('sms-auth');
 
 type CorsHeaders = Record<string, string>;
 
-function escapeXML(unsafe: string): string {
-  if (!unsafe) return '';
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function validatePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
-  const digitsOnly = phone.replace(/[^\d]/g, '');
-  
-  if (digitsOnly.length < 10 || digitsOnly.length > 11) {
-    return { valid: false, error: 'Phone number must be 10 or 11 digits' };
-  }
-  
-  if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
-    return { valid: false, error: 'Invalid phone number format' };
-  }
-  
-  const normalized = digitsOnly.length === 10 
-    ? `+1${digitsOnly}` 
-    : `+${digitsOnly}`;
-  
-  return { valid: true, normalized };
-}
+// escapeXML and phone normalization now handled by shared twilio-client
 
 interface SmsAuthRequest {
   action: 'send_magic_link' | 'verify_token' | 'make_call';
@@ -77,7 +52,7 @@ serve(async (req) => {
         return await verifyToken(phoneNumber, token!, supabase, corsHeaders);
       
       case 'make_call':
-        return await makeCall(phoneNumber, message || 'Hello from IntelliApp!', corsHeaders);
+        return await handleMakeCall(phoneNumber, message || 'Hello from IntelliApp!', corsHeaders);
       
       default:
         throw new Error('Invalid action');
@@ -95,16 +70,16 @@ serve(async (req) => {
   }
 });
 
-async function sendMagicLink(phoneNumber: string, supabase: ReturnType<typeof createClient>, corsHeaders: CorsHeaders) {
-  const validation = validatePhoneNumber(phoneNumber);
-  if (!validation.valid) {
-    throw new Error(validation.error || 'Invalid phone number');
-  }
-  
-  const normalizedPhone = validation.normalized!;
-  
+async function sendMagicLink(phoneNumber: string, supabase: any, corsHeaders: CorsHeaders) {
   const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  // normalizePhone is called inside twilioSendSms, but we need it for DB storage too
+  const { normalizePhone } = await import('../_shared/phone-utils.ts');
+  const normalizedPhone = normalizePhone(phoneNumber);
+  if (!normalizedPhone) {
+    throw new Error('Invalid phone number');
+  }
 
   const { error: dbError } = await supabase
     .from('sms_magic_links')
@@ -120,45 +95,20 @@ async function sendMagicLink(phoneNumber: string, supabase: ReturnType<typeof cr
     throw new Error(`Database error: ${dbError.message}`);
   }
 
-  const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    throw new Error('Twilio credentials not configured');
-  }
-
   const smsMessage = `Your IntelliApp verification code is: ${verificationToken}. This code expires in 15 minutes.`;
+  const result = await twilioSendSms(phoneNumber, smsMessage);
 
-  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-  const twilioCredentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-  const twilioResponse = await fetch(twilioUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${twilioCredentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      From: twilioPhoneNumber,
-      To: normalizedPhone,
-      Body: smsMessage,
-    }),
-  });
-
-  if (!twilioResponse.ok) {
-    const errorText = await twilioResponse.text();
-    throw new Error(`Twilio error: ${errorText}`);
+  if (!result.success) {
+    throw new Error(`Twilio error: ${result.error}`);
   }
 
-  const twilioResult = await twilioResponse.json();
-  logger.info('SMS sent successfully', { messageSid: twilioResult.sid });
+  logger.info('SMS sent successfully', { messageSid: result.sid });
 
   return new Response(
     JSON.stringify({ 
       success: true, 
       message: 'Verification code sent successfully',
-      messageSid: twilioResult.sid 
+      messageSid: result.sid 
     }),
     {
       status: 200,
@@ -167,7 +117,7 @@ async function sendMagicLink(phoneNumber: string, supabase: ReturnType<typeof cr
   );
 }
 
-async function verifyToken(phoneNumber: string, token: string, supabase: ReturnType<typeof createClient>, corsHeaders: CorsHeaders) {
+async function verifyToken(phoneNumber: string, token: string, supabase: any, corsHeaders: CorsHeaders) {
   const { data: linkData, error: findError } = await supabase
     .from('sms_magic_links')
     .select('*')
@@ -214,58 +164,20 @@ async function verifyToken(phoneNumber: string, token: string, supabase: ReturnT
   );
 }
 
-async function makeCall(phoneNumber: string, message: string, corsHeaders: CorsHeaders) {
-  const validation = validatePhoneNumber(phoneNumber);
-  if (!validation.valid) {
-    throw new Error(validation.error || 'Invalid phone number');
-  }
-  
-  const normalizedPhone = validation.normalized!;
-  
-  const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+async function handleMakeCall(phoneNumber: string, message: string, corsHeaders: CorsHeaders) {
+  const result = await twilioMakeCall(phoneNumber, message);
 
-  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    throw new Error('Twilio credentials not configured');
+  if (!result.success) {
+    throw new Error(`Twilio call error: ${result.error}`);
   }
 
-  const safeMessage = escapeXML(message);
-  
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-    <Response>
-      <Say voice="alice">${safeMessage}</Say>
-    </Response>`;
-
-  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`;
-  const twilioCredentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-  const twilioResponse = await fetch(twilioUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${twilioCredentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      From: twilioPhoneNumber,
-      To: normalizedPhone,
-      Twiml: twiml,
-    }),
-  });
-
-  if (!twilioResponse.ok) {
-    const errorText = await twilioResponse.text();
-    throw new Error(`Twilio call error: ${errorText}`);
-  }
-
-  const twilioResult = await twilioResponse.json();
-  logger.info('Call initiated successfully', { callSid: twilioResult.sid });
+  logger.info('Call initiated successfully', { callSid: result.sid });
 
   return new Response(
     JSON.stringify({ 
       success: true, 
       message: 'Call initiated successfully',
-      callSid: twilioResult.sid 
+      callSid: result.sid 
     }),
     {
       status: 200,
