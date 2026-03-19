@@ -243,7 +243,26 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
         state: { 
           organizationName: data.organizationName,
           hasVoiceAgent: data.hasVoiceAgent,
-          logoUrl: clientLogoUrl
+          logoUrl: clientLogoUrl,
+          formData: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+            cdl: formData.cdl,
+            cdlClass: formData.cdlClass,
+            cdlEndorsements: formData.cdlEndorsements,
+            experience: formData.experience,
+            drug: formData.drug,
+            consent: formData.consent,
+            over21: formData.over21,
+            veteran: formData.veteran,
+            job_listing_id: formData.job_listing_id,
+            job_id: formData.job_id,
+          }
         } 
       });
     },

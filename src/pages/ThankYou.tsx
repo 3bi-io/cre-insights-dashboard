@@ -1,7 +1,8 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, Phone, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Phone, Clock, ClipboardList } from "lucide-react";
 import { SEO } from '@/components/SEO';
 import { LogoAvatar, LogoAvatarImage } from '@/components/ui/logo-avatar';
 
@@ -9,15 +10,44 @@ interface ThankYouState {
   organizationName?: string;
   hasVoiceAgent?: boolean;
   logoUrl?: string;
+  formData?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    cdl?: string;
+    cdlClass?: string;
+    cdlEndorsements?: string[];
+    experience?: string;
+    drug?: string;
+    consent?: string;
+    over21?: string;
+    veteran?: string;
+    job_listing_id?: string;
+    job_id?: string;
+  };
 }
 
 const ThankYou = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const state = location.state as ThankYouState | null;
   
   const organizationName = state?.organizationName || 'our team';
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
   const logoUrl = state?.logoUrl;
+  const formData = state?.formData;
+
+  const handleContinueToFullApplication = () => {
+    const jobId = formData?.job_listing_id || formData?.job_id;
+    const searchParams = jobId ? `?job_id=${jobId}` : '';
+    navigate(`/apply/detailed${searchParams}`, {
+      state: { prefill: formData }
+    });
+  };
 
   return (
     <div className="h-full overflow-y-auto bg-background">
@@ -31,7 +61,6 @@ const ThankYou = () => {
           <Card className="text-center">
             <CardContent className="p-8">
               <div className="mb-6">
-                {/* Logo above success icon */}
                 {logoUrl && (
                   <div className="flex justify-center mb-4">
                     <LogoAvatar size="xl" className="shadow-md">
@@ -75,6 +104,27 @@ const ThankYou = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Continue to Full Application CTA */}
+              {formData && (
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-foreground">Speed Up Your Hiring Process</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    While you wait for our call, complete your full application with work history and additional details. Your information has been pre-filled to save you time.
+                  </p>
+                  <Button 
+                    onClick={handleContinueToFullApplication} 
+                    size="lg" 
+                    className="w-full"
+                  >
+                    <ClipboardList className="h-4 w-4 mr-2" />
+                    Complete Your Full Application
+                  </Button>
+                </div>
+              )}
 
             </CardContent>
           </Card>
