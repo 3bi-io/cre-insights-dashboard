@@ -82,22 +82,104 @@ export const DetailedExperienceSection = React.memo(({
         </p>
       </div>
 
-      {/* Employment History */}
-      <div className="space-y-2">
-        <Label htmlFor="employmentHistory" className="text-sm font-medium">
+      {/* Employment History - 3 Employers */}
+      <div className="space-y-6">
+        <Label className="text-sm font-medium flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
           Previous Employment
         </Label>
-        <Textarea
-          id="employmentHistory"
-          value={formData.employmentHistory}
-          onChange={(e) => onInputChange('employmentHistory', e.target.value)}
-          placeholder="Please describe your previous employment history, including company names, positions held, dates of employment, and reasons for leaving."
-          rows={5}
-          className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none"
-        />
-        <p className="text-xs text-muted-foreground">
-          Include your most recent employment first
+        <p className="text-xs text-muted-foreground -mt-4">
+          List up to 3 previous employers, starting with the most recent. All fields are optional.
         </p>
+
+        {formData.employers.map((employer, index) => (
+          <div key={index} className="space-y-3 p-4 rounded-xl border-2 border-border bg-muted/30">
+            <h4 className="text-sm font-semibold text-foreground">
+              Employer {index + 1}
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Company Name</Label>
+                <Input
+                  value={employer.companyName}
+                  onChange={(e) => {
+                    const updated = [...formData.employers];
+                    updated[index] = { ...updated[index], companyName: e.target.value };
+                    onInputChange('employers', updated);
+                  }}
+                  placeholder="Company name"
+                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Company Phone</Label>
+                <Input
+                  type="tel"
+                  value={employer.phone}
+                  onChange={(e) => {
+                    const updated = [...formData.employers];
+                    updated[index] = { ...updated[index], phone: e.target.value };
+                    onInputChange('employers', updated);
+                  }}
+                  placeholder="(555) 555-5555"
+                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">City</Label>
+                <Input
+                  value={employer.city}
+                  onChange={(e) => {
+                    const updated = [...formData.employers];
+                    updated[index] = { ...updated[index], city: e.target.value };
+                    onInputChange('employers', updated);
+                  }}
+                  placeholder="City"
+                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">State</Label>
+                <Input
+                  value={employer.state}
+                  onChange={(e) => {
+                    const updated = [...formData.employers];
+                    updated[index] = { ...updated[index], state: e.target.value };
+                    onInputChange('employers', updated);
+                  }}
+                  placeholder="State"
+                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Start Date</Label>
+                <Input
+                  type="month"
+                  value={employer.startDate}
+                  onChange={(e) => {
+                    const updated = [...formData.employers];
+                    updated[index] = { ...updated[index], startDate: e.target.value };
+                    onInputChange('employers', updated);
+                  }}
+                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">End Date</Label>
+                <Input
+                  type="month"
+                  value={employer.endDate}
+                  onChange={(e) => {
+                    const updated = [...formData.employers];
+                    updated[index] = { ...updated[index], endDate: e.target.value };
+                    onInputChange('employers', updated);
+                  }}
+                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Education Level */}
