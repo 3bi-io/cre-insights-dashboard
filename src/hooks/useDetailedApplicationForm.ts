@@ -8,6 +8,15 @@ import { format } from 'date-fns';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { logger } from '@/lib/logger';
 
+export interface EmployerEntry {
+  companyName: string;
+  phone: string;
+  startDate: string;
+  endDate: string;
+  city: string;
+  state: string;
+}
+
 // Serializable version for localStorage (dates as strings)
 interface SerializableFormData extends Omit<DetailedFormData, 
   'dateOfBirth' | 'cdlExpirationDate' | 'militaryStartDate' | 'militaryEndDate' | 
@@ -65,7 +74,7 @@ export interface DetailedFormData {
   experience: string;
   accidentHistory: string;
   violationHistory: string;
-  employmentHistory: string;
+  employers: EmployerEntry[];
   educationLevel: string;
   
   // Military Service
@@ -154,7 +163,11 @@ const initialFormData: DetailedFormData = {
   experience: '',
   accidentHistory: '',
   violationHistory: '',
-  employmentHistory: '',
+  employers: [
+    { companyName: '', phone: '', startDate: '', endDate: '', city: '', state: '' },
+    { companyName: '', phone: '', startDate: '', endDate: '', city: '', state: '' },
+    { companyName: '', phone: '', startDate: '', endDate: '', city: '', state: '' },
+  ],
   educationLevel: '',
   
   // Military Service
@@ -377,7 +390,7 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
         // Background
         accident_history: data.accidentHistory || undefined,
         violation_history: data.violationHistory || undefined,
-        employment_history: data.employmentHistory || undefined,
+        employment_history: data.employers.some(e => e.companyName) ? JSON.stringify(data.employers.filter(e => e.companyName)) : undefined,
         education_level: data.educationLevel || undefined,
         
         // Military
