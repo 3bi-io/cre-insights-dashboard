@@ -45,10 +45,12 @@ export const DetailedApplicationForm = () => {
     clientLogoUrl,
     location,
     source,
+    clientId,
     isLoading: contextLoading,
   } = useApplyContext();
 
   const { isOutsideAmericas, country } = useGeoBlocking();
+  const { isFieldEnabled, isFieldRequired } = useClientFieldConfig(clientId);
 
   const {
     formData,
