@@ -65,7 +65,7 @@ export interface DetailedFormData {
   experience: string;
   accidentHistory: string;
   violationHistory: string;
-  employmentHistory: string;
+  employers: EmployerEntry[];
   educationLevel: string;
   
   // Military Service
