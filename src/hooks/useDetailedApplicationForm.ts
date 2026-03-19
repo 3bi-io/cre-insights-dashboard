@@ -246,6 +246,9 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
 
   // Check for prefill data from quick-apply route state
   const prefillData = (location.state as { prefill?: Record<string, unknown> } | null)?.prefill;
+  
+  // Track existing application ID for update mode (from short form → thank you → detailed)
+  const existingApplicationId = (prefillData?.applicationId as string) || null;
 
   const [formData, setFormData] = useState<DetailedFormData>(() => {
     if (!prefillData) return initialFormData;
