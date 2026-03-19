@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClientLogoUpload } from './ClientLogoUpload';
+import ClientApplicationFieldsConfig from './ClientApplicationFieldsConfig';
 import { ClientATSSettings } from './ClientATSSettings';
 import {
   Form,
@@ -27,7 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Client, UpdateClientData } from '../types/client.types';
-import { Building2, Link2 } from 'lucide-react';
+import { Building2, Link2, ClipboardList } from 'lucide-react';
 
 const clientFormSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
@@ -120,10 +121,14 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Details
+            </TabsTrigger>
+            <TabsTrigger value="fields" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Application Fields
             </TabsTrigger>
             <TabsTrigger value="ats" className="flex items-center gap-2">
               <Link2 className="h-4 w-4" />
@@ -309,6 +314,19 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
                   </DialogFooter>
                 </form>
               </Form>
+            </TabsContent>
+
+            <TabsContent value="fields" className="mt-0 pr-4 data-[state=active]:flex-1">
+              {client?.organization_id ? (
+                <ClientApplicationFieldsConfig
+                  clientId={client.id}
+                  organizationId={client.organization_id}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No organization associated with this client.
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="ats" className="mt-0 pr-4 data-[state=active]:flex-1">

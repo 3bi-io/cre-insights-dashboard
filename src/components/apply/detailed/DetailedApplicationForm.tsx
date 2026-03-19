@@ -4,6 +4,7 @@ import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredDa
 import { useStepWizard } from '@/hooks/useStepWizard';
 import { useDetailedApplicationForm } from '@/hooks/useDetailedApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
+import { useClientFieldConfig } from '@/hooks/useClientFieldConfig';
 import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { SimulatedApplicationForm } from '../SimulatedApplicationForm';
 import { StepContainer } from '../StepContainer';
@@ -44,10 +45,12 @@ export const DetailedApplicationForm = () => {
     clientLogoUrl,
     location,
     source,
+    clientId,
     isLoading: contextLoading,
   } = useApplyContext();
 
   const { isOutsideAmericas, country } = useGeoBlocking();
+  const { isFieldEnabled, isFieldRequired } = useClientFieldConfig(clientId);
 
   const {
     formData,
@@ -206,6 +209,8 @@ export const DetailedApplicationForm = () => {
                     formData={formData}
                     onInputChange={handleInputChange}
                     isActive={activeStep === id}
+                    isFieldEnabled={isFieldEnabled}
+                    isFieldRequired={isFieldRequired}
                     {...(hasEndorsementToggle && { onEndorsementToggle: handleEndorsementToggle })}
                   />
                 </StepContainer>

@@ -14,6 +14,8 @@ interface DetailedPersonalSectionProps {
   formData: DetailedFormData;
   onInputChange: (field: string, value: unknown) => void;
   isActive?: boolean;
+  isFieldEnabled?: (key: string) => boolean;
+  isFieldRequired?: (key: string) => boolean;
 }
 
 const PREFIX_OPTIONS = [
@@ -41,7 +43,9 @@ const isValidField = (value: string) => value.trim().length > 0;
 export const DetailedPersonalSection = React.memo(({ 
   formData, 
   onInputChange,
-  isActive 
+  isActive,
+  isFieldEnabled = () => true,
+  isFieldRequired = () => false,
 }: DetailedPersonalSectionProps) => {
   const firstNameRef = useRef<HTMLInputElement>(null);
 
@@ -72,26 +76,28 @@ export const DetailedPersonalSection = React.memo(({
       </div>
 
       {/* Prefix Selection */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Title (Optional)</Label>
-        <div className="flex flex-wrap gap-2">
-          {PREFIX_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onInputChange('prefix', formData.prefix === option.value ? '' : option.value)}
-              className={cn(
-                "px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation",
-                formData.prefix === option.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background hover:border-primary/50"
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
+      {isFieldEnabled('prefix') && (
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Title {isFieldRequired('prefix') ? <span className="text-destructive">*</span> : '(Optional)'}</Label>
+          <div className="flex flex-wrap gap-2">
+            {PREFIX_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onInputChange('prefix', formData.prefix === option.value ? '' : option.value)}
+                className={cn(
+                  "px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation",
+                  formData.prefix === option.value
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-background hover:border-primary/50"
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Name Fields */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -113,20 +119,22 @@ export const DetailedPersonalSection = React.memo(({
             className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="middleName" className="text-sm font-medium">
-            Middle Name
-          </Label>
-          <Input
-            id="middleName"
-            name="middleName"
-            autoComplete="additional-name"
-            value={formData.middleName}
-            onChange={(e) => onInputChange('middleName', e.target.value)}
-            placeholder="Michael"
-            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-          />
-        </div>
+        {isFieldEnabled('middleName') && (
+          <div className="space-y-2">
+            <Label htmlFor="middleName" className="text-sm font-medium">
+              Middle Name {isFieldRequired('middleName') && <span className="text-destructive">*</span>}
+            </Label>
+            <Input
+              id="middleName"
+              name="middleName"
+              autoComplete="additional-name"
+              value={formData.middleName}
+              onChange={(e) => onInputChange('middleName', e.target.value)}
+              placeholder="Michael"
+              className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -147,106 +155,118 @@ export const DetailedPersonalSection = React.memo(({
             className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
           />
         </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Suffix (Optional)</Label>
-          <div className="flex flex-wrap gap-2">
-            {SUFFIX_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onInputChange('suffix', formData.suffix === option.value ? '' : option.value)}
-                className={cn(
-                  "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation",
-                  formData.suffix === option.value
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background hover:border-primary/50"
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+        {isFieldEnabled('suffix') && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Suffix {isFieldRequired('suffix') ? <span className="text-destructive">*</span> : '(Optional)'}</Label>
+            <div className="flex flex-wrap gap-2">
+              {SUFFIX_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onInputChange('suffix', formData.suffix === option.value ? '' : option.value)}
+                  className={cn(
+                    "px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation",
+                    formData.suffix === option.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background hover:border-primary/50"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Date of Birth */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-          Date of Birth
-        </Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
-                !formData.dateOfBirth && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.dateOfBirth ? format(formData.dateOfBirth, "PPP") : "Select your date of birth"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 z-50" align="start">
-            <Calendar
-              mode="single"
-              selected={formData.dateOfBirth || undefined}
-              onSelect={(date) => onInputChange('dateOfBirth', date || null)}
-              className="pointer-events-auto"
-              initialFocus
-              captionLayout="dropdown-buttons"
-              fromYear={1940}
-              toYear={new Date().getFullYear() - 18}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+      {isFieldEnabled('dateOfBirth') && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            Date of Birth {isFieldRequired('dateOfBirth') && <span className="text-destructive">*</span>}
+          </Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
+                  !formData.dateOfBirth && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.dateOfBirth ? format(formData.dateOfBirth, "PPP") : "Select your date of birth"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 z-50" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.dateOfBirth || undefined}
+                onSelect={(date) => onInputChange('dateOfBirth', date || null)}
+                className="pointer-events-auto"
+                initialFocus
+                captionLayout="dropdown-buttons"
+                fromYear={1940}
+                toYear={new Date().getFullYear() - 18}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
 
       {/* SSN and Government ID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="ssn" className="text-sm font-medium">
-            SSN (Last 4 digits)
-          </Label>
-          <Input
-            id="ssn"
-            name="ssn"
-            autoComplete="off"
-            value={formData.ssn}
-            onChange={(e) => onInputChange('ssn', formatSSN(e.target.value))}
-            placeholder="1234"
-            maxLength={4}
-            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-          />
-          <p className="text-xs text-muted-foreground">Only the last 4 digits for verification</p>
+      {(isFieldEnabled('ssn') || isFieldEnabled('governmentId')) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isFieldEnabled('ssn') && (
+            <div className="space-y-2">
+              <Label htmlFor="ssn" className="text-sm font-medium">
+                SSN (Last 4 digits) {isFieldRequired('ssn') && <span className="text-destructive">*</span>}
+              </Label>
+              <Input
+                id="ssn"
+                name="ssn"
+                autoComplete="off"
+                value={formData.ssn}
+                onChange={(e) => onInputChange('ssn', formatSSN(e.target.value))}
+                placeholder="1234"
+                maxLength={4}
+                className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+              />
+              <p className="text-xs text-muted-foreground">Only the last 4 digits for verification</p>
+            </div>
+          )}
+          {isFieldEnabled('governmentId') && (
+            <div className="space-y-2">
+              <Label htmlFor="governmentId" className="text-sm font-medium">
+                Government ID Number {isFieldRequired('governmentId') && <span className="text-destructive">*</span>}
+              </Label>
+              <Input
+                id="governmentId"
+                name="governmentId"
+                autoComplete="off"
+                value={formData.governmentId}
+                onChange={(e) => onInputChange('governmentId', e.target.value)}
+                placeholder="ID number"
+                className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+              />
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="governmentId" className="text-sm font-medium">
-            Government ID Number
-          </Label>
-          <Input
-            id="governmentId"
-            name="governmentId"
-            autoComplete="off"
-            value={formData.governmentId}
-            onChange={(e) => onInputChange('governmentId', e.target.value)}
-            placeholder="ID number"
-            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-          />
-        </div>
-      </div>
+      )}
 
       {/* ID Type Selection */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">ID Type</Label>
-        <SelectionButtonGroup
-          options={ID_TYPE_OPTIONS}
-          value={formData.governmentIdType}
-          onChange={(value) => onInputChange('governmentIdType', value)}
-          columns={3}
-        />
-      </div>
+      {isFieldEnabled('governmentId') && (
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">ID Type</Label>
+          <SelectionButtonGroup
+            options={ID_TYPE_OPTIONS}
+            value={formData.governmentIdType}
+            onChange={(value) => onInputChange('governmentIdType', value)}
+            columns={3}
+          />
+        </div>
+      )}
     </div>
   );
 });

@@ -16,6 +16,8 @@ interface DetailedCDLSectionProps {
   onInputChange: (field: string, value: unknown) => void;
   onEndorsementToggle: (endorsement: string) => void;
   isActive?: boolean;
+  isFieldEnabled?: (key: string) => boolean;
+  isFieldRequired?: (key: string) => boolean;
 }
 
 const CDL_OPTIONS = [
@@ -64,7 +66,9 @@ export const DetailedCDLSection = React.memo(({
   formData, 
   onInputChange,
   onEndorsementToggle,
-  isActive 
+  isActive,
+  isFieldEnabled = () => true,
+  isFieldRequired = () => false,
 }: DetailedCDLSectionProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -89,7 +93,7 @@ export const DetailedCDLSection = React.memo(({
         </p>
       </div>
 
-      {/* CDL Status */}
+      {/* CDL Status - always shown */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">
           Do you have a CDL? <span className="text-destructive">*</span>
@@ -102,14 +106,13 @@ export const DetailedCDLSection = React.memo(({
         />
       </div>
 
-      {/* Experience Level */}
+      {/* Experience Level - always shown */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">Commercial Driving Experience</Label>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {EXPERIENCE_OPTIONS.map((option) => (
             <button
-              key={option.value}
-              type="button"
+              key={option.value} type="button"
               onClick={() => onInputChange('experience', option.value)}
               className={cn(
                 "p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation text-center",
@@ -127,7 +130,7 @@ export const DetailedCDLSection = React.memo(({
       {/* CDL Details (shown only if CDL = yes) */}
       {formData.cdl === 'yes' && (
         <div className="space-y-6 pt-4 border-t border-border animate-in slide-in-from-top-2 duration-300">
-          {/* CDL Class */}
+          {/* CDL Class - always shown when CDL=yes */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">CDL Class</Label>
             <SelectionButtonGroup
@@ -139,207 +142,152 @@ export const DetailedCDLSection = React.memo(({
           </div>
 
           {/* CDL State and Expiration */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cdlState" className="text-sm font-medium">
-                CDL State
-              </Label>
-              <Input
-                id="cdlState"
-                value={formData.cdlState}
-                onChange={(e) => onInputChange('cdlState', e.target.value.toUpperCase())}
-                placeholder="TX"
-                maxLength={2}
-                className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors uppercase"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">CDL Expiration Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
-                      !formData.cdlExpirationDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.cdlExpirationDate ? format(formData.cdlExpirationDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-50" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.cdlExpirationDate || undefined}
-                    onSelect={(date) => onInputChange('cdlExpirationDate', date || null)}
-                    className="pointer-events-auto"
-                    initialFocus
+          {(isFieldEnabled('cdlState') || isFieldEnabled('cdlExpirationDate')) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {isFieldEnabled('cdlState') && (
+                <div className="space-y-2">
+                  <Label htmlFor="cdlState" className="text-sm font-medium">CDL State</Label>
+                  <Input
+                    id="cdlState" value={formData.cdlState}
+                    onChange={(e) => onInputChange('cdlState', e.target.value.toUpperCase())}
+                    placeholder="TX" maxLength={2}
+                    className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors uppercase"
                   />
-                </PopoverContent>
-              </Popover>
+                </div>
+              )}
+              {isFieldEnabled('cdlExpirationDate') && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">CDL Expiration Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full h-14 justify-start text-left font-normal rounded-xl border-2", !formData.cdlExpirationDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.cdlExpirationDate ? format(formData.cdlExpirationDate, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                      <Calendar mode="single" selected={formData.cdlExpirationDate || undefined} onSelect={(date) => onInputChange('cdlExpirationDate', date || null)} className="pointer-events-auto" initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {/* Endorsements */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">CDL Endorsements (select all that apply)</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {ENDORSEMENTS.map((endorsement) => (
-                <button
-                  key={endorsement.code}
-                  type="button"
-                  onClick={() => onEndorsementToggle(endorsement.code)}
-                  className={cn(
-                    "p-4 rounded-xl border-2 text-left transition-all touch-manipulation",
-                    formData.cdlEndorsements.includes(endorsement.code)
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-background hover:border-primary/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={cn(
-                      "text-lg font-bold",
-                      formData.cdlEndorsements.includes(endorsement.code) ? "text-primary" : "text-foreground"
+          {isFieldEnabled('cdlEndorsements') && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">CDL Endorsements (select all that apply)</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {ENDORSEMENTS.map((endorsement) => (
+                  <button key={endorsement.code} type="button" onClick={() => onEndorsementToggle(endorsement.code)}
+                    className={cn("p-4 rounded-xl border-2 text-left transition-all touch-manipulation",
+                      formData.cdlEndorsements.includes(endorsement.code) ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/50"
                     )}>
-                      {endorsement.code}
-                    </span>
-                    {formData.cdlEndorsements.includes(endorsement.code) && (
-                      <CheckCircle className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{endorsement.description}</p>
-                </button>
-              ))}
+                    <div className="flex items-center justify-between">
+                      <span className={cn("text-lg font-bold", formData.cdlEndorsements.includes(endorsement.code) ? "text-primary" : "text-foreground")}>{endorsement.code}</span>
+                      {formData.cdlEndorsements.includes(endorsement.code) && <CheckCircle className="h-5 w-5 text-primary" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{endorsement.description}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* Driving Years */}
-      <div className="space-y-2">
-        <Label htmlFor="drivingExperienceYears" className="text-sm font-medium">
-          Total Years of Driving Experience
-        </Label>
-        <Input
-          id="drivingExperienceYears"
-          type="number"
-          min="0"
-          max="50"
-          value={formData.drivingExperienceYears}
-          onChange={(e) => onInputChange('drivingExperienceYears', e.target.value)}
-          placeholder="Years of experience"
-          className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-        />
-      </div>
+      {isFieldEnabled('drivingExperienceYears') && (
+        <div className="space-y-2">
+          <Label htmlFor="drivingExperienceYears" className="text-sm font-medium">Total Years of Driving Experience</Label>
+          <Input
+            id="drivingExperienceYears" type="number" min="0" max="50"
+            value={formData.drivingExperienceYears}
+            onChange={(e) => onInputChange('drivingExperienceYears', e.target.value)}
+            placeholder="Years of experience"
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+          />
+        </div>
+      )}
 
       {/* HAZMAT & TWIC */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">HAZMAT Endorsement</Label>
-          <SelectionButtonGroup
-            options={HAZMAT_OPTIONS}
-            value={formData.hazmatEndorsement}
-            onChange={(value) => onInputChange('hazmatEndorsement', value)}
-            columns={1}
-          />
+      {(isFieldEnabled('hazmatEndorsement') || isFieldEnabled('twicCard')) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {isFieldEnabled('hazmatEndorsement') && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">HAZMAT Endorsement</Label>
+              <SelectionButtonGroup options={HAZMAT_OPTIONS} value={formData.hazmatEndorsement} onChange={(value) => onInputChange('hazmatEndorsement', value)} columns={1} />
+            </div>
+          )}
+          {isFieldEnabled('twicCard') && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">TWIC Card</Label>
+              <SelectionButtonGroup options={TWIC_OPTIONS} value={formData.twicCard} onChange={(value) => onInputChange('twicCard', value)} columns={1} />
+            </div>
+          )}
         </div>
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">TWIC Card</Label>
-          <SelectionButtonGroup
-            options={TWIC_OPTIONS}
-            value={formData.twicCard}
-            onChange={(value) => onInputChange('twicCard', value)}
-            columns={1}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Medical & DOT */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Medical Card Expiration</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
-                  !formData.medicalCardExpiration && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.medicalCardExpiration ? format(formData.medicalCardExpiration, "PPP") : "Select date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50" align="start">
-              <Calendar
-                mode="single"
-                selected={formData.medicalCardExpiration || undefined}
-                onSelect={(date) => onInputChange('medicalCardExpiration', date || null)}
-                className="pointer-events-auto"
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+      {(isFieldEnabled('medicalCardExpiration') || isFieldEnabled('dotPhysicalDate')) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isFieldEnabled('medicalCardExpiration') && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Medical Card Expiration</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full h-14 justify-start text-left font-normal rounded-xl border-2", !formData.medicalCardExpiration && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.medicalCardExpiration ? format(formData.medicalCardExpiration, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-50" align="start">
+                  <Calendar mode="single" selected={formData.medicalCardExpiration || undefined} onSelect={(date) => onInputChange('medicalCardExpiration', date || null)} className="pointer-events-auto" initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+          {isFieldEnabled('dotPhysicalDate') && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Last DOT Physical</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full h-14 justify-start text-left font-normal rounded-xl border-2", !formData.dotPhysicalDate && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.dotPhysicalDate ? format(formData.dotPhysicalDate, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-50" align="start">
+                  <Calendar mode="single" selected={formData.dotPhysicalDate || undefined} onSelect={(date) => onInputChange('dotPhysicalDate', date || null)} className="pointer-events-auto" initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Last DOT Physical</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
-                  !formData.dotPhysicalDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formData.dotPhysicalDate ? format(formData.dotPhysicalDate, "PPP") : "Select date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50" align="start">
-              <Calendar
-                mode="single"
-                selected={formData.dotPhysicalDate || undefined}
-                onSelect={(date) => onInputChange('dotPhysicalDate', date || null)}
-                className="pointer-events-auto"
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
+      )}
 
       {/* Accident & Violation History */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="accidentHistory" className="text-sm font-medium">
-            Accident History (last 3 years)
-          </Label>
-          <Textarea
-            id="accidentHistory"
-            value={formData.accidentHistory}
-            onChange={(e) => onInputChange('accidentHistory', e.target.value)}
-            placeholder="Please describe any accidents in the last 3 years, or type 'None'"
-            rows={3}
-            className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none"
-          />
+      {(isFieldEnabled('accidentHistory') || isFieldEnabled('violationHistory')) && (
+        <div className="space-y-4">
+          {isFieldEnabled('accidentHistory') && (
+            <div className="space-y-2">
+              <Label htmlFor="accidentHistory" className="text-sm font-medium">Accident History (last 3 years)</Label>
+              <Textarea id="accidentHistory" value={formData.accidentHistory} onChange={(e) => onInputChange('accidentHistory', e.target.value)}
+                placeholder="Please describe any accidents in the last 3 years, or type 'None'" rows={3}
+                className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none" />
+            </div>
+          )}
+          {isFieldEnabled('violationHistory') && (
+            <div className="space-y-2">
+              <Label htmlFor="violationHistory" className="text-sm font-medium">Moving Violations (last 3 years)</Label>
+              <Textarea id="violationHistory" value={formData.violationHistory} onChange={(e) => onInputChange('violationHistory', e.target.value)}
+                placeholder="Please describe any moving violations in the last 3 years, or type 'None'" rows={3}
+                className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none" />
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="violationHistory" className="text-sm font-medium">
-            Moving Violations (last 3 years)
-          </Label>
-          <Textarea
-            id="violationHistory"
-            value={formData.violationHistory}
-            onChange={(e) => onInputChange('violationHistory', e.target.value)}
-            placeholder="Please describe any moving violations in the last 3 years, or type 'None'"
-            rows={3}
-            className="text-base rounded-xl border-2 focus:border-primary transition-colors resize-none"
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 });
