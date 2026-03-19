@@ -118,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     logger.info('Sending SMS', { 
       to: normalizedPhone.slice(0, -4) + '****', // Mask phone for logging
-      conversation_id: conversationId 
+      conversation_id: conversationId || 'system',
     });
 
     const startTime = Date.now();
