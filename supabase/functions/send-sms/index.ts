@@ -13,8 +13,8 @@ const logger = createLogger('send-sms');
 const smsRequestSchema = z.object({
   to: z.string().min(10, 'Phone number must be at least 10 digits'),
   message: z.string().min(1, 'Message is required').max(1600, 'Message too long'),
-  conversationId: z.string().uuid('Invalid conversation ID'),
-  messageId: z.string().uuid('Invalid message ID'),
+  conversationId: z.string().uuid('Invalid conversation ID').optional(),
+  messageId: z.string().uuid('Invalid message ID').optional(),
 });
 
 type SMSRequest = z.infer<typeof smsRequestSchema>;
@@ -85,7 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
       return validationErrorResponse(errors, origin || undefined);
     }
 
-    const { to, message, conversationId, messageId }: SMSRequest = validationResult.data;
+    const { to, message, conversationId, messageId } = validationResult.data;
 
     // Validate and normalize phone number
     const phoneValidation = normalizePhoneNumber(to);
@@ -118,7 +118,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     logger.info('Sending SMS', { 
       to: normalizedPhone.slice(0, -4) + '****', // Mask phone for logging
-      conversation_id: conversationId 
+      conversation_id: conversationId || 'system',
     });
 
     const startTime = Date.now();
@@ -141,29 +141,33 @@ const handler = async (req: Request): Promise<Response> => {
         duration_ms: duration 
       });
       
-      // Update message status to failed
-      await supabase
-        .from('sms_messages')
-        .update({ 
-          status: 'failed',
-          twilio_sid: twilioResult.error_code || null
-        })
-        .eq('id', messageId);
+      // Update message status to failed (only if messageId provided)
+      if (messageId) {
+        await supabase
+          .from('sms_messages')
+          .update({ 
+            status: 'failed',
+            twilio_sid: twilioResult.error_code || null
+          })
+          .eq('id', messageId);
+      }
 
       return errorResponse(twilioResult.message || 'Failed to send SMS', 500, undefined, origin || undefined);
     }
 
-    // Update message with Twilio SID and delivered status
-    const { error: updateError } = await supabase
-      .from('sms_messages')
-      .update({ 
-        status: 'delivered',
-        twilio_sid: twilioResult.sid
-      })
-      .eq('id', messageId);
+    // Update message with Twilio SID and delivered status (only if messageId provided)
+    if (messageId) {
+      const { error: updateError } = await supabase
+        .from('sms_messages')
+        .update({ 
+          status: 'delivered',
+          twilio_sid: twilioResult.sid
+        })
+        .eq('id', messageId);
 
-    if (updateError) {
-      logger.warn('Failed to update message status', { error: updateError.message });
+      if (updateError) {
+        logger.warn('Failed to update message status', { error: updateError.message });
+      }
     }
 
     logger.info('SMS sent successfully', { 

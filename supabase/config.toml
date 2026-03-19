@@ -335,3 +335,6 @@ verify_jwt = false
 
 [functions.hayes-inbound]
 verify_jwt = false
+
+[functions.sms-webhook]
+verify_jwt = false

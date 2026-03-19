@@ -5604,6 +5604,7 @@ export type Database = {
           phone_number: string
           retry_count: number | null
           scheduled_at: string | null
+          sms_followup_sent: boolean
           status: string
           updated_at: string
           voice_agent_id: string | null
@@ -5622,6 +5623,7 @@ export type Database = {
           phone_number: string
           retry_count?: number | null
           scheduled_at?: string | null
+          sms_followup_sent?: boolean
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
@@ -5640,6 +5642,7 @@ export type Database = {
           phone_number?: string
           retry_count?: number | null
           scheduled_at?: string | null
+          sms_followup_sent?: boolean
           status?: string
           updated_at?: string
           voice_agent_id?: string | null
@@ -6777,6 +6780,91 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "sms_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_verification_sessions: {
+        Row: {
+          application_id: string
+          client_name: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          job_listing_id: string | null
+          outbound_call_id: string
+          phone_number: string
+          status: Database["public"]["Enums"]["sms_verification_status"]
+          updated_at: string
+          verification_message: string | null
+        }
+        Insert: {
+          application_id: string
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          job_listing_id?: string | null
+          outbound_call_id: string
+          phone_number: string
+          status?: Database["public"]["Enums"]["sms_verification_status"]
+          updated_at?: string
+          verification_message?: string | null
+        }
+        Update: {
+          application_id?: string
+          client_name?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          job_listing_id?: string | null
+          outbound_call_id?: string
+          phone_number?: string
+          status?: Database["public"]["Enums"]["sms_verification_status"]
+          updated_at?: string
+          verification_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_verification_sessions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_verification_sessions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_verification_sessions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_contact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_verification_sessions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications_sensitive"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_verification_sessions_job_listing_id_fkey"
+            columns: ["job_listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_verification_sessions_outbound_call_id_fkey"
+            columns: ["outbound_call_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_calls"
             referencedColumns: ["id"]
           },
         ]
@@ -9095,6 +9183,11 @@ export type Database = {
         | "background_check"
         | "employment_application"
         | "drug_screening"
+      sms_verification_status:
+        | "pending_confirmation"
+        | "confirmed"
+        | "edit_requested"
+        | "expired"
       sponsorship_tier: "premium" | "standard" | "organic"
     }
     CompositeTypes: {
@@ -9235,6 +9328,12 @@ export const Constants = {
         "background_check",
         "employment_application",
         "drug_screening",
+      ],
+      sms_verification_status: [
+        "pending_confirmation",
+        "confirmed",
+        "edit_requested",
+        "expired",
       ],
       sponsorship_tier: ["premium", "standard", "organic"],
     },
