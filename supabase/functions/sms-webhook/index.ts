@@ -254,8 +254,11 @@ serve(async (req) => {
       .update({ status: 'edit_requested', updated_at: new Date().toISOString() })
       .eq('id', session.id);
 
+    const corrFirstName = session.applicant_first_name || 'there';
+    const corrClientName = session.client_name || 'our company';
+
     await sendReply(
-      `Thanks! We've received your update. A recruiter will review and update your application shortly.`
+      `Got it, ${corrFirstName}! We've forwarded your update to the ${corrClientName} recruiting team. They'll review it shortly.`
     );
 
     return new Response('<?xml version="1.0" encoding="UTF-8"?><Response/>', {
