@@ -381,7 +381,7 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
         // Background
         accident_history: data.accidentHistory || undefined,
         violation_history: data.violationHistory || undefined,
-        employment_history: data.employmentHistory || undefined,
+        employment_history: data.employers.some(e => e.companyName) ? JSON.stringify(data.employers.filter(e => e.companyName)) : undefined,
         education_level: data.educationLevel || undefined,
         
         // Military
