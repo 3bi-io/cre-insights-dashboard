@@ -355,7 +355,10 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
       };
 
       // Build application payload matching edge function schema
-      const applicationData = {
+      const applicationData: Record<string, unknown> = {
+        // If we have an existing application from the short form, send it for update mode
+        existing_application_id: existingApplicationId || undefined,
+        
         // Required fields
         first_name: data.firstName,
         last_name: data.lastName,
