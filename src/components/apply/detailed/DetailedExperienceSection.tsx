@@ -9,8 +9,7 @@ import { Briefcase, Calendar as CalendarIcon, GraduationCap, Medal, CheckCircle,
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SelectionButtonGroup } from '../SelectionButton';
-import type { DetailedFormData } from '@/hooks/useDetailedApplicationForm';
-import type { EmployerEntry } from '@/hooks/useDetailedApplicationForm';
+import type { DetailedFormData, EmployerEntry } from '@/hooks/useDetailedApplicationForm';
 
 interface DetailedExperienceSectionProps {
   formData: DetailedFormData;
