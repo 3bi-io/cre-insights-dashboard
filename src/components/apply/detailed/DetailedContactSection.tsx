@@ -13,6 +13,8 @@ interface DetailedContactSectionProps {
   formData: DetailedFormData;
   onInputChange: (field: string, value: unknown) => void;
   isActive?: boolean;
+  isFieldEnabled?: (key: string) => boolean;
+  isFieldRequired?: (key: string) => boolean;
 }
 
 const US_STATES = [
@@ -60,7 +62,9 @@ const isValidField = (value: string, type?: 'email' | 'phone') => {
 export const DetailedContactSection = React.memo(({ 
   formData, 
   onInputChange,
-  isActive 
+  isActive,
+  isFieldEnabled = () => true,
+  isFieldRequired = () => false,
 }: DetailedContactSectionProps) => {
   const emailRef = useRef<HTMLInputElement>(null);
   const { city: lookupCity, state: lookupState, isLoading: isZipLoading } = useZipCodeLookup(formData.zipCode);
@@ -84,12 +88,9 @@ export const DetailedContactSection = React.memo(({
   const handlePhoneChange = useCallback((field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const formatted = formatPhoneInput(rawValue);
-    
-    // Only show reformat message for primary phone
     if (field === 'phone') {
       setPhoneWasReformatted(wasCountryCodeDetected(rawValue));
     }
-    
     onInputChange(field, formatted);
   }, [onInputChange]);
 
@@ -108,7 +109,7 @@ export const DetailedContactSection = React.memo(({
         </p>
       </div>
 
-      {/* Email and Phone */}
+      {/* Email and Phone - always shown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
@@ -157,35 +158,39 @@ export const DetailedContactSection = React.memo(({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="secondaryPhone" className="text-sm font-medium">
-          Secondary Phone (Optional)
-        </Label>
-        <Input
-          id="secondaryPhone"
-          name="secondaryPhone"
-          type="tel"
-          autoComplete="tel"
-          value={formData.secondaryPhone}
-          onChange={handlePhoneChange('secondaryPhone')}
-          placeholder="(555) 987-6543"
-          maxLength={14}
-          className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-        />
-      </div>
+      {isFieldEnabled('secondaryPhone') && (
+        <div className="space-y-2">
+          <Label htmlFor="secondaryPhone" className="text-sm font-medium">
+            Secondary Phone {isFieldRequired('secondaryPhone') ? <span className="text-destructive">*</span> : '(Optional)'}
+          </Label>
+          <Input
+            id="secondaryPhone"
+            name="secondaryPhone"
+            type="tel"
+            autoComplete="tel"
+            value={formData.secondaryPhone}
+            onChange={handlePhoneChange('secondaryPhone')}
+            placeholder="(555) 987-6543"
+            maxLength={14}
+            className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+          />
+        </div>
+      )}
 
       {/* Preferred Contact Method */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Preferred Contact Method</Label>
-        <SelectionButtonGroup
-          options={CONTACT_METHOD_OPTIONS}
-          value={formData.preferredContactMethod}
-          onChange={(value) => onInputChange('preferredContactMethod', value)}
-          columns={3}
-        />
-      </div>
+      {isFieldEnabled('preferredContactMethod') && (
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Preferred Contact Method</Label>
+          <SelectionButtonGroup
+            options={CONTACT_METHOD_OPTIONS}
+            value={formData.preferredContactMethod}
+            onChange={(value) => onInputChange('preferredContactMethod', value)}
+            columns={3}
+          />
+        </div>
+      )}
 
-      {/* Address Section */}
+      {/* Address Section - always shown */}
       <div className="space-y-4 pt-4 border-t border-border">
         <div className="flex items-center gap-2 text-muted-foreground">
           <MapPin className="h-4 w-4" />
@@ -193,9 +198,7 @@ export const DetailedContactSection = React.memo(({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address1" className="text-sm font-medium">
-            Street Address
-          </Label>
+          <Label htmlFor="address1" className="text-sm font-medium">Street Address</Label>
           <AddressAutocompleteInput
             id="address1"
             name="address1"
@@ -215,9 +218,7 @@ export const DetailedContactSection = React.memo(({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address2" className="text-sm font-medium">
-            Apt, Suite, etc. (Optional)
-          </Label>
+          <Label htmlFor="address2" className="text-sm font-medium">Apt, Suite, etc. (Optional)</Label>
           <Input
             id="address2"
             name="address2"
@@ -231,69 +232,45 @@ export const DetailedContactSection = React.memo(({
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="zipCode" className="text-sm font-medium">
-              ZIP Code
-            </Label>
+            <Label htmlFor="zipCode" className="text-sm font-medium">ZIP Code</Label>
             <div className="relative">
               <Input
                 id="zipCode"
                 name="zipCode"
                 autoComplete="postal-code"
                 value={formData.zipCode}
-                onChange={(e) => {
-                  onInputChange('zipCode', e.target.value);
-                  setWasAutoFilled(false);
-                }}
+                onChange={(e) => { onInputChange('zipCode', e.target.value); setWasAutoFilled(false); }}
                 placeholder="12345"
                 maxLength={10}
                 className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors pr-10"
               />
-              {isZipLoading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />
-              )}
-              {wasAutoFilled && !isZipLoading && (
-                <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />
-              )}
+              {isZipLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-muted-foreground" />}
+              {wasAutoFilled && !isZipLoading && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />}
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="city" className="text-sm font-medium flex items-center gap-2">
-              City
-              {wasAutoFilled && <span className="text-xs text-green-600">(auto)</span>}
+              City {wasAutoFilled && <span className="text-xs text-green-600">(auto)</span>}
             </Label>
             <Input
-              id="city"
-              name="city"
-              autoComplete="address-level2"
+              id="city" name="city" autoComplete="address-level2"
               value={formData.city}
-              onChange={(e) => {
-                onInputChange('city', e.target.value);
-                setWasAutoFilled(false);
-              }}
+              onChange={(e) => { onInputChange('city', e.target.value); setWasAutoFilled(false); }}
               placeholder="City"
               className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="state" className="text-sm font-medium flex items-center gap-2">
-              State
-              {wasAutoFilled && <span className="text-xs text-green-600">(auto)</span>}
+              State {wasAutoFilled && <span className="text-xs text-green-600">(auto)</span>}
             </Label>
-            <Select 
-              value={formData.state} 
-              onValueChange={(value) => {
-                onInputChange('state', value);
-                setWasAutoFilled(false);
-              }}
-            >
+            <Select value={formData.state} onValueChange={(value) => { onInputChange('state', value); setWasAutoFilled(false); }}>
               <SelectTrigger id="state" className="h-14 text-base rounded-xl border-2">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] z-50">
                 {US_STATES.map((state) => (
-                  <SelectItem key={state.value} value={state.value}>
-                    {state.label}
-                  </SelectItem>
+                  <SelectItem key={state.value} value={state.value}>{state.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -302,65 +279,56 @@ export const DetailedContactSection = React.memo(({
       </div>
 
       {/* Emergency Contact Section */}
-      <div className="space-y-4 pt-4 border-t border-border">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span className="text-sm font-medium">Emergency Contact</span>
-        </div>
+      {isFieldEnabled('emergencyContact') && (
+        <div className="space-y-4 pt-4 border-t border-border">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span className="text-sm font-medium">Emergency Contact {isFieldRequired('emergencyContact') && <span className="text-destructive">*</span>}</span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="emergencyContactName" className="text-sm font-medium">
-              Full Name
-            </Label>
-            <Input
-              id="emergencyContactName"
-              name="emergencyContactName"
-              autoComplete="off"
-              value={formData.emergencyContactName}
-              onChange={(e) => onInputChange('emergencyContactName', e.target.value)}
-              placeholder="Emergency contact name"
-              className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContactName" className="text-sm font-medium">Full Name</Label>
+              <Input
+                id="emergencyContactName" name="emergencyContactName" autoComplete="off"
+                value={formData.emergencyContactName}
+                onChange={(e) => onInputChange('emergencyContactName', e.target.value)}
+                placeholder="Emergency contact name"
+                className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContactPhone" className="text-sm font-medium">Phone Number</Label>
+              <Input
+                id="emergencyContactPhone" name="emergencyContactPhone" type="tel" autoComplete="off"
+                value={formData.emergencyContactPhone}
+                onChange={handlePhoneChange('emergencyContactPhone')}
+                placeholder="(555) 123-4567" maxLength={14}
+                className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="emergencyContactPhone" className="text-sm font-medium">
-              Phone Number
-            </Label>
-            <Input
-              id="emergencyContactPhone"
-              name="emergencyContactPhone"
-              type="tel"
-              autoComplete="off"
-              value={formData.emergencyContactPhone}
-              onChange={handlePhoneChange('emergencyContactPhone')}
-              placeholder="(555) 123-4567"
-              maxLength={14}
-              className="h-14 text-base rounded-xl border-2 focus:border-primary transition-colors"
-            />
-          </div>
-        </div>
 
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Relationship</Label>
-          <div className="flex flex-wrap gap-2">
-            {RELATIONSHIP_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onInputChange('emergencyContactRelationship', option.value)}
-                className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation ${
-                  formData.emergencyContactRelationship === option.value
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background hover:border-primary/50"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Relationship</Label>
+            <div className="flex flex-wrap gap-2">
+              {RELATIONSHIP_OPTIONS.map((option) => (
+                <button
+                  key={option.value} type="button"
+                  onClick={() => onInputChange('emergencyContactRelationship', option.value)}
+                  className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all touch-manipulation ${
+                    formData.emergencyContactRelationship === option.value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background hover:border-primary/50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 });

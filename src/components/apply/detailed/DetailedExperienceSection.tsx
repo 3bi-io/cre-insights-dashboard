@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Briefcase, Calendar as CalendarIcon, GraduationCap, Medal, CheckCircle, Building2 } from 'lucide-react';
@@ -15,6 +14,8 @@ interface DetailedExperienceSectionProps {
   formData: DetailedFormData;
   onInputChange: (field: string, value: unknown) => void;
   isActive?: boolean;
+  isFieldEnabled?: (key: string) => boolean;
+  isFieldRequired?: (key: string) => boolean;
 }
 
 const EDUCATION_OPTIONS = [
@@ -56,7 +57,9 @@ const MILITARY_BRANCHES = [
 export const DetailedExperienceSection = React.memo(({ 
   formData, 
   onInputChange,
-  isActive 
+  isActive,
+  isFieldEnabled = () => true,
+  isFieldRequired = () => false,
 }: DetailedExperienceSectionProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -81,262 +84,154 @@ export const DetailedExperienceSection = React.memo(({
         </p>
       </div>
 
-      {/* Employment History - 3 Employers */}
-      <div className="space-y-6">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          Previous Employment
-        </Label>
-        <p className="text-xs text-muted-foreground -mt-4">
-          List up to 3 previous employers, starting with the most recent. All fields are optional.
-        </p>
+      {/* Employment History */}
+      {isFieldEnabled('employers') && (
+        <div className="space-y-6">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            Previous Employment {isFieldRequired('employers') && <span className="text-destructive">*</span>}
+          </Label>
+          <p className="text-xs text-muted-foreground -mt-4">
+            List up to 3 previous employers, starting with the most recent. All fields are optional.
+          </p>
 
-        {formData.employers.map((employer, index) => (
-          <div key={index} className="space-y-3 p-4 rounded-xl border-2 border-border bg-muted/30">
-            <h4 className="text-sm font-semibold text-foreground">
-              Employer {index + 1}
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Company Name</Label>
-                <Input
-                  value={employer.companyName}
-                  onChange={(e) => {
-                    const updated = [...formData.employers];
-                    updated[index] = { ...updated[index], companyName: e.target.value };
-                    onInputChange('employers', updated);
-                  }}
-                  placeholder="Company name"
-                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Company Phone</Label>
-                <Input
-                  type="tel"
-                  value={employer.phone}
-                  onChange={(e) => {
-                    const updated = [...formData.employers];
-                    updated[index] = { ...updated[index], phone: e.target.value };
-                    onInputChange('employers', updated);
-                  }}
-                  placeholder="(555) 555-5555"
-                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">City</Label>
-                <Input
-                  value={employer.city}
-                  onChange={(e) => {
-                    const updated = [...formData.employers];
-                    updated[index] = { ...updated[index], city: e.target.value };
-                    onInputChange('employers', updated);
-                  }}
-                  placeholder="City"
-                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">State</Label>
-                <Input
-                  value={employer.state}
-                  onChange={(e) => {
-                    const updated = [...formData.employers];
-                    updated[index] = { ...updated[index], state: e.target.value };
-                    onInputChange('employers', updated);
-                  }}
-                  placeholder="State"
-                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Start Date</Label>
-                <Input
-                  type="month"
-                  value={employer.startDate}
-                  onChange={(e) => {
-                    const updated = [...formData.employers];
-                    updated[index] = { ...updated[index], startDate: e.target.value };
-                    onInputChange('employers', updated);
-                  }}
-                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">End Date</Label>
-                <Input
-                  type="month"
-                  value={employer.endDate}
-                  onChange={(e) => {
-                    const updated = [...formData.employers];
-                    updated[index] = { ...updated[index], endDate: e.target.value };
-                    onInputChange('employers', updated);
-                  }}
-                  className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12"
-                />
+          {formData.employers.map((employer, index) => (
+            <div key={index} className="space-y-3 p-4 rounded-xl border-2 border-border bg-muted/30">
+              <h4 className="text-sm font-semibold text-foreground">Employer {index + 1}</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Company Name</Label>
+                  <Input value={employer.companyName} onChange={(e) => { const updated = [...formData.employers]; updated[index] = { ...updated[index], companyName: e.target.value }; onInputChange('employers', updated); }}
+                    placeholder="Company name" className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Company Phone</Label>
+                  <Input type="tel" value={employer.phone} onChange={(e) => { const updated = [...formData.employers]; updated[index] = { ...updated[index], phone: e.target.value }; onInputChange('employers', updated); }}
+                    placeholder="(555) 555-5555" className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">City</Label>
+                  <Input value={employer.city} onChange={(e) => { const updated = [...formData.employers]; updated[index] = { ...updated[index], city: e.target.value }; onInputChange('employers', updated); }}
+                    placeholder="City" className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">State</Label>
+                  <Input value={employer.state} onChange={(e) => { const updated = [...formData.employers]; updated[index] = { ...updated[index], state: e.target.value }; onInputChange('employers', updated); }}
+                    placeholder="State" className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Start Date</Label>
+                  <Input type="month" value={employer.startDate} onChange={(e) => { const updated = [...formData.employers]; updated[index] = { ...updated[index], startDate: e.target.value }; onInputChange('employers', updated); }}
+                    className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">End Date</Label>
+                  <Input type="month" value={employer.endDate} onChange={(e) => { const updated = [...formData.employers]; updated[index] = { ...updated[index], endDate: e.target.value }; onInputChange('employers', updated); }}
+                    className="text-base rounded-xl border-2 focus:border-primary transition-colors h-12" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Education Level */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium flex items-center gap-2">
-          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-          Education Level
-        </Label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {EDUCATION_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onInputChange('educationLevel', option.value)}
-              className={cn(
-                "p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation text-center",
-                formData.educationLevel === option.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background hover:border-primary/50"
-              )}
-            >
-              {option.label}
-            </button>
           ))}
         </div>
-      </div>
+      )}
+
+      {/* Education Level */}
+      {isFieldEnabled('educationLevel') && (
+        <div className="space-y-3">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+            Education Level {isFieldRequired('educationLevel') && <span className="text-destructive">*</span>}
+          </Label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {EDUCATION_OPTIONS.map((option) => (
+              <button key={option.value} type="button" onClick={() => onInputChange('educationLevel', option.value)}
+                className={cn("p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation text-center",
+                  formData.educationLevel === option.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:border-primary/50"
+                )}>{option.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Work Authorization */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Work Authorization Status</Label>
-        <SelectionButtonGroup
-          options={WORK_AUTH_OPTIONS}
-          value={formData.workAuthorization}
-          onChange={(value) => onInputChange('workAuthorization', value)}
-          columns={2}
-        />
-      </div>
+      {isFieldEnabled('workAuthorization') && (
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Work Authorization Status {isFieldRequired('workAuthorization') && <span className="text-destructive">*</span>}</Label>
+          <SelectionButtonGroup options={WORK_AUTH_OPTIONS} value={formData.workAuthorization} onChange={(value) => onInputChange('workAuthorization', value)} columns={2} />
+        </div>
+      )}
 
       {/* Military Service Section */}
-      <div className="space-y-4 pt-4 border-t border-border">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Medal className="h-4 w-4" />
-          <span className="text-sm font-medium">Military Service</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Have you served in the military?</Label>
-            <SelectionButtonGroup
-              options={MILITARY_OPTIONS}
-              value={formData.militaryService}
-              onChange={(value) => onInputChange('militaryService', value)}
-              columns={1}
-            />
+      {isFieldEnabled('militaryService') && (
+        <div className="space-y-4 pt-4 border-t border-border">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Medal className="h-4 w-4" />
+            <span className="text-sm font-medium">Military Service</span>
           </div>
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Veteran Status</Label>
-            <SelectionButtonGroup
-              options={VETERAN_OPTIONS}
-              value={formData.veteranStatus}
-              onChange={(value) => onInputChange('veteranStatus', value)}
-              columns={1}
-            />
-          </div>
-        </div>
 
-        {/* Military Details (shown only if served) */}
-        {formData.militaryService === 'yes' && (
-          <div className="space-y-4 pt-4 animate-in slide-in-from-top-2 duration-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Branch of Service</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {MILITARY_BRANCHES.map((branch) => (
-                  <button
-                    key={branch.value}
-                    type="button"
-                    onClick={() => onInputChange('militaryBranch', branch.value)}
-                    className={cn(
-                      "p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation",
-                      formData.militaryBranch === branch.value
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-background hover:border-primary/50"
-                    )}
-                  >
-                    <div className="flex items-center justify-center gap-2">
-                      {formData.militaryBranch === branch.value && (
-                        <CheckCircle className="h-4 w-4" />
-                      )}
-                      {branch.label}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <Label className="text-sm font-medium">Have you served in the military?</Label>
+              <SelectionButtonGroup options={MILITARY_OPTIONS} value={formData.militaryService} onChange={(value) => onInputChange('militaryService', value)} columns={1} />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Service Start Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
-                        !formData.militaryStartDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.militaryStartDate ? format(formData.militaryStartDate, "PPP") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.militaryStartDate || undefined}
-                      onSelect={(date) => onInputChange('militaryStartDate', date || null)}
-                      className="pointer-events-auto"
-                      initialFocus
-                      captionLayout="dropdown-buttons"
-                      fromYear={1970}
-                      toYear={new Date().getFullYear()}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Service End Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full h-14 justify-start text-left font-normal rounded-xl border-2",
-                        !formData.militaryEndDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.militaryEndDate ? format(formData.militaryEndDate, "PPP") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.militaryEndDate || undefined}
-                      onSelect={(date) => onInputChange('militaryEndDate', date || null)}
-                      className="pointer-events-auto"
-                      initialFocus
-                      captionLayout="dropdown-buttons"
-                      fromYear={1970}
-                      toYear={new Date().getFullYear()}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Veteran Status</Label>
+              <SelectionButtonGroup options={VETERAN_OPTIONS} value={formData.veteranStatus} onChange={(value) => onInputChange('veteranStatus', value)} columns={1} />
             </div>
           </div>
-        )}
-      </div>
+
+          {formData.militaryService === 'yes' && (
+            <div className="space-y-4 pt-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Branch of Service</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {MILITARY_BRANCHES.map((branch) => (
+                    <button key={branch.value} type="button" onClick={() => onInputChange('militaryBranch', branch.value)}
+                      className={cn("p-3 rounded-xl border-2 text-sm font-medium transition-all touch-manipulation",
+                        formData.militaryBranch === branch.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-background hover:border-primary/50"
+                      )}>
+                      <div className="flex items-center justify-center gap-2">
+                        {formData.militaryBranch === branch.value && <CheckCircle className="h-4 w-4" />}
+                        {branch.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Service Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full h-14 justify-start text-left font-normal rounded-xl border-2", !formData.militaryStartDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.militaryStartDate ? format(formData.militaryStartDate, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                      <Calendar mode="single" selected={formData.militaryStartDate || undefined} onSelect={(date) => onInputChange('militaryStartDate', date || null)} className="pointer-events-auto" initialFocus captionLayout="dropdown-buttons" fromYear={1970} toYear={new Date().getFullYear()} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Service End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full h-14 justify-start text-left font-normal rounded-xl border-2", !formData.militaryEndDate && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.militaryEndDate ? format(formData.militaryEndDate, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-50" align="start">
+                      <Calendar mode="single" selected={formData.militaryEndDate || undefined} onSelect={(date) => onInputChange('militaryEndDate', date || null)} className="pointer-events-auto" initialFocus captionLayout="dropdown-buttons" fromYear={1970} toYear={new Date().getFullYear()} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 });
