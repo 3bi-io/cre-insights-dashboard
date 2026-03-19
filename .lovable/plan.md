@@ -1,43 +1,27 @@
 
 
-# Send All SMS Templates to Jimmy Hayes for Review
-
-## Context
-- **Recipient**: Jimmy Hayes, +12564528215
-- **Job Listing**: `a3a8b6d5-7b4b-45db-a74a-d8a0ddfc35c6` — "CDL-A Solo Truck Drivers Needed" at **Danny Herman Trucking**
-- **Existing application data**: Jimmy has prior apps but none for this job listing yet
+# Send All 5 SMS Templates to +18177572828
 
 ## Approach
-Create a one-off edge function script (or use `supabase--curl_edge_functions` against an existing function) to systematically send all 5 SMS templates to Jimmy's phone with a short delay between each, using the real Twilio credentials already configured in Supabase.
+Re-create the temporary `sms-template-preview` edge function (it was deleted after the last run), deploy it, invoke it with the same personalization data but targeting **+18177572828**, then delete it again.
 
-However, since Twilio secrets (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`) are not in the Lovable secrets list (they're likely set directly in Supabase edge function secrets), the cleanest approach is:
+## Templates (identical to what Jimmy received)
+Using: **Jimmy Hayes**, **CDL-A Solo Truck Drivers Needed**, **Danny Herman Trucking**
 
-### Create a temporary edge function: `sms-template-preview`
+1. **[1/5 - Verification]** — Initial outbound with bullet points, YES/EDIT/STOP
+2. **[2/5 - YES Not Enriched]** — Confirmation + application link
+3. **[3/5 - YES Already Enriched]** — Confirmation, recruiter follow-up
+4. **[4/5 - EDIT Response]** — Correction instructions
+5. **[5/5 - Correction Ack]** — Free-text update acknowledgment
 
-This function will:
-1. Accept a POST with `{ phone, firstName, lastName, jobTitle, clientName, jobListingId, applicationId }`
-2. Send all 5 templates sequentially with 3-second delays between each
-3. Prefix each message with a label like `[Template 1/5 - Verification]`
+3-second delay between each message.
 
-### Templates to send (using Jimmy's real data):
+## Steps
+1. Create `supabase/functions/sms-template-preview/index.ts` (same as before)
+2. Deploy and invoke with `phone: +18177572828`
+3. Delete function after successful send
 
-| # | Template | Personalized Message |
-|---|----------|---------------------|
-| 1 | **Initial Verification** | "Hi Jimmy! We tried reaching you about your CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking.\n\nHere's what we have:\n• Name: Jimmy Hayes\n• Location: Anniston, AL\n• CDL: Yes\n• Experience: More than 3 months\n\nReply YES to confirm or EDIT to update.\nReply STOP to opt out." |
-| 2 | **YES — Not Enriched** | "Thanks for confirming, Jimmy! Complete your CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking here:\n\n{url}\n\nYour info will be pre-filled.\nReply STOP to opt out." |
-| 3 | **YES — Already Enriched** | "Thanks for confirming, Jimmy! Your full CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking is on file. A recruiter will be in touch soon." |
-| 4 | **EDIT Response** | "No problem, Jimmy! Reply with your corrections (e.g. \"City: Dallas\" or \"CDL: Class A\"). We'll update your CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking." |
-| 5 | **Free-text Correction Ack** | "Got it, Jimmy! We've forwarded your update to the Danny Herman Trucking recruiting team. They'll review it shortly." |
-
-### Steps
-1. Create `supabase/functions/sms-template-preview/index.ts` — sends all 5 templates with labels and delays
-2. Deploy and invoke it once with Jimmy's data
-3. Delete the function after send (cleanup)
-
-### Pre-requisite Check
-Twilio secrets must be available to edge functions. They're not in the Lovable secrets list — need to verify they exist in Supabase function secrets before proceeding.
-
-### Files
+## File
 | File | Action |
 |------|--------|
 | `supabase/functions/sms-template-preview/index.ts` | Create (temporary) |
