@@ -274,6 +274,53 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
       veteranStatus: (prefillData.veteran as string) || '',
     };
   });
+
+  // Fetch existing application data when arriving via SMS link (app_id in URL)
+  useEffect(() => {
+    if (!appIdFromUrl || prefillData) return; // Skip if we already have prefill data from route state
+    
+    const fetchExistingApplication = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('applications')
+          .select('first_name, last_name, applicant_email, phone, city, state, zip, cdl, cdl_class, cdl_endorsements, exp, consent_to_sms, over_21, veteran, address_1, address_2, country')
+          .eq('id', appIdFromUrl)
+          .single();
+        
+        if (error || !data) {
+          logger.warn('Failed to fetch application for SMS prefill', { error });
+          return;
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          firstName: data.first_name || prev.firstName,
+          lastName: data.last_name || prev.lastName,
+          email: data.applicant_email || prev.email,
+          phone: data.phone || prev.phone,
+          city: data.city || prev.city,
+          state: data.state || prev.state,
+          zipCode: data.zip || prev.zipCode,
+          address1: data.address_1 || prev.address1,
+          address2: data.address_2 || prev.address2,
+          country: data.country || prev.country,
+          cdl: data.cdl || prev.cdl,
+          cdlClass: data.cdl_class || prev.cdlClass,
+          cdlEndorsements: data.cdl_endorsements || prev.cdlEndorsements,
+          experience: data.exp || prev.experience,
+          consentToSms: data.consent_to_sms === 'yes',
+          over21: data.over_21 || prev.over21,
+          veteranStatus: data.veteran || prev.veteranStatus,
+        }));
+
+        logger.info('Pre-filled detailed form from existing application via SMS link');
+      } catch (err) {
+        logger.error('Error fetching application for SMS prefill', err as Error);
+      }
+    };
+
+    fetchExistingApplication();
+  }, [appIdFromUrl, prefillData]);
   
   // Serializable version for persistence
   const [serializedData, setSerializedData] = useState<SerializableFormData>(() => 
