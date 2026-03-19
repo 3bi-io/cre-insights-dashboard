@@ -2707,6 +2707,68 @@ export type Database = {
           },
         ]
       }
+      client_application_fields: {
+        Row: {
+          client_id: string
+          created_at: string
+          enabled: boolean
+          field_key: string
+          id: string
+          organization_id: string
+          required: boolean
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          enabled?: boolean
+          field_key: string
+          id?: string
+          organization_id: string
+          required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          enabled?: boolean
+          field_key?: string
+          id?: string
+          organization_id?: string
+          required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_application_fields_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_application_fields_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_client_info"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_application_fields_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_application_fields_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "public_organization_info"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_webhook_logs: {
         Row: {
           application_id: string
@@ -8737,6 +8799,14 @@ export type Database = {
           updated_at: string
           work_authorization: string
           zip: string
+        }[]
+      }
+      get_client_application_fields: {
+        Args: { p_client_id: string }
+        Returns: {
+          enabled: boolean
+          field_key: string
+          required: boolean
         }[]
       }
       get_conversation_message_counts: {
