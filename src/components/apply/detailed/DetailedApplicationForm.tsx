@@ -4,6 +4,7 @@ import { StructuredData, buildBreadcrumbSchema } from '@/components/StructuredDa
 import { useStepWizard } from '@/hooks/useStepWizard';
 import { useDetailedApplicationForm } from '@/hooks/useDetailedApplicationForm';
 import { useApplyContext } from '@/hooks/useApplyContext';
+import { useClientFieldConfig } from '@/hooks/useClientFieldConfig';
 import { useGeoBlocking } from '@/contexts/GeoBlockingContext';
 import { SimulatedApplicationForm } from '../SimulatedApplicationForm';
 import { StepContainer } from '../StepContainer';
