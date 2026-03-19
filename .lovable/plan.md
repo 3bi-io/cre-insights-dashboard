@@ -1,58 +1,45 @@
 
 
-# SMS Follow-Up After First Unanswered AI Call
+# Post-Quick-Apply: Thank You + Continue to Full Application
 
 ## Overview
-When the first AI agent call to a driver results in `no_answer`, automatically send a single SMS text message containing the key application details the agent was trying to confirm. Only one SMS per application — no spam.
+After submitting the short application (`/apply`), instead of just navigating to a static thank-you page, show a thank-you message **with a prominent option to continue filling out the full detailed application**. The detailed form will be pre-filled with data already captured from the short form.
 
-## Prerequisites: Twilio Credentials
-The project currently has **no Twilio secrets configured** (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` are missing). The existing `send-sms` and `sms-auth` functions reference them but they would fail today. We need these secrets added before SMS will work. There is also no Twilio connector linked.
+## Changes
 
-## Database Changes
+### 1. Update ThankYou page (`src/pages/ThankYou.tsx`)
+- Add a new CTA button: "Complete Your Full Application" below the existing "what happens next" section
+- Pass the short-form data through route state so it can be forwarded
+- Add messaging: "While you wait for our call, you can complete your full application to speed up the process"
+- The button navigates to `/apply/detailed` with the form data in route state
 
-**1. Add `sms_followup_sent` boolean to `outbound_calls`**
-- Default `false`. Set to `true` after the SMS is sent. Prevents duplicate texts.
+### 2. Pass form data to ThankYou (`src/hooks/useApplicationForm.ts`)
+- Expand the `navigate('/thank-you', { state: ... })` call to include the submitted form data (firstName, lastName, email, phone, city, state, zip, cdl, cdlClass, experience, drug, consent, etc.)
+- Add `formData` to the ThankYouState
 
-**2. Add `sms_followup_enabled` boolean to `organization_call_settings`**
-- Default `true`. Allows orgs to opt out of SMS follow-ups.
+### 3. Pre-fill detailed form from route state (`src/hooks/useDetailedApplicationForm.ts`)
+- On mount, check for `location.state` containing quick-apply data
+- Map overlapping fields: `firstName` → `firstName`, `lastName` → `lastName`, `email` → `email`, `phone` → `phone`, `zip` → `zipCode`, `cdl` → `cdlStatus`, `cdlClass` → `cdlClass`, `experience` → `experience`, `city` → `city`, `state` → `state`, `drug` → `drugTest`, `consent` → `consentToSms`
+- Only pre-fill if the detailed form fields are currently empty (don't overwrite draft data)
 
-## Edge Function Changes
+### 4. Field mapping (short → detailed)
+| Short Form | Detailed Form |
+|---|---|
+| firstName | firstName |
+| lastName | lastName |
+| email | email |
+| phone | phone |
+| city | city |
+| state | state |
+| zip | zipCode |
+| cdl | cdlStatus |
+| cdlClass | cdlClass |
+| experience | experience |
+| drug | drugTest |
+| consent | consentToSms |
 
-**`elevenlabs-outbound-call/index.ts`** — In the sync reconciliation block (lines 177-361), after a call is mapped to `no_answer`:
-
-1. Check guard conditions:
-   - `retry_count === 0` (first attempt only)
-   - `sms_followup_sent === false` on the outbound call record
-   - Org setting `sms_followup_enabled !== false`
-   - Application has `consent_to_sms` = 'Yes' or 'yes'
-   - Application has a valid phone number
-
-2. Build SMS message from application data (same fields the agent uses):
-   ```
-   Hi {first_name}, this is {company_name} following up on your {job_title} application.
-   We'd like to confirm a few details:
-   - CDL: {cdl_class}
-   - Location: {city}, {state}
-   - Experience: {experience}
-   Please call us back at {company_phone} or reply to this text.
-   ```
-
-3. Send via Twilio (using existing `TWILIO_*` env vars pattern from `send-sms` function)
-
-4. Mark `sms_followup_sent = true` on the outbound call record
-
-5. Log the SMS in `sms_messages` table for audit trail
-
-## Guard Rails
-- **One SMS per application**: The `sms_followup_sent` flag on the outbound call + a check for existing SMS messages for the same `application_id` ensures no duplicates
-- **First call only**: Only triggers when `retry_count === 0` — subsequent no-answer retries don't send another text
-- **Consent check**: Only sends if `consent_to_sms` is affirmative on the application
-- **Org toggle**: `sms_followup_enabled` setting lets orgs disable this feature
-
-## Files to Edit
-- `supabase/functions/elevenlabs-outbound-call/index.ts` — Add SMS follow-up logic after `no_answer` detection in sync block
-- Database migration — Add `sms_followup_sent` column and `sms_followup_enabled` setting
-
-## Secret Requirements
-Before this can work, Twilio credentials (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`) must be added as secrets, **or** the Twilio connector must be linked to the project.
+## Technical Details
+- Route state is used (no URL params with PII)
+- The detailed form hook already supports `useLocation()` — we add a `useEffect` to read and map the incoming state
+- The ThankYou page button uses `navigate('/apply/detailed', { state: { prefill: formData } })`
 
