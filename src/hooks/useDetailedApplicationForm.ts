@@ -246,6 +246,9 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
 
   // Check for prefill data from quick-apply route state
   const prefillData = (location.state as { prefill?: Record<string, unknown> } | null)?.prefill;
+  
+  // Track existing application ID for update mode (from short form → thank you → detailed)
+  const existingApplicationId = (prefillData?.applicationId as string) || null;
 
   const [formData, setFormData] = useState<DetailedFormData>(() => {
     if (!prefillData) return initialFormData;
@@ -352,7 +355,10 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
       };
 
       // Build application payload matching edge function schema
-      const applicationData = {
+      const applicationData: Record<string, unknown> = {
+        // If we have an existing application from the short form, send it for update mode
+        existing_application_id: existingApplicationId || undefined,
+        
         // Required fields
         first_name: data.firstName,
         last_name: data.lastName,

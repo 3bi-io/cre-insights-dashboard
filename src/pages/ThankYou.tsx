@@ -10,6 +10,7 @@ interface ThankYouState {
   organizationName?: string;
   hasVoiceAgent?: boolean;
   logoUrl?: string;
+  applicationId?: string;
   formData?: {
     firstName?: string;
     lastName?: string;
@@ -39,13 +40,14 @@ const ThankYou = () => {
   const organizationName = state?.organizationName || 'our team';
   const hasVoiceAgent = state?.hasVoiceAgent ?? false;
   const logoUrl = state?.logoUrl;
+  const applicationId = state?.applicationId;
   const formData = state?.formData;
 
   const handleContinueToFullApplication = () => {
     const jobId = formData?.job_listing_id || formData?.job_id;
     const searchParams = jobId ? `?job_id=${jobId}` : '';
     navigate(`/apply/detailed${searchParams}`, {
-      state: { prefill: formData }
+      state: { prefill: { ...formData, applicationId } }
     });
   };
 
