@@ -1,14 +1,16 @@
 import React, { useRef, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Briefcase, Calendar as CalendarIcon, GraduationCap, Medal, CheckCircle } from 'lucide-react';
+import { Briefcase, Calendar as CalendarIcon, GraduationCap, Medal, CheckCircle, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { SelectionButtonGroup } from '../SelectionButton';
 import type { DetailedFormData } from '@/hooks/useDetailedApplicationForm';
+import type { EmployerEntry } from '@/hooks/useDetailedApplicationForm';
 
 interface DetailedExperienceSectionProps {
   formData: DetailedFormData;
