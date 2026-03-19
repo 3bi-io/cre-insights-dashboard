@@ -1053,6 +1053,111 @@ Deno.serve(async (req) => {
       updated_at: new Date().toISOString()
     };
 
+    // ================================================================
+    // UPDATE MODE: If existing_application_id is provided, update instead of insert
+    // This handles the short form → detailed form flow without creating duplicates
+    // ================================================================
+    if (formData.existing_application_id) {
+      const existingAppId = formData.existing_application_id;
+      logger.info('Update mode: enriching existing application', { existing_id: existingAppId });
+
+      // Verify the existing application exists and matches on email/phone
+      const { data: existingApp, error: lookupError } = await supabase
+        .from('applications')
+        .select('id, applicant_email, phone, job_listing_id')
+        .eq('id', existingAppId)
+        .single();
+
+      if (lookupError || !existingApp) {
+        logger.error('Existing application not found for update', { existing_id: existingAppId, error: lookupError });
+        return errorResponse('Referenced application not found', 404, undefined, origin || undefined);
+      }
+
+      // Security: verify email matches to prevent unauthorized updates
+      const existingEmail = (existingApp.applicant_email || '').toLowerCase();
+      if (existingEmail && existingEmail !== applicantEmail) {
+        logger.warn('Email mismatch on application update attempt', { existing_id: existingAppId });
+        return errorResponse('Application verification failed', 403, undefined, origin || undefined);
+      }
+
+      // Build update payload (exclude fields that shouldn't change: job_listing_id, source, applied_at, created_at)
+      const { job_listing_id: _jl, job_id: _ji, source: _src, status: _st, applied_at: _aa, created_at: _ca, ...updateFields } = applicationData;
+      
+      const { error: updateError } = await supabase
+        .from('applications')
+        .update({
+          ...updateFields,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingAppId);
+
+      if (updateError) {
+        logger.error('Error updating existing application', updateError);
+        return errorResponse('Failed to update application', 500, { details: updateError.message }, origin || undefined);
+      }
+
+      logger.info('Application updated successfully (enriched from detailed form)', { id: existingAppId });
+
+      // Resolve client_id for ATS routing from the EXISTING application's job listing
+      const existingJobListingId = existingApp.job_listing_id;
+      const { data: jobForATS } = await supabase
+        .from('job_listings')
+        .select('client_id, organization_id')
+        .eq('id', existingJobListingId)
+        .single();
+      const updateClientId = jobForATS?.client_id || formData.client_id || null;
+      const updateOrgId = jobForATS?.organization_id || organizationId;
+
+      // Re-fetch the full updated application data for ATS re-sync
+      const { data: updatedApp } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('id', existingAppId)
+        .single();
+
+      // Re-sync to ATS with enriched data (non-blocking)
+      EdgeRuntime.waitUntil(
+        autoPostToATS(supabase, existingAppId, updateOrgId, (updatedApp || applicationData) as Record<string, unknown>, {
+          clientId: updateClientId
+        })
+          .then((result) => {
+            logger.info('ATS re-sync completed (detailed form update)', { 
+              application_id: existingAppId,
+              total: result.totalConnections,
+              successful: result.successful,
+              failed: result.failed,
+              skipped: result.skipped
+            });
+          })
+          .catch((err) => {
+            logger.error('ATS re-sync failed (detailed form update)', err as Error, { application_id: existingAppId });
+          })
+      );
+
+      // Trigger webhooks for the update (non-blocking)
+      try {
+        await triggerSourceWebhooks(supabase, existingAppId, detectedSource);
+      } catch (webhookError) {
+        logger.error('Webhook trigger failed on update (non-blocking)', webhookError as Error);
+      }
+
+      return successResponse(
+        { 
+          applicationId: existingAppId,
+          organizationName,
+          hasVoiceAgent: false, // Don't trigger another call on update
+          updated: true,
+        },
+        'Application updated successfully with detailed information',
+        undefined,
+        origin || undefined
+      );
+    }
+
+    // ================================================================
+    // INSERT MODE: Normal new application flow
+    // ================================================================
+    
     // Insert into applications table using shared processor
     const { data, error } = await insertApplication(supabase, applicationData);
 
