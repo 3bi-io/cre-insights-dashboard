@@ -1,39 +1,27 @@
 
 
-# SMS Verification + Full Application Link After Unanswered Call
+# SMS Template Personalization Refactor
 
 ## Status: ✅ IMPLEMENTED
 
 ## Overview
-When an AI agent call goes unanswered (`no_answer` on first attempt), the system sends an SMS that verifies the short application details (mirroring the phone verification), then after confirmation, sends a link to complete the full application.
-
-## Flow
-```text
-Call → no_answer (retry_count === 0, consent_to_sms = 'yes', not enriched)
-  ↓
-SMS #1: "Hi {name}! We tried calling about the application you submitted to {client_name}. Confirm your details..."
-  ↓
-YES → SMS #2: Full application link (/apply/detailed?job_id=X&app_id=Y)
-EDIT → SMS #3: Instructions to reply with corrections
-STOP → Opt-out (consent_to_sms set to 'no')
-```
+All SMS templates now include personalized applicant first name, job title, and company name for a best-in-class mobile experience. Data is stored on the `sms_verification_sessions` table at creation time to avoid extra lookups in the webhook handler.
 
 ## Changes Made
 
 ### Database
-- Added `sms_followup_sent` boolean column to `outbound_calls` (default false)
-- Created `sms_verification_sessions` table with status enum (pending_confirmation, confirmed, edit_requested, expired)
+- Added `applicant_first_name` and `job_title` columns to `sms_verification_sessions`
 
 ### Edge Functions
-1. **Created** `supabase/functions/sms-webhook/index.ts` — Twilio incoming SMS handler (YES/EDIT/STOP)
-2. **Updated** `supabase/functions/elevenlabs-outbound-call/index.ts` — triggers verification SMS on first `no_answer`
-3. **Updated** `supabase/functions/send-sms/index.ts` — made conversationId/messageId optional
+1. **`elevenlabs-outbound-call/index.ts`** — Fetches job title, stores `applicant_first_name` + `job_title` on session insert, refined outbound SMS with bullet formatting and STOP disclosure
+2. **`sms-webhook/index.ts`** — All 4 reply templates personalized with first name, job title, and company name
 
-### Frontend
-4. **Updated** `src/hooks/useDetailedApplicationForm.ts` — reads `app_id` from URL params, fetches existing application to pre-fill
-
-### Config
-5. **Updated** `supabase/config.toml` — added `sms-webhook` with `verify_jwt = false`
+### Template Examples
+- **Outbound**: "Hi {firstName}! We tried reaching you about your {jobTitle} application with {clientName}. • Name: ... • Location: ... Reply YES/EDIT. Reply STOP to opt out."
+- **YES (enriched)**: "Thanks for confirming, {firstName}! Your full {jobTitle} application with {clientName} is on file."
+- **YES (link)**: "Thanks for confirming, {firstName}! Complete your {jobTitle} application with {clientName} here: {url}"
+- **EDIT**: "No problem, {firstName}! Reply with corrections. We'll update your {jobTitle} application with {clientName}."
+- **Free-text**: "Got it, {firstName}! We've forwarded your update to the {clientName} recruiting team."
 
 ## Twilio Webhook Setup Required
 Configure the Twilio phone number's incoming message webhook URL to:
