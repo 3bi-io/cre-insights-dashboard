@@ -440,38 +440,17 @@ serve(async (req) => {
 
                         const verificationMsg = `Hi ${firstName}! We tried reaching you about your ${jobTitle} application with ${clientName}.\n\nHere's what we have:\n• Name: ${firstName} ${lastName}\n• Location: ${location}\n• CDL: ${cdlInfo}\n• Experience: ${experience}\n\nReply YES to confirm or EDIT to update.\nReply STOP to opt out.`;
 
-                        // Send via Twilio
-                        const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-                        const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-                        const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+                        // Send via shared Twilio client
+                        const { sendSms: sendTwilioSms, hasTwilioCredentials } = await import('../_shared/twilio-client.ts');
 
-                        if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
-                          // Normalize phone to E.164
-                          let toPhone = appData.phone;
-                          const digits = toPhone.replace(/[^\d]/g, '');
-                          if (digits.length === 10) toPhone = `+1${digits}`;
-                          else if (digits.length === 11 && digits.startsWith('1')) toPhone = `+${digits}`;
+                        if (hasTwilioCredentials()) {
+                          const smsResult = await sendTwilioSms(appData.phone, verificationMsg);
 
-                          const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-                          const smsResponse = await fetch(twilioUrl, {
-                            method: 'POST',
-                            headers: {
-                              'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-                              'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: new URLSearchParams({
-                              To: toPhone,
-                              From: twilioPhoneNumber,
-                              Body: verificationMsg,
-                            }),
-                          });
-
-                          const smsResult = await smsResponse.json();
-
-                          if (smsResponse.ok) {
+                          if (smsResult.success) {
                             logger.info(`Verification SMS sent for call ${call.id}`, { twilio_sid: smsResult.sid });
 
                             // Normalize phone for session lookup
+                            const digits = appData.phone.replace(/[^\d]/g, '');
                             const sessionPhone = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : (digits.length === 10 ? digits : digits);
 
                             // Create verification session with personalization data
@@ -495,7 +474,7 @@ serve(async (req) => {
 
                             syncResults.push({ call_id: call.id, status: 'sms_verification_sent' });
                           } else {
-                            logger.error(`Failed to send verification SMS for call ${call.id}`, { error: smsResult });
+                            logger.error(`Failed to send verification SMS for call ${call.id}`, { error: smsResult.error });
                           }
                         } else {
                           logger.warn('Twilio credentials not configured - skipping SMS verification');

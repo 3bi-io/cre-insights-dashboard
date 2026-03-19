@@ -164,58 +164,20 @@ async function verifyToken(phoneNumber: string, token: string, supabase: any, co
   );
 }
 
-async function makeCall(phoneNumber: string, message: string, corsHeaders: CorsHeaders) {
-  const validation = validatePhoneNumber(phoneNumber);
-  if (!validation.valid) {
-    throw new Error(validation.error || 'Invalid phone number');
-  }
-  
-  const normalizedPhone = validation.normalized!;
-  
-  const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+async function handleMakeCall(phoneNumber: string, message: string, corsHeaders: CorsHeaders) {
+  const result = await twilioMakeCall(phoneNumber, message);
 
-  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    throw new Error('Twilio credentials not configured');
+  if (!result.success) {
+    throw new Error(`Twilio call error: ${result.error}`);
   }
 
-  const safeMessage = escapeXML(message);
-  
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-    <Response>
-      <Say voice="alice">${safeMessage}</Say>
-    </Response>`;
-
-  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`;
-  const twilioCredentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-  const twilioResponse = await fetch(twilioUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${twilioCredentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      From: twilioPhoneNumber,
-      To: normalizedPhone,
-      Twiml: twiml,
-    }),
-  });
-
-  if (!twilioResponse.ok) {
-    const errorText = await twilioResponse.text();
-    throw new Error(`Twilio call error: ${errorText}`);
-  }
-
-  const twilioResult = await twilioResponse.json();
-  logger.info('Call initiated successfully', { callSid: twilioResult.sid });
+  logger.info('Call initiated successfully', { callSid: result.sid });
 
   return new Response(
     JSON.stringify({ 
       success: true, 
       message: 'Call initiated successfully',
-      callSid: twilioResult.sid 
+      callSid: result.sid 
     }),
     {
       status: 200,
