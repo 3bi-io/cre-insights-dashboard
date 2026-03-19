@@ -34,6 +34,7 @@ const ApplicationsPage = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
     applicant: true,
+    formType: true,
     job: true,
     contact: true,
     location: true,

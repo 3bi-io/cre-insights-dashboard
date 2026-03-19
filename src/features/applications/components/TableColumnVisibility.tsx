@@ -11,6 +11,7 @@ import { Settings2 } from 'lucide-react';
 
 export interface ColumnVisibility {
   applicant: boolean;
+  formType: boolean;
   job: boolean;
   contact: boolean;
   location: boolean;
@@ -45,6 +46,12 @@ export const TableColumnVisibility = ({
           onCheckedChange={() => onColumnVisibilityChange('applicant')}
         >
           Applicant
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={columnVisibility.formType}
+          onCheckedChange={() => onColumnVisibilityChange('formType')}
+        >
+          Form Type
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
           checked={columnVisibility.job}
