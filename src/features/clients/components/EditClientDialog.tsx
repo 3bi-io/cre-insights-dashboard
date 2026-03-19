@@ -316,6 +316,19 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
               </Form>
             </TabsContent>
 
+            <TabsContent value="fields" className="mt-0 pr-4 data-[state=active]:flex-1">
+              {client?.organization_id ? (
+                <ClientApplicationFieldsConfig
+                  clientId={client.id}
+                  organizationId={client.organization_id}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No organization associated with this client.
+                </div>
+              )}
+            </TabsContent>
+
             <TabsContent value="ats" className="mt-0 pr-4 data-[state=active]:flex-1">
               {client?.organization_id ? (
                 <ClientATSSettings
