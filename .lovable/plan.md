@@ -1,68 +1,50 @@
 
 
-# Client-Level Application Field Configuration
+# Update Existing Application + Re-sync to ATS on Full Application Completion
 
-## Overview
-Allow admins to configure which fields appear on the detailed application form (`/apply/detailed`) on a per-client basis. Clients (non-admin users) cannot access or modify this configuration. When a driver opens the detailed application for a client's job, only the fields that client's admin has enabled will be shown.
+## Problem
+When a driver completes the short application, it gets inserted into the database and auto-posted to Tenstreet/DriverReach. When they then complete the full detailed application, it creates a **second, separate** application record and posts again — resulting in duplicates in both the database and the ATS.
 
-## Database Changes
+## Solution
+Thread the `applicationId` from the short form submission all the way through to the detailed form. When the detailed form submits, it sends an **update** to the existing application instead of creating a new one, then re-triggers `autoPostToATS` with the enriched data.
 
-**New table: `client_application_fields`**
-- `id` (uuid, PK)
-- `client_id` (uuid, FK → clients, NOT NULL)
-- `organization_id` (uuid, FK → organizations, NOT NULL)
-- `field_key` (text, NOT NULL) — matches the `DetailedFormData` field names (e.g., `ssn`, `militaryService`, `employers`, `accidentHistory`)
-- `enabled` (boolean, default true)
-- `required` (boolean, default false)
-- Unique constraint on `(client_id, field_key)`
-- RLS: Only admin/super_admin in the same org can SELECT/INSERT/UPDATE/DELETE
+## Changes
 
-**Seed with a DB function or default behavior**: If no rows exist for a client, all fields are shown (backward compatible). Admins can then selectively disable fields.
+### 1. Pass `applicationId` through the flow
+- **`src/hooks/useApplicationForm.ts`**: Include `applicationId` from the submit response in the route state when navigating to `/thank-you`
+- **`src/pages/ThankYou.tsx`**: Add `applicationId` to `ThankYouState` and pass it along in the prefill data when navigating to `/apply/detailed`
+- **`src/hooks/useDetailedApplicationForm.ts`**: Read `applicationId` from route state prefill data and include it in the submission payload as `existing_application_id`
 
-## Admin UI — Field Configuration Panel
+### 2. Add update mode to `submit-application` edge function
+- **`supabase/functions/submit-application/index.ts`**: 
+  - Accept an optional `existing_application_id` field in the request body (add to Zod schema)
+  - When present: **update** the existing application record instead of inserting a new one
+  - Skip duplicate checks, confirmation emails, and source detection for updates
+  - Still call `autoPostToATS` after the update to re-sync enriched data to the ATS
+  - Validate that the existing application exists and matches on email/phone to prevent abuse
 
-**New component**: `ClientApplicationFieldsConfig` in `src/features/clients/components/`
-- Accessible from the client edit dialog or a dedicated tab on the Clients page
-- Shows a checklist of all detailed application field groups:
-  - **Personal**: prefix, middleName, suffix, ssn, governmentId, dateOfBirth
-  - **Contact**: secondaryPhone, preferredContactMethod, emergencyContact fields
-  - **CDL**: cdlEndorsements, cdlExpirationDate, cdlState, drivingExperienceYears
-  - **Experience**: employers (work history), accidentHistory, violationHistory, educationLevel
-  - **Background**: militaryService fields, convictedFelony, workAuthorization
-  - **Work Preferences**: canWorkWeekends, canWorkNights, willingToRelocate, salaryExpectations
-  - **Medical**: medicalCardExpiration, hazmatEndorsement, passportCard, twicCard, dotPhysicalDate
-- Each field group has toggles for "Visible" and "Required"
-- Only users with admin/super_admin role see this config
+### 3. Update the auto-post engine behavior
+- No changes needed to `auto-post-engine.ts` — it already accepts an `applicationId` and sends whatever data is current. The re-post will contain all the enriched fields (work history, medical, background, etc.)
 
-**Hook**: `useClientApplicationFields` — CRUD operations against `client_application_fields`
+## Data Flow
 
-## Applicant-Facing Changes
+```text
+Short Apply → submit-application (INSERT) → autoPostToATS (basic data)
+    ↓
+Thank You page (carries applicationId + formData)
+    ↓
+Detailed Apply (pre-filled, carries applicationId)
+    ↓
+submit-application (UPDATE existing) → autoPostToATS (full enriched data)
+```
 
-**Hook**: `useClientFieldConfig` (public/anonymous-safe)
-- Takes `client_id` from `useApplyContext()`
-- Fetches enabled fields via a SECURITY DEFINER function `get_client_application_fields(p_client_id uuid)` that returns the field config without requiring auth
-- Returns a map of `{ [fieldKey]: { enabled, required } }`
-
-**Form sections update**: Each detailed section component (`DetailedPersonalSection`, `DetailedExperienceSection`, etc.) receives a `fieldConfig` prop and conditionally renders fields based on `enabled` status. Required fields respect the `required` flag from config.
-
-**`DetailedApplicationForm.tsx`**: Passes `fieldConfig` down to all step sections. Also updates `validateStep` in the hook to only validate fields that are both enabled and required.
+## Files to Edit
+1. `src/hooks/useApplicationForm.ts` — pass `applicationId` to thank-you state
+2. `src/pages/ThankYou.tsx` — thread `applicationId` through to detailed form
+3. `src/hooks/useDetailedApplicationForm.ts` — send `existing_application_id` in payload
+4. `supabase/functions/submit-application/index.ts` — add update mode with re-sync
 
 ## Security
-- RLS on `client_application_fields` restricts write access to admin/super_admin within the same organization
-- Public read access goes through a SECURITY DEFINER function only returning `field_key`, `enabled`, `required` — no org internals leaked
-- Clients (non-admin users) have no write access
-
-## Files to Create/Edit
-1. **DB migration** — Create `client_application_fields` table, RLS policies, and `get_client_application_fields()` function
-2. **`src/features/clients/components/ClientApplicationFieldsConfig.tsx`** — Admin toggle UI
-3. **`src/features/clients/hooks/useClientApplicationFields.ts`** — Admin CRUD hook
-4. **`src/hooks/useClientFieldConfig.ts`** — Public hook for applicant-facing form
-5. **`src/components/apply/detailed/DetailedPersonalSection.tsx`** — Add field visibility checks
-6. **`src/components/apply/detailed/DetailedContactSection.tsx`** — Add field visibility checks
-7. **`src/components/apply/detailed/DetailedCDLSection.tsx`** — Add field visibility checks
-8. **`src/components/apply/detailed/DetailedExperienceSection.tsx`** — Add field visibility checks
-9. **`src/components/apply/detailed/DetailedBackgroundSection.tsx`** — Add field visibility checks
-10. **`src/components/apply/detailed/DetailedApplicationForm.tsx`** — Fetch and pass field config
-11. **`src/hooks/useDetailedApplicationForm.ts`** — Update validation to respect field config
-12. **Client edit dialog or Clients page** — Add entry point to field config panel
+- The update mode validates that the email/phone on the existing application matches the submission to prevent unauthorized updates
+- No auth required (applicants are anonymous), but the match check prevents tampering
 
