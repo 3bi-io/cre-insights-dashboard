@@ -85,7 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
       return validationErrorResponse(errors, origin || undefined);
     }
 
-    const { to, message, conversationId, messageId }: SMSRequest = validationResult.data;
+    const { to, message, conversationId, messageId } = validationResult.data;
 
     // Validate and normalize phone number
     const phoneValidation = normalizePhoneNumber(to);
