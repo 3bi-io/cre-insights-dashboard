@@ -1,37 +1,84 @@
 
 
-# Add "Form Type" Enrichment Badge to Application Views
+# SMS Verification + Full Application Link After Unanswered Call
 
 ## Overview
-Add a visual badge to application cards and table rows indicating whether the application contains only short-form data ("Quick") or has been enriched with the full detailed form ("Detailed"). No database changes needed — we determine this client-side by checking for fields only present in the detailed form.
+When an AI agent call goes unanswered (`no_answer` on first attempt), send an SMS that first verifies the short application details (mirroring the phone verification), then after confirmation, sends a link to complete the full application.
 
-## Detection Logic
-Create a small utility function `getFormType(application)` that returns `'Quick' | 'Detailed'` by checking if any detailed-form-specific fields are populated:
-- `employment_history` (has entries)
-- `ssn`
-- `date_of_birth`
-- `emergency_contact_name`
-- `convicted_felony`
-- `military_service`
-- `medical_card_expiration`
+## Flow
+```text
+Call → no_answer (retry_count === 0, consent_to_sms = 'yes', not enriched)
+  ↓
+SMS #1: Verification summary with YES/EDIT prompt
+  ↓
+YES → SMS #2: Full application link
+EDIT → SMS #3: Instructions to call or reply with corrections
+STOP → Opt-out
+```
 
-If any of these have non-null/non-empty values, the application is "Detailed". Otherwise "Quick".
+## SMS Message Templates
 
-## UI Changes
+**Verification SMS:**
+```
+Hi {first_name}! We tried calling about the application you submitted to {client_name}. Please confirm your details:
 
-**Badge styling:**
-- **Quick**: Subtle outline badge, neutral color (e.g., `bg-muted text-muted-foreground`)
-- **Detailed**: Green-tinted badge (e.g., `bg-emerald-500/20 text-emerald-400`) with a checkmark icon
+Name: {first_name} {last_name}
+Location: {city}, {state}
+CDL: {cdl_status}
+Experience: {experience}
 
-**Files to edit:**
+Reply YES to confirm or EDIT to make changes.
+```
 
-1. **`src/utils/applicationHelpers.ts`** — Add `getFormType()` utility function
-2. **`src/components/applications/ApplicationCard.tsx`** — Add form type badge next to the category badge (line ~101-103 area)
-3. **`src/features/applications/components/ApplicationsTableView.tsx`** — Add form type badge in the applicant cell next to the category badge
-4. **`src/features/applications/components/TableColumnVisibility.tsx`** — Add optional `formType` column toggle
-5. **`src/features/applications/pages/ApplicationsPage.tsx`** — Add `formType` to default column visibility state
+**Confirmation + Link SMS:**
+```
+Thanks for confirming! Complete your full application here:
+{link to /apply/detailed?job_id=X&app_id=Y}
+Reply STOP to opt out.
+```
 
-## Scope
-- Pure frontend change, no database migration needed
-- ~5 files modified, 1 new utility function
+**Edit SMS:**
+```
+Please call us at {phone} or reply with corrections (e.g. 'City: Dallas, CDL: Class A'). A recruiter will update your record.
+```
+
+## Changes Required
+
+### 1. Database Migration
+- Add `sms_followup_sent` boolean to `outbound_calls` (default false)
+- Create `sms_verification_sessions` table: `id`, `application_id`, `outbound_call_id`, `phone_number`, `status` (enum: pending_confirmation, confirmed, edit_requested, expired), `verification_message`, `created_at`, `updated_at`, `expires_at`
+
+### 2. Create `supabase/functions/sms-webhook/index.ts`
+- Twilio incoming SMS handler (no JWT, validate Twilio signature)
+- Looks up sender phone in `sms_verification_sessions`
+- Parses YES → mark confirmed, send full app link
+- Parses EDIT → mark edit_requested, send instructions
+- Parses STOP → update `consent_to_sms` to 'no'
+- Returns empty TwiML `<Response/>`
+
+### 3. Edit `supabase/functions/elevenlabs-outbound-call/index.ts`
+- On `no_answer` + `retry_count === 0` + `consent_to_sms === 'yes'` + not enriched:
+  - Fetch application + client name (from `job_listings.clients.name`)
+  - Build verification SMS using client name (not job title)
+  - Send via Twilio
+  - Create `sms_verification_sessions` record
+  - Set `sms_followup_sent = true`
+
+### 4. Edit `supabase/functions/send-sms/index.ts`
+- Make `conversationId`/`messageId` optional for system-originated SMS
+
+### 5. Edit `src/hooks/useDetailedApplicationForm.ts`
+- Read `app_id` from URL query params for SMS link support
+- Fetch existing application to pre-fill and trigger UPDATE flow
+
+### 6. Edit `supabase/config.toml`
+- Add `sms-webhook` with `verify_jwt = false`
+
+## Files Summary
+1. **Create** `supabase/functions/sms-webhook/index.ts`
+2. **Edit** `supabase/functions/elevenlabs-outbound-call/index.ts`
+3. **Edit** `supabase/functions/send-sms/index.ts`
+4. **Edit** `src/hooks/useDetailedApplicationForm.ts`
+5. **Edit** `supabase/config.toml`
+6. **Migration** for `sms_followup_sent` + `sms_verification_sessions`
 
