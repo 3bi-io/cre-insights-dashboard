@@ -239,11 +239,35 @@ const deserializeFormData = (data: SerializableFormData): DetailedFormData => ({
 
 export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const jobId = searchParams.get('job_id') || searchParams.get('job_listing_id') || searchParams.get('jobId') || searchParams.get('job');
 
-  const [formData, setFormData] = useState<DetailedFormData>(initialFormData);
+  // Check for prefill data from quick-apply route state
+  const prefillData = (location.state as { prefill?: Record<string, unknown> } | null)?.prefill;
+
+  const [formData, setFormData] = useState<DetailedFormData>(() => {
+    if (!prefillData) return initialFormData;
+    return {
+      ...initialFormData,
+      firstName: (prefillData.firstName as string) || '',
+      lastName: (prefillData.lastName as string) || '',
+      email: (prefillData.email as string) || '',
+      phone: (prefillData.phone as string) || '',
+      city: (prefillData.city as string) || '',
+      state: (prefillData.state as string) || '',
+      zipCode: (prefillData.zip as string) || '',
+      cdl: (prefillData.cdl as string) || '',
+      cdlClass: (prefillData.cdlClass as string) || '',
+      cdlEndorsements: (prefillData.cdlEndorsements as string[]) || [],
+      experience: (prefillData.experience as string) || '',
+      canPassDrugTest: (prefillData.drug as string) || '',
+      consentToSms: prefillData.consent === 'yes' || prefillData.consent === 'Yes',
+      over21: (prefillData.over21 as string) || '',
+      veteranStatus: (prefillData.veteran as string) || '',
+    };
+  });
   
   // Serializable version for persistence
   const [serializedData, setSerializedData] = useState<SerializableFormData>(() => 
