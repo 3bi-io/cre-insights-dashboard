@@ -72,57 +72,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { to, message, conversationId, messageId } = validationResult.data;
 
-    // Validate and normalize phone number
-    const phoneValidation = normalizePhoneNumber(to);
-    if (!phoneValidation.valid) {
-      return validationErrorResponse(phoneValidation.error || 'Invalid phone number', origin || undefined);
-    }
-    
-    const normalizedPhone = phoneValidation.normalized!;
-
     // Initialize Supabase client
     const supabase = getServiceClient();
 
-    // Get Twilio credentials
-    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-      logger.error('Twilio credentials not configured');
-      return errorResponse('SMS service not configured', 500, undefined, origin || undefined);
-    }
-
-    // Send SMS via Twilio
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-    
-    const formData = new URLSearchParams();
-    formData.append('To', normalizedPhone);
-    formData.append('From', twilioPhoneNumber);
-    formData.append('Body', message);
-
     logger.info('Sending SMS', { 
-      to: normalizedPhone.slice(0, -4) + '****', // Mask phone for logging
       conversation_id: conversationId || 'system',
     });
 
     const startTime = Date.now();
-    const twilioResponse = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
+    const twilioResult = await sendSms(to, message);
     const duration = Date.now() - startTime;
 
-    const twilioResult = await twilioResponse.json();
-
-    if (!twilioResponse.ok) {
+    if (!twilioResult.success) {
       logger.error('Twilio error', undefined, { 
-        status: twilioResponse.status, 
-        error_code: twilioResult.code,
+        error: twilioResult.error,
+        error_code: twilioResult.errorCode,
         duration_ms: duration 
       });
       
@@ -132,12 +96,12 @@ const handler = async (req: Request): Promise<Response> => {
           .from('sms_messages')
           .update({ 
             status: 'failed',
-            twilio_sid: twilioResult.error_code || null
+            twilio_sid: String(twilioResult.errorCode || '')
           })
           .eq('id', messageId);
       }
 
-      return errorResponse(twilioResult.message || 'Failed to send SMS', 500, undefined, origin || undefined);
+      return errorResponse(twilioResult.error || 'Failed to send SMS', 500, undefined, origin || undefined);
     }
 
     // Update message with Twilio SID and delivered status (only if messageId provided)
