@@ -260,9 +260,21 @@ export const ApplicationsTableView: React.FC<ApplicationsTableViewProps> = ({
                       </div>
                       <div className="min-w-0">
                         <div className="font-medium text-sm truncate">{applicantName}</div>
-                        <Badge variant="outline" className={`${category.color} text-xs px-1 py-0 border mt-0.5`}>
-                          {category.code}
-                        </Badge>
+                        <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                          <Badge variant="outline" className={`${category.color} text-xs px-1 py-0 border`}>
+                            {category.code}
+                          </Badge>
+                          {getFormType(application) === 'Detailed' ? (
+                            <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs px-1 py-0 border hover:bg-emerald-500/30">
+                              <CheckCircle2 className="w-3 h-3 mr-0.5" />
+                              Detailed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground text-xs px-1 py-0 border">
+                              Quick
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     </TableCell>

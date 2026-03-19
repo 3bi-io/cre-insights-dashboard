@@ -96,11 +96,21 @@ const ApplicationCard = ({
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="font-semibold text-xl text-foreground truncate group-hover:text-primary transition-colors">{applicantName}</h3>
                   <Badge variant="outline" className={`${category.color} text-xs px-2 py-0.5 border`}>
                     {category.code}
                   </Badge>
+                  {getFormType(application) === 'Detailed' ? (
+                    <Badge className="bg-emerald-500/20 text-emerald-500 border-emerald-500/30 text-xs px-2 py-0.5 border hover:bg-emerald-500/30">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Detailed
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-muted text-muted-foreground text-xs px-2 py-0.5 border">
+                      Quick
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground font-medium">{jobTitle}</p>
               </div>

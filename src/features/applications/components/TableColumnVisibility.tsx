@@ -48,6 +48,12 @@ export const TableColumnVisibility = ({
           Applicant
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
+          checked={columnVisibility.formType}
+          onCheckedChange={() => onColumnVisibilityChange('formType')}
+        >
+          Form Type
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
           checked={columnVisibility.job}
           onCheckedChange={() => onColumnVisibilityChange('job')}
         >

@@ -75,3 +75,25 @@ export const getCategoryCounts = (applications: any[]) => {
     return acc;
   }, {} as Record<string, number>);
 };
+
+/**
+ * Determines if an application was enriched with full detailed form data.
+ */
+export const getFormType = (application: any): 'Quick' | 'Detailed' => {
+  const detailedFields = [
+    application.employment_history,
+    application.ssn,
+    application.date_of_birth,
+    application.emergency_contact_name,
+    application.convicted_felony,
+    application.military_service,
+    application.medical_card_expiration,
+  ];
+
+  return detailedFields.some(field => {
+    if (field === null || field === undefined || field === '') return false;
+    if (Array.isArray(field)) return field.length > 0;
+    if (typeof field === 'object') return Object.keys(field).length > 0;
+    return true;
+  }) ? 'Detailed' : 'Quick';
+};
