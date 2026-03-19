@@ -12,7 +12,8 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Loader2
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   Table, 
