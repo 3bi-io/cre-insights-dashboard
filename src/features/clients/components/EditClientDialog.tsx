@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ClientLogoUpload } from './ClientLogoUpload';
+import ClientApplicationFieldsConfig from './ClientApplicationFieldsConfig';
 import { ClientATSSettings } from './ClientATSSettings';
 import {
   Form,
