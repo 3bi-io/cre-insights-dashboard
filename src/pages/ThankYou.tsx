@@ -10,6 +10,7 @@ interface ThankYouState {
   organizationName?: string;
   hasVoiceAgent?: boolean;
   logoUrl?: string;
+  applicationId?: string;
   formData?: {
     firstName?: string;
     lastName?: string;
