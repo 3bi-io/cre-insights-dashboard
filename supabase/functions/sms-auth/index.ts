@@ -70,16 +70,16 @@ serve(async (req) => {
   }
 });
 
-async function sendMagicLink(phoneNumber: string, supabase: ReturnType<typeof createClient>, corsHeaders: CorsHeaders) {
-  const validation = validatePhoneNumber(phoneNumber);
-  if (!validation.valid) {
-    throw new Error(validation.error || 'Invalid phone number');
-  }
-  
-  const normalizedPhone = validation.normalized!;
-  
+async function sendMagicLink(phoneNumber: string, supabase: any, corsHeaders: CorsHeaders) {
   const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  // normalizePhone is called inside twilioSendSms, but we need it for DB storage too
+  const { normalizePhone } = await import('../_shared/phone-utils.ts');
+  const normalizedPhone = normalizePhone(phoneNumber);
+  if (!normalizedPhone) {
+    throw new Error('Invalid phone number');
+  }
 
   const { error: dbError } = await supabase
     .from('sms_magic_links')
@@ -95,45 +95,20 @@ async function sendMagicLink(phoneNumber: string, supabase: ReturnType<typeof cr
     throw new Error(`Database error: ${dbError.message}`);
   }
 
-  const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    throw new Error('Twilio credentials not configured');
-  }
-
   const smsMessage = `Your IntelliApp verification code is: ${verificationToken}. This code expires in 15 minutes.`;
+  const result = await twilioSendSms(phoneNumber, smsMessage);
 
-  const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-  const twilioCredentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-  const twilioResponse = await fetch(twilioUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${twilioCredentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      From: twilioPhoneNumber,
-      To: normalizedPhone,
-      Body: smsMessage,
-    }),
-  });
-
-  if (!twilioResponse.ok) {
-    const errorText = await twilioResponse.text();
-    throw new Error(`Twilio error: ${errorText}`);
+  if (!result.success) {
+    throw new Error(`Twilio error: ${result.error}`);
   }
 
-  const twilioResult = await twilioResponse.json();
-  logger.info('SMS sent successfully', { messageSid: twilioResult.sid });
+  logger.info('SMS sent successfully', { messageSid: result.sid });
 
   return new Response(
     JSON.stringify({ 
       success: true, 
       message: 'Verification code sent successfully',
-      messageSid: twilioResult.sid 
+      messageSid: result.sid 
     }),
     {
       status: 200,
