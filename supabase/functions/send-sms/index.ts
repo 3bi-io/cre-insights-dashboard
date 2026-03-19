@@ -155,17 +155,19 @@ const handler = async (req: Request): Promise<Response> => {
       return errorResponse(twilioResult.message || 'Failed to send SMS', 500, undefined, origin || undefined);
     }
 
-    // Update message with Twilio SID and delivered status
-    const { error: updateError } = await supabase
-      .from('sms_messages')
-      .update({ 
-        status: 'delivered',
-        twilio_sid: twilioResult.sid
-      })
-      .eq('id', messageId);
+    // Update message with Twilio SID and delivered status (only if messageId provided)
+    if (messageId) {
+      const { error: updateError } = await supabase
+        .from('sms_messages')
+        .update({ 
+          status: 'delivered',
+          twilio_sid: twilioResult.sid
+        })
+        .eq('id', messageId);
 
-    if (updateError) {
-      logger.warn('Failed to update message status', { error: updateError.message });
+      if (updateError) {
+        logger.warn('Failed to update message status', { error: updateError.message });
+      }
     }
 
     logger.info('SMS sent successfully', { 

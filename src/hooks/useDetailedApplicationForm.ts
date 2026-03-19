@@ -243,12 +243,15 @@ export const useDetailedApplicationForm = (clientLogoUrl?: string | null) => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const jobId = searchParams.get('job_id') || searchParams.get('job_listing_id') || searchParams.get('jobId') || searchParams.get('job');
+  
+  // Support app_id from URL query params (SMS verification link flow)
+  const appIdFromUrl = searchParams.get('app_id') || searchParams.get('appId');
 
   // Check for prefill data from quick-apply route state
   const prefillData = (location.state as { prefill?: Record<string, unknown> } | null)?.prefill;
   
-  // Track existing application ID for update mode (from short form → thank you → detailed)
-  const existingApplicationId = (prefillData?.applicationId as string) || null;
+  // Track existing application ID for update mode (from short form → thank you → detailed, or SMS link)
+  const existingApplicationId = appIdFromUrl || (prefillData?.applicationId as string) || null;
 
   const [formData, setFormData] = useState<DetailedFormData>(() => {
     if (!prefillData) return initialFormData;
