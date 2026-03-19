@@ -141,14 +141,16 @@ const handler = async (req: Request): Promise<Response> => {
         duration_ms: duration 
       });
       
-      // Update message status to failed
-      await supabase
-        .from('sms_messages')
-        .update({ 
-          status: 'failed',
-          twilio_sid: twilioResult.error_code || null
-        })
-        .eq('id', messageId);
+      // Update message status to failed (only if messageId provided)
+      if (messageId) {
+        await supabase
+          .from('sms_messages')
+          .update({ 
+            status: 'failed',
+            twilio_sid: twilioResult.error_code || null
+          })
+          .eq('id', messageId);
+      }
 
       return errorResponse(twilioResult.message || 'Failed to send SMS', 500, undefined, origin || undefined);
     }
