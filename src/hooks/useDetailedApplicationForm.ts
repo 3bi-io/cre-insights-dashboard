@@ -8,6 +8,15 @@ import { format } from 'date-fns';
 import { useFormPersistence } from '@/hooks/useFormPersistence';
 import { logger } from '@/lib/logger';
 
+export interface EmployerEntry {
+  companyName: string;
+  phone: string;
+  startDate: string;
+  endDate: string;
+  city: string;
+  state: string;
+}
+
 // Serializable version for localStorage (dates as strings)
 interface SerializableFormData extends Omit<DetailedFormData, 
   'dateOfBirth' | 'cdlExpirationDate' | 'militaryStartDate' | 'militaryEndDate' | 
