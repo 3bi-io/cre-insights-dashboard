@@ -209,6 +209,8 @@ export const DetailedApplicationForm = () => {
                     formData={formData}
                     onInputChange={handleInputChange}
                     isActive={activeStep === id}
+                    isFieldEnabled={isFieldEnabled}
+                    isFieldRequired={isFieldRequired}
                     {...(hasEndorsementToggle && { onEndorsementToggle: handleEndorsementToggle })}
                   />
                 </StepContainer>
