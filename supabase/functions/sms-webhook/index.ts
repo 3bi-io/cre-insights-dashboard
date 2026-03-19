@@ -59,7 +59,7 @@ serve(async (req) => {
     // Look up active verification session by phone number
     const { data: session, error: sessionError } = await supabase
       .from('sms_verification_sessions')
-      .select('*, application_id, outbound_call_id, job_listing_id, client_name')
+      .select('*, application_id, outbound_call_id, job_listing_id, client_name, applicant_first_name, job_title')
       .eq('phone_number', normalizedPhone)
       .eq('status', 'pending_confirmation')
       .gt('expires_at', new Date().toISOString())
