@@ -13,8 +13,8 @@ const logger = createLogger('send-sms');
 const smsRequestSchema = z.object({
   to: z.string().min(10, 'Phone number must be at least 10 digits'),
   message: z.string().min(1, 'Message is required').max(1600, 'Message too long'),
-  conversationId: z.string().uuid('Invalid conversation ID'),
-  messageId: z.string().uuid('Invalid message ID'),
+  conversationId: z.string().uuid('Invalid conversation ID').optional(),
+  messageId: z.string().uuid('Invalid message ID').optional(),
 });
 
 type SMSRequest = z.infer<typeof smsRequestSchema>;
