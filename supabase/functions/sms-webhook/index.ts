@@ -7,6 +7,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors-config.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
+import { sendSms } from "../_shared/twilio-client.ts";
 
 const logger = createLogger('sms-webhook');
 
