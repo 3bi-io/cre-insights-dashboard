@@ -158,6 +158,11 @@ serve(async (req) => {
         .update({ status: 'confirmed', updated_at: new Date().toISOString() })
         .eq('id', session.id);
 
+      // Personalization fields from session
+      const firstName = session.applicant_first_name || 'there';
+      const jobTitle = session.job_title || 'driver';
+      const clientName = session.client_name || 'our company';
+
       // Check if application is already enriched (has detailed form data)
       const { data: app } = await supabase
         .from('applications')
@@ -177,15 +182,13 @@ serve(async (req) => {
       );
 
       if (isEnriched) {
-        // Already has detailed data — just confirm
         await sendReply(
-          `Thanks for confirming your details! Your full application is already on file. We'll be in touch soon.`
+          `Thanks for confirming, ${firstName}! Your full ${jobTitle} application with ${clientName} is on file. A recruiter will be in touch soon.`
         );
       } else {
-        // Send link to complete full application
         const detailedUrl = `${APP_BASE_URL}/apply/detailed?job_id=${session.job_listing_id}&app_id=${session.application_id}`;
         await sendReply(
-          `Thanks for confirming! Complete your full application here:\n${detailedUrl}\nReply STOP to opt out.`
+          `Thanks for confirming, ${firstName}! Complete your ${jobTitle} application with ${clientName} here:\n\n${detailedUrl}\n\nYour info will be pre-filled.\nReply STOP to opt out.`
         );
       }
 
@@ -198,13 +201,17 @@ serve(async (req) => {
     if (normalizedBody === 'EDIT' || normalizedBody === 'UPDATE' || normalizedBody === 'CHANGE') {
       logger.info('Edit requested', { session_id: session.id });
 
+      const firstName = session.applicant_first_name || 'there';
+      const jobTitle = session.job_title || 'driver';
+      const clientName = session.client_name || 'our company';
+
       await supabase
         .from('sms_verification_sessions')
         .update({ status: 'edit_requested', updated_at: new Date().toISOString() })
         .eq('id', session.id);
 
       await sendReply(
-        `No problem! Please reply with your corrections (e.g. "City: Dallas, CDL: Class A"). A recruiter will update your record.`
+        `No problem, ${firstName}! Reply with your corrections (e.g. "City: Dallas" or "CDL: Class A"). We'll update your ${jobTitle} application with ${clientName}.`
       );
 
       return new Response('<?xml version="1.0" encoding="UTF-8"?><Response/>', {
