@@ -20,23 +20,7 @@ const smsRequestSchema = z.object({
 
 type SMSRequest = z.infer<typeof smsRequestSchema>;
 
-function normalizePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
-  const digitsOnly = phone.replace(/[^\d]/g, '');
-  
-  if (digitsOnly.length < 10 || digitsOnly.length > 11) {
-    return { valid: false, error: 'Phone number must be 10 or 11 digits' };
-  }
-  
-  if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
-    return { valid: false, error: 'Invalid phone number format' };
-  }
-  
-  const normalized = digitsOnly.length === 10 
-    ? `+1${digitsOnly}` 
-    : `+${digitsOnly}`;
-  
-  return { valid: true, normalized };
-}
+// Phone normalization now handled by shared twilio-client
 
 const handler = async (req: Request): Promise<Response> => {
   const origin = req.headers.get('origin');
