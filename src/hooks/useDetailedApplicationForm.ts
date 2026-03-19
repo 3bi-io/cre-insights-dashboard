@@ -154,7 +154,11 @@ const initialFormData: DetailedFormData = {
   experience: '',
   accidentHistory: '',
   violationHistory: '',
-  employmentHistory: '',
+  employers: [
+    { companyName: '', phone: '', startDate: '', endDate: '', city: '', state: '' },
+    { companyName: '', phone: '', startDate: '', endDate: '', city: '', state: '' },
+    { companyName: '', phone: '', startDate: '', endDate: '', city: '', state: '' },
+  ],
   educationLevel: '',
   
   // Military Service
