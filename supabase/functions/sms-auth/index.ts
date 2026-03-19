@@ -117,7 +117,7 @@ async function sendMagicLink(phoneNumber: string, supabase: any, corsHeaders: Co
   );
 }
 
-async function verifyToken(phoneNumber: string, token: string, supabase: ReturnType<typeof createClient>, corsHeaders: CorsHeaders) {
+async function verifyToken(phoneNumber: string, token: string, supabase: any, corsHeaders: CorsHeaders) {
   const { data: linkData, error: findError } = await supabase
     .from('sms_magic_links')
     .select('*')
