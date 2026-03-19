@@ -24,10 +24,10 @@ export const useClientApplicationFields = (clientId: string | null, organization
         .from('client_application_fields' as any)
         .select('*')
         .eq('client_id', clientId!)
-        .order('field_key');
+        .order('field_key') as { data: ClientFieldRow[] | null; error: any };
       
       if (error) throw error;
-      return (data || []) as ClientFieldRow[];
+      return data || [];
     },
   });
 
