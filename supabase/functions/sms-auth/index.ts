@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { getServiceClient } from "../_shared/supabase-client.ts";
 import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { createLogger } from '../_shared/logger.ts';
+import { sendSms as twilioSendSms, makeCall as twilioMakeCall } from '../_shared/twilio-client.ts';
 
 const logger = createLogger('sms-auth');
 
