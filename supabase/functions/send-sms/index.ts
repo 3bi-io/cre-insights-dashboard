@@ -5,6 +5,7 @@ import { getCorsHeaders } from '../_shared/cors-config.ts';
 import { successResponse, errorResponse, validationErrorResponse, rateLimitResponse } from '../_shared/response.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { checkRateLimitWithGeo } from '../_shared/rate-limiter.ts';
+import { sendSms } from '../_shared/twilio-client.ts';
 import { verifyUser } from '../_shared/auth.ts';
 
 const logger = createLogger('send-sms');
