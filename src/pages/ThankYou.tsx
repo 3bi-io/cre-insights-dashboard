@@ -47,7 +47,7 @@ const ThankYou = () => {
     const jobId = formData?.job_listing_id || formData?.job_id;
     const searchParams = jobId ? `?job_id=${jobId}` : '';
     navigate(`/apply/detailed${searchParams}`, {
-      state: { prefill: formData }
+      state: { prefill: { ...formData, applicationId } }
     });
   };
 

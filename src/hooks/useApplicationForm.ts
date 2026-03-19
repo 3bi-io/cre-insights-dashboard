@@ -244,6 +244,7 @@ export const useApplicationForm = (clientLogoUrl?: string | null) => {
           organizationName: data.organizationName,
           hasVoiceAgent: data.hasVoiceAgent,
           logoUrl: clientLogoUrl,
+          applicationId: data.applicationId,
           formData: {
             firstName: formData.firstName,
             lastName: formData.lastName,
