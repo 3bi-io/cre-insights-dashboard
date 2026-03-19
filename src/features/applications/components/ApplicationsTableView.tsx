@@ -22,7 +22,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory } from '@/utils/applicationHelpers';
+import { getApplicantName, getApplicantEmail, getClientName, getApplicantCategory, getFormType } from '@/utils/applicationHelpers';
 import { getJobDisplayTitle } from '@/features/applications/utils/applicationFormatters';
 import { formatPhoneForDisplay } from '@/utils/phoneNormalizer';
 import { useZipCodeLookup } from '@/hooks/useZipCodeLookup';
