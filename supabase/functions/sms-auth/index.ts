@@ -52,7 +52,7 @@ serve(async (req) => {
         return await verifyToken(phoneNumber, token!, supabase, corsHeaders);
       
       case 'make_call':
-        return await makeCall(phoneNumber, message || 'Hello from IntelliApp!', corsHeaders);
+        return await handleMakeCall(phoneNumber, message || 'Hello from IntelliApp!', corsHeaders);
       
       default:
         throw new Error('Invalid action');
