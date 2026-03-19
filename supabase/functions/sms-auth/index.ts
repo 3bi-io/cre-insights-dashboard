@@ -8,33 +8,7 @@ const logger = createLogger('sms-auth');
 
 type CorsHeaders = Record<string, string>;
 
-function escapeXML(unsafe: string): string {
-  if (!unsafe) return '';
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function validatePhoneNumber(phone: string): { valid: boolean; error?: string; normalized?: string } {
-  const digitsOnly = phone.replace(/[^\d]/g, '');
-  
-  if (digitsOnly.length < 10 || digitsOnly.length > 11) {
-    return { valid: false, error: 'Phone number must be 10 or 11 digits' };
-  }
-  
-  if (digitsOnly.length === 11 && !digitsOnly.startsWith('1')) {
-    return { valid: false, error: 'Invalid phone number format' };
-  }
-  
-  const normalized = digitsOnly.length === 10 
-    ? `+1${digitsOnly}` 
-    : `+${digitsOnly}`;
-  
-  return { valid: true, normalized };
-}
+// escapeXML and phone normalization now handled by shared twilio-client
 
 interface SmsAuthRequest {
   action: 'send_magic_link' | 'verify_token' | 'make_call';
