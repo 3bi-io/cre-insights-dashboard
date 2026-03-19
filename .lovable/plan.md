@@ -1,28 +1,44 @@
 
 
-# SMS Template Personalization Refactor
+# Send All SMS Templates to Jimmy Hayes for Review
 
-## Status: ✅ IMPLEMENTED
+## Context
+- **Recipient**: Jimmy Hayes, +12564528215
+- **Job Listing**: `a3a8b6d5-7b4b-45db-a74a-d8a0ddfc35c6` — "CDL-A Solo Truck Drivers Needed" at **Danny Herman Trucking**
+- **Existing application data**: Jimmy has prior apps but none for this job listing yet
 
-## Overview
-All SMS templates now include personalized applicant first name, job title, and company name for a best-in-class mobile experience. Data is stored on the `sms_verification_sessions` table at creation time to avoid extra lookups in the webhook handler.
+## Approach
+Create a one-off edge function script (or use `supabase--curl_edge_functions` against an existing function) to systematically send all 5 SMS templates to Jimmy's phone with a short delay between each, using the real Twilio credentials already configured in Supabase.
 
-## Changes Made
+However, since Twilio secrets (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`) are not in the Lovable secrets list (they're likely set directly in Supabase edge function secrets), the cleanest approach is:
 
-### Database
-- Added `applicant_first_name` and `job_title` columns to `sms_verification_sessions`
+### Create a temporary edge function: `sms-template-preview`
 
-### Edge Functions
-1. **`elevenlabs-outbound-call/index.ts`** — Fetches job title, stores `applicant_first_name` + `job_title` on session insert, refined outbound SMS with bullet formatting and STOP disclosure
-2. **`sms-webhook/index.ts`** — All 4 reply templates personalized with first name, job title, and company name
+This function will:
+1. Accept a POST with `{ phone, firstName, lastName, jobTitle, clientName, jobListingId, applicationId }`
+2. Send all 5 templates sequentially with 3-second delays between each
+3. Prefix each message with a label like `[Template 1/5 - Verification]`
 
-### Template Examples
-- **Outbound**: "Hi {firstName}! We tried reaching you about your {jobTitle} application with {clientName}. • Name: ... • Location: ... Reply YES/EDIT. Reply STOP to opt out."
-- **YES (enriched)**: "Thanks for confirming, {firstName}! Your full {jobTitle} application with {clientName} is on file."
-- **YES (link)**: "Thanks for confirming, {firstName}! Complete your {jobTitle} application with {clientName} here: {url}"
-- **EDIT**: "No problem, {firstName}! Reply with corrections. We'll update your {jobTitle} application with {clientName}."
-- **Free-text**: "Got it, {firstName}! We've forwarded your update to the {clientName} recruiting team."
+### Templates to send (using Jimmy's real data):
 
-## Twilio Webhook Setup Required
-Configure the Twilio phone number's incoming message webhook URL to:
-`https://auwhcdpppldjlcaxzsme.supabase.co/functions/v1/sms-webhook`
+| # | Template | Personalized Message |
+|---|----------|---------------------|
+| 1 | **Initial Verification** | "Hi Jimmy! We tried reaching you about your CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking.\n\nHere's what we have:\n• Name: Jimmy Hayes\n• Location: Anniston, AL\n• CDL: Yes\n• Experience: More than 3 months\n\nReply YES to confirm or EDIT to update.\nReply STOP to opt out." |
+| 2 | **YES — Not Enriched** | "Thanks for confirming, Jimmy! Complete your CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking here:\n\n{url}\n\nYour info will be pre-filled.\nReply STOP to opt out." |
+| 3 | **YES — Already Enriched** | "Thanks for confirming, Jimmy! Your full CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking is on file. A recruiter will be in touch soon." |
+| 4 | **EDIT Response** | "No problem, Jimmy! Reply with your corrections (e.g. \"City: Dallas\" or \"CDL: Class A\"). We'll update your CDL-A Solo Truck Drivers Needed application with Danny Herman Trucking." |
+| 5 | **Free-text Correction Ack** | "Got it, Jimmy! We've forwarded your update to the Danny Herman Trucking recruiting team. They'll review it shortly." |
+
+### Steps
+1. Create `supabase/functions/sms-template-preview/index.ts` — sends all 5 templates with labels and delays
+2. Deploy and invoke it once with Jimmy's data
+3. Delete the function after send (cleanup)
+
+### Pre-requisite Check
+Twilio secrets must be available to edge functions. They're not in the Lovable secrets list — need to verify they exist in Supabase function secrets before proceeding.
+
+### Files
+| File | Action |
+|------|--------|
+| `supabase/functions/sms-template-preview/index.ts` | Create (temporary) |
+
