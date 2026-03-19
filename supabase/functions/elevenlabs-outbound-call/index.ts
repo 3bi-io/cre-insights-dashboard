@@ -418,14 +418,27 @@ serve(async (req) => {
                       }
 
                       if (smsFollowupEnabled) {
-                        // Build verification message
+                        // Build verification message with personalization
                         const firstName = appData.first_name || 'there';
                         const lastName = appData.last_name || '';
                         const location = [appData.city, appData.state].filter(Boolean).join(', ') || 'Not provided';
                         const cdlInfo = appData.cdl_class ? `Class ${appData.cdl_class}` : (appData.cdl || 'Not provided');
                         const experience = appData.exp || 'Not provided';
 
-                        const verificationMsg = `Hi ${firstName}! We tried calling about the application you submitted to ${clientName}. Please confirm your details:\n\nName: ${firstName} ${lastName}\nLocation: ${location}\nCDL: ${cdlInfo}\nExperience: ${experience}\n\nReply YES to confirm or EDIT to make changes.`;
+                        // Fetch job title for personalization
+                        let jobTitle = 'driver';
+                        if (appData.job_listing_id) {
+                          const { data: jobTitleData } = await supabase
+                            .from('job_listings')
+                            .select('title, job_title')
+                            .eq('id', appData.job_listing_id)
+                            .single();
+                          if (jobTitleData) {
+                            jobTitle = jobTitleData.title || jobTitleData.job_title || 'driver';
+                          }
+                        }
+
+                        const verificationMsg = `Hi ${firstName}! We tried reaching you about your ${jobTitle} application with ${clientName}.\n\nHere's what we have:\n• Name: ${firstName} ${lastName}\n• Location: ${location}\n• CDL: ${cdlInfo}\n• Experience: ${experience}\n\nReply YES to confirm or EDIT to update.\nReply STOP to opt out.`;
 
                         // Send via Twilio
                         const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
@@ -461,7 +474,7 @@ serve(async (req) => {
                             // Normalize phone for session lookup
                             const sessionPhone = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : (digits.length === 10 ? digits : digits);
 
-                            // Create verification session
+                            // Create verification session with personalization data
                             await supabase.from('sms_verification_sessions').insert({
                               application_id: fullCall.application_id,
                               outbound_call_id: call.id,
@@ -470,6 +483,8 @@ serve(async (req) => {
                               verification_message: verificationMsg,
                               client_name: clientName,
                               job_listing_id: appData.job_listing_id,
+                              applicant_first_name: appData.first_name || null,
+                              job_title: jobTitle,
                             });
 
                             // Mark SMS followup as sent

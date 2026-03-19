@@ -6786,12 +6786,14 @@ export type Database = {
       }
       sms_verification_sessions: {
         Row: {
+          applicant_first_name: string | null
           application_id: string
           client_name: string | null
           created_at: string
           expires_at: string
           id: string
           job_listing_id: string | null
+          job_title: string | null
           outbound_call_id: string
           phone_number: string
           status: Database["public"]["Enums"]["sms_verification_status"]
@@ -6799,12 +6801,14 @@ export type Database = {
           verification_message: string | null
         }
         Insert: {
+          applicant_first_name?: string | null
           application_id: string
           client_name?: string | null
           created_at?: string
           expires_at?: string
           id?: string
           job_listing_id?: string | null
+          job_title?: string | null
           outbound_call_id: string
           phone_number: string
           status?: Database["public"]["Enums"]["sms_verification_status"]
@@ -6812,12 +6816,14 @@ export type Database = {
           verification_message?: string | null
         }
         Update: {
+          applicant_first_name?: string | null
           application_id?: string
           client_name?: string | null
           created_at?: string
           expires_at?: string
           id?: string
           job_listing_id?: string | null
+          job_title?: string | null
           outbound_call_id?: string
           phone_number?: string
           status?: Database["public"]["Enums"]["sms_verification_status"]
