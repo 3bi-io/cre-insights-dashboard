@@ -121,10 +121,14 @@ const EditClientDialog: React.FC<EditClientDialogProps> = ({
         </DialogHeader>
 
         <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Details
+            </TabsTrigger>
+            <TabsTrigger value="fields" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Application Fields
             </TabsTrigger>
             <TabsTrigger value="ats" className="flex items-center gap-2">
               <Link2 className="h-4 w-4" />
