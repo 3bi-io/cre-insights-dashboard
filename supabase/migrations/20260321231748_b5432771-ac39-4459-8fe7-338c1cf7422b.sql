@@ -1,0 +1,2 @@
+UPDATE clients SET logo_url = 'https://applyai.jobs/logos/werner-enterprises.png' WHERE id = 'feb3479f-4116-42a5-bb6a-811406c1c99a';
+UPDATE clients SET logo_url = 'https://applyai.jobs/logos/tmc-transportation.png' WHERE id = '50657f4d-c47b-4104-a307-b82d5fa4a1df';
