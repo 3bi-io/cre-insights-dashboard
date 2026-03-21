@@ -9066,6 +9066,10 @@ export type Database = {
         Args: { p_amount?: number; p_metric: string; p_organization_id: string }
         Returns: undefined
       }
+      is_assigned_to_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_holiday: {
         Args: { p_date: string; p_org_id: string }
         Returns: boolean
