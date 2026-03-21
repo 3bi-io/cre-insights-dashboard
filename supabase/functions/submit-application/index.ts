@@ -928,8 +928,17 @@ Deno.serve(async (req) => {
     });
 
     // Map form data to applications table schema
-    const firstName = formData.firstName || formData.first_name || '';
-    const lastName = formData.lastName || formData.last_name || '';
+    let firstName = (formData.firstName || formData.first_name || '').trim();
+    let lastName = (formData.lastName || formData.last_name || '').trim();
+    
+    // Guard: if first_name contains a space and equals last_name, it's a
+    // corrupted "full name in both fields" issue (common with Facebook Lead Ads)
+    if (firstName && firstName === lastName && firstName.includes(' ')) {
+      const parts = firstName.split(/\s+/);
+      firstName = parts[0];
+      lastName = parts.slice(1).join(' ');
+      logger.warn('Auto-split duplicate full-name fields', { original: formData.first_name, firstName, lastName });
+    }
     
     // Calculate driving experience years from months
     const monthsValue = formData.months || formData.experience || '0';
