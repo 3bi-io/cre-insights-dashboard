@@ -1,55 +1,51 @@
 
 
-# Create R.E. Garrison Job Listings
+# Update R.E. Garrison Job Listings with Coverage Locations
 
-## Context
-- **Client**: R.E. Garrison Trucking (`be8b645e-d480-4c22-8e75-b09a7fc1db7a`)
-- **Organization**: Hayes Recruiting Solutions (`84214b48-7b51-45bc-ad7f-723bcf50466c`)
-- **Category**: Driver Recruitment (`61bd5f79-b3c1-4804-a6a0-d568773c3d84`)
-- **User ID**: `5761e7e0-1bdf-43b1-ba5f-19a24f9d025e`
-- **Current listings**: 0
+## What the Documents Show
 
-## Job Listings to Create
+### Owner Ops States Map (OTR coverage)
+Yellow-highlighted states representing OTR operating territory. Covers most of the eastern US plus central/mountain states:
 
-Based on the provided info, there are 4 distinct positions:
+**States**: TX, OK, AR, LA, MS, AL, TN, KY, GA, FL, SC, NC, VA, WV, OH, IN, IL, MO, KS, NE, IA, SD, MN, WI, MI, CO, UT, AZ, NM, PA, NY, CT, NJ, DE, MD
 
-### Job 1: Solo Owner Operator - OTR (Lease Purchase)
-- **Title**: Solo Owner Operator - OTR Lease Purchase
-- **Summary**: Drive 2021+ trucks on OTR routes. Earn $2,000-$3,000 weekly take-home ($4,000-$5,000 gross). We pay 70% of line haul + 100% of billed fuel surcharge. No trailer rental fees. Nationwide fuel & maintenance discounts. $50/hr detention pay after first hour (max $500/day). Weekly pay via Comdata. Insurance available after 60 days. Reefer freight. 1 year experience required in last 10 years with activity in last 2 years. Truck must pass DOT inspection and support Samsara ELD.
-- **Salary**: $104,000-$156,000/year (based on $2k-$3k weekly take-home)
-- **Salary type**: yearly
-- **Job type**: OTR
-- **Experience**: mid
+### Regional Maps (Regional coverage)
+Two distinct regional zones:
 
-### Job 2: Solo Owner Operator - Regional (Lease Purchase)
-- **Title**: Solo Owner Operator - Regional Lease Purchase
-- **Summary**: Drive 2019-2021 tractors with lower payments and higher miles on regional routes. Earn $2,000-$3,000 weekly take-home ($4,000-$5,000 gross). 70% of line haul + 100% of fuel surcharge. No trailer rental. Nationwide fuel & maintenance discounts. Weekly pay. Insurance after 60 days. $40/hr detention pay after first 3 hours (max $400/day). 1 year experience required in last 10 years. Truck must pass DOT inspection and support ELD.
-- **Salary**: $104,000-$156,000/year
-- **Salary type**: yearly
-- **Job type**: Regional
-- **Experience**: mid
+- **Southeast Regional** (red): TX, AR, LA, MS, AL, TN, KY, GA, SC, NC, VA, FL
+- **Central Regional** (gold): TX, LA, AR, OK, KS, NE, IA, MN, WI, IL, MO
 
-### Job 3: Team Owner Operators - OTR
-- **Title**: Team Owner Operators - OTR
-- **Summary**: Team drivers earn $2,500-$4,500 weekly take-home per driver. 70% of line haul + 100% of billed fuel surcharge. No trailer rental fees. Nationwide fuel & maintenance discounts. Weekly pay via Comdata. $50/hr detention pay after first hour (max $500/day). Reefer freight. With or without your own authority. Insurance after 60 days. 1 year experience required in last 10 years with activity in last 2 years.
-- **Salary**: $130,000-$234,000/year (based on $2.5k-$4.5k weekly)
-- **Salary type**: yearly
-- **Job type**: OTR
-- **Experience**: mid
+## Job-to-Coverage Mapping
 
-### Job 4: Owner Operator - Bring Your Own Truck
-- **Title**: Owner Operator - Bring Your Own Truck (Reefer)
-- **Summary**: Run your own truck under R.E. Garrison. Earn $4,000-$5,000 gross weekly. 70% of line haul + 100% of billed fuel surcharge. No trailer rental. With or without your own authority. Preplanned loads. Nationwide fuel & maintenance discounts. Weekly deductions: Bobtail $6.69/wk, Workers Comp $50/wk. Truck must pass DOT inspection within 30 days and support Samsara ELD. 1 year experience required in last 10 years.
-- **Salary**: $208,000-$260,000/year gross
-- **Salary type**: yearly
-- **Job type**: OTR
-- **Experience**: mid
+| Job Listing | Coverage Area | Map Source |
+|-------------|--------------|------------|
+| 1. Solo Owner Operator - OTR Lease Purchase | All 35 OTR states | Owner Ops States map |
+| 2. Solo Owner Operator - Regional Lease Purchase | Southeast + Central Regional (two zones) | Regional Maps |
+| 3. Team Owner Operators - OTR | All 35 OTR states | Owner Ops States map |
+| 4. Owner Operator - Bring Your Own Truck (Reefer) | All 35 OTR states | Owner Ops States map |
 
-## Execution
-Insert all 4 job listings into `job_listings` via `supabase--analytics_query` with:
-- `status: 'active'`
-- `experience_level: 'mid'` (1 year required)
-- `category_id`: Driver Recruitment
-- `client_id`: R.E. Garrison Trucking
-- Detailed `job_description` field with full compensation breakdown, deductions, requirements, and lease purchase payment schedules where applicable
+## Plan
+
+### Step 1: Update all 4 job listings with location data
+Run a SQL migration to set `location` and `job_type` fields:
+
+- **OTR jobs** (listings 1, 3, 4): Set `location` to summary of OTR states, `job_type` to `OTR`
+- **Regional job** (listing 2): Set `location` to describe both SE and Central regions, `job_type` to `Regional`
+
+### Step 2: Update job descriptions with coverage details
+Append coverage area details into each listing's `job_summary` field so drivers can see which states are covered directly in the listing. Include the specific state lists for each position.
+
+## Technical Details
+
+**Job IDs**:
+- OTR LP: `99d461b1-96c1-4cf2-823e-f29781d2009f`
+- Regional LP: `0614cde1-ccf3-4ef8-84aa-fa3e2694f29d`
+- Team OTR: `d77332d7-7ea7-4320-af34-bc360fa2958d`
+- BYOT Reefer: `4eb6e012-9fc5-441c-bc24-46225d23d83b`
+
+**OTR States** (35): AZ, UT, CO, NM, TX, OK, AR, LA, MS, AL, TN, KY, GA, FL, SC, NC, VA, WV, OH, IN, IL, MO, KS, NE, IA, SD, MN, WI, MI, PA, NY, CT, NJ, DE, MD
+
+**Southeast Regional** (12): TX, AR, LA, MS, AL, TN, KY, GA, SC, NC, VA, FL
+
+**Central Regional** (11): TX, LA, AR, OK, KS, NE, IA, MN, WI, IL, MO
 
