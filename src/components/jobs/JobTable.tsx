@@ -35,7 +35,9 @@ const JobTable: React.FC<JobTableProps> = ({
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [updatingSponsorship, setUpdatingSponsorship] = useState<string | null>(null);
+  const [geoExpandJobId, setGeoExpandJobId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { userRole } = useAuth();
 
   const handleSponsorshipToggle = async (jobId: string, currentValue: boolean) => {
     setUpdatingSponsorship(jobId);
