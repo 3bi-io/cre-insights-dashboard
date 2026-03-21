@@ -27,8 +27,12 @@ export const ClientPortalDashboard: React.FC<ClientPortalDashboardProps> = ({ ov
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   // Auto-select first client when loaded
-  const activeClientId = selectedClientId || assignedClients?.[0]?.id || null;
-  const activeClient = assignedClients?.find(c => c.id === activeClientId);
+  // If overrideClientId is set (admin preview mode), use it directly
+  const activeClientId = overrideClientId || selectedClientId || assignedClients?.[0]?.id || null;
+  const activeClient = overrideClientId 
+    ? { id: overrideClientId, name: '', logo_url: null, city: null, state: null, status: 'active' }
+    : assignedClients?.find(c => c.id === activeClientId);
+  const hasMultipleClients = !overrideClientId && (assignedClients?.length || 0) > 1;
   const hasMultipleClients = (assignedClients?.length || 0) > 1;
 
   // Pass null for organization since client-role users access via RLS directly

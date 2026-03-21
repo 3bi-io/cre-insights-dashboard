@@ -304,6 +304,7 @@ export const routeTitles: Record<string, string> = {
   '/admin/talent/pools': 'Talent Pools',
   '/admin/social-beacons': 'Social Beacons',
   '/admin/social-engagement': 'Social Engagement',
+  '/admin/client-dashboards': 'Client Dashboards',
 };
 
 export const getRouteTitle = (pathname: string): string => {
